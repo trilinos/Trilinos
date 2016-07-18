@@ -12,7 +12,8 @@ typedef int    size_type;
 
 typedef Kokkos::Qthread exec_space;
 
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
+        || defined(HAVE_SHYLUTACHO_AMESOS)))
 #include "Tacho_ExampleCholSuperNodesByBlocks.hpp"
 using namespace Tacho;
 #endif
@@ -30,6 +31,9 @@ int main (int argc, char *argv[]) {
 
   // int core_per_numa = 0;
   // clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
+
+  bool verbose_blocks = false;
+  clp.setOption("enable-verbose-blocks", "disable-verbose-blocks", &verbose_blocks, "Flag for verbose printing blocks");
 
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
@@ -49,7 +53,7 @@ int main (int argc, char *argv[]) {
   int rows_per_team = 4096;
   clp.setOption("rows-per-team", &rows_per_team, "Workset size");
 
-  int max_concurrency = 250000;
+  int max_concurrency = 1000000;
   clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
 
   int max_task_dependence = 3;
@@ -79,12 +83,14 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads);
 
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
+        || defined(HAVE_SHYLUTACHO_AMESOS)))
     r_val = exampleCholSuperNodesByBlocks<exec_space>
       (file_input, 
        treecut, prunecut, fill_level, rows_per_team, 
        max_concurrency, max_task_dependence, team_size,
        nrhs, mb, nb,
+       verbose_blocks,
        verbose);
 #else
     r_val = -1;

@@ -625,19 +625,26 @@ evaluateFields(typename TRAITS::EvalData workset)
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    double seed_value = 0.0;
-   if (useTimeDerivativeSolutionVector_) {
-     seed_value = workset.alpha;
-   }
-   else {
-     seed_value = workset.beta;
+   if(applySensitivities_) {
+     if (useTimeDerivativeSolutionVector_ && gatherSeedIndex_<0) {
+       seed_value = workset.alpha;
+     }
+     else if (gatherSeedIndex_<0) {
+       seed_value = workset.beta;
+     }
+     else if(!useTimeDerivativeSolutionVector_) {
+       seed_value = workset.gather_seeds[gatherSeedIndex_];
+     }
+     else {
+       TEUCHOS_ASSERT(false);
+     }
    }
 
    // turn off sensitivies: this may be faster if we don't expand the term
    // but I suspect not because anywhere it is used the full complement of
    // sensitivies will be needed anyway.
-   if(disableSensitivities_) {
+   if(!applySensitivities_)
       seed_value = 0.0;
-   }
 
    std::vector<int> blockOffsets;
    computeBlockOffsets(blockId,indexers_,blockOffsets);

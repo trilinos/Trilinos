@@ -12,7 +12,7 @@ namespace Experimental{
 
 namespace Graph{
 
-enum ColoringAlgorithm{COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB};
+enum ColoringAlgorithm{COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB,COLORING_SERIAL2};
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
@@ -596,6 +596,7 @@ private:
     case COLORING_VBBIT:
     case COLORING_VBCS:
     case COLORING_SERIAL:
+    case COLORING_SERIAL2:
       this->conflict_list_type = COLORING_ATOMIC;
       this->min_reduction_for_conflictlist = 0.35;
       this->min_elements_for_conflictlist = 1000;

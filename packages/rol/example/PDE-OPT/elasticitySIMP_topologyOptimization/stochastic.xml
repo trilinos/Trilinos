@@ -2,6 +2,7 @@
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
     <Parameter name="Number of Samples"               type="int"  value="10"    />
+    <Parameter name="Number of Output Samples"        type="int"  value="10"    />
     <Parameter name="Use Optimization-Based Sampling" type="bool" value="false" />
     <Parameter name="Use Expected Value Scaling"      type="bool" value="false" />
 

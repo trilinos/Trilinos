@@ -400,6 +400,10 @@ public:
     return state_;
   }
 
+  void reset(void) {
+    state_  = Teuchos::rcp(new AlgorithmState<Real>);
+  }
+
 }; // class Algorithm
 
 

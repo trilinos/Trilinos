@@ -339,14 +339,14 @@ public:
     const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
     if ( bnd1_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneActive(*v2,*(xs.get_2()),eps);
-      vs.set_2(*v2);
-    }
-    if ( bnd2_->isActivated() ) {
       Teuchos::RCP<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
       bnd1_->pruneActive(*v1,*(xs.get_1()),eps);
       vs.set_1(*v1);
+    }
+    if ( bnd2_->isActivated() ) {
+      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
+      bnd2_->pruneActive(*v2,*(xs.get_2()),eps);
+      vs.set_2(*v2);
     }
   }
 

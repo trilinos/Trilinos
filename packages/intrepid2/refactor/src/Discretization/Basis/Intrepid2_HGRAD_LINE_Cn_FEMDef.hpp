@@ -49,172 +49,48 @@
 #ifndef __INTREPID2_HGRAD_LINE_CN_FEM_DEF_HPP__
 #define __INTREPID2_HGRAD_LINE_CN_FEM_DEF_HPP__
 
-
 namespace Intrepid2 {
 
-  template<class Scalar, class ArrayScalar>
-  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_LINE_Cn_FEM( const int n ,
-									const EPointType &pointType ):
-    latticePts_( n+1 , 1 ),
-    Phis_( n ),
-    V_(n+1,n+1),
-    Vinv_(n+1,n+1)
-  {
-    const int N = n+1;
-    this -> basisCardinality_  = N;
-    this -> basisDegree_       = n;
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
-    this -> basisType_         = BASIS_FEM_FIAT;
-    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
-
-    switch(pointType) {
-    case POINTTYPE_EQUISPACED:
-      PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_EQUISPACED );
-      break;
-    case POINTTYPE_SPECTRAL: 
-    case POINTTYPE_WARPBLEND:
-      PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_WARPBLEND );
-      break;
-    case POINTTYPE_SPECTRAL_OPEN: 
-      PointTools::getGaussPoints<Scalar,ArrayScalar >( latticePts_ , n );
-      break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument , "Basis_HGRAD_LINE_Cn_FEM:: invalid point type" );
-      break;
-    }
-
-    // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
-    // so we transpose on copy below.
-  
-    Phis_.getValues( V_ , latticePts_ , OPERATOR_VALUE );
-
-    // now I need to copy V into a Teuchos array to do the inversion
-    Teuchos::SerialDenseMatrix<int,Scalar> Vsdm(N,N);
-    for (int i=0;i<N;i++) {
-      for (int j=0;j<N;j++) {
-        Vsdm(i,j) = V_(i,j);
-      }
-    }
-
-    // invert the matrix
-    Teuchos::SerialDenseSolver<int,Scalar> solver;
-    solver.setMatrix( rcp( &Vsdm , false ) );
-    solver.invert( );
-
-    // now I need to copy the inverse into Vinv
-    for (int i=0;i<N;i++) {
-      for (int j=0;j<N;j++) {
-        Vinv_(i,j) = Vsdm(j,i);
-      }
-    }
-
-    initializeTags();
-    this->basisTagsAreSet_ = true;
-  }  
-  
-  
-  template<class Scalar, class ArrayScalar>
-  void Basis_HGRAD_LINE_Cn_FEM<Scalar, ArrayScalar>::initializeTags() {
-  
-    // Basis-dependent initializations
-    int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-    int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-    int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-  
-    // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
-
-    int *tags = new int[ tagSize * this->getCardinality() ];
-
-    int internal_dof;
-    int edge_dof;
-
-    const int n = this->getDegree();
-
-    // now we check the points for association 
-    if (latticePts_(0,0) == -1.0) {
-      tags[0] = 0;
-      tags[1] = 0;
-      tags[2] = 0;
-      tags[3] = 1;
-      edge_dof = 1;
-      internal_dof = n-1;
-    }
-    else {
-      tags[0] = 1;
-      tags[1] = 0;
-      tags[2] = 0;
-      tags[3] = n+1;
-      edge_dof = 0;
-      internal_dof = n+1;
-    }
-    for (int i=1;i<n;i++) {
-      tags[4*i] = 1;
-      tags[4*i+1] = 0;
-      tags[4*i+2] = -edge_dof + i;
-      tags[4*i+3] = internal_dof;
-    }
-    if (latticePts_(n,0) == 1.0) {
-      tags[4*n] = 0;
-      tags[4*n+1] = 1;
-      tags[4*n+2] = 0;
-      tags[4*n+3] = 1;
-    }
-    else {
-      tags[4*n] = 1;
-      tags[4*n+1] = 0;
-      tags[4*n+2] = n;
-      tags[4*n+3] = n;
-    }	 
+  // -------------------------------------------------------------------------------------
+  namespace Impl {
     
-    Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
-                                this -> ordinalToTag_,
-                                tags,
-                                this -> basisCardinality_,
-                                tagSize,
-                                posScDim,
-                                posScOrd,
-                                posDfOrd);
+    template<EOperator opType>
+    template<typename outputViewType,
+             typename inputViewType,
+             typename workViewType,
+             typename vinvViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    Basis_HGRAD_LINE_Cn_FEM::Serial<opType>::
+    getValues( /**/  outputViewType output,
+               const inputViewType  input,
+               /**/  workViewType   work,
+               const vinvViewType   vinv,
+               const ordinal_type   operatorDn ) {    
+      ordinal_type opDn = operatorDn;
 
-    delete []tags;
-  
-  }  
+      const auto card = vinv.dimension(0);
+      const auto npts = input.dimension(0);
 
+      const auto order = card - 1;
+      const double alpha = 0.0, beta = 0.0;
 
+      switch (opType) {
+      case OPERATOR_VALUE: {
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> phis(work.data(), card, npts);
 
-  template<class Scalar, class ArrayScalar> 
-  void Basis_HGRAD_LINE_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-                                                              const ArrayScalar &  inputPoints,
-                                                              const EOperator      operatorType) const {
-  
-    // Verify arguments
-#ifdef HAVE_INTREPID2_DEBUG
-    Intrepid2::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-                                                        inputPoints,
-                                                        operatorType,
-                                                        this -> getBaseCellTopology(),
-                                                        this -> getCardinality() );
-#endif
-    const int numPts = inputPoints.dimension(0);
-    const int numBf = this->getCardinality();
+        Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
+          Serial<opType>::getValues(phis, input, order, alpha, beta);
 
-    try {
-      switch (operatorType) {
-      case OPERATOR_VALUE:
-        {
-          ArrayScalar phisCur( numBf , numPts );
-          Phis_.getValues( phisCur , inputPoints , operatorType );
-          for (int i=0;i<outputValues.dimension(0);i++) {
-            for (int j=0;j<outputValues.dimension(1);j++) {
-              outputValues(i,j) = 0.0;
-              for (int k=0;k<this->getCardinality();k++) {
-                outputValues(i,j) += this->Vinv_(k,i) * phisCur(k,j);
-              }
-            }
+        for (auto i=0;i<card;++i) 
+          for (auto j=0;j<npts;++j) {
+            output(i,j) = 0.0;
+            for (auto k=0;k<card;++k) 
+              output(i,j) += vinv(k,i)*phis(k,j);
           }
-        }
         break;
+      }
       case OPERATOR_GRAD:
       case OPERATOR_D1:
       case OPERATOR_D2:
@@ -225,52 +101,296 @@ namespace Intrepid2 {
       case OPERATOR_D7:
       case OPERATOR_D8:
       case OPERATOR_D9:
-      case OPERATOR_D10:
-        {
-          const int dkcard = 
-            (operatorType == OPERATOR_GRAD)? getDkCardinality(OPERATOR_D1,1): getDkCardinality(operatorType,1);
-          
-          ArrayScalar phisCur( numBf , numPts , dkcard );
-          Phis_.getValues( phisCur , inputPoints , operatorType );
+      case OPERATOR_D10: 
+        opDn = getOperatorOrder(opType);
+      case OPERATOR_Dn: {
+        // dkcard is always 1 for 1D element
+        const auto dkcard = 1;
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> phis(work.data(), card, npts, dkcard);
+        
+        Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
+          Serial<opType>::getValues(phis, input, order, alpha, beta, opDn);
 
-          for (int i=0;i<outputValues.dimension(0);i++) {
-            for (int j=0;j<outputValues.dimension(1);j++) {
-              for (int k=0;k<outputValues.dimension(2);k++) {
-                outputValues(i,j,k) = 0.0;
-                for (int l=0;l<this->getCardinality();l++) {
-                  outputValues(i,j,k) += this->Vinv_(l,i) * phisCur(l,j,k);
-                }
-              }
+        for (auto i=0;i<card;++i) 
+          for (auto j=0;j<npts;++j) 
+            for (auto k=0;k<dkcard;++k) {
+              output(i,j,k) = 0.0;
+              for (auto l=0;l<card;++l) 
+                output(i,j,k) += vinv(l,i)*phis(l,j,k);
             }
-          }
-        }
-        break;
-      default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
-                            ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): Operator type not implemented" );
         break;
       }
+      default: {
+        INTREPID2_TEST_FOR_ABORT( true,
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::Serial::getValues) operator is not supported." );
+      }
+      }
     }
-    catch (std::invalid_argument &exception){
-      TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
-                          ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): Operator failed");    
+    
+
+    template<typename SpT, ordinal_type numPtsPerEval,
+             typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties,
+             typename vinvValueType,        class ...vinvProperties>
+    void
+    Basis_HGRAD_LINE_Cn_FEM::
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+               const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+               const EOperator operatorType ) {
+      typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+      typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+      typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
+      // loopSize corresponds to cardinality
+      const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
+      const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+      const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+      
+      switch (operatorType) {
+      case OPERATOR_VALUE: {
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+            OPERATOR_VALUE,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
+        break;
+      }
+      case OPERATOR_GRAD:
+      case OPERATOR_D1:
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10: {
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+            OPERATOR_Dn,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv,
+                                                  getOperatorOrder(operatorType)) );
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
+                                      ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): Operator type not implemented" );
+        break;
+      }
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------------------
+
+  template<typename SpT, typename OT, typename PT>
+  Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT>::
+  Basis_HGRAD_LINE_Cn_FEM( const ordinal_type order,
+                           const EPointType   pointType ) {
+    this->basisCardinality_  = order+1;
+    this->basisDegree_       = order;
+    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
+    this->basisType_         = BASIS_FEM_FIAT;
+    this->basisCoordinates_  = COORDINATES_CARTESIAN;
+
+    const auto card = this->basisCardinality_;
+    
+    // points are computed in the host and will be copied 
+    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoords("Hgrad::Line::Cn::dofCoords", card, 1);
+
+
+    switch (pointType) {
+    case POINTTYPE_EQUISPACED:
+    case POINTTYPE_WARPBLEND: {
+      // lattice ordering 
+      {
+        const auto offset = 0;
+        PointTools::getLattice( dofCoords,
+                                this->basisCellTopology_, 
+                                order, offset, 
+                                pointType );
+        
+      }
+      // topological order
+      // { 
+      //   // two vertices
+      //   dofCoords(0,0) = -1.0;
+      //   dofCoords(1,0) =  1.0;
+        
+      //   // internal points
+      //   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+      //   auto pts = Kokkos::subdynrankview(dofCoords, range_type(2, card), Kokkos::ALL());
+        
+      //   const auto offset = 1;
+      //   PointTools::getLattice( pts,
+      //                           this->basisCellTopology_, 
+      //                           order, offset, 
+      //                           pointType );
+      // }
+      break;
+    }
+    case POINTTYPE_GAUSS: {
+      // internal points only
+      PointTools::getGaussPoints( dofCoords, 
+                                  order );
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( !isValidPointType(pointType),
+                                    std::invalid_argument , 
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) invalid pointType." );
+    }
     }
 
+    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    Kokkos::deep_copy(this->dofCoords_, dofCoords);
+    
+    // form Vandermonde matrix; actually, this is the transpose of the VDM,
+    // this matrix is used in LAPACK so it should be column major and left layout
+    const ordinal_type lwork = card*card;
+    Kokkos::DynRankView<PT,Kokkos::LayoutLeft,Kokkos::HostSpace>
+      vmat("Hgrad::Line::Cn::vmat", card, card), work("Hgrad::Line::Cn::work", lwork);
+
+    const double alpha = 0.0, beta = 0.0;
+    Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
+      getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>
+      (vmat, dofCoords, order, alpha, beta, OPERATOR_VALUE);
+
+    ordinal_type ipiv[Parameters::MaxOrder+1] = {}, info = 0;
+    Teuchos::LAPACK<ordinal_type,PT> lapack;
+
+    lapack.GETRF(card, card, 
+                 vmat.data(), vmat.stride_1(),
+                 ipiv,
+                 &info);
+
+    INTREPID2_TEST_FOR_EXCEPTION( info != 0,
+                                  std::runtime_error , 
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRF returns nonzero info." );
+
+    lapack.GETRI(card, 
+                 vmat.data(), vmat.stride_1(),
+                 ipiv,
+                 work.data(), lwork,
+                 &info);
+
+    INTREPID2_TEST_FOR_EXCEPTION( info != 0,
+                                  std::runtime_error , 
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRI returns nonzero info." );
+    
+    // create host mirror 
+    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+      vinv("Hgrad::Line::Cn::vinv", card, card);
+
+    for (auto i=0;i<card;++i) 
+      for (auto j=0;j<card;++j) 
+        vinv(i,j) = vmat(j,i);
+
+    this->vinv_ = Kokkos::create_mirror_view(typename SpT::memory_space(), vinv);
+    Kokkos::deep_copy(this->vinv_ , vinv);
+
+    // initialize tags
+    {
+      const bool is_vertex_included = (pointType != POINTTYPE_GAUSS);
+
+      // Basis-dependent initializations
+      const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+      const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+      const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+      
+
+      ordinal_type tags[Parameters::MaxOrder+1][4];
+
+      // now we check the points for association 
+      if (is_vertex_included) {
+        // lattice order
+        {
+          const auto v0 = 0;
+          tags[v0][0] = 0; // vertex dof
+          tags[v0][1] = 0; // vertex id
+          tags[v0][2] = 0; // local dof id
+          tags[v0][3] = 1; // total number of dofs in this vertex
+          
+          const auto iend = card - 2;
+          for (auto i=0;i<iend;++i) {
+            const auto e = i + 1;
+            tags[e][0] = 1;    // edge dof
+            tags[e][1] = 0;    // edge id
+            tags[e][2] = i;    // local dof id
+            tags[e][3] = iend; // total number of dofs in this edge
+          }
+
+          const auto v1 = card -1;
+          tags[v1][0] = 0; // vertex dof
+          tags[v1][1] = 1; // vertex id
+          tags[v1][2] = 0; // local dof id
+          tags[v1][3] = 1; // total number of dofs in this vertex
+        }
+
+        // topological order
+        // {
+        //   tags[0][0] = 0; // vertex dof
+        //   tags[0][1] = 0; // vertex id
+        //   tags[0][2] = 0; // local dof id
+        //   tags[0][3] = 1; // total number of dofs in this vertex
+          
+        //   tags[1][0] = 0; // vertex dof
+        //   tags[1][1] = 1; // vertex id
+        //   tags[1][2] = 0; // local dof id
+        //   tags[1][3] = 1; // total number of dofs in this vertex
+          
+        //   const auto iend = card - 2;
+        //   for (auto i=0;i<iend;++i) {
+        //     const auto ii = i + 2;
+        //     tags[ii][0] = 1;    // edge dof
+        //     tags[ii][1] = 0;    // edge id
+        //     tags[ii][2] = i;    // local dof id
+        //     tags[ii][3] = iend; // total number of dofs in this edge
+        //   }
+        // }
+      } else {
+        for (auto i=0;i<card;++i) {
+          tags[i][0] = 1;    // edge dof
+          tags[i][1] = 0;    // edge id
+          tags[i][2] = i;    // local dof id
+          tags[i][3] = card; // total number of dofs in this edge
+        }
+      }
+
+      ordinal_type_array_1d_host tagView(&tags[0][0], card*4);
+
+      // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
+      // tags are constructed on host
+      this->setOrdinalTagData(this->tagToOrdinal_,
+                              this->ordinalToTag_,
+                              tagView,
+                              this->basisCardinality_,
+                              tagSize,
+                              posScDim,
+                              posScOrd,
+                              posDfOrd);
+    }  
   }
   
-
-  template<class Scalar, class ArrayScalar>
-  void Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>::getDofCoords( ArrayScalar & dofCoords ) const
-  {
-    for (int i=0;i<latticePts_.dimension(0);i++)
-      {
-	for (int j=0;j<latticePts_.dimension(1);j++)
-	  {
-	    dofCoords(i,j) = latticePts_(i,j);
-	  }
-      }
-    return;
-  }
-
 }// namespace Intrepid2
+
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

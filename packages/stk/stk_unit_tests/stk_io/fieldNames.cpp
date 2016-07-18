@@ -45,9 +45,10 @@
 #include "Ioss_NodeBlock.h"             // for NodeBlock
 #include "Ioss_Region.h"                // for Region, NodeBlockContainer
 #include "Ioss_Utils.h"                 // for Utils
-#include "gtest/gtest.h"                // for AssertHelper, ASSERT_EQ, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+
+
 namespace Ioss { class DatabaseIO; }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace {
@@ -185,5 +186,9 @@ TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
     unlink(outputFileName.c_str());
     unlink(restartFilename.c_str());
 }
+
+
+
+
 
 }

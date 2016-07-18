@@ -122,7 +122,7 @@ namespace Tpetra {
 
     // Remotes / exports (hard part) - extract the exportPIDs from the remotes of my distributor
     size_t NumReceives                  = distributor_.getNumReceives();
-    ArrayView<const int> ProcsFrom      = distributor_.getImagesFrom();
+    ArrayView<const int> ProcsFrom      = distributor_.getProcsFrom();
     ArrayView<const size_t> LengthsFrom = distributor_.getLengthsFrom();
 
     for (size_t i = 0, j = 0; i < NumReceives; ++i) {

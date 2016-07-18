@@ -121,7 +121,7 @@ public:
       for (int i = 0; i < sampler_->numMySamples(); ++i) {
         std::vector<Real> pt = sampler_->getMyPoint(i);
         Real wt = sampler_->getMyWeight(i);
-        for (int j = 0; j < pt.size(); ++j) {
+        for (int j = 0; j < static_cast<int>(pt.size()); ++j) {
           file << std::setw(width) << std::left << pt[j];
         }
         file << std::setw(width) << std::left << wt << std::endl; 

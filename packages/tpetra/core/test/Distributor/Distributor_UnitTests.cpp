@@ -41,12 +41,11 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Distributor.hpp"
-#include <Teuchos_Array.hpp>
-#include <Teuchos_as.hpp>
+#include "Teuchos_Array.hpp"
+#include "Teuchos_as.hpp"
 
 // FINISH: test for createFromRecvs(), that negatives in remoteNodeIDs are met by negatives in exportNodeIDs, and that the placement is
 //         is preserved. need to understand the semantics of negatives in the node list.
@@ -58,15 +57,15 @@ namespace {
   using Teuchos::rcp;
   using Teuchos::outArg;
   using Tpetra::Distributor;
-  using Tpetra::DefaultPlatform;
-  using std::sort;
-  using Teuchos::arrayViewFromVector;
-  using Teuchos::broadcast;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
   using Teuchos::Array;
+  //using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::broadcast;
   using Teuchos::Comm;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
   using Teuchos::tuple;
+  using std::endl;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -92,7 +91,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
+      return Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
@@ -106,6 +105,18 @@ namespace {
   TEUCHOS_UNIT_TEST( Distributor, createFromSendsContig)
   {
     RCP<const Comm<int> > comm = getDefaultComm();
+
+    // Set debug = true if you want immediate debug output to stderr.
+    const bool debug = false;
+    Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+      debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Distributor createFromSendsContig" << endl;
+    Teuchos::OSTab tab1 (myOut);
+
     const int numImages = comm->getSize();
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
@@ -123,21 +134,28 @@ namespace {
       exportImageIDs.push_back(i);
       exportImageIDs.push_back(i);
     }
-    // create from contiguous sends
+
+    myOut << "Create Distributor from (contiguous) sends" << endl;
     Distributor distributor(comm);
     numImports = distributor.createFromSends(exportImageIDs);
-    // tests
+
+    myOut << "Test the resulting Distributor" << endl;
+
     TEST_EQUALITY(numImports, as<size_t>(2*numImages));
     TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<size_t>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numImages > 1 ? 2 : 0))
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(2*numImages));
+
+    myOut << "Compare getProcsFrom() and getProcsTo()" << endl;
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
+
+    myOut << "Compare getLengthsFrom() and getLengthsTo()" << endl;
     {
       ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
       ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
@@ -149,12 +167,12 @@ namespace {
       }
     }
 
-    // Make sure that Distributor output doesn't cause a hang.
+    myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -189,7 +207,7 @@ namespace {
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 #endif // HAVE_TPETRA_DEBUG
@@ -200,7 +218,24 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    if (numImages < 2) return;
+
+    // Set debug = true if you want immediate debug output to stderr.
+    const bool debug = false;
+    Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+      debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Distributor createFromSendsMixedContig" << endl;
+    Teuchos::OSTab tab1 (myOut);
+
+    if (numImages < 2) {
+      myOut << "comm->getSize() = " << numImages << " < 2.  The test makes no "
+        "sense to run in this case, so I'll skip it." << endl;
+      return;
+    }
+
     // even is black, odd is red
     bool even = ((myImageID % 2) == 0);
     // two exports to each image, including myself
@@ -225,24 +260,32 @@ namespace {
         exportImageIDs.push_back(i);
       }
     }
-    // create from sends, contiguous and non-contiguous
+
+    myOut << "Create Distributor from sends (mix of contiguous and noncontiguous)" << endl;
+
     Distributor distributor(comm);
 #ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
     TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
 #else
     TEST_NOTHROW( numImports = distributor.createFromSends(exportImageIDs) );
-    // tests
+
+    myOut << "Test the resulting Distributor" << endl;
+
     TEST_EQUALITY(numImports, as<size_t>(2*numImages));
     TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<size_t>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 2);
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(2*numImages));
+
+    myOut << "Compare getProcsFrom() and getProcsTo()" << endl;
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
+
+    myOut << "Compare getLengthsFrom() and getLengthsTo()" << endl;
     {
       ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
       ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
@@ -255,12 +298,12 @@ namespace {
     }
 #endif
 
-    // Make sure that Distributor output doesn't cause a hang.
+    myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -271,7 +314,24 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    if (numImages < 3) return;
+
+    // Set debug = true if you want immediate debug output to stderr.
+    const bool debug = false;
+    Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+      debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Distributor createFromSendsRedBlack" << endl;
+    Teuchos::OSTab tab1 (myOut);
+
+    if (numImages < 3) {
+      myOut << "comm->getSize() = " << numImages << " < 3.  The test makes no "
+        "sense to run in this case, so I'll skip it." << endl;
+      return;
+    }
+
     // partition world into red/black (according to imageID even/odd)
     // even is black, odd is red
     bool black = ((myImageID % 2) == 0);
@@ -293,21 +353,30 @@ namespace {
         numInMyPartition++;
       }
     }
+
+    out << "Create Distributor from sends" << endl;
+
     // create from contiguous sends
     Distributor distributor(comm);
     numImports = distributor.createFromSends(exportImageIDs);
-    // tests
+
+    out << "Test the resulting Distributor" << endl;
+
     TEST_EQUALITY(numImports, numInMyPartition);
     TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), numInMyPartition-1);
     TEST_EQUALITY(distributor.getNumReceives(), numInMyPartition-1);
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numInMyPartition > 1 ? 1 : 0));
     TEST_EQUALITY(distributor.getTotalReceiveLength(), numInMyPartition);
+
+    myOut << "Compare getProcsFrom() and getProcsTo()" << endl;
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
+
+    myOut << "Compare getLengthsFrom() and getLengthsTo()" << endl;
     {
       ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
       ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
@@ -319,12 +388,12 @@ namespace {
       }
     }
 
-    // Make sure that Distributor output doesn't cause a hang.
+    myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -335,7 +404,24 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    if (numImages < 2) return;
+
+    // Set debug = true if you want immediate debug output to stderr.
+    const bool debug = false;
+    Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+      debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Distributor createFromSendsContigNoself" << endl;
+    Teuchos::OSTab tab1 (myOut);
+
+    if (numImages < 2) {
+      myOut << "comm->getSize() = " << numImages << " < 2.  The test makes no "
+        "sense to run in this case, so I'll skip it." << endl;
+      return;
+    }
+
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
     size_t numImports = 0;
@@ -349,21 +435,30 @@ namespace {
     for (int i = myImageID+1; i < numImages; ++i) {
       exportImageIDs.push_back(i);
     }
+
+    myOut << "Create Distributor from sends" << endl;
+
     // create from contiguous sends
     Distributor distributor(comm);
     numImports = distributor.createFromSends(exportImageIDs);
-    // tests
+
+    myOut << "Test the resulting Distributor" << endl;
+
     TEST_EQUALITY(numImports, as<size_t>(numImages-1));
     TEST_EQUALITY_CONST(distributor.hasSelfMessage(), false);
     TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<size_t>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 1);
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(numImages-1));
+
+    myOut << "Compare getProcsFrom() and getProcsTo()" << endl;
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
+
+    myOut << "Compare getLengthsFrom() and getLengthsTo()" << endl;
     {
       ArrayView<const size_t> lenFrom(distributor.getLengthsFrom());
       ArrayView<const size_t> lenTo(distributor.getLengthsTo());
@@ -375,12 +470,12 @@ namespace {
       }
     }
 
-    // Make sure that Distributor output doesn't cause a hang.
+    myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -390,7 +485,24 @@ namespace {
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    if (numImages < 3) return;
+
+    // Set debug = true if you want immediate debug output to stderr.
+    const bool debug = false;
+    Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+      debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Distributor createFromSendsContigUnordered" << endl;
+    Teuchos::OSTab tab1 (myOut);
+
+    if (numImages < 3) {
+      myOut << "comm->getSize() = " << numImages << " < 3.  The test makes no "
+        "sense to run in this case, so I'll skip it." << endl;
+      return;
+    }
+
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
     size_t numImports = 0;
@@ -411,21 +523,29 @@ namespace {
       exportImageIDs.push_back(i);
       exportImageIDs.push_back(i);
     }
-    // create from contiguous sends
+
+    myOut << "Create Distributor from contiguous sends" << endl;
+
     Distributor distributor(comm);
     numImports = distributor.createFromSends(exportImageIDs);
-    // tests
+
+    myOut << "Test the resulting Distributor" << endl;
+
     TEST_EQUALITY(numImports, as<size_t>(3*numImages));
     TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<size_t>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 3);
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(3*numImages));
+
+    myOut << "Compare getProcsFrom() and getProcsTo()" << endl;
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
+
+    myOut << "Compare getLengthsFrom() and getLengthsTo()" << endl;
     {
       ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
       ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
@@ -437,12 +557,12 @@ namespace {
       }
     }
 
-    // Make sure that Distributor output doesn't cause a hang.
+    myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -452,6 +572,17 @@ namespace {
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
+
+    // Set debug = true if you want immediate debug output to stderr.
+    const bool debug = false;
+    Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+      debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Distributor createFromSendsNonContig" << endl;
+    Teuchos::OSTab tab1 (myOut);
 
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
@@ -469,13 +600,17 @@ namespace {
     for(int i=0; i < numImages; ++i) {
       exportImageIDs.push_back(i);
     }
-    // create from non-contiguous sends
+
+    myOut << "Create Distributor from noncontiguous sends" << endl;
+
     Distributor distributor(comm);
 #ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
     TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
 #else
     numImports = distributor.createFromSends(exportImageIDs);
-    // tests
+
+    myOut << "Test the resulting Distributor" << endl;
+
     TEST_EQUALITY(numImports, as<size_t>(2*numImages));
     TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
@@ -487,11 +622,15 @@ namespace {
       TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 2);
     }
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(2*numImages));
+
+    myOut << "Compare getProcsFrom() and getProcsTo()" << endl;
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
+
+    myOut << "Compare getLengthsFrom() and getLengthsTo()" << endl;
     {
       ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
       ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
@@ -504,12 +643,12 @@ namespace {
     }
 #endif
 
-    // Make sure that Distributor output doesn't cause a hang.
+    myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -521,6 +660,18 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
+
+    // Set debug = true if you want immediate debug output to stderr.
+    const bool debug = false;
+    Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+      debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Distributor doPostsContig" << endl;
+    Teuchos::OSTab tab1 (myOut);
+
     // send data to each image, including myself
     const size_t numExportIDs = numImages;
     size_t numRemoteIDs = 0;
@@ -541,13 +692,18 @@ namespace {
         exportImageIDs.push_back(i);
       }
     }
+
+    myOut << "Create Distributor from sends" << endl;
     Distributor distributor(comm);
     numRemoteIDs = distributor.createFromSends(exportImageIDs);
 
-    // Make sure that Distributor output doesn't cause a hang.
+    myOut << "Make sure that Distributor output doesn't cause a hang" << endl;
     distributor.describe (out, Teuchos::VERB_EXTREME);
 
+    myOut << "Check return value of createFromSends" << endl;
     TEST_EQUALITY(numRemoteIDs, as<size_t>(numImages));
+
+    myOut << "Generate data set for doPosts on Process 0" << endl;
     // generate global random data set: each image sends 1 packet to each image
     // we need numImages*numImages "unique" values (we don't want redundant data allowing false positives)
     // root node generates all values, sends them to the others.
@@ -557,8 +713,9 @@ namespace {
         exports[i] = PT::random();
       }
     }
-    // broadcast
+    myOut << "Broadcast data set from Process 0" << endl;
     broadcast(*comm,0,exports());
+
     // pick a subset of entries to post
     Array<Packet> myExports(0);
     if (myImageID == 0) {
@@ -573,7 +730,10 @@ namespace {
     }
     // do posts, one Packet to each image
     Array<Packet> imports(1*distributor.getTotalReceiveLength());
+    myOut << "Call doPostsAndWaits" << endl;
     distributor.doPostsAndWaits(myExports().getConst(), 1, imports());
+
+    myOut << "Test results" << endl;
     // imports[i] came from image i. it was element "myImageID" in his "myExports" vector.
     // it corresponds to element i*numImages+myImageID in the global export vector
     // make a copy of the corresponding entries in the global vector, then compare these against the
@@ -598,7 +758,7 @@ namespace {
     TEST_COMPARE_ARRAYS(expectedImports,imports);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -700,7 +860,7 @@ namespace {
 #endif
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -744,7 +904,7 @@ namespace {
     }
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 #endif // HAVE_TPETRA_DEBUG
@@ -788,7 +948,7 @@ namespace {
     TEST_COMPARE_ARRAYS(expectedGIDs, exportGIDs);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 

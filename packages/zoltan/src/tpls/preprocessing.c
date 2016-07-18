@@ -300,9 +300,17 @@ int Zoltan_Preprocess_Graph(
     }
     else{
       gr->vtxdist = (indextype *)gno_ptr1;
-      gr->adjncy= (indextype *)gno_ptr2;
       FIELD_DO_NOT_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_DIST_Y);
-      FIELD_DO_NOT_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_PINGNO);
+
+      if (gr->xadj[gr->num_obj] > 0) {
+        gr->adjncy = (indextype *)gno_ptr2;
+        FIELD_DO_NOT_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_PINGNO);
+      }
+      else {
+        gr->adjncy = (indextype *)ZOLTAN_MALLOC(sizeof(indextype));
+                   /* KDD 7/2/16   ParMETIS 4 doesn't like NULL adjncy array
+                      when number of adjacencies is 0; force non-NULL */
+      }
     }
 
     /* Find info about the graph according to the distribution */

@@ -1,8 +1,8 @@
 
-IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
-   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_Pamgen)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
+   ${PACKAGE_NAME}_ENABLE_Amesos AND ${PACKAGE_NAME}_ENABLE_AztecOO AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND ${PACKAGE_NAME}_ENABLE_ML AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_NoFE
     SOURCES example_Poisson_NoFE.cpp
@@ -17,12 +17,29 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_BlockMaterials
     SOURCES example_Poisson_BlockMaterials.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
+    COMM serial mpi
     )
+
+  TRIBITS_ADD_TEST(
+   Example_Poisson_BlockMaterials
+   NAME "Poisson2D_BlockMaterials"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
+
+  TRIBITS_ADD_TEST(
+   Example_Poisson_BlockMaterials
+   NAME "Poisson_BlockMaterials_RTC"
+   ARGS "--meshfile=Poisson_RTC.xml"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
+
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson2D
     SOURCES example_Poisson2D.cpp
@@ -42,6 +59,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     SOURCES example_Poisson2D_p2_tpetra.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
+    COMM mpi # Fails to build in serial (see Trilinos #465)
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -107,7 +125,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
 
   
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
-  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml
+  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml Poisson_RTC.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
@@ -115,10 +133,10 @@ ENDIF()
 
 
 
-IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
-   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
+   ${PACKAGE_NAME}_ENABLE_Amesos AND ${PACKAGE_NAME}_ENABLE_AztecOO AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND ${PACKAGE_NAME}_ENABLE_ML AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND ${PACKAGE_NAME}_ENABLE_Teko)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Darcy
     SOURCES example_Darcy.cpp
@@ -156,10 +174,10 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   ) 
 ENDIF()
 
-IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
-   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STKClassic)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
+   ${PACKAGE_NAME}_ENABLE_Amesos AND ${PACKAGE_NAME}_ENABLE_AztecOO AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND ${PACKAGE_NAME}_ENABLE_ML AND
+   ${PACKAGE_NAME}_ENABLE_SEACAS AND ${PACKAGE_NAME}_ENABLE_STKClassic)
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_STKclassic
     SOURCES example_Poisson_stkclassic.cpp
@@ -172,11 +190,11 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   ) 
 ENDIF()
 
-IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
-   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STK
-   AND Trilinos_ENABLE_STKIO AND Trilinos_ENABLE_STKMesh)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
+   ${PACKAGE_NAME}_ENABLE_Amesos AND ${PACKAGE_NAME}_ENABLE_AztecOO AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND ${PACKAGE_NAME}_ENABLE_ML AND
+   ${PACKAGE_NAME}_ENABLE_SEACAS AND ${PACKAGE_NAME}_ENABLE_STK
+   AND ${PACKAGE_NAME}_ENABLE_STKIO AND ${PACKAGE_NAME}_ENABLE_STKMesh)
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_STK
     SOURCES example_Poisson_stk.cpp
@@ -196,10 +214,10 @@ ENDIF()
 # Intrepid has required dependencies on Teuchos, Shards, and Sacado,
 # so we don't have to name those packages explicitly here.
 # Belos and Tpetra also both have required dependencies on Teuchos.
-IF(Trilinos_ENABLE_Belos AND
-   Trilinos_ENABLE_Intrepid AND
-   Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Tpetra)
+IF(${PACKAGE_NAME}_ENABLE_Belos AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND
+   ${PACKAGE_NAME}_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_NoFE_Tpetra
     SOURCES example_Poisson_NoFE_Tpetra.cpp
@@ -214,12 +232,12 @@ ENDIF()
 #
 # Intrepid has required dependencies on Teuchos, Shards, and Sacado,
 # so we don't have to name those packages explicitly here.
-IF(Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Epetra AND
-   Trilinos_ENABLE_EpetraExt AND
-   Trilinos_ENABLE_Intrepid AND
-   Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_Pamgen)
+IF(${PACKAGE_NAME}_ENABLE_AztecOO AND
+   ${PACKAGE_NAME}_ENABLE_Epetra AND
+   ${PACKAGE_NAME}_ENABLE_EpetraExt AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_ML AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen)
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_NoFE_Epetra
     SOURCES example_Poisson_NoFE_Epetra.cpp
@@ -236,10 +254,10 @@ ENDIF()
 # so we don't have to name those packages explicitly here.
 # Belos and Tpetra also both have required dependencies on Teuchos.
 # The executable may use MueLu only if the MueLu package is enabled.
-IF(Trilinos_ENABLE_Belos AND
-   Trilinos_ENABLE_Intrepid AND
-   Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Tpetra)
+IF(${PACKAGE_NAME}_ENABLE_Belos AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND
+   ${PACKAGE_NAME}_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
     IntrepidPoisson_Pamgen_Tpetra
     SOURCES IntrepidPoisson_Pamgen_Tpetra_main.cpp
@@ -258,16 +276,16 @@ ENDIF()
 # Intrepid has required dependencies on Teuchos, Shards, and Sacado,
 # so we don't have to name those packages explicitly here.
 # Belos both also have required dependencies on Teuchos.
-IF(Trilinos_ENABLE_Belos AND
-   Trilinos_ENABLE_Intrepid AND
-   Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Epetra)
+IF(${PACKAGE_NAME}_ENABLE_Belos AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND
+   ${PACKAGE_NAME}_ENABLE_Epetra)
 
   # The example has an option to use MueLu, if it is enabled.  _If_
   # MueLu is enabled, the example needs MueLu to support Epetra.  It
   # is possible to turn off MueLu's support for Epetra, so we have to
   # check here whether we are allowed to use MueLu with Epetra.
-  IF(Trilinos_ENABLE_MueLu)
+  IF(${PACKAGE_NAME}_ENABLE_MueLu)
     # This variable only exists if MueLu is enabled.
     ASSERT_DEFINED(MueLu_ENABLE_Epetra)
     SET(TrilinosCouplings_ENABLE_EXAMPLE_IntrepidPoisson_Pamgen_Epetra ${MueLu_ENABLE_Epetra})
@@ -289,12 +307,12 @@ IF(Trilinos_ENABLE_Belos AND
   ENDIF()
 ENDIF()
 
-IF(Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND
-   Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Epetra AND
-   Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_MueLu)
+IF(${PACKAGE_NAME}_ENABLE_AztecOO AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND
+   ${PACKAGE_NAME}_ENABLE_Epetra AND
+   ${PACKAGE_NAME}_ENABLE_ML AND
+   ${PACKAGE_NAME}_ENABLE_MueLu)
 
   # The example requires MueLu and needs MueLu to support Tpetra.  It
   # is possible to enable MueLu, yet turn off MueLu's support for
@@ -327,7 +345,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
 # Tpetra has a required dependency on Teuchos and Kokkos,
 # so we don't have to name those packages explicitly here.
 # This test uses the default Kokkos Node type.
-IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_Tpetra)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
     epetraTpetraImportBenchmark
     SOURCES epetraTpetraImportBenchmark.cpp

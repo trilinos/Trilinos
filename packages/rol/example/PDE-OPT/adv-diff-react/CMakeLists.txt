@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
    ${PROJECT_NAME}_ENABLE_Epetra   AND
@@ -30,7 +29,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     AdvDiffReactDataCopy
     SOURCE_FILES
-      input.xml plotresults.m
+      input.xml inputOED.xml plotresults.m tightfig.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

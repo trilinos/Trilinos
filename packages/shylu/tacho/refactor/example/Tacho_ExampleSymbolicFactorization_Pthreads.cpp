@@ -10,7 +10,8 @@ typedef int    size_type;
 
 typedef Kokkos::Threads exec_space;
 
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
+        || defined(HAVE_SHYLUTACHO_AMESOS)))
 #include "Tacho_ExampleSymbolicFactorization.hpp"
 using namespace Tacho;
 #endif
@@ -59,7 +60,8 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
 
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
+        || defined(HAVE_SHYLUTACHO_AMESOS)))
     r_val = exampleSymbolicFactorization<exec_space>
       (file_input, treecut, prunecut, fill_level, rows_per_team, verbose);
 #else

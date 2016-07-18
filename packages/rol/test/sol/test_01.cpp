@@ -324,7 +324,46 @@ int main(int argc, char* argv[]) {
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
     /**********************************************************************************************/
-    /************************* MIXED-QUANTILE QUADRANGLE ******************************************/
+    /************************* SUPER QUANTILE QUADRANGLE ******************************************/
+    /**********************************************************************************************/
+    *outStream << "\nSUPER QUANTILE QUADRANGLE RISK MEASURE\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Super Quantile Quadrangle");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* CHEBYSHEV 1 KUSUOKA ************************************************/
+    /**********************************************************************************************/
+    *outStream << "\nCHEBYSHEV 1 KUSUOKA RISK MEASURE\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Chebyshev-Kusuoka");
+    list.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev-Kusuoka").set("Weight Type",1);
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* CHEBYSHEV 2 KUSUOKA ************************************************/
+    /**********************************************************************************************/
+    *outStream << "\nCHEBYSHEV 2 KUSUOKA RISK MEASURE\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Chebyshev-Kusuoka");
+    list.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev-Kusuoka").set("Weight Type",2);
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* CHEBYSHEV 3 KUSUOKA ************************************************/
+    /**********************************************************************************************/
+    *outStream << "\nCHEBYSHEV 3 KUSUOKA RISK MEASURE\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Chebyshev-Kusuoka");
+    list.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev-Kusuoka").set("Weight Type",3);
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* MEAN-VARIANCE QUADRANGLE *******************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN-VARIANCE QUADRANGLE RISK MEASURE\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 

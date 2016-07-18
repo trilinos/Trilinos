@@ -679,7 +679,6 @@ lib iovs
     ioss
     /sierra/stk_util//stk_util_util
     /sierra/stk_util//stk_util_diag
-    /tpl/boost-filesystem//boost_filesystem
     exodus
   :
     [ ifdevbuild

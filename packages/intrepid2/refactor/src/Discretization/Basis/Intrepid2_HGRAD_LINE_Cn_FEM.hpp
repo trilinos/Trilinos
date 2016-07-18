@@ -43,99 +43,188 @@
 /** \file   Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp
     \brief  Header file for the Intrepid2::HGRAD_LINE_Cn_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_HGRAD_LINE_Cn_FEM_HPP
-#define INTREPID2_HGRAD_LINE_Cn_FEM_HPP
+#ifndef __INTREPID2_HGRAD_LINE_CN_FEM_HPP__
+#define __INTREPID2_HGRAD_LINE_CN_FEM_HPP__
 
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_PointTools.hpp"
-#include "Intrepid2_Polylib.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM_JACOBI.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseSolver.hpp"
 
+#include "Intrepid2_PointTools.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 namespace Intrepid2 {
   
-/** \class  Intrepid2::Basis_HGRAD_LINE_Cn_FEM
-    \brief  Implementation of the locally H(grad)-compatible FEM basis of variable order
-            on the [-1,1] reference line cell, using Lagrange polynomials. 
+  /** \class  Intrepid2::Basis_HGRAD_LINE_Cn_FEM
+      \brief  Implementation of the locally H(grad)-compatible FEM basis of variable order
+      on the [-1,1] reference line cell, using Lagrange polynomials. 
   
-            Implements Lagrange basis of variable order \f$n\f$ on
-            the reference [-1,1] line cell.  The distribution of the points
-	    may be equispaced points with our without the endpoints, the Gauss-Legendre
-	    or Gauss-Lobatto points.  These points are {x_i}_{i=0}^n. with x_i < x_{i+1}
+      Implements Lagrange basis of variable order \f$n\f$ on
+      the reference [-1,1] line cell.  The distribution of the points
+      may be equispaced points with our without the endpoints, the Gauss-Legendre
+      or Gauss-Lobatto points.  These points are {x_i}_{i=0}^n. with x_i < x_{i+1}
 
-            The basis has cardinality \f$n+1\f$ and spans a COMPLETE linear polynomial space.
-            Basis functions are dual to a unisolvent set of degrees of freedom (DoF)
-	    n_i( psi ) = psi(x_i).  The DoF are ordered by i.  The DoF at points 
-	    -1 and 1 (if included in {x_i} are attached to the vertices, and the rest of
-	    the DoF are attached to the edge itself.
-*/
-template<class Scalar, class ArrayScalar> 
-class Basis_HGRAD_LINE_Cn_FEM: 
-    public Basis<Scalar, ArrayScalar>, 
-    public DofCoordsInterface<ArrayScalar> {
-private:
-  /** \brief Holds the points defining the Lagrange basis */
-  ArrayScalar latticePts_;
-
-  /** \brief orthogonal basis */
-  Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar > Phis_;
-  
-  /** \brief Generalized Vandermonde matrix V_{ij} = phis_i(x_j) */
-  ArrayScalar V_;
-
-  /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
-      coefficients of the nodal basis in terms of phis_ */
-  ArrayScalar Vinv_;
-
-  /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
+      The basis has cardinality \f$n+1\f$ and spans a COMPLETE linear polynomial space.
+      Basis functions are dual to a unisolvent set of degrees of freedom (DoF)
+      n_i( psi ) = psi(x_i).  The DoF are ordered by i.  The DoF at points 
+      -1 and 1 (if included in {x_i} are attached to the vertices, and the rest of
+      the DoF are attached to the edge itself.
   */
-  void initializeTags();
-  
-public:
-  /** \brief Destructor
-   */
-  ~Basis_HGRAD_LINE_Cn_FEM( ) { }
 
-  /** \brief  Constructor.
-  */
-  Basis_HGRAD_LINE_Cn_FEM(int order , const ArrayScalar &pts );  
+  namespace Impl {
 
-  /** \brief Constructor.
-      \param  int order:        [in] polynomial degree of the basis
-      \param  int pointType:    [in] type of points, either POINTTYPE_EQUISPACED or POINTTYPE_SPECTRAL */
-  Basis_HGRAD_LINE_Cn_FEM(int order , const EPointType &pointType );  
-  
-  
-  /** \brief  Evaluation of a FEM basis on a <strong>reference Line</strong> cell. 
-  
-              Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-              points in the <strong>reference Line</strong> cell. For rank and dimensions of
-              I/O array arguments see Section \ref basis_md_array_sec .
+    class Basis_HGRAD_LINE_Cn_FEM {
+    public:
 
-      \param  outputValues      [out] - variable rank array with the basis values
-      \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
-      \param  operatorType      [in]  - the operator acting on the basis functions    
-  */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const EOperator        operatorType) const;
-  
-  
-  /**  \brief  FVD basis evaluation: invocation of this method throws an exception.
-  */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const ArrayScalar &    cellVertices,
-                 const EOperator        operatorType = OPERATOR_VALUE) const;
+      template<EOperator opType>
+      struct Serial {
+        template<typename outputValueViewType,
+                 typename inputPointViewType,
+                 typename workViewType,
+                 typename vinvViewType>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        getValues( /**/  outputValueViewType outputValues,
+                   const inputPointViewType  inputPoints,
+                   /**/  workViewType        work,
+                   const vinvViewType        vinv,
+                   const ordinal_type        operatorDn = 0 );
+      };
 
-  /** \brief implements the dofcoords interface */
-  virtual void getDofCoords( ArrayScalar & DofCoords ) const;
+      template<typename ExecSpaceType, ordinal_type numPtsPerEval,
+               typename outputValueValueType, class ...outputValueProperties,
+               typename inputPointValueType,  class ...inputPointProperties,
+               typename vinvValueType,        class ...vinvProperties>
+      static void
+      getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+                  const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+                  const EOperator operatorType );
+      
+      template<typename outputValueViewType,
+               typename inputPointViewType,
+               typename vinvViewType,
+               EOperator opType,
+               ordinal_type numPtsEval>
+      struct Functor {
+        /**/  outputValueViewType _outputValues;
+        const inputPointViewType  _inputPoints;
+        const vinvViewType        _vinv;
+        const ordinal_type        _opDn;
+        
+        KOKKOS_INLINE_FUNCTION
+        Functor( /**/  outputValueViewType outputValues_,
+                 /**/  inputPointViewType  inputPoints_,
+                 /**/  vinvViewType        vinv_,
+                 const ordinal_type        opDn_ = 0 )
+          : _outputValues(outputValues_), _inputPoints(inputPoints_), _vinv(vinv_), _opDn(opDn_) {}
+        
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const size_type iter) const {
+          const auto ptBegin = Util::min(iter*numPtsEval,    _inputPoints.dimension(0));
+          const auto ptEnd   = Util::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
+          
+          const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
+          const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
 
-};
+          typedef typename outputValueViewType::value_type outputValueType;
+          constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*numPtsEval;
+          outputValueType buf[bufSize];
+
+          Kokkos::DynRankView<outputValueType,
+            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+          
+          switch (opType) {
+          case OPERATOR_VALUE : {
+            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
+            Serial<opType>::getValues( output, input, work, _vinv );
+            break;
+          }
+          case OPERATOR_Dn : {
+            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+            Serial<opType>::getValues( output, input, work, _vinv, _opDn );
+            break;
+          }
+          default: {
+            INTREPID2_TEST_FOR_ABORT( true,
+                                      ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::Functor) operator is not supported");
+            
+          }
+          }
+        }
+      };
+    };
+  }
+  
+  template<typename ExecSpaceType = void,
+           typename outputValueType = double,
+           typename pointValueType = double>
+  class Basis_HGRAD_LINE_Cn_FEM
+    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+  public:
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+
+    /** \brief  Constructor.
+     */
+    Basis_HGRAD_LINE_Cn_FEM(const ordinal_type order,
+                            const EPointType   pointType = POINTTYPE_EQUISPACED);  
+
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+
+    virtual
+    void
+    getValues( /**/  outputViewType outputValues,
+               const pointViewType  inputPoints,
+               const EOperator operatorType = OPERATOR_VALUE ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+      Intrepid2::getValues_HGRAD_Args(outputValues,
+                                      inputPoints,
+                                      operatorType,
+                                      this->getBaseCellTopology(),
+                                      this->getCardinality() );
+#endif
+      constexpr ordinal_type numPtsPerEval = 1;
+      Impl::Basis_HGRAD_LINE_Cn_FEM::
+        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
+                                                inputPoints,
+                                                this->vinv_,
+                                                operatorType );
+    }
+
+    virtual
+    void
+    getDofCoords( pointViewType dofCoords ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+      // Verify rank of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getDofCoords) rank = 2 required for dofCoords array");
+      // Verify 0th dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != this->getCardinality(), std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
+      // Verify 1st dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
+#endif
+      Kokkos::deep_copy(dofCoords, this->dofCoords_);
+    }
+
+    void
+    getVandermondeInverse( outputViewType vinv ) const {
+      // has to be same rank and dimensions
+      Kokkos::deep_copy(vinv, this->vinv_);      
+    }
+    
+  private:
+
+    /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
+               coefficients of the nodal basis in terms of phis_ */
+    Kokkos::DynRankView<outputValueType,ExecSpaceType> vinv_;
+  };
 
 }// namespace Intrepid2
 

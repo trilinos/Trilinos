@@ -61,6 +61,15 @@ namespace panzer {
     s.zero();
   }
 
+  //! Specialization for Fad type Hessian
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  inline void zeroSensitivities(panzer::Traits::HessianType& s) 
+  {
+    s.val().zero(); // is this right...? What does zero sensitivities mean here?
+    s.zero();
+  }
+#endif
+
   //! Specialization for Kokkos View reference type Jacobian
   /*
   template<typename S, unsigned l, unsigned s, typename b>

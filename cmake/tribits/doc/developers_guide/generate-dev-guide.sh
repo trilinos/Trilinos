@@ -56,6 +56,12 @@ ARGS=$@
 
 source ../utils/gen_doc_utils.sh
 
+function generate_gitdist_dist_help_topic {
+  help_topic_name=$1
+  ../../python_utils/gitdist --dist-help=$help_topic_name &> gitdist-dist-help-$help_topic_name.txt.tmp
+  update_if_different  gitdist-dist-help-$help_topic_name.txt  tmp
+}
+
 
 if [ "$TRIBITS_DEV_GUIDE_SKIP_DOCUMENTATION_EXTRACTION" == "" ] ; then
 
@@ -100,10 +106,18 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   update_if_different  checkin-test-help.txt  tmp
 
   echo
-  echo "Generating output for 'gitdist --help' ..."
+  echo "Generating output for 'gitdist --help' and '--dist-help=<topic>' ..."
   echo
   ../../python_utils/gitdist --help &> gitdist-help.txt.tmp
   update_if_different  gitdist-help.txt  tmp
+  generate_gitdist_dist_help_topic overview
+  generate_gitdist_dist_help_topic repo-selection-and-setup
+  generate_gitdist_dist_help_topic dist-repo-status
+  generate_gitdist_dist_help_topic repo-versions
+  generate_gitdist_dist_help_topic aliases
+  generate_gitdist_dist_help_topic usage-tips
+  generate_gitdist_dist_help_topic script-dependencies
+  generate_gitdist_dist_help_topic all
 
   echo
   echo "Generating output for 'clone_extra_repos.py --help' ..."

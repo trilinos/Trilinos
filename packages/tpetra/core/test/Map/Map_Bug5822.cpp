@@ -110,14 +110,9 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
   // Proc 0: myGids = [3B, 3B+2, 3B+4, 3B+6, 3B+8].
   // Proc 1: myGids = [3B+10, 3B+12, 3B+14, 3B+16, 3B+18].
 
-  RCP<NT> node;
-  {
-    Teuchos::ParameterList defaultParams;
-    node = Teuchos::rcp (new NT (defaultParams));
-  }
   // Tpetra::Map requires that the index base and the first GID be equal.
   const GO indexBase = globalFirstGid;
-  RCP<const map_type> map (new map_type (globalNumElts, myGids (), indexBase, comm, node));
+  RCP<const map_type> map (new map_type (globalNumElts, myGids (), indexBase, comm));
 
   ArrayView<const GO> myGidsFound = map->getNodeElementList ();
   TEST_COMPARE_ARRAYS( myGidsExpected (), myGidsFound () );

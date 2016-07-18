@@ -42,7 +42,6 @@ namespace Tacho {
     ordinal_type   _n;        // # of cols
 
     size_type _nnz;
-    ordinal_type _tr, _br, _lc, _rc; // top row, bottom row, left column, right column
 
     row_view_type_array _rows;
 
@@ -83,30 +82,8 @@ namespace Tacho {
         // statistics
         const size_type tmp = row.NumNonZeros();
 
-#define USE_GRAFT
-#ifdef USE_GRAFT
-        if (tmp) {
-          if (_nnz) {
-            // _tr is not necessary to be updated
-            _br = i;
-            _lc = Util::min(_lc, row.Col(0));
-            _rc = Util::max(_rc, row.Col(tmp-1));
-          } else { // first initialization
-            _tr = i;
-            _br = i;
-            _lc = row.Col(0);
-            _rc = row.Col(tmp-1);
-          }
-          _nnz += tmp;
-        }
-#else
         _nnz += tmp;
-#endif
       }
-#ifndef USE_GRAFT
-      _tr = 0; _br = _m - 1; _lc = 0; _rc = _n - 1; 
-#endif
-#undef USE_GRAFT
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -156,13 +133,6 @@ namespace Tacho {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void getDataRegion(ordinal_type &tr, ordinal_type &br,
-                       ordinal_type &lc, ordinal_type &rc) {
-      tr = _tr; br = _br;
-      lc = _lc; rc = _rc;
-    }
-
-    KOKKOS_INLINE_FUNCTION
     bool isNull() const { 
       return (_m == 0 || _n == 0);
     }
@@ -187,10 +157,6 @@ namespace Tacho {
         _m(0),
         _n(0),
         _nnz(0),
-        _tr(-1),
-        _br(-1),
-        _lc(-1),
-        _rc(-1),
         _rows()
     { } 
 
@@ -203,10 +169,6 @@ namespace Tacho {
         _m(b._m),
         _n(b._n),
         _nnz(b._nnz),
-        _tr(b._tr),
-        _br(b._br),
-        _lc(b._lc),
-        _rc(b._rc),
         _rows(b._rows)
     { } 
 
@@ -218,10 +180,6 @@ namespace Tacho {
         _m(b.NumRows()),
         _n(b.NumCols()),
         _nnz(0),
-        _tr(-1),
-        _br(-1),
-        _lc(-1),
-        _rc(-1),
         _rows()
     { } 
 
@@ -235,10 +193,6 @@ namespace Tacho {
         _m(m),
         _n(n),
         _nnz(0),
-        _tr(-1),
-        _br(-1),
-        _lc(-1),
-        _rc(-1),
         _rows()
     { } 
 
@@ -264,17 +218,10 @@ namespace Tacho {
         os << "-- Base object is null --;";
       } else {
         const size_type nnz = (_rows.dimension_0() == _m ? _nnz : -1);
-        const double density_1 = (nnz == -1 ? double(0) : double(nnz)/(_br-_tr+1)/(_rc-_lc+1));
-        const double density_2 = (nnz == -1 ? double(0) : double(nnz)/_m/_n);
         os << _base.Label() << "::View, "
-           << " Offs ( " << std::setw(w) << _offm << ", " << std::setw(w) << _offn << " ); "
-           << " Dims ( " << std::setw(w) << _m    << ", " << std::setw(w) << _n    << " ); "
-           << " NumNonZeros = " << std::setw(w) << nnz << ";"
-           << " Density (nnz/data) = " << std::setw(w) << density_1 << ";"
-           << " Density (nnz/view) = " << std::setw(w) << density_2 << ";";
-        
-        //if (density_1 > 1.0 || density_2 > 1.0) 
-        //  Kokkos::abort("density is greater than 1");
+           << " Offs ( " << std::setw(w) << _offm << " , " << std::setw(w) << _offn << " ); "
+           << " Dims ( " << std::setw(w) << _m    << " , " << std::setw(w) << _n    << " ); "
+           << " NumNonZeros = " << std::setw(w) << nnz << " ;";
       }
       os.unsetf(std::ios::scientific);
       os.precision(prec);

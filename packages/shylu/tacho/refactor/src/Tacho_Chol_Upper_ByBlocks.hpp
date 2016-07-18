@@ -22,19 +22,19 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
                       const MemberType &member,
-                      CrsTaskViewTypeA &A) {
+                      CrsTaskViewTypeA &A,
+                      unsigned int &part) {
 
-      typedef typename CrsTaskViewTypeA::ordinal_type      ordinal_type;
-      typedef typename CrsTaskViewTypeA::value_type        value_type;
       typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
-
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+#else
       typedef typename CrsTaskViewTypeA::future_type       future_type;
-
       TaskFactory factory;
+#endif
 
       if (member.team_rank() == 0) {
-        const ordinal_type ntasks_window = 4096;
-        ordinal_type ntasks_spawned = 0;
+        const unsigned int ntasks_window = 4096;
+        /**/  unsigned int ntasks_spawned = 0;
 
         CrsTaskViewTypeA ATL, ATR,      A00, A01, A02,
           /**/           ABL, ABR,      A10, A11, A12,
@@ -42,7 +42,7 @@ namespace Tacho {
 
         Part_2x2(A,  ATL, ATR,
                  /**/ABL, ABR,
-                 0, 0, Partition::TopLeft);
+                 part, part, Partition::TopLeft);
 
         while (ATL.NumRows() < A.NumRows()) {
           Part_2x2_to_3x3(ATL, ATR, /**/  A00, A01, A02,
@@ -51,14 +51,19 @@ namespace Tacho {
                           1, 1, Partition::BottomRight);
           // -----------------------------------------------------
 
-          // A11 = chol(A11)
-          {
-            row_view_type a(A11, 0); 
-            value_type &aa = a.Value(0);
+          row_view_type diag(A11, 0); 
+          const bool diagNull = diag.Value(0).isNull();
 
-            if (aa.isEmpty()) {
-              continue;
-            } else {
+          if (!diagNull) {
+            // A11 = chol(A11)
+            {
+              auto &aa = diag.Value(0);
+              
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+              Chol<Uplo::Upper,
+                CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
+                ::invoke(policy, member, aa);
+#else
               // construct a task
               const future_type f = factory.create<future_type>
                 (policy,
@@ -73,127 +78,135 @@ namespace Tacho {
               // spawn a task
               factory.spawn(policy, f);
               ++ntasks_spawned;
-            } 
-          }
-
-          // A12 = inv(triu(A11)') * A12
-          {
-            row_view_type a(A11, 0), b(A12, 0); 
-            value_type &aa = a.Value(0);
-            
-            const ordinal_type nnz = b.NumNonZeros();
-            for (ordinal_type j=0;j<nnz;++j) {
-              value_type &bb = b.Value(j);
-
-              if (bb.isEmpty()) {
-                continue;
-              } else {
-                const future_type f = factory.create<future_type>
-                  (policy, 
-                   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-                   CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
-                   ::createTaskFunctor(policy, Diag::NonUnit, 1.0, aa, bb), 2);
-                
-                // trsm dependence
-                factory.depend(policy, f, aa.Future());
-                factory.depend(policy, f, bb.Future());
-                
-                // place task signature on b
-                bb.setFuture(f);
-                
-                // spawn a task
-                factory.spawn(policy, f);              
-                ++ntasks_spawned;
-              } 
+#endif
             }
-          }
 
-          // A22 = A22 - A12' * A12
-          {
-            // case that X.transpose, A.no_transpose, Y.no_transpose
-            
-            row_view_type a(A12,0);
-            
-            const ordinal_type nnz = a.NumNonZeros();
-            
-            // update herk
-            for (ordinal_type i=0;i<nnz;++i) {
-              const ordinal_type row_at_i = a.Col(i);
-              value_type &aa = a.Value(i);
+            // A12 = inv(triu(A11)') * A12
+            {
+              row_view_type b(A12, 0); 
+              auto &aa = diag.Value(0);
               
-              if (aa.isEmpty()) {
-                continue;
-              } else {
-                row_view_type c(A22, row_at_i);
+              const auto nnz = b.NumNonZeros();
+              for (auto j=0;j<nnz;++j) {
+                auto &bb = b.Value(j);
                 
-                ordinal_type idx = 0;
-                for (ordinal_type j=i;j<nnz && (idx > -2);++j) {
-                  const ordinal_type col_at_j = a.Col(j);
-                  value_type &bb = a.Value(j);
+                if (!bb.isNull()) {
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+                  Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                    CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
+                    ::invoke(policy, member, Diag::NonUnit, 1.0, aa, bb);
+#else
+                  const future_type f = factory.create<future_type>
+                    (policy, 
+                     Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                     CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
+                     ::createTaskFunctor(policy, Diag::NonUnit, 1.0, aa, bb), 2);
                   
-                  if (bb.isEmpty()) {
-                    continue;
-                  } else {
-                    if (row_at_i == col_at_j) {
-                      idx = c.Index(row_at_i, idx);
-                      if (idx >= 0) {
-                        value_type &cc = c.Value(idx);
-
-                        if (cc.isEmpty()) {
-                          continue;
-                        } else {
-                          const future_type f = factory.create<future_type>
-                            (policy, 
-                             Herk<Uplo::Upper,Trans::ConjTranspose,
-                             CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
-                             ::createTaskFunctor(policy, -1.0, aa, 1.0, cc), 2);
+                  // trsm dependence
+                  factory.depend(policy, f, aa.Future());
+                  factory.depend(policy, f, bb.Future());
+                  
+                  // place task signature on b
+                  bb.setFuture(f);
+                  
+                  // spawn a task
+                  factory.spawn(policy, f);              
+                  ++ntasks_spawned;
+#endif
+                } 
+              }
+            }
+            
+            // A22 = A22 - A12' * A12
+            {
+              // case that X.transpose, A.no_transpose, Y.no_transpose
+              row_view_type a(A12,0);
+              
+              const auto nnz = a.NumNonZeros();
+              
+              // update herk
+              for (auto i=0;i<nnz;++i) {
+                const auto row_at_i = a.Col(i);
+                auto &aa = a.Value(i);
+                
+                if (!aa.isNull()) {
+                  row_view_type c(A22, row_at_i);
+                  
+                  auto idx = 0;
+                  for (auto j=i;j<nnz && (idx > -2);++j) {
+                    const auto col_at_j = a.Col(j);
+                    auto &bb = a.Value(j);
+                    
+                    if (!bb.isNull()) {
+                      if (row_at_i == col_at_j) {
+                        idx = c.Index(row_at_i, idx);
+                        if (idx >= 0) {
+                          auto &cc = c.Value(idx);
                           
-                          // dependence
-                          factory.depend(policy, f, aa.Future());              
-                          factory.depend(policy, f, cc.Future());
+                          if (!cc.isNull()) {
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+                            Herk<Uplo::Upper,Trans::ConjTranspose,
+                              CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
+                              ::invoke(policy, member, -1.0, aa, 1.0, cc);
+#else
+                            const future_type f = factory.create<future_type>
+                              (policy, 
+                               Herk<Uplo::Upper,Trans::ConjTranspose,
+                               CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
+                               ::createTaskFunctor(policy, -1.0, aa, 1.0, cc), 2);
+                            
+                            // dependence
+                            factory.depend(policy, f, aa.Future());              
+                            factory.depend(policy, f, cc.Future());
+                            
+                            // place task signature on y
+                            cc.setFuture(f);
+                            
+                            // spawn a task
+                            factory.spawn(policy, f);
+                            ++ntasks_spawned;
+#endif
+                          } 
+                        }
+                      } else {
+                        idx = c.Index(col_at_j, idx);
+                        if (idx >= 0) {
+                          auto &cc = c.Value(idx);
                           
-                          // place task signature on y
-                          cc.setFuture(f);
-                          
-                          // spawn a task
-                          factory.spawn(policy, f);
-                          ++ntasks_spawned;
-                        } 
+                          if (!cc.isNull()) {
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+                            Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                              CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
+                              ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
+#else
+                            const future_type f = factory.create<future_type>
+                              (policy, 
+                               Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                               CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
+                               ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
+                            
+                            // dependence
+                            factory.depend(policy, f, aa.Future());
+                            factory.depend(policy, f, bb.Future());
+                            factory.depend(policy, f, cc.Future());
+                            
+                            // place task signature on y
+                            cc.setFuture(f);
+                            
+                            // spawn a task
+                            factory.spawn(policy, f);
+                            ++ntasks_spawned;
+#endif
+                          } 
+                        }
                       }
-                    } else {
-                      idx = c.Index(col_at_j, idx);
-                      if (idx >= 0) {
-                        value_type &cc = c.Value(idx);
-                        
-                        if (cc.isEmpty()) {
-                          continue;
-                        } else {
-                          const future_type f = factory.create<future_type>
-                            (policy, 
-                             Gemm<Trans::ConjTranspose,Trans::NoTranspose,
-                             CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
-                             ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
-                          
-                          // dependence
-                          factory.depend(policy, f, aa.Future());
-                          factory.depend(policy, f, bb.Future());
-                          factory.depend(policy, f, cc.Future());
-                          
-                          // place task signature on y
-                          cc.setFuture(f);
-                          
-                          // spawn a task
-                          factory.spawn(policy, f);
-                          ++ntasks_spawned;
-                        } 
-                      }
-                    }
-                  } 
+                    } 
+                  }
                 }
               }
             }
           }
-
+          
           // -----------------------------------------------------
           Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
                            A10, A11, A12, /**/ /******/
@@ -204,7 +217,7 @@ namespace Tacho {
             break;
         }
 
-        A = ABR;
+        part = ATL.NumRows();
       }
       
       return 0;
@@ -223,23 +236,32 @@ namespace Tacho {
       ExecViewTypeA _A;
       
       PolicyType _policy;
-      
+
+      unsigned int _part;
+
     public:
       KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const ExecViewTypeA A)
         : _A(A),
-          _policy(policy)
+          _policy(policy),
+          _part(0)
       { } 
       
       KOKKOS_INLINE_FUNCTION
-      const char* Label() const { return "CholByBlocks"; }
+      const char* Label() const { return "Chol::ByBlocks"; }
       
       KOKKOS_INLINE_FUNCTION
       void apply(value_type &r_val) {
+          _policy.clear_dependence(this);
+
         r_val = Chol::invoke(_policy, _policy.member_single(), 
-                             _A);
-        _A.setFuture(typename ExecViewTypeA::future_type());
+                             _A, _part);
+        if (_part < _A.NumRows()) {
+          _policy.respawn_needing_memory(this); 
+        } else {
+          _A.setFuture(typename ExecViewTypeA::future_type());
+        }
       }
       
       KOKKOS_INLINE_FUNCTION
@@ -250,9 +272,9 @@ namespace Tacho {
           _policy.clear_dependence(this);
 
           const int ierr = Chol::invoke(_policy, member,
-                                        _A);
+                                        _A, _part);
 
-          if (_A.NumRows()) {
+          if (_part < _A.NumRows()) {
             _policy.respawn_needing_memory(this); 
           } else {
             _A.setFuture(typename ExecViewTypeA::future_type());

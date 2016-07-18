@@ -207,12 +207,12 @@ namespace Tacho {
             std::cout << "GraphTools_Scotch:: # of roots " << nroot << std::endl
                       << "                    a fake root is created to complete the tree" << std::endl
                       << std::endl;
-          _tree [_cblk]   = -1;          // dummy root
+          _tree [_cblk]   = -1;            // dummy root
           _range[_cblk+1] = _range[_cblk]; // zero range for the dummy root
           
           for (ordinal_type i=0;i<_cblk;++i)
             if (_tree[i] == -1)           // multiple roots becomes children of the dummy root
-              _tree[i] = (_cblk+1);
+              _tree[i] = _cblk;
           ++_cblk;                       // include the dummy root
         }
       }

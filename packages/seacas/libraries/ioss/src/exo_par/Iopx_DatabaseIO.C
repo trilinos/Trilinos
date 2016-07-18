@@ -65,6 +65,7 @@
 #include <sys/select.h>
 #include <time.h>
 #include <tokenize.h>
+#include <unistd.h>
 #include <utility>
 #include <vector>
 
@@ -378,12 +379,37 @@ namespace Iopx {
       mode |= EX_DISKLESS;
     }
 #endif
+
     int par_mode = get_parallel_io_mode(properties);
 
     MPI_Info info        = MPI_INFO_NULL;
     int      app_opt_val = ex_opts(EX_VERBOSE);
-    exodusFilePtr = ex_open_par(get_filename().c_str(), EX_READ | par_mode | mode, &cpu_word_size,
+    std::string filename = get_filename();
+    
+#if defined(OMPI_MAJOR_VERSION)
+#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
+    // See bug description in thread at
+    // https://www.open-mpi.org/community/lists/users/2015/01/26167.php and
+    // https://prod.sandia.gov/sierra-trac/ticket/14679
+    // Kluge is to set cwd to pathname, open file, then set cwd back to original.
+    Ioss::FileInfo file(filename);
+    std::string path = file.pathname();
+    filename = file.tailname();
+
+    char* current_cwd = getcwd(0,0); 
+    chdir(path.c_str()); 
+#endif
+#endif
+
+    exodusFilePtr = ex_open_par(filename.c_str(), EX_READ | par_mode | mode, &cpu_word_size,
                                 &io_word_size, &version, util().communicator(), info);
+
+#if defined(OMPI_MAJOR_VERSION)
+#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
+    chdir(current_cwd);
+    std::free(current_cwd);
+#endif
+#endif
 
     bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
@@ -461,10 +487,24 @@ namespace Iopx {
 
     MPI_Info info        = MPI_INFO_NULL;
     int      app_opt_val = ex_opts(EX_VERBOSE);
+    std::string filename = get_filename();
+
+#if defined(OMPI_MAJOR_VERSION)
+#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
+    Ioss::FileInfo file(filename);
+    std::string path = file.pathname();
+    filename = file.tailname();
+
+    char* current_cwd = getcwd(0,0); 
+    chdir(path.c_str()); 
+#endif
+#endif
+
     if (fileExists) {
       exodusFilePtr =
-          ex_open_par(get_filename().c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
+          ex_open_par(filename.c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
                       &io_word_size, &version, util().communicator(), info);
+
     }
     else {
       // If the first write for this file, create it...
@@ -474,9 +514,17 @@ namespace Iopx {
       if ((mode & EX_ALL_INT64_DB) && par_mode == EX_PNETCDF) {
         par_mode = EX_MPIIO;
       }
-      exodusFilePtr = ex_create_par(get_filename().c_str(), mode | par_mode, &cpu_word_size,
+      exodusFilePtr = ex_create_par(filename.c_str(), mode | par_mode, &cpu_word_size,
                                     &dbRealWordSize, util().communicator(), info);
+
     }
+
+#if defined(OMPI_MAJOR_VERSION)
+#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
+    chdir(current_cwd);
+    std::free(current_cwd);
+#endif
+#endif
 
     bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
@@ -520,6 +568,27 @@ namespace Iopx {
     assert(exodusFilePtr >= 0);
     fileExists = true;
     return exodusFilePtr;
+  }
+
+  int DatabaseIO::free_file_pointer() const
+  {
+    int flag;
+    MPI_Initialized(&flag);
+    if (!flag) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: MPI is not initialized.";
+      IOSS_ERROR(errmsg);
+    }
+
+    // Make sure all file pointers are valid...
+    int fp_min = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
+    int fp_max = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MAX);
+    if (fp_min != fp_max && fp_min < 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Inconsistent file pointer values.";
+      IOSS_ERROR(errmsg);
+    }
+    return Ioex::DatabaseIO::free_file_pointer();
   }
 
   void DatabaseIO::read_meta_data()
@@ -1526,7 +1595,7 @@ namespace Iopx {
             }
 
             Ioex::separate_surface_element_sides(element, sides, get_region(), topo_map, side_map,
-                                                 split_type);
+                                                 split_type, side_set_name);
           }
           else if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
             // There are multiple side types in the model.  Iterate
@@ -1566,7 +1635,7 @@ namespace Iopx {
               }
             }
             Ioex::separate_surface_element_sides(element, sides, get_region(), topo_map, side_map,
-                                                 split_type);
+                                                 split_type, side_set_name);
           }
         }
 

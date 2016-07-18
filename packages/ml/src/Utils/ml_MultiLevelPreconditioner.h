@@ -307,6 +307,7 @@ public:
              const Teuchos::ParameterList & List,
              const bool ComputePrec = true);
 
+#define NewStuff
 #ifdef NewStuff
   //! Constructs a MultiLevelPreconditioner for multiphysics with variable dofs per node
 

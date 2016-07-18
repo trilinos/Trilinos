@@ -684,10 +684,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(ThyraBlockedOperator, NestedBlockOperator2Thyr
   TEST_EQUALITY(productDomain->numBlocks() ,2);
   TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->dim())  ,fullmap->getGlobalNumElements());
   TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->dim()) ,fullmap->getGlobalNumElements());
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(0)->dim())  ,comm->getSize() * 160);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(0)->dim()) ,comm->getSize() * 160);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(1)->dim())  ,comm->getSize() * 30);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(1)->dim()) ,comm->getSize() * 30);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(0)->dim())  ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 160));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(0)->dim()) ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 160));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(1)->dim())  ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 30));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(1)->dim()) ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 30));
 
   Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thbOp11 =
       Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(thbOp->getBlock(1,1));
@@ -697,12 +697,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(ThyraBlockedOperator, NestedBlockOperator2Thyr
   Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > productDomain11 = thbOp11->productDomain();
   TEST_EQUALITY(productRange11->numBlocks()  ,2);
   TEST_EQUALITY(productDomain11->numBlocks() ,2);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange11->dim())  ,comm->getSize() * 30);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain11->dim()) ,comm->getSize() * 30);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange11->getBlock(0)->dim())  ,comm->getSize() * 20);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain11->getBlock(0)->dim()) ,comm->getSize() * 20);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange11->getBlock(1)->dim())  ,comm->getSize() * 10);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain11->getBlock(1)->dim()) ,comm->getSize() * 10);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange11->dim())  ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 30));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain11->dim()) ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 30));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange11->getBlock(0)->dim())  ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 20));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain11->getBlock(0)->dim()) ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 20));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange11->getBlock(1)->dim())  ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 10));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain11->getBlock(1)->dim()) ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 10));
 
 #if 0
   // create Thyra product vector space
@@ -809,12 +809,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(ThyraBlockedOperator, ReorderBlockOperator2Thy
   TEST_EQUALITY(productDomain->numBlocks() ,3);
   TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->dim())  ,fullmap->getGlobalNumElements());
   TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->dim()) ,fullmap->getGlobalNumElements());
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(0)->dim())  ,comm->getSize() * 160);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(0)->dim()) ,comm->getSize() * 160);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(1)->dim())  ,comm->getSize() * 20);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(1)->dim()) ,comm->getSize() * 20);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(2)->dim())  ,comm->getSize() * 10);
-  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(2)->dim()) ,comm->getSize() * 10);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(0)->dim())  ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 160));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(0)->dim()) ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 160));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(1)->dim())  ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 20));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(1)->dim()) ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 20));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(2)->dim())  ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 10));
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(2)->dim()) ,Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 10));
 
   // create Thyra product vector space
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs1 =

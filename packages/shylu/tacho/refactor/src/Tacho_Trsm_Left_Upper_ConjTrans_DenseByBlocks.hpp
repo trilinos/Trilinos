@@ -26,12 +26,11 @@ namespace Tacho {
                       DenseTaskViewTypeA &A,
                       DenseTaskViewTypeB &B) {
 
-      typedef typename DenseTaskViewTypeA::ordinal_type ordinal_type;
-      typedef typename DenseTaskViewTypeA::value_type   value_type;
-      typedef typename value_type::future_type          future_type;
-
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+#else
+      typedef typename DenseTaskViewTypeA::value_type::future_type future_type;
       TaskFactory factory;
-
+#endif
       
       if (member.team_rank() == 0) {
         DenseTaskViewTypeA ATL, ATR,      A00, A01, A02,
@@ -51,7 +50,7 @@ namespace Tacho {
                  0, Partition::Top);     
 
         while (ATL.NumRows() < A.NumRows()) {
-          const ScalarType alpha_select = (ATL.NumRows() == 0 ? ScalarType(1.0) : alpha);
+          const auto alpha_select = (ATL.NumRows() == 0 ? ScalarType(1.0) : alpha);
           
           Part_2x2_to_3x3(ATL, ATR, /**/ A00, A01, A02,
                           /*******/ /**/ A10, A11, A12,
@@ -64,12 +63,16 @@ namespace Tacho {
                           1, Partition::Bottom);  
           
           //------------------------------------------------------------
-          value_type &aa = A11.Value(0, 0);
+          auto &aa = A11.Value(0, 0);
+          const auto ncols = B1.NumCols();
+          for (auto j=0;j<ncols;++j) {
+            auto &bb = B1.Value(0, j);
 
-          const ordinal_type ncols = B1.NumCols();
-          for (ordinal_type j=0;j<ncols;++j) {
-            value_type &bb = B1.Value(0, j);
-
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+            Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+              CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
+              ::invoke(policy, member, diagA, alpha_select, aa, bb);
+#else
             future_type f = factory.create<future_type>
               (policy,
                Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
@@ -85,6 +88,7 @@ namespace Tacho {
 
             // spawn a task
             factory.spawn(policy, f);
+#endif
           }
 
           Gemm<Trans::ConjTranspose,Trans::NoTranspose,

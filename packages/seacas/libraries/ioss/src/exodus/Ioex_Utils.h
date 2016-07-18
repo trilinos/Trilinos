@@ -131,6 +131,7 @@ namespace Ioex {
   void separate_surface_element_sides(Ioss::Int64Vector &element, Ioss::Int64Vector &sides,
                                       Ioss::Region *region, Ioex::TopologyMap &topo_map,
                                       Ioex::TopologyMap &    side_map,
-                                      Ioss::SurfaceSplitType split_type);
+                                      Ioss::SurfaceSplitType split_type,
+                                      const std::string &    surface_name);
 }
 #endif

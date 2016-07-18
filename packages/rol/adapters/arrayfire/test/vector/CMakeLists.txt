@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(ROL_ENABLE_ArrayFireCPU)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

@@ -74,22 +74,12 @@ stk::mesh::EntityVector SideConnector::get_nodes_of_elem_side(stk::mesh::Entity 
     return nodesOfSide;
 }
 
-stk::mesh::Permutation get_permutation_of_side_nodes(stk::topology sideTopology,
-                                                     const stk::mesh::Entity *sideNodes,
-                                                     const stk::mesh::Entity *elemSideNodes)
-{
-    std::pair<bool, unsigned> result = sideTopology.equivalent(sideNodes, elemSideNodes);
-    return static_cast<stk::mesh::Permutation>(result.second);
-}
-
 stk::mesh::Permutation SideConnector::get_permutation_for_side(stk::mesh::Entity sideEntity,
                                                                stk::mesh::Entity element,
                                                                int sideOrd)
 {
-    stk::mesh::EntityVector elemSideNodes = get_nodes_of_elem_side(element, sideOrd);
-    return get_permutation_of_side_nodes(m_bulk_data.bucket(sideEntity).topology(),
-                                         m_bulk_data.begin_nodes(sideEntity),
-                                         elemSideNodes.data());
+    std::pair<bool,unsigned> result = stk::mesh::side_equivalent(m_bulk_data, element, sideOrd, m_bulk_data.begin_nodes(sideEntity));
+    return static_cast<stk::mesh::Permutation>(result.second);
 }
 
 }

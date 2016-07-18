@@ -347,7 +347,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                                   /*    line. Instead if we have n dofs per   */
                                   /*    node, we create n tridiagonal solves  */
                                   /*    for each line.                        */
-
   int ParaSailsN = List_.get("smoother: ParaSails levels",0);
 
   // this can be:

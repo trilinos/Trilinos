@@ -508,6 +508,27 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op);
   */
 void applyOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alpha=1.0,double beta=0.0);
 
+
+/** \brief Apply a transposed linear operator to a multivector (think of this as a matrix
+  *        vector multiply).
+  *
+  * Apply a transposed linear operator to a multivector. This also permits arbitrary scaling
+  * and addition of the result. This function gives
+  *     
+  *    \f$ y = \alpha A^T x + \beta y \f$
+  *
+  * It is required that the domain space of <code>A</code> is compatible with <code>y</code> and the range space
+  * of <code>A</code> is compatible with <code>x</code>.
+  *
+  * \param[in]     A
+  * \param[in]     x
+  * \param[in,out] y
+  * \param[in]     alpha
+  * \param[in]     beta
+  *
+  */
+void applyTransposeOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alpha=1.0,double beta=0.0);
+
 /** \brief Apply a linear operator to a blocked multivector (think of this as a matrix
   *        vector multiply).
   *
@@ -529,6 +550,28 @@ void applyOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alp
 inline void applyOp(const LinearOp & A,const BlockedMultiVector & x,BlockedMultiVector & y,double alpha=1.0,double beta=0.0)
 { const MultiVector x_mv = toMultiVector(x); MultiVector y_mv = toMultiVector(y);
   applyOp(A,x_mv,y_mv,alpha,beta); }
+
+/** \brief Apply a transposed linear operator to a blocked multivector (think of this as a matrix
+  *        vector multiply).
+  *
+  * Apply a transposed linear operator to a blocked multivector. This also permits arbitrary scaling
+  * and addition of the result. This function gives
+  *     
+  *    \f$ y = \alpha A^T x + \beta y \f$
+  *
+  * It is required that the domain space of <code>A</code> is compatible with <code>y</code> and the range space
+  * of <code>A</code> is compatible with <code>x</code>.
+  *
+  * \param[in]     A
+  * \param[in]     x
+  * \param[in,out] y
+  * \param[in]     alpha
+  * \param[in]     beta
+  *
+  */
+inline void applyTransposeOp(const LinearOp & A,const BlockedMultiVector & x,BlockedMultiVector & y,double alpha=1.0,double beta=0.0)
+{ const MultiVector x_mv = toMultiVector(x); MultiVector y_mv = toMultiVector(y);
+  applyTransposeOp(A,x_mv,y_mv,alpha,beta); }
 
 /** \brief Update the <code>y</code> vector so that \f$y = \alpha x+\beta y\f$
   *

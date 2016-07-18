@@ -549,7 +549,7 @@ std::ostream &
 print( std::ostream & os , const std::string & indent , const Bucket & bucket )
 {
   const MetaData & mesh_meta_data = MetaData::get(bucket);
-  const BulkData & mesh = BulkData::get(bucket);
+  const BulkData & mesh = bucket.mesh();
   const std::string & entity_rank_name =
     mesh_meta_data.entity_rank_names()[ bucket.entity_rank() ];
 

@@ -63,7 +63,6 @@ alias install-targets
     stk_learning_openmp_utest
     stk_learning_mpi_openmp_utest
     stk_learning_kokkos_utest
-    stk_learning_diffing_tool_utest
     stk_learning_game_of_life_utest
     stk_learning_mesh_builder_utest
 #    stk_learning_sphere_utest
@@ -99,7 +98,7 @@ install install-user-include
 
 explicit install-user-lib ;
 install install-user-lib
-  : stk_learning_diffing_tool
+  : 
   : <location>$(install-root)/stk/stk_learning/lib
   ;
 
@@ -137,42 +136,6 @@ exe stk_learning_mpi_openmp_utest
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /tpl/gtest//gtest
     /mpi//mpi
-    /sierra/stk_util//stk_util_environment
-  :
-    <tag>@sierra-exec-tag
-  ;
-
-lib stk_learning_diffing_tool
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-        [ glob $(stk_learning-root)/DiffingToolLib/*.cpp ]
-    ]
-    /sierra/stk_mesh//stk_mesh_base
-    /sierra/stk_util//stk_util_environment
-    /sierra/stk_util//stk_util_parallel
-    /sierra/stk_util//stk_util_util
-    /sierra/stk_topology//stk_topology
-    /tpl/trilinos//shards
-    /mpi//mpi
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(stk_learning-root)/lib/libstk_learning_diffing_tool.a
-    ]
-  ;
-exe stk_learning_diffing_tool_utest 
-  :
-    [ glob $(stk_learning-root)/DiffingTool/*.cpp ]
-    stk_learning_diffing_tool
-    /sierra/stk_util//stk_util_parallel
-    /tpl/gtest//gtest
-    /mpi//mpi
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /sierra/stk_mesh//stk_mesh_base
-    /sierra/stk_topology//stk_topology
     /sierra/stk_util//stk_util_environment
   :
     <tag>@sierra-exec-tag

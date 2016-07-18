@@ -462,8 +462,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
   const RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<const crs_matrix_type > A = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap,-one);
 
-  int myRank = rowmap->getComm()->getRank();
-
   Array<Teuchos::ArrayRCP<LocalOrdinal>> customBlocks;
 
   int numLocalBlocks = 1 + (num_rows_per_proc-3)/2;
@@ -502,15 +500,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
   pList.set("relaxation: type","Gauss-Seidel");
 
   RCP<multivector_type> B,X,Xact,Res;
-  
+
   B = rcp( new multivector_type(rowmap,1));
   X = rcp( new multivector_type(rowmap,1));
   Xact = rcp( new multivector_type(rowmap,1));
   Res = rcp( new multivector_type(rowmap,1));
-  //Separate the rng streams on different ranks.  This test will only run on small #s of processes,
-  //so we don't need to worry about overflow.
-  STS::seedrandom(myRank*17);
-  Xact->randomize();
+
+  //Xact->randomize();
+  Xact->putScalar (Teuchos::ScalarTraits<Scalar>::one ());
+
   A->apply(*Xact, *B, Teuchos::NO_TRANS, one, zero);
   X->putScalar(zero);
 

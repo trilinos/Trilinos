@@ -150,7 +150,7 @@ void example_02(int N, int M, int nrepeat) {
 
 }
 
-TEST_F(MTK_Kokkos, TUTORIAL_02) {
+TEST_F(MTK_Kokkos, DISABLED_TUTORIAL_02) {
   int N = std::pow(2, 12);
   int M = std::pow(2, 10);
   int nrepeat = 100;

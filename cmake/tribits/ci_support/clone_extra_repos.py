@@ -42,6 +42,7 @@
 from CheckinTestConstants import *
 from FindGeneralScriptSupport import *
 from GeneralScriptSupport import *
+from gitdist import addOptionParserChoiceOption
 import gitdist
 
 
@@ -67,14 +68,14 @@ g_verbosityLevelDefaultIdx = findInSequence(g_verbosityLevels, g_verbosityLevelD
 # This part can be reused in other scripts that are project-specific
 genericUsageHelp = \
 r"""
-By default, that will clone all the 'Nightly' extra repos that are listed in the
-file:
+By default, this will clone all the 'Nightly' extra repos that are listed in
+the file:
 
   <projectDir>/"""+g_extraRerposFileDefault+r"""
 
 (other repo types can be selected usng --extra-repos-type).
 
-The list of which repos to clone can "white-list" selected with the option
+The list of which repos to clone can be "white-list" selected with the option
 --extra-repos (see options below for details).  Extra repos can in addition be
 "back-listed" using the option --not-extra-repos.
 
@@ -95,27 +96,28 @@ If the git repo server is using gitolite, one can set
 --gitolite-root=<gitolite-root> and that will result in git repos being
 selected only if the selcted repos are listed in 'ssh <gitolite-root> info'.
 This allows one to automatically exclude repos from being cloned that the user
-has no permissions to clone.  NOTE: See warning about --gitolite-root below!
+has no permissions to clone.  NOTE: See warning about the --gitolite-root option below!
 
-TIP: After cloning the set of repos, a nice too to use on the repos is
-'gitdist'.  If your project does not have a version controlled
+TIP: After cloning the set of repos, a nice way to interact with the repos is
+to use the tool 'gitdist'.  If your project does not have a version controlled
 .gitdist.default file, you can generate one using the
 --create-gitdist-file=<gitdist-file> argument, for example with:
 
   --create-gitdist-file=.gitdist
+
+This will restrict the list of repos processed by gitdist to just the repos cloned.
 """
 
 
 usageHelp = r"""clone_extra_repos.py [options]
 
-This script clones one more extra repos from a TriBITS
+This script clones one more extra repos listed in a TriBITS
 ExtraRepositoriesList.cmake file.  The standard usage is:
 
   $ cd base <projectDir>
   $ ./cmake/tribits/ci_support/clone-extra-repos.py
 
 where <projectDir> is the base TriBITS project dir and base git repo.
-
 """ + \
 genericUsageHelp
 

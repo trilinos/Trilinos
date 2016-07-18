@@ -70,7 +70,7 @@ namespace Intrepid2 {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
-        size_type cl, bf, pt;
+        size_type cl = 0, bf = 0, pt = 0;
         size_type outputRank(_output.rank()), rightRank(_rightInput.rank());
 
         if (_hasField) 

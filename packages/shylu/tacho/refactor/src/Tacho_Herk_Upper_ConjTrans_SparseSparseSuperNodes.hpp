@@ -29,27 +29,10 @@ namespace Tacho {
            const ScalarType beta,
            CrsExecViewTypeC &C) {
 
-    typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
-
     if (member.team_rank() == 0) {
-      DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> AA; //(A.Flat());
-      DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> CC; //(C.Flat());
+      DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> AA(A.Flat());
+      DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> CC(C.Flat());
       
-      {
-        ordinal_type tr, br, lc, rc;
-
-        A.getDataRegion(tr, br, lc, rc);
-        const ordinal_type offm = tr, offn = lc, m = br - tr + 1, n = rc - lc + 1;
-
-        AA.setView(A.Flat(), 
-                   offm, m,
-                   offn, n);
-
-        CC.setView(C.Flat(),
-                   offn, n,
-                   offn, n);
-      }
-
       Herk<Uplo::Upper,Trans::ConjTranspose,
         AlgoHerk::ExternalBlas,Variant::One>
         ::invoke(policy, member,

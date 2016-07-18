@@ -51,6 +51,39 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+/** @ingroup risk_group
+    \class ROL::MixedQuantileQuadrangle
+    \brief Provides an interface for a convex combination of
+           conditional value-at-risks.
+
+    The risk measure associated with the mixed-quantile quadrangle is defined
+    as
+    \f[
+       \mathcal{R}(X) = \lambda_1 \mathrm{CVaR}_{\beta_1}(X)
+         + \ldots + \lambda_n \mathrm{CVaR}_{\beta_n}(X)
+    \f]
+    where \f$0 \le \beta_1 \le \cdots \le \beta_n < 1\f$ and
+    \f$0 \le \lambda_i\f$, \f$i=1,\ldots,n\f$, satisfies
+    \f[
+       \lambda_1 + \ldots + \lambda_n = 1.
+    \f]
+    Here, the conditional value-at-risk (CVaR) with confidence level
+    \f$0\le \beta < 1\f$ is
+    \f[
+       \mathrm{CVaR}_\beta(X) = \inf_{t\in\mathbb{R}} \left\{
+         t + \frac{1}{1-\beta} \mathbb{E}\left[(X-t)_+\right]
+         \right\}
+    \f]
+    where \f$(x)_+ = \max\{0,x\}\f$.  If the distribution of \f$X\f$ is
+    continuous, then \f$\mathrm{CVaR}_{\beta}(X)\f$ is the conditional
+    expectation of \f$X\f$ exceeding the \f$\beta\f$-quantile of \f$X\f$ and
+    the optimal \f$t\f$ is the \f$\beta\f$-quantile.
+    Additionally, \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
+
+    When using derivative-based optimization, the user can provide a smooth
+    approximation of \f$(\cdot)_+\f$ using the ROL::PlusFunction class.
+*/
+
 namespace ROL {
 
 template<class Real>

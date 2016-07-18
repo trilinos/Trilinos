@@ -142,7 +142,7 @@ public:
 
   double eval() const;
 
-  const Opcode	m_opcode;
+  const Opcode m_opcode;
 
   union _data
   {
@@ -163,9 +163,9 @@ public:
     } function;
   } m_data;
 
-  Node *		m_left;
-  Node *		m_right;
-  Node *		m_other;
+  Node *m_left;
+  Node *m_right;
+  Node *m_other;
 };
 
 
@@ -177,7 +177,7 @@ Node::eval() const
     {
       double value = 0.0;
       for (const Node *statement = this; statement; statement = statement->m_right)
-	value = statement->m_left->eval();
+        value = statement->m_left->eval();
       return value;
     }
 
@@ -300,12 +300,12 @@ Node *parseIndex(Eval &eval, LexemVector::const_iterator from, LexemVector::cons
 
 Node *
 parseStatements(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	to)
+  Eval &eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator to)
 {
   if ((*from).getToken() == TOKEN_END)
-    return NULL;
+    return nullptr;
 
   if ((*from).getToken() == TOKEN_SEMI)
     return parseStatements(eval, from + 1, to);
@@ -328,9 +328,9 @@ parseStatements(
 
 Node *
 parseStatement(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	to)
+  Eval &eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator to)
 {
   return parseExpression(eval, from, to);
 }
@@ -338,38 +338,36 @@ parseStatement(
 
 Node *
 parseExpression(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	to)
+  Eval &eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator to)
 {
-  int paren_level = 0;					// Paren level
-  int brack_level = 0;					// Brack level
-  LexemVector::const_iterator lparen_open_it = to;	// First open paren
-  LexemVector::const_iterator lparen_close_it = to;	// Corresponding close paren
-  LexemVector::const_iterator lbrack_open_it = to;	// First open bracket
-  LexemVector::const_iterator lbrack_close_it = to;	// Corresponding close brack
-  LexemVector::const_iterator assign_it = to;		// First = at paren_level 0 for assignment
-  LexemVector::const_iterator term_it = to;		// Last + or - at paren_level 0 for adding or subtracting
-  LexemVector::const_iterator factor_it = to;		// Last * or / at paren_level 0 for multiplying or dividing
+  int paren_level = 0;                                  // Paren level
+  int brack_level = 0;                                  // Brack level
+  LexemVector::const_iterator lparen_open_it = to;      // First open paren
+  LexemVector::const_iterator lparen_close_it = to;     // Corresponding close paren
+  LexemVector::const_iterator lbrack_open_it = to;      // First open bracket
+  LexemVector::const_iterator lbrack_close_it = to;     // Corresponding close brack
+  LexemVector::const_iterator assign_it = to;           // First = at paren_level 0 for assignment
+  LexemVector::const_iterator term_it = to;             // Last + or - at paren_level 0 for adding or subtracting
+  LexemVector::const_iterator factor_it = to;           // Last * or / at paren_level 0 for multiplying or dividing
   LexemVector::const_iterator expon_it = to;            // Last ^ for exponenation
 
 
-  LexemVector::const_iterator relation_it = to;		// Last relational at paren_level 0 for relational operator
-  LexemVector::const_iterator logical_it = to;		// Last logical at paren_level 0 for logical operator
-  LexemVector::const_iterator question_it = to;		// Last tiernary at paren_level 0 for tiernary operator
+  LexemVector::const_iterator relation_it = to;         // Last relational at paren_level 0 for relational operator
+  LexemVector::const_iterator logical_it = to;          // Last logical at paren_level 0 for logical operator
+  LexemVector::const_iterator question_it = to;         // Last tiernary at paren_level 0 for tiernary operator
   LexemVector::const_iterator colon_it = to;
-  LexemVector::const_iterator unary_it = to;		// First +,- at plevel 0 for positive,negative
-  LexemVector::const_iterator last_unary_it = to;	// Last +,- found at plevel for for positive,negative
-
-
+  LexemVector::const_iterator unary_it = to;            // First +,- at plevel 0 for positive,negative
+  LexemVector::const_iterator last_unary_it = to;       // Last +,- found at plevel for for positive,negative
 
   // Scan the expression for the instances of the above tokens
   for (LexemVector::const_iterator it = from; it != to; ++it) {
     switch((*it).getToken()) {
     case TOKEN_LPAREN:
       if (paren_level == 0 && lparen_open_it == to
-	  && brack_level == 0 && lbrack_open_it == to)
-	lparen_open_it = it;
+         && brack_level == 0 && lbrack_open_it == to)
+      lparen_open_it = it;
       paren_level++;
       break;
 
@@ -377,18 +375,18 @@ parseExpression(
       paren_level--;
 
       if (paren_level == 0 && lparen_close_it == to
-	  && brack_level == 0 && lbrack_close_it == to)
-	lparen_close_it = it;
+       && brack_level == 0 && lbrack_close_it == to)
+        lparen_close_it = it;
 
       if (paren_level < 0) {
-	throw std::runtime_error("mismatched parenthesis");
+        throw std::runtime_error("mismatched parenthesis");
       }
       break;
 
     case TOKEN_LBRACK:
       if (paren_level == 0 && lparen_open_it == to
-	  && brack_level == 0 && lbrack_open_it == to)
-	lbrack_open_it = it;
+          && brack_level == 0 && lbrack_open_it == to)
+        lbrack_open_it = it;
       brack_level++;
       break;
 
@@ -396,31 +394,31 @@ parseExpression(
       brack_level--;
 
       if (paren_level == 0 && lparen_close_it == to
-	  && brack_level == 0 && lbrack_close_it == to)
-	lbrack_close_it = it;
+          && brack_level == 0 && lbrack_close_it == to)
+        lbrack_close_it = it;
 
       if (brack_level < 0)
-	throw std::runtime_error("mismatched bracket");
+        throw std::runtime_error("mismatched bracket");
       break;
 
     case TOKEN_ASSIGN:
       if (paren_level == 0 && assign_it == to)
-	assign_it = it;
+        assign_it = it;
       break;
 
     case TOKEN_QUESTION:
       if (paren_level == 0 && question_it == to)
-	question_it = it;
+        question_it = it;
       break;
 
     case TOKEN_COLON:
       if (paren_level == 0) // && colon_it == to)
-	colon_it = it;
+        colon_it = it;
       break;
 
     case TOKEN_EXPONENTIATION:
       if (paren_level == 0) // && expon_it == to)
-	expon_it = it;
+        expon_it = it;
       break;
 
 
@@ -428,7 +426,7 @@ parseExpression(
     case TOKEN_DIVIDE:
     case TOKEN_PERCENT:
       if (paren_level == 0) // && factor_it == to)
-	factor_it = it;
+        factor_it = it;
       break;
 
     case TOKEN_EQUAL:
@@ -438,38 +436,38 @@ parseExpression(
     case TOKEN_LESS_EQUAL:
     case TOKEN_GREATER_EQUAL:
       if (paren_level == 0 && relation_it == to)
-	relation_it = it;
+        relation_it = it;
       break;
 
     case TOKEN_LOGICAL_AND:
     case TOKEN_LOGICAL_OR:
       if (paren_level == 0 && logical_it == to)
-	logical_it = it;
+        logical_it = it;
       break;
 
     case TOKEN_PLUS:
     case TOKEN_MINUS:
       if (paren_level == 0) {
-	// After any of these, we are a unary operator, not a term
-	if (it == from || it == assign_it + 1
-	    || it == term_it + 1 || it == factor_it + 1
-	    || it == last_unary_it + 1 || it == expon_it + 1)
-	{ // Unary operator
-	  if (unary_it == to) // First unary operator?
-	    unary_it = it;
-	  last_unary_it = it;
-	}
-	else { // Term
-	  term_it = it;
-	}
+        // After any of these, we are a unary operator, not a term
+        if (it == from || it == assign_it + 1
+            || it == term_it + 1 || it == factor_it + 1
+            || it == last_unary_it + 1 || it == expon_it + 1)
+        { // Unary operator
+          if (unary_it == to) // First unary operator?
+            unary_it = it;
+          last_unary_it = it;
+        }
+        else { // Term
+          term_it = it;
+        }
       }
       break;
 
     case TOKEN_NOT:
       if (paren_level == 0) {
-	if (unary_it == to) /// First unary operator
-	  unary_it = it;
-	last_unary_it = it;
+        if (unary_it == to) /// First unary operator
+          unary_it = it;
+        last_unary_it = it;
       }
       break;
 
@@ -520,18 +518,18 @@ parseExpression(
   if (lparen_open_it != to) {
     if (lparen_open_it == from) {
       if (lparen_close_it == to - 1 && lparen_close_it - lparen_open_it > 1) {
-	return parseExpression(eval, lparen_open_it + 1, lparen_close_it);
+        return parseExpression(eval, lparen_open_it + 1, lparen_close_it);
       }
       else
-	throw std::runtime_error("syntax error parsing parentheses");
+        throw std::runtime_error("syntax error parsing parentheses");
     }
 
     // Function
     if (lparen_open_it == from + 1) {
       if (lparen_close_it == to - 1)
-	return parseFunction(eval, from, lparen_open_it, lparen_close_it, to);
+        return parseFunction(eval, from, lparen_open_it, lparen_close_it, to);
       else // Closing paren not at to
-	throw std::runtime_error("syntax error 2");
+        throw std::runtime_error("syntax error 2");
     }
 
     throw std::runtime_error("syntax error 3");
@@ -543,9 +541,9 @@ parseExpression(
     // Array index
     if (lbrack_open_it == from + 1) {
       if (lbrack_close_it == to - 1)
-	return parseIndex(eval, from, lbrack_open_it, lbrack_close_it, to);
+        return parseIndex(eval, from, lbrack_open_it, lbrack_close_it, to);
       else // Closing brack not at to
-	throw std::runtime_error("syntax error 2");
+        throw std::runtime_error("syntax error 2");
     }
 
     throw std::runtime_error("syntax error 3");
@@ -558,10 +556,10 @@ parseExpression(
 
 Node *
 parseAssign(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	assign_it,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator assign_it,
+  LexemVector::const_iterator to)
 {
   if ((*from).getToken() != TOKEN_IDENTIFIER) //  || from + 1 != assign_it) {
     throw std::runtime_error("stk::expreval::parseAssign: expected identifier");
@@ -589,10 +587,10 @@ parseAssign(
 
 Node *
 parseTerm(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	term_it,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator term_it,
+  LexemVector::const_iterator to)
 {
   Node *term = eval.newNode((*term_it).getToken() == TOKEN_PLUS ? OPCODE_ADD : OPCODE_SUBTRACT);
 
@@ -605,10 +603,10 @@ parseTerm(
 
 Node *
 parseFactor(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	factor_it,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator factor_it,
+  LexemVector::const_iterator to)
 {
   Node *factor = eval.newNode
     (
@@ -629,10 +627,10 @@ parseFactor(
 
 Node *
 parseRelation(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	relation_it,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator relation_it,
+  LexemVector::const_iterator to)
 {
   Opcode relation_opcode = OPCODE_UNDEFINED;
 
@@ -675,10 +673,10 @@ parseRelation(
 
 Node *
 parseLogical(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	logical_it,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator logical_it,
+  LexemVector::const_iterator to)
 {
   Node *logical = eval.newNode(((*logical_it).getToken() == TOKEN_LOGICAL_AND ? OPCODE_LOGICAL_AND : OPCODE_LOGICAL_OR));
 
@@ -691,11 +689,11 @@ parseLogical(
 
 Node *
 parseTiernary(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	question_it,
-  LexemVector::const_iterator	colon_it,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator question_it,
+  LexemVector::const_iterator colon_it,
+  LexemVector::const_iterator to)
 {
   if (question_it == to || colon_it == to)
     throw std::runtime_error("syntax error parsing ?: operator");
@@ -712,10 +710,10 @@ parseTiernary(
 
 Node *
 parseUnary(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	unary_it,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator unary_it,
+  LexemVector::const_iterator to)
 {
 
   /* If it is a positive, just parse the internal of it */
@@ -738,19 +736,18 @@ parseUnary(
 
 Node *
 parseFunction(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	lparen,
-  LexemVector::const_iterator	rparen,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator lparen,
+  LexemVector::const_iterator rparen,
+  LexemVector::const_iterator to)
 {
-
   if ((*from).getToken() != TOKEN_IDENTIFIER)
     throw std::runtime_error("syntax error parsing function");
 
   const std::string &function_name = (*from).getString();
 
-  CFunctionBase *c_function = NULL;
+  CFunctionBase *c_function = nullptr;
   CFunctionMap::iterator it = getCFunctionMap().find(function_name);
   Node *function = eval.newNode(OPCODE_FUNCTION);
   // only 1 function found with that function name.
@@ -798,11 +795,11 @@ parseFunction(
 
 Node *
 parseIndex(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	lbrack,
-  LexemVector::const_iterator	rbrack,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator lbrack,
+  LexemVector::const_iterator rbrack,
+  LexemVector::const_iterator to)
 {
   if ((*from).getToken() != TOKEN_IDENTIFIER)
     throw std::runtime_error("syntax error parsing array");
@@ -817,12 +814,12 @@ parseIndex(
 
 Node *
 parseFunctionArg(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator to)
 {
   if (from == to) {
-    return NULL;
+    return nullptr;
   }
 
   //
@@ -834,7 +831,6 @@ parseFunctionArg(
 
   LexemVector::const_iterator endIterator = to;
 
-
   LexemVector::const_iterator it = from;
   while(it != to) {
     Token curToken = (*it).getToken();
@@ -843,14 +839,14 @@ parseFunctionArg(
     } else if (curToken == TOKEN_RPAREN) {
       paren_level--;
       if (paren_level < 0) {
-	throw std::runtime_error("mismatched parenthesis");
+        throw std::runtime_error("mismatched parenthesis");
       }
     } else if (curToken ==TOKEN_LBRACK) {
       brack_level++;
     } else if(curToken == TOKEN_RBRACK) {
       brack_level--;
       if (brack_level < 0) {
-	throw std::runtime_error("mismatched bracket");
+        throw std::runtime_error("mismatched bracket");
       }
     } else if (curToken == TOKEN_COMMA) {
       if(paren_level == 0 && brack_level == 0) {
@@ -866,7 +862,6 @@ parseFunctionArg(
   argument->m_left = parseExpression(eval, from, endIterator);
   if (endIterator != to) {
     argument->m_right = parseFunctionArg(eval, endIterator + 1, to);
-
   }
 
   return argument;
@@ -875,9 +870,9 @@ parseFunctionArg(
 
 Node *
 parseRValue(
-  Eval &			eval,
-  LexemVector::const_iterator	from,
-  LexemVector::const_iterator	to)
+  Eval & eval,
+  LexemVector::const_iterator from,
+  LexemVector::const_iterator to)
 {
   if (from + 1 != to)
     throw std::runtime_error(std::string("r-value not allowed following ") + (*from).getString());
@@ -887,16 +882,15 @@ parseRValue(
     {
       ConstantMap::iterator it = getConstantMap().find((*from).getString());
       if (it != getConstantMap().end()) {
-	Node *constant = eval.newNode(OPCODE_CONSTANT);
-	constant->m_data.constant.value = (*it).second;
-	return constant;
+        Node *constant = eval.newNode(OPCODE_CONSTANT);
+        constant->m_data.constant.value = (*it).second;
+        return constant;
       }
-
       // Define a variable
       else {
-	Node *variable = eval.newNode(OPCODE_RVALUE);
-	variable->m_data.variable.variable = eval.getVariableMap()[(*from).getString()];
-	return variable;
+        Node *variable = eval.newNode(OPCODE_RVALUE);
+        variable->m_data.variable.variable = eval.getVariableMap()[(*from).getString()];
+        return variable;
       }
     }
 
@@ -916,22 +910,20 @@ parseRValue(
 } // namespace Parser
 
 Eval::Eval(
-  VariableMap::Resolver &		resolver,
-  const std::string &			expression)
+  VariableMap::Resolver & resolver,
+  const std::string & expression)
   : m_variableMap(resolver),
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
-    m_headNode(0)
+    m_headNode(nullptr)
 {}
-
 
 Eval::~Eval()
 {
-  for (std::vector<Node *>::iterator it = m_nodes.begin(); it != m_nodes.end(); ++it)
-    delete (*it);
+  for (auto& node : m_nodes)
+    delete node;
 }
-
 
 Node *
 Eval::newNode(
@@ -941,7 +933,6 @@ Eval::newNode(
   m_nodes.push_back(new_node);
   return new_node;
 }
-
 
 void
 Eval::syntax()
@@ -976,9 +967,8 @@ Eval::parse()
       if (!m_undefinedFunctionSet.empty()) {
         std::ostringstream strout;
         strout << "In expression '" << m_expression << "', the following functions are not defined:" << std::endl;
-        //	for (iteration<UndefinedFunctionSet> it(m_undefinedFunctionSet); it; ++it)
-        for (UndefinedFunctionSet::iterator it = m_undefinedFunctionSet.begin(); it != m_undefinedFunctionSet.end(); ++it)
-          strout << (*it) << std::endl;
+        for (const auto& it : m_undefinedFunctionSet)
+          strout << it << std::endl;
         throw std::runtime_error(strout.str());
       }
 
@@ -1002,7 +992,6 @@ Eval::resolve()
     m_variableMap.getResolver().resolve(it);
   }
 }
-
 
 double
 Eval::evaluate() const

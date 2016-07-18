@@ -125,6 +125,7 @@
 #include "pamgen_im_exodusII_l.h"
 #include "pamgen_im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
+#include "RTC_FunctionRTC.hh"
 
 // AztecOO includes
 #include "AztecOO.h"
@@ -482,32 +483,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    // Get sigma value for each block of elements from parameter list
-    std::vector<double>  sigma(numElemBlk);
-    for(int b = 0; b < numElemBlk; b++){
-       stringstream sigmaBlock;
-       sigmaBlock.clear();
-       sigmaBlock << "sigma" << b;
-       sigma[b] = inputMeshList.get(sigmaBlock.str(),1.0);
-    }
-
-
-
-   // Get node-element connectivity and set element mu/sigma value
-    int telct = 0;
-    FieldContainer<int> elemToNode(numElems,numNodesPerElem);
-    FieldContainer<double> sigmaVal(numElems);
-    for(long long b = 0; b < numElemBlk; b++){
-      for(long long el = 0; el < elements[b]; el++){
-        for (int j=0; j<numNodesPerElem; j++) {
-          elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
-        }
-        sigmaVal(telct) = sigma[b];
-        telct ++;
-      }
-    }
-
-   // Read node coordinates and place in field container
+    // Read node coordinates and place in field container
     FieldContainer<double> nodeCoord(numNodes,dim);
     double * nodeCoordx = new double [numNodes];
     double * nodeCoordy = new double [numNodes];
@@ -518,6 +494,59 @@ int main(int argc, char *argv[]) {
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
     }
+    
+    
+    // Get sigma value for each block of elements from parameter list
+    ///CMS start hacking here
+    std::vector<double>  sigma(numElemBlk);
+    std::vector<PG_RuntimeCompiler::Function> sigmaRTC(numElemBlk);
+    std::vector<bool> useSigmaRTC(numElemBlk,false);
+
+    for(int b = 0; b < numElemBlk; b++){
+      stringstream sigmaBlock, mysigmaRTC;
+      sigmaBlock << "sigma" << b;
+      mysigmaRTC << "sigma RTC " << b;
+      if(inputMeshList.isParameter(sigmaBlock.str()))
+       sigma[b] = inputMeshList.get(sigmaBlock.str(),1.0);
+      else if(inputMeshList.isParameter(mysigmaRTC.str())) {
+	std::string dummy;
+	sigmaRTC[b].addBody(inputMeshList.get(mysigmaRTC.str(),dummy));
+	sigmaRTC[b].addVar("double","x");
+	sigmaRTC[b].addVar("double","y");
+	sigmaRTC[b].addVar("double","z");
+	sigmaRTC[b].addVar("double","sigma");
+	useSigmaRTC[b]=true;
+      }
+      else
+	sigma[b]=1.0;
+    }
+
+    // Get node-element connectivity and set element mu/sigma value
+    int telct = 0;
+    FieldContainer<int> elemToNode(numElems,numNodesPerElem);
+    FieldContainer<double> sigmaVal(numElems);
+    for(long long b = 0; b < numElemBlk; b++){
+      for(long long el = 0; el < elements[b]; el++){
+	std::vector<double> centercoord(3,0);
+	for (int j=0; j<numNodesPerElem; j++) {
+          elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
+          centercoord[0] += nodeCoord(elemToNode(telct,j),0) / numNodesPerElem;
+	  centercoord[1] += nodeCoord(elemToNode(telct,j),1) / numNodesPerElem;
+	  centercoord[2] += nodeCoord(elemToNode(telct,j),2) / numNodesPerElem;
+        }
+	if(useSigmaRTC[b]) {
+	  sigmaRTC[b].varAddrFill(0,&centercoord[0]);
+	  sigmaRTC[b].varAddrFill(1,&centercoord[1]);
+	  sigmaRTC[b].varAddrFill(2,&centercoord[2]);
+	  sigmaRTC[b].varAddrFill(3,&sigmaVal(telct));
+	  sigmaRTC[b].execute();
+	}
+	else
+	  sigmaVal(telct) = sigma[b];
+        telct ++;
+      }
+    }
+
 
     /*parallel info*/
     long long num_internal_nodes;

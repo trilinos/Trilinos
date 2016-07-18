@@ -55,20 +55,28 @@ template<class Real,
          class Node=Tpetra::Map<>::node_type > 
 class TpetraTeuchosBatchManager : public TeuchosBatchManager<Real,GO> {
   typedef Tpetra::MultiVector<Real,LO,GO,Node> Tpetra_Vector;
-  typedef ROL::TpetraMultiVector<Real,LO,GO,Node> OptVector;
+  typedef TpetraMultiVector<Real,LO,GO,Node> OptVector;
 
 public:
   TpetraTeuchosBatchManager(const Teuchos::RCP<const Teuchos::Comm<GO> > &comm)
-    : ROL::TeuchosBatchManager<Real,GO>(comm) {}
+    : TeuchosBatchManager<Real,GO>(comm) {}
 
-  void sumAll(ROL::Vector<Real> &input, ROL::Vector<Real> &output) {
+  void sumAll(Vector<Real> &input, Vector<Real> &output) {
     Teuchos::RCP<Tpetra_Vector> ivec = Teuchos::dyn_cast<OptVector>(input).getVector();
     Teuchos::RCP<Tpetra_Vector> ovec = Teuchos::dyn_cast<OptVector>(output).getVector();
 
-    size_t nvec = ivec->getNumVectors();
-    for (size_t i = 0; i < nvec; i++) {
-      ROL::TeuchosBatchManager<Real,GO>::sumAll((ivec->getDataNonConst(i)).getRawPtr(),
-           (ovec->getDataNonConst(i)).getRawPtr(),ivec->getLocalLength());
+    size_t ilength = ivec->getLocalLength(), olength = ovec->getLocalLength();
+    TEUCHOS_TEST_FOR_EXCEPTION(ilength != olength, std::invalid_argument,
+      ">>> (TpetraTeuchosBatchManager::sumAll): Inconsistent local lengths!");
+
+    size_t invec = ivec->getNumVectors(), onvec = ovec->getNumVectors();
+    TEUCHOS_TEST_FOR_EXCEPTION(invec != onvec, std::invalid_argument,
+      ">>> (TpetraTeuchosBatchManager::sumAll): Inconsistent number of vectors!");
+
+    for (size_t i = 0; i < invec; ++i) {
+      TeuchosBatchManager<Real,GO>::sumAll((ivec->getDataNonConst(i)).getRawPtr(),
+                                           (ovec->getDataNonConst(i)).getRawPtr(),
+                                           ilength);
     }
   }
 };

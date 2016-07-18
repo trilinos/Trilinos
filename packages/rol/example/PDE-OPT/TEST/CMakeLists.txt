@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
    ${PROJECT_NAME}_ENABLE_Epetra )

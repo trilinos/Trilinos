@@ -48,15 +48,7 @@
 #include <algorithm>
 
 namespace {
-  /// \fn getNode
-  /// \brief Return an RCP to a Kokkos Node
-  ///
-  template<class NodeType>
-  Teuchos::RCP<NodeType>
-  getNode () {
-    Teuchos::ParameterList defaultParams;
-    return Teuchos::rcp (new NodeType (defaultParams));
-  }
+  using KokkosClassic::Details::getNode;
 
   // Ensure that X and Y have the same dimensions, and that the
   // corresponding columns of X and Y have 2-norms that differ by no

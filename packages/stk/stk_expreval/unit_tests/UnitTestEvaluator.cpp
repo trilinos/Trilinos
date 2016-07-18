@@ -414,26 +414,20 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(test_one_value("sin(sin(sin(sin(100))))",sin(sin(sin(sin(100.0))))));
   EXPECT_TRUE(test_one_value("sin(sin(sin(sin(pow(2,2)))))",sin(sin(sin(sin(4.0))))));
 
-#ifndef __PATHSCALE__
   double weibull_gold_value = 3.6787944117144233402;
   EXPECT_TRUE(test_one_value("shape=10;scale=1;weibull_pdf(1.0,shape,scale)", weibull_gold_value));
-#endif
 
-#ifndef __PATHSCALE__
   // Need a better test for distributions, perhaps something that computes the
   // mean and standard deviation of the distribution.
   double normal_gold_value = 0.79788456080286540573;
   EXPECT_TRUE(test_one_value("mean=0;standard_deviation=0.5;normal_pdf(0.0,mean,standard_deviation)", normal_gold_value));
-#endif
 
-#ifndef __PATHSCALE__
   // These tests just print a range of values of the input expressions.
   // and optionally output to a CSV file along with an associated GNUPLOT input file.
   //                                                              XMIN  XMAX    Pts  Output
   EXPECT_TRUE(evaluate_range("weibull_pdf(x,3,1)"       ,    0,    3,  3000, false ));
   EXPECT_TRUE(evaluate_range("normal_pdf(x,1,.2)"       ,    0,    2,  3000, false ));
   EXPECT_TRUE(evaluate_range("gamma_pdf(x,10,1.0)"      ,    0,    4,  3000, false ));
-#endif
 
   EXPECT_TRUE(evaluate_range("exponential_pdf(x,2)"     ,    0,    6,  3000, false ));
   EXPECT_TRUE(evaluate_range("log_uniform_pdf(x,10,1.0)",    0,    4,  3000, false ));
@@ -483,10 +477,8 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
   EXPECT_TRUE(syntax("sign(x)"));
 
-#ifndef __PATHSCALE__
   EXPECT_TRUE(syntax("weibull_pdf(x, alpha, beta)"));
-  EXPECT_TRUE(syntax("normal_pdf(x, alpha, beta)"));
-#endif
+  EXPECT_TRUE(syntax( "normal_pdf(x, alpha, beta)"));
 
 #define EXPREVAL_TEST(name) test(name##_expr, name)
 

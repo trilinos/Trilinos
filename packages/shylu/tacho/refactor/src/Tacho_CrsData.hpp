@@ -76,7 +76,7 @@ namespace Tacho {
       typedef typename CrsMatrixType::size_type_array size_type_array;
 
       std::streamsize prec = file.precision();
-      file.precision(8);
+      file.precision(16);
       file << std::scientific;
       
       file << "%%Tacho Crs data "

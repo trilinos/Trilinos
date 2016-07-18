@@ -424,6 +424,18 @@ BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
                const LO colIndex) const
 {
+  // NOTE (mfh 07 Jul 2016) It should be correct to add the
+  // commented-out test below.  However, I've conservatively commented
+  // it out, since users might not realize that they need to have
+  // things sync'd correctly.
+
+// #ifdef HAVE_TPETRA_DEBUG
+//   TEUCHOS_TEST_FOR_EXCEPTION
+//     (mv_.template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+//      "Tpetra::Experimental::BlockMultiVector::getLocalBlock: This method "
+//      "accesses host data, but the object is not in sync on host." );
+// #endif // HAVE_TPETRA_DEBUG
+
   if (! isValidLocalMeshIndex (localRowIndex)) {
     return typename little_vec_type::HostMirror ();
   } else {
@@ -699,7 +711,136 @@ createBlockWiseMultiply (const int block_size, const Scalar& alpha,
                          const ViewY& Y, const ViewD& D, const ViewX& X) {
   return BlockWiseMultiply<Scalar, ViewY, ViewD, ViewX>(block_size, alpha, Y, D, X);
 }
+
+template <typename ViewY,
+          typename Scalar,
+          typename ViewD,
+          typename ViewZ,
+          typename LO = typename ViewY::size_type>
+class BlockJacobiUpdate {
+private:
+  typedef typename ViewD::device_type Device;
+  typedef typename ViewD::non_const_value_type ImplScalar;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> Unmanaged;
+
+  template <typename ViewType>
+  using UnmanagedView = Kokkos::View<typename ViewType::data_type,
+                                     typename ViewType::array_layout,
+                                     typename ViewType::device_type,
+                                     Unmanaged>;
+  typedef UnmanagedView<ViewY> UnMViewY;
+  typedef UnmanagedView<ViewD> UnMViewD;
+  typedef UnmanagedView<ViewZ> UnMViewZ;
+
+  const LO blockSize_;
+  UnMViewY Y_;
+  const Scalar alpha_;
+  UnMViewD D_;
+  UnMViewZ Z_;
+  const Scalar beta_;
+
+public:
+  BlockJacobiUpdate (const ViewY& Y,
+                     const Scalar& alpha,
+                     const ViewD& D,
+                     const ViewZ& Z,
+                     const Scalar& beta) :
+    blockSize_ (D.dimension_1 ()),
+    // numVecs_ (static_cast<int> (ViewY::rank) == 1 ? static_cast<size_type> (1) : static_cast<size_type> (Y_.dimension_1 ())),
+    Y_ (Y),
+    alpha_ (alpha),
+    D_ (D),
+    Z_ (Z),
+    beta_ (beta)
+  {
+    static_assert (static_cast<int> (ViewY::rank) == 1,
+                   "Y must have rank 1.");
+    static_assert (static_cast<int> (ViewD::rank) == 3, "D must have rank 3.");
+    static_assert (static_cast<int> (ViewZ::rank) == 1,
+                   "Z must have rank 1.");
+    // static_assert (static_cast<int> (ViewZ::rank) ==
+    //                static_cast<int> (ViewY::rank),
+    //                "Z must have the same rank as Y.");
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const LO& k) const
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    typedef Kokkos::pair<LO, LO> range_type;
+    typedef Kokkos::Details::ArithTraits<Scalar> KAT;
+
+    // We only have to implement the alpha != 0 case.
+
+    auto D_curBlk = subview (D_, k, ALL (), ALL ());
+    const range_type kslice (k*blockSize_, (k+1)*blockSize_);
+
+    // Z.update (STS::one (), X, -STS::one ()); // assume this is done
+
+    auto Z_curBlk = subview (Z_, kslice);
+    auto Y_curBlk = subview (Y_, kslice);
+    // Y_curBlk := beta * Y_curBlk + alpha * D_curBlk * Z_curBlk
+    if (beta_ == KAT::zero ()) {
+      Tpetra::Experimental::FILL (Y_curBlk, KAT::zero ());
+    }
+    else if (beta_ != KAT::one ()) {
+      Tpetra::Experimental::SCAL (beta_, Y_curBlk);
+    }
+    Tpetra::Experimental::GEMV (alpha_, D_curBlk, Z_curBlk, Y_curBlk);
+  }
+};
+
+template<class ViewY,
+         class Scalar,
+         class ViewD,
+         class ViewZ,
+         class LO = typename ViewD::size_type>
+void
+blockJacobiUpdate (const ViewY& Y,
+                   const Scalar& alpha,
+                   const ViewD& D,
+                   const ViewZ& Z,
+                   const Scalar& beta)
+{
+  static_assert (Kokkos::Impl::is_view<ViewY>::value, "Y must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<ViewD>::value, "D must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<ViewZ>::value, "Z must be a Kokkos::View.");
+  static_assert (static_cast<int> (ViewY::rank) == static_cast<int> (ViewZ::rank),
+                 "Y and Z must have the same rank.");
+  static_assert (static_cast<int> (ViewD::rank) == 3, "D must have rank 3.");
+
+  const auto lclNumMeshRows = D.dimension_0 ();
+
+#ifdef HAVE_TPETRA_DEBUG
+  // D.dimension_0() is the (local) number of mesh rows.
+  // D.dimension_1() is the block size.  Thus, their product should be
+  // the local number of point rows, that is, the number of rows in Y.
+  const auto blkSize = D.dimension_1 ();
+  const auto lclNumPtRows = lclNumMeshRows * blkSize;
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (Y.dimension_0 () != lclNumPtRows, std::invalid_argument,
+     "blockJacobiUpdate: Y.dimension_0() = " << Y.dimension_0 () << " != "
+     "D.dimension_0()*D.dimension_1() = " << lclNumMeshRows << " * " << blkSize
+     << " = " << lclNumPtRows << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (Y.dimension_0 () != Z.dimension_0 (), std::invalid_argument,
+     "blockJacobiUpdate: Y.dimension_0() = " << Y.dimension_0 () << " != "
+     "Z.dimension_0() = " << Z.dimension_0 () << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (Y.dimension_1 () != Z.dimension_1 (), std::invalid_argument,
+     "blockJacobiUpdate: Y.dimension_1() = " << Y.dimension_1 () << " != "
+     "Z.dimension_1() = " << Z.dimension_1 () << ".");
+#endif // HAVE_TPETRA_DEBUG
+
+  BlockJacobiUpdate<ViewY, Scalar, ViewD, ViewZ, LO> functor (Y, alpha, D, Z, beta);
+  typedef Kokkos::RangePolicy<typename ViewY::execution_space, LO> range_type;
+  // lclNumMeshRows must fit in LO, else the Map would not be correct.
+  range_type range (0, static_cast<LO> (lclNumMeshRows));
+  Kokkos::parallel_for (range, functor);
 }
+
+} // namespace Impl
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
@@ -709,18 +850,27 @@ blockWiseMultiply (const Scalar& alpha,
                    const BlockMultiVector<Scalar, LO, GO, Node>& X)
 {
   using Kokkos::ALL;
+  typedef typename device_type::execution_space execution_space;
+  typedef typename device_type::memory_space memory_space;
   const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
 
   if (alpha == STS::zero ()) {
     this->putScalar (STS::zero ());
   }
   else { // alpha != 0
-    auto bwm = Impl::createBlockWiseMultiply (
-      getBlockSize(), alpha,
-      this->getMultiVectorView().template getLocalView<device_type>(),
-      D,
-      const_cast<BlockMultiVector<Scalar, LO, GO, Node>&>(X).getMultiVectorView().template getLocalView<device_type>());
-    Kokkos::parallel_for (lclNumMeshRows, bwm);
+    const LO blockSize = this->getBlockSize ();
+    const impl_scalar_type alphaImpl = static_cast<impl_scalar_type> (alpha);
+    auto X_lcl = X.mv_.template getLocalView<memory_space> ();
+    auto Y_lcl = this->mv_.template getLocalView<memory_space> ();
+    auto bwm = Impl::createBlockWiseMultiply (blockSize, alphaImpl, Y_lcl, D, X_lcl);
+
+    // Use an explicit RangePolicy with the desired execution space.
+    // Otherwise, if you just use a number, it runs on the default
+    // execution space.  For example, if the default execution space
+    // is Cuda but the current execution space is Serial, using just a
+    // number would incorrectly run with Cuda.
+    Kokkos::RangePolicy<execution_space, LO> range (0, lclNumMeshRows);
+    Kokkos::parallel_for (range, bwm);
   }
 }
 
@@ -734,29 +884,30 @@ blockJacobiUpdate (const Scalar& alpha,
                    const Scalar& beta)
 {
   using Kokkos::ALL;
-  const impl_scalar_type zero = static_cast<impl_scalar_type> (STS::zero ());
-  const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
+  using Kokkos::subview;
+  typedef typename device_type::memory_space memory_space;
+  typedef impl_scalar_type IST;
+
+  const IST zero = Kokkos::Details::ArithTraits<IST>::zero ();
+  const IST one = Kokkos::Details::ArithTraits<IST>::one ();
+  const IST alphaImpl = static_cast<IST> (alpha);
+  const IST betaImpl = static_cast<IST> (beta);
   const LO numVecs = mv_.getNumVectors ();
+
+  auto X_lcl = X.mv_.template getLocalView<memory_space> ();
+  auto Y_lcl = this->mv_.template getLocalView<memory_space> ();
+  auto Z_lcl = Z.mv_.template getLocalView<memory_space> ();
 
   if (alpha == STS::zero ()) { // Y := beta * Y
     this->scale (beta);
   }
   else { // alpha != 0
     Z.update (STS::one (), X, -STS::one ());
-    for (LO i = 0; i < numVecs; ++i) {
-      for (LO k = 0; k < lclNumMeshRows; ++k) {
-        auto D_curBlk = Kokkos::subview (D, k, ALL (), ALL ());
-        auto Z_curBlk = Z.getLocalBlock (k, i);
-        auto Y_curBlk = this->getLocalBlock (k, i);
-        // Y_curBlk := beta * Y_curBlk + alpha * D_curBlk * Z_curBlk
-        if (beta == STS::zero ()) {
-          Tpetra::Experimental::FILL (Y_curBlk, zero);
-        }
-        else if (beta != STS::one ()) {
-          Tpetra::Experimental::SCAL (beta, Y_curBlk);
-        }
-        Tpetra::Experimental::GEMV (alpha, D_curBlk, Z_curBlk, Y_curBlk);
-      }
+    for (LO j = 0; j < numVecs; ++j) {
+      auto X_lcl_j = subview (X_lcl, ALL (), j);
+      auto Y_lcl_j = subview (Y_lcl, ALL (), j);
+      auto Z_lcl_j = subview (Z_lcl, ALL (), j);
+      Impl::blockJacobiUpdate (Y_lcl_j, alphaImpl, D, Z_lcl_j, betaImpl);
     }
   }
 }

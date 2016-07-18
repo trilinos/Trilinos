@@ -44,6 +44,11 @@
 #ifndef TPETRA_DETAILS_COPYOFFSETS_HPP
 #define TPETRA_DETAILS_COPYOFFSETS_HPP
 
+/// \file Tpetra_Details_copyOffsets.hpp
+/// \brief Declare and define Tpetra::Details::copyOffsets, an
+///   implementation detail of Tpetra (in particular, of
+///   FixedHashTable, CrsGraph, and CrsMatrix).
+
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
 #include <limits>
@@ -200,14 +205,15 @@ namespace { // (anonymous)
   //
   // We specialize copyOffsets on two different conditions:
   //
-  // 1. Can the output View's execution space access the input View's
+  // 1. Are the two Views' layouts the same, and do the input and
+  //    output Views have the same value type?
+  // 2. Can the output View's execution space access the input View's
   //    memory space?
-  // 2. Do the input and output Views have the same value type?
   //
-  // If (2) is true, that makes the implementation simple: just call
+  // If (1) is true, that makes the implementation simple: just call
   // Kokkos::deep_copy (FixedHashTable always uses the same layout, no
   // matter the device type).  Otherwise, we need a custom copy
-  // functor.  If (1) is true, then we can use CopyOffsetsFunctor
+  // functor.  If (2) is true, then we can use CopyOffsetsFunctor
   // directly.  Otherwise, we have to copy the input View into the
   // output View's memory space, before we can use the functor.
   //
@@ -216,36 +222,40 @@ namespace { // (anonymous)
   // argument of VerifyExecutionCanAccessMemorySpace.
   template<class OutputViewType,
            class InputViewType,
+           const bool sameLayoutsSameOffsetTypes =
+             std::is_same<typename OutputViewType::array_layout,
+                          typename InputViewType::array_layout>::value &&
+             std::is_same<typename OutputViewType::non_const_value_type,
+                          typename InputViewType::non_const_value_type>::value,
            const bool outputExecSpaceCanAccessInputMemSpace =
              Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
                typename OutputViewType::memory_space,
-               typename InputViewType::memory_space>::value,
-           const bool offsetsSame =
-             std::is_same<typename OutputViewType::non_const_value_type,
-                          typename InputViewType::non_const_value_type>::value>
+               typename InputViewType::memory_space>::value>
   struct CopyOffsetsImpl {
     static void run (const OutputViewType& dst, const InputViewType& src);
   };
 
-  // Specialization for offsetsSame = true:
+  // Specialization for sameLayoutsSameOffsetTypes = true:
   //
-  // If both input and output use the same type for offsets, then we
-  // don't need to check for overflow, and we can use
-  // Kokkos::deep_copy directly.  It doesn't matter whether the output
-  // execution space can access the input memory space:
-  // Kokkos::deep_copy takes care of the details.
+  // If both input and output Views have the same layout, and both
+  // input and output use the same type for offsets, then we don't
+  // need to check for overflow, and we can use Kokkos::deep_copy
+  // directly.  It doesn't matter whether the output execution space
+  // can access the input memory space: Kokkos::deep_copy takes care
+  // of the details.
   template<class OutputViewType,
            class InputViewType,
            const bool outputExecSpaceCanAccessInputMemSpace>
   struct CopyOffsetsImpl<OutputViewType, InputViewType,
-                         outputExecSpaceCanAccessInputMemSpace, true> {
+                         true, outputExecSpaceCanAccessInputMemSpace> {
     static void run (const OutputViewType& dst, const InputViewType& src) {
       static_assert (std::is_same<typename OutputViewType::non_const_value_type,
                        typename InputViewType::non_const_value_type>::value,
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, the input and output must "
                      "use the same offset type.");
-      static_assert (static_cast<int> (OutputViewType::rank) == static_cast<int> (InputViewType::rank),
+      static_assert (static_cast<int> (OutputViewType::rank) ==
+                     static_cast<int> (InputViewType::rank),
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, src and dst must have the "
                      "same rank.");
@@ -258,21 +268,37 @@ namespace { // (anonymous)
     }
   };
 
-  // Specialization for offsetsSame = false:
+  // Specializations for sameLayoutsSameOffsetTypes = false:
   //
-  // If input and output use different types for offsets, then we
-  // can't use Kokkos::deep_copy directly, and we may have to check
-  // for overflow.
+  // If input and output don't have the same layout, or use different
+  // types for offsets, then we can't use Kokkos::deep_copy directly,
+  // and we may have to check for overflow.
 
+  // Specialization for sameLayoutsSameOffsetTypes = false and
+  // outputExecSpaceCanAccessInputMemSpace = true:
+  //
   // If the output execution space can access the input memory space,
   // then we can use CopyOffsetsFunctor directly.
-  template<class OutputViewType, class InputViewType>
-  struct CopyOffsetsImpl<OutputViewType, InputViewType, true, false> {
+  template<class OutputViewType,
+           class InputViewType>
+  struct CopyOffsetsImpl<OutputViewType, InputViewType,
+                         false, true> {
     static void run (const OutputViewType& dst, const InputViewType& src) {
-      static_assert (static_cast<int> (OutputViewType::rank) == static_cast<int> (InputViewType::rank),
-                     "CopyOffsetsImpl (implementation of copyOffsets): In order"
-                     " to call this specialization, src and dst must have the "
-                     "same rank.");
+      static_assert (static_cast<int> (OutputViewType::rank) ==
+                     static_cast<int> (InputViewType::rank),
+                     "CopyOffsetsImpl (implementation of copyOffsets): "
+                     "src and dst must have the same rank.");
+      constexpr bool sameLayoutsSameOffsetTypes =
+        std::is_same<typename OutputViewType::array_layout,
+          typename InputViewType::array_layout>::value &&
+        std::is_same<typename OutputViewType::non_const_value_type,
+          typename InputViewType::non_const_value_type>::value;
+      static_assert (! sameLayoutsSameOffsetTypes,
+                     "CopyOffsetsImpl (implements copyOffsets): In order to "
+                     "call this specialization, sameLayoutsSameOffsetTypes "
+                     "must be false.  That is, either the input and output "
+                     "must have different array layouts, or their value types "
+                     "must differ.");
       // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
       // a memory space, rather than an execution space, as the first
       // argument of VerifyExecutionCanAccessMemorySpace.
@@ -293,6 +319,9 @@ namespace { // (anonymous)
     }
   };
 
+  // Specialization for sameLayoutsSameOffsetTypes = false and
+  // outputExecSpaceCanAccessInputMemSpace = false.
+  //
   // If the output execution space canNOT access the input memory
   // space, then we can't use CopyOffsetsFunctor directly.  Instead,
   // tell Kokkos to copy the input View's data into the output View's
@@ -308,12 +337,26 @@ namespace { // (anonymous)
   // since (as of 28 Jan 2016 at least) Kokkos::Cuda uses a smaller
   // offset type than Kokkos' host spaces.
   template<class OutputViewType, class InputViewType>
-  struct CopyOffsetsImpl<OutputViewType, InputViewType, false, false> {
+  struct CopyOffsetsImpl<OutputViewType, InputViewType,
+                         false, false> {
     static void run (const OutputViewType& dst, const InputViewType& src) {
-      static_assert (static_cast<int> (OutputViewType::rank) == static_cast<int> (InputViewType::rank),
+      static_assert (static_cast<int> (OutputViewType::rank) ==
+                     static_cast<int> (InputViewType::rank),
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, src and dst must have the "
                      "same rank.");
+      constexpr bool sameLayoutsSameOffsetTypes =
+        std::is_same<typename OutputViewType::array_layout,
+          typename InputViewType::array_layout>::value &&
+        std::is_same<typename OutputViewType::non_const_value_type,
+          typename InputViewType::non_const_value_type>::value;
+      static_assert (! sameLayoutsSameOffsetTypes,
+                     "CopyOffsetsImpl (implements copyOffsets): In order to "
+                     "call this specialization, sameLayoutsSameOffsetTypes "
+                     "must be false.  That is, either the input and output "
+                     "must have different array layouts, or their value types "
+                     "must differ.");
+
       typedef Kokkos::View<typename InputViewType::non_const_value_type*,
                            Kokkos::LayoutLeft,
                            typename OutputViewType::device_type>
@@ -359,7 +402,8 @@ copyOffsets (const OutputViewType& dst, const InputViewType& src)
                  "OutputViewType (the type of dst) must be a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<InputViewType>::value,
                  "InputViewType (the type of src) must be a Kokkos::View.");
-  static_assert (std::is_same<OutputViewType, typename OutputViewType::non_const_type>::value,
+  static_assert (std::is_same<typename OutputViewType::value_type,
+                   typename OutputViewType::non_const_value_type>::value,
                  "OutputViewType (the type of dst) must be a nonconst Kokkos::View.");
   static_assert (static_cast<int> (OutputViewType::rank) == 1,
                  "OutputViewType (the type of dst) must be a rank-1 Kokkos::View.");

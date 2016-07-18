@@ -95,6 +95,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace3D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
+  int loops = 10; clp.setOption("l", &loops, "Number of loops");
+
+  clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -134,11 +137,16 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #1: Xpetra")));
 
     GO validation = 0;
-    for (LocalOrdinal row = 0; row < numRows; row++) {
-      ArrayView<const LocalOrdinal> indices;
-      ArrayView<const Scalar> vals;
-      A->getLocalRowView(row, indices, vals);
-      validation += indices.size();
+
+    ArrayView<const LocalOrdinal> indices;
+    ArrayView<const Scalar> vals;
+    for (int i = 0; i < loops; i++) {
+      for (LocalOrdinal row = 0; row < numRows; row++) {
+
+        A->getLocalRowView(row, indices, vals);
+
+        validation += indices.size();
+      }
     }
     std::cout << "validation = " << validation << std::endl;
 
@@ -150,6 +158,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #2: Tpetra/Epetra")));
 
     GO validation = 0;
+
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
       typedef Tpetra::CrsMatrix<SC,LO,GO,NO> tCrsMatrix;
@@ -157,11 +166,14 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       TEUCHOS_TEST_FOR_EXCEPTION(tA.is_null(), MueLu::Exceptions::RuntimeError,
                                  "A is not a Tpetra CrsMatrix");
 
-      for (LocalOrdinal row = 0; row < numRows; row++) {
-        ArrayView<const LocalOrdinal> indices;
-        ArrayView<const Scalar> vals;
-        tA->getLocalRowView(row, indices, vals);
-        validation += indices.size();
+      ArrayView<const LocalOrdinal> indices;
+      ArrayView<const Scalar> vals;
+      for (int i = 0; i < loops; i++)  {
+        for (LocalOrdinal row = 0; row < numRows; row++) {
+          tA->getLocalRowView(row, indices, vals);
+
+          validation += indices.size();
+        }
       }
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
@@ -175,12 +187,16 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       TEUCHOS_TEST_FOR_EXCEPTION(eA.is_null(), MueLu::Exceptions::RuntimeError,
                                  "A is not a Epetra CrsMatrix");
 
-      for (LocalOrdinal row = 0; row < numRows; row++) {
-        int      numEntries;
-        double * eValues;
-        int    * eIndices;
-        eA->ExtractMyRowView(row, numEntries, eValues, eIndices);
-        validation += numEntries;
+      for (int i = 0; i < loops; i++) {
+        for (LocalOrdinal row = 0; row < numRows; row++) {
+          int      numEntries;
+          double * eValues;
+          int    * eIndices;
+
+          eA->ExtractMyRowView(row, numEntries, eValues, eIndices);
+
+          validation += numEntries;
+        }
       }
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
@@ -195,7 +211,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
   // Loop 3
   {
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #3: Kokkos-1")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #3: Kokkos-serial")));
 
     typedef Kokkos::ArithTraits<SC> ATS;
 
@@ -203,11 +219,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
     GO validation = 0;
     Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
-    for (LocalOrdinal row = 0; row < numRows; row++) {
-      auto rowView = localMatrix.row (row);
-      auto length  = rowView.length;
+    for (int i = 0; i < loops; i++) {
+      for (LocalOrdinal row = 0; row < numRows; row++) {
+        auto rowView = localMatrix.row (row);
+        auto length  = rowView.length;
 
-      validation += length;
+        validation += length;
+      }
     }
     std::cout << "validation = " << validation << std::endl;
 
@@ -216,20 +234,23 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
   // Loop 4
   {
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #4: Kokkos-2")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #4: Kokkos-parallel (node)")));
 
     typedef Kokkos::ArithTraits<SC> ATS;
 
     auto localMatrix = A->getLocalMatrix();
 
     GO validation = 0;
-    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
-    Kokkos::parallel_reduce("Utils::DetectDirichletRows", numRows, KOKKOS_LAMBDA(const LO row, GlobalOrdinal& r) {
-      auto rowView = localMatrix.row (row);
-      auto length  = rowView.length;
 
-      r += length;
-    }, validation);
+    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
+    for (int i = 0; i < loops; i++) {
+      Kokkos::parallel_reduce("Utils::DetectDirichletRows", Kokkos::RangePolicy<typename NO::execution_space>(0, numRows), KOKKOS_LAMBDA(const LO row, GlobalOrdinal& r) {
+        auto rowView = localMatrix.row (row);
+        auto length  = rowView.length;
+
+        r += length;
+      }, validation);
+    }
     std::cout << "validation = " << validation << std::endl;
 
     tm = Teuchos::null;
@@ -252,16 +273,18 @@ int main(int argc, char* argv[]) {
   bool success = false;
   bool verbose = true;
 
+  Kokkos::initialize(argc, argv);
+
   // try {
   {
-    const bool throwExceptions     = false;
-    const bool recogniseAllOptions = false;
+    const bool throwExceptions = false;
 
-    Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+    Teuchos::CommandLineProcessor clp(throwExceptions);
     Xpetra::Parameters xpetraParameters(clp);
 
     std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
 
+    clp.recogniseAllOptions(false);
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
@@ -366,6 +389,8 @@ int main(int argc, char* argv[]) {
     }
   }
   // TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  Kokkos::finalize();
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

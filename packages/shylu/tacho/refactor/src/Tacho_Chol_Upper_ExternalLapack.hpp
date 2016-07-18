@@ -41,11 +41,13 @@ namespace Tacho {
 #ifdef HAVE_SHYLUTACHO_TEUCHOS
       Teuchos::LAPACK<ordinal_type,value_type> lapack;
 
-      lapack.POTRF('U',
-                   A.NumRows(),
-                   A.ValuePtr(), A.BaseObject().ColStride(),
-                   &r_val);
-
+      const ordinal_type m = A.NumRows();
+      if (m > 0)
+        lapack.POTRF('U',
+                     m, 
+                     A.ValuePtr(), A.BaseObject().ColStride(),
+                     &r_val);
+      
       TACHO_TEST_FOR_WARNING( r_val, "LAPACK Chol (potrf) returns non-zero error code (matrix is not spd or badly conditioned)" );
 #else
     TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("Teuchos") );

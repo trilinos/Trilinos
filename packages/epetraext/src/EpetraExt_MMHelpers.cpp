@@ -1692,7 +1692,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 #endif
 
   // Pack & Prepare w/ owning PIDs
-  rv=Epetra_Import_Util::PackAndPrepareWithOwningPIDs(SourceMatrix,
+  rv=Epetra_Import_Util::PackAndPrepareWithOwningPIDs(SourceMatrix,  // packandpreparewith reverse comm is needed for Tpetra.  cbl
                                                       NumExportIDs,ExportLIDs,
                                                       LenExports_,Exports_,SizeOfPacket,
                                                       Sizes_,VarSizes,SourcePids);
@@ -1726,7 +1726,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
     std::vector<int> RecvSizes(MDistor->NumReceives()+1);
     int msg_tag=MpiComm->GetMpiTag();
     boundary_exchange_varsize<char>(*MpiComm,MPI_CHAR,MDistor->NumSends(),MDistor->ProcsTo(),SendSizes.size() ? &SendSizes[0] : 0,Exports_,
-                                    MDistor->NumReceives(),MDistor->ProcsFrom(),RecvSizes.size() ? &RecvSizes[0] : 0,Imports_,SizeOfPacket,msg_tag);
+                                    MDistor->NumReceives(),MDistor->ProcsFrom(),RecvSizes.size() ? &RecvSizes[0] : 0,Imports_,SizeOfPacket,msg_tag);  // cbl
 
     // If the  source matrix doesn't have an importer, then nobody sent data belonging to me in the forward round.
     if(SourceMatrix.Importer()) {
@@ -1740,7 +1740,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 
       // Setup the reverse communication
       // Note: Buffer pairs are in (PID,GID) order
-      PackAndPrepareReverseComm<ImportType, int_type>(SourceMatrix,RowImporter,ReverseSendSizes,ReverseSendBuffer);
+  PackAndPrepareReverseComm<ImportType, int_type>(SourceMatrix,RowImporter,ReverseSendSizes,ReverseSendBuffer);  // cbl
 
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-1.4 Reverse Send"))));
@@ -1751,7 +1751,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
       ReverseRecvSizes.resize(MyDistor->NumSends()+1);
       const int msg_tag2 = MpiComm->GetMpiTag ();
       MPI_Datatype data_type = sizeof(int_type) == 4 ? MPI_INT : MPI_LONG_LONG;
-      boundary_exchange_varsize<int_type> (*MpiComm, data_type, MyDistor->NumReceives (),
+      boundary_exchange_varsize<int_type> (*MpiComm, data_type, MyDistor->NumReceives (),                                // cbl
                                            MyDistor->ProcsFrom (),
                                            ReverseSendSizes.size() ? &ReverseSendSizes[0] : 0,
                                            ReverseSendBuffer.size() ? &ReverseSendBuffer[0] : 0,

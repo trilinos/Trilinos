@@ -13,6 +13,11 @@ if("${CMAKE_Fortran_COMPILER_ID}" MATCHES "XL|VisualAge")
      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qfixed=72 -qxlines")
    endif()
 
+#
+# Add Debug Option
+#
+TRIBITS_ADD_DEBUG_OPTION()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ABC
   HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   "Enable array bounds checking on Epetra objects."

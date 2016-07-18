@@ -205,6 +205,7 @@ public:
     aRed  -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
     pRed_ -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
     Real rho(0);
+    //if ((std::abs(aRed) < eps_ && std::abs(fold1) > eps_) || aRed == pRed_) {
     if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
       rho = one;
       flagTR = TRUSTREGION_FLAG_SUCCESS;

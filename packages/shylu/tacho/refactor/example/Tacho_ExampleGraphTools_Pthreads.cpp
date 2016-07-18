@@ -9,7 +9,8 @@ typedef int    size_type;
 
 typedef Kokkos::Threads exec_space;
 
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
+        || defined(HAVE_SHYLUTACHO_AMESOS)))
 #include "Tacho_ExampleGraphTools.hpp"
 using namespace Tacho;
 #endif
@@ -52,7 +53,8 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
 
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && defined(HAVE_SHYLUTACHO_CHOLMOD))
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
+        || defined(HAVE_SHYLUTACHO_AMESOS)))
     r_val = exampleGraphTools<exec_space>
       (file_input, treecut, prunecut, verbose);
 #else

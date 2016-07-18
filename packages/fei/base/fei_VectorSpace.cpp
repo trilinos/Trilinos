@@ -1461,7 +1461,7 @@ int fei::VectorSpace::getNumOwnedIDs(int idType)
   if (idx < 0) return(0);
 
   fei::RecordAttributeCounter attrCounter(fei::localProc(comm_));
-  runRecords(attrCounter);
+  runRecords(attrCounter, idx);
 
   return( attrCounter.numLocallyOwnedIDs_ );
 }
@@ -2059,6 +2059,22 @@ void fei::VectorSpace::runRecords(fei::Record_Operator<int>& record_op)
       record_op(thisrecord);
     }
   }
+}
+
+//----------------------------------------------------------------------------
+void fei::VectorSpace::runRecords(fei::Record_Operator<int>& record_op, int recordIndex)
+{
+    snl_fei::RecordCollection* records = recordCollections_[recordIndex];
+    std::map<int,int>& g2l = records->getGlobalToLocalMap();
+    std::map<int,int>::iterator
+    it = g2l.begin(),
+    end= g2l.end();
+
+    for(; it!=end; ++it) {
+        fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
+
+        record_op(thisrecord);
+    }
 }
 
 //----------------------------------------------------------------------------

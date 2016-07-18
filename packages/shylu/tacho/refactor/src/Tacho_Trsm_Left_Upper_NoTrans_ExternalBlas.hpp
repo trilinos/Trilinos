@@ -55,12 +55,13 @@ namespace Tacho {
       const ordinal_type m = A.NumRows();
       const ordinal_type n = B.NumCols();
 
-      blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-                (diagA == Diag::Unit ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG),
-                m, n,
-                alpha,
-                A.ValuePtr(), A.BaseObject().ColStride(),
-                B.ValuePtr(), B.BaseObject().ColStride());
+      if (m > 0 && n > 0)
+        blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+                  (diagA == Diag::Unit ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG),
+                  m, n,
+                  alpha,
+                  A.ValuePtr(), A.BaseObject().ColStride(),
+                  B.ValuePtr(), B.BaseObject().ColStride());
 #else
     TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("Teuchos") );
 #endif

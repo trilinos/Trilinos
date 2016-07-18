@@ -1254,7 +1254,7 @@ int Ifpack_BlockRelaxation<T>::Initialize()
   else if (PartitionerType_ == "user")
     Partitioner_ = Teuchos::rcp( new Ifpack_UserPartitioner(&*Graph_) );
   else if (PartitionerType_ == "line")
-    Partitioner_ = Teuchos::rcp( new Ifpack_LinePartitioner(&*Graph_) );
+    Partitioner_ = Teuchos::rcp( new Ifpack_LinePartitioner(&Matrix()) );
   else
     IFPACK_CHK_ERR(-2);
 

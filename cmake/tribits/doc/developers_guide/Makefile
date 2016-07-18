@@ -15,6 +15,14 @@ EXTRA_FILES = \
   TribitsCommonTPLsList.txt \
   checkin-test-help.txt \
   gitdist-help.txt \
+  gitdist-dist-help-overview.txt \
+  gitdist-dist-help-repo-selection-and-setup.txt \
+  gitdist-dist-help-dist-repo-status.txt \
+  gitdist-dist-help-repo-versions.txt \
+  gitdist-dist-help-aliases.txt \
+  gitdist-dist-help-usage-tips.txt \
+  gitdist-dist-help-script-dependencies.txt \
+  gitdist-dist-help-all.txt \
   clone_extra_repos-help.txt \
   snapshot-dir-help.txt \
   is_checkin_tested_commit.txt \

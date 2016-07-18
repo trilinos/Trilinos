@@ -166,6 +166,7 @@ namespace panzer_stk_classic {
         p.set<int>("Workset Size", 1);
         p.set<int>("Default Integration Order",-1);
         p.set<std::string>("Field Order","");
+        p.set<std::string>("Auxiliary Field Order","");
         p.set<bool>("Use DOFManager FEI",false);
         p.set<bool>("Load Balance DOFs",false);
         p.set<bool>("Use Tpetra",false);

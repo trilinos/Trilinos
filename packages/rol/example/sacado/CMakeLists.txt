@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/sacado/src/function)
 INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/util/numerics/)
 

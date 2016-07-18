@@ -41,18 +41,22 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_LAPACK.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 namespace {
   using Kokkos::ALL;
   using Kokkos::subview;
   using Tpetra::TestingUtilities::getDefaultComm;
   using Teuchos::Comm;
+  using Teuchos::outArg;
   using Teuchos::RCP;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using Teuchos::TypeNameTraits;
   using std::endl;
 
   //
@@ -71,32 +75,52 @@ namespace {
     typedef Tpetra::global_size_t GST;
     typedef Kokkos::Details::ArithTraits<IST> KAT;
     typedef typename KAT::mag_type MT;
+    // Set debug = true if you want immediate debug output to stderr.
+    const bool debug = false;
+    int lclSuccess = 1;
+    int gblSuccess = 0;
 
-    out << "Test BlockMultiVector::blockWiseMultiply" << endl;
+    Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+      debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test BlockMultiVector::blockWiseMultiply" << endl;
     Teuchos::OSTab tab1 (out);
+    myOut << "Scalar: " << TypeNameTraits<Scalar>::name () << endl
+          << "LO: " << TypeNameTraits<LO>::name () << endl
+          << "GO: " << TypeNameTraits<LO>::name () << endl
+          << "device_type: " << TypeNameTraits<device_type>::name () << endl;
 
     const LO blockSize = 4;
     const LO numVecs = 3;
     const LO numLocalMeshPoints = 12;
     const GO indexBase = 0;
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    RCP<const Comm<int> > comm = getDefaultComm ();
 
     // Creating the Map first initializes the Kokkos execution space,
     // if it hasn't already been initialized.
     map_type meshMap (INVALID, static_cast<size_t> (numLocalMeshPoints),
-                      indexBase, getDefaultComm ());
+                      indexBase, comm);
     // Make sure that the execution space actually got initialized.
     TEST_ASSERT( execution_space::is_initialized () );
-    if (! success) {
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
       // mfh 24 Jan 2016: Failure to initialize Kokkos::Threads in a
       // release build before allocating a Kokkos::View may cause the
       // test to hang.
-      out << "The execution space is not initialized.  No sense in "
+      myOut << "The execution space is not initialized.  No sense in "
         "continuing the test." << endl;
       return;
     }
 
-    out << "Make prototype block and test GETF2 and GETRI" << endl;
+    myOut << "Make prototype block and test GETF2 and GETRI" << endl;
 
     // Each block in the block diagonal will be a diagonally dominant
     // but nonsymmetric matrix.  To make sure that the implementation
@@ -144,7 +168,7 @@ namespace {
                     &info);
       TEST_EQUALITY_CONST( info, 0 );
       if (info != 0) {
-        out << "GETRF returned info = " << info << " != 0 on the test matrix.  "
+        myOut << "GETRF returned info = " << info << " != 0 on the test matrix.  "
           "No point in continuing." << endl;
         return;
       }
@@ -154,7 +178,7 @@ namespace {
                     reinterpret_cast<Scalar*> (&workQuery), -1, &info);
       TEST_EQUALITY_CONST( info, 0 );
       if (info != 0) {
-        out << "GETRI workspace query returned info = " << info << " != 0.  "
+        myOut << "GETRI workspace query returned info = " << info << " != 0.  "
           "No point in continuing." << endl;
         return;
       }
@@ -168,7 +192,7 @@ namespace {
                     lwork, &info);
       TEST_EQUALITY_CONST( info, 0 );
       if (info != 0) {
-        out << "GETRI returned info = " << info << " != 0.  "
+        myOut << "GETRI returned info = " << info << " != 0.  "
           "No point in continuing." << endl;
         return;
       }
@@ -177,14 +201,14 @@ namespace {
     Tpetra::Experimental::GETF2 (prototypeBlock_h, ipiv, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
-      out << "Our GETF2 returned info = " << info << " != 0.  "
+      myOut << "Our GETF2 returned info = " << info << " != 0.  "
         "No point in continuing." << endl;
       return;
     }
     Tpetra::Experimental::GETRI (prototypeBlock_h, ipiv, work, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
-      out << "Our GETF2 returned info = " << info << " != 0.  "
+      myOut << "Our GETF2 returned info = " << info << " != 0.  "
         "No point in continuing." << endl;
       return;
     }
@@ -199,23 +223,25 @@ namespace {
         frobNorm += KAT::abs (prototypeBlock_h(i,j) - static_cast<IST> (teuchosBlock(i,j)));
       }
     }
-    out << "KAT::eps() = " << KAT::eps ()
+    myOut << "KAT::eps() = " << KAT::eps ()
         << " and blockSize = " << blockSize << endl;
     const MT maxMatFrobNorm = KAT::eps () * static_cast<MT> (blockSize) *
       static_cast<MT> (blockSize);
-    out << "maxMatFrobNorm = " << maxMatFrobNorm << endl;
+    myOut << "maxMatFrobNorm = " << maxMatFrobNorm << endl;
     TEST_ASSERT( frobNorm <= maxMatFrobNorm );
 
     if (! success) {
-      out << "Returning early due to FAILURE." << endl;
+      myOut << "Returning early due to FAILURE." << endl;
       return;
     }
 
     // Compute the expected solution (little) vector in prototypeY,
     // when applying the explicit inverse to a vector of all ones.
-    typename Kokkos::View<IST*, device_type>::HostMirror prototypeX ("prototypeX", blockSize);
+    typename Kokkos::View<IST*, device_type>::HostMirror
+      prototypeX ("prototypeX", blockSize);
     Kokkos::deep_copy (prototypeX, one);
-    typename Kokkos::View<IST*, device_type>::HostMirror prototypeY ("prototypeY", blockSize);
+    typename Kokkos::View<IST*, device_type>::HostMirror
+      prototypeY ("prototypeY", blockSize);
     Teuchos::BLAS<int, Scalar> blas;
     blas.GEMV (Teuchos::NO_TRANS, blockSize, blockSize,
                static_cast<Scalar> (1.0),
@@ -224,7 +250,7 @@ namespace {
                static_cast<Scalar> (0.0),
                reinterpret_cast<Scalar*> (prototypeY.ptr_on_device ()), 1);
 
-    out << "Constructing block diagonal (as 3-D Kokkos::View)" << endl;
+    myOut << "Constructing block diagonal (as 3-D Kokkos::View)" << endl;
 
     // Each (little) block of D gets scaled by a scaling factor, and
     // every (little) vector of X gets scaled by the inverse of the
@@ -243,7 +269,7 @@ namespace {
     }
     Kokkos::deep_copy (D, D_host);
 
-    out << "Make and fill BlockMultiVector instances" << endl;
+    myOut << "Make and fill BlockMultiVector instances" << endl;
 
     BMV X (meshMap, blockSize, numVecs);
     map_type pointMap = X.getPointMap ();
@@ -252,9 +278,8 @@ namespace {
     X.putScalar (one);
     Y.putScalar (zero);
     {
-      auto X_mv = X.getMultiVectorView ();
-      X_mv.template sync<Kokkos::HostSpace> ();
-      X_mv.template modify<Kokkos::HostSpace> ();
+      X.template sync<Kokkos::HostSpace> ();
+      X.template modify<Kokkos::HostSpace> ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -266,22 +291,21 @@ namespace {
         }
         curScalingFactor += one;
       }
-      X_mv.template sync<device_type> ();
+      X.template sync<device_type> ();
     }
 
-    out << "Call Y.blockWiseMultiply(alpha, D, X)" << endl;
+    myOut << "Call Y.blockWiseMultiply(alpha, D, X)" << endl;
 
     Y.blockWiseMultiply (one, D, X);
 
-    out << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
+    myOut << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
 
     const MT maxVecNorm = KAT::eps () * static_cast<MT> (blockSize);
-    out << "maxVecNorm = " << maxVecNorm << endl;
+    myOut << "maxVecNorm = " << maxVecNorm << endl;
 
     {
-      auto Y_mv = Y.getMultiVectorView ();
-      Y_mv.template sync<Kokkos::HostSpace> ();
-      Y_mv.template modify<Kokkos::HostSpace> ();
+      Y.template sync<Kokkos::HostSpace> ();
+      Y.template modify<Kokkos::HostSpace> ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -294,29 +318,27 @@ namespace {
           for (LO i = 0; i < blockSize; ++i) {
             frobNorm2 += KAT::abs (prototypeY(i) - Y_cur(i));
           }
-          out << "frobNorm = " << frobNorm2 << endl;
+          myOut << "frobNorm = " << frobNorm2 << endl;
           TEST_ASSERT( frobNorm2 <= maxVecNorm );
           if (! success) {
-            out << "Retuning early due to FAILURE." << endl;
+            myOut << "Retuning early due to FAILURE." << endl;
             return;
           }
         }
         curScalingFactor += one;
       }
-      Y_mv.template sync<device_type> ();
+      Y.template sync<device_type> ();
     }
 
-    out << "Call Y.blockWiseMultiply(alpha, D, X) again, where Y has nonzero "
+    myOut << "Call Y.blockWiseMultiply(alpha, D, X) again, where Y has nonzero "
       "initial contents (the method should ignore those contents)" << endl;
     Y.putScalar (-five);
     Y.blockWiseMultiply (one, D, X);
 
-    out << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
+    myOut << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
 
     {
-      auto Y_mv = Y.getMultiVectorView ();
-      Y_mv.template sync<Kokkos::HostSpace> ();
-      Y_mv.template modify<Kokkos::HostSpace> ();
+      Y.template sync<Kokkos::HostSpace> ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -329,16 +351,24 @@ namespace {
           for (LO i = 0; i < blockSize; ++i) {
             frobNorm2 += KAT::abs (prototypeY(i) - Y_cur(i));
           }
-          out << "frobNorm = " << frobNorm2 << endl;
+          myOut << "frobNorm = " << frobNorm2 << endl;
           TEST_ASSERT( frobNorm2 <= maxVecNorm );
-          if (! success) {
-            out << "Retuning early due to FAILURE." << endl;
-            return;
-          }
         }
         curScalingFactor += one;
       }
-      Y_mv.template sync<device_type> ();
+      Y.template sync<device_type> ();
+    }
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+
+    if (gblSuccess == 1) {
+      myOut << "Test succeeded" << endl;
+    }
+    else {
+      myOut << "Test FAILED" << endl;
     }
   }
 
@@ -355,32 +385,52 @@ namespace {
     typedef Tpetra::global_size_t GST;
     typedef Kokkos::Details::ArithTraits<IST> KAT;
     typedef typename KAT::mag_type MT;
+    // Set debug = true if you want immediate debug output to stderr.
+    const bool debug = false;
+    int lclSuccess = 1;
+    int gblSuccess = 0;
 
-    out << "Test BlockMultiVector::blockJacobiUpdate" << endl;
+    Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+      debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test BlockMultiVector::blockJacobiUpdate" << endl;
     Teuchos::OSTab tab1 (out);
+    myOut << "Scalar: " << TypeNameTraits<Scalar>::name () << endl
+          << "LO: " << TypeNameTraits<LO>::name () << endl
+          << "GO: " << TypeNameTraits<LO>::name () << endl
+          << "device_type: " << TypeNameTraits<device_type>::name () << endl;
 
     const LO blockSize = 4;
     const LO numVecs = 3;
     const LO numLocalMeshPoints = 12;
     const GO indexBase = 0;
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    RCP<const Comm<int> > comm = getDefaultComm ();
 
     // Creating the Map first initializes the Kokkos execution space,
     // if it hasn't already been initialized.
     map_type meshMap (INVALID, static_cast<size_t> (numLocalMeshPoints),
-                      indexBase, getDefaultComm ());
+                      indexBase, comm);
     // Make sure that the execution space actually got initialized.
     TEST_ASSERT( execution_space::is_initialized () );
-    if (! success) {
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
       // mfh 24 Jan 2016: Failure to initialize Kokkos::Threads in a
       // release build before allocating a Kokkos::View may cause the
       // test to hang.
-      out << "The execution space is not initialized.  No sense in "
+      myOut << "The execution space is not initialized.  No sense in "
         "continuing the test." << endl;
       return;
     }
 
-    out << "Make prototype block" << endl;
+    myOut << "Make prototype block" << endl;
 
     // Each block in the block diagonal will be a diagonally dominant
     // but nonsymmetric matrix.  To make sure that the implementation
@@ -410,7 +460,7 @@ namespace {
     Tpetra::Experimental::GETF2 (prototypeBlock_h, ipiv, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
-      out << "Our GETF2 returned info = " << info << " != 0.  "
+      myOut << "Our GETF2 returned info = " << info << " != 0.  "
         "No point in continuing." << endl;
       return;
     }
@@ -418,12 +468,12 @@ namespace {
     Tpetra::Experimental::GETRI (prototypeBlock_h, ipiv, work, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
-      out << "Our GETF2 returned info = " << info << " != 0.  "
+      myOut << "Our GETF2 returned info = " << info << " != 0.  "
         "No point in continuing." << endl;
       return;
     }
 
-    out << "Constructing block diagonal (as 3-D Kokkos::View)" << endl;
+    myOut << "Constructing block diagonal (as 3-D Kokkos::View)" << endl;
 
     // Each (little) block of D gets scaled by a scaling factor, and
     // every (little) vector of X gets scaled by the inverse of the
@@ -443,7 +493,7 @@ namespace {
     }
     Kokkos::deep_copy (D, D_host);
 
-    out << "Make and fill BlockMultiVector instances" << endl;
+    myOut << "Make and fill BlockMultiVector instances" << endl;
 
     BMV X (meshMap, blockSize, numVecs);
     map_type pointMap = X.getPointMap ();
@@ -452,9 +502,8 @@ namespace {
     X.putScalar (one);
     Y.putScalar (zero);
     {
-      auto X_mv = X.getMultiVectorView ();
-      X_mv.template sync<Kokkos::HostSpace> ();
-      X_mv.template modify<Kokkos::HostSpace> ();
+      X.template sync<Kokkos::HostSpace> ();
+      X.template modify<Kokkos::HostSpace> ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -466,7 +515,7 @@ namespace {
         }
         curScalingFactor += one;
       }
-      X_mv.template sync<device_type> ();
+      X.template sync<device_type> ();
     }
 
     // Fill Y with some initial value, so that using beta != 0 gives a
@@ -486,14 +535,21 @@ namespace {
     BMV Z (meshMap, pointMap, blockSize, numVecs);
     Z.putScalar (one / three);
 
-    out << "Call Y.blockJacobiUpdate(alpha, D, X, Z, beta) with alpha = "
+    myOut << "Call Y.blockJacobiUpdate(alpha, D, X, Z, beta) with alpha = "
         << alpha << " and beta = " << beta << endl;
 
-    Y.blockJacobiUpdate (alpha, D, X, Z, beta);
+    TEST_NOTHROW( Y.blockJacobiUpdate (alpha, D, X, Z, beta) );
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      return; // abort the test
+    }
 
-    out << "Test result of blockJacobiUpdate" << endl;
+    myOut << "Test result of blockJacobiUpdate" << endl;
 
-    // Refill Z in preparation for the test.
+    myOut << "Refill Z in preparation for the test" << endl;
     Z.putScalar (one / three);
 
     // We know that blockWiseMultiply works, so we can use it to test
@@ -508,16 +564,40 @@ namespace {
     // We use Y2 instead of Y here, so that we can compare against the
     // result of Y computed above.
 
+    myOut << "Use blockWiseMultiply to test blockJacobiUpdate" << endl;
     Z.update (one, X, -one);
     BMV U (meshMap, pointMap, blockSize, numVecs);
-    U.blockWiseMultiply (alpha, D, Z);
-    Y2.update (one, U, beta);
+    TEST_NOTHROW( U.blockWiseMultiply (alpha, D, Z) );
+    {
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0;
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      TEST_EQUALITY_CONST( gblSuccess, 1 );
+      if (gblSuccess != 1) {
+        myOut << "U.blockWiseMultiply(alpha,D,Z) threw an exception on some "
+          "process!" << endl;
+        return; // abort the test
+      }
+    }
+    TEST_NOTHROW( Y2.update (one, U, beta) );
+    {
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0;
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      TEST_EQUALITY_CONST( gblSuccess, 1 );
+      if (gblSuccess != 1) {
+        myOut << "Y2.update(one,U,beta) threw an exception on some process!"
+            << endl;
+        return; // abort the test
+      }
+    }
 
     // Take the norm of the difference between the two results.  We
     // can use the inf norm as a reasonable approximation for the
     // actual norm that we should use (something like the inf norm
     // between blocks, but 2-norm within a block).
 
+    myOut << "Take the norm of the difference between the two results" << endl;
     Y2.update (one, Y, -one); // Y2 := Y - Y2
     Kokkos::View<MT*, device_type> norms ("norms", numVecs);
     Y2.getMultiVectorView ().normInf (norms);
@@ -529,10 +609,11 @@ namespace {
       static_cast<MT> (blockSize);
 
     for (LO j = 0; j < numVecs; ++j) {
-      out << "Norm of vector " << j << ": " << norms_host(j) << endl;
+      myOut << "Norm of vector " << j << ": " << norms_host(j) << endl;
       TEST_ASSERT( norms_host(j) <= maxResultNorm );
     }
 
+    myOut << "Retest Y.blockJacobiUpdate with beta == 0" << endl;
     // Retest Y.blockJacobiUpdate(alpha, D, X, Z, beta) with beta = 0.
     // The implementation should treat this as a special case by
     // ignoring the initial contents of Y.
@@ -541,12 +622,12 @@ namespace {
     Y2.putScalar (-five); // same as Y
     Z.putScalar (one / three); // refill Z, since we used it as scratch
 
-    out << "Call Y.blockJacobiUpdate(alpha, D, X, Z, beta) with alpha = "
+    myOut << "Call Y.blockJacobiUpdate(alpha, D, X, Z, beta) with alpha = "
         << alpha << " and beta = " << beta << endl;
 
     Y.blockJacobiUpdate (alpha, D, X, Z, beta);
 
-    out << "Test result of blockJacobiUpdate" << endl;
+    myOut << "Test result of blockJacobiUpdate" << endl;
 
     // Refill Z in preparation for the test.
     Z.putScalar (one / three);
@@ -572,8 +653,19 @@ namespace {
     Kokkos::deep_copy (norms_host, norms);
 
     for (LO j = 0; j < numVecs; ++j) {
-      out << "Norm of vector " << j << ": " << norms_host(j) << endl;
+      myOut << "Norm of vector " << j << ": " << norms_host(j) << endl;
       TEST_ASSERT( norms_host(j) <= maxResultNorm );
+    }
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess == 1) {
+      myOut << "Test succeeded" << endl;
+    }
+    else {
+      myOut << "Test FAILED" << endl;
     }
   }
 

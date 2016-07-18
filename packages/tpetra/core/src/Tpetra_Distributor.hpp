@@ -95,8 +95,9 @@ namespace Tpetra {
       DISTRIBUTOR_NOT_INITIALIZED, // Not initialized yet
       DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS, // By createFromSends
       DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS, // By createFromRecvs
+      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS, // By createFromSendsAndRecvs
       DISTRIBUTOR_INITIALIZED_BY_REVERSE, // By createReverseDistributor
-      DISTRIBUTOR_INITIALIZED_BY_COPY // By copy constructor
+      DISTRIBUTOR_INITIALIZED_BY_COPY, // By copy constructor
     };
 
     /// \brief Convert an EDistributorHowInitialized enum value to a string.
@@ -290,19 +291,19 @@ namespace Tpetra {
     /// efficiently scattering to those processes.  Return the number
     /// of processes which will send me (the calling process) data.
     ///
-    /// \param exportNodeIDs [in] List of ranks of the processes that
+    /// \param exportProcIDs [in] List of ranks of the processes that
     ///   will get the exported data.  If there is a process rank
     ///   greater than or equal to the number of processes, all
     ///   processes will throw an <tt>std::runtime_error</tt>
     ///   exception.  Process ranks less than zero are ignored; their
     ///   placement corresponds to null sends in any future
-    ///   exports. That is, if <tt>exportNodeIDs[0] == -1</tt>, then
+    ///   exports. That is, if <tt>exportProcIDs[0] == -1</tt>, then
     ///   the corresponding position in the export array is ignored
     ///   during a call to doPosts() or doPostsAndWaits().  For this
     ///   reason, a negative entry is sufficient to break contiguity.
     ///
     /// \return Number of imports this process will be receiving.
-    size_t createFromSends (const ArrayView<const int>& exportNodeIDs);
+    size_t createFromSends (const ArrayView<const int>& exportProcIDs);
 
     /// \brief Set up Distributor using list of process ranks from which to receive.
     ///
@@ -320,7 +321,7 @@ namespace Tpetra {
     ///
     /// \param remoteIDs [in] List of remote IDs wanted.
     ///
-    /// \param remoteNodeIDs [in] The ranks of the process that will
+    /// \param remoteProcIDs [in] The ranks of the process that will
     ///   send the remote IDs listed in \c remoteIDs. Process ranks
     ///   less than zero are ignored; their placement corresponds to
     ///   null sends in any future exports.  If there is a process
@@ -331,18 +332,26 @@ namespace Tpetra {
     /// \param exportIDs [out] List of IDs that need to be sent from
     ///   this process.
     ///
-    /// \param exportNodeIDs [out] The ranks of the processes that
+    /// \param exportProcIDs [out] The ranks of the processes that
     ///   will get the exported IDs in \c exportIDs.
     ///
-    /// The \c exportGIDs and \c exportNodeIDs arrays are resized by
+    /// The \c exportGIDs and \c exportProcIDs arrays are resized by
     /// the Distributor, which is why they are passed in as a nonconst
     /// Array reference.
     template <class Ordinal>
     void
     createFromRecvs (const ArrayView<const Ordinal>& remoteIDs,
-                     const ArrayView<const int>& remoteNodeIDs,
+                     const ArrayView<const int>& remoteProcIDs,
                      Array<Ordinal>& exportIDs,
-                     Array<int>& exportNodeIDs);
+                     Array<int>& exportProcIDs);
+
+
+    //   template <class Ordinal>
+    void 
+    createFromSendsAndRecvs(
+				 const ArrayView<const int> &exportProcIDs,
+				 const ArrayView<const int> &remoteProcIDs);
+    
 
     //@}
     //! @name Attribute accessor methods
@@ -371,18 +380,18 @@ namespace Tpetra {
     ///
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
-    ArrayView<const int> getImagesFrom() const;
+    ArrayView<const int> getProcsFrom() const;
 
     /// \brief Ranks of the processes to which this process will send values.
     ///
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
-    ArrayView<const int> getImagesTo() const;
+    ArrayView<const int> getProcsTo() const;
 
     /// \brief Number of values this process will receive from each process.
     ///
     /// This process will receive <tt>getLengthsFrom[i]</tt> values
-    /// from process <tt>getImagesFrom[i]</tt>.
+    /// from process <tt>getProcsFrom[i]</tt>.
     ///
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
@@ -391,7 +400,7 @@ namespace Tpetra {
     /// \brief Number of values this process will send to each process.
     ///
     /// This process will send <tt>getLengthsTo[i]</tt> values to
-    /// process <tt>getImagesTo[i]</tt>.
+    /// process <tt>getProcsTo[i]</tt>.
     ///
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
@@ -829,7 +838,7 @@ namespace Tpetra {
     ///
     /// This array has length numSends_ + selfMessage_ (that is, it
     /// includes the self message, if there is one).
-    Array<int> imagesTo_;
+    Array<int> procsTo_;
 
     /// \brief Starting index of the block of Packets to send to each process.
     ///
@@ -892,7 +901,7 @@ namespace Tpetra {
     /// \brief Array of lengths of incoming messages.
     ///
     /// This array has length numReceives_ + selfMessage_.  Incoming
-    /// message i from process imagesFrom_[i] has length
+    /// message i from process procsFrom_[i] has length
     /// lengthsFrom_[i].
     Array<size_t> lengthsFrom_;
 
@@ -900,8 +909,8 @@ namespace Tpetra {
     ///   process will receive a message.
     ///
     /// This array has length numReceives_ + selfMessage_.  Incoming
-    /// message i was sent by process imagesFrom_[i].
-    Array<int> imagesFrom_;
+    /// message i was sent by process procsFrom_[i].
+    Array<int> procsFrom_;
 
     /// \brief Array of offsets of incoming messages.
     ///
@@ -996,7 +1005,7 @@ namespace Tpetra {
 
     /// \brief Compute receive info from sends.
     ///
-    /// This method computes numReceives_, lengthsFrom_, imagesFrom_,
+    /// This method computes numReceives_, lengthsFrom_, procsFrom_,
     /// totalReceiveLength_, indicesFrom_, and startsFrom_.
     ///
     /// \note This method currently ignores the sendType_ and
@@ -1011,18 +1020,18 @@ namespace Tpetra {
     /// GID means "global ID" and PID means "process ID" (rank, in MPI
     /// terms).
     ///
-    /// \param importIDs [in] GIDs to receive by my process.
-    /// \param importNodeIDs [in] Process IDs from which to receive by
+    /// \param importGIDs [in] GIDs to receive by my process.
+    /// \param importProcIDs [in] Process IDs from which to receive by
     ///   my process.
-    /// \param exportIDs [out] GIDs to send by my process.  Resized if
+    /// \param exportGIDs [out] GIDs to send by my process.  Resized if
     ///   necessary.
-    /// \param exportNodeIDs [out] Process IDs to which to send by my
+    /// \param exportProcIDs [out] Process IDs to which to send by my
     ///   process.  Resized if necessary.
     template <class Ordinal>
-    void computeSends (const ArrayView<const Ordinal> &importIDs,
-                       const ArrayView<const int> &importNodeIDs,
-                       Array<Ordinal> &exportIDs,
-                       Array<int> &exportNodeIDs);
+    void computeSends (const ArrayView<const Ordinal> &remoteGIDs,
+                       const ArrayView<const int> &remoteProcIDs,
+                       Array<Ordinal> &exportGIDs,
+                       Array<int> &exportProcIDs);
 
     //! Create a distributor for the reverse communication pattern.
     void createReverseDistributor() const;
@@ -1253,12 +1262,12 @@ namespace Tpetra {
       size_t curBufOffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
         const size_t curBufLen = lengthsFrom_[i] * numPackets;
-        if (imagesFrom_[i] != myRank) {
+        if (procsFrom_[i] != myRank) {
           if (debug_) {
             std::ostringstream os;
             os << "Proc " << myRank << ": doPosts(3,"
                << (indicesTo_.empty () ? "fast" : "slow") << "): "
-               << "Post irecv: {source: " << imagesFrom_[i]
+               << "Post irecv: {source: " << procsFrom_[i]
                << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
@@ -1267,7 +1276,7 @@ namespace Tpetra {
           //
           // 1. Set up the persisting view (recvBuf) of the imports
           //    array, given the offset and size (total number of
-          //    packets from process imagesFrom_[i]).
+          //    packets from process procsFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
           TEUCHOS_TEST_FOR_EXCEPTION(
             curBufOffset + curBufLen > static_cast<size_t> (imports.size ()),
@@ -1278,7 +1287,7 @@ namespace Tpetra {
             << ").");
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufOffset, curBufLen);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
+          requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
                                                       tag, *comm_));
         }
         else { // Receiving from myself
@@ -1311,18 +1320,18 @@ namespace Tpetra {
     Teuchos::TimeMonitor timeMonSends (*timer_doPosts3_sends_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-    // setup scan through imagesTo_ list starting with higher numbered images
+    // setup scan through procsTo_ list starting with higher numbered procs
     // (should help balance message traffic)
     //
     // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
     // It doesn't depend on the input at all.
     size_t numBlocks = numSends_ + selfMessage_;
-    size_t imageIndex = 0;
-    while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myRank)) {
-      ++imageIndex;
+    size_t procIndex = 0;
+    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myRank)) {
+      ++procIndex;
     }
-    if (imageIndex == numBlocks) {
-      imageIndex = 0;
+    if (procIndex == numBlocks) {
+      procIndex = 0;
     }
 
     size_t selfNum = 0;
@@ -1345,16 +1354,16 @@ namespace Tpetra {
       // Data are already blocked (laid out) by process, so we don't
       // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + imageIndex;
+        size_t p = i + procIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myRank) {
+        if (procsTo_[p] != myRank) {
           if (debug_) {
             std::ostringstream os;
             os << "Proc " << myRank << ": doPosts(3,fast): Post send: "
-              "{target: " << imagesTo_[p] << ", tag: " << tag << "}" << endl;
+              "{target: " << procsTo_[p] << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
 
@@ -1364,24 +1373,24 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int, Packet> (tmpSend.getRawPtr (),
                                as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+                               procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               exports.persistingView (startsTo_[p] * numPackets,
                                       lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
+            requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
                                                      tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (tmpSend.getRawPtr (),
                                     as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+                                    procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
-                                imagesTo_[p], tag, *comm_);
+                                procsTo_[p], tag, *comm_);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error, "Tpetra::Distributor::doPosts(3 args): "
@@ -1417,7 +1426,7 @@ namespace Tpetra {
         *out_ << os.str ();
       }
     }
-    else { // data are not blocked by image, use send buffer
+    else { // data are not blocked by proc, use send buffer
       if (debug_) {
         std::ostringstream os;
         os << myRank << ": doPosts(3,slow): posting sends" << endl;
@@ -1434,16 +1443,16 @@ namespace Tpetra {
         << "doesn't currently work with nonblocking sends.");
 
       for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + imageIndex;
+        size_t p = i + procIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myRank) {
+        if (procsTo_[p] != myRank) {
           if (debug_) {
             std::ostringstream os;
             os << "Proc " << myRank << ": doPosts(3,slow): Post send: "
-              "{target: " << imagesTo_[p] << ", tag: " << tag << "}" << endl;
+              "{target: " << procsTo_[p] << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
 
@@ -1462,23 +1471,23 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int, Packet> (tmpSend.getRawPtr (),
                                as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+                               procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               sendArray.persistingView (0, lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
+            requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
                                                      tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (tmpSend.getRawPtr (),
                                     as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+                                    procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
-                                imagesTo_[p], tag, *comm_);
+                                procsTo_[p], tag, *comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1584,7 +1593,7 @@ namespace Tpetra {
       "have been checked before.  "
       "Please report this bug to the Tpetra developers.");
 
-    const int myImageID = comm_->getRank ();
+    const int myProcID = comm_->getRank ();
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -1612,10 +1621,10 @@ namespace Tpetra {
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
-        "doPosts(4 args): Process " << myImageID << ": requests_.size() = "
+        "doPosts(4 args): Process " << myProcID << ": requests_.size() = "
         << requests_.size () << " != 0.");
       std::ostringstream os;
-      os << myImageID << ": doPosts(4,"
+      os << myProcID << ": doPosts(4,"
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
       *out_ << os.str ();
     }
@@ -1655,18 +1664,18 @@ namespace Tpetra {
           totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
         }
         curLIDoffset += lengthsFrom_[i];
-        if (imagesFrom_[i] != myImageID && totalPacketsFrom_i) {
+        if (procsFrom_[i] != myProcID && totalPacketsFrom_i) {
           // If my process is receiving these packet(s) from another
           // process (not a self-receive), and if there is at least
           // one packet to receive:
           //
           // 1. Set up the persisting view (recvBuf) into the imports
           //    array, given the offset and size (total number of
-          //    packets from process imagesFrom_[i]).
+          //    packets from process procsFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
+          requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
                                                       tag, *comm_));
         }
         else { // Receiving these packet(s) from myself
@@ -1708,15 +1717,15 @@ namespace Tpetra {
       curPKToffset += numPackets;
     }
 
-    // setup scan through imagesTo_ list starting with higher numbered images
+    // setup scan through procsTo_ list starting with higher numbered procs
     // (should help balance message traffic)
     size_t numBlocks = numSends_+ selfMessage_;
-    size_t imageIndex = 0;
-    while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
-      ++imageIndex;
+    size_t procIndex = 0;
+    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myProcID)) {
+      ++procIndex;
     }
-    if (imageIndex == numBlocks) {
-      imageIndex = 0;
+    if (procIndex == numBlocks) {
+      procIndex = 0;
     }
 
     size_t selfNum = 0;
@@ -1725,42 +1734,42 @@ namespace Tpetra {
     if (indicesTo_.empty()) {
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << ": doPosts(4,fast): posting sends" << endl;
+        os << myProcID << ": doPosts(4,fast): posting sends" << endl;
         *out_ << os.str ();
       }
 
       // Data are already blocked (laid out) by process, so we don't
       // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + imageIndex;
+        size_t p = i + procIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myImageID && packetsPerSend[p] > 0) {
+        if (procsTo_[p] != myProcID && packetsPerSend[p] > 0) {
           ArrayView<const Packet> tmpSend =
             exports.view (sendPacketOffsets[p], packetsPerSend[p]);
 
           if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
             send<int, Packet> (tmpSend.getRawPtr (),
                                as<int> (tmpSend.size ()),
-                               imagesTo_[p], tag, *comm_);
+                               procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (tmpSend.getRawPtr (),
                                     as<int> (tmpSend.size ()),
-                                    imagesTo_[p], tag, *comm_);
+                                    procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
+            requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
                                                      tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
-                                imagesTo_[p], tag, *comm_);
+                                procsTo_[p], tag, *comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1781,14 +1790,14 @@ namespace Tpetra {
       }
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << ": doPosts(4,fast) done" << endl;
+        os << myProcID << ": doPosts(4,fast) done" << endl;
         *out_ << os.str ();
       }
     }
-    else { // data are not blocked by image, use send buffer
+    else { // data are not blocked by proc, use send buffer
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << ": doPosts(4,slow): posting sends" << endl;
+        os << myProcID << ": doPosts(4,slow): posting sends" << endl;
         *out_ << os.str ();
       }
 
@@ -1808,12 +1817,12 @@ namespace Tpetra {
       }
 
       for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + imageIndex;
+        size_t p = i + procIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myImageID) {
+        if (procsTo_[p] != myProcID) {
           typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
           size_t sendArrayOffset = 0;
           size_t j = startsTo_[p];
@@ -1832,23 +1841,23 @@ namespace Tpetra {
             if (sendType == Details::DISTRIBUTOR_RSEND) {
               readySend<int, Packet> (tmpSend.getRawPtr (),
                                       as<int> (tmpSend.size ()),
-                                      imagesTo_[p], tag, *comm_);
+                                      procsTo_[p], tag, *comm_);
             }
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
               ArrayRCP<const Packet> tmpSendBuf =
                 sendArray.persistingView (0, numPacketsTo_p);
-              requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
+              requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
                                                        tag, *comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
               ssend<int, Packet> (tmpSend.getRawPtr (),
                                   as<int> (tmpSend.size ()),
-                                  imagesTo_[p], tag, *comm_);
+                                  procsTo_[p], tag, *comm_);
             }
             else { // if (sendType == Details::DISTRIBUTOR_SSEND)
               send<int, Packet> (tmpSend.getRawPtr (),
                                  as<int> (tmpSend.size ()),
-                                 imagesTo_[p], tag, *comm_);
+                                 procsTo_[p], tag, *comm_);
             }
           }
         }
@@ -1869,7 +1878,7 @@ namespace Tpetra {
       }
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << ": doPosts(4,slow) done" << endl;
+        os << myProcID << ": doPosts(4,slow) done" << endl;
         *out_ << os.str ();
       }
     }
@@ -2205,12 +2214,12 @@ namespace Tpetra {
       size_t curBufferOffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
         const size_t curBufLen = lengthsFrom_[i] * numPackets;
-        if (imagesFrom_[i] != myRank) {
+        if (procsFrom_[i] != myRank) {
           if (debug_) {
             std::ostringstream os;
             os << "Proc " << myRank << ": doPosts(3,"
                << (indicesTo_.empty () ? "fast" : "slow") << "): "
-               << "Post irecv: {source: " << imagesFrom_[i]
+               << "Post irecv: {source: " << procsFrom_[i]
                << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
@@ -2219,7 +2228,7 @@ namespace Tpetra {
           //
           // 1. Set up the persisting view (recvBuf) of the imports
           //    array, given the offset and size (total number of
-          //    packets from process imagesFrom_[i]).
+          //    packets from process procsFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
           TEUCHOS_TEST_FOR_EXCEPTION(
             curBufferOffset + curBufLen > static_cast<size_t> (imports.size ()),
@@ -2230,7 +2239,7 @@ namespace Tpetra {
             curBufLen << ").");
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, curBufLen);
-          requests_.push_back (ireceive<int> (recvBuf, imagesFrom_[i],
+          requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
                                               tag, *comm_));
         }
         else { // Receiving from myself
@@ -2263,18 +2272,18 @@ namespace Tpetra {
     Teuchos::TimeMonitor timeMonSends (*timer_doPosts3_sends_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-    // setup scan through imagesTo_ list starting with higher numbered images
+    // setup scan through procsTo_ list starting with higher numbered procs
     // (should help balance message traffic)
     //
     // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
     // It doesn't depend on the input at all.
     size_t numBlocks = numSends_ + selfMessage_;
-    size_t imageIndex = 0;
-    while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myRank)) {
-      ++imageIndex;
+    size_t procIndex = 0;
+    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myRank)) {
+      ++procIndex;
     }
-    if (imageIndex == numBlocks) {
-      imageIndex = 0;
+    if (procIndex == numBlocks) {
+      procIndex = 0;
     }
 
     size_t selfNum = 0;
@@ -2297,16 +2306,16 @@ namespace Tpetra {
       // Data are already blocked (laid out) by process, so we don't
       // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + imageIndex;
+        size_t p = i + procIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myRank) {
+        if (procsTo_[p] != myRank) {
           if (debug_) {
             std::ostringstream os;
             os << "Proc " << myRank << ": doPosts(3,fast): Post send: "
-              "{target: " << imagesTo_[p] << ", tag: " << tag << "}" << endl;
+              "{target: " << procsTo_[p] << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
           // if (debug_) {
@@ -2325,24 +2334,24 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int> (tmpSend,
                        as<int> (tmpSend.size ()),
-                       imagesTo_[p], tag, *comm_);
+                       procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (exports, startsTo_[p] * numPackets,
                               lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
                                              tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                             as<int> (tmpSend.size ()),
-                            imagesTo_[p], tag, *comm_);
+                            procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
-                        imagesTo_[p], tag, *comm_);
+                        procsTo_[p], tag, *comm_);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error, "Tpetra::Distributor::doPosts(3 args): "
@@ -2378,7 +2387,7 @@ namespace Tpetra {
         *out_ << os.str ();
       }
     }
-    else { // data are not blocked by image, use send buffer
+    else { // data are not blocked by proc, use send buffer
       if (debug_) {
         std::ostringstream os;
         os << "Proc " << myRank << ": doPosts(3,slow): posting sends" << endl;
@@ -2400,16 +2409,16 @@ namespace Tpetra {
         "doesn't currently work with nonblocking sends.");
 
       for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + imageIndex;
+        size_t p = i + procIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myRank) {
+        if (procsTo_[p] != myRank) {
           if (debug_) {
             std::ostringstream os;
             os << "Proc " << myRank << ": doPosts(3,slow): Post send: "
-              "{target: " << imagesTo_[p] << ", tag: " << tag << "}" << endl;
+              "{target: " << procsTo_[p] << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
 
@@ -2426,23 +2435,23 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int> (tmpSend,
                        as<int> (tmpSend.size ()),
-                       imagesTo_[p], tag, *comm_);
+                       procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (sendArray, size_t(0), lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
                                              tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                             as<int> (tmpSend.size ()),
-                            imagesTo_[p], tag, *comm_);
+                            procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
-                        imagesTo_[p], tag, *comm_);
+                        procsTo_[p], tag, *comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2554,7 +2563,7 @@ namespace Tpetra {
       "sends.  This should have been checked before.  "
       "Please report this bug to the Tpetra developers.");
 
-    const int myImageID = comm_->getRank ();
+    const int myProcID = comm_->getRank ();
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -2582,10 +2591,10 @@ namespace Tpetra {
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
-        "doPosts(4 args): Process " << myImageID << ": requests_.size () = "
+        "doPosts(4 args): Process " << myProcID << ": requests_.size () = "
         << requests_.size () << " != 0.");
       std::ostringstream os;
-      os << myImageID << ": doPosts(4,"
+      os << myProcID << ": doPosts(4,"
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
       *out_ << os.str ();
     }
@@ -2625,18 +2634,18 @@ namespace Tpetra {
           totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
         }
         curLIDoffset += lengthsFrom_[i];
-        if (imagesFrom_[i] != myImageID && totalPacketsFrom_i) {
+        if (procsFrom_[i] != myProcID && totalPacketsFrom_i) {
           // If my process is receiving these packet(s) from another
           // process (not a self-receive), and if there is at least
           // one packet to receive:
           //
           // 1. Set up the persisting view (recvBuf) into the imports
           //    array, given the offset and size (total number of
-          //    packets from process imagesFrom_[i]).
+          //    packets from process procsFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int> (recvBuf, imagesFrom_[i],
+          requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
                                               tag, *comm_));
         }
         else { // Receiving these packet(s) from myself
@@ -2678,15 +2687,15 @@ namespace Tpetra {
       curPKToffset += numPackets;
     }
 
-    // setup scan through imagesTo_ list starting with higher numbered images
+    // setup scan through procsTo_ list starting with higher numbered procs
     // (should help balance message traffic)
     size_t numBlocks = numSends_+ selfMessage_;
-    size_t imageIndex = 0;
-    while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
-      ++imageIndex;
+    size_t procIndex = 0;
+    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myProcID)) {
+      ++procIndex;
     }
-    if (imageIndex == numBlocks) {
-      imageIndex = 0;
+    if (procIndex == numBlocks) {
+      procIndex = 0;
     }
 
     size_t selfNum = 0;
@@ -2695,42 +2704,42 @@ namespace Tpetra {
     if (indicesTo_.empty()) {
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << ": doPosts(4,fast): posting sends" << endl;
+        os << myProcID << ": doPosts(4,fast): posting sends" << endl;
         *out_ << os.str ();
       }
 
       // Data are already blocked (laid out) by process, so we don't
       // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + imageIndex;
+        size_t p = i + procIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myImageID && packetsPerSend[p] > 0) {
+        if (procsTo_[p] != myProcID && packetsPerSend[p] > 0) {
           exports_view_type tmpSend =
             subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
 
           if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
             send<int> (tmpSend,
                        as<int> (tmpSend.size ()),
-                       imagesTo_[p], tag, *comm_);
+                       procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                             as<int> (tmpSend.size ()),
-                            imagesTo_[p], tag, *comm_);
+                            procsTo_[p], tag, *comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
-            requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
                                              tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
-                        imagesTo_[p], tag, *comm_);
+                        procsTo_[p], tag, *comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2750,14 +2759,14 @@ namespace Tpetra {
       }
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << ": doPosts(4,fast) done" << endl;
+        os << myProcID << ": doPosts(4,fast) done" << endl;
         *out_ << os.str ();
       }
     }
-    else { // data are not blocked by image, use send buffer
+    else { // data are not blocked by proc, use send buffer
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << ": doPosts(4,slow): posting sends" << endl;
+        os << myProcID << ": doPosts(4,slow): posting sends" << endl;
         *out_ << os.str ();
       }
 
@@ -2781,12 +2790,12 @@ namespace Tpetra {
       }
 
       for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + imageIndex;
+        size_t p = i + procIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myImageID) {
+        if (procsTo_[p] != myProcID) {
           size_t sendArrayOffset = 0;
           size_t j = startsTo_[p];
           size_t numPacketsTo_p = 0;
@@ -2802,23 +2811,23 @@ namespace Tpetra {
             if (sendType == Details::DISTRIBUTOR_RSEND) {
               readySend<int> (tmpSend,
                               as<int> (tmpSend.size ()),
-                              imagesTo_[p], tag, *comm_);
+                              procsTo_[p], tag, *comm_);
             }
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
               exports_view_type tmpSendBuf =
                 subview_offset (sendArray, size_t(0), numPacketsTo_p);
-              requests_.push_back (isend<int> (tmpSendBuf, imagesTo_[p],
+              requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
                                                tag, *comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
               ssend<int> (tmpSend,
                           as<int> (tmpSend.size ()),
-                          imagesTo_[p], tag, *comm_);
+                          procsTo_[p], tag, *comm_);
             }
             else { // if (sendType == Details::DISTRIBUTOR_SSEND)
               send<int> (tmpSend,
                          as<int> (tmpSend.size ()),
-                         imagesTo_[p], tag, *comm_);
+                         procsTo_[p], tag, *comm_);
             }
           }
         }
@@ -2839,7 +2848,7 @@ namespace Tpetra {
       }
       if (debug_) {
         std::ostringstream os;
-        os << myImageID << ": doPosts(4,slow) done" << endl;
+        os << myProcID << ": doPosts(4,slow) done" << endl;
         *out_ << os.str ();
       }
     }
@@ -2914,16 +2923,16 @@ namespace Tpetra {
 
   template <class OrdinalType>
   void Distributor::
-  computeSends (const ArrayView<const OrdinalType> & importIDs,
-                const ArrayView<const int> & importNodeIDs,
-                Array<OrdinalType> & exportIDs,
-                Array<int> & exportNodeIDs)
+  computeSends (const ArrayView<const OrdinalType> & importGIDs,
+                const ArrayView<const int> & importProcIDs,
+                Array<OrdinalType> & exportGIDs,
+                Array<int> & exportProcIDs)
   {
     // NOTE (mfh 19 Apr 2012): There was a note on this code saying:
     // "assumes that size_t >= Ordinal".  The code certainly does
     // assume that sizeof(size_t) >= sizeof(OrdinalType) as well as
     // sizeof(size_t) >= sizeof(int).  This is because it casts the
-    // OrdinalType elements of importIDs (along with their
+    // OrdinalType elements of importGIDs (along with their
     // corresponding process IDs, as int) to size_t, and does a
     // doPostsAndWaits<size_t>() to send the packed data.
     using std::endl;
@@ -2938,21 +2947,21 @@ namespace Tpetra {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      importIDs.size () != importNodeIDs.size (), std::invalid_argument,
+      importGIDs.size () != importProcIDs.size (), std::invalid_argument,
       "Tpetra::Distributor::computeSends: On Process " << myRank << ": "
-      "importNodeIDs.size() = " << importNodeIDs.size ()
-      << " != importIDs.size() = " << importIDs.size () << ".");
+      "importProcIDs.size() = " << importProcIDs.size ()
+      << " != importGIDs.size() = " << importGIDs.size () << ".");
 
-    const size_type numImports = importNodeIDs.size ();
+    const size_type numImports = importProcIDs.size ();
     Array<size_t> importObjs (2*numImports);
-    // Pack pairs (importIDs[i], my process ID) to send into importObjs.
+    // Pack pairs (importGIDs[i], my process ID) to send into importObjs.
     for (size_type i = 0; i < numImports; ++i) {
-      importObjs[2*i]   = static_cast<size_t> (importIDs[i]);
+      importObjs[2*i]   = static_cast<size_t> (importGIDs[i]);
       importObjs[2*i+1] = static_cast<size_t> (myRank);
     }
     //
-    // Use a temporary Distributor to send the (importIDs[i], myRank)
-    // pairs to importNodeIDs[i].
+    // Use a temporary Distributor to send the (importGIDs[i], myRank)
+    // pairs to importProcIDs[i].
     //
     Distributor tempPlan (comm_, out_);
     if (debug_) {
@@ -2963,7 +2972,7 @@ namespace Tpetra {
 
     // mfh 20 Mar 2014: An extra-cautious cast from unsigned to
     // signed, in order to forestall any possible causes for Bug 6069.
-    const size_t numExportsAsSizeT = tempPlan.createFromSends (importNodeIDs);
+    const size_t numExportsAsSizeT = tempPlan.createFromSends (importProcIDs);
     const size_type numExports = static_cast<size_type> (numExportsAsSizeT);
     TEUCHOS_TEST_FOR_EXCEPTION(
       numExports < 0, std::logic_error, "Tpetra::Distributor::computeSends: "
@@ -2979,8 +2988,8 @@ namespace Tpetra {
       "Tpetra developers.");
 
     if (numExports > 0) {
-      exportIDs.resize (numExports);
-      exportNodeIDs.resize (numExports);
+      exportGIDs.resize (numExports);
+      exportProcIDs.resize (numExports);
     }
 
     // exportObjs: Packed receive buffer.  (exportObjs[2*i],
@@ -3015,10 +3024,10 @@ namespace Tpetra {
     }
     tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
 
-    // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
+    // Unpack received (GID, PID) pairs into exportIDs resp. exportProcIDs.
     for (size_type i = 0; i < numExports; ++i) {
-      exportIDs[i] = static_cast<OrdinalType> (exportObjs[2*i]);
-      exportNodeIDs[i] = static_cast<int> (exportObjs[2*i+1]);
+      exportGIDs[i] = static_cast<OrdinalType> (exportObjs[2*i]);
+      exportProcIDs[i] = static_cast<int> (exportObjs[2*i+1]);
     }
 
     if (debug_) {
@@ -3030,10 +3039,10 @@ namespace Tpetra {
 
   template <class OrdinalType>
   void Distributor::
-  createFromRecvs (const ArrayView<const OrdinalType> &remoteIDs,
-                   const ArrayView<const int> &remoteImageIDs,
+  createFromRecvs (const ArrayView<const OrdinalType> &remoteGIDs,
+                   const ArrayView<const int> &remoteProcIDs,
                    Array<OrdinalType> &exportGIDs,
-                   Array<int> &exportNodeIDs)
+                   Array<int> &exportProcIDs)
   {
     using std::endl;
 
@@ -3051,7 +3060,7 @@ namespace Tpetra {
     // In debug mode, first test locally, then do an all-reduce to
     // make sure that all processes passed.
     const int errProc =
-      (remoteIDs.size () != remoteImageIDs.size ()) ? myRank : -1;
+      (remoteGIDs.size () != remoteProcIDs.size ()) ? myRank : -1;
     int maxErrProc = -1;
     reduceAll<int, int> (*comm_, Teuchos::REDUCE_MAX, errProc, outArg (maxErrProc));
     TEUCHOS_TEST_FOR_EXCEPTION(maxErrProc != -1, std::runtime_error,
@@ -3062,26 +3071,26 @@ namespace Tpetra {
 
     // In non-debug mode, just test locally.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      remoteIDs.size () != remoteImageIDs.size (), std::invalid_argument,
+      remoteGIDs.size () != remoteProcIDs.size (), std::invalid_argument,
       Teuchos::typeName (*this) << "::createFromRecvs<" <<
       Teuchos::TypeNameTraits<OrdinalType>::name () << ">(): On Process " <<
-      myRank << ": remoteIDs.size() = " << remoteIDs.size () << " != "
-      "remoteImageIDs.size() = " << remoteImageIDs.size () << ".");
+      myRank << ": remoteGIDs.size() = " << remoteGIDs.size () << " != "
+      "remoteProcIDs.size() = " << remoteProcIDs.size () << ".");
 #endif // HAVE_TPETRA_DEBUG
 
-    computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
+    computeSends (remoteGIDs, remoteProcIDs, exportGIDs, exportProcIDs);
 
-    const size_t numProcsSendingToMe = createFromSends (exportNodeIDs ());
+    const size_t numProcsSendingToMe = createFromSends (exportProcIDs ());
 
     if (debug_) {
-      // NOTE (mfh 20 Mar 2014) If remoteImageIDs could contain
+      // NOTE (mfh 20 Mar 2014) If remoteProcIDs could contain
       // duplicates, then its length might not be the right check here,
       // even if we account for selfMessage_.  selfMessage_ is set in
       // createFromSends.
       std::ostringstream os;
       os << "Proc " << myRank << ": {numProcsSendingToMe: "
-         << numProcsSendingToMe << ", remoteImageIDs.size(): "
-         << remoteImageIDs.size () << ", selfMessage_: "
+         << numProcsSendingToMe << ", remoteProcIDs.size(): "
+         << remoteProcIDs.size () << ", selfMessage_: "
          << (selfMessage_ ? "true" : "false") << "}" << std::endl;
       std::cerr << os.str ();
     }
@@ -3092,6 +3101,7 @@ namespace Tpetra {
 
     howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
   }
+
 
 } // namespace Tpetra
 

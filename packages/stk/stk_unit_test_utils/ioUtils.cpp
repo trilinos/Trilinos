@@ -8,36 +8,37 @@ namespace stk
 namespace unit_test_util
 {
 
+void fill_mesh_using_stk_io_preexisting(stk::io::StkMeshIoBroker & stkIo, const std::string& meshSpec, stk::mesh::BulkData& bulkData)
+{
+    stkIo.set_bulk_data(bulkData);
+    stkIo.add_mesh_database(meshSpec, stk::io::READ_MESH);
+    stkIo.create_input_mesh();
+    stkIo.add_all_mesh_fields_as_input_fields();
+    stkIo.populate_bulk_data();
+}
+
 void fill_mesh_using_stk_io_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData)
 {
-    stk::io::StkMeshIoBroker exodusFileReader;
-    exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
-
-    exodusFileReader.set_bulk_data(bulkData);
-    exodusFileReader.add_mesh_database(meshSpec, stk::io::READ_MESH);
-    exodusFileReader.create_input_mesh();
-    exodusFileReader.populate_bulk_data();
+    stk::io::StkMeshIoBroker stkIo;
+    stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
+    fill_mesh_using_stk_io_preexisting(stkIo, meshSpec, bulkData);
 }
 
 void fill_mesh_using_stk_io(const std::string &meshSpec, stk::mesh::BulkData &bulkData)
 {
-    stk::io::StkMeshIoBroker exodusFileReader;
-
-    exodusFileReader.set_bulk_data(bulkData);
-    exodusFileReader.add_mesh_database(meshSpec, stk::io::READ_MESH);
-    exodusFileReader.create_input_mesh();
-    exodusFileReader.populate_bulk_data();
+    stk::io::StkMeshIoBroker stkIo;
+    fill_mesh_using_stk_io_preexisting(stkIo, meshSpec, bulkData);
 }
 
 void write_mesh_using_stk_io(const std::string &filename,
                              stk::mesh::BulkData &bulkData,
                              stk::io::DatabasePurpose databasePurpose)
 {
-    stk::io::StkMeshIoBroker exodusFileWriter;
-
-    exodusFileWriter.set_bulk_data(bulkData);
-    size_t output_file_index = exodusFileWriter.create_output_mesh(filename, databasePurpose);
-    exodusFileWriter.write_output_mesh(output_file_index);
+    stk::io::StkMeshIoBroker stkIo;
+    stkIo.set_bulk_data(bulkData);
+    size_t outputFileIndex = stkIo.create_output_mesh(filename, databasePurpose);
+    stkIo.write_output_mesh(outputFileIndex);
+    stkIo.write_defined_output_fields(outputFileIndex);
 }
 
 

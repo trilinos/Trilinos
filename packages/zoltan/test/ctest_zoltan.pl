@@ -110,15 +110,24 @@ print LOG "$time\n";
 ### If output subdirectory does not exist, create it.
 mkdir "output" unless -d "output";
 
-### If answers directory exists, use it.  Otherwise look for answers64bitids.
-if (-d "answers") {
-  $answersdir = "answers";
-}
-else
-{
-  $answersdir = "answers64bitids";
-}
+### Find the appropriate answers directory.
+$answersdir32 = "answers";
+$answersdir64 = "answers64bitTPLs";
+$string64 = "indextype = 8";
+$string32 = "indextype = 4";
 
+### If answersZOLTANID64 directory exists, use it.  
+### Otherwise use answers with default ZOLTAN_ID_TYPE = unsigned long.
+if (-d "answersZOLTANID64") {
+  # Special case of Zoltan IDs == ULONG or ULLONG
+  $ZoltanIDsize = 64;
+  $answersdir = "answersZOLTANID64";
+}
+else {
+  # Standard ZOLTAN_ID_TYPE is unsigned long
+  $ZoltanIDsize = 32;
+  $answersdir = $answersdir32;  # Default is 32-bit TPLs
+}
 
 ### Get list of input files
 if ($package eq "Zoltan") {
@@ -206,6 +215,8 @@ TEST:  foreach $file (@inpfiles) {
   if ($loop_np == 1) {
     $zoutfile = sprintf("%s%d", $archfilebase, 0);
     if (!(-e "$answersdir/$zoutfile")) {
+      # Note:  this test assumes the same answer files exist
+      # for 32-bit and 64-bit TPLs.  
       print LOG "Test $dirname:$testname SKIPPED (no answer file)\n";
       print "Test $dirname:$testname SKIPPED (no answer file)\n";
       next TEST;
@@ -231,6 +242,27 @@ TEST:  foreach $file (@inpfiles) {
   $result = system($cmd);
   if ($debug) {print "DEBUG system results $result\n";}
 
+  if ($ZoltanIDsize == 32) {
+    # ZOLTAN_ID_TYPE == unsigned int.
+    # Query the output to determine whether TPL indextype is 32- or 64-bit.
+    open(F,$zouterrfile); @list=<F>; close F;
+    @found64 = grep /$string64/,@list;
+    @found32 = grep /$string32/,@list;
+    if ((scalar(@found64)>0) && (-d "$answersdir64")) {
+      # indextype = 64 bit; use 64-bit TPL answers if they exist
+      $answersdir = $answersdir64;
+      print LOG "Using answers for 64-bit indextype\n";
+      print "Using answers for 64-bit indextype\n";
+    }
+    else {
+      # Either indextype = 32 bit or no 64-bit answers exist.
+      # Use 32-bit TPL answers by default
+      $answersdir = $answersdir32;
+      print LOG "Using default indextype\n";
+      print "Using default indextype\n";
+    }
+  }
+
   ### Copy zdrive output files to output directory.
   $failed = 0;
   move($zouterrfile, "output/$zouterrfile");
@@ -241,8 +273,10 @@ TEST:  foreach $file (@inpfiles) {
     $zoutdrop = sprintf("$format", $zoutdropbase, $ii);
     $archfile = sprintf("output/$format", $archfilebase, $ii);
     $archdrop = sprintf("output/$format", $archdropbase, $ii);
+
     $answfile = sprintf("$answersdir/$format", $archfilebase, $ii);
     $answdrop = sprintf("$answersdir/$format", $archdropbase, $ii);
+
     if ($debug) {print "DEBUG moving files:  $zoutfile $archfile\n";}
     if (-e "$zoutfile") {
       move($zoutfile, $archfile);

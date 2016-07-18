@@ -356,7 +356,7 @@ namespace Thyra {
     RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
 
     // FIXME: why do we need to perturb A_22?
-    Array<SC> smallVal(1, 1.0e-9);
+    Array<SC> smallVal(1, 1.0e-10);
 
     // FIXME: could this be sped up using expertStaticFillComplete?
     // There was an attempt on doing it, but it did not do the proper thing
@@ -744,7 +744,8 @@ namespace Thyra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<MueLu::FactoryBase>
-  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetSmoother(const std::string& type, const ParameterList& paramList, bool coarseSolver) const {
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  GetSmoother(const std::string& type, const ParameterList& paramList, bool coarseSolver) const {
     typedef Teuchos::ParameterEntry                   ParameterEntry;
 
     typedef MueLu::BlockedDirectSolver   <SC,LO,GO,NO> BlockedDirectSolver;
@@ -780,8 +781,11 @@ namespace Thyra {
 
       smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
 
-    } else if (type == "direct") {
-      smootherPrototype = rcp(new BlockedDirectSolver());
+    } else if (type == "schwarz") {
+
+      std::string ifpackType = "SCHWARZ";
+
+      smootherPrototype = rcp(new TrilinosSmoother(ifpackType, paramList));
 
     } else if (type == "braess-sarazin") {
       // Define smoother/solver for BraessSarazin
@@ -821,6 +825,14 @@ namespace Thyra {
       smootherPrototype->SetParameter("Damping factor", ParameterEntry(omega));
       smootherPrototype->SetParameter("q2q1 mode",      ParameterEntry(true));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
+
+    } else if (type == "ilu") {
+      std::string ifpackType = "RILUK";
+
+      smootherPrototype = rcp(new TrilinosSmoother(ifpackType, paramList));
+
+    } else if (type == "direct") {
+      smootherPrototype = rcp(new BlockedDirectSolver());
 
     } else {
       throw MueLu::Exceptions::RuntimeError("Unknown smoother type: \"" + type + "\"");

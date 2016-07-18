@@ -4,6 +4,8 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
+//#define TACHO_EXECUTE_TASKS_SERIAL
+
 #include "Tacho_Util.hpp"
 
 #include "Tacho_CrsMatrixBase.hpp"
@@ -54,6 +56,7 @@ namespace Tacho {
                                     const int nrhs,
                                     const int mb,
                                     const int nb,
+                                    const bool verbose_blocks,
                                     const bool verbose) {
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
@@ -302,7 +305,8 @@ namespace Tacho {
                                auto &block = HA_factor_host.Value(k);
                                block.setRowViewArray(Kokkos::subview(rows, range_type(ap(k), ap(k+1))));
                              } );
-        CrsMatrixTools::filterEmptyBlocks(HA_factor_host);
+        // since symbolic factor is not accurate, filter out empty blocks is not safe either.
+        //CrsMatrixTools::filterEmptyBlocks(HA_factor_host);
       }
       { // nblocks is changed as empty blocks are filtered out
         const size_type nblocks = HA_factor_host.NumNonZeros();
@@ -356,6 +360,10 @@ namespace Tacho {
                              } );
       }
       t_blocks = timer.seconds();
+
+      if (verbose || verbose_blocks)
+        for (auto k=0;k<HA_factor_host.NumNonZeros();++k) 
+          HA_factor_host.Value(k).showMe(std::cout) << std::endl;
 
       {
         const size_type nblocks = HA_factor_host.NumNonZeros();

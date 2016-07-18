@@ -64,6 +64,7 @@ if debugDump: print "\nthisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
 
 from CheckinTest import *
 from GeneralScriptSupport import *
+from gitdist import addOptionParserChoiceOption
 
 #
 # Utility classes and functions.

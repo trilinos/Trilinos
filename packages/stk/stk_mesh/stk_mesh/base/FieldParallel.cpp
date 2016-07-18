@@ -58,7 +58,7 @@ void communicate_field_data(
 {
   if ( fields.empty() ) { return; }
 
-  const BulkData & mesh = BulkData::get(ghosts);
+  const BulkData & mesh = ghosts.mesh();
   const int parallel_size = mesh.parallel_size();
   const int parallel_rank = mesh.parallel_rank();
   const unsigned ghost_id = ghosts.ordinal();

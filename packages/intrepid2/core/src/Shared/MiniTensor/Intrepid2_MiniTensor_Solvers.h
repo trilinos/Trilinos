@@ -143,6 +143,12 @@ public:
   Index
   min_num_iter{0};
 
+  Index
+  num_iter{0};
+
+  T
+  initial_norm{1.0};
+
   T
   rel_tol{1.0e-12};
 
@@ -157,6 +163,15 @@ public:
 
   T
   growth_limit{1.0};
+
+  T
+  initial_value{0.0};
+
+  T
+  previous_value{0.0};
+
+  T
+  final_value{0.0};
 
   bool
   failed{false};
@@ -176,33 +191,17 @@ public:
   bool
   enforce_boundedness{false};
 
-  T
-  initial_value{0.0};
+  Vector<T, N>
+  initial_guess;
 
-  T
-  previous_value{0.0};
-
-  T
-  final_value{0.0};
+  Vector<T, N>
+  final_soln;
 
   Vector<T, N>
   final_gradient;
 
   Tensor<T, N>
   final_hessian;
-
-private:
-  T
-  initial_norm{1.0};
-
-  Index
-  num_iter{0};
-
-  Vector<T, N>
-  initial_guess;
-
-  Vector<T, N>
-  final_soln;
 
   char const *
   step_method_name{nullptr};
@@ -249,6 +248,9 @@ struct BacktrackingLineSearch
 
   T
   search_increment{0.1};
+
+  T
+  alpha{1.0};
 
   T
   tolerance{1.0e-6};

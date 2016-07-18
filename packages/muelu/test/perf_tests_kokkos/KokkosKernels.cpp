@@ -216,9 +216,13 @@ int main(int argc, char **argv) {
   int n    = 100000;
   int loop = 10;
 
-  for (int i = 0; i < argc; i++) {
-    if ((strcmp(argv[i], "-n") == 0)) { n    = atoi(argv[++i]); continue; }
-    if ((strcmp(argv[i], "-l") == 0)) { loop = atoi(argv[++i]); continue; }
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "-n") == 0) { n    = atoi(argv[++i]); continue; }
+    if (strcmp(argv[i], "-l") == 0) { loop = atoi(argv[++i]); continue; }
+    if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+      std::cout << "./MueLu_KokkosKernels.exe [-n <matrix_size>] [-l <number_of_loops>]" << std::endl;
+      return 0;
+    }
   }
 
   Kokkos::initialize(argc, argv);

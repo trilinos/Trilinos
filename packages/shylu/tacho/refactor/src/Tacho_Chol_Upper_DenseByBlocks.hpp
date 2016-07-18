@@ -20,12 +20,11 @@ namespace Tacho {
     static int invoke(PolicyType &policy,
                       const MemberType &member,
                       DenseTaskViewTypeA &A) {
-      // typedef ScalarType scalar_type;
-      typedef typename DenseTaskViewTypeA::ordinal_type ordinal_type;
-      typedef typename DenseTaskViewTypeA::value_type   value_type;
-      typedef typename value_type::future_type          future_type;
-
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+#else
+      typedef typename DenseTaskViewTypeA::value_type::future_type future_type;
       TaskFactory factory;
+#endif
 
       if (member.team_rank() == 0) {
         DenseTaskViewTypeA ATL, ATR,      A00, A01, A02,
@@ -45,8 +44,13 @@ namespace Tacho {
 
           // A11 = chol(A11)
           {
-            value_type &aa = A11.Value(0, 0);
+            auto &aa = A11.Value(0, 0);
 
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+            Chol<Uplo::Upper,
+              CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Chol)>
+              ::invoke(policy, member, aa);
+#else
             // construct a task
             future_type f = factory.create<future_type>
               (policy,
@@ -60,43 +64,53 @@ namespace Tacho {
 
             // spawn a task
             factory.spawn(policy, f);
+#endif
           }
 
           // A12 = inv(triu(A11)') * A12
           {
-            value_type &aa = A11.Value(0, 0);
+            auto &aa = A11.Value(0, 0);
+            
+            const auto ncols = A12.NumCols();
+            for (auto j=0;j<ncols;++j) {
+              auto &bb = A12.Value(0, j);
 
-            const ordinal_type ncols = A12.NumCols();
-            for (ordinal_type j=0;j<ncols;++j) {
-              value_type &bb = A12.Value(0, j);
-
-            future_type f = factory.create<future_type>
-              (policy,
-               Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-               CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
-               ::createTaskFunctor(policy, Diag::NonUnit, 1.0, aa, bb), 2);
-
-            // trsm dependence
-            factory.depend(policy, f, aa.Future());
-            factory.depend(policy, f, bb.Future());
-
-            // place task signature on b
-            bb.setFuture(f);
-
-            // spawn a task
-            factory.spawn(policy, f);
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+              Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
+                ::invoke(policy, member, Diag::NonUnit, 1.0, aa, bb);
+#else
+              future_type f = factory.create<future_type>
+                (policy,
+                 Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                 CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
+                 ::createTaskFunctor(policy, Diag::NonUnit, 1.0, aa, bb), 2);
+              
+              // trsm dependence
+              factory.depend(policy, f, aa.Future());
+              factory.depend(policy, f, bb.Future());
+              
+              // place task signature on b
+              bb.setFuture(f);
+              
+              // spawn a task
+              factory.spawn(policy, f);
+#endif
             }
           }
 
           // A22 = A22 - A12' * A12
           {
-            const ordinal_type ncols = A22.NumCols();
-
-            for (ordinal_type j=0;j<ncols;++j) {
+            const auto ncols = A22.NumCols();
+            for (auto j=0;j<ncols;++j) {
               {
-                value_type &aa = A12.Value(0, j);
-                value_type &cc = A22.Value(j, j);
-
+                auto &aa = A12.Value(0, j);
+                auto &cc = A22.Value(j, j);
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+                Herk<Uplo::Upper,Trans::ConjTranspose,
+                  CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Herk)>
+                  ::invoke(policy, member, -1.0, aa, 1.0, cc);
+#else
                 future_type f = factory.create<future_type>
                   (policy,
                    Herk<Uplo::Upper,Trans::ConjTranspose,
@@ -112,12 +126,18 @@ namespace Tacho {
 
                 // spawn a task
                 factory.spawn(policy, f);
+#endif
               }
-              for (ordinal_type i=0;i<j;++i) {
-                value_type &aa = A12.Value(0, i);
-                value_type &bb = A12.Value(0, j);
-                value_type &cc = A22.Value(i, j);
+              for (auto i=0;i<j;++i) {
+                auto &aa = A12.Value(0, i);
+                auto &bb = A12.Value(0, j);
+                auto &cc = A22.Value(i, j);
 
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+                Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                  CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Gemm)>
+                  ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
+#else
                 future_type f = factory.create<future_type>
                   (policy,
                    Gemm<Trans::ConjTranspose,Trans::NoTranspose,
@@ -134,6 +154,7 @@ namespace Tacho {
 
                 // spawn a task
                 factory.spawn(policy, f);
+#endif
               }
             }
           }

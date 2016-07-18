@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutable)
 
 TRIBITS_ADD_EXECUTABLE(
   example_01
@@ -22,6 +21,7 @@ if( ${lower_build_type} STREQUAL "release" )
     example_01
     ARGS PrintItAll
     NUM_MPI_PROCS 1
+    CATEGORIES CONTINUOUS
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
   )

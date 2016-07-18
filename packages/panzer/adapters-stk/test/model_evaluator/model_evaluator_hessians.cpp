@@ -53,6 +53,8 @@ using Teuchos::rcp;
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_LinearOpTester.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 
 #include "Phalanx_KokkosUtilities.hpp"
 
@@ -82,6 +84,7 @@ using Teuchos::rcp;
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -148,6 +151,132 @@ namespace panzer {
     AssemblyPieces ap;
     buildAssemblyPieces(distr_param_on,ap);
 
+    int rIndex = -1;
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
+    bool build_transient_support = true;
+    RCP<PME> me 
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
+
+    const double DENSITY_VALUE = 3.7;
+    const double TEMPERATURE_VALUE = 2.0;
+    const double PERTURB_VALUE = 0.1;
+
+    // add in a flexible response
+    {
+      Teuchos::RCP<panzer::FunctionalResponse_Builder<int,int> > builder
+        = Teuchos::rcp(new panzer::FunctionalResponse_Builder<int,int>);
+ 
+      builder->comm = MPI_COMM_WORLD; // good enough
+      builder->cubatureDegree = 1;
+      builder->requiresCellIntegral = true;
+      builder->quadPointField = "";
+
+      std::vector<panzer::WorksetDescriptor> blocks;
+      blocks.push_back(panzer::blockDescriptor("eblock-0_0"));
+      blocks.push_back(panzer::blockDescriptor("eblock-1_0"));
+      rIndex = me->addFlexibleResponse("INTEGRAND",blocks,builder); // integrate the density
+    }
+
+    // add distributed parameter
+    {
+      RCP<ThyraObjFactory<double> > th_param_lof = rcp_dynamic_cast<ThyraObjFactory<double> >(ap.param_lof);
+
+      RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
+      Thyra::assign(param_density.ptr(),DENSITY_VALUE);
+      me->addDistributedParameter("DENSITY_P",th_param_lof->getThyraDomainSpace(),
+                                  ap.param_ged,param_density,ap.param_dofManager);
+    }
+
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,
+                   *ap.bc_factory,
+                   ap.cm_factory,
+                   ap.cm_factory,
+                   ap.closure_models,
+                   ap.user_data,false,"");
+
+    // test value
+    {
+      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex)); 
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+
+      OutArgs out_args = me->createOutArgs();
+      out_args.set_g(0,g);
+
+      me->evalModel(in_args, out_args);
+
+      out << "RESPONSE = " << std::endl;
+      out << Teuchos::describe(*g,Teuchos::VERB_EXTREME) << std::endl;
+
+      Teuchos::ArrayRCP<const double> g_data;
+      rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(g)->getLocalData(Teuchos::ptrFromRef(g_data));
+      TEST_FLOATING_EQUALITY(g_data[0],TEMPERATURE_VALUE*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*DENSITY_VALUE,1e-12);
+        // Volume of integral is 1.0, then just compute the integrand
+    }
+
+    RCP<VectorType> D2gDx2 = Thyra::createMember(*me->get_x_space()); 
+
+    // test hessian
+    {
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      RCP<VectorType> dx = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(dx.ptr(),PERTURB_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+
+      me->evalModel_D2gDx2(rIndex,in_args,dx,D2gDx2);
+
+      out << "D2gDx2 = \n" << Teuchos::describe(*D2gDx2,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    Teuchos::ArrayRCP<const double> D2gDx2_data;
+    RCP<const SpmdVectorType> spmd_D2gDx2 = rcp_dynamic_cast<const SpmdVectorType>(D2gDx2);
+    rcp_dynamic_cast<const SpmdVectorType>(D2gDx2)->getLocalData(Teuchos::ptrFromRef(D2gDx2_data));
+    double scale = 2.0*DENSITY_VALUE*DENSITY_VALUE*DENSITY_VALUE*PERTURB_VALUE;
+    double int_phi = 1.0/192.0;
+    for(int i=0;i<D2gDx2_data.size();i++) {
+      out << D2gDx2_data[i]  << " " << D2gDx2_data[i]/(scale*int_phi) << std::endl;
+      bool a = std::fabs(D2gDx2_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
+      bool b = std::fabs(D2gDx2_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
+      bool c = std::fabs(D2gDx2_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
+      bool d = (D2gDx2_data[i]==0.0);
+
+      TEST_ASSERT(a || b || c || d);
+    }
+  }
+
+  // Testing Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2g_dp2)
+  {
+    typedef Thyra::ModelEvaluatorBase MEB;
+    typedef panzer::Traits::RealType RealType;
+    typedef Thyra::VectorBase<RealType> VectorType;
+    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::LinearOpBase<RealType> OperatorType;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+
+    bool distr_param_on = true;
+    AssemblyPieces ap;
+    buildAssemblyPieces(distr_param_on,ap);
+
     int pIndex = -1;
     int rIndex = -1;
 
@@ -183,7 +312,7 @@ namespace panzer {
 
       RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
       Thyra::assign(param_density.ptr(),DENSITY_VALUE);
-      pIndex = me->addDistributedParameter("DENSITY",th_param_lof->getThyraDomainSpace(),
+      pIndex = me->addDistributedParameter("DENSITY_P",th_param_lof->getThyraDomainSpace(),
                                            ap.param_ged,param_density,ap.param_dofManager);
     }
 
@@ -215,11 +344,138 @@ namespace panzer {
 
       Teuchos::ArrayRCP<const double> g_data;
       rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(g)->getLocalData(Teuchos::ptrFromRef(g_data));
-      TEST_FLOATING_EQUALITY(g_data[0],TEMPERATURE_VALUE*TEMPERATURE_VALUE*DENSITY_VALUE,1e-12);
+      TEST_FLOATING_EQUALITY(g_data[0],TEMPERATURE_VALUE*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*DENSITY_VALUE,1e-12);
         // Volume of integral is 1.0, then just compute the integrand
     }
 
-    RCP<VectorType> D2gDx2 = Thyra::createMember(*me->get_x_space()); 
+    RCP<VectorType> D2gDp2 = Thyra::createMember(*me->get_p_space(pIndex)); 
+
+    // test hessian
+    {
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      RCP<VectorType> dp = Thyra::createMember(*me->get_p_space(pIndex));
+      Thyra::assign(dp.ptr(),PERTURB_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+
+      me->evalModel_D2gDp2(rIndex,pIndex,in_args,dp,D2gDp2);
+
+      out << "D2gDp2 = \n" << Teuchos::describe(*D2gDp2,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    Teuchos::ArrayRCP<const double> D2gDp2_data;
+    RCP<const SpmdVectorType> spmd_D2gDp2 = rcp_dynamic_cast<const SpmdVectorType>(D2gDp2);
+    rcp_dynamic_cast<const SpmdVectorType>(D2gDp2)->getLocalData(Teuchos::ptrFromRef(D2gDp2_data));
+    double scale = 6.0*TEMPERATURE_VALUE*TEMPERATURE_VALUE*DENSITY_VALUE*PERTURB_VALUE;
+    double int_phi = 1.0/192.0;
+    for(int i=0;i<D2gDp2_data.size();i++) {
+      out << D2gDp2_data[i]  << " " << D2gDp2_data[i]/(scale*int_phi) << std::endl;
+      bool a = std::fabs(D2gDp2_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
+      bool b = std::fabs(D2gDp2_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
+      bool c = std::fabs(D2gDp2_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
+      bool d = (D2gDp2_data[i]==0.0);
+
+      TEST_ASSERT(a || b || c || d);
+    }
+  }
+
+  // Testing Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2g_dpdx)
+  {
+    typedef Thyra::ModelEvaluatorBase MEB;
+    typedef panzer::Traits::RealType RealType;
+    typedef Thyra::VectorBase<RealType> VectorType;
+    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::LinearOpBase<RealType> OperatorType;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+
+    bool distr_param_on = true;
+    AssemblyPieces ap;
+    buildAssemblyPieces(distr_param_on,ap);
+
+    int pIndex = -1;
+    int rIndex = -1;
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
+    bool build_transient_support = true;
+    RCP<PME> me 
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
+
+    const double DENSITY_VALUE = 3.7;
+    const double TEMPERATURE_VALUE = 2.0;
+    const double PERTURB_VALUE = 0.1;
+
+    // add in a flexible response
+    {
+      Teuchos::RCP<panzer::FunctionalResponse_Builder<int,int> > builder
+        = Teuchos::rcp(new panzer::FunctionalResponse_Builder<int,int>);
+ 
+      builder->comm = MPI_COMM_WORLD; // good enough
+      builder->cubatureDegree = 1;
+      builder->requiresCellIntegral = true;
+      builder->quadPointField = "";
+
+      std::vector<panzer::WorksetDescriptor> blocks;
+      blocks.push_back(panzer::blockDescriptor("eblock-0_0"));
+      blocks.push_back(panzer::blockDescriptor("eblock-1_0"));
+      rIndex = me->addFlexibleResponse("INTEGRAND",blocks,builder); // integrate the density
+    }
+
+    // add distributed parameter
+    {
+      RCP<ThyraObjFactory<double> > th_param_lof = rcp_dynamic_cast<ThyraObjFactory<double> >(ap.param_lof);
+
+      RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
+      Thyra::assign(param_density.ptr(),DENSITY_VALUE);
+      pIndex = me->addDistributedParameter("DENSITY_P",th_param_lof->getThyraDomainSpace(),
+                                           ap.param_ged,param_density,ap.param_dofManager);
+    }
+
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,
+                   *ap.bc_factory,
+                   ap.cm_factory,
+                   ap.cm_factory,
+                   ap.closure_models,
+                   ap.user_data,false,"");
+
+    // test value
+    {
+      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex)); 
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+
+      OutArgs out_args = me->createOutArgs();
+      out_args.set_g(0,g);
+
+      me->evalModel(in_args, out_args);
+
+      out << "RESPONSE = " << std::endl;
+      out << Teuchos::describe(*g,Teuchos::VERB_EXTREME) << std::endl;
+
+      Teuchos::ArrayRCP<const double> g_data;
+      rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(g)->getLocalData(Teuchos::ptrFromRef(g_data));
+      TEST_FLOATING_EQUALITY(g_data[0],TEMPERATURE_VALUE*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*DENSITY_VALUE,1e-12);
+        // Volume of integral is 1.0, then just compute the integrand
+    }
+
+    RCP<VectorType> D2gDpDx = Thyra::createMember(*me->get_p_space(pIndex)); 
 
     // test hessian
     {
@@ -233,24 +489,358 @@ namespace panzer {
       InArgs  in_args = me->createInArgs();
       in_args.set_x(x);
 
-      me->evalModel_D2gDx2(rIndex,in_args,dx,D2gDx2);
+      me->evalModel_D2gDpDx(rIndex,pIndex,in_args,dx,D2gDpDx);
 
-      out << Teuchos::describe(*D2gDx2,Teuchos::VERB_EXTREME) << std::endl;
+      out << "D2gDpDx = \n" << Teuchos::describe(*D2gDpDx,Teuchos::VERB_EXTREME) << std::endl;
     }
 
-    Teuchos::ArrayRCP<const double> D2gDx2_data;
-    RCP<const SpmdVectorType> spmd_D2gDx2 = rcp_dynamic_cast<const SpmdVectorType>(D2gDx2);
-    rcp_dynamic_cast<const SpmdVectorType>(D2gDx2)->getLocalData(Teuchos::ptrFromRef(D2gDx2_data));
-    double scale = 2.0*DENSITY_VALUE*PERTURB_VALUE;
+    Teuchos::ArrayRCP<const double> D2gDpDx_data;
+    RCP<const SpmdVectorType> spmd_D2gDpDx = rcp_dynamic_cast<const SpmdVectorType>(D2gDpDx);
+    rcp_dynamic_cast<const SpmdVectorType>(D2gDpDx)->getLocalData(Teuchos::ptrFromRef(D2gDpDx_data));
+    double scale = 6.0*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*PERTURB_VALUE;
     double int_phi = 1.0/192.0;
-    for(int i=0;i<D2gDx2_data.size();i++) {
-      out << D2gDx2_data[i]  << " " << int_phi << std::endl;
-      bool a = std::fabs(D2gDx2_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
-      bool b = std::fabs(D2gDx2_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
-      bool c = std::fabs(D2gDx2_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
+    for(int i=0;i<D2gDpDx_data.size();i++) {
+      out << D2gDpDx_data[i]  << " " << D2gDpDx_data[i]/(scale*int_phi) << std::endl;
+      bool a = std::fabs(D2gDpDx_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
+      bool b = std::fabs(D2gDpDx_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
+      bool c = std::fabs(D2gDpDx_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
+      bool d = (D2gDpDx_data[i]==0.0);
 
-      TEST_ASSERT(a || b || c);
+      TEST_ASSERT(a || b || c || d);
     }
+  }
+
+  // Testing Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2g_dxdp)
+  {
+    typedef Thyra::ModelEvaluatorBase MEB;
+    typedef panzer::Traits::RealType RealType;
+    typedef Thyra::VectorBase<RealType> VectorType;
+    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::LinearOpBase<RealType> OperatorType;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+
+    bool distr_param_on = true;
+    AssemblyPieces ap;
+    buildAssemblyPieces(distr_param_on,ap);
+
+    int pIndex = -1;
+    int rIndex = -1;
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
+    bool build_transient_support = true;
+    RCP<PME> me 
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
+
+    const double DENSITY_VALUE = 3.7;
+    const double TEMPERATURE_VALUE = 2.0;
+    const double PERTURB_VALUE = 0.1;
+
+    // add in a flexible response
+    {
+      Teuchos::RCP<panzer::FunctionalResponse_Builder<int,int> > builder
+        = Teuchos::rcp(new panzer::FunctionalResponse_Builder<int,int>);
+ 
+      builder->comm = MPI_COMM_WORLD; // good enough
+      builder->cubatureDegree = 1;
+      builder->requiresCellIntegral = true;
+      builder->quadPointField = "";
+
+      std::vector<panzer::WorksetDescriptor> blocks;
+      blocks.push_back(panzer::blockDescriptor("eblock-0_0"));
+      blocks.push_back(panzer::blockDescriptor("eblock-1_0"));
+      rIndex = me->addFlexibleResponse("INTEGRAND",blocks,builder); // integrate the density
+    }
+
+    // add distributed parameter
+    {
+      RCP<ThyraObjFactory<double> > th_param_lof = rcp_dynamic_cast<ThyraObjFactory<double> >(ap.param_lof);
+
+      RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
+      Thyra::assign(param_density.ptr(),DENSITY_VALUE);
+      pIndex = me->addDistributedParameter("DENSITY_P",th_param_lof->getThyraDomainSpace(),
+                                           ap.param_ged,param_density,ap.param_dofManager);
+    }
+
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,
+                   *ap.bc_factory,
+                   ap.cm_factory,
+                   ap.cm_factory,
+                   ap.closure_models,
+                   ap.user_data,false,"");
+
+    // test value
+    {
+      RCP<VectorType> g = Thyra::createMember(*me->get_g_space(rIndex)); 
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+
+      OutArgs out_args = me->createOutArgs();
+      out_args.set_g(0,g);
+
+      me->evalModel(in_args, out_args);
+
+      out << "RESPONSE = " << std::endl;
+      out << Teuchos::describe(*g,Teuchos::VERB_EXTREME) << std::endl;
+
+      Teuchos::ArrayRCP<const double> g_data;
+      rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(g)->getLocalData(Teuchos::ptrFromRef(g_data));
+      TEST_FLOATING_EQUALITY(g_data[0],TEMPERATURE_VALUE*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*DENSITY_VALUE,1e-12);
+        // Volume of integral is 1.0, then just compute the integrand
+    }
+
+    RCP<VectorType> D2gDxDp = Thyra::createMember(*me->get_x_space()); 
+
+    // test hessian
+    {
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      RCP<VectorType> dp = Thyra::createMember(*me->get_p_space(pIndex));
+      Thyra::assign(dp.ptr(),PERTURB_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+
+      me->evalModel_D2gDxDp(rIndex,pIndex,in_args,dp,D2gDxDp);
+
+      out << "D2gDxDp = \n" << Teuchos::describe(*D2gDxDp,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    Teuchos::ArrayRCP<const double> D2gDxDp_data;
+    RCP<const SpmdVectorType> spmd_D2gDxDp = rcp_dynamic_cast<const SpmdVectorType>(D2gDxDp);
+    rcp_dynamic_cast<const SpmdVectorType>(D2gDxDp)->getLocalData(Teuchos::ptrFromRef(D2gDxDp_data));
+    double scale = 6.0*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*PERTURB_VALUE;
+    double int_phi = 1.0/192.0;
+    for(int i=0;i<D2gDxDp_data.size();i++) {
+      out << D2gDxDp_data[i]  << " " << D2gDxDp_data[i]/(scale*int_phi) << std::endl;
+      bool a = std::fabs(D2gDxDp_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
+      bool b = std::fabs(D2gDxDp_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
+      bool c = std::fabs(D2gDxDp_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
+      bool d = (D2gDxDp_data[i]==0.0);
+
+      TEST_ASSERT(a || b || c || d);
+    }
+  }
+
+  // Testing Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2f_dx2)
+  {
+    typedef panzer::Traits::RealType RealType;
+    typedef Thyra::VectorBase<RealType> VectorType;
+    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::LinearOpBase<RealType> OperatorType;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+
+    bool distr_param_on = true;
+    AssemblyPieces ap;
+    buildAssemblyPieces(distr_param_on,ap);
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
+    bool build_transient_support = true;
+    RCP<PME> me 
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
+
+    const double DENSITY_VALUE = 3.7;
+    const double TEMPERATURE_VALUE = 2.0;
+    const double PERTURB_VALUE = 0.1;
+
+    // add distributed parameter
+    {
+      RCP<ThyraObjFactory<double> > th_param_lof = rcp_dynamic_cast<ThyraObjFactory<double> >(ap.param_lof);
+
+      RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
+      Thyra::assign(param_density.ptr(),DENSITY_VALUE);
+      me->addDistributedParameter("DENSITY_P",th_param_lof->getThyraDomainSpace(),
+                                  ap.param_ged,param_density,ap.param_dofManager);
+    }
+
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,
+                   *ap.bc_factory,
+                   ap.cm_factory,
+                   ap.cm_factory,
+                   ap.closure_models,
+                   ap.user_data,false,"");
+
+    panzer::printMeshTopology(out,*ap.dofManager);
+    
+
+    RCP<OperatorType> D2fDx2 = me->create_W_op();
+
+    // test hessian
+    {
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      RCP<VectorType> dx = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(dx.ptr(),PERTURB_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+      in_args.set_alpha(1.0/0.1);
+      in_args.set_beta(1.0);
+
+      me->evalModel_D2fDx2(in_args,dx,D2fDx2);
+
+      out << "D2fDx2 = \n" << Teuchos::describe(*D2fDx2,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    RCP<OperatorType> W = me->create_W_op();
+    {
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      InArgs in_args = me->createInArgs();
+      in_args.set_x(x);
+      in_args.set_alpha(1.0);
+      in_args.set_beta(0.0);
+
+      OutArgs out_args = me->createOutArgs();
+      out_args.set_W_op(W);
+
+      me->evalModel(in_args,out_args);
+
+      out << "W = \n" << Teuchos::describe(*W,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    Thyra::LinearOpTester<double> tester;
+    tester.show_all_tests(true);
+    tester.set_all_error_tol(1e-15);
+    tester.num_random_vectors(20);
+
+    double scaling_of_mass_matrix = -2.0*PERTURB_VALUE*DENSITY_VALUE*DENSITY_VALUE;
+
+    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    const bool op_cmp = tester.compare( *Thyra::scaleAndAdjoint(scaling_of_mass_matrix,Thyra::NOTRANS,W.getConst()), *D2fDx2, Teuchos::ptrFromRef(fout));
+    TEST_ASSERT(op_cmp);
+  }
+
+  // Testing Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2f_dxdp)
+  {
+    typedef panzer::Traits::RealType RealType;
+    typedef Thyra::VectorBase<RealType> VectorType;
+    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::LinearOpBase<RealType> OperatorType;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+
+    bool distr_param_on = true;
+    AssemblyPieces ap;
+    buildAssemblyPieces(distr_param_on,ap);
+
+    int pIndex = -1;
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
+    bool build_transient_support = true;
+    RCP<PME> me 
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
+
+    const double DENSITY_VALUE = 3.7;
+    const double TEMPERATURE_VALUE = 2.0;
+    const double PERTURB_VALUE = 0.1;
+
+    // add distributed parameter
+    {
+      RCP<ThyraObjFactory<double> > th_param_lof = rcp_dynamic_cast<ThyraObjFactory<double> >(ap.param_lof);
+
+      RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
+      Thyra::assign(param_density.ptr(),DENSITY_VALUE);
+      pIndex = me->addDistributedParameter("DENSITY_P",th_param_lof->getThyraDomainSpace(),
+                                           ap.param_ged,param_density,ap.param_dofManager);
+    }
+
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,
+                   *ap.bc_factory,
+                   ap.cm_factory,
+                   ap.cm_factory,
+                   ap.closure_models,
+                   ap.user_data,false,"");
+
+    panzer::printMeshTopology(out,*ap.dofManager);
+    
+
+    RCP<OperatorType> D2fDxDp = me->create_W_op();
+
+    // test hessian
+    {
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      RCP<VectorType> dx = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(dx.ptr(),PERTURB_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+      in_args.set_alpha(1.0/0.1);
+      in_args.set_beta(1.0);
+
+      me->evalModel_D2fDxDp(pIndex,in_args,dx,D2fDxDp);
+
+      out << "D2fDxDp = \n" << Teuchos::describe(*D2fDxDp,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    RCP<OperatorType> W = me->create_W_op();
+    {
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      InArgs in_args = me->createInArgs();
+      in_args.set_x(x);
+      in_args.set_alpha(1.0);
+      in_args.set_beta(0.0);
+
+      OutArgs out_args = me->createOutArgs();
+      out_args.set_W_op(W);
+
+      me->evalModel(in_args,out_args);
+
+      out << "W = \n" << Teuchos::describe(*W,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    Thyra::LinearOpTester<double> tester;
+    tester.show_all_tests(true);
+    tester.set_all_error_tol(1e-15);
+    tester.num_random_vectors(20);
+
+    double scaling_of_mass_matrix = -2.0*TEMPERATURE_VALUE*2.0*DENSITY_VALUE*PERTURB_VALUE;
+
+    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    const bool op_cmp = tester.compare( *Thyra::scaleAndAdjoint(scaling_of_mass_matrix,Thyra::NOTRANS,W.getConst()), *D2fDxDp, Teuchos::ptrFromRef(fout));
+    TEST_ASSERT(op_cmp);
   }
 
   bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
@@ -282,6 +872,214 @@ namespace panzer {
     Teuchos::RCP<const Teuchos::Comm<Teuchos::Ordinal> > comm = Teuchos::DefaultComm<Teuchos::Ordinal>::getComm();
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, is_equal ? 0 : 1, Teuchos::outArg(globalSuccess) );
     return (globalSuccess==0);
+  }
+
+  // Testing Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2f_dpdx)
+  {
+    typedef panzer::Traits::RealType RealType;
+    typedef Thyra::VectorBase<RealType> VectorType;
+    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::LinearOpBase<RealType> OperatorType;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+
+    bool distr_param_on = true;
+    AssemblyPieces ap;
+    buildAssemblyPieces(distr_param_on,ap);
+
+    int pIndex = -1;
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
+    bool build_transient_support = true;
+    RCP<PME> me 
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
+
+    const double DENSITY_VALUE = 3.7;
+    const double TEMPERATURE_VALUE = 2.0;
+    const double PERTURB_VALUE = 0.1;
+
+    // add distributed parameter
+    {
+      RCP<ThyraObjFactory<double> > th_param_lof = rcp_dynamic_cast<ThyraObjFactory<double> >(ap.param_lof);
+
+      RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
+      Thyra::assign(param_density.ptr(),DENSITY_VALUE);
+      pIndex = me->addDistributedParameter("DENSITY_P",th_param_lof->getThyraDomainSpace(),
+                                           ap.param_ged,param_density,ap.param_dofManager);
+    }
+
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,
+                   *ap.bc_factory,
+                   ap.cm_factory,
+                   ap.cm_factory,
+                   ap.closure_models,
+                   ap.user_data,false,"");
+
+    panzer::printMeshTopology(out,*ap.dofManager);
+    
+
+    RCP<OperatorType> D2fDpDx = me->create_DfDp_op(pIndex);
+
+    // test hessian
+    {
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      RCP<VectorType> dx = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(dx.ptr(),PERTURB_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+      in_args.set_alpha(1.0/0.1);
+      in_args.set_beta(1.0);
+
+      me->evalModel_D2fDpDx(pIndex,in_args,dx,D2fDpDx);
+
+      out << "D2fDpDx = \n" << Teuchos::describe(*D2fDpDx,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    RCP<OperatorType> W = me->create_DfDp_op(pIndex);
+    {
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      InArgs in_args = me->createInArgs();
+      in_args.set_x(x);
+      in_args.set_alpha(1.0);
+      in_args.set_beta(0.0);
+
+      OutArgs out_args = me->createOutArgs();
+      out_args.set_DfDp(pIndex,W);
+
+      me->evalModel(in_args,out_args);
+
+      out << "W = \n" << Teuchos::describe(*W,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    Thyra::LinearOpTester<double> tester;
+    tester.show_all_tests(true);
+    tester.set_all_error_tol(1e-15);
+    tester.num_random_vectors(20);
+
+    double scaling_of_dfdp = 2.0*PERTURB_VALUE/TEMPERATURE_VALUE;
+
+    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    const bool op_cmp = tester.compare( *Thyra::scaleAndAdjoint(scaling_of_dfdp,Thyra::NOTRANS,W.getConst()), *D2fDpDx, Teuchos::ptrFromRef(fout));
+    TEST_ASSERT(op_cmp);
+  }
+
+  // Testing Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2f_dp2)
+  {
+    typedef panzer::Traits::RealType RealType;
+    typedef Thyra::VectorBase<RealType> VectorType;
+    typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::LinearOpBase<RealType> OperatorType;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+
+    bool distr_param_on = true;
+    AssemblyPieces ap;
+    buildAssemblyPieces(distr_param_on,ap);
+
+    int pIndex = -1;
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
+    bool build_transient_support = true;
+    RCP<PME> me 
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
+
+    const double DENSITY_VALUE = 3.7;
+    const double TEMPERATURE_VALUE = 2.0;
+    const double PERTURB_VALUE = 0.1;
+
+    // add distributed parameter
+    {
+      RCP<ThyraObjFactory<double> > th_param_lof = rcp_dynamic_cast<ThyraObjFactory<double> >(ap.param_lof);
+
+      RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
+      Thyra::assign(param_density.ptr(),DENSITY_VALUE);
+      pIndex = me->addDistributedParameter("DENSITY_P",th_param_lof->getThyraDomainSpace(),
+                                           ap.param_ged,param_density,ap.param_dofManager);
+    }
+
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,
+                   *ap.bc_factory,
+                   ap.cm_factory,
+                   ap.cm_factory,
+                   ap.closure_models,
+                   ap.user_data,false,"");
+
+    panzer::printMeshTopology(out,*ap.dofManager);
+    
+
+    RCP<OperatorType> D2fDp2 = me->create_DfDp_op(pIndex);
+
+    // test hessian
+    {
+
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      RCP<VectorType> dx = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(dx.ptr(),PERTURB_VALUE);
+
+      InArgs  in_args = me->createInArgs();
+      in_args.set_x(x);
+      in_args.set_alpha(1.0/0.1);
+      in_args.set_beta(1.0);
+
+      me->evalModel_D2fDp2(pIndex,in_args,dx,D2fDp2);
+
+      out << "D2fDp2 = \n" << Teuchos::describe(*D2fDp2,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    RCP<OperatorType> W = me->create_DfDp_op(pIndex);
+    {
+      RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
+      Thyra::assign(x.ptr(),TEMPERATURE_VALUE);
+
+      InArgs in_args = me->createInArgs();
+      in_args.set_x(x);
+      in_args.set_alpha(1.0);
+      in_args.set_beta(0.0);
+
+      OutArgs out_args = me->createOutArgs();
+      out_args.set_DfDp(pIndex,W);
+
+      me->evalModel(in_args,out_args);
+
+      out << "W = \n" << Teuchos::describe(*W,Teuchos::VERB_EXTREME) << std::endl;
+    }
+
+    Thyra::LinearOpTester<double> tester;
+    tester.show_all_tests(true);
+    tester.set_all_error_tol(1e-15);
+    tester.num_random_vectors(20);
+
+    double scaling_of_dfdp = PERTURB_VALUE/DENSITY_VALUE;
+
+    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    const bool op_cmp = tester.compare( *Thyra::scaleAndAdjoint(scaling_of_dfdp,Thyra::NOTRANS,W.getConst()), *D2fDp2, Teuchos::ptrFromRef(fout));
+    TEST_ASSERT(op_cmp);
   }
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
@@ -377,6 +1175,7 @@ namespace panzer {
     testInitialzation(ipb, bcs);
 
     ap.fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
+    ap.bcs = bcs;
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
@@ -443,8 +1242,8 @@ namespace panzer {
 
       Teuchos::RCP<Intrepid2FieldPattern> fp 
           = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<double,Kokkos::DynRankView<double,PHX::Device> >("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
-      dofManager->addField("eblock-0_0","DENSITY",fp);
-      dofManager->addField("eblock-1_0","DENSITY",fp);
+      dofManager->addField("eblock-0_0","DENSITY_P",fp);
+      dofManager->addField("eblock-1_0","DENSITY_P",fp);
 
       dofManager->setOrientationsRequired(false);
       dofManager->buildGlobalUnknowns();
@@ -473,19 +1272,19 @@ namespace panzer {
     ap.cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
-    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
-    if(distr_parameter_on)
-      closure_models.sublist("solid").sublist("DENSITY").set("Type","Distributed Parameter");
-    else
-      closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","Product");
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Term Names","TEMPERATURE,TEMPERATURE,DENSITY_P,DENSITY_P");
+    closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
     closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
+    closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<std::string>("Type","Product");
+    closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<std::string>("Term Names","ION_TEMPERATURE,ION_TEMPERATURE,DENSITY_P,DENSITY_P");
     closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").set<double>("Value",1.0);
 
+    closure_models.sublist("solid").sublist("DENSITY_P").set("Type","Distributed Parameter");
     closure_models.sublist("solid").sublist("INTEGRAND").set<std::string>("Type","Product");
-    closure_models.sublist("solid").sublist("INTEGRAND").set<std::string>("Term Names","TEMPERATURE,TEMPERATURE,DENSITY");
+    closure_models.sublist("solid").sublist("INTEGRAND").set<std::string>("Term Names","TEMPERATURE,TEMPERATURE,DENSITY_P,DENSITY_P,DENSITY_P");
 
     ap.closure_models = closure_models;
 

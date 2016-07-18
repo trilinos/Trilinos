@@ -55,12 +55,13 @@ namespace Tacho {
       const ordinal_type n = C.NumRows();
       const ordinal_type k = A.NumRows();
 
-      blas.HERK(Teuchos::UPPER_TRI, Teuchos::CONJ_TRANS,
-                n, k,
-                alpha,
-                A.ValuePtr(), A.BaseObject().ColStride(),
-                beta,
-                C.ValuePtr(), C.BaseObject().ColStride());
+      if (n > 0 && k > 0) 
+        blas.HERK(Teuchos::UPPER_TRI, Teuchos::CONJ_TRANS,
+                  n, k,
+                  alpha,
+                  A.ValuePtr(), A.BaseObject().ColStride(),
+                  beta,
+                  C.ValuePtr(), C.BaseObject().ColStride());
 #else
     TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("Teuchos") );
 #endif

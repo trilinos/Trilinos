@@ -58,16 +58,16 @@ public:
   using EpetraBatchManager<Real>::sumAll;
 
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    std::vector<Real> input_ptr
-      = *(Teuchos::dyn_cast<StdVector<Real> >(input).getVector());
-    std::vector<Real> output_ptr
-      = *(Teuchos::dyn_cast<StdVector<Real> >(output).getVector());
-    int dim_i = static_cast<int>(input_ptr.size());
-    int dim_o = static_cast<int>(output_ptr.size());
+    Teuchos::RCP<std::vector<Real> > input_ptr
+      = Teuchos::dyn_cast<StdVector<Real> >(input).getVector();
+    Teuchos::RCP<std::vector<Real> > output_ptr
+      = Teuchos::dyn_cast<StdVector<Real> >(output).getVector();
+    int dim_i = static_cast<int>(input_ptr->size());
+    int dim_o = static_cast<int>(output_ptr->size());
     TEUCHOS_TEST_FOR_EXCEPTION(dim_i != dim_o, std::invalid_argument,
       ">>> (ROL::StdEpetraBatchManager::SumAll): Dimension mismatch!");
-    EpetraBatchManager<Real>::sumAll(&input_ptr[0],
-                                     &output_ptr[0],
+    EpetraBatchManager<Real>::sumAll(&input_ptr->front(),
+                                     &output_ptr->front(),
                                      dim_i);
   }
 };

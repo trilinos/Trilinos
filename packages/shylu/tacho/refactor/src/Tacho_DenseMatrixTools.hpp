@@ -9,14 +9,70 @@
 
 namespace Tacho { 
 
+  namespace Impl {
+    
+    // Serial and Team interface for dealing with dense matrices
+    // - callable from device functor
+    class DenseMatrixTools {
+    public:
+
+      struct Serial {
+        /// \brief elementwise value set
+        template<typename DenseMatrixTypeA, 
+                 typename ValueType>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        set(/**/  DenseMatrixTypeA &A,
+            const ValueType val) {
+          
+          const auto iend = A.NumRows();
+          const auto jend = A.NumCols();
+          for (auto j=0;j<jend;++j)
+            for (auto i=0;i<iend;++i)
+              A.Value(i,j) = val;
+        }
+
+        /// \brief elementwise copy 
+        template<typename DenseMatrixTypeA, 
+                 typename DenseMatrixTypeB>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        copy(/**/  DenseMatrixTypeA &B,
+             const DenseMatrixTypeB &A) {
+          const auto iend = B.NumRows();
+          const auto jend = B.NumCols();
+          
+          for (auto j=0;j<jend;++j)
+            for (auto i=0;i<iend;++i)
+              B.Value(i,j) = A.Value(i,j);
+        }
+
+        /// \brief axpy
+        template<typename DenseMatrixTypeA, 
+                 typename DenseMatrixTypeB,
+                 typename ValueType>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        axpy(/**/  DenseMatrixTypeA &B,
+             const DenseMatrixTypeB &A,
+             const ValueType alpha = 1.0) {
+          const auto iend = B.NumRows();
+          const auto jend = B.NumCols();
+          
+          for (auto j=0;j<jend;++j)
+            for (auto i=0;i<iend;++i)
+              B.Value(i,j) += alpha*A.Value(i,j);
+        }
+      };
+
+    };
+  }
+
   class DenseMatrixTools {
   public:
+
     /// Elementwise copy
     /// ------------------------------------------------------------------
-    /// Properties: 
-    /// - Compile with Device (o), 
-    /// - Callable in KokkosFunctors (x), no team interface
-    /// - Blocking with fence (o)
 
     /// \brief elementwise copy 
     template<typename DenseMatrixTypeA, 

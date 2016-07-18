@@ -80,6 +80,7 @@ void get_histogram(
     out_lno_view_t histogram /*must be initialized with 0s*/){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_for( my_exec_space(0, in_elements), Histogram<in_lno_view_t, out_lno_view_t>(in_view, histogram));
+  MyExecSpace::fence();
 }
 
 template <typename idx, typename ExecutionSpace>
@@ -150,6 +151,41 @@ void get_suggested_vector_team_size(
 }
 
 
+inline int get_suggested_vector__size(
+    size_t nr, size_t nnz, ExecSpaceType exec_space){
+  int suggested_vector_size_ = 1;
+  switch (exec_space){
+  default:
+    break;
+  case Exec_SERIAL:
+  case Exec_OMP:
+  case Exec_PTHREADS:
+  case Exec_QTHREADS:
+    break;
+  case Exec_CUDA:
+
+    suggested_vector_size_ = nnz / double (nr) + 0.5;
+
+    if (suggested_vector_size_ <= 3){
+      suggested_vector_size_ = 2;
+    }
+    else if (suggested_vector_size_ <= 6){
+      suggested_vector_size_ = 4;
+    }
+    else if (suggested_vector_size_ <= 12){
+      suggested_vector_size_ = 8;
+    }
+    else if (suggested_vector_size_ <= 24){
+      suggested_vector_size_ = 16;
+    }
+    else {
+      suggested_vector_size_ = 32;
+    }
+    break;
+  }
+  return suggested_vector_size_;
+
+}
 
 template <typename idx_array_type,
           typename idx_edge_array_type,
@@ -627,6 +663,53 @@ struct PropogataMaxValstoZeros{
 
 };
 
+template <typename out_array_t, typename in_array_t, typename scalar_1, typename scalar_2>
+struct A_times_X_plus_B{
+
+  out_array_t out_view;
+  in_array_t in_view;
+  const scalar_1 a;
+  const scalar_2 b;
+  A_times_X_plus_B(
+      out_array_t out_view_,
+      in_array_t in_view_,
+      scalar_1 a_,
+      scalar_2 b_): out_view(out_view_),in_view(in_view_), a(a_), b(b_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii) const {
+    out_view(ii) = in_view(ii) * a + b;
+  }
+};
+
+template <typename out_array_t, typename in_array_t, typename scalar_1, typename scalar_2, typename MyExecSpace>
+void a_times_x_plus_b(typename in_array_t::value_type num_elements,
+                  in_array_t out_arr, in_array_t in_arr,
+                  scalar_1 a, scalar_2 b){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_for( my_exec_space(0, num_elements),
+      A_times_X_plus_B<out_array_t, in_array_t, scalar_1, scalar_2>(out_arr, in_arr, a, b));
+}
+
+template <typename out_array_type, typename in_array_type>
+struct ModularView{
+  typedef typename in_array_type::value_type vt;
+  out_array_type out_view;
+  in_array_type in_view;
+  const int modular_constant;
+  ModularView(out_array_type out_view_,in_array_type in_view_,int mod_factor_): out_view(out_view_),in_view(in_view_), modular_constant(mod_factor_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t ii) const {
+    out_view(ii) = in_view(ii) % modular_constant;
+  }
+};
+
+template <typename out_array_type, typename in_array_type, typename MyExecSpace>
+void modular_view(typename in_array_type::value_type num_elements, out_array_type out_arr, in_array_type in_arr, int mod_factor_){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_for( my_exec_space(0, num_elements), ModularView<out_array_type, in_array_type>(out_arr, in_arr, mod_factor_));
+}
 
 template <typename array_type>
 struct LinearInitialization{
@@ -1131,6 +1214,9 @@ void symmetrize_and_get_lower_diagonal_edge_list(
 }
 
 
+
+
+
 template <typename in_lno_row_view_t,
           typename in_lno_nnz_view_t,
           typename out_lno_row_view_t,
@@ -1421,6 +1507,50 @@ void view_reduce_max(size_t num_elements, view_type view_to_reduce, typename vie
 }
 
 
+template<typename view_type>
+struct ReduceMaxRowFunctor{
+
+  view_type rowmap_view;
+  typedef typename view_type::non_const_value_type value_type;
+  const value_type min_val;
+  ReduceMaxRowFunctor(
+      view_type rowmap_view_): rowmap_view(rowmap_view_),
+          min_val(KOKKOSKERNELS_MACRO_MIN (-std::numeric_limits<value_type>::max(), 0)){
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i, value_type &max_reduction) const {
+    value_type val = rowmap_view(i+1) - rowmap_view(i) ;
+    if (max_reduction < val) { max_reduction = val;}
+
+  }
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile value_type& dst,const volatile value_type& src) const {
+    if (dst < src) { dst = src;}
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void init (value_type& dst) const
+  {
+    // The identity under max is -Inf.
+    // Kokkos does not come with a portable way to access
+    // floating -point Inf and NaN. Trilinos does , however;
+    // see Kokkos :: ArithTraits in the Tpetra package.
+    dst = min_val;
+  }
+
+};
+
+//view has num_rows+1 elements.
+template <typename view_type , typename MyExecSpace>
+void view_reduce_maxsizerow(size_t num_rows, view_type rowmap_view, typename view_type::non_const_value_type &max_reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0,num_rows), ReduceMaxRowFunctor<view_type>(rowmap_view), max_reduction);
+}
+
+
+
+
 template<typename view_type1, typename view_type2>
 struct IsEqualFunctor{
   view_type1 view1;
@@ -1485,6 +1615,414 @@ struct MaxHeap{
 
 
 };
+
+
+
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename in_scalar_view_t,
+          typename out_row_view_t,
+          typename out_nnz_view_t,
+          typename out_scalar_view_t,
+          typename tempwork_row_view_t,
+          typename MyExecSpace>
+struct TransposeMatrix{
+
+  struct CountTag{};
+  struct FillTag{};
+
+  typedef struct CountTag CountTag;
+  typedef struct FillTag FillTag;
+  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
+  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
+  typedef typename team_count_policy_t::member_type team_count_member_t ;
+  typedef typename team_fill_policy_t::member_type team_fill_member_t ;
+
+  typedef typename in_nnz_view_t::non_const_value_type nnz_lno_t;
+  typedef typename in_row_view_t::non_const_value_type size_type;
+
+
+  typename in_nnz_view_t::non_const_value_type num_rows;
+  typename in_nnz_view_t::non_const_value_type num_cols;
+  in_row_view_t xadj;
+  in_nnz_view_t adj;
+  in_scalar_view_t vals;
+  out_row_view_t t_xadj; //allocated
+  out_nnz_view_t t_adj;  //allocated
+  out_nnz_view_t t_vals;  //allocated
+  tempwork_row_view_t tmp_txadj;
+  bool transpose_values;
+  nnz_lno_t team_work_size;
+
+  TransposeMatrix(
+      nnz_lno_t num_rows_,
+      nnz_lno_t num_cols_,
+      in_row_view_t xadj_,
+      in_nnz_view_t adj_,
+      in_scalar_view_t vals_,
+      out_row_view_t t_xadj_,
+      out_nnz_view_t t_adj_,
+      out_nnz_view_t t_vals_,
+      tempwork_row_view_t tmp_txadj_,
+      bool transpose_values_,
+      nnz_lno_t team_row_work_size_):
+        num_rows(num_rows_), num_cols(num_cols_),
+        xadj(xadj_), adj(adj_), vals(vals_),
+        t_xadj(t_xadj_),  t_adj(t_adj_), t_vals(t_vals_),
+        tmp_txadj(tmp_txadj_), transpose_values(transpose_values_), team_work_size(team_row_work_size_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const CountTag&, const team_count_member_t & teamMember) const {
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, num_rows);
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,team_row_begin,team_row_end), [&] (const nnz_lno_t& row_index) {
+      const size_type col_begin = xadj[row_index];
+      const size_type col_end = xadj[row_index + 1];
+      const nnz_lno_t left_work = col_end - col_begin;
+      Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(teamMember, left_work),
+          [&] (nnz_lno_t i) {
+        const size_type adjind = i + col_begin;
+        const nnz_lno_t colIndex = adj[adjind];
+        Kokkos::atomic_fetch_add(&(t_xadj(colIndex)),1);
+      });
+    });
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const FillTag&, const team_fill_member_t & teamMember) const {
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, num_rows);
+
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,team_row_begin,team_row_end), [&] (const nnz_lno_t& row_index) {
+    const nnz_lno_t teamsize = teamMember.team_size();
+    //for (nnz_lno_t row_index = team_row_begin + teamMember.team_rank(); row_index < team_row_end; row_index += teamsize){
+      const size_type col_begin = xadj[row_index];
+      const size_type col_end = xadj[row_index + 1];
+      const nnz_lno_t left_work = col_end - col_begin;
+      Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(teamMember, left_work),
+          [&] (nnz_lno_t i) {
+        const size_type adjind = i + col_begin;
+        const nnz_lno_t colIndex = adj[adjind];
+        const size_type pos = Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)),1);
+
+        t_adj(pos) = row_index;
+        if (transpose_values){
+          t_vals(pos) = vals[adjind];
+        }
+
+      });
+    //}
+    });
+  }
+};
+
+
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename in_scalar_view_t,
+          typename out_row_view_t,
+          typename out_nnz_view_t,
+          typename out_scalar_view_t,
+          typename tempwork_row_view_t,
+          typename MyExecSpace>
+struct TransposeMatrix2{
+
+  struct CountTag{};
+  struct FillTag{};
+
+  typedef struct CountTag CountTag;
+  typedef struct FillTag FillTag;
+  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
+  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
+  typedef typename team_count_policy_t::member_type team_count_member_t ;
+  typedef typename team_fill_policy_t::member_type team_fill_member_t ;
+
+  typedef typename in_nnz_view_t::non_const_value_type nnz_lno_t;
+  typedef typename in_row_view_t::non_const_value_type size_type;
+
+
+  typename in_nnz_view_t::non_const_value_type num_rows;
+  typename in_nnz_view_t::non_const_value_type num_cols;
+  in_row_view_t xadj;
+  in_nnz_view_t adj;
+  in_scalar_view_t vals;
+  out_row_view_t t_xadj; //allocated
+  out_nnz_view_t t_adj;  //allocated
+  out_nnz_view_t t_vals;  //allocated
+  tempwork_row_view_t tmp_txadj;
+  bool transpose_values;
+
+  TransposeMatrix2(
+      nnz_lno_t num_rows_,
+      nnz_lno_t num_cols_,
+      in_row_view_t xadj_,
+      in_nnz_view_t adj_,
+      in_scalar_view_t vals_,
+      out_row_view_t t_xadj_,
+      out_nnz_view_t t_adj_,
+      out_nnz_view_t t_vals_,
+      tempwork_row_view_t tmp_txadj_,
+      bool transpose_values_):
+        num_rows(num_rows_), num_cols(num_cols_),
+        xadj(xadj_), adj(adj_), vals(vals_),
+        t_xadj(t_xadj_),  t_adj(t_adj_), t_vals(t_vals_),
+        tmp_txadj(tmp_txadj_), transpose_values(transpose_values_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const CountTag&, const team_count_member_t & teamMember) const {
+
+    const nnz_lno_t row_index = teamMember.league_rank() * teamMember.team_size() + teamMember.team_rank();
+
+    if (row_index >= num_rows) return;
+
+    const size_type col_begin = xadj[row_index];
+    const size_type col_end = xadj[row_index + 1];
+    const nnz_lno_t left_work = col_end - col_begin;
+    Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(teamMember, left_work),
+          [&] (nnz_lno_t i) {
+      const size_type adjind = i + col_begin;
+      const nnz_lno_t colIndex = adj[adjind];
+      Kokkos::atomic_fetch_add(&(t_xadj(colIndex)),1);
+    });
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const FillTag&, const team_fill_member_t & teamMember) const {
+    const nnz_lno_t row_index = teamMember.league_rank() * teamMember.team_size() + teamMember.team_rank();
+
+    if (row_index >= num_rows) return;
+    const size_type col_begin = xadj[row_index];
+    const size_type col_end = xadj[row_index + 1];
+    const nnz_lno_t left_work = col_end - col_begin;
+    Kokkos::parallel_for(
+        Kokkos::ThreadVectorRange(teamMember, left_work),
+        [&] (nnz_lno_t i) {
+      const size_type adjind = i + col_begin;
+      const nnz_lno_t colIndex = adj[adjind];
+      const size_type pos = Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)),1);
+
+      t_adj(pos) = row_index;
+      if (transpose_values){
+        t_vals(pos) = vals[adjind];
+      }
+
+    });
+  }
+};
+
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename in_scalar_view_t,
+          typename out_row_view_t,
+          typename out_nnz_view_t,
+          typename out_scalar_view_t,
+          typename tempwork_row_view_t,
+          typename MyExecSpace>
+void transpose_matrix(
+    typename in_nnz_view_t::non_const_value_type num_rows,
+    typename in_nnz_view_t::non_const_value_type num_cols,
+    in_row_view_t xadj,
+    in_nnz_view_t adj,
+    in_scalar_view_t vals,
+    out_row_view_t t_xadj, //pre-allocated -- initialized with 0
+    out_nnz_view_t t_adj,  //pre-allocated -- no need for initialize
+    out_nnz_view_t t_vals,  //pre-allocated -- no need for initialize
+    typename in_nnz_view_t::non_const_value_type team_row_work_size = 256
+    ){
+  //first count the number of entries in each column
+
+  tempwork_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_cols + 1);
+  typedef TransposeMatrix <in_row_view_t, in_nnz_view_t, in_scalar_view_t,
+      out_row_view_t, out_nnz_view_t, out_scalar_view_t,
+      tempwork_row_view_t, MyExecSpace>  TransposeFunctor_t;
+  TransposeFunctor_t tm (num_rows, num_cols, xadj, adj, vals, t_xadj, t_adj,t_vals, tmp_row_view, true, team_row_work_size);
+
+  typedef typename TransposeFunctor_t::team_count_policy_t tcp_t;
+  typedef typename TransposeFunctor_t::team_fill_policy_t tfp_t;
+
+  typename in_row_view_t::non_const_value_type nnz = adj.dimension_0();
+  int vector_size = get_suggested_vector__size(num_rows, nnz, get_exec_space_type<MyExecSpace>());
+
+  Kokkos::Impl::Timer timer1;
+  Kokkos::parallel_for(  tcp_t(num_rows / team_row_work_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  MyExecSpace::fence();
+
+  exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
+  MyExecSpace::fence();
+  Kokkos::deep_copy(tmp_row_view, t_xadj);
+  MyExecSpace::fence();
+
+  timer1.reset();
+  Kokkos::parallel_for(  tfp_t(num_rows / team_row_work_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  MyExecSpace::fence();
+}
+
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename out_row_view_t,
+          typename out_nnz_view_t,
+          typename tempwork_row_view_t,
+          typename MyExecSpace>
+void transpose_graph(
+    typename in_nnz_view_t::non_const_value_type num_rows,
+    typename in_nnz_view_t::non_const_value_type num_cols,
+    in_row_view_t xadj,
+    in_nnz_view_t adj,
+    out_row_view_t t_xadj, //pre-allocated -- initialized with 0
+    out_nnz_view_t t_adj,  //pre-allocated -- no need for initialize
+    int vector_size = -1,
+    int suggested_team_size = -1,
+    typename in_nnz_view_t::non_const_value_type team_row_chunk_size = 256
+    ){
+  //first count the number of entries in each column
+
+  tempwork_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_cols + 1);
+  in_nnz_view_t tmp1;
+  out_nnz_view_t tmp2;
+  typedef TransposeMatrix <in_row_view_t, in_nnz_view_t, in_nnz_view_t,
+      out_row_view_t, out_nnz_view_t, out_nnz_view_t,
+      tempwork_row_view_t, MyExecSpace>  TransposeFunctor_t;
+  TransposeFunctor_t tm (num_rows, num_cols, xadj, adj, tmp1, t_xadj, t_adj, tmp2, tmp_row_view, false, team_row_chunk_size);
+
+  typedef typename TransposeFunctor_t::team_count_policy_t tcp_t;
+  typedef typename TransposeFunctor_t::team_fill_policy_t tfp_t;
+
+  typename in_row_view_t::non_const_value_type nnz = adj.dimension_0();
+  if (vector_size == -1)
+    vector_size = get_suggested_vector__size(num_rows, nnz, get_exec_space_type<MyExecSpace>());
+
+  Kokkos::Impl::Timer timer1;
+  if (suggested_team_size == -1)
+    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  else
+    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
+
+  MyExecSpace::fence();
+
+
+  exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
+  MyExecSpace::fence();
+  Kokkos::deep_copy(tmp_row_view, t_xadj);
+  MyExecSpace::fence();
+
+  timer1.reset();
+  if (suggested_team_size == -1)
+    Kokkos::parallel_for(  tfp_t(num_rows / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  else
+    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
+
+  MyExecSpace::fence();
+
+
+
+
+}
+
+//TODO: DELETE this one, old version.
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename out_row_view_t,
+          typename out_nnz_view_t,
+          typename tempwork_row_view_t,
+          typename MyExecSpace>
+void transpose_graph2(
+    typename in_nnz_view_t::non_const_value_type num_rows,
+    typename in_nnz_view_t::non_const_value_type num_cols,
+    in_row_view_t xadj,
+    in_nnz_view_t adj,
+    out_row_view_t t_xadj, //pre-allocated -- initialized with 0
+    out_nnz_view_t t_adj  //pre-allocated -- no need for initialize
+
+    ){
+  //first count the number of entries in each column
+
+  tempwork_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_cols + 1);
+  in_nnz_view_t tmp1;
+  out_nnz_view_t tmp2;
+  typedef TransposeMatrix2 <in_row_view_t, in_nnz_view_t, in_nnz_view_t,
+      out_row_view_t, out_nnz_view_t, out_nnz_view_t,
+      tempwork_row_view_t, MyExecSpace>  TransposeFunctor_t;
+  TransposeFunctor_t tm (num_rows, num_cols, xadj, adj, tmp1, t_xadj, t_adj, tmp2, tmp_row_view, false);
+
+  typedef typename TransposeFunctor_t::team_count_policy_t tcp_t;
+  typedef typename TransposeFunctor_t::team_fill_policy_t tfp_t;
+
+  typename in_row_view_t::non_const_value_type nnz = adj.dimension_0();
+  int vector_size = get_suggested_vector__size(num_rows, nnz, get_exec_space_type<MyExecSpace>());
+
+  Kokkos::Impl::Timer timer1;
+  Kokkos::parallel_for(  tcp_t(num_rows  , Kokkos::AUTO_t(), vector_size), tm);
+  MyExecSpace::fence();
+
+  exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
+  MyExecSpace::fence();
+  Kokkos::deep_copy(tmp_row_view, t_xadj);
+  MyExecSpace::fence();
+
+  timer1.reset();
+  Kokkos::parallel_for(  tfp_t(num_rows , Kokkos::AUTO_t(), vector_size), tm);
+  MyExecSpace::fence();
+
+
+}
+
+
+template <typename in_view_t,
+          typename MyExecSpace>
+struct InitScalar{
+  typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
+  typedef typename team_policy_t::member_type team_member_t ;
+
+  typedef typename in_view_t::non_const_value_type nnz_lno_t;
+  typedef typename in_view_t::size_type size_type;
+
+  in_view_t view_to_init;
+  size_type num_elements;
+  size_type team_row_chunk_size;
+  nnz_lno_t init_val;
+
+  InitScalar(
+      size_type num_elements_,
+      in_view_t view_to_init_,
+      size_type chunk_size_,
+      nnz_lno_t init_val_):
+        num_elements(num_elements_),
+        view_to_init(view_to_init_), team_row_chunk_size(chunk_size_), init_val (init_val_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const team_member_t & teamMember) const {
+
+    //const nnz_lno_t row_index = teamMember.league_rank() * team_row_chunk_size;
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, num_elements);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_ind){
+      view_to_init [row_ind] = init_val;
+    });
+  }
+};
+template <typename in_row_view_t, typename MyExecSpace>
+void init_view_withscalar(typename in_row_view_t::size_type num_elements, in_row_view_t arr,
+    typename in_row_view_t::size_type team_size,
+    typename in_row_view_t::non_const_value_type init_val){
+
+  typename in_row_view_t::size_type chunk_size =  num_elements / team_size;
+  typedef InitScalar <in_row_view_t, MyExecSpace>  InitScalar_t;
+  InitScalar_t tm (num_elements, arr, chunk_size, init_val);
+  typedef typename InitScalar_t::team_policy_t tcp_t;
+  int vector_size = 1;
+
+  Kokkos::Impl::Timer timer1;
+  Kokkos::parallel_for(  tcp_t(num_elements / chunk_size + 1 , team_size, vector_size), tm);
+  MyExecSpace::fence();
+}
+
 
 }
 }

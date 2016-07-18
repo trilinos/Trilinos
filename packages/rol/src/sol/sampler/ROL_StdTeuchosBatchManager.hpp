@@ -55,17 +55,19 @@ public:
   StdTeuchosBatchManager(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm)
     : TeuchosBatchManager<Real,Ordinal>(comm) {}
 
+  using TeuchosBatchManager<Real,Ordinal>::sumAll;
+
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    std::vector<Real> input_ptr
-      = *(Teuchos::dyn_cast<StdVector<Real> >(input).getVector());
+    Teuchos::RCP<std::vector<Real> > input_ptr
+      = Teuchos::dyn_cast<StdVector<Real> >(input).getVector();
     Teuchos::RCP<std::vector<Real> > output_ptr
       = Teuchos::dyn_cast<StdVector<Real> >(output).getVector();
-    int dim_i = static_cast<int>(input_ptr.size());
+    int dim_i = static_cast<int>(input_ptr->size());
     int dim_o = static_cast<int>(output_ptr->size());
     TEUCHOS_TEST_FOR_EXCEPTION(dim_i != dim_o, std::invalid_argument,
       ">>> (ROL::StdTeuchosBatchManager::SumAll): Dimension mismatch!");
-    TeuchosBatchManager<Real,Ordinal>::sumAll(&input_ptr[0],
-                                              &(*output_ptr)[0],
+    TeuchosBatchManager<Real,Ordinal>::sumAll(&input_ptr->front(),
+                                              &output_ptr->front(),
                                               dim_i);
   }
 };

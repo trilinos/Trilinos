@@ -25,23 +25,19 @@ namespace Tacho {
                       const MemberType &member,
                       const int diagA,
                       CrsTaskViewTypeA &A,
-                      DenseTaskViewTypeB &B) {
-      
-      typedef typename CrsTaskViewTypeA::ordinal_type      ordinal_type;
-      
-      typedef typename CrsTaskViewTypeA::value_type        crs_value_type;
-      typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
-      
-      typedef typename DenseTaskViewTypeB::value_type      dense_value_type;
-      
+                      DenseTaskViewTypeB &B,
+                      unsigned int &part) {
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+#else
       typedef typename CrsTaskViewTypeA::future_type       future_type;
-      
       TaskFactory factory;
+#endif
+      typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
 
       // ---------------------------------------------
       if (member.team_rank() == 0) {
-        const ordinal_type ntasks_window = 4096;
-        ordinal_type ntasks_spawned = 0;
+        const unsigned int ntasks_window = 4096;
+        /**/  unsigned int ntasks_spawned = 0;
 
         CrsTaskViewTypeA ATL, ATR,      A00, A01, A02,
           /**/           ABL, ABR,      A10, A11, A12,
@@ -53,11 +49,11 @@ namespace Tacho {
 
         Part_2x2(A,  ATL, ATR,
                  /**/ABL, ABR,
-                 0, 0, Partition::BottomRight);
+                 part, part, Partition::BottomRight);
 
         Part_2x1(B,  BT,
                  /**/BB,
-                 0, Partition::Bottom);
+                 part, Partition::Bottom);
 
         while (ABR.NumRows() < A.NumRows()) {
           Part_2x2_to_3x3(ATL, ATR, /**/  A00, A01, A02,
@@ -75,34 +71,41 @@ namespace Tacho {
           // B1 = B1 - A12*B2;
           {
             row_view_type a(A12,0);
-            const ordinal_type nnz = a.NumNonZeros();
-            
-            for (ordinal_type i=0;i<nnz;++i) {
-              const ordinal_type row_at_i = a.Col(i);
-              crs_value_type &aa = a.Value(i);
+            const auto nnz = a.NumNonZeros();
+
+            for (auto i=0;i<nnz;++i) {
+              const auto row_at_i = a.Col(i);
+              auto &aa = a.Value(i);
               
-              for (ordinal_type j=0;j<B1.NumCols();++j) {
-                const ordinal_type col_at_j = j;
-                dense_value_type &bb = B2.Value(row_at_i, col_at_j);
-                dense_value_type &cc = B1.Value(0, col_at_j);
-                
-                const future_type f = factory.create<future_type>
-                  (policy,
-                   Gemm<Trans::NoTranspose,Trans::NoTranspose,
-                   CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
-                   ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
-                
-                // dependence
-                factory.depend(policy, f, aa.Future());
-                factory.depend(policy, f, bb.Future());
-                factory.depend(policy, f, cc.Future());
-                
-                // place task signature on y
-                cc.setFuture(f);
-                
-                // spawn a task
-                factory.spawn(policy, f);
-                ++ntasks_spawned;
+              if (!aa.isNull()) {
+                for (auto j=0;j<B1.NumCols();++j) {
+                  auto &bb = B2.Value(row_at_i, j);
+                  auto &cc = B1.Value(0, j);
+                  
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+                  Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                    CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
+                    ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
+#else
+                  const future_type f = factory.create<future_type>
+                    (policy,
+                     Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                     CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
+                     ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
+                  
+                  // dependence
+                  factory.depend(policy, f, aa.Future());
+                  factory.depend(policy, f, bb.Future());
+                  factory.depend(policy, f, cc.Future());
+                  
+                  // place task signature on y
+                  cc.setFuture(f);
+                  
+                  // spawn a task
+                  factory.spawn(policy, f);
+                  ++ntasks_spawned;
+#endif
+                }
               }
             }
           }
@@ -110,47 +113,54 @@ namespace Tacho {
           // B1 = inv(triu(A11))*B1
           {
             row_view_type a(A11,0);
-            crs_value_type &aa = a.Value(0);
-            
-            for (ordinal_type j=0;j<B1.NumCols();++j) {
-              dense_value_type &bb = B1.Value(0, j);
-              
-              const future_type f = factory.create<future_type>
-                (policy,
-                 Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
-                 CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
-                 ::createTaskFunctor(policy, diagA, 1.0, aa, bb), 2);
-              
-              // trsm dependence
-              factory.depend(policy, f, aa.Future());
-              factory.depend(policy, f, bb.Future());
-              
-              // place task signature on b
-              bb.setFuture(f);
-              
-              // spawn a task
-              factory.spawn(policy, f);
-              ++ntasks_spawned;
+            auto &aa = a.Value(0);
+
+            if (!aa.isNull()) {
+              for (auto j=0;j<B1.NumCols();++j) {
+                auto &bb = B1.Value(0, j);
+                
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+                Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
+                  CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
+                  ::invoke(policy, member, diagA, 1.0, aa, bb);
+#else
+                const future_type f = factory.create<future_type>
+                  (policy,
+                   Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
+                   CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
+                   ::createTaskFunctor(policy, diagA, 1.0, aa, bb), 2);
+                
+                // trsm dependence
+                factory.depend(policy, f, aa.Future());
+                factory.depend(policy, f, bb.Future());
+                
+                // place task signature on b
+                bb.setFuture(f);
+                
+                // spawn a task
+                factory.spawn(policy, f);
+                ++ntasks_spawned;
+#endif
+              }
             }
           }
-          
+
           // -----------------------------------------------------
           Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
                            A10, A11, A12, /**/ /******/
                            A20, A21, A22, /**/ ABL, ABR,
                            Partition::BottomRight);
-          
+
           Merge_3x1_to_2x1(B0, /**/   BT,
                            B1, /**/  /**/
                            B2, /**/   BB,
                            Partition::Bottom);
-          
+
           if (ntasks_spawned > ntasks_window)
             break;
         }
-        
-        A = ATL;
-        B = BT;
+
+        part = BB.NumRows();
       }
       return 0;
     }
@@ -173,6 +183,8 @@ namespace Tacho {
 
       PolicyType _policy;
 
+      unsigned int _part;
+
     public:
       KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
@@ -182,17 +194,25 @@ namespace Tacho {
         : _diagA(diagA),
           _A(A),
           _B(B),
-          _policy(policy)
+          _policy(policy),
+          _part(0)
       { }
 
       KOKKOS_INLINE_FUNCTION
-      const char* Label() const { return "TriSolve"; }
+      const char* Label() const { return "TriSolve::Upper::NoTrans::ByBlocks"; }
 
       KOKKOS_INLINE_FUNCTION
       void apply(value_type &r_val) {
+        _policy.clear_dependence(this);
+
         r_val = TriSolve::invoke(_policy, _policy.member_single(),
-                                 _diagA, _A, _B);
-        _B.setFuture(typename ExecViewTypeB::future_type());
+                                 _diagA, _A, _B, _part);
+        if (_part < _B.NumRows()) {
+          _policy.respawn_needing_memory(this);
+        } else {
+          _part = 0;
+          _B.setFuture(typename ExecViewTypeB::future_type());
+        }
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -202,11 +222,12 @@ namespace Tacho {
           _policy.clear_dependence(this);
 
           const int ierr = TriSolve::invoke(_policy, member,
-                                            _diagA,_A, _B);
+                                            _diagA, _A, _B, _part);
 
-          if (_A.NumRows()) {
+          if (_part < _B.NumRows()) {
             _policy.respawn_needing_memory(this);
           } else {
+            _part = 0;
             _B.setFuture(typename ExecViewTypeB::future_type());
           }
           r_val = ierr;

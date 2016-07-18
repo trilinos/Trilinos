@@ -235,21 +235,20 @@ extern "C" {
 
   /// Return the current time
   double current_time() {
-    return static_cast<double>(::time(NULL));
+    return static_cast<double>(::time(nullptr));
   }
 
   /// Sets the current time as the "seed" to randomize the next call to real_rand.
-  static double randomize() {
-    std::srand(::time(NULL));
+  double randomize() {
+    std::srand(::time(nullptr));
     return 0.0;
   }
 
   /// Sets x as the "seed" for the pseudo-random number generator.
-  double random_seed(double x) {
+  void random_seed(double x) {
     int y = static_cast<int>(x);
     sRandomRangeHighValue =  y;
     sRandomRangeLowValue  = ~y;
-    return 0.0;
   }
 
   /// Non-platform specific (pseudo) random number generator.
@@ -264,11 +263,7 @@ extern "C" {
   /// Non-platform specific (pseudo) random number generator.
   double random1(double seed) {
     random_seed(seed);
-    sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
-    sRandomRangeHighValue += sRandomRangeLowValue;
-    sRandomRangeLowValue += sRandomRangeHighValue;
-    int val = std::abs(sRandomRangeHighValue);
-    return double(val) / double(RAND_MAX);
+    return random0();
   }
 
   /// Returns the angle (given in radians) in degrees.
@@ -331,7 +326,7 @@ extern "C" {
     }
   }
 
-  static double haversine_pulse(double t, double t1, double t2)
+  double haversine_pulse(double t, double t1, double t2)
   {
     if( t < t1 )
     {
@@ -347,7 +342,7 @@ extern "C" {
     }
   }
 
-  static double cycloidal_ramp(double t, double t1, double t2)
+  double cycloidal_ramp(double t, double t1, double t2)
   {
     if( t < t1 )
     {
@@ -374,23 +369,15 @@ extern "C" {
   /// Weibull distribution probability distribution function.
   double weibull_pdf(double x, double shape, double scale)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     weibull_dist weibull1(shape, scale);
     return boost::math::pdf(weibull1, x);
-#endif
   }
 
   /// Normal (Gaussian) distribution probability distribution function.
   double normal_pdf(double x, double mean, double standard_deviation)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     normal_dist normal1(mean, standard_deviation);
     return boost::math::pdf(normal1, x);
-#endif
   }
 
   /// Uniform distribution probability distribution function.
@@ -411,30 +398,18 @@ extern "C" {
   /// Gamma continuous probability distribution function.
   inline double gamma_pdf(double x, double shape, double scale)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     return boost::math::pdf(gamma_dist(shape,scale), x);
-#endif
   }
 
   inline double phi(double beta)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     return boost::math::pdf(normal_dist(0.,1.), beta);
-#endif
   }
 
   /// Returns a probability < 0.5 for negative beta and a probability > 0.5 for positive beta.
   inline double Phi(double beta)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     return boost::math::cdf(normal_dist(0.,1.), beta);
-#endif
   }
 
   inline double bounded_normal_pdf(double x, double mean, double std_dev, double lwr, double upr)

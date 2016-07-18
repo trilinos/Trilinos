@@ -44,7 +44,6 @@
 
 #
 # Include the TriBITS library macros
-INCLUDE(TribitsLibraryMacros)
 
 #
 # Package-specific configuration options

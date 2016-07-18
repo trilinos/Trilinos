@@ -574,7 +574,9 @@ int main( int argc , char ** argv )
     if ( cmdline.USE_SERIAL ) {
 #if defined(__MIC__)
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
-           cmdline.USE_UQ_ENSEMBLE == 16 )
+           cmdline.USE_UQ_ENSEMBLE == 8 )
+        run< Kokkos::Serial ,  8 >( comm , cmdline );
+      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::Serial , 16 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Serial , 32 >( comm , cmdline );
@@ -600,7 +602,9 @@ int main( int argc , char ** argv )
     if ( cmdline.USE_THREADS ) {
 #if defined(__MIC__)
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
-           cmdline.USE_UQ_ENSEMBLE == 16 )
+           cmdline.USE_UQ_ENSEMBLE == 8 )
+        run< Kokkos::Threads ,  8 >( comm , cmdline );
+      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::Threads , 16 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Threads , 32 >( comm , cmdline );
@@ -626,7 +630,9 @@ int main( int argc , char ** argv )
     if ( cmdline.USE_OPENMP ) {
 #if defined(__MIC__)
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
-           cmdline.USE_UQ_ENSEMBLE == 16 )
+           cmdline.USE_UQ_ENSEMBLE == 8 )
+        run< Kokkos::OpenMP ,  8 >( comm , cmdline );
+      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::OpenMP , 16 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::OpenMP , 32 >( comm , cmdline );

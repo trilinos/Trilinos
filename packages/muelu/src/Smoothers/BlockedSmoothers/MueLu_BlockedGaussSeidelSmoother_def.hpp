@@ -175,24 +175,17 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
   }
 
-  // This function is equivalent to the std::map 'at' method introduced in C++11.
-  // TODO: move to Utils
-  template <class StdMapType>
-  const typename StdMapType::mapped_type & at(const StdMapType& map, const typename StdMapType::key_type& x) {
-    typename StdMapType::const_iterator it = map.find(x);
-    TEUCHOS_TEST_FOR_EXCEPTION(it == map.end(), std::out_of_range, "MueLu::at(): element does not exist in the map");
-    return it->second;
-  }
-
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector &X, const MultiVector& B, bool InitialGuessIsZero) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): Setup() has not been called");
 
+#ifdef HAVE_MUELU_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(A_->getRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
     TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
+#endif
 
-#if 1
+#if 0
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempres = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
@@ -268,6 +261,7 @@ namespace MueLu {
         // extract corresponding subvectors from X and residual
         bool bRangeThyraMode =  rangeMapExtractor_->getThyraMode()  && (bIsBlockedOperator_[i] == false);
         bool bDomainThyraMode = domainMapExtractor_->getThyraMode() && (bIsBlockedOperator_[i] == false);
+
         Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(bX, i, bDomainThyraMode);
         Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, i, bRangeThyraMode);
         Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(i, X.getNumVectors(), bDomainThyraMode);
@@ -287,7 +281,7 @@ namespace MueLu {
     // write back solution
     for(size_t r = 0; r < domainMapExtractor_->NumMaps(); ++r) {
       bool bDomainThyraMode = domainMapExtractor_->getThyraMode() && (bIsBlockedOperator_[r] == false);
-      domainMapExtractor_->InsertVector(bX->getMultiVector(r),r,rcpX,bDomainThyraMode);
+      domainMapExtractor_->InsertVector(bX->getMultiVector(r,bDomainThyraMode),r,rcpX,bDomainThyraMode);
     }
 #endif
   }

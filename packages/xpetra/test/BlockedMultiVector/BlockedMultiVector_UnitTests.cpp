@@ -146,7 +146,7 @@ Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Cr
   // fill multivector data (first multivector contains the GID, the second the LID as scalar)
   Teuchos::ArrayRCP< Scalar > vv1 = vv->getDataNonConst(0);
   Teuchos::ArrayRCP< Scalar > vv2 = vv->getDataNonConst(1);
-  for(LocalOrdinal i = 0; i < vv->getLocalLength(); ++i) {
+  for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(vv->getLocalLength()); ++i) {
     vv1[i] = Teuchos::as<Scalar>(fullmap->getGlobalElement(i));
     vv2[i] = Teuchos::as<Scalar>(i);
   }
@@ -204,7 +204,7 @@ Teuchos::RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   // fill multivector data (first multivector contains the GID, the second the LID as scalar)
   Teuchos::ArrayRCP< Scalar > vv1 = vv->getDataNonConst(0);
   Teuchos::ArrayRCP< Scalar > vv2 = vv->getDataNonConst(1);
-  for(LocalOrdinal i = 0; i < vv->getLocalLength(); ++i) {
+  for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(vv->getLocalLength()); ++i) {
     vv1[i] = Teuchos::as<Scalar>(fullmap->getGlobalElement(i));
     vv2[i] = Teuchos::as<Scalar>(i);
   }
@@ -285,7 +285,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Constructor, M, MA, Scala
     TEST_EQUALITY(bvvi->getMap()->isSameAs(*(bvv->getMapExtractor()->getMap(r))),true);
     Teuchos::ArrayRCP<const Scalar > bvvi1 = bvvi->getData(0);
     Teuchos::ArrayRCP<const Scalar > bvvi2 = bvvi->getData(1);
-    for(LO l = 0; l < bvvi->getLocalLength(); ++l) {
+    for(LO l = 0; l < Teuchos::as<LO>(bvvi->getLocalLength()); ++l) {
       TEST_EQUALITY(bvvi1[l],Teuchos::as<Scalar>(bvvi->getMap()->getGlobalElement(l)));
     }
   }
@@ -326,7 +326,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Norm1, M, MA, Scalar, LO,
   TEST_NOTHROW( bvv->norm1(bnorms) );
   TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
   Magnitude result = Teuchos::ScalarTraits<Magnitude>::zero();
-  for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
+  for(GO gg = 0; gg < Teuchos::as<GO>(vv->getMap()->getGlobalNumElements()); gg++)
     result += Teuchos::as<Magnitude>(gg);
   TEST_EQUALITY( bnorms[0], result);
 
@@ -361,7 +361,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Norm2, M, MA, Scalar, LO,
   TEST_NOTHROW( bvv->norm2(bnorms) );
   TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
   Magnitude result = Teuchos::ScalarTraits<Magnitude>::zero();
-  for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
+  for(GO gg = 0; gg < Teuchos::as<GO>(vv->getMap()->getGlobalNumElements()); gg++)
     result += Teuchos::as<Magnitude>(gg) * Teuchos::as<Magnitude>(gg);
   result = Teuchos::ScalarTraits<Magnitude>::squareroot(result);
   TEST_EQUALITY( bnorms[0], result);
@@ -397,7 +397,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, NormInf, M, MA, Scalar, L
   TEST_NOTHROW( bvv->normInf(bnorms) );
   TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
   Magnitude result = Teuchos::ScalarTraits<Magnitude>::zero();
-  for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
+  for(GO gg = 0; gg < Teuchos::as<GO>(vv->getMap()->getGlobalNumElements()); gg++)
     result = std::max(result, Teuchos::as<Magnitude>(gg));
   TEST_EQUALITY( bnorms[0], result);
 
@@ -432,7 +432,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Scale, M, MA, Scalar, LO,
   TEST_NOTHROW( bvv->normInf(bnorms) );
   TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
   Magnitude myresult = Teuchos::ScalarTraits<Magnitude>::zero();
-  for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
+  for(GO gg = 0; gg < Teuchos::as<GO>(vv->getMap()->getGlobalNumElements()); gg++)
     myresult = std::max(myresult, Teuchos::as<Magnitude>(gg));
   TEST_EQUALITY( bnorms[0], myresult);
 
@@ -450,7 +450,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Scale, M, MA, Scalar, LO,
   TEST_NOTHROW( bvv->normInf(scaled_bnorms) );
   TEST_COMPARE_FLOATING_ARRAYS(scaled_fnorms,scaled_bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
   myresult = Teuchos::ScalarTraits<Magnitude>::zero();
-  for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
+  for(GO gg = 0; gg < Teuchos::as<GO>(vv->getMap()->getGlobalNumElements()); gg++)
     myresult = std::max(myresult, Teuchos::as<Magnitude>(gg));
   TEST_EQUALITY( scaled_bnorms[0], Teuchos::as<Magnitude>(2.0) * myresult);
 
@@ -492,7 +492,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVector, M, MA, Sca
     Teuchos::ArrayRCP<const Scalar > partBd = partB->getData(0);
     Teuchos::ArrayRCP<const Scalar > partVd = partV->getData(0);
     TEST_COMPARE_FLOATING_ARRAYS(partBd,partVd,Teuchos::ScalarTraits<Magnitude>::zero());
+#ifdef HAVE_XPETRA_DEBUG
     TEST_THROW(partB = me->ExtractVector(bvv,r,true),Xpetra::Exceptions::RuntimeError);
+#endif
     TEST_THROW(partV = me->ExtractVector(vv,r,true),Xpetra::Exceptions::RuntimeError);
   }
 
@@ -599,18 +601,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVector, M, MA, Scal
     Teuchos::RCP<const MultiVector> part = me->ExtractVector(bvv,r);
     Teuchos::ArrayRCP<const Scalar > partd1 = part->getData(0);
     Teuchos::ArrayRCP<const Scalar > partd2 = part->getData(1);
-    for(LO l = 0; l < part->getLocalLength(); l++)
+    for(LO l = 0; l < Teuchos::as<LO>(part->getLocalLength()); l++)
       TEST_EQUALITY(partd1[l], STS::one());
     TEST_COMPARE_FLOATING_ARRAYS(partd1,partd2,Teuchos::ScalarTraits<Magnitude>::zero());
   }
 
+#ifdef HAVE_XPETRA_DEBUG
   // create malicious multivector
   Teuchos::RCP<MultiVector> part1 = me->getVector(0,23,false);
   TEST_THROW(me->InsertVector(part1,0,bvv),Xpetra::Exceptions::RuntimeError);
   Teuchos::RCP<MultiVector> part2 = me->getVector(0,2,false);
   TEST_THROW(me->InsertVector(part2,1,bvv),Xpetra::Exceptions::RuntimeError);
   TEST_THROW(Teuchos::RCP<MultiVector> part3 = me->getVector(1,2,true),Xpetra::Exceptions::RuntimeError);
-
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA, Scalar, LO, GO, Node )
@@ -649,11 +652,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA,
     Teuchos::RCP<const MultiVector> part = me->ExtractVector(bvv,r,me->getThyraMode());
     Teuchos::ArrayRCP<const Scalar > partd1 = part->getData(0);
     Teuchos::ArrayRCP<const Scalar > partd2 = part->getData(1);
-    for(LO l = 0; l < part->getLocalLength(); l++)
+    for(LO l = 0; l < Teuchos::as<LO>(part->getLocalLength()); l++)
       TEST_EQUALITY(partd1[l], STS::one());
     TEST_COMPARE_FLOATING_ARRAYS(partd1,partd2,Teuchos::ScalarTraits<Magnitude>::zero());
   }
 
+#ifdef HAVE_XPETRA_DEBUG
   // create malicious multivector
   Teuchos::RCP<MultiVector> part1 = me->getVector(0,23,true);
   TEST_THROW(me->InsertVector(part1,0,bvv),Xpetra::Exceptions::RuntimeError);
@@ -664,6 +668,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA,
   // This should throw, thought
   Teuchos::RCP<MultiVector> part3 = me->getVector(0,2,true);
   TEST_THROW(me->InsertVector(part2,2,bvv,me->getThyraMode()),Xpetra::Exceptions::RuntimeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Scalar, LO, GO, Node )
@@ -695,8 +700,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Sca
   Teuchos::Array<Magnitude> bnorms1(bvv1->getNumVectors());
   Teuchos::Array<Magnitude> bnorms2(vv->getNumVectors());
   TEST_NOTHROW( bvv1->norm1(bnorms1) );
-  TEST_EQUALITY( bnorms1[0], Teuchos::ScalarTraits<Magnitude>::zero());
-  TEST_EQUALITY( bnorms1[1], Teuchos::ScalarTraits<Magnitude>::zero());
+  // TAW: CUDA produces a "dirty zero" (not exactly zero)
+  // this might be numerical effects caused by the ordering of calculations
+  TEST_COMPARE( bnorms1[0], < , 1e-12);
+  TEST_COMPARE( bnorms1[1], < , 1e-12);
+  //TEST_EQUALITY( bnorms1[0], Teuchos::ScalarTraits<Magnitude>::zero());
+  //TEST_EQUALITY( bnorms1[1], Teuchos::ScalarTraits<Magnitude>::zero());
   TEST_NOTHROW( vv->norm1(bnorms1) );
   TEST_NOTHROW( bvv2->norm1(bnorms2) );
   TEST_COMPARE_FLOATING_ARRAYS(bnorms1,bnorms2,Teuchos::ScalarTraits<Magnitude>::zero());
@@ -732,11 +741,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Sc
   TEST_EQUALITY( bnorms1[0], 0.5 * bnorms2[0]);
   TEST_EQUALITY( bnorms1[1], 0.5 * bnorms2[1]);
 
+#ifdef HAVE_XPETRA_DEBUG
   // create faulty multivector
   Teuchos::RCP<MultiVector> vvx = MultiVectorFactory::Build(bvv1->getMapExtractor()->getMap(0),2,true);
   TEST_THROW(bvv1->update(STS::one(), *vvx, STS::one()), Xpetra::Exceptions::RuntimeError);
   vvx = MultiVectorFactory::Build(bvv1->getMap(),1,true);
   TEST_THROW(bvv1->update(STS::one(), *vvx, STS::one()), Xpetra::Exceptions::RuntimeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector2, M, MA, Scalar, LO, GO, Node )
@@ -808,7 +819,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, PutScalar, M, MA, Scalar,
     Teuchos::RCP<const MultiVector> part = bvv->getMapExtractor()->ExtractVector(bvv,r);
     Teuchos::ArrayRCP<const Scalar > partd1 = part->getData(0);
     Teuchos::ArrayRCP<const Scalar > partd2 = part->getData(1);
-    for(LO l = 0; l < part->getLocalLength(); l++)
+    for(LO l = 0; l < Teuchos::as<LO>(part->getLocalLength()); l++)
       TEST_EQUALITY(partd1[l], 3.0 * STS::one());
     TEST_COMPARE_FLOATING_ARRAYS(partd1,partd2,Teuchos::ScalarTraits<Magnitude>::zero());
   }

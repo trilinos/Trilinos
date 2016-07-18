@@ -33,7 +33,9 @@ int main(int argc,char * argv[])
 
   Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
   int np   = comm.getSize(); // number of processors
-  // int rank = comm.getRank(); 
+
+  // timings output
+  std::string timingsFile = "timings.yaml";
 
   // mesh description
   int nx = 10, ny = 7, nz = 4;
@@ -48,6 +50,7 @@ int main(int argc,char * argv[])
   clp.setOption("px",&px);
   clp.setOption("py",&py);
   clp.setOption("pz",&pz);
+  clp.setOption("timings-file",&timingsFile);
   auto cmdResult = clp.parse(argc,argv);
   if(cmdResult!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     clp.printHelpMessage(argv[0],std::cout);
@@ -61,39 +64,50 @@ int main(int argc,char * argv[])
   RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer> >();
   RCP<const panzer::FieldPattern> pattern_E = buildFieldPattern<Intrepid2::Basis_HCURL_HEX_I1_FEM<double,FieldContainer> >();
 
-  // build the topology
-  RCP<CCM> connManager = rcp(new CCM);
-  connManager->initialize(comm,
-                          Teuchos::as<panzer::Ordinal64>(nx),
-                          Teuchos::as<panzer::Ordinal64>(ny),
-                          Teuchos::as<panzer::Ordinal64>(nz),
-                          px,py,pz,bx,by,bz);
-
-  // build the dof manager, and assocaite with the topology
-  RCP<DOFManager> dofManager = rcp(new DOFManager);
-  dofManager->setConnManager(connManager,*comm.getRawMpiComm());
-
-  // add velocity (U) and PRESSURE fields to the MHD element block
-  dofManager->addField("eblock-0_0_0","UX",pattern_U);
-  dofManager->addField("eblock-0_0_0","UY",pattern_U);
-  dofManager->addField("eblock-0_0_0","UZ",pattern_U);
-  dofManager->addField("eblock-0_0_0","PRESSURE",pattern_P);
-  dofManager->addField("eblock-0_0_0","B",pattern_B);
-  dofManager->addField("eblock-0_0_0","E",pattern_E);
-
-  // add velocity (U) fields to the solid element block
-  dofManager->addField("eblock-0_1_0","UX",pattern_U);
-  dofManager->addField("eblock-0_1_0","UY",pattern_U);
-  dofManager->addField("eblock-0_1_0","UZ",pattern_U);
-  dofManager->addField("eblock-0_1_0","T",pattern_T);
-
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::ScalingTest::buildGlobalUnknowns)");
-
-    dofManager->buildGlobalUnknowns();
+  // repeatedly construct DOFManager timing the buildGlobalUnknowns
+  for(int repeats=0;repeats<10;repeats++) {
+  
+    // build the topology
+    RCP<CCM> connManager = rcp(new CCM);
+    connManager->initialize(comm,
+                            Teuchos::as<panzer::Ordinal64>(nx),
+                            Teuchos::as<panzer::Ordinal64>(ny),
+                            Teuchos::as<panzer::Ordinal64>(nz),
+                            px,py,pz,bx,by,bz);
+  
+    // build the dof manager, and assocaite with the topology
+    RCP<DOFManager> dofManager = rcp(new DOFManager);
+    dofManager->setConnManager(connManager,*comm.getRawMpiComm());
+  
+    // add velocity (U) and PRESSURE fields to the MHD element block
+    dofManager->addField("eblock-0_0_0","UX",pattern_U);
+    dofManager->addField("eblock-0_0_0","UY",pattern_U);
+    dofManager->addField("eblock-0_0_0","UZ",pattern_U);
+    dofManager->addField("eblock-0_0_0","PRESSURE",pattern_P);
+    dofManager->addField("eblock-0_0_0","B",pattern_B);
+    dofManager->addField("eblock-0_0_0","E",pattern_E);
+  
+    // add velocity (U) fields to the solid element block
+    dofManager->addField("eblock-0_1_0","UX",pattern_U);
+    dofManager->addField("eblock-0_1_0","UY",pattern_U);
+    dofManager->addField("eblock-0_1_0","UZ",pattern_U);
+  
+    {
+      PANZER_FUNC_TIME_MONITOR("panzer::ScalingTest::buildGlobalUnknowns)");
+  
+      dofManager->buildGlobalUnknowns();
+    }
   }
 
   Teuchos::TimeMonitor::summarize(std::cout,false,true,false);
+
+  if ( timingsFile != "" ){
+    std::ofstream fout(timingsFile.c_str());
+    Teuchos::RCP<Teuchos::ParameterList> reportParams = parameterList(* (Teuchos::TimeMonitor::getValidReportParameters()));
+    reportParams->set("Report format", "YAML");
+    reportParams->set("YAML style", "spacious");
+    Teuchos::TimeMonitor::report(fout,reportParams);
+  }
  
   // this confirms the application passes
   std::cout << "Scaling test completed" << std::endl;

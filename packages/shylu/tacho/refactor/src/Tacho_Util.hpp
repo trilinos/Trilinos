@@ -178,27 +178,45 @@ namespace Tacho {
       return is_scalar_type<T>::value;
     }
 
+    // uses range [first, last)
+    template<typename ValueType, typename SpaceType, typename IterType>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static IterType getLowerBound(const Kokkos::View<ValueType*,SpaceType> &data,
+                                  IterType first,
+                                  IterType last,
+                                  const ValueType val) {
+      IterType it, count = last - first, step = 0;
+      while (count > 0) {
+        it = first;
+        it += ( step = (count >> 1) );
+        if (data[it] < val) {
+          first = ++it;
+          count -= step+1;
+        } else {
+          count=step;
+        }
+      }
+      return first;
+    }
 
-    // // uses range [first, end)
-    // template<typename ValueType, typename SpaceType, typename IterType>
-    // KOKKOS_FORCEINLINE_FUNCTION
-    // static IterType getLowerBound(const Kokkos::View<ValueType*,SpaceType> &data,
-    //                               const IterType begin,
-    //                               const IterType end,
-    //                               const ValueType value) {
-    //   return end;
-    // }
-    
     template<typename ValueType, typename SpaceType, typename IterType>
     KOKKOS_FORCEINLINE_FUNCTION
     static IterType getUpperBound(const Kokkos::View<ValueType*,SpaceType> &data,
-                                  IterType begin,
-                                  IterType end,
-                                  const ValueType value) {
-      const auto begin_ptr = &data[begin];
-      const auto end_ptr = &data[end];
-      const auto it = std::upper_bound(begin_ptr, end_ptr, value);
-      return begin + (it - begin_ptr);
+                                  IterType first,
+                                  IterType last,
+                                  const ValueType val) {
+      IterType it, count = last - first, step;
+      while (count > 0) {
+        it = first;
+        it += ( step = (count >> 1) );
+        if (!(val < data[it])) {
+          first = ++it;
+          count -= step+1;
+        } else {
+          count = step;
+        }
+      }
+      return first;
     }
 
     template<typename T>
@@ -326,6 +344,11 @@ namespace Tacho {
     static constexpr int Two   = 2;
     static constexpr int Three = 3;
     static constexpr int Four  = 4;
+    static constexpr int Five  = 5;
+    static constexpr int Six   = 6;
+    static constexpr int Seven = 7;
+    static constexpr int Eight = 8;
+    static constexpr int Nine  = 9;
   };
 
   /// \class AlgoChol
@@ -364,8 +387,8 @@ namespace Tacho {
     static constexpr int ByBlocks               = 1501;
 
     // - Flat sparse with nested dense matrices
-    static constexpr int SuperNodes             = 1701;
-    static constexpr int SuperNodesByBlocks     = 1702;
+    static constexpr int SuperNodes             = 1601;
+    static constexpr int SuperNodesByBlocks     = 1602;
   };
 
   /// \class AlgoBlas

@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PROJECT_NAME}_ENABLE_Thyra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
