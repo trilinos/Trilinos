@@ -226,6 +226,21 @@ namespace Tacho {
     cidx = typename GraphToolsHostType::ordinal_type_array();
 
     ///
+    /// Create task policy
+    ///
+    ///     input  - max_task_size
+    ///     output - policy
+    ///
+    const size_type max_task_size = (3*sizeof(CrsTaskViewHostType)+sizeof(PolicyType)+128);
+
+    timer.reset();
+    PolicyType policy(max_concurrency,
+                      max_task_size,
+                      max_task_dependence,
+                      team_size);
+    double t_policy = timer.seconds();
+
+    ///
     /// Symbolic factorization
     ///
     ///     input  -
@@ -317,21 +332,6 @@ namespace Tacho {
       }
     }
     double t_symbolic = timer.seconds();
-
-    ///
-    /// Create task policy
-    ///
-    ///     input  - max_task_size
-    ///     output - policy
-    ///
-    const size_type max_task_size = (3*sizeof(CrsTaskViewHostType)+sizeof(PolicyType)+128);
-
-    timer.reset();
-    PolicyType policy(max_concurrency,
-                      max_task_size,
-                      max_task_dependence,
-                      team_size);
-    double t_policy = timer.seconds();
 
     ///
     /// Task parallel execution
