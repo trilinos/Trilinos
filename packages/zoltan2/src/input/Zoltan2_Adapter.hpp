@@ -82,6 +82,7 @@ template <typename User>
   class BaseAdapter {
 
 public:
+  typedef typename InputTraits<User>::lno_t lno_t;
   typedef typename InputTraits<User>::gno_t gno_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::part_t part_t;  
