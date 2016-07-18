@@ -67,7 +67,7 @@ extern "C" {
 #define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on
                                  either side of cut */
 #define ALMOST_ONE 0.99       /* For scaling, should be slightly < 1.0 */
-#define MAX_BISECT_ITER 40    /* Max. no. of iterations in main bisection
+#define MAX_BISECT_ITER 100    /* Max. no. of iterations in main bisection
                                  loop. Avoids potential infinite loops. */
 
 /* Data structure for parallel find bisector routine */
@@ -1090,7 +1090,7 @@ int Zoltan_RB_find_bisector(
 #endif
       ierr = ZOLTAN_WARN;
       ZOLTAN_PRINT_WARN(proc, yo,
-                        "MAX_BISECT_ITER reached. Possible bug in Zoltan/RCB.");
+                        "MAX_BISECT_ITER reached in Zoltan/RCB.");
     }
   }
   else { /* if one processor set all dots to 0 (Tflops_Special) */
