@@ -294,12 +294,6 @@ private:
   typedef typename vec_type::dual_view_type::host_mirror_space::execution_space host_execution_space;
   typedef typename crs_graph_type::map_type map_type;
 
-#ifdef KOKKOS_HAVE_CUDA
-  typedef typename device_type::execution_space execution_space;
-  static_assert (! std::is_same<Kokkos::Cuda, execution_space>::value,
-                 "This functor does NOT work with the Kokkos::Cuda execution space.");
-
-#endif // KOKKOS_HAVE_CUDA
 public:
   // lclNumErrs [out] Total count of errors on this process.
   GetLocalDiagCopyWithoutOffsetsNotFillCompleteFunctor (LO& lclNumErrs,
