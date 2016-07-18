@@ -16,7 +16,7 @@
 #include "Tacho_GraphTools_Scotch.hpp"
 #include "Tacho_GraphTools_CAMD.hpp"
 
-#include "Tacho_SymbolicFactorization.hpp"
+#include "Tacho_IncompleteSymbolicFactorization.hpp"
 
 namespace Tacho {
   
@@ -40,7 +40,7 @@ namespace Tacho {
     typedef GraphTools_Scotch<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_Scotch;
     typedef GraphTools_CAMD<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_CAMD;
 
-    typedef SymbolicFactorization<CrsMatrixBaseHostType> SymbolicFactorizationType;
+    typedef IncompleteSymbolicFactorization<CrsMatrixBaseHostType> IncompleteSymbolicFactorizationType;
 
     int r_val = 0;
 
@@ -133,7 +133,7 @@ namespace Tacho {
     CrsMatrixBaseHostType DD("DD");    
     
     timer.reset();
-    SymbolicFactorizationType::createNonZeroPattern(DD, 
+    IncompleteSymbolicFactorizationType::createNonZeroPattern(DD, 
                                                     fill_level, 
                                                     Uplo::Upper,
                                                     CC,
