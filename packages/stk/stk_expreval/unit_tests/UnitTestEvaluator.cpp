@@ -391,6 +391,11 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(test_one_value("max(1,2,3)",3));
   EXPECT_TRUE(test_one_value("max(1,2,3,4)",4));
 
+  //
+  //  Test overloaded function with wrong number of arguments
+  //
+  EXPECT_THROW(test_one_value("min(4)",4), std::exception);
+
   EXPECT_TRUE(test_one_value("min(4,3)",3));
   EXPECT_TRUE(test_one_value("min(4,3,2)",2));
   EXPECT_TRUE(test_one_value("min(4,3,2,1)",1));

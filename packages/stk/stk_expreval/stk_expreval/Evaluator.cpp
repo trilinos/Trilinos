@@ -46,6 +46,7 @@
 #include <sstream>
 #include <iomanip>
 #include <string>
+#include <cstring>
 #include <stdexcept>
 #include <cstdlib>
 #include <cctype>
@@ -66,8 +67,21 @@ struct expression_evaluation_exception : public virtual std::exception
   virtual const char* what() const throw() {
     return "Error evaluating expressions";
   }
+
 };
 
+struct expression_undefined_exception : public virtual std::exception
+{
+  virtual const char* what() const throw() {
+    std::string rtnMsg = "Found undefined function with name: " + m_msg + " and " + std::to_string(m_numArgs)  + " argument(s)";
+    return rtnMsg.c_str();
+  }
+
+  expression_undefined_exception(const char *msg, std::size_t numArgs) : m_msg(msg), m_numArgs(numArgs) {}
+
+  std::string m_msg;
+  std::size_t m_numArgs = 0;
+};
 }
 
 namespace stk {
@@ -124,13 +138,18 @@ class Node
   //
 public:
   enum { MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES = 5 };
+  enum { MAXIMUM_FUNCTION_NAME_LENGTH = 32 };
 
   explicit Node(Opcode opcode)
     : m_opcode(opcode),
       m_left(0),
       m_right(0),
       m_other(0)
-  {m_data.function.undefinedFunction = false;}
+  {
+      m_data.function.undefinedFunction = false;
+      for(unsigned i=0; i<MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES; ++i)
+          m_data.function.function[i] = nullptr;
+  }
 
 private:
   explicit Node(const Node &);
@@ -160,6 +179,7 @@ public:
     {
       CFunctionBase* function[MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES];
       bool undefinedFunction;
+      char functionName[MAXIMUM_FUNCTION_NAME_LENGTH];
     } function;
   } m_data;
 
@@ -267,6 +287,11 @@ Node::eval() const
 
       for(unsigned int i=0; i<Node::MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES; ++i)
       {
+         if(nullptr == m_data.function.function[i])
+         {
+             throw expression_undefined_exception(m_data.function.functionName, argc);
+         }
+
         // Linear search to match the function name and number of arguments.
         if( m_data.function.function[i]->getArgCount() == argc) {
           return (*m_data.function.function[i])(argc, argv);
@@ -756,6 +781,9 @@ parseFunction(
       c_function = (*it).second;
     }
     function->m_data.function.function[0] = c_function;
+    std::strncpy(function->m_data.function.functionName,
+                 function_name.c_str(),
+                 function_name.length() < Node::MAXIMUM_FUNCTION_NAME_LENGTH-1 ? function_name.length() : Node::MAXIMUM_FUNCTION_NAME_LENGTH-1);
 
     if (!c_function)
       eval.getUndefinedFunctionSet().insert(function_name);
@@ -770,9 +798,13 @@ parseFunction(
         ++it2,
         ++iCount)
     {
-      //cout << "  [" << (*it2).first << ", " << (*it2).second->getArgCount() << "]" << endl;
+//      cout << "  [" << (*it2).first << ", " << (*it2).second->getArgCount() << "]" << endl;
       c_function = (*it2).second;
       function->m_data.function.function[iCount] = c_function;
+      std::strncpy(function->m_data.function.functionName,
+                   function_name.c_str(),
+                   function_name.length() < Node::MAXIMUM_FUNCTION_NAME_LENGTH-1 ? function_name.length() : Node::MAXIMUM_FUNCTION_NAME_LENGTH-1);
+
 
       if (!c_function)
         eval.getUndefinedFunctionSet().insert(function_name);
