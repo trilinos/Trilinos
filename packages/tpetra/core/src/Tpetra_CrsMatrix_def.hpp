@@ -60,6 +60,10 @@
 #include "Kokkos_Sparse_getDiagCopy.hpp"
 #include <typeinfo>
 
+#ifdef HAVE_TPETRA_DEBUG
+#  include "Tpetra_Details_gathervPrint.hpp"
+#endif // HAVE_TPETRA_DEBUG
+
 namespace Tpetra {
 //
 // Users must never rely on anything in the Details namespace.
@@ -255,6 +259,189 @@ getDiagCopyWithoutOffsets (const DiagType& D,
   LO errCount = 0;
   Kokkos::parallel_reduce (policy_type (0, numRows), functor, errCount);
   return errCount;
+}
+
+// Work-around for #499: Implementation of one-argument (no offsets)
+// getLocalDiagCopy for the NOT fill-complete case.
+//
+// NOTE (mfh 18 Jul 2016) This calls functions that are NOT GPU device
+// functions!  Thus, we do NOT use KOKKOS_INLINE_FUNCTION or
+// KOKKOS_FUNCTION here, because those attempt to mark the functions
+// they modify as CUDA device functions.  This functor is ONLY for
+// non-CUDA execution spaces!
+template<class CrsMatrixType, class VectorType>
+class GetLocalDiagCopyWithoutOffsetsNotFillCompleteFunctor {
+public:
+  typedef ::Tpetra::CrsMatrix<typename CrsMatrixType::scalar_type,
+                              typename CrsMatrixType::local_ordinal_type,
+                              typename CrsMatrixType::global_ordinal_type,
+                              typename CrsMatrixType::node_type> crs_matrix_type;
+  typedef ::Tpetra::CrsGraph<typename CrsMatrixType::local_ordinal_type,
+                             typename CrsMatrixType::global_ordinal_type,
+                             typename CrsMatrixType::node_type> crs_graph_type;
+  typedef ::Tpetra::Vector<typename VectorType::scalar_type,
+                           typename VectorType::local_ordinal_type,
+                           typename VectorType::global_ordinal_type,
+                           typename VectorType::node_type> vec_type;
+
+  typedef typename vec_type::impl_scalar_type IST;
+  typedef typename crs_matrix_type::local_ordinal_type LO;
+  typedef typename crs_matrix_type::global_ordinal_type GO;
+  // The output Vector determines the execution space.
+  typedef typename vec_type::device_type device_type;
+
+private:
+  typedef typename vec_type::dual_view_type::host_mirror_space::execution_space host_execution_space;
+  typedef typename crs_graph_type::map_type map_type;
+
+#ifdef KOKKOS_HAVE_CUDA
+  typedef typename device_type::execution_space execution_space;
+  static_assert (! std::is_same<Kokkos::Cuda, execution_space>::value,
+                 "This functor does NOT work with the Kokkos::Cuda execution space.");
+
+#endif // KOKKOS_HAVE_CUDA
+public:
+  // lclNumErrs [out] Total count of errors on this process.
+  GetLocalDiagCopyWithoutOffsetsNotFillCompleteFunctor (LO& lclNumErrs,
+                                                        vec_type& diag,
+                                                        const crs_matrix_type& A) :
+    A_ (A),
+    lclRowMap_ (A.getRowMap ()->getLocalMap ()),
+    lclColMap_ (A.getColMap ()->getLocalMap ()),
+    sorted_ (A.getCrsGraph ()->isSorted ())
+  {
+    const LO lclNumRows = static_cast<LO> (diag.getLocalLength ());
+    {
+      const LO matLclNumRows =
+        static_cast<LO> (lclRowMap_.getNodeNumElements ());
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (lclNumRows != matLclNumRows, std::invalid_argument,
+         "diag.getLocalLength() = " << lclNumRows << " != "
+         "A.getRowMap()->getNodeNumElements() = " << matLclNumRows << ".");
+    }
+
+    // Side effects start below this point.
+
+    diag.template modify<Kokkos::HostSpace> ();
+    D_lcl_ = diag.template getLocalView<Kokkos::HostSpace> ();
+    D_lcl_1d_ = Kokkos::subview (D_lcl_, Kokkos::ALL (), 0);
+
+    Kokkos::RangePolicy<host_execution_space, LO> range (0, lclNumRows);
+    lclNumErrs = 0;
+    Kokkos::parallel_reduce (range, *this, lclNumErrs);
+
+    // sync changes back to device, since the user doesn't know that
+    // we had to run on host.
+    diag.template sync<typename device_type::memory_space> ();
+  }
+
+  void operator () (const LO& lclRowInd, LO& errCount) const {
+    using KokkosSparse::findRelOffset;
+
+    D_lcl_1d_(lclRowInd) = Kokkos::Details::ArithTraits<IST>::zero ();
+    const GO gblInd = lclRowMap_.getGlobalElement (lclRowInd);
+    const LO lclColInd = lclColMap_.getLocalElement (gblInd);
+
+    if (lclColInd == Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+      errCount++;
+    }
+    else { // row index is also in the column Map on this process
+      LO numEnt;
+      const LO* lclColInds;
+      const IST* curVals;
+      const LO err = A_.getLocalRowView (lclRowInd, numEnt, curVals, lclColInds);
+      if (err != 0) {
+        errCount++;
+      }
+      else {
+        // The search hint is always zero, since we only call this
+        // once per row of the matrix.
+        const LO hint = 0;
+        const LO offset =
+          findRelOffset (lclColInds, numEnt, lclColInd, hint, sorted_);
+        if (offset == numEnt) { // didn't find the diagonal column index
+          errCount++;
+        }
+        else {
+          D_lcl_1d_(lclRowInd) = curVals[offset];
+        }
+      }
+    }
+  }
+
+private:
+  const crs_matrix_type& A_;
+  typename map_type::local_map_type lclRowMap_;
+  typename map_type::local_map_type lclColMap_;
+  typename vec_type::dual_view_type::t_host D_lcl_;
+  decltype (Kokkos::subview (D_lcl_, Kokkos::ALL (), 0)) D_lcl_1d_;
+  const bool sorted_;
+};
+
+// Work-around for #499.  Implementation of one-argument
+// getLocalDiagCopy for the not-fill-complete case.
+template<class CrsMatrixType, class VectorType>
+typename CrsMatrixType::local_ordinal_type
+getLocalDiagCopyWithoutOffsetsNotFillComplete (VectorType& diag, const CrsMatrixType& A)
+{
+#ifdef HAVE_TPETRA_DEBUG
+  using ::Tpetra::Details::gathervPrint;
+  using Teuchos::outArg;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+#endif // HAVE_TPETRA_DEBUG
+  typedef typename CrsMatrixType::local_ordinal_type LO;
+  typedef GetLocalDiagCopyWithoutOffsetsNotFillCompleteFunctor<CrsMatrixType, VectorType> functor_type;
+
+  // The functor's constructor does error checking and executes the
+  // thread-parallel kernel.
+
+  LO lclNumErrs = 0;
+
+#ifdef HAVE_TPETRA_DEBUG
+  int lclSuccess = 1;
+  int gblSuccess = 0;
+  std::ostringstream errStrm;
+  Teuchos::RCP<const Teuchos::Comm<int> > commPtr = A.getComm ();
+  if (commPtr.is_null ()) {
+    return lclNumErrs; // this process does not participate
+  }
+  const Teuchos::Comm<int>& comm = *commPtr;
+
+  try {
+    functor_type functor (lclNumErrs, diag, A);
+  }
+  catch (std::exception& e) {
+    lclSuccess = -1;
+    errStrm << "Process " << A.getComm ()->getRank () << ": "
+            << e.what () << std::endl;
+  }
+  if (lclNumErrs != 0) {
+    lclSuccess = 0;
+  }
+
+  reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess == -1) {
+    std::ostringstream gatheredErrStrm;
+    gathervPrint (gatheredErrStrm, errStrm.str (), comm);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (gblSuccess != 1, std::runtime_error,
+       "getLocalDiagCopyWithoutOffsetsNotFillComplete threw an exception on "
+       "one or more MPI processes in the matrix's communicator."
+       << std::endl << gatheredErrStrm);
+  }
+  else if (gblSuccess == 0) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (gblSuccess != 1, std::runtime_error,
+       "getLocalDiagCopyWithoutOffsetsNotFillComplete failed on "
+       "one or more MPI processes in the matrix's communicator.");
+  }
+
+#else
+  functor_type functor (lclNumErrs, diag, A);
+#endif // HAVE_TPETRA_DEBUG
+
+  return lclNumErrs;
 }
 
 } // namespace Details
@@ -3391,79 +3578,22 @@ namespace Tpetra {
       lclNumErrs = getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap, lclColMap, lclMatrix);
     }
     else {
-      // For now, we fill the Vector on the host and sync to device.
-      // Later, we may write a parallel kernel that works entirely on
-      // device.
-      diag.template modify<host_execution_space> ();
-      const auto D_lcl = diag.template getLocalView<host_execution_space> ();
-      // 1-D subview of the first (and only) column of lclVecHost.
-      auto D_lcl_1d =
-        Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
-
-      // Find the diagonal entries and put them in lclVecHost1d.
-
-      // NOTE (mfh 03 Feb 2016) We use the host execution space here,
-      // because the lambda's body calls methods that aren't yet
-      // suitable for marking as CUDA device functions.
-      typedef Kokkos::RangePolicy<host_execution_space, LocalOrdinal> policy_type;
-      policy_type range (0, myNumRows);
-      // NOTE (mfh 03 Feb 2016) We use [=] here rather than
-      // KOKKOS_LAMBDA, because the lambda's body calls methods that
-      // aren't yet suitable for marking as CUDA device functions.
-
-      const bool sorted = staticGraph_->isSorted ();
-      // Always keep a count of the local number of errors (hence
-      // parallel_reduce).  In a release build, don't try to compute
-      // those across MPI processes.
-      Kokkos::parallel_reduce (range, [=] (const LO& r, LO& errCount) {
-          D_lcl_1d(r) = Kokkos::Details::ArithTraits<IST>::zero ();
-          const GO gblInd = rowMap.getGlobalElement (r);
-          const LO lclColInd = colMap.getLocalElement (gblInd);
-
-          if (lclColInd != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
-            const RowInfo rowinfo = staticGraph_->getRowInfo (r);
-            if (rowinfo.numEntries > 0) {
-              auto colInds = staticGraph_->getLocalKokkosRowView (rowinfo);
-              // The search hint is always zero, since we only call
-              // this once per line.
-              const size_t offset =
-                KokkosSparse::findRelOffset (colInds, rowinfo.numEntries,
-                                             lclColInd, static_cast<size_t> (0),
-                                             sorted);
-              if (offset != rowinfo.numEntries) {
-                // NOTE (mfh 03 Feb 2016) This may assume UVM.
-                const impl_scalar_type* curVals;
-                LO numEnt;
-                const LO err = this->getViewRawConst (curVals, numEnt, rowinfo);
-                if (err == 0) {
-                  // Even in a release build, if an error occurs, don't
-                  // attempt to write to memory.
-                  D_lcl_1d(r) = curVals[offset];
-                }
-                else {
-                  ++errCount;
-                }
-              }
-            }
-          }
-        }, lclNumErrs);
+      lclNumErrs = ::Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete (diag, *this);
+    }
 
 #ifdef HAVE_TPETRA_DEBUG
-      if (! this->getComm ().is_null ()) {
-        using Teuchos::reduceAll;
-        GlobalOrdinal gblNumErrs = 0;
-        reduceAll<int, GO> (* (this->getComm ()), Teuchos::REDUCE_SUM,
-                            static_cast<LO> (lclNumErrs),
-                            Teuchos::outArg (gblNumErrs));
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (gblNumErrs != 0, std::logic_error, "Something went wrong on "
-           << gblNumErrs << " out of " << this->getComm ()->getSize ()
-           << " process(es).");
-      }
-#endif // HAVE_TPETRA_DEBUG
-
-      diag.template sync<execution_space> (); // sync changes back to device
+    if (! this->getComm ().is_null ()) {
+      using Teuchos::reduceAll;
+      GlobalOrdinal gblNumErrs = 0;
+      reduceAll<int, GO> (* (this->getComm ()), Teuchos::REDUCE_SUM,
+                          static_cast<LO> (lclNumErrs),
+                          Teuchos::outArg (gblNumErrs));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (gblNumErrs != 0, std::logic_error, "Something went wrong on "
+         << gblNumErrs << " out of " << this->getComm ()->getSize ()
+         << " process(es).");
     }
+#endif // HAVE_TPETRA_DEBUG
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
