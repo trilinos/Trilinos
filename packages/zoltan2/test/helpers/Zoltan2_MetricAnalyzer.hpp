@@ -100,7 +100,10 @@ public:
   /// @param[out] msg_stream a std::ostringstream stream to return information from the analysis
   ///
   /// @return returns a boolean value indicated pass/failure.
-  static bool analyzeMetrics( const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject, const ParameterList &metricsParameters, std::ostringstream & msg_stream )
+  static bool analyzeMetrics(
+    const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
+    const ParameterList &metricsParameters, 
+    std::ostringstream & msg_stream )
   {
     if (metricsParameters.numParams() == 0) {
       return true; // specification is that we do nothing - we may just be testing our status
@@ -112,7 +115,8 @@ public:
     LoadMetricInfo(metricInfoSet, metricObject, metricsParameters);
 
     int countFailedMetricChecks = 0;
-    for (auto metricInfo = metricInfoSet.begin(); metricInfo != metricInfoSet.end(); ++metricInfo) {
+    for (auto metricInfo = metricInfoSet.begin();
+         metricInfo != metricInfoSet.end(); ++metricInfo) {
       if (!MetricAnalyzer::executeMetricCheck(*metricInfo, msg_stream)) {
         ++countFailedMetricChecks;
       }
@@ -130,30 +134,34 @@ public:
     return bAllPassed;
   }
 
-  static void LoadMetricInfo(std::vector<MetricAnalyzerInfo> & metricInfoSet,
-                             const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
-                             const ParameterList &metricsParameters) {
+  static void LoadMetricInfo(
+    std::vector<MetricAnalyzerInfo> & metricInfoSet,
+    const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
+    const ParameterList &metricsParameters) {
 
-    // at this point we should be looking at a metricsPlist with the following format - note that weight is optional
+    // at this point we should be looking at a metricsPlist with the following 
+    // format - note that weight is optional
 
-//      <ParameterList name="metriccheck1">
-//        <Parameter name="check" type="string" value="imbalance"/>
-//        <Parameter name="lower" type="double" value="0.99"/>
-//        <Parameter name="upper" type="double" value="1.4"/>
-//      </ParameterList>
-//      <ParameterList name="metriccheck2">
-//        <Parameter name="check" type="string" value="imbalance"/>
-//        <Parameter name="weight" type="int" value="0"/>
-//        <Parameter name="lower" type="double" value="0.99"/>
-//        <Parameter name="upper" type="double" value="1.4"/>
-//      </ParameterList>
+    //      <ParameterList name="metriccheck1">
+    //        <Parameter name="check" type="string" value="imbalance"/>
+    //        <Parameter name="lower" type="double" value="0.99"/>
+    //        <Parameter name="upper" type="double" value="1.4"/>
+    //      </ParameterList>
+    //      <ParameterList name="metriccheck2">
+    //        <Parameter name="check" type="string" value="imbalance"/>
+    //        <Parameter name="weight" type="int" value="0"/>
+    //        <Parameter name="lower" type="double" value="0.99"/>
+    //        <Parameter name="upper" type="double" value="1.4"/>
+    //      </ParameterList>
 
     // first let's get a list of all the headings, so "metriccheck1", "metriccheck2" in this case
     // I've currently got this enforcing those names strictly to make sure formatting is correct
     // But really the headings could just be any unique names and are arbitrary
     int headingIndex = 1;
 
-    for (auto iterateArbitraryHeadingNames = metricsParameters.begin(); iterateArbitraryHeadingNames != metricsParameters.end(); ++iterateArbitraryHeadingNames) {
+    for (auto iterateArbitraryHeadingNames = metricsParameters.begin(); 
+         iterateArbitraryHeadingNames != metricsParameters.end();
+         ++iterateArbitraryHeadingNames) {
       auto headingName = metricsParameters.name(iterateArbitraryHeadingNames);
 
       // we could be flexible on these headers but for now let's enforce it to get any convention inconsistencies cleaned up
@@ -173,8 +181,12 @@ public:
 
 private:
 
-  static zscalar_t convertParameterChoicesToEvaluatePartitionAPICall( const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject, std::string keyWord, int weightIndex, int selectedNormedSetting ) {
-
+  static zscalar_t convertParameterChoicesToEvaluatePartitionAPICall( 
+    const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
+    std::string keyWord,
+    int weightIndex,
+    int selectedNormedSetting ) 
+  {
     // this is going to need some consideration - how is the adapter scalar_t type to be properly handled?
     zscalar_t theValue = 0;
 
@@ -257,10 +269,13 @@ private:
     return bDoesThisTestPass;
   }
 
-  static MetricAnalyzerInfo getMetricInfo(  const ParameterList & metricCheckParameters,
-                                      const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject) {
+  static MetricAnalyzerInfo getMetricInfo(  
+    const ParameterList & metricCheckParameters,
+    const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject)
+  {
     MetricAnalyzerInfo result; // will fill these values
-    for (auto iterateAllKeys = metricCheckParameters.begin(); iterateAllKeys != metricCheckParameters.end(); ++iterateAllKeys) {
+    for (auto iterateAllKeys = metricCheckParameters.begin();
+         iterateAllKeys != metricCheckParameters.end(); ++iterateAllKeys) {
       auto checkName = metricCheckParameters.name(iterateAllKeys);
       if ( checkName != WEIGHT_PARAMETER_NAME &&
           checkName != KEYWORD_PARAMETER_NAME &&
