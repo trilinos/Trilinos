@@ -1346,8 +1346,14 @@ namespace Tpetra {
         return Kokkos::subview (row_view_type (k_lclInds1D_), rng);
       }
       else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
-        Teuchos::ArrayView<const LO> rowAv = lclInds2D_[rowinfo.localRow] ();
-        return row_view_type (rowAv.getRawPtr (), rowAv.size ());
+        // Use a reference, to avoid doing the array lookup twice.
+        //
+        // NOTE (mfh 18 Jul 2016) Don't create a Teuchos::ArrayView,
+        // because this is not thread safe in a debug build.
+        Teuchos::Array<LocalOrdinal>& lclInds = lclInds2D_[rowinfo.localRow];
+        const LO* rowPtr = lclInds.getRawPtr ();
+        const auto rowSize = lclInds.size ();
+        return row_view_type (rowPtr, rowSize);
       }
       else {
         return row_view_type (); // nothing in the row to view
