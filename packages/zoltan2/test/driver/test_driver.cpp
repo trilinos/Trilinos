@@ -214,12 +214,16 @@ bool run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 1. get basic input adapter
   ////////////////////////////////////////////////////////////
-  const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
+  const ParameterList &adapterPlist =
+                      problem_parameters.sublist("InputAdapterParameters");
   comparison_source->timers["adapter construction time"]->start();
-  base_adapter_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
+
+  // a pointer to a basic type
+  base_adapter_t *ia = AdapterForTests::getAdapterForInput(
+                                        const_cast<UserInputForTests*>(&uinput),
+                                        adapterPlist,comm); 
   comparison_source->timers["adapter construction time"]->stop();
 
-//  if(rank == 0) cout << "Got input adapter... " << endl;
   if(ia == nullptr)
   {
     if(rank == 0) {
@@ -227,6 +231,7 @@ bool run(const UserInputForTests &uinput,
     }
     return false;
   }
+  RCP<basic_id_t> iaRCP = rcp(reinterpret_cast<basic_id_t *>(ia), true);
 
   ////////////////////////////////////////////////////////////
   // 2. construct a Zoltan2 problem
@@ -249,28 +254,27 @@ bool run(const UserInputForTests &uinput,
 #ifdef HAVE_ZOLTAN2_MPI
   base_problem_t * problem = 
     Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, 
-                                                         adapter_name, 
-                                                         ia, 
+                                                         adapter_name, ia, 
                                                          &zoltan2_parameters, 
                                                          MPI_COMM_WORLD);
 #else
   base_problem_t * problem = 
     Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, 
-                                                         adapter_name, 
-                                                         ia, 
+                                                         adapter_name, ia, 
                                                          &zoltan2_parameters);
 #endif
 
   if (problem == nullptr) {
     if (rank == 0) {
       std::cerr << "Input adapter type: " << adapter_name 
-                << ", is unvailable, or misspelled." << std::endl;
+                << ", is unavailable, or misspelled." << std::endl;
     }
     return false;
   }
   else if(rank == 0) {
     std::cout << "Using input adapter type: " + adapter_name << std::endl;
   }
+  RCP<base_problem_t> problemRCP = rcp(problem, true);
 
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
@@ -432,10 +436,8 @@ bool run(const UserInputForTests &uinput,
     // 5. Add solution to map for possible comparison testing
     ////////////////////////////////////////////////////////////
 
-    comparison_source->adapter = 
-               RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
-    comparison_source->problem = 
-               RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
+    comparison_source->adapter = iaRCP;
+    comparison_source->problem = problemRCP;
     comparison_source->metricObject = metricObject;
     comparison_source->problem_kind = (problem_parameters.isParameter("kind") ? 
                                        problem_parameters.get<string>("kind") :
