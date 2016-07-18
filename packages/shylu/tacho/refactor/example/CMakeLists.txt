@@ -117,6 +117,12 @@ IF(Kokkos_ENABLE_Pthread)
     COMM serial mpi
   )
   TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDirectSymbolicFactorization_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDirectSymbolicFactorization_Pthreads.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleHierMatrix_Pthreads
     NOEXEPREFIX
     SOURCES Tacho_ExampleHierMatrix_Pthreads.cpp
