@@ -12,7 +12,7 @@ typedef Kokkos::Threads exec_space;
 
 #if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
         || defined(HAVE_SHYLUTACHO_AMESOS)))
-#include "Tacho_ExampleSymbolicFactorization.hpp"
+#include "Tacho_ExampleIncompleteSymbolicFactorization.hpp"
 using namespace Tacho;
 #endif
 
@@ -62,7 +62,7 @@ int main (int argc, char *argv[]) {
 
 #if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
         || defined(HAVE_SHYLUTACHO_AMESOS)))
-    r_val = exampleSymbolicFactorization<exec_space>
+    r_val = exampleIncompleteSymbolicFactorization<exec_space>
       (file_input, treecut, prunecut, fill_level, rows_per_team, verbose);
 #else
     r_val = -1;

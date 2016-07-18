@@ -11,12 +11,40 @@ namespace Tacho {
 
   class CrsMatrixTools {
   public:
+
+    // Tim Davis, Direct Methods for Sparse Linear Systems, Siam, p 42.
+    template<typename CrsMatBaseType,
+             typename OrdinalTypeArray>
+    static void
+    createEliminationTree(OrdinalTypeArray &parent,
+                          /** const OrdinalTypeArray p,
+                              const OrdinalTypeArray ip, */
+                          const CrsMatBaseType A) {
+      const auto m = A.NumRows();
+      auto ancestor = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::ancestor", m);
+
+      if (parent.data() == NULL || parent.dimension(0) < m)
+        parent = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::parent", m);
+
+      for (auto i=0;i<m;++i) {
+        parent(i) = -1;
+        ancestor(i) = -1;
+        
+        const auto nnz_in_row = A.NumNonZerosInRow(i);
+        const auto cols_in_row = A.ColsInRow(i);        
+
+        for (auto idx=0;idx<nnz_in_row;++idx) 
+          for (auto j=cols_in_row(idx);j != -1 && j < i;) {
+            const auto next = ancestor(j);
+            ancestor(j) = i ;
+            if (next == -1) parent(j) = i;
+            j = next;
+          }
+      }
+    }
+
     /// Elementwise copy
     /// ------------------------------------------------------------------
-    /// Properties:
-    /// - Runnable on Device (o),
-    /// - Callable in KokkosFunctors (x),
-    /// - Blocking with fence (o)
 
     /// \brief sort columns
     template<typename CrsMatBaseType>

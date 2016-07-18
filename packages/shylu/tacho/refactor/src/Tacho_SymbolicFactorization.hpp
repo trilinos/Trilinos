@@ -1,5 +1,5 @@
 #ifndef __TACHO_SYMBOLIC_FACTORIZATION_HPP__
-#define __SYMBOLIC_FACTOR_HELPER_HPP__
+#define __TACHO_SYMBOLIC_FACTORIZATION_HPP__
 
 /// \file symbolic_factor_helper.hpp
 /// \brief The class compute a nonzero pattern with a given level of fills

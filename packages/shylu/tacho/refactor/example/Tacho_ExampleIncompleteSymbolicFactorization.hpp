@@ -1,5 +1,5 @@
-#ifndef __TACHO_EXAMPLE_SYMBOLIC_FACTORIZATION_HPP__
-#define __TACHO_EXAMPLE_SYMBOLIC_FACTORIZATION_HPP__
+#ifndef __TACHO_EXAMPLE_INCOMPLETE_SYMBOLIC_FACTORIZATION_HPP__
+#define __TACHO_EXAMPLE_INCOMPLETE_SYMBOLIC_FACTORIZATION_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
@@ -21,12 +21,12 @@
 namespace Tacho {
   
   template<typename DeviceSpaceType>
-  int exampleSymbolicFactorization(const std::string file_input,
-                                   const int treecut,
-                                   const int prunecut,
-                                   const int fill_level,
-                                   const int rows_per_team,
-                                   const bool verbose) {
+  int exampleIncompleteSymbolicFactorization(const std::string file_input,
+                                             const int treecut,
+                                             const int prunecut,
+                                             const int fill_level,
+                                             const int rows_per_team,
+                                             const bool verbose) {
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
