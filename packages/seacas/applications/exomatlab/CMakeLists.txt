@@ -1,6 +1,3 @@
-INCLUDE(TribitsSubPackageMacros)
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsLibraryMacros)
 
 TRIBITS_SUBPACKAGE(Exomatlab)
 

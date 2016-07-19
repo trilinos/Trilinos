@@ -1,5 +1,3 @@
-INCLUDE(TribitsSubPackageMacros)
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(FortranSettings)
 
 TRIBITS_SUBPACKAGE(SVDI)

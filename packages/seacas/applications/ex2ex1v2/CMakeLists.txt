@@ -1,5 +1,3 @@
-INCLUDE(TribitsSubPackageMacros)
-INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
 
 TRIBITS_SUBPACKAGE(Ex2ex1v2)

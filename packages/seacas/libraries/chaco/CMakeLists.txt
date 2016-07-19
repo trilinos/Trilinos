@@ -1,5 +1,3 @@
-INCLUDE(TribitsSubPackageMacros)
-INCLUDE(TribitsLibraryMacros)
 
 TRIBITS_SUBPACKAGE(Chaco)
 

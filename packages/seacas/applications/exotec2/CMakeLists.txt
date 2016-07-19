@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsLibraryMacros)
 
 SEACAS_PACKAGE(Exotec2)
 

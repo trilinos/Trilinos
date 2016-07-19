@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsLibraryMacros)
 
 SET( ACCESSDIR ${CMAKE_INSTALL_PREFIX} )
 SET( SEPARATOR "_")
