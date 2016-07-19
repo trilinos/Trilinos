@@ -49,9 +49,6 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_Operator_fwd.hpp>
-
 #include "MueLu_FacadeClassBase_decl.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
@@ -66,17 +63,7 @@ namespace MueLu {
     //! @name Constructors/Destructors
     //@{
 
-    /*! @brief Constructor that accepts a user-provided ParameterList.
-
-        Constructor for parameter list interpreter which directly interprets Teuchos::ParameterLists
-
-        @details The parameter list can be either in the easy parameter list format or in the factory driven parameter list format.
-
-        @param[in] paramList (Teuchos::ParameterList): ParameterList containing the MueLu parameters
-        @param[in] comm  (RCP<Teuchos::Comm<int> >): Optional RCP of a Teuchos communicator  (default: Teuchos::null)
-        @param[in] factFact  (RCP<FactoryFactory>): Optional parameter allowing to define user-specific factory interpreters for user-specific extensions of the XML interface. (default: Teuchos::null)
-
-     */
+    //! Constructor.
     FacadeSimple();
 
     //! Destructor.
@@ -84,34 +71,14 @@ namespace MueLu {
 
     //@}
 
-    /*! @brief Set parameter list for FacadeClassFactory interpreter.
+    /*! @brief Set parameter list for FacadeClass interpreter.
 
-       The routine checks whether it is a parameter list in the easy parameter format or the more advanced factory-based parameter format and calls the corresponding interpreter routine.
-
-       When finished, the parameter list is set that will used by the hierarchy build phase.
-
-       This method includes validation and some pre-parsing of the list for:
-           - verbosity level
-           - data to export
-           - cycle type
-           - max coarse size
-           - max levels
-           - number of equations
-
-       @param[in] paramList: ParameterList containing the MueLu parameters.
+        @param[in] paramList: ParameterList containing the MueLu parameters for chosen facade class.
     */
     Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
 
-    //! Call the SetupHierarchy routine from the HiearchyManager object.
-    //void SetupHierarchy(Hierarchy& H) const;
-
   private:
 
-    //! @brief String equivalent of preconditioner layout
-    //static const std::string stringTemplate_;
-
-    //! @ brief String defining default parameter list for facade input
-    //static const std::string defaultParams_;
   };
 
 } // namespace MueLu
