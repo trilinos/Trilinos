@@ -49,12 +49,16 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include "MueLu_BaseClass.hpp"
+#include "MueLu_FacadeClassBase.hpp"
+
 #include "MueLu_ConfigDefs.hpp"
 
 namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class FacadeClassFactory {
+  class FacadeClassFactory
+  : public virtual BaseClass{
 #undef MUELU_FACADECLASSFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -77,6 +81,8 @@ namespace MueLu {
     Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
 
   private:
+
+    std::map<std::string, Teuchos::RCP<FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > facadeClasses_;
 
   };
 

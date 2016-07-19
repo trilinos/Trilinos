@@ -53,6 +53,7 @@
 
 #include "MueLu_Exceptions.hpp"
 
+#include "MueLu_FacadeClassBase.hpp"
 #include "MueLu_Facade_Simple_decl.hpp"
 
 #include "MueLu_FacadeClassFactory_decl.hpp"
@@ -61,62 +62,29 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   FacadeClassFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::FacadeClassFactory() {
+    facadeClasses_["Simple"] = Teuchos::rcp(new FacadeSimple<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Teuchos::ParameterList> FacadeClassFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
 
-    FacadeSimple<Scalar,LocalOrdinal,GlobalOrdinal,Node> test;
+    TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("MueLu preconditioner") == false, MueLu::Exceptions::RuntimeError, "FacadeClassFactory: undefined MueLu preconditioner. Set the \"MueLu preconditioner\" parameter correctly in your input file.");
+    TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("MueLu preconditioner") == "undefined", MueLu::Exceptions::RuntimeError, "FacadeClassFactory: undefined MueLu preconditioner. Set the \"MueLu preconditioner\" parameter correctly in your input file.");
 
-    Teuchos::RCP<Teuchos::ParameterList> facadeParams = test.SetParameterList(paramList);
+    std::string precMueLu = paramList.get<std::string>("MueLu preconditioner");
 
-    return facadeParams;
-    // obtain ParameterList with default input parameters for this facade class
-    /*std::string defaultString = FacadeClassFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_;
-    Teuchos::RCP<ParameterList> defaultList = Teuchos::getParametersFromXmlString(defaultString);
-
-    // validate user input parameters (and set defaults if necessary)
-    Teuchos::ParameterList inputParameters = paramList;
-    inputParameters.validateParametersAndSetDefaults(*defaultList);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(inputParameters.get<std::string>("MueLu preconditioner") == "undefined", MueLu::Exceptions::RuntimeError, "FacadeClassFactory: undefined MueLu preconditioner. Set the \"MueLu preconditioner\" parameter correctly in your input file.");
-
-    // create copy of template string which is updated with in-place string replacements
-    std::string finalString = FacadeClassFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_;
-
-    // loop over all input parameters
-    for(Teuchos::ParameterList::ConstIterator it = inputParameters.begin(); it != inputParameters.end(); it++) {
-      // form replacement string
-      std::string par_name = inputParameters.name(it);
-      std::stringstream ss;
-      ss << "XXX" << par_name << "YYY";
-
-      // update final string with parameters
-      Teuchos::ParameterEntry par_entry = inputParameters.entry(it);
-      ReplaceString(finalString,
-              ss.str(), Teuchos::toString(par_entry.getAny()));
+    // could not find requested facade class
+    if(facadeClasses_.find(precMueLu) == facadeClasses_.end()) {
+      GetOStream(Errors) << "FacadeClassFactory: Could not find facade class \"" << precMueLu << "\"!" << std::endl;
+      GetOStream(Errors) << "The available facade classes are:" << std::endl;
+      for(typename std::map<std::string, Teuchos::RCP<FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >::const_iterator it =facadeClasses_.begin(); it != facadeClasses_.end(); it++){
+        GetOStream(Errors) << "   " << it->first << std::endl;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "FacadeClassFactory: Could not find facade class \"" << precMueLu << "\".");
     }
 
-    // logical code for more complicated distinctions
-    if(inputParameters.get<bool>("Block 1: transfer smoothing") == true) {
-      ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myPFact1");
-      ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myRFact1");
-    } else {
-      ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myTentativePFact1");
-      ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myTransPFact1");
-    }
-    if(inputParameters.get<bool>("Block 2: transfer smoothing") == true) {
-      ReplaceString(finalString, "XXXBlock 2: prolongatorYYY", "myPFact2");
-      ReplaceString(finalString, "XXXBlock 2: restrictor YYY", "myRFact2");
-    } else {
-      ReplaceString(finalString, "XXXBlock 2: prolongatorYYY", "myTentativePFact2");
-      ReplaceString(finalString, "XXXBlock 2: restrictor YYY", "myTransPFact2");
-    }
-    // end logical code
-
-    Teuchos::RCP<ParameterList> ret = Teuchos::getParametersFromXmlString(finalString);*/
-    //return ret;
+    return facadeClasses_[precMueLu]->SetParameterList(paramList);
   }
 
 } // end namespace MueLu
