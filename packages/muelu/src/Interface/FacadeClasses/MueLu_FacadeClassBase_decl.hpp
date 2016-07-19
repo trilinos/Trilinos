@@ -47,10 +47,13 @@
 #ifndef PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_MUELU_FACADECLASSBASE_DECL_HPP_
 #define PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_MUELU_FACADECLASSBASE_DECL_HPP_
 
+#include "MueLu_BaseClass.hpp"
+
 namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class FacadeClassBase {
+  class FacadeClassBase
+  : public virtual BaseClass{
 #undef MUELU_FACADECLASSBASE_SHORT
 #include "MueLu_UseShortNames.hpp"
 

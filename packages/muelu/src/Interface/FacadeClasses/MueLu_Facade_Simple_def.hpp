@@ -82,6 +82,43 @@ namespace MueLu {
 
 
 
+    
+    std::string smoother1 = inputParameters.get<std::string>("Block 1: smoother");
+    if(smoother1 == "ILU") {
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooILUFact1");
+    } else if (smoother1 == "Symmetric Gauss-Seidel" || smoother1 == "SGS") {
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Symmetric Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
+    } else if (smoother1 == "Symmetric Gauss-Seidel" || smoother1 == "GS") {
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
+    } else if (smoother1 == "Jacobi") {
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
+    } else if (smoother1 == "Direct") {
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooDirectFact1");
+    } else {
+      this->GetOStream(Errors) << "Invalid smoother type for block 1: " << smoother1 << ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." << std::endl;
+    }
+    
+    std::string smoother2 = inputParameters.get<std::string>("Block 2: smoother");
+    if(smoother2 == "ILU") {
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooILUFact2");
+    } else if (smoother2 == "Symmetric Gauss-Seidel" || smoother2 == "SGS") {
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Symmetric Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
+    } else if (smoother2 == "Symmetric Gauss-Seidel" || smoother2 == "GS") {
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
+    } else if (smoother2 == "Jacobi") {
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
+    } else if (smoother2 == "Direct") {
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooDirectFact2");
+    } else {
+      this->GetOStream(Errors) << "Invalid smoother type for block 2: " << smoother2 << ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." << std::endl;
+    }
+    
     if(inputParameters.get<bool>("Block 1: transfer smoothing") == true) {
       this->ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myPFact1");
       this->ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myRFact1");
@@ -122,11 +159,13 @@ namespace MueLu {
 "<Parameter name=\"MueLu preconditioner\" type=\"string\" value=\"undefined\"/>"
 "<Parameter name=\"Block 1: dofs per node\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"Block 2: dofs per node\" type=\"int\" value=\"1\"/>"
-  "<Parameter name=\"Block 1: relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+  "<Parameter name=\"Block 1: smoother\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+  "<Parameter name=\"Block 1: level-of-fill\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"Block 1: relaxation: sweeps\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"Block 1: relaxation: damping factor\" type=\"double\" value=\"1.0\"/>"
   "<Parameter name=\"Block 1: transfer smoothing\" type=\"bool\" value=\"true\"/>"
-  "<Parameter name=\"Block 2: relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+  "<Parameter name=\"Block 2: smoother\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+  "<Parameter name=\"Block 2: level-of-fill\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"Block 2: relaxation: sweeps\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"Block 2: relaxation: damping factor\" type=\"double\" value=\"1.0\"/>"
   "<Parameter name=\"Block 2: transfer smoothing\" type=\"bool\" value=\"true\"/>"
@@ -290,6 +329,18 @@ namespace MueLu {
 "      </ParameterList>"
 "    </ParameterList>"
 ""
+"    <ParameterList name=\"mySmooILUFact1\">"
+"      <Parameter name=\"factory\" type=\"string\" value=\"TrilinosSmoother\"/>"
+"      <Parameter name=\"type\" type=\"string\" value=\"ILU\"/>"
+"      <ParameterList name=\"ParameterList\">"
+"        <Parameter name=\"fact: level-of-fill\" type=\"int\" value=\"XXXBlock 1: level-of-fillYYY\"/>"
+"      </ParameterList>"
+"    </ParameterList>"
+""
+"    <ParameterList name=\"mySmooDirectFact1\">"
+"      <Parameter name=\"factory\" type=\"string\" value=\"DirectSolver\"/>"
+"    </ParameterList>"
+""
 "    <ParameterList name=\"mySmooFact2\">"
 "      <Parameter name=\"factory\" type=\"string\" value=\"TrilinosSmoother\"/>"
 "      <Parameter name=\"type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -298,6 +349,18 @@ namespace MueLu {
 "        <Parameter name=\"relaxation: sweeps\" type=\"int\"    value=\"XXXBlock 2: relaxation: sweepsYYY\"/>"
 "        <Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"XXXBlock 2: relaxation: damping factorYYY\"/>"
 "      </ParameterList>"
+"    </ParameterList>"
+""
+"    <ParameterList name=\"mySmooILUFact2\">"
+"      <Parameter name=\"factory\" type=\"string\" value=\"TrilinosSmoother\"/>"
+"      <Parameter name=\"type\" type=\"string\" value=\"ILU\"/>"
+"      <ParameterList name=\"ParameterList\">"
+"        <Parameter name=\"fact: level-of-fill\" type=\"int\" value=\"XXXBlock 2: level-of-fillYYY\"/>"
+"      </ParameterList>"
+"    </ParameterList>"
+""
+"    <ParameterList name=\"mySmooDirectFact2\">"
+"      <Parameter name=\"factory\" type=\"string\" value=\"DirectSolver\"/>"
 "    </ParameterList>"
 ""
 "    <ParameterList name=\"myNSSchurCompFact\">"
@@ -313,12 +376,12 @@ namespace MueLu {
 "      <!-- factory manager for block 1 -->"
 "      <ParameterList name=\"block1\">"
 "        <Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory1\"/>"
-"        <Parameter name=\"Smoother\" type=\"string\" value=\"mySmooFact1\"/>"
+"        <Parameter name=\"Smoother\" type=\"string\" value=\"XYZSmoother1XYZ\"/>"
 "      </ParameterList>"
 "      <!-- factory manager for block 2 -->"
 "      <ParameterList name=\"block2\">"
 "        <Parameter name=\"A\" type=\"string\" value=\"myNSSchurCompFact\"/>"
-"        <Parameter name=\"Smoother\" type=\"string\" value=\"mySmooFact2\"/>"
+"        <Parameter name=\"Smoother\" type=\"string\" value=\"XYZSmoother2XYZ\"/>"
 "      </ParameterList>"
 "    </ParameterList>"
 ""
