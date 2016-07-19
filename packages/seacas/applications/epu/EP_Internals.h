@@ -97,6 +97,8 @@ namespace Excn {
     int exodusFilePtr;
   };
 
+  bool is_path_absolute(const std::string &path);
+
   template <typename INT> class Internals
   {
   public:

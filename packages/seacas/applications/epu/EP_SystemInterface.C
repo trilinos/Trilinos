@@ -44,6 +44,7 @@
 #include <utility>  // for pair, make_pair
 #include <vector>
 
+#include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <limits.h>

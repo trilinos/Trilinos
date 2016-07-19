@@ -54,6 +54,10 @@
 #include <string>   // for string, basic_string
 #include <vector>   // for vector
 
+#ifdef _WIN32
+#include <Shlwapi.h>
+#endif
+
 extern "C" {
 #define NO_NETCDF_2
 #include <exodusII.h>
@@ -107,6 +111,15 @@ namespace {
 
   int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim, int dimension,
                              int dim_dim, int str_dim);
+}
+
+bool Excn::is_path_absolute(const std::string &path)
+{
+#ifdef _WIN32
+  return !PathIsRelativeA(path.c_str());
+#else
+  return path[0] == '/';
+#endif
 }
 
 Excn::Redefine::Redefine(int exoid) : exodusFilePtr(exoid)
@@ -244,7 +257,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
 
   // For now, put entity names using the ExodusII api...
   {
-    ssize_t max_entity = mesh.blockCount;
+    size_t max_entity = mesh.blockCount;
     if (mesh.nodesetCount > max_entity)
       max_entity = mesh.nodesetCount;
     if (mesh.sidesetCount > max_entity)
@@ -258,7 +271,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
 
     size_t name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
     auto   names     = new char *[max_entity];
-    for (ssize_t i = 0; i < max_entity; i++) {
+    for (size_t i = 0; i < max_entity; i++) {
       names[i] = new char[name_size + 1];
     }
 
@@ -301,7 +314,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
       ex_put_names(exodusFilePtr, EX_SIDE_SET, names);
     }
 
-    for (ssize_t i = 0; i < max_entity; i++) {
+    for (size_t i = 0; i < max_entity; i++) {
       delete[] names[i];
     }
     delete[] names;

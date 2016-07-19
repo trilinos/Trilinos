@@ -39,8 +39,13 @@
 #include <iostream>
 #include <string>
 
+#include <EP_Internals.h>
 #include <EP_ParallelDisks.h>
 #include <to_string.h>
+
+#ifdef _WIN32
+#include <Shlwapi.h>
+#endif
 
 /*****************************************************************************/
 Excn::ParallelDisks::ParallelDisks() : disk_names(nullptr), number_of_raids(0), raid_offset(0) {}
@@ -80,7 +85,7 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   if (rootdir.length()) {
     prepend = rootdir + "/";
   }
-  else if (name[0] == '/') {
+  else if (Excn::is_path_absolute(name)) {
     prepend = "";
   }
   else {

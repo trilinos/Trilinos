@@ -54,11 +54,19 @@
 
 #include "smart_assert.h"
 #include "to_string.h"
+
 #include <cctype>
 #include <cstring>
 #include <ctime>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#undef IN
+#undef OUT
+#else
 #include <sys/utsname.h>
+#endif
 
 typedef std::vector<std::string> StringVector;
 
@@ -76,7 +84,9 @@ typedef std::vector<std::string> StringVector;
 #error "Requires exodusII version 4.68 or later"
 #endif
 
+#ifndef _WIN32
 #include "add_to_log.h"
+#endif
 
 typedef std::vector<ex_entity_id> ExodusIdVector;
 
@@ -416,8 +426,10 @@ int main(int argc, char *argv[])
       }
     }
 
+#ifndef _WIN32
     time_t end_time = time(nullptr);
     add_to_log(argv[0], (int)(end_time - begin_time));
+#endif
     return (error);
   }
   catch (std::exception &e) {
@@ -2837,10 +2849,40 @@ namespace {
 
   void add_info_record(char *info_record, int size)
   {
-    // Add 'uname' output to the passed in character string.
-    // Maximum size of string is 'size' (not including terminating nullptr)
-    // This is used as information data in the concatenated results file
-    // to help in tracking when/where/... the file was created
+// Add 'uname' output to the passed in character string.
+// Maximum size of string is 'size' (not including terminating nullptr)
+// This is used as information data in the concatenated results file
+// to help in tracking when/where/... the file was created
+
+#ifdef _WIN32
+    std::string info                                      = "EPU: ";
+    char        machine_name[MAX_COMPUTERNAME_LENGTH + 1] = {0};
+    DWORD       buf_len                                   = MAX_COMPUTERNAME_LENGTH + 1;
+    ::GetComputerName(machine_name, &buf_len);
+    info += machine_name;
+    info += ", OS: ";
+
+    std::string   os = "Microsoft Windows";
+    OSVERSIONINFO osvi;
+
+    ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+
+    if (GetVersionEx(&osvi)) {
+      std::stringstream str;
+      str << " ";
+      str << osvi.dwMajorVersion << "." << osvi.dwMinorVersion;
+      str << " ";
+      str << osvi.szCSDVersion;
+      DWORD build = osvi.dwBuildNumber & 0xFFFF;
+      str << " (Build " << build << ")";
+      os += str.str().c_str();
+    }
+    info += os;
+    const char *sinfo = info.c_str();
+    strncpy(info_record, sinfo, size);
+    info_record[size] = '\0';
+#else
     struct utsname sys_info;
     uname(&sys_info);
 
@@ -2857,6 +2899,7 @@ namespace {
     const char *sinfo = info.c_str();
     strncpy(info_record, sinfo, size);
     info_record[size] = '\0';
+#endif
   }
 
   inline bool is_whitespace(char c)

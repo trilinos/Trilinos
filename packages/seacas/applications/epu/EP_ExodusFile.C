@@ -34,6 +34,7 @@
  */
 
 #include "EP_ExodusFile.h"
+#include "EP_Internals.h"
 #include "EP_ParallelDisks.h"
 #include "EP_SystemInterface.h"
 #include "smart_assert.h"
@@ -252,7 +253,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
     outputFilename_ += "." + output_suffix;
   }
 
-  if (curdir.length() && outputFilename_[0] != '/') {
+  if (curdir.length() && !Excn::is_path_absolute(outputFilename_)) {
     outputFilename_ = curdir + "/" + outputFilename_;
   }
 
@@ -318,7 +319,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
 
 #if defined(__PUMAGON__)
 #include <stdio.h>
-#else
+#elif !defined(_WIN32)
 #include <unistd.h>
 #endif
 
@@ -329,6 +330,8 @@ namespace {
 // at one time. (POSIX)
 #if defined(__PUMAGON__)
     int fdmax = FOPEN_MAX;
+#elif defined(_WIN32)
+    int fdmax = _getmaxstdio();
 #else
     int fdmax = sysconf(_SC_OPEN_MAX);
     if (fdmax == -1) {
