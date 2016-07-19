@@ -87,6 +87,11 @@ namespace Tacho {
     }
 
     KOKKOS_INLINE_FUNCTION
+    row_view_type_array getRowViewArray() const {
+      return _rows;
+    }
+
+    KOKKOS_INLINE_FUNCTION
     row_view_type& RowView(const ordinal_type i) const { return _rows[i]; }
 
     KOKKOS_INLINE_FUNCTION
