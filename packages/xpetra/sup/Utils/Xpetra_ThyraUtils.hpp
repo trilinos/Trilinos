@@ -69,6 +69,7 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 
 #include <Thyra_VectorSpaceBase.hpp>
+#include <Thyra_SpmdVectorSpaceBase.hpp>
 #include <Thyra_ProductVectorSpaceBase.hpp>
 #include <Thyra_ProductMultiVectorBase.hpp>
 #include <Thyra_VectorSpaceBase.hpp>
