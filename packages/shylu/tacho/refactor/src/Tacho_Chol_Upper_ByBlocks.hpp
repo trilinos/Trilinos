@@ -25,15 +25,15 @@ namespace Tacho {
                       CrsTaskViewTypeA &A,
                       unsigned int &part) {
 
-      typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
+      typedef typename CrsTaskViewTypeA::row_view_type row_view_type;
 #ifdef TACHO_EXECUTE_TASKS_SERIAL
 #else
-      typedef typename CrsTaskViewTypeA::future_type       future_type;
+      typedef typename CrsTaskViewTypeA::future_type future_type;
       TaskFactory factory;
 #endif
 
       if (member.team_rank() == 0) {
-        const unsigned int ntasks_window = 4096;
+        const unsigned int ntasks_window  = TaskWindow::CholByBlocks;
         /**/  unsigned int ntasks_spawned = 0;
 
         CrsTaskViewTypeA ATL, ATR,      A00, A01, A02,
@@ -64,7 +64,6 @@ namespace Tacho {
                 CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
                 ::invoke(policy, member, aa);
 #else
-              
               switch (ArgVariant) {
               case Variant::Three: // SuperNodes-ByBlocks with DenseByBlocks
                 {
@@ -77,7 +76,7 @@ namespace Tacho {
               case Variant::Two:   // Sparse-ByBlocks
                 { 
                   // construct a task
-                  const future_type f = factory.create<future_type>
+                  const auto f = factory.create<future_type>
                     (policy,
                      Chol<Uplo::Upper,
                      CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
@@ -89,10 +88,10 @@ namespace Tacho {
                   
                   // spawn a task
                   factory.spawn(policy, f);
-                  ++ntasks_spawned;
                   break;
                 }
               }
+              ++ntasks_spawned;
 #endif
             }
             
@@ -122,7 +121,7 @@ namespace Tacho {
                   case Variant::One:    // Sparse-ByBlocks
                   case Variant::Two:    // SuperNodes-ByBlocks
                     {
-                      const future_type f = factory.create<future_type>
+                      const auto f = factory.create<future_type>
                         (policy, 
                          Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
                          CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
@@ -137,10 +136,10 @@ namespace Tacho {
                       
                       // spawn a task
                       factory.spawn(policy, f);              
-                      ++ntasks_spawned;
                       break;
                     }
                   }
+                  ++ntasks_spawned;
 #endif
                 } 
               }
@@ -189,7 +188,7 @@ namespace Tacho {
                             case Variant::One:
                             case Variant::Two:
                               {
-                                const future_type f = factory.create<future_type>
+                                const auto f = factory.create<future_type>
                                   (policy, 
                                    Herk<Uplo::Upper,Trans::ConjTranspose,
                                    CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
@@ -204,10 +203,10 @@ namespace Tacho {
                                 
                                 // spawn a task
                                 factory.spawn(policy, f);
-                                ++ntasks_spawned;
                                 break;
                               }
                             }
+                            ++ntasks_spawned;
 #endif
                           } 
                         }
@@ -233,7 +232,7 @@ namespace Tacho {
                             case Variant::One:
                             case Variant::Two: 
                               {
-                                const future_type f = factory.create<future_type>
+                                const auto f = factory.create<future_type>
                                   (policy, 
                                    Gemm<Trans::ConjTranspose,Trans::NoTranspose,
                                    CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
@@ -249,10 +248,10 @@ namespace Tacho {
                                 
                                 // spawn a task
                                 factory.spawn(policy, f);
-                                ++ntasks_spawned;
                                 break;
                               }
                             }
+                            ++ntasks_spawned;
 #endif
                           } 
                         }

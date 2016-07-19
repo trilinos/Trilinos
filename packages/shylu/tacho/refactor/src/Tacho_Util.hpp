@@ -351,6 +351,12 @@ namespace Tacho {
     static constexpr int Nine  = 9;
   };
 
+  class TaskWindow {
+  public:
+    static constexpr unsigned int CholByBlocks     = 4096;
+    static constexpr unsigned int TriSolveByBlocks = 4096;
+  };
+
   /// \class AlgoChol
   /// \brief Various Cholesky algorithms for sparse and dense factorization.
   class AlgoChol {

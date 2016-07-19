@@ -29,14 +29,14 @@ namespace Tacho {
                       unsigned int &part) {
 #ifdef TACHO_EXECUTE_TASKS_SERIAL
 #else
-      typedef typename CrsTaskViewTypeA::future_type       future_type;
+      typedef typename CrsTaskViewTypeA::future_type future_type;
       TaskFactory factory;
 #endif
-      typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
+      typedef typename CrsTaskViewTypeA::row_view_type row_view_type;
 
       // ---------------------------------------------
       if (member.team_rank() == 0) {
-        const unsigned int ntasks_window = 4096;
+        const unsigned int ntasks_window  = TaskWindow::TriSolveByBlocks;
         /**/  unsigned int ntasks_spawned = 0;
 
         CrsTaskViewTypeA ATL, ATR,      A00, A01, A02,
@@ -87,22 +87,36 @@ namespace Tacho {
                     CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
                     ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
 #else
-                  const future_type f = factory.create<future_type>
-                    (policy,
-                     Gemm<Trans::NoTranspose,Trans::NoTranspose,
-                     CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
-                     ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
-                  
-                  // dependence
-                  factory.depend(policy, f, aa.Future());
-                  factory.depend(policy, f, bb.Future());
-                  factory.depend(policy, f, cc.Future());
-                  
-                  // place task signature on y
-                  cc.setFuture(f);
-                  
-                  // spawn a task
-                  factory.spawn(policy, f);
+                  switch (ArgVariant) {
+                  case Variant::Three: 
+                    {
+                      Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                        CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
+                        ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
+                      break;
+                    }
+                  case Variant::One:
+                  case Variant::Two: 
+                    {
+                      const auto f = factory.create<future_type>
+                        (policy,
+                         Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                         CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
+                         ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
+                      
+                      // dependence
+                      factory.depend(policy, f, aa.Future());
+                      factory.depend(policy, f, bb.Future());
+                      factory.depend(policy, f, cc.Future());
+                      
+                      // place task signature on y
+                      cc.setFuture(f);
+                      
+                      // spawn a task
+                      factory.spawn(policy, f);
+                      break;
+                    }
+                  }
                   ++ntasks_spawned;
 #endif
                 }
@@ -124,21 +138,35 @@ namespace Tacho {
                   CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
                   ::invoke(policy, member, diagA, 1.0, aa, bb);
 #else
-                const future_type f = factory.create<future_type>
-                  (policy,
-                   Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
-                   CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
-                   ::createTaskFunctor(policy, diagA, 1.0, aa, bb), 2);
-                
-                // trsm dependence
-                factory.depend(policy, f, aa.Future());
-                factory.depend(policy, f, bb.Future());
-                
-                // place task signature on b
-                bb.setFuture(f);
-                
-                // spawn a task
-                factory.spawn(policy, f);
+                switch (ArgVariant) {
+                case Variant::Three:
+                  {
+                    Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
+                      CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
+                      ::invoke(policy, member, diagA, 1.0, aa, bb);
+                    break;
+                  }
+                case Variant::One:
+                case Variant::Two:
+                  {
+                    const auto f = factory.create<future_type>
+                      (policy,
+                       Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
+                       CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
+                       ::createTaskFunctor(policy, diagA, 1.0, aa, bb), 2);
+                    
+                    // trsm dependence
+                    factory.depend(policy, f, aa.Future());
+                    factory.depend(policy, f, bb.Future());
+                    
+                    // place task signature on b
+                    bb.setFuture(f);
+                    
+                    // spawn a task
+                    factory.spawn(policy, f);
+                    break;
+                  }
+                }
                 ++ntasks_spawned;
 #endif
               }
