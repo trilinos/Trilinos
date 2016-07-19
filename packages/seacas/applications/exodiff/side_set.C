@@ -88,8 +88,7 @@ template <typename INT> void Side_Set<INT>::entity_load_params()
   int err = ex_get_sets(fileId, 1, &sets[0]);
 
   if (err < 0) {
-    std::cout << "ERROR: Failed to get sideset parameters for sideset " << id_ << ". !  Aborting..."
-              << '\n';
+    ERROR("Failed to get sideset parameters for sideset " << id_ << ". !  Aborting...\n");
     exit(1);
   }
 
@@ -125,8 +124,8 @@ template <typename INT> void Side_Set<INT>::load_sides(const INT *elmt_map) cons
     err = ex_get_set(fileId, EX_SIDE_SET, id_, elmts, sides);
 
     if (err < 0) {
-      std::cout << "Side_Set<INT>::Load_Set(): ERROR: Failed to read side set " << id_
-                << "!  Aborting..." << '\n';
+      ERROR("Side_Set<INT>::Load_Set(): Failed to read side set " << id_
+	    << "!  Aborting...\n");
       exit(1);
     }
 
@@ -179,8 +178,8 @@ template <typename INT> void Side_Set<INT>::load_df() const
   else {
     int err = ex_get_side_set_node_count(fileId, id_, count.data());
     if (err < 0) {
-      std::cout << "Side_Set::load_df(): ERROR: Failed to read side set node count for sideset "
-                << id_ << "!  Aborting..." << '\n';
+      ERROR("Side_Set::load_df(): Failed to read side set node count for sideset "
+	    << id_ << "!  Aborting...\n");
       exit(1);
     }
   }
@@ -198,9 +197,8 @@ template <typename INT> void Side_Set<INT>::load_df() const
   dist_factors = new double[index];
   int err      = ex_get_set_dist_fact(fileId, EX_SIDE_SET, id_, dist_factors);
   if (err < 0) {
-    std::cout
-        << "Side_Set::load_df(): ERROR: Failed to read side set distribution factors for sideset "
-        << id_ << "!  Aborting..." << '\n';
+    ERROR("Side_Set::load_df(): Failed to read side set distribution factors for sideset "
+	  << id_ << "!  Aborting...\n");
     exit(1);
   }
 }
@@ -245,8 +243,8 @@ std::pair<INT, INT> Side_Set<INT>::Distribution_Factor_Range(size_t side) const
     load_df();
   }
   if (dfIndex == nullptr) {
-    std::cout << "ERROR: Failed to get distribution factors for sideset " << id_
-              << ". !  Aborting..." << '\n';
+    ERROR("Failed to get distribution factors for sideset " << id_
+	  << ". !  Aborting...\n");
     exit(1);
   }
   size_t side_index = sideIndex[side];

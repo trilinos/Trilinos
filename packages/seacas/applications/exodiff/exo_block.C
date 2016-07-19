@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include "ED_SystemInterface.h" // for SystemInterface, interface
 #include "exo_block.h"
 #include "exodusII.h"     // for ex_block, etc
 #include "smart_assert.h" // for SMART_ASSERT
@@ -79,8 +80,8 @@ template <typename INT> void Exo_Block<INT>::entity_load_params()
   int err    = ex_get_block_param(fileId, &block);
 
   if (err < 0) {
-    std::cout << "Exo_Block<INT>::Load_Block_Params(): ERROR: Failed to get element"
-              << " block parameters!  Aborting..." << '\n';
+    ERROR("Exo_Block<INT>::Load_Block_Params(): Failed to get element"
+	  << " block parameters!  Aborting...\n");
     exit(1);
   }
 
@@ -90,12 +91,12 @@ template <typename INT> void Exo_Block<INT>::entity_load_params()
   elmt_type          = block.topology;
 
   if (num_nodes_per_elmt < 0 || num_attr < 0) {
-    std::cout << "Exo_Block<INT>::Load_Block_Params(): ERROR: Data appears corrupt for"
-              << " block " << id_ << "(id=" << id_ << ")!" << '\n'
+    ERROR("Exo_Block<INT>::Load_Block_Params(): Data appears corrupt for"
+              << " block " << id_ << "(id=" << id_ << ")!\n"
               << "\tnum elmts = " << numEntity << '\n'
               << "\tnum nodes per elmt = " << num_nodes_per_elmt << '\n'
               << "\tnum attributes = " << num_attr << '\n'
-              << " ... Aborting..." << '\n';
+	  << " ... Aborting...\n");
     exit(1);
   }
 }
@@ -119,9 +120,9 @@ template <typename INT> std::string Exo_Block<INT>::Load_Connectivity()
 
     int err = ex_get_conn(fileId, EX_ELEM_BLOCK, id_, conn, nullptr, nullptr);
     if (err < 0) {
-      std::cout << "Exo_Block<INT>::Load_Connectivity()  ERROR: Call to ex_get_conn"
-                << " returned error value!  Block id = " << id_ << '\n';
-      std::cout << "Aborting..." << '\n';
+      ERROR("Exo_Block<INT>::Load_Connectivity(): Call to ex_get_conn"
+	    << " returned error value!  Block id = " << id_ << '\n'
+	    << "Aborting...\n");
       exit(1);
     }
     else if (err > 0) {

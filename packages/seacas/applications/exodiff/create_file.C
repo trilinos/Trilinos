@@ -175,7 +175,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         std::cout << buf << '\n';
       }
       else {
-        std::cout << "\nNodal coordinates will not be compared." << '\n';
+        std::cout << "\nNodal coordinates will not be compared.\n";
       }
 
       if (interface.time_tol.type != IGNORE) {
@@ -184,7 +184,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         std::cout << buf << '\n';
       }
       else {
-        std::cout << "Time step time values will not be compared." << '\n';
+        std::cout << "Time step time values will not be compared.\n";
       }
 
       output_compare_names("Global", interface.glob_var_names, interface.glob_var,
@@ -271,7 +271,7 @@ namespace {
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2)
   {
     if (!names.empty()) {
-      std::cout << type << " variables to be compared:" << '\n';
+      std::cout << type << " variables to be compared:\n";
       for (unsigned v = 0; v < names.size(); ++v) {
         if (v == 0)
           sprintf(buf, "%-32s tol: %8g (%s), floor: %8g", names[v].c_str(), tol[v].value,
@@ -293,12 +293,12 @@ namespace {
   void output_diff_names(const char *type, const std::vector<std::string> &names)
   {
     if (!names.empty()) {
-      std::cout << type << " variables to be differenced:" << '\n';
+      std::cout << type << " variables to be differenced:\n";
       for (auto &name : names)
         std::cout << "\t" << name << '\n';
     }
     else
-      std::cout << "No " << type << " variables will be differenced." << '\n';
+      std::cout << "No " << type << " variables will be differenced.\n";
   }
 
   void build_variable_names(const char *type, std::vector<std::string> &names,
@@ -329,7 +329,7 @@ namespace {
               *diff_found = true;
               if (!interface.quiet_flag)
                 std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
-                          << "\" is in the first file but not the second." << '\n';
+                          << "\" is in the first file but not the second.\n";
               continue;
             }
           }
@@ -352,7 +352,7 @@ namespace {
               *diff_found = true;
               if (!interface.quiet_flag)
                 std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
-                          << "\" is in the second file but not the first." << '\n';
+                          << "\" is in the second file but not the first.\n";
               continue;
             }
           }
@@ -380,14 +380,14 @@ namespace {
           *diff_found = true;
           if (!interface.quiet_flag)
             std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
-                      << "\" is not in the second file." << '\n';
+                      << "\" is not in the second file.\n";
         }
       }
       else {
         *diff_found = true;
         if (!interface.quiet_flag)
           std::cout << "exodiff: WARNING .. Specified " << type << " variable \"" << name
-                    << "\" is not in the first file." << '\n';
+                    << "\" is not in the first file.\n";
       }
     }
     names = tmp_list;
@@ -427,7 +427,7 @@ namespace {
           int                idx1 = find_string(var_names1, name, interface.nocase_var_names);
           int                idx2 = find_string(var_names2, name, interface.nocase_var_names);
           if (idx1 < 0 || idx2 < 0) {
-            std::cerr << "ERROR: Unable to find variable named '" << name << "' on database.\n";
+            ERROR("Unable to find variable named '" << name << "' on database.\n");
             exit(1);
           }
 
@@ -435,7 +435,7 @@ namespace {
             if (set2->is_valid_var(idx2))
               truth_tab[b * num_vars + out_idx] = 1;
             else if (!quiet_flag) {
-              std::cout << "exodiff: WARNING " << label << " variable \"" << name
+              std::cerr << "exodiff: WARNING " << label << " variable \"" << name
                         << "\" is not saved for " << label << " id " << set1->Id()
                         << " in the second file but is "
                         << "in the first (by virtue of the truth tables).  "
@@ -443,7 +443,7 @@ namespace {
             }
           }
           else if (set2->is_valid_var(idx2) && !quiet_flag) {
-            std::cout << "exodiff: WARNING " << label << " variable \"" << name
+            std::cerr << "exodiff: WARNING " << label << " variable \"" << name
                       << "\" is not saved for " << label << " id " << set1->Id()
                       << " in the first file but is "
                       << "in the second (by virtue of the truth tables).  "

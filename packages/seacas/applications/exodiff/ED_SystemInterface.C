@@ -19,7 +19,7 @@ namespace {
   {
     std::string sline = line;
     chop_whitespace(sline);
-    std::cout << "exodiff: Error parsing input file, currently at \"" << sline << "\".\n";
+    ERROR("parsing input file, currently at \"" << sline << "\".\n");
     exit(1);
   }
 
@@ -50,14 +50,14 @@ namespace {
     double val = strtod(str_val.c_str(), &endptr);
 
     if (errno == ERANGE) {
-      std::cerr << "exodiff: ERROR:  Overflow or underflow occured when trying"
-                << " to parse command line tolerance.  Aborting...\n";
+      ERROR(" Overflow or underflow occured when trying"
+	    << " to parse command line tolerance.  Aborting...\n");
       exit(1);
     }
     errno = 0;
 
     if (val < 0.0) {
-      std::cerr << "exodiff: ERROR:  Parsed a negative value \"" << val << "\".  Aborting...\n";
+      ERROR(" Parsed a negative value \"" << val << "\".  Aborting...\n");
       exit(1);
     }
     return val;
@@ -147,9 +147,9 @@ namespace {
         ++num_include;
     }
     if (!all_flag && num_include > 0 && num_exclude > 0) {
-      std::cerr << "exodiff: ERROR: Parsing error: Cannot specify both "
-                   "variables to include and exclude without using the "
-                   "'(all)' specifier.  Aborting...\n";
+      ERROR("Parsing error: Cannot specify both "
+	    "variables to include and exclude without using the "
+	    "'(all)' specifier.  Aborting...\n");
       exit(1);
     }
     if (num_include == 0 && num_exclude > 0)
@@ -174,8 +174,8 @@ namespace {
       SMART_ASSERT(errno == 0);
 
       if (ival1 < 1) {
-        std::cerr << "exodiff: Error parsing exclusion times from command "
-                     "line .. value was less than 1\n";
+        ERROR("parsing exclusion times from command "
+	      "line .. value was less than 1\n");
         exit(1);
       }
 
@@ -188,8 +188,8 @@ namespace {
         SMART_ASSERT(errno == 0);
 
         if (ival2 < 1) {
-          std::cerr << "exodiff: Error parsing exclusion times from command "
-                       "line .. value was less than 1\n";
+          ERROR("parsing exclusion times from command "
+		"line .. value was less than 1\n");
           exit(1);
         }
 
@@ -198,9 +198,9 @@ namespace {
             ++num_excluded_steps;
         }
         else if (ival1 > ival2) {
-          std::cerr << "exodiff: Error parsing exclusion times from command "
-                       "line .. first value in a range was greater than the "
-                       "second.\n";
+          ERROR("parsing exclusion times from command "
+		"line .. first value in a range was greater than the "
+		"second.\n");
           exit(1);
         }
       }
@@ -528,8 +528,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
       if ((case_strcmp("tolerance", temp) == 0) || (case_strcmp("all", temp) == 0)) {
         tolerance_help();
       }
-      std::cerr << "\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n";
-      std::cerr << "\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n";
+      std::cout << "\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n";
+      std::cout << "\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n";
       exit(EXIT_SUCCESS);
     }
   }
@@ -592,26 +592,28 @@ bool SystemInterface::parse_options(int argc, char **argv)
       }
       else {
         // Check for additional unknown arguments...
-        std::cerr << "\nERROR: Too many file arguments specified."
-                  << "\n       Probably options following filenames which is no longer allowed."
-                  << "\n       Unknown options are: ";
+        std::cerr << trmclr::red
+		  << "\nexodiff: ERROR: Too many file arguments specified."
+                  << "\n         Probably caused by options following filenames which is no longer allowed."
+                  << "\n         Unknown options are: ";
         while (option_index < argc) {
           std::cerr << "'" << argv[option_index++] << "' ";
         }
-        std::cerr << "\n\n";
+        std::cerr << "\n\n"
+		  << trmclr::normal;
         return false;
       }
     }
   }
   else {
-    std::cerr << "\nERROR: no files specified\n\n";
+    ERROR("no files specified\n\n");
     return false;
   }
 
   // Get options from environment variable also...
   char *options = getenv("EXODIFF_OPTIONS");
   if (options != nullptr) {
-    std::cerr
+    std::cout
         << "\nThe following options were specified via the EXODIFF_OPTIONS environment variable:\n"
         << "\t\t" << options << "\n\n";
     options_.parse(options, options_.basename(*argv));
@@ -707,9 +709,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
         }
       }
       else {
-        std::cout << "exodiff: ERROR: parse error for -explicit keyword. "
+        ERROR("parse error for -explicit keyword. "
                      "Expected '<int|last>:<int|last>', found '"
-                  << temp << "' Aborting...\n";
+	      << temp << "' Aborting...\n");
         exit(1);
       }
     }
@@ -894,7 +896,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     if (temp) {
       command_file = temp;
       if (!summary_flag && !File_Exists(command_file)) {
-        std::cerr << "exodiff: Can't open file \"" << command_file << "\".\n";
+        ERROR("Can't open file \"" << command_file << "\".\n");
         exit(1);
       }
 
@@ -906,7 +908,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
       if (t2) {
         command_file = t2;
         if (!summary_flag && !File_Exists(command_file)) {
-          std::cerr << "exodiff: Can't open file \"" << command_file << "\".\n";
+          ERROR("Can't open file \"" << command_file << "\".\n");
           exit(1);
         }
 
@@ -1003,9 +1005,9 @@ void SystemInterface::Parse_Command_File()
             Set_Max_Names(tmp);
         }
         else {
-          std::cout << "exodiff: ERROR:  expected an integer "
+          ERROR(" expected an integer "
                        "after the \"MAX NAMES\" keyword.  "
-                       "Aborting...\n";
+		"Aborting...\n");
           exit(1);
         }
       }
@@ -1013,9 +1015,9 @@ void SystemInterface::Parse_Command_File()
         tok3 = extract_token(xline, " \t");
         to_lower(tok3);
         if (!abbreviation(tok3, "tolerance", 3)) {
-          std::cout << "exodiff: ERROR:  expected \"TOLERANCE\" "
+          ERROR(" expected \"TOLERANCE\" "
                     << "after the \"FINAL TIME\" keyword. "
-                    << "Found \"" << tok3 << "\" instead. Aborting...\n";
+		<< "Found \"" << tok3 << "\" instead. Aborting...\n");
           exit(1);
         }
         std::string tok = extract_token(xline, " \n\t=,");
@@ -1417,9 +1419,9 @@ namespace {
           !abbreviation(tok, "eigen_relative", 7) && !abbreviation(tok, "eigen_absolute", 7) &&
           !abbreviation(tok, "eigen_combine", 7) && !abbreviation(tok, "ignore", 3) &&
           !abbreviation(tok, "floor", 3)) {
-        std::cout << "exodiff: error in parsing command file: unrecognized "
+        ERROR("in parsing command file: unrecognized "
                      "keyword \""
-                  << tok << "\"\n";
+	      << tok << "\"\n");
         exit(1);
       }
 
@@ -1433,8 +1435,8 @@ namespace {
         def_tol.type = RELATIVE;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          std::cout << "exodiff: Input file specifies a tolerance type "
-                       "but no tolerance\n";
+          ERROR(" Input file specifies a tolerance type "
+		"but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1445,8 +1447,8 @@ namespace {
         def_tol.type = ABSOLUTE;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          std::cout << "exodiff: Input file specifies a tolerance type "
-                       "but no tolerance\n";
+          ERROR("Input file specifies a tolerance type "
+		"but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1457,8 +1459,8 @@ namespace {
         def_tol.type = COMBINED;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          std::cout << "exodiff: Input file specifies a tolerance type "
-                       "but no tolerance\n";
+          ERROR("Input file specifies a tolerance type "
+		"but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1469,8 +1471,8 @@ namespace {
         def_tol.type = ULPS_FLOAT;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          std::cout << "exodiff: Input file specifies a tolerance type "
-                       "but no tolerance\n";
+          ERROR("Input file specifies a tolerance type "
+		"but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1481,8 +1483,8 @@ namespace {
         def_tol.type = ULPS_DOUBLE;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          std::cout << "exodiff: Input file specifies a tolerance type "
-                       "but no tolerance\n";
+          ERROR("Input file specifies a tolerance type "
+		"but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1493,8 +1495,8 @@ namespace {
         def_tol.type = EIGEN_REL;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          std::cout << "exodiff: Input file specifies a tolerance type "
-                       "but no tolerance\n";
+          ERROR("Input file specifies a tolerance type "
+		"but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1505,8 +1507,8 @@ namespace {
         def_tol.type = EIGEN_ABS;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          std::cout << "exodiff: Input file specifies a tolerance type "
-                       "but no tolerance\n";
+          ERROR("Input file specifies a tolerance type "
+		"but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1517,8 +1519,8 @@ namespace {
         def_tol.type = EIGEN_COM;
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
-          std::cout << "exodiff: Input file specifies a tolerance type "
-                       "but no tolerance\n";
+          ERROR("Input file specifies a tolerance type "
+		"but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1535,7 +1537,7 @@ namespace {
       if (abbreviation(tok, "floor", 3)) {
         tok = extract_token(xline, " \n\t=,");
         if (tok == "" || tok[0] == '#') {
-          std::cout << "exodiff: Floor specified but couldn't find value\n";
+          ERROR("Floor specified but couldn't find value\n");
           exit(1);
         }
         def_tol.floor = To_Double(tok);
@@ -1560,11 +1562,11 @@ namespace {
 
         int idx = names.size();
         if (idx >= max_names) {
-          std::cout << "exodiff: Number of names in tabbed list is larger "
+          ERROR("Number of names in tabbed list is larger "
                        "than current limit of "
                     << max_names << ".  To increase, use \"-maxnames <int>\" on the "
                                     "command line or \"MAX NAMES <int>\" in the command "
-                                    "file.  Aborting...\n";
+		"file.  Aborting...\n");
           exit(1);
         }
 

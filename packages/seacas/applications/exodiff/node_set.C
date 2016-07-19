@@ -186,8 +186,7 @@ template <typename INT> void Node_Set<INT>::entity_load_params()
   int err = ex_get_sets(fileId, 1, &sets[0]);
 
   if (err < 0) {
-    std::cout << "ERROR: Failed to get nodeset parameters for nodeset " << id_ << ". !  Aborting..."
-              << '\n';
+    ERROR("Failed to get nodeset parameters for nodeset " << id_ << ". !  Aborting...\n");
     exit(1);
   }
 
