@@ -83,10 +83,6 @@
 #include "Ioss_State.h"
 #include "Ioss_VariableType.h"
 
-#ifdef HAVE_MPI
-#include "Ioss_FileInfo.h"
-#endif
-
 // ========================================================================
 // Static internal helper functions
 // ========================================================================

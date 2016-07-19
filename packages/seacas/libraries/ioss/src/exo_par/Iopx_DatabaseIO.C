@@ -417,6 +417,9 @@ namespace Iopx {
       assert(exodusFilePtr >= 0);
       // Check byte-size of integers stored on the database...
       if ((ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
+	if (myProcessor == 0) {
+	  std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte integers.\n";
+	}
         ex_set_int64_status(exodusFilePtr, EX_ALL_INT64_API);
         set_int_byte_size_api(Ioss::USE_INT64_API);
       }
