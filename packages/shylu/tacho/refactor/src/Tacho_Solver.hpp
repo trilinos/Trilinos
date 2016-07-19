@@ -108,7 +108,7 @@ namespace Tacho {
     PolicyType _policy;
 
     // cross over parameter
-    ordinal_type _algo_flat_maxsize, _algo_hier_minsize;
+    ordinal_type _algo_hier_minsize; //, _algo_flat_maxsize;
     
     // input matrices
     CrsMatrixBaseHostType _AA;
@@ -190,9 +190,8 @@ namespace Tacho {
       _nb = nb;
     }
 
-    void setCrossOverSize(const ordinal_type algo_flat_maxsize, 
-                          const ordinal_type algo_hier_minsize) {
-      _algo_flat_maxsize = algo_flat_maxsize;
+    void setCrossOverSize(const ordinal_type algo_hier_minsize) {
+      //_algo_flat_maxsize = algo_flat_maxsize;
       _algo_hier_minsize = algo_hier_minsize;
     }
 
@@ -438,7 +437,7 @@ namespace Tacho {
         const ordinal_type m = _PAA.NumRows();
         const ordinal_type hm = _maxrange/_mb + 1;
 
-        variant = (m  >= _algo_flat_maxsize ? Variant::Three : Variant::Two);
+        //variant = (m  >= _algo_flat_maxsize ? Variant::Three : Variant::Two);
         variant = (hm >= _algo_hier_minsize ? Variant::Three : variant);
       } else {
         variant = Variant::Two;

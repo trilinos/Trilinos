@@ -18,7 +18,6 @@ namespace Tacho {
                     const int nrhs,
                     const int mb,
                     const int nb,
-                    const int flat_maxsize,
                     const int hier_minsize,
                     const bool verbose) {
     typedef typename
@@ -40,7 +39,7 @@ namespace Tacho {
     SolverType tacho("Tacho::CholSolver");
     tacho.setPolicy(max_concurrency);
     tacho.setBlocksize(mb, nb);
-    tacho.setCrossOverSize(flat_maxsize, hier_minsize);
+    tacho.setCrossOverSize(hier_minsize);
 
     ///
     /// Read from matrix market
