@@ -64,23 +64,38 @@ namespace Tacho {
                 CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
                 ::invoke(policy, member, aa);
 #else
-              // construct a task
-              const future_type f = factory.create<future_type>
-                (policy,
-                 Chol<Uplo::Upper,
-                 CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
-                 ::createTaskFunctor(policy, aa), 1);
               
-              // manage dependence
-              factory.depend(policy, f, aa.Future());
-              aa.setFuture(f);
-              
-              // spawn a task
-              factory.spawn(policy, f);
-              ++ntasks_spawned;
+              switch (ArgVariant) {
+              case Variant::Three: // SuperNodes-ByBlocks with DenseByBlocks
+                {
+                  Chol<Uplo::Upper,
+                    CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
+                    ::invoke(policy, member, aa);
+                  break;
+                }
+              case Variant::One:   // SuperNodes-ByBlocks
+              case Variant::Two:   // Sparse-ByBlocks
+                { 
+                  // construct a task
+                  const future_type f = factory.create<future_type>
+                    (policy,
+                     Chol<Uplo::Upper,
+                     CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
+                     ::createTaskFunctor(policy, aa), 1);
+                  
+                  // manage dependence
+                  factory.depend(policy, f, aa.Future());
+                  aa.setFuture(f);
+                  
+                  // spawn a task
+                  factory.spawn(policy, f);
+                  ++ntasks_spawned;
+                  break;
+                }
+              }
 #endif
             }
-
+            
             // A12 = inv(triu(A11)') * A12
             {
               row_view_type b(A12, 0); 
@@ -96,22 +111,36 @@ namespace Tacho {
                     CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
                     ::invoke(policy, member, Diag::NonUnit, 1.0, aa, bb);
 #else
-                  const future_type f = factory.create<future_type>
-                    (policy, 
-                     Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-                     CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
-                     ::createTaskFunctor(policy, Diag::NonUnit, 1.0, aa, bb), 2);
-                  
-                  // trsm dependence
-                  factory.depend(policy, f, aa.Future());
-                  factory.depend(policy, f, bb.Future());
-                  
-                  // place task signature on b
-                  bb.setFuture(f);
-                  
-                  // spawn a task
-                  factory.spawn(policy, f);              
-                  ++ntasks_spawned;
+                  switch (ArgVariant) {
+                  case Variant::Three:  // SuperNodes-ByBlocks with DenseByBlocks
+                    {
+                      Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                        CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
+                        ::invoke(policy, member, Diag::NonUnit, 1.0, aa, bb);
+                      break;
+                    }
+                  case Variant::One:    // Sparse-ByBlocks
+                  case Variant::Two:    // SuperNodes-ByBlocks
+                    {
+                      const future_type f = factory.create<future_type>
+                        (policy, 
+                         Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                         CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
+                         ::createTaskFunctor(policy, Diag::NonUnit, 1.0, aa, bb), 2);
+                      
+                      // trsm dependence
+                      factory.depend(policy, f, aa.Future());
+                      factory.depend(policy, f, bb.Future());
+                      
+                      // place task signature on b
+                      bb.setFuture(f);
+                      
+                      // spawn a task
+                      factory.spawn(policy, f);              
+                      ++ntasks_spawned;
+                      break;
+                    }
+                  }
 #endif
                 } 
               }
@@ -149,22 +178,36 @@ namespace Tacho {
                               CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
                               ::invoke(policy, member, -1.0, aa, 1.0, cc);
 #else
-                            const future_type f = factory.create<future_type>
-                              (policy, 
-                               Herk<Uplo::Upper,Trans::ConjTranspose,
-                               CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
-                               ::createTaskFunctor(policy, -1.0, aa, 1.0, cc), 2);
-                            
-                            // dependence
-                            factory.depend(policy, f, aa.Future());              
-                            factory.depend(policy, f, cc.Future());
-                            
-                            // place task signature on y
-                            cc.setFuture(f);
-                            
-                            // spawn a task
-                            factory.spawn(policy, f);
-                            ++ntasks_spawned;
+                            switch (ArgVariant) {
+                            case Variant::Three:
+                              {
+                                Herk<Uplo::Upper,Trans::ConjTranspose,
+                                  CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
+                                  ::invoke(policy, member, -1.0, aa, 1.0, cc);
+                                break;
+                              }
+                            case Variant::One:
+                            case Variant::Two:
+                              {
+                                const future_type f = factory.create<future_type>
+                                  (policy, 
+                                   Herk<Uplo::Upper,Trans::ConjTranspose,
+                                   CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
+                                   ::createTaskFunctor(policy, -1.0, aa, 1.0, cc), 2);
+                                
+                                // dependence
+                                factory.depend(policy, f, aa.Future());              
+                                factory.depend(policy, f, cc.Future());
+                                
+                                // place task signature on y
+                                cc.setFuture(f);
+                                
+                                // spawn a task
+                                factory.spawn(policy, f);
+                                ++ntasks_spawned;
+                                break;
+                              }
+                            }
 #endif
                           } 
                         }
@@ -179,23 +222,37 @@ namespace Tacho {
                               CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
                               ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
 #else
-                            const future_type f = factory.create<future_type>
-                              (policy, 
-                               Gemm<Trans::ConjTranspose,Trans::NoTranspose,
-                               CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
-                               ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
-                            
-                            // dependence
-                            factory.depend(policy, f, aa.Future());
-                            factory.depend(policy, f, bb.Future());
-                            factory.depend(policy, f, cc.Future());
-                            
-                            // place task signature on y
-                            cc.setFuture(f);
-                            
-                            // spawn a task
-                            factory.spawn(policy, f);
-                            ++ntasks_spawned;
+                            switch (ArgVariant) {
+                            case Variant::Three: 
+                              {
+                                Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                                  CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
+                                  ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
+                                break;
+                              }
+                            case Variant::One:
+                            case Variant::Two: 
+                              {
+                                const future_type f = factory.create<future_type>
+                                  (policy, 
+                                   Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                                   CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
+                                   ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
+                                
+                                // dependence
+                                factory.depend(policy, f, aa.Future());
+                                factory.depend(policy, f, bb.Future());
+                                factory.depend(policy, f, cc.Future());
+                                
+                                // place task signature on y
+                                cc.setFuture(f);
+                                
+                                // spawn a task
+                                factory.spawn(policy, f);
+                                ++ntasks_spawned;
+                                break;
+                              }
+                            }
 #endif
                           } 
                         }
