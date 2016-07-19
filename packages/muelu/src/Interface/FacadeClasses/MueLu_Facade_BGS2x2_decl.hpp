@@ -44,8 +44,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_
-#define PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_
+#ifndef PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_BGS2x2_DECL_HPP_
+#define PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_BGS2x2_DECL_HPP_
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -56,7 +56,7 @@
 namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class FacadeSimple : public FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class FacadeBGS2x2 : public FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -64,10 +64,10 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    FacadeSimple();
+    FacadeBGS2x2();
 
     //! Destructor.
-    virtual ~FacadeSimple() { }
+    virtual ~FacadeBGS2x2() { }
 
     //@}
 
@@ -90,4 +90,4 @@ namespace MueLu {
 
 
 
-#endif /* PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_ */
+#endif /* PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_BGS2x2_DECL_HPP_ */

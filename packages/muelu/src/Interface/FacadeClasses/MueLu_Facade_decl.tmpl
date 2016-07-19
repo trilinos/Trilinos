@@ -78,6 +78,11 @@ namespace MueLu {
     Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
 
   private:
+    //! @brief String equivalent of preconditioner layout
+    static const std::string stringTemplate_;
+
+    //! @ brief String defining default parameter list for facade input
+    static const std::string defaultParams_;
 
   };
 

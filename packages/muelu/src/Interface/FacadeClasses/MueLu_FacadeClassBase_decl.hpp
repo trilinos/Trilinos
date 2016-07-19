@@ -88,11 +88,6 @@ namespace MueLu {
       return subject;
     }
 
-    //! @brief String equivalent of preconditioner layout
-    static const std::string stringTemplate_;
-
-    //! @ brief String defining default parameter list for facade input
-    static const std::string defaultParams_;
   };
 
 } // namespace MueLu

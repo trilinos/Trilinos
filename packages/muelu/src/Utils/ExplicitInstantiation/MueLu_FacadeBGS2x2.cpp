@@ -44,50 +44,13 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_
-#define PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_
-
-#include <Teuchos_ParameterList.hpp>
-
-#include "MueLu_FacadeClassBase_decl.hpp"
-
-#include "MueLu_ConfigDefs.hpp"
-
-namespace MueLu {
-
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class FacadeSimple : public FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
-#include "MueLu_UseShortNames.hpp"
-
-  public:
-    //! @name Constructors/Destructors
-    //@{
-
-    //! Constructor.
-    FacadeSimple();
-
-    //! Destructor.
-    virtual ~FacadeSimple() { }
-
-    //@}
-
-    /*! @brief Set parameter list for FacadeClass interpreter.
-
-        @param[in] paramList: ParameterList containing the MueLu parameters for chosen facade class.
-    */
-    Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
-
-  private:
-    //! @brief String equivalent of preconditioner layout
-    static const std::string stringTemplate_;
-
-    //! @ brief String defining default parameter list for facade input
-    static const std::string defaultParams_;
-
-  };
-
-} // namespace MueLu
 
 
 
-#endif /* PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DECL_HPP_ */
+#include "MueLu_Facade_BGS2x2_def.hpp"
+
+#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
+  template class MueLu::FacadeBGS2x2<SC,LO,GO,NO>;
+
+#include "MueLu_ETI_4arg.hpp"
+

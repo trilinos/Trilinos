@@ -46,7 +46,7 @@ function createFiles {
   echo '' >> MueLu_Facade_${filekenner}_def.hpp
   echo '  // Note all parameters are of type string (we use it for string replacement)' >> MueLu_Facade_${filekenner}_def.hpp
   echo '  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>' >> MueLu_Facade_${filekenner}_def.hpp
-  echo '  const std::string FacadeClassBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_ =' >> MueLu_Facade_${filekenner}_def.hpp
+  echo '  const std::string Facade'${filekenner}'<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_ =' >> MueLu_Facade_${filekenner}_def.hpp
   echo '"<ParameterList name=\"Input\">"' >> MueLu_Facade_${filekenner}_def.hpp
   echo '"<Parameter name=\"MueLu preconditioner\" type=\"string\" value=\"undefined\"/>"' >> MueLu_Facade_${filekenner}_def.hpp
   xsltproc gen_defaults.xsl ${facade_xml} >> MueLu_Facade_${filekenner}_def.hpp
@@ -55,7 +55,7 @@ function createFiles {
 
   echo '  // template string for preconditioner layout (factory based parameters)' >> MueLu_Facade_${filekenner}_def.hpp
   echo '  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>' >> MueLu_Facade_${filekenner}_def.hpp
-  echo '  const std::string FacadeClassBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_ =' >> MueLu_Facade_${filekenner}_def.hpp
+  echo '  const std::string Facade'${filekenner}'<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_ =' >> MueLu_Facade_${filekenner}_def.hpp
   xsltproc gen_template.xsl ${facade_xml} >> MueLu_Facade_${filekenner}_def.hpp
   echo ';' >> MueLu_Facade_${filekenner}_def.hpp
 
@@ -64,4 +64,6 @@ function createFiles {
   echo '#endif'                   >> MueLu_Facade_${filekenner}_def.hpp
 }
 
+# create facade files
 createFiles def_facade_Simple2x2.xml
+createFiles def_facade_BGS2x2.xml

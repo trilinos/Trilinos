@@ -44,8 +44,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DEF_HPP_
-#define PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_Simple_DEF_HPP_
+#ifndef PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_BGS2x2_DEF_HPP_
+#define PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_BGS2x2_DEF_HPP_
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
@@ -53,30 +53,30 @@
 
 #include "MueLu_Exceptions.hpp"
 
-#include "MueLu_Facade_Simple_decl.hpp"
+#include "MueLu_Facade_BGS2x2_decl.hpp"
 
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  FacadeSimple<Scalar, LocalOrdinal, GlobalOrdinal, Node>::FacadeSimple() {
+  FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::FacadeBGS2x2() {
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Teuchos::ParameterList> FacadeSimple<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
+  Teuchos::RCP<Teuchos::ParameterList> FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
 
     // obtain ParameterList with default input parameters for this facade class
-    std::string defaultString = FacadeSimple<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_;
+    std::string defaultString = FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_;
     Teuchos::RCP<ParameterList> defaultList = Teuchos::getParametersFromXmlString(defaultString);
 
     // validate user input parameters (and set defaults if necessary)
     Teuchos::ParameterList inputParameters = paramList;
     inputParameters.validateParametersAndSetDefaults(*defaultList);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(inputParameters.get<std::string>("MueLu preconditioner") == "undefined", MueLu::Exceptions::RuntimeError, "FacadeSimple: undefined MueLu preconditioner. Set the \"MueLu preconditioner\" parameter correctly in your input file.");
+    TEUCHOS_TEST_FOR_EXCEPTION(inputParameters.get<std::string>("MueLu preconditioner") == "undefined", MueLu::Exceptions::RuntimeError, "FacadeBGS2x2: undefined MueLu preconditioner. Set the \"MueLu preconditioner\" parameter correctly in your input file.");
 
     // create copy of template string which is updated with in-place string replacements
-    std::string finalString = FacadeSimple<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_;
+    std::string finalString = FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_;
 
     // logical code for more complicated distinctions
 
@@ -154,7 +154,7 @@ namespace MueLu {
 
   // Note all parameters are of type string (we use it for string replacement)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const std::string FacadeSimple<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_ =
+  const std::string FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::defaultParams_ =
 "<ParameterList name=\"Input\">"
 "<Parameter name=\"MueLu preconditioner\" type=\"string\" value=\"undefined\"/>"
 "<Parameter name=\"Block 1: dofs per node\" type=\"int\" value=\"1\"/>"
@@ -169,7 +169,7 @@ namespace MueLu {
   "<Parameter name=\"Block 2: relaxation: sweeps\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"Block 2: relaxation: damping factor\" type=\"double\" value=\"1.0\"/>"
   "<Parameter name=\"Block 2: transfer smoothing\" type=\"bool\" value=\"true\"/>"
-  "<Parameter name=\"Simple: damping factor\" type=\"double\" value=\"1.0\"/>"
+  "<Parameter name=\"BGS: damping factor\" type=\"double\" value=\"1.0\"/>"
   "<Parameter name=\"max levels\" type=\"int\" value=\"5\"/>"
   "<Parameter name=\"coarse: max size\" type=\"int\" value=\"25000\"/>"
   "<Parameter name=\"verbosity\" type=\"string\" value=\"High\"/>"
@@ -177,7 +177,7 @@ namespace MueLu {
 ;
   // template string for preconditioner layout (factory based parameters)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const std::string FacadeSimple<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_ =
+  const std::string FacadeBGS2x2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::stringTemplate_ =
 
 "<ParameterList name=\"MueLu\">"
 "  <ParameterList name=\"Factories\">"
@@ -363,16 +363,10 @@ namespace MueLu {
 "      <Parameter name=\"factory\" type=\"string\" value=\"DirectSolver\"/>"
 "    </ParameterList>"
 ""
-"    <ParameterList name=\"myNSSchurCompFact\">"
-"      <Parameter name=\"factory\" type=\"string\" value=\"SchurComplementFactory\"/>"
-"      <Parameter name=\"omega\" type=\"double\" value=\"1.0\"/>"
-"      <Parameter name=\"lumping\" type=\"bool\" value=\"false\"/>"
-"    </ParameterList>"
-""
 "    <ParameterList name=\"myBlockSmoother\">"
-"      <Parameter name=\"factory\" type=\"string\" value=\"SimpleSmoother\"/>"
+"      <Parameter name=\"factory\" type=\"string\" value=\"BlockedGaussSeidelSmoother\"/>"
 "      <Parameter name=\"Sweeps\" type=\"int\" value=\"1\"/>"
-"      <Parameter name=\"Damping factor\" type=\"double\" value=\"XXXSimple: damping factorYYY\"/>"
+"      <Parameter name=\"Damping factor\" type=\"double\" value=\"XXXBGS: damping factorYYY\"/>"
 "      <!-- factory manager for block 1 -->"
 "      <ParameterList name=\"block1\">"
 "        <Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory1\"/>"
@@ -380,7 +374,7 @@ namespace MueLu {
 "      </ParameterList>"
 "      <!-- factory manager for block 2 -->"
 "      <ParameterList name=\"block2\">"
-"        <Parameter name=\"A\" type=\"string\" value=\"myNSSchurCompFact\"/>"
+"        <Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory2\"/>"
 "        <Parameter name=\"Smoother\" type=\"string\" value=\"XYZSmoother2XYZ\"/>"
 "      </ParameterList>"
 "    </ParameterList>"

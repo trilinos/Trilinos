@@ -55,6 +55,7 @@
 
 #include "MueLu_FacadeClassBase.hpp"
 #include "MueLu_Facade_Simple_decl.hpp"
+#include "MueLu_Facade_BGS2x2_decl.hpp"
 
 #include "MueLu_FacadeClassFactory_decl.hpp"
 
@@ -63,6 +64,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   FacadeClassFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::FacadeClassFactory() {
     facadeClasses_["Simple"] = Teuchos::rcp(new FacadeSimple<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
+    facadeClasses_["BGS2x2"] = Teuchos::rcp(new FacadeBGS2x2<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
   }
 
 
