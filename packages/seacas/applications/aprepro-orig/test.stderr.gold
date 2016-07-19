@@ -1,6 +1,0 @@
-Aprepro: WARN: Undefined variable 'Parse' (/test.inp_app, line 78)
-Aprepro: ERROR:  syntax error (/test.inp_app, line 78)
-Aprepro: WARN: Undefined variable 'This' (/test.inp_app, line 79)
-Aprepro: ERROR:  syntax error (/test.inp_app, line 79)
-Aprepro: WARN: User-defined Variable 'a' redefined (_string_, line 1)
-Aprepro: WARN: Undefined variable 'T' (/test.inp_app, line 189)

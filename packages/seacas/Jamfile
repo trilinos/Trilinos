@@ -69,7 +69,6 @@ explicit install-targets ;
 alias install-targets
   : algebra
     aprepro
-    aprepro-orig
     aprepro_lib_test
     conjoin
     ejoin
@@ -118,7 +117,6 @@ alias install-targets
 alias install-targets
   : algebra
     aprepro
-    aprepro-orig
     aprepro_lib_test
     blot_x11
     blot_pst
@@ -308,7 +306,6 @@ explicit install-user-bin ;
 install install-user-bin
   : algebra
     aprepro
-    aprepro-orig
     aprepro_lib_test
     conjoin
     ejoin
@@ -353,7 +350,6 @@ install install-user-bin
 install install-user-bin
   : algebra
     aprepro
-    aprepro-orig
     aprepro_lib_test
     blot_x11
     blot_pst
@@ -691,11 +687,6 @@ lib iovs
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libiovs.a
     ]
-  ;
-
-obj y_tab_o : $(seacas-root)/applications/aprepro-orig/y.tab.c
-  : <toolset>clang,<address-model>64:<cflags>"-O0"
-    <link>shared:<cflags>-fPIC
   ;
 
 obj blot_main : $(seacas-root)/applications/blot/blot.f
@@ -1507,31 +1498,6 @@ exe aprepro
   :
   : <include>$(seacas-root)/applications/aprepro
     <include>$(seacas-root-inc)/applications/aprepro
-  ;
-
-exe aprepro-orig
-  :
-  $(seacas-root)/applications/aprepro-orig/ap_builtin.c
-  $(seacas-root)/applications/aprepro-orig/ap_exodus.c
-  $(seacas-root)/applications/aprepro-orig/ap_hash.c
-  $(seacas-root)/applications/aprepro-orig/ap_init.c
-  $(seacas-root)/applications/aprepro-orig/ap_liballoc.c
-  $(seacas-root)/applications/aprepro-orig/ap_aprepro.c
-  $(seacas-root)/applications/aprepro-orig/ap_array.c
-  $(seacas-root)/applications/aprepro-orig/ap_stat.c
-  $(seacas-root)/applications/aprepro-orig/ap_units.c
-  $(seacas-root)/applications/aprepro-orig/ap_util.c
-  $(seacas-root)/applications/aprepro-orig/ap_getline_int.c
-  y_tab_o
-    suplib_c
-  : <include>$(seacas-root)/applications/aprepro-orig
-    <include>$(seacas-root-inc)/applications/aprepro-orig
-    <define>NO_EXODUSII
-    <tag>@utility-exec-tag
-  :
-  : <include>$(seacas-root)/applications/aprepro-orig
-    <include>$(seacas-root-inc)/applications/aprepro-orig
-    <define>NO_EXODUSII
   ;
 
 exe conjoin
