@@ -58,9 +58,9 @@ MESSAGE( "Turning CTEST_DO_UPDATES off to prevent attempt to access Sandia libra
 SET(CTEST_DO_UPDATES FALSE)
 
 # This will be modified later
-MESSAGE( "Turning CTEST_DO_SUBMIT off to prevent dashboard submissions temporarily." )
-SET(CTEST_DO_SUBMIT FALSE)
-SET(CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE FALSE)
+#MESSAGE( "Turning CTEST_DO_SUBMIT off to prevent dashboard submissions temporarily." )
+#SET(CTEST_DO_SUBMIT FALSE)
+#SET(CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE FALSE)
 
 # Setup binary location override - for custom setups but for normal cdash it can be unset
 IF( DEFINED ENV{OVERRIDE_BINARY_LOCATION} )
