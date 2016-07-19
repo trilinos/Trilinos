@@ -185,12 +185,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
         switch (md_getsubopt(&sub_opt, weight_subopts, &value)) {
         case READ_EXO:
           if (value == nullptr) {
-            sprintf(ctemp, "fatal: must specify a file name with %s", weight_subopts[READ_EXO]);
+            sprintf(ctemp, "FATAL: must specify a file name with %s", weight_subopts[READ_EXO]);
             Gen_Error(0, ctemp);
             return 0;
           }
           if (strlen(value) == 0) {
-            sprintf(ctemp, "fatal: must specify a file name with %s", weight_subopts[READ_EXO]);
+            sprintf(ctemp, "FATAL: must specify a file name with %s", weight_subopts[READ_EXO]);
             Gen_Error(0, ctemp);
             return 0;
           }
@@ -210,19 +210,19 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         case VAR_INDX:
           if (value == nullptr) {
-            sprintf(ctemp, "fatal: must specify a value with %s", weight_subopts[VAR_INDX]);
+            sprintf(ctemp, "FATAL: must specify a value with %s", weight_subopts[VAR_INDX]);
             Gen_Error(0, ctemp);
             return 0;
           }
           if (strlen(value) == 0) {
-            sprintf(ctemp, "fatal: must specify a value with %s", weight_subopts[VAR_INDX]);
+            sprintf(ctemp, "FATAL: must specify a value with %s", weight_subopts[VAR_INDX]);
             Gen_Error(0, ctemp);
             return 0;
           }
 
           iret = sscanf(value, "%d", &(weight->exo_vindx));
           if (iret != 1) {
-            sprintf(ctemp, "fatal: invalid value specified for %s", weight_subopts[VAR_INDX]);
+            sprintf(ctemp, "FATAL: invalid value specified for %s", weight_subopts[VAR_INDX]);
             Gen_Error(0, ctemp);
             return 0;
           }
@@ -230,19 +230,19 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         case TIME_INDX:
           if (value == nullptr) {
-            sprintf(ctemp, "fatal: must specify a value with %s", weight_subopts[TIME_INDX]);
+            sprintf(ctemp, "FATAL: must specify a value with %s", weight_subopts[TIME_INDX]);
             Gen_Error(0, ctemp);
             return 0;
           }
           if (strlen(value) == 0) {
-            sprintf(ctemp, "fatal: must specify a value with %s", weight_subopts[TIME_INDX]);
+            sprintf(ctemp, "FATAL: must specify a value with %s", weight_subopts[TIME_INDX]);
             Gen_Error(0, ctemp);
             return 0;
           }
 
           iret = sscanf(value, "%d", &(weight->exo_tindx));
           if (iret != 1) {
-            sprintf(ctemp, "fatal: invalid value specified for %s", weight_subopts[TIME_INDX]);
+            sprintf(ctemp, "FATAL: invalid value specified for %s", weight_subopts[TIME_INDX]);
             Gen_Error(0, ctemp);
             return 0;
           }
@@ -250,12 +250,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         case VAR_NAME:
           if (value == nullptr) {
-            sprintf(ctemp, "fatal: must specify a value with %s", weight_subopts[VAR_NAME]);
+            sprintf(ctemp, "FATAL: must specify a value with %s", weight_subopts[VAR_NAME]);
             Gen_Error(0, ctemp);
             return 0;
           }
           if (strlen(value) == 0) {
-            sprintf(ctemp, "fatal: must specify a value with %s", weight_subopts[VAR_NAME]);
+            sprintf(ctemp, "FATAL: must specify a value with %s", weight_subopts[VAR_NAME]);
             Gen_Error(0, ctemp);
             return 0;
           }
@@ -266,7 +266,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         case EL_BLK:
           if (value == nullptr) {
-            sprintf(ctemp, "fatal: must specify an element block and weight with %s",
+            sprintf(ctemp, "FATAL: must specify an element block and weight with %s",
                     weight_subopts[EL_BLK]);
             Gen_Error(0, ctemp);
             return 0;
@@ -314,7 +314,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
         case NO_WEIGHT: weight->type = NO_WEIGHT; break;
 
         default:
-          sprintf(ctemp, "fatal: unknown suboption %s specified", value);
+          sprintf(ctemp, "FATAL: unknown suboption %s specified", value);
           Gen_Error(0, ctemp);
           return 0;
 
@@ -339,7 +339,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     case 'n':
       /* Nodal decomposition */
       if (prob->type == ELEMENTAL) {
-        Gen_Error(0, "fatal: -e and -n are mutually exclusive");
+        Gen_Error(0, "FATAL: -e and -n are mutually exclusive");
         return 0;
       }
       prob->type = NODAL;
@@ -348,7 +348,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     case 'e':
       /* Elemental decomposition */
       if (prob->type == NODAL) {
-        Gen_Error(0, "fatal: -e and -n are mutually exclusive\n");
+        Gen_Error(0, "FATAL: -e and -n are mutually exclusive\n");
         return 0;
       }
       prob->type = ELEMENTAL;
@@ -385,7 +385,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           if (machine->type < 0) /* so, get the number of boxes */
           {
             if (value == nullptr || strlen(value) == 0) {
-              Gen_Error(0, "fatal: need to specify number of boxes");
+              Gen_Error(0, "FATAL: need to specify number of boxes");
               return 0;
             }
 
@@ -400,7 +400,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
               max_dim       = 1;
             }
             else {
-              Gen_Error(0, "fatal: unknown type specified with cluster");
+              Gen_Error(0, "FATAL: unknown type specified with cluster");
               return 0;
             }
             /* blank out character and move cptr to next char */
@@ -410,18 +410,18 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             /* get the number of boxes from value */
             iret = sscanf(value, "%d", &(machine->num_boxes));
             if (iret <= 0 || machine->num_boxes <= 0) {
-              Gen_Error(0, "fatal: invalid number of boxes");
+              Gen_Error(0, "FATAL: invalid number of boxes");
               return 0;
             }
           }
 
           if (cptr == nullptr || strlen(cptr) == 0) {
-            Gen_Error(0, "fatal: need to specify dimension");
+            Gen_Error(0, "FATAL: need to specify dimension");
             return 0;
           }
           cptr2 = strtok(cptr, "xX");
           if (cptr2 == nullptr) {
-            Gen_Error(0, "fatal: bad size for dimension specification");
+            Gen_Error(0, "FATAL: bad size for dimension specification");
             return 0;
           }
           machine->num_dims = 0;
@@ -430,7 +430,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           while (cptr2) {
             iret = sscanf(cptr2, "%d", &(machine->dim[machine->num_dims]));
             if (iret <= 0 || machine->dim[machine->num_dims] <= 0) {
-              Gen_Error(0, "fatal: invalid dimension specification");
+              Gen_Error(0, "FATAL: invalid dimension specification");
               return 0;
             }
 
@@ -439,14 +439,14 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
             /* Only up to three-dimensional allowed */
             if (machine->num_dims == max_dim && cptr2 != nullptr) {
-              Gen_Error(0, "fatal: maximum number of dimensions exceeded");
+              Gen_Error(0, "FATAL: maximum number of dimensions exceeded");
               return 0;
             }
           }
 
           break; /* End "case MESH or HCUBE or CLUSTER" */
 
-        default: Gen_Error(0, "fatal: unknown machine type"); return 0;
+        default: Gen_Error(0, "FATAL: unknown machine type"); return 0;
 
         } /* End "switch(md_getsubopt(&sub_opt, mach_subopts, &value))" */
 
@@ -485,14 +485,14 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         case INFILE:
           if (value == nullptr) {
-            Gen_Error(0, "fatal: need to specify a value with file");
+            Gen_Error(0, "FATAL: need to specify a value with file");
             return 0;
           }
           char tmpstr[2048];
           iret     = sscanf(value, "%s", tmpstr);
           lb->file = tmpstr;
           if (iret != 1) {
-            Gen_Error(0, "fatal: invalid value associated with file");
+            Gen_Error(0, "FATAL: invalid value associated with file");
             return 0;
           }
           lb->type = INFILE;
@@ -504,12 +504,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         case NUM_SECTS:
           if (value == nullptr) {
-            Gen_Error(0, "fatal: need to specify a value with num_sects");
+            Gen_Error(0, "FATAL: need to specify a value with num_sects");
             return 0;
           }
           iret = sscanf(value, "%d", &(lb->num_sects));
           if (iret != 1) {
-            Gen_Error(0, "fatal: invalid value associated with num_sects");
+            Gen_Error(0, "FATAL: invalid value associated with num_sects");
             return 0;
           }
           break;
@@ -520,20 +520,20 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         case OUTFILE:
           if (value == nullptr) {
-            Gen_Error(0, "fatal: need to specify a value with outfile");
+            Gen_Error(0, "FATAL: need to specify a value with outfile");
             return 0;
           }
           iret     = sscanf(value, "%s", tmpstr);
           lb->file = tmpstr;
           if (iret != 1) {
-            Gen_Error(0, "fatal: invalid value associated with outfile");
+            Gen_Error(0, "FATAL: invalid value associated with outfile");
             return 0;
           }
           lb->outfile = ELB_TRUE;
           break;
 
         default:
-          sprintf(ctemp, "fatal: unknown lb param \"%s\"", value);
+          sprintf(ctemp, "FATAL: unknown lb param \"%s\"", value);
           Gen_Error(0, ctemp);
           return 0;
 
@@ -554,13 +554,13 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
         switch (md_getsubopt(&sub_opt, solve_subopts, &value)) {
         case TOLER:
           if (value == nullptr) {
-            fprintf(stderr, "fatal: tolerance specification requires \
+            fprintf(stderr, "FATAL: tolerance specification requires \
 value\n");
             return 0;
           }
           iret = sscanf(value, "%le", &(solver->tolerance));
           if (iret != 1) {
-            fprintf(stderr, "fatal: incorrect value for tolerance\n");
+            fprintf(stderr, "FATAL: incorrect value for tolerance\n");
             return 0;
           }
 
@@ -576,18 +576,18 @@ value\n");
 
         case VMAX:
           if (value == nullptr) {
-            fprintf(stderr, "fatal: must specify a value with %s\n", solve_subopts[VMAX]);
+            fprintf(stderr, "FATAL: must specify a value with %s\n", solve_subopts[VMAX]);
             return 0;
           }
           iret = sscanf(value, "%d", &(solver->vmax));
           if (iret != 1) {
-            fprintf(stderr, "fatal: invalid value read for %s\n", solve_subopts[VMAX]);
+            fprintf(stderr, "FATAL: invalid value read for %s\n", solve_subopts[VMAX]);
             return 0;
           }
 
           break;
 
-        default: fprintf(stderr, "fatal: unknown solver option\n"); return 0;
+        default: fprintf(stderr, "FATAL: unknown solver option\n"); return 0;
 
         } /* End "switch(md_getsubopt(&sub_opt, solve_subopts, &value))" */
 
@@ -661,7 +661,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
   char tmpstr[2048];
   /*-----------------------------Execution Begins------------------------------*/
   if (!(inp_fd = fopen(ascii_inp_file.c_str(), "r"))) {
-    sprintf(ctemp, "fatal: unable to open ASCII input file %s", ascii_inp_file.c_str());
+    sprintf(ctemp, "FATAL: unable to open ASCII input file %s", ascii_inp_file.c_str());
     Gen_Error(0, ctemp);
     return 0;
   }
@@ -693,7 +693,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
           else {
             iret = sscanf(cptr, "%d", &problem->vis_out);
             if (iret != 1) {
-              Gen_Error(1, "warning: unknown visualization output flag");
+              Gen_Error(1, "WARNING: unknown visualization output flag");
               problem->vis_out = 0;
             }
             else {
@@ -772,7 +772,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 lb->type = INFILE;
                 cptr2    = strchr(cptr, '=');
                 if (cptr2 == nullptr) {
-                  Gen_Error(0, "fatal: need to specify a value with infile");
+                  Gen_Error(0, "FATAL: need to specify a value with infile");
                   return 0;
                 }
 
@@ -780,7 +780,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 iret     = sscanf(cptr2, "%s", tmpstr);
                 lb->file = tmpstr;
                 if (iret != 1) {
-                  Gen_Error(0, "fatal: invalid value for infile");
+                  Gen_Error(0, "FATAL: invalid value for infile");
                   return 0;
                 }
               }
@@ -800,14 +800,14 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               if (lb->num_sects < 0) {
                 cptr2 = strchr(cptr, '=');
                 if (cptr2 == nullptr) {
-                  Gen_Error(0, "fatal: need to specify a value with num_sects");
+                  Gen_Error(0, "FATAL: need to specify a value with num_sects");
                   return 0;
                 }
 
                 cptr2++;
                 iret = sscanf(cptr2, "%d", &(lb->num_sects));
                 if (iret != 1) {
-                  Gen_Error(0, "fatal: invalid value for num_sects");
+                  Gen_Error(0, "FATAL: invalid value for num_sects");
                   return 0;
                 }
               }
@@ -821,7 +821,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 lb->outfile = ELB_TRUE;
                 cptr2       = strchr(cptr, '=');
                 if (cptr2 == nullptr) {
-                  Gen_Error(0, "fatal: need to specify a value with outfile");
+                  Gen_Error(0, "FATAL: need to specify a value with outfile");
                   return 0;
                 }
 
@@ -829,13 +829,13 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 iret     = sscanf(cptr2, "%s", tmpstr);
                 lb->file = tmpstr;
                 if (iret != 1) {
-                  Gen_Error(0, "fatal: invalid value for outfile");
+                  Gen_Error(0, "FATAL: invalid value for outfile");
                   return 0;
                 }
               }
             }
             else {
-              sprintf(ctemp, "fatal: unknown LB method \"%s\" specified in command"
+              sprintf(ctemp, "FATAL: unknown LB method \"%s\" specified in command"
                              " file",
                       cptr);
               Gen_Error(0, ctemp);
@@ -864,14 +864,14 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             if (solver->tolerance < 0.0) {
               cptr2 = strchr(cptr, '=');
               if (cptr2 == nullptr) {
-                Gen_Error(0, "fatal: tolerance specification requires a value");
+                Gen_Error(0, "FATAL: tolerance specification requires a value");
                 return 0;
               }
 
               cptr2++;
               iret = sscanf(cptr2, "%le", &(solver->tolerance));
               if (iret != 1) {
-                Gen_Error(0, "fatal: invalid value for tolerance");
+                Gen_Error(0, "FATAL: invalid value for tolerance");
                 return 0;
               }
             }
@@ -886,20 +886,20 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             if (solver->vmax < 0) {
               cptr2 = strchr(cptr, '=');
               if (cptr2 == nullptr) {
-                Gen_Error(0, "fatal: vmax must have a value");
+                Gen_Error(0, "FATAL: vmax must have a value");
                 return 0;
               }
 
               cptr2++;
               iret = sscanf(cptr2, "%d", &(solver->vmax));
               if (iret != 1) {
-                Gen_Error(0, "fatal: invalid value for vmax");
+                Gen_Error(0, "FATAL: invalid value for vmax");
                 return 0;
               }
             }
           }
           else {
-            sprintf(ctemp, "warning: unknown solver suboption %s", cptr);
+            sprintf(ctemp, "WARNING: unknown solver suboption %s", cptr);
             Gen_Error(1, ctemp);
           }
 
@@ -920,7 +920,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
           else if (strcmp(cptr, "element") == 0)
             problem->type = ELEMENTAL;
           else {
-            Gen_Error(0, "fatal: unknown graph type specified");
+            Gen_Error(0, "FATAL: unknown graph type specified");
             return 0;
           }
         }
@@ -936,7 +936,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
           /* Search to equal sign */
           cptr2 = strchr(cptr, '=');
           if (cptr2 == nullptr) {
-            Gen_Error(0, "fatal: machine must have a dimension specified");
+            Gen_Error(0, "FATAL: machine must have a dimension specified");
             return 0;
           }
 
@@ -965,7 +965,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               max_dim       = 1;
             }
             else {
-              Gen_Error(0, "fatal: unknown type specified with cluster");
+              Gen_Error(0, "FATAL: unknown type specified with cluster");
               return 0;
             }
             /* blank out character and move cptr to next char */
@@ -974,12 +974,12 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             /* get the number of boxes from value */
             iret = sscanf(cptr, "%d", &(machine->num_boxes));
             if (iret <= 0 || machine->num_boxes <= 0) {
-              Gen_Error(0, "fatal: invalid number of boxes");
+              Gen_Error(0, "FATAL: invalid number of boxes");
               return 0;
             }
           }
           else {
-            Gen_Error(0, "fatal: unknown machine type specified");
+            Gen_Error(0, "FATAL: unknown machine type specified");
             return 0;
           }
 
@@ -989,7 +989,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
           while (cptr) {
             iret = sscanf(cptr, "%d", &(machine->dim[machine->num_dims]));
             if (iret != 1) {
-              Gen_Error(0, "fatal: invalid dimension specified for machine");
+              Gen_Error(0, "FATAL: invalid dimension specified for machine");
               return 0;
             }
 
@@ -998,7 +998,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
 
             /* Check how many dimensions there are */
             if (machine->num_dims == max_dim && cptr != nullptr) {
-              Gen_Error(0, "fatal: maximum number of dimensions exceeded");
+              Gen_Error(0, "FATAL: maximum number of dimensions exceeded");
               return 0;
             }
           }
@@ -1018,12 +1018,12 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             if (strstr(cptr, "read")) {
               cptr2 = strchr(cptr, '=');
               if (cptr2 == nullptr) {
-                Gen_Error(0, "fatal: must specify file name with \"read\"");
+                Gen_Error(0, "FATAL: must specify file name with \"read\"");
                 return 0;
               }
               cptr2++;
               if (strlen(cptr2) == 0) {
-                Gen_Error(0, "fatal: invalid file name with \"read\"");
+                Gen_Error(0, "FATAL: invalid file name with \"read\"");
                 return 0;
               }
               weight->exo_filename = cptr2;
@@ -1039,12 +1039,12 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             else if (strstr(cptr, "var_name")) {
               cptr2 = strchr(cptr, '=');
               if (cptr2 == nullptr) {
-                Gen_Error(0, "fatal: must specify a name with \"var_name\"");
+                Gen_Error(0, "FATAL: must specify a name with \"var_name\"");
                 return 0;
               }
               cptr2++;
               if (strlen(cptr2) == 0) {
-                Gen_Error(0, "fatal: invalid variable name specified with"
+                Gen_Error(0, "FATAL: invalid variable name specified with"
                              " \"var_name\"");
                 return 0;
               }
@@ -1053,35 +1053,35 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             else if (strstr(cptr, "var_index")) {
               cptr2 = strchr(cptr, '=');
               if (cptr2 == nullptr) {
-                Gen_Error(0, "fatal: must specify a value with \"var_index\"");
+                Gen_Error(0, "FATAL: must specify a value with \"var_index\"");
                 return 0;
               }
               cptr2++;
 
               iret = sscanf(cptr2, "%d", &(weight->exo_vindx));
               if (iret != 1) {
-                Gen_Error(0, "fatal: invalid value with \"var_index\"");
+                Gen_Error(0, "FATAL: invalid value with \"var_index\"");
                 return 0;
               }
             }
             else if (strstr(cptr, "time_index")) {
               cptr2 = strchr(cptr, '=');
               if (cptr2 == nullptr) {
-                Gen_Error(0, "fatal: must specify a value with \"time_index\"");
+                Gen_Error(0, "FATAL: must specify a value with \"time_index\"");
                 return 0;
               }
               cptr2++;
 
               iret = sscanf(cptr2, "%d", &(weight->exo_tindx));
               if (iret != 1) {
-                Gen_Error(0, "fatal: invalid value with \"time_index\"");
+                Gen_Error(0, "FATAL: invalid value with \"time_index\"");
                 return 0;
               }
             }
             else if (strstr(cptr, "eb")) {
               cptr2 = strchr(cptr, '=');
               if (cptr2 == nullptr) {
-                Gen_Error(0, "fatal: must specify a value with \"eb\"");
+                Gen_Error(0, "FATAL: must specify a value with \"eb\"");
                 return 0;
               }
               cptr2++;
@@ -1091,7 +1091,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
 
               iret = sscanf(cptr2, "%d:%d", &el_blk, &wgt);
               if (iret != 2) {
-                Gen_Error(0, "fatal: invalid value with \"eb\"");
+                Gen_Error(0, "FATAL: invalid value with \"eb\"");
                 return 0;
               }
               if (el_blk <= 0) {
@@ -1124,7 +1124,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 weight->type += EDGE_WGT;
             }
             else {
-              sprintf(ctemp, "fatal: unknown suboption \"%s\" specified", cptr);
+              sprintf(ctemp, "FATAL: unknown suboption \"%s\" specified", cptr);
               Gen_Error(0, ctemp);
               return 0;
             }
@@ -1216,7 +1216,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             /* "{" defines the beginning of the group designator */
             cptr2 = strchr(cptr, '{');
             if (cptr2 == nullptr) {
-              Gen_Error(0, "fatal: group start designator \"}\" not found");
+              Gen_Error(0, "FATAL: group start designator \"}\" not found");
               return 0;
             }
             cptr2++;
@@ -1228,7 +1228,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             *cptr2 = '\0';
           }
           else {
-            sprintf(ctemp, "warning: unknown miscellaneous suboption %s", cptr);
+            sprintf(ctemp, "WARNING: unknown miscellaneous suboption %s", cptr);
             Gen_Error(1, ctemp);
           }
           cptr = strtok(nullptr, ",");
@@ -1238,7 +1238,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
         /* Generate an error, but continue reading for an unknown key */
         strip_string(inp_copy, " #\t");
         if (strlen(inp_copy) > 5) {
-          sprintf(ctemp, "warning: don't know how to process line: \n%s\nin command"
+          sprintf(ctemp, "WARNING: don't know how to process line: \n%s\nin command"
                          " file, ignored",
                   inp_copy);
           Gen_Error(1, ctemp);
@@ -1283,13 +1283,13 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
 
   /* Check that an input ExodusII file name was specified */
   if (exoII_inp_file.empty()) {
-    Gen_Error(0, "fatal: no input ExodusII file specified");
+    Gen_Error(0, "FATAL: no input ExodusII file specified");
     return 0;
   }
 
   /* Check for the existence and readability of the input file */
   if ((exid_inp = ex_open(exoII_inp_file.c_str(), EX_READ, &icpu_ws, &iio_ws, &vers)) < 0) {
-    sprintf(ctemp, "fatal: unable to open input ExodusII file %s", exoII_inp_file.c_str());
+    sprintf(ctemp, "FATAL: unable to open input ExodusII file %s", exoII_inp_file.c_str());
     Gen_Error(0, ctemp);
     return 0;
   }
@@ -1302,16 +1302,16 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   /*                       Check the machine specification                     */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   if (machine->type != MESH && machine->type != HCUBE) {
-    Gen_Error(0, "fatal: machine type not properly set");
+    Gen_Error(0, "FATAL: machine type not properly set");
     return 0;
   }
   if (machine->type == HCUBE && machine->num_dims != 1) {
-    Gen_Error(0, "fatal: improper number of dimension for a hypercube, only"
+    Gen_Error(0, "FATAL: improper number of dimension for a hypercube, only"
                  " 1 allowed");
     return 0;
   }
   if (machine->type == MESH && machine->num_dims > 3) {
-    Gen_Error(0, "fatal: maximum of 3 dimensions for a mesh exceeded");
+    Gen_Error(0, "FATAL: maximum of 3 dimensions for a mesh exceeded");
     return 0;
   }
 
@@ -1336,7 +1336,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
    * loops to chaco get a bit too confusing
    */
   if (machine->num_boxes > 1 && prob->groups != nullptr) {
-    Gen_Error(0, "fatal: groups cannot be designated for a cluster machine");
+    Gen_Error(0, "FATAL: groups cannot be designated for a cluster machine");
     return 0;
   }
 
@@ -1344,7 +1344,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   /*                      Check the problem specifications                     */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   if (prob->type != ELEMENTAL && prob->type != NODAL) {
-    Gen_Error(0, "fatal: unknown problem type specified");
+    Gen_Error(0, "FATAL: unknown problem type specified");
     return 0;
   }
 
@@ -1359,9 +1359,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
    * with an elemental decomposition
    */
   if (prob->type != ELEMENTAL && prob->face_adj) {
-    Gen_Error(1, "warning: can only use face definition of");
-    Gen_Error(1, "warning: adjacency with elemental decomposition");
-    Gen_Error(1, "warning: face definition turned off");
+    Gen_Error(1, "WARNING: can only use face definition of");
+    Gen_Error(1, "WARNING: adjacency with elemental decomposition");
+    Gen_Error(1, "WARNING: face definition turned off");
     prob->face_adj = 0;
   }
 
@@ -1372,14 +1372,14 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       lb->type != RANDOM && lb->type != SCATTERED && lb->type != INFILE && lb->type != ZPINCH &&
       lb->type != BRICK && lb->type != ZOLTAN_RCB && lb->type != ZOLTAN_RIB &&
       lb->type != ZOLTAN_HSFC) {
-    Gen_Error(0, "fatal: unknown load balance type requested");
+    Gen_Error(0, "FATAL: unknown load balance type requested");
     return 0;
   }
 
   if ((sizeof(INT) == 8) && (lb->type != LINEAR && lb->type != SCATTERED)) {
-    Gen_Error(1, "warning: can only use 'linear' or 'scattered'");
-    Gen_Error(1, "warning: load balance methods with the 64-bit integers");
-    Gen_Error(1, "warning: setting method to 'linear'");
+    Gen_Error(1, "WARNING: This mesh is using 64-bit integers. The only supported");
+    Gen_Error(1, "         load balance methods for 64-bit integers are 'linear' or 'scattered'");
+    Gen_Error(1, "         The load balance method will be automatically changed to 'linear'.");
     lb->type = LINEAR;
   }
 
@@ -1395,9 +1395,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   if (lb->cnctd_dom < 0)
     lb->cnctd_dom = 0;
   else if (!prob->face_adj) {
-    Gen_Error(1, "warning: can only set connected domain");
-    Gen_Error(1, "warning: when using face definition of adjacency");
-    Gen_Error(1, "warning: connected domain turned off");
+    Gen_Error(1, "WARNING: can only set connected domain");
+    Gen_Error(1, "WARNING: when using face definition of adjacency");
+    Gen_Error(1, "WARNING: connected domain turned off");
     lb->cnctd_dom = 0;
   }
 
@@ -1406,12 +1406,12 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
 
   if (lb->type == INFILE) {
     if (lb->outfile) {
-      Gen_Error(0, "fatal: both infile and outfile cannot be specified");
+      Gen_Error(0, "FATAL: both infile and outfile cannot be specified");
       return 0;
     }
 
     if (lb->refine != NO_REFINE) {
-      Gen_Error(1, "warning: no refinement can be specified with infile");
+      Gen_Error(1, "WARNING: no refinement can be specified with infile");
       return 0;
     }
   }
@@ -1421,7 +1421,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   if (lb->type == SPECTRAL || lb->type == MULTIKL) {
     if (solver->tolerance < 0.0) {
-      Gen_Error(1, "warning: using default value for eigensolver"
+      Gen_Error(1, "WARNING: using default value for eigensolver"
                    " tolerance");
       solver->tolerance = 1.0e-3;
     }
@@ -1430,7 +1430,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       solver->rqi_flag = 0;
 
     if (solver->vmax < 0) {
-      Gen_Error(1, "warning: no value for vmax specified,"
+      Gen_Error(1, "WARNING: no value for vmax specified,"
                    " using default");
       solver->vmax = 200;
     }
@@ -1496,7 +1496,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   if (weight->exo_filename.length() > 0) {
     /* Check that a variable name and/or index was specified. */
     if (strlen(weight->exo_varname.c_str()) == 0 && weight->exo_vindx <= 0) {
-      Gen_Error(0, "fatal: must specify an index and/or a name for weighting"
+      Gen_Error(0, "FATAL: must specify an index and/or a name for weighting"
                    " variable");
       return 0;
     }
@@ -1506,7 +1506,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * file and compare the specified name against what exists in the file.
      */
     if ((exoid = ex_open(weight->exo_filename.c_str(), EX_READ, &cpu_ws, &io_ws, &version)) < 0) {
-      sprintf(ctemp, "fatal: failed to open ExodusII weighting file %s",
+      sprintf(ctemp, "FATAL: failed to open ExodusII weighting file %s",
               weight->exo_filename.c_str());
       Gen_Error(0, ctemp);
       return 0;
@@ -1519,7 +1519,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       weight->exo_tindx = 1; /* Defaults to 1 */
 
     if (weight->exo_tindx > ntimes) {
-      sprintf(ctemp, "fatal: requested time index %d not available in weighting file",
+      sprintf(ctemp, "FATAL: requested time index %d not available in weighting file",
               weight->exo_tindx);
       Gen_Error(0, ctemp);
       return 0;
@@ -1535,19 +1535,19 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * specified ExodusII file.
      */
     if (ex_get_variable_param(exoid, type, &nvars) < 0) {
-      Gen_Error(0, "fatal: unable to get variable params from ExodusII"
+      Gen_Error(0, "FATAL: unable to get variable params from ExodusII"
                    " weighting file");
       return 0;
     }
     if (nvars <= 0) {
-      Gen_Error(0, "fatal: no variables found in the ExodusII weighting file");
+      Gen_Error(0, "FATAL: no variables found in the ExodusII weighting file");
       return 0;
     }
 
     /* Read the variable names from the requested file */
     var_names = (char **)malloc(nvars * sizeof(char *));
     if (!var_names) {
-      Gen_Error(0, "fatal: insufficient memory");
+      Gen_Error(0, "FATAL: insufficient memory");
       return 0;
     }
 
@@ -1558,14 +1558,14 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       for (cnt = 0; cnt < nvars; cnt++) {
         var_names[cnt] = (char *)malloc((max_name_length + 1) * sizeof(char));
         if (!var_names[cnt]) {
-          Gen_Error(0, "fatal: insufficient memory");
+          Gen_Error(0, "FATAL: insufficient memory");
           return 0;
         }
       }
     }
 
     if (ex_get_variable_names(exoid, type, nvars, var_names) < 0) {
-      Gen_Error(0, "fatal: unable to obtain variable names for weighting");
+      Gen_Error(0, "FATAL: unable to obtain variable names for weighting");
       return 0;
     }
 
@@ -1586,7 +1586,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       if (weight->exo_vindx <= 0)
         weight->exo_vindx = tmp_vindx;
       else if (weight->exo_vindx != tmp_vindx) {
-        Gen_Error(0, "fatal: requested weight variable index doesn't match"
+        Gen_Error(0, "FATAL: requested weight variable index doesn't match"
                      " the variable name in the ExodusII file");
         return 0;
       }
@@ -1605,7 +1605,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * not exist in the specified file.
      */
     if (weight->exo_vindx <= 0) {
-      sprintf(ctemp, "fatal: requested weighting variable %s not found in ExodusII"
+      sprintf(ctemp, "FATAL: requested weighting variable %s not found in ExodusII"
                      " file",
               weight->exo_varname.c_str());
       Gen_Error(0, ctemp);
@@ -1613,13 +1613,13 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     }
 
     if (nvars < weight->exo_vindx) {
-      Gen_Error(0, "fatal: requested variable index is larger than number in"
+      Gen_Error(0, "FATAL: requested variable index is larger than number in"
                    " ExodusII weighting file");
       return 0;
     }
 
     if (weight->exo_vindx <= 0) {
-      sprintf(ctemp, "fatal: variable index must be in the range [1,%d]", nvars);
+      sprintf(ctemp, "FATAL: variable index must be in the range [1,%d]", nvars);
       Gen_Error(0, ctemp);
       return 0;
     }
@@ -1636,7 +1636,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       /* now loop through, and make sure that we don't have multiple values */
       for (cnt = 1; cnt < (int)weight->elemblk.size(); cnt++)
         if (weight->elemblk[cnt] == weight->elemblk[cnt - 1]) {
-          sprintf(ctemp, "warning: multiple weight specified for block " ST_ZU "",
+          sprintf(ctemp, "WARNING: multiple weight specified for block " ST_ZU "",
                   (size_t)weight->elemblk[cnt]);
           Gen_Error(1, ctemp);
         }

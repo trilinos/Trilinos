@@ -72,7 +72,7 @@ void error_report()
   if (error_lev >= 1) {
     size_t error_cnt = error_info.size();
     for (size_t i = 0; i < error_cnt; i++) {
-      if (error_info[i].level == 0 || error_lev > 1) {
+      if (error_info[i].level == 0 || error_info[i].level >= error_lev) {
         if (iflag == 0) {
           fprintf(stderr, "================================");
           fprintf(stderr, "messages");
