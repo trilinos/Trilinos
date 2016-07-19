@@ -104,6 +104,7 @@ EX_WRITE             = 0x0001  # ex_open(): open existing file for appending.
 EX_NOCLOBBER         = 0x0004  # does not overwrite existing exodus file
 EX_CLOBBER           = 0x0008  # overwrites existing exodus file
 MAX_STR_LENGTH       = 32      # match exodus default
+MAX_NAME_LENGTH      = 256     # match exodus default
 MAX_LINE_LENGTH      = 80      # match exodus default
 EX_MAPS_INT64_API    = 0x2000  # all maps (id, order, ...) store int64_t values
 EX_IDS_INT64_API     = 0x4000  # all entity ids (sets, blocks, maps) are int64_t
@@ -305,6 +306,7 @@ class exodus:
     self.basename = basename(file)
     self.modeChar = mode
     self.__open(io_size=io_size)
+    EXODUS_LIB.ex_set_max_name_length(self.fileId,MAX_NAME_LENGTH)
     if mode.lower() == 'w':
       if (init_params is not None):
         self.init_params = init_params
@@ -3548,9 +3550,9 @@ class exodus:
   # --------------------------------------------------------------------
 
   def __ex_get_coord_names(self):
-    coord_name_ptrs = (POINTER(c_char * (MAX_STR_LENGTH+1)) * self.numDim.value)()
+    coord_name_ptrs = (POINTER(c_char * (MAX_NAME_LENGTH+1)) * self.numDim.value)()
     for i in range(self.numDim.value):
-      coord_name_ptrs[i] = pointer(create_string_buffer(MAX_STR_LENGTH+1))
+      coord_name_ptrs[i] = pointer(create_string_buffer(MAX_NAME_LENGTH+1))
     EXODUS_LIB.ex_get_coord_names(self.fileId, byref(coord_name_ptrs))
     coord_names = []
     for cnp in coord_name_ptrs:
@@ -3560,10 +3562,10 @@ class exodus:
   # --------------------------------------------------------------------
 
   def __ex_put_coord_names(self, names):
-    coord_name_ptrs = (POINTER(c_char * (MAX_STR_LENGTH+1)) * self.numDim.value)()
+    coord_name_ptrs = (POINTER(c_char * (MAX_NAME_LENGTH+1)) * self.numDim.value)()
     assert len(names) == self.numDim.value
     for i in range(self.numDim.value):
-      coord_name_ptrs[i] = pointer(create_string_buffer(names[i], MAX_STR_LENGTH+1))
+      coord_name_ptrs[i] = pointer(create_string_buffer(names[i], MAX_NAME_LENGTH+1))
     EXODUS_LIB.ex_put_coord_names(self.fileId, byref(coord_name_ptrs))
 
   # --------------------------------------------------------------------
@@ -3593,7 +3595,7 @@ class exodus:
   def __ex_get_name(self, objType, objId):
     obj_type = c_int(objType)
     obj_id = c_int(objId)
-    obj_name = create_string_buffer(MAX_STR_LENGTH+1)
+    obj_name = create_string_buffer(MAX_NAME_LENGTH+1)
     EXODUS_LIB.ex_get_name(self.fileId, obj_type, obj_id, byref(obj_name))
     return obj_name.value
 
@@ -3602,7 +3604,7 @@ class exodus:
   def __ex_put_name(self, objType, objId, objName):
     obj_type = c_int(objType)
     obj_id = c_int(objId)
-    obj_name = create_string_buffer(objName, MAX_STR_LENGTH+1)
+    obj_name = create_string_buffer(objName, MAX_NAME_LENGTH+1)
     EXODUS_LIB.ex_put_name(self.fileId, obj_type, obj_id, obj_name)
 
   # --------------------------------------------------------------------
@@ -3611,9 +3613,9 @@ class exodus:
     obj_type = c_int(objType)
     num_objs = c_int(self.__ex_inquire_int(inqType))
     numObjs = num_objs.value
-    obj_name_ptrs = (POINTER(c_char * (MAX_STR_LENGTH+1)) * numObjs)()
+    obj_name_ptrs = (POINTER(c_char * (MAX_NAME_LENGTH+1)) * numObjs)()
     for i in range(numObjs):
-      obj_name_ptrs[i] = pointer(create_string_buffer(MAX_STR_LENGTH+1))
+      obj_name_ptrs[i] = pointer(create_string_buffer(MAX_NAME_LENGTH+1))
     EXODUS_LIB.ex_get_names(self.fileId, obj_type, byref(obj_name_ptrs))
     obj_names = []
     for onp in obj_name_ptrs:
@@ -3626,10 +3628,10 @@ class exodus:
     num_objs = c_int(self.__ex_inquire_int(inqType))
     numObjs = num_objs.value
     assert numObjs == len(objNames)
-    obj_name_ptrs = (POINTER(c_char * (MAX_STR_LENGTH+1)) * numObjs)()
+    obj_name_ptrs = (POINTER(c_char * (MAX_NAME_LENGTH+1)) * numObjs)()
     obj_type = c_int(objType)
     for i in range(numObjs):
-      obj_name_ptrs[i] = pointer(create_string_buffer(objNames[i], MAX_STR_LENGTH+1))
+      obj_name_ptrs[i] = pointer(create_string_buffer(objNames[i], MAX_NAME_LENGTH+1))
     EXODUS_LIB.ex_put_names(self.fileId, obj_type, byref(obj_name_ptrs))
 
   # --------------------------------------------------------------------
@@ -3979,9 +3981,9 @@ class exodus:
     assert varChar.lower() in 'ngems'
     var_char = c_char(varChar)
     num_vars = self.__ex_get_var_param(varChar)
-    var_name_ptrs = (POINTER(c_char * (MAX_STR_LENGTH+1)) * num_vars.value)()
+    var_name_ptrs = (POINTER(c_char * (MAX_NAME_LENGTH+1)) * num_vars.value)()
     for i in range(num_vars.value):
-      var_name_ptrs[i] = pointer(create_string_buffer(MAX_STR_LENGTH+1))
+      var_name_ptrs[i] = pointer(create_string_buffer(MAX_NAME_LENGTH+1))
     EXODUS_LIB.ex_get_var_names(self.fileId, byref(var_char), num_vars, byref(var_name_ptrs))
     var_names = []
     for vnp in var_name_ptrs: var_names.append(vnp.contents.value)
@@ -4240,7 +4242,7 @@ class exodus:
   def __ex_get_variable_name(self, varType, varId):
     var_type = c_int(varType)
     var_id   = c_int(varId)
-    name = create_string_buffer(MAX_STR_LENGTH+1)
+    name = create_string_buffer(MAX_NAME_LENGTH+1)
     EXODUS_LIB.ex_get_variable_name(self.fileId, var_type, var_id, name)
     return name
 
@@ -4249,7 +4251,7 @@ class exodus:
   def __ex_put_variable_name(self, varType, varId, varName):
     var_type = c_int(varType)
     var_id   = c_int(varId)
-    name = create_string_buffer(varName, MAX_STR_LENGTH+1)
+    name = create_string_buffer(varName, MAX_NAME_LENGTH+1)
     EXODUS_LIB.ex_put_variable_name(self.fileId, var_type, var_id, name)
     return True
 
