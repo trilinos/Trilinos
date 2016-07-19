@@ -41,10 +41,9 @@
 
 /*!
 
-The function ex_put_coord_names() writes the names (\p
-MAX_STR_LENGTH-characters in length) of the coordinate arrays to the
-database. Memory must be allocated for the character strings before
-this function is invoked.
+The function ex_put_coord_names() writes the names of the coordinate
+arrays to the database. Memory must be allocated for the character
+strings before this function is invoked.
 
 In case of an error, ex_put_coord_names() returns a negative number; a
 warning will return a positive number.  Possible causes of errors
@@ -56,8 +55,7 @@ include:
 \param[in] exoid          exodus file ID returned from a previous call to
 ex_create() or ex_open().
 \param[in] coord_names    Array containing \c num_dim names of length \p
-MAX_STR_LENGTH
-                          of the nodal coordinate arrays.
+...max_name_length...                         of the nodal coordinate arrays.
 
 The following coding will write the coordinate names to an
 open exodus file :

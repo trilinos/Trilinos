@@ -290,10 +290,10 @@ int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run
       option = getenv("EXODUS_NETCDF4");
       if (option != NULL) {
         netcdf4_mode = NC_NETCDF4;
-	if (option[0] != 'q') {
-	  fprintf(stderr, "EXODUS: Using netcdf version 4 selected via "
-		  "EXODUS_NETCDF4 environment variable\n");
-	}
+        if (option[0] != 'q') {
+          fprintf(stderr, "EXODUS: Using netcdf version 4 selected via "
+                          "EXODUS_NETCDF4 environment variable\n");
+        }
       }
       else {
         netcdf4_mode = 0;

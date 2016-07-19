@@ -344,12 +344,12 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
 /* All done: release element block ids array,
    element block parameters array, and side set element index array */
 cleanup:
-  ex_safe_free(elem_blk_ids);
-  ex_safe_free(elem_blk_parms);
-  ex_safe_free(ss_elem_ndx);
-  ex_safe_free(ss_elem_ndx_64);
-  ex_safe_free(side_set_side_list);
-  ex_safe_free(side_set_elem_list);
+  free(elem_blk_ids);
+  free(elem_blk_parms);
+  free(ss_elem_ndx);
+  free(ss_elem_ndx_64);
+  free(side_set_side_list);
+  free(side_set_elem_list);
 
   return (err_stat);
 }

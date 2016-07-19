@@ -169,7 +169,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
 
     /* Allocate space for the side set side list */
     if (!(side_set_side_list = malloc(tot_num_ss_elem * int_size))) {
-      ex_safe_free(side_set_elem_list);
+      free(side_set_elem_list);
       exerrval = EX_MEMFAIL;
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set side list "
                                        "for file id %d",
@@ -322,11 +322,11 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
  * array
  */
 cleanup:
-  ex_safe_free(elem_blk_ids);
-  ex_safe_free(elem_blk_parms);
-  ex_safe_free(ss_elem_ndx);
-  ex_safe_free(side_set_side_list);
-  ex_safe_free(side_set_elem_list);
+  free(elem_blk_ids);
+  free(elem_blk_parms);
+  free(ss_elem_ndx);
+  free(side_set_side_list);
+  free(side_set_elem_list);
 
   return (err_stat);
 }

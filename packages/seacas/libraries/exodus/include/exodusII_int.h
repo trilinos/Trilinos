@@ -754,8 +754,6 @@ int ne_id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
  * accessing multiple databases, they will all use the same value.
  */
 extern int ex_default_max_name_length;
-
-void *ex_safe_free(void *array);
 #ifdef __cplusplus
 }
 #endif

@@ -148,29 +148,19 @@ void ex_get_err(const char **msg, const char **func, int *err_num)
   (*err_num) = last_err_num;
 }
 
-const char* ex_strerror(int err_num)
+const char *ex_strerror(int err_num)
 {
-  switch (err_num)
-    {
-    case EX_MEMFAIL:
-      return "Memory allocation failure";
-    case EX_BADFILEMODE:
-      return "Bad file mode -- cannot specify both EX_READ and EX_WRITE";
-    case EX_BADFILEID:
-      return "Bad file id. Could not find exodus file associated with file id.";
-    case EX_WRONGFILETYPE:
-      return "Integer sizes must match for input and output file in ex_copy.";
-    case EX_LOOKUPFAIL:
-      return "Id lookup failed for specified entity type. Could not find entity with specified id.";
-    case EX_BADPARAM:
-      return "Bad parameter.";
-    case EX_INTERNAL:
-      return "Internal logic error in exodus library.";
-    case EX_NOTROOTID:
-      return "File id is not the root id; it is a subgroup id.";
-    case EX_NULLENTITY:
-      return "Null entity found.";
-    default:
-      return nc_strerror(err_num);
-    }
+  switch (err_num) {
+  case EX_MEMFAIL: return "Memory allocation failure";
+  case EX_BADFILEMODE: return "Bad file mode -- cannot specify both EX_READ and EX_WRITE";
+  case EX_BADFILEID: return "Bad file id. Could not find exodus file associated with file id.";
+  case EX_WRONGFILETYPE: return "Integer sizes must match for input and output file in ex_copy.";
+  case EX_LOOKUPFAIL:
+    return "Id lookup failed for specified entity type. Could not find entity with specified id.";
+  case EX_BADPARAM: return "Bad parameter.";
+  case EX_INTERNAL: return "Internal logic error in exodus library.";
+  case EX_NOTROOTID: return "File id is not the root id; it is a subgroup id.";
+  case EX_NULLENTITY: return "Null entity found.";
+  default: return nc_strerror(err_num);
+  }
 }

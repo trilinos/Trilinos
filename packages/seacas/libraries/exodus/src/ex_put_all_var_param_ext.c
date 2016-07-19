@@ -273,8 +273,10 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
     if (define_truth_table(TID, exoid, DVAL, NUMVAR, VTABVAL, VSTATVAL, VIDS, TNAME) != NC_NOERR)  \
       goto error_ret;                                                                              \
                                                                                                    \
-    VSTATVAL = ex_safe_free(VSTATVAL);                                                             \
-    VIDS     = ex_safe_free(VIDS);                                                                 \
+    free(VSTATVAL);                                                                                \
+    VSTATVAL = NULL;                                                                               \
+    free(VIDS);                                                                                    \
+    VIDS = NULL;                                                                                   \
                                                                                                    \
     /* create a variable array in which to store the STNAME variable truth                         \
      * table                                                                                       \
@@ -387,23 +389,23 @@ error_ret:
       ex_err("ex_put_all_var_param_ext", errmsg, exerrval);
     }
   }
-  ex_safe_free(eblk_ids);
-  ex_safe_free(edblk_ids);
-  ex_safe_free(fablk_ids);
-  ex_safe_free(nset_ids);
-  ex_safe_free(eset_ids);
-  ex_safe_free(fset_ids);
-  ex_safe_free(sset_ids);
-  ex_safe_free(elset_ids);
+  free(eblk_ids);
+  free(edblk_ids);
+  free(fablk_ids);
+  free(nset_ids);
+  free(eset_ids);
+  free(fset_ids);
+  free(sset_ids);
+  free(elset_ids);
 
-  ex_safe_free(eblk_stat);
-  ex_safe_free(edblk_stat);
-  ex_safe_free(fablk_stat);
-  ex_safe_free(nset_stat);
-  ex_safe_free(eset_stat);
-  ex_safe_free(fset_stat);
-  ex_safe_free(sset_stat);
-  ex_safe_free(elset_stat);
+  free(eblk_stat);
+  free(edblk_stat);
+  free(fablk_stat);
+  free(nset_stat);
+  free(eset_stat);
+  free(fset_stat);
+  free(sset_stat);
+  free(elset_stat);
   return (EX_FATAL);
 }
 
@@ -479,7 +481,7 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE, con
 
     if ((status = nc_get_var_int(exoid, varid, stat_vals)) != NC_NOERR) {
       exerrval = status;
-      ex_safe_free(stat_vals);
+      free(stat_vals);
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s status array from file id %d",
                label, exoid);
       ex_err("ex_put_all_var_param_ext", errmsg, exerrval);

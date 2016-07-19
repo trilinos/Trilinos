@@ -527,7 +527,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
     if (elem > elem_ctr) {
       /* release connectivity array space and get next one */
       if (elem_ctr > 0) {
-        ex_safe_free(connect);
+        free(connect);
       }
 
       /* Allocate space for the connectivity array for new element block */
@@ -1033,14 +1033,14 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
 /* All done: release connectivity array space, element block ids array,
    element block parameters array, and side set element index array */
 cleanup:
-  ex_safe_free(connect);
-  ex_safe_free(ss_parm_ndx);
-  ex_safe_free(elem_blk_ids);
-  ex_safe_free(elem_blk_parms);
-  ex_safe_free(ss_elem_ndx);
-  ex_safe_free(ss_elem_node_ndx);
-  ex_safe_free(side_set_side_list);
-  ex_safe_free(side_set_elem_list);
+  free(connect);
+  free(ss_parm_ndx);
+  free(elem_blk_ids);
+  free(elem_blk_parms);
+  free(ss_elem_ndx);
+  free(ss_elem_node_ndx);
+  free(side_set_side_list);
+  free(side_set_elem_list);
 
   return (err_stat);
 }

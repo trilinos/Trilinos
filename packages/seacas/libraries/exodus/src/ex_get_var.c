@@ -120,7 +120,8 @@ int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
     return (EX_FATAL);
   }
 
-  /* Verify that time_step is within bounds */
+/* Verify that time_step is within bounds */
+#if 0
   {
     int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
     if (time_step <= 0 || time_step > num_time_steps) {
@@ -131,6 +132,7 @@ int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
       return (EX_FATAL);
     }
   }
+#endif
 
   /* read values of element variable */
   start[0] = --time_step;

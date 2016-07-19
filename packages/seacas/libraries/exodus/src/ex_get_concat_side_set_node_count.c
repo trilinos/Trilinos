@@ -324,27 +324,30 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
         goto error_ret;
       }
     }
-    ss_elem_ndx        = ex_safe_free(ss_elem_ndx);
-    side_set_elem_list = ex_safe_free(side_set_elem_list);
-    side_set_side_list = ex_safe_free(side_set_side_list);
+    free(ss_elem_ndx);
+    ss_elem_ndx = NULL;
+    free(side_set_elem_list);
+    side_set_elem_list = NULL;
+    free(side_set_side_list);
+    side_set_side_list = NULL;
     ioff += tot_num_ss_elem;
   }
 
   /* All done: release allocated memory */
-  ex_safe_free(elem_blk_ids);
-  ex_safe_free(side_set_ids);
-  ex_safe_free(ss_elem_ndx);
-  ex_safe_free(side_set_elem_list);
-  ex_safe_free(side_set_side_list);
-  ex_safe_free(elem_blk_parms);
+  free(elem_blk_ids);
+  free(side_set_ids);
+  free(ss_elem_ndx);
+  free(side_set_elem_list);
+  free(side_set_side_list);
+  free(elem_blk_parms);
   return (EX_NOERR);
 
 error_ret:
-  ex_safe_free(elem_blk_ids);
-  ex_safe_free(side_set_ids);
-  ex_safe_free(ss_elem_ndx);
-  ex_safe_free(side_set_elem_list);
-  ex_safe_free(side_set_side_list);
-  ex_safe_free(elem_blk_parms);
+  free(elem_blk_ids);
+  free(side_set_ids);
+  free(ss_elem_ndx);
+  free(side_set_elem_list);
+  free(side_set_side_list);
+  free(elem_blk_parms);
   return (EX_FATAL);
 }

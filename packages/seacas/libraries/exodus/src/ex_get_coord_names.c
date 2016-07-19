@@ -41,10 +41,9 @@
 
 /*!
 
-The function ex_get_coord_names() reads the names (\p MAX_STR_LENGTH
--characters in length) of the coordinate arrays from the
-database. Memory must be allocated for the character strings before
-this function is invoked.
+The function ex_get_coord_names() reads the names of the coordinate
+arrays from the database. Memory must be allocated for the character
+strings before this function is invoked.
 
 \return In case of an error, ex_get_coord_names() returns a negative
 number; a warning will return a positive number.  Possible causes of
@@ -66,7 +65,7 @@ int error, exoid;
 char *coord_names[3];
 
 for (i=0; i < num_dim; i++) {
-   coord_names[i] = (char *)calloc((MAX_STR_LENGTH+1), sizeof(char));
+   coord_names[i] = (char *)calloc((..size of names...+1), sizeof(char));
 }
 
 error = ex_get_coord_names (exoid, coord_names);
