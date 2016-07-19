@@ -41,6 +41,7 @@ namespace Tacho {
       }
     }
 
+    // Tim Davis, Algorithm 849: A Concise Sparse Cholesky Factorization Package
     template<typename CrsMatBaseType,
              typename OrdinalTypeArray,
              typename SizeTypeArray>

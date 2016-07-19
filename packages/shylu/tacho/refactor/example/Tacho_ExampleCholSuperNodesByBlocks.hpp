@@ -310,9 +310,7 @@ namespace Tacho {
       // fill block information 
       typename CrsHierBaseHostType::value_type_array ax("ax", aj.dimension(0));
       {
-        const auto flat = AA_reordered;
-        const auto range = S.RangeVector();
-        
+        const auto range = S.RangeVector();        
         const ordinal_type m = S.NumBlocks();
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
                              [&](const ordinal_type i) {
@@ -320,8 +318,8 @@ namespace Tacho {
                                const auto end = ap(i+1);
                                for (auto idx=beg;idx<end;++idx) {
                                  const auto j = aj(idx);
-                                 ax(idx).setView(flat, range(i), (range(i+1) - range(i)),
-                                                 /**/  range(j), (range(j+1) - range(j)));
+                                 ax(idx).setView(AA_reordered, range(i), (range(i+1) - range(i)),
+                                                 /**/          range(j), (range(j+1) - range(j)));
                                }
                              } );
       }
@@ -493,6 +491,9 @@ namespace Tacho {
 #endif
     }
     const double t_chol = timer.seconds();    
+
+    /// Phase 4 : Solve problem
+    /// ------------------------------------------------------------------------------------
     
     ///
     /// Solution check
@@ -614,7 +615,6 @@ namespace Tacho {
                 << std::endl
                 << "CholSuperNodesByBlocks:: "
                 << "policy creation = " << t_policy << " [sec] "
-        //<< "hier creation = " << t_hier << " [sec] "
                 << "block specification = " << t_blocks << " [sec] "
                 << std::endl
                 << "CholSuperNodesByBlocks:: "

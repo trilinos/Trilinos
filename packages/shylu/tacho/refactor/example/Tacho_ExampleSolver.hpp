@@ -18,6 +18,8 @@ namespace Tacho {
                     const int nrhs,
                     const int mb,
                     const int nb,
+                    const int flat_maxsize,
+                    const int hier_minsize,
                     const bool verbose) {
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
@@ -38,6 +40,7 @@ namespace Tacho {
     SolverType tacho("Tacho::CholSolver");
     tacho.setPolicy(max_concurrency);
     tacho.setBlocksize(mb, nb);
+    tacho.setCrossOverSize(flat_maxsize, hier_minsize);
 
     ///
     /// Read from matrix market
@@ -52,7 +55,7 @@ namespace Tacho {
 
       value_type *b;
       bool is_allocated;
-    } data;
+    } data = { NULL, NULL, NULL, NULL, false };
 
     timer.reset();
     const auto is_file_null = (file_input.compare("null") == 0);
@@ -133,10 +136,8 @@ namespace Tacho {
               << "input generation = " << t_input << " [sec] "
               << std::endl;
 
-    if (verbose) {
-      std::cout << "- Problem A, B, X - " << std::endl;
+    if (verbose) 
       tacho.getA().showMe(std::cout) << std::endl;
-    }
 
     typename SolverType::DenseMatrixBaseHostType BB("BB", tacho.getA().NumRows(), nrhs), XX("XX");
     XX.createConfTo(BB);
@@ -147,7 +148,7 @@ namespace Tacho {
         srand(time(NULL));  
         for (auto rhs=0;rhs<nrhs;++rhs) 
           for (auto i=0;i<m;++i) 
-            BB.Value(i, rhs) = 1.0; //((value_type)rand()/(RAND_MAX));
+            BB.Value(i, rhs) = ((value_type)rand()/(RAND_MAX));
       } else {
         data.b = new value_type[m*nrhs];
         
@@ -204,13 +205,17 @@ namespace Tacho {
       std::cout.precision(4);
       
       const auto AA = tacho.getA();
-      const auto UU = tacho.getFlatU();
       const auto HU = tacho.getHierU();
-
+      const auto w = 10;
       std::cout << std::scientific;
-      std::cout << "Solver:: given    matrix = " << AA.NumRows() << " x " << AA.NumCols() << ", nnz = " << AA.NumNonZeros() << std::endl;
-      std::cout << "Solver:: factored matrix = " << UU.NumRows() << " x " << UU.NumCols() << ", nnz = " << UU.NumNonZeros() << std::endl;
-      std::cout << "Solver:: hier     matrix = " << HU.NumRows() << " x " << HU.NumCols() << ", nnz = " << HU.NumNonZeros() << std::endl;
+      std::cout << "Solver:: given matrix = " << std::setw(w) << AA.NumRows() << " x " << std::setw(w) << AA.NumCols() << ", nnz = " << std::setw(w) << AA.NumNonZeros() << std::endl;
+      std::cout << "Solver:: hier  matrix = " << std::setw(w) << HU.NumRows() << " x " << std::setw(w) << HU.NumCols() << ", nnz = " << std::setw(w) << HU.NumNonZeros() << std::endl;
+      std::cout << "Solver:: max range size = " 
+                << tacho.getMaxRangeSize() 
+                << std::endl;
+      std::cout << "Solver:: factorization algorithm variant = " 
+                << tacho.getFactorizationAlgorithmVariant() 
+                << std::endl << std::endl;
       
       std::cout << "Solver:: "
                 << "input generation = " << t_input << " [sec], "

@@ -56,6 +56,12 @@ int main (int argc, char *argv[]) {
   int nb = 4;
   clp.setOption("nb", &nb, "Column block size of right hand side");
 
+  int flat_maxsize = 32000;
+  clp.setOption("flat-maxsize", &flat_maxsize, "Cross-over size for flat algorithm");
+
+  int hier_minsize = 4;
+  clp.setOption("hier-minsize", &hier_minsize, "Cross-over size for hier algorithm");
+
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -75,6 +81,7 @@ int main (int argc, char *argv[]) {
        prunecut, 
        max_concurrency, 
        nrhs, mb, nb,
+       flat_maxsize, hier_minsize,
        verbose);
 #else
     r_val = -1;
