@@ -13,6 +13,7 @@ namespace Tacho {
 
   template<typename DeviceSpaceType>
   int exampleSolver(const std::string file_input,
+                    const int treecut,
                     const int prunecut,
                     const int max_concurrency,
                     const int nrhs,
@@ -172,7 +173,7 @@ namespace Tacho {
     ///
     /// Solver interface
     ///
-    TACHO_SOLVER_RUN(tacho.reorder(prunecut), t_reorder);
+    TACHO_SOLVER_RUN(tacho.reorder(treecut, prunecut), t_reorder);
     TACHO_SOLVER_RUN(tacho.analyze(), t_analyze);
 
 #ifdef HAVE_SHYLUTACHO_VTUNE

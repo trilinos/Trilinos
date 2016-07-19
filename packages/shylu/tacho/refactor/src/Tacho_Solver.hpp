@@ -191,7 +191,6 @@ namespace Tacho {
     }
 
     void setCrossOverSize(const ordinal_type algo_hier_minsize) {
-      //_algo_flat_maxsize = algo_flat_maxsize;
       _algo_hier_minsize = algo_hier_minsize;
     }
 
@@ -437,8 +436,7 @@ namespace Tacho {
         const ordinal_type m = _PAA.NumRows();
         const ordinal_type hm = _maxrange/_mb + 1;
 
-        //variant = (m  >= _algo_flat_maxsize ? Variant::Three : Variant::Two);
-        variant = (hm >= _algo_hier_minsize ? Variant::Three : variant);
+        variant = (hm >= _algo_hier_minsize ? Variant::Three : Variant::Two);
       } else {
         variant = Variant::Two;
       }

@@ -42,6 +42,9 @@ int main (int argc, char *argv[]) {
   std::string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
+  int treecut = 4;
+  clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
+
   int prunecut = 0;
   clp.setOption("prunecut", &prunecut, "Level to prune tree from bottom");
 
@@ -79,10 +82,10 @@ int main (int argc, char *argv[]) {
         || defined(HAVE_SHYLUTACHO_AMESOS)))
     r_val = exampleSolver<exec_space>
       (file_input, 
+       treecut,
        prunecut, 
        max_concurrency, 
        nrhs, mb, nb,
-       //flat_maxsize, 
        hier_minsize,
        verbose);
 #else
