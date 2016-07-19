@@ -102,9 +102,9 @@ int main(int argc, char *argv[])
   std::cout << "A few parameters after validation: " << std::endl;
   std::cout << myParams << std::endl;
 
-  rangeList_t &a1 = myParams.get<rangeList_t>("debug_procs");
+  rangeList_t *a1 = myParams.getPtr<rangeList_t>("debug_procs");
   std::cout << "debug_procs translation: ";
-  Zoltan2::printIntegralRangeList(std::cout, a1);
+  Zoltan2::printIntegralRangeList(std::cout, *a1);
   std::cout << std::endl;
 
   // Now let's enter a bad value for a parameter and make sure
@@ -193,14 +193,14 @@ int main(int argc, char *argv[])
   std::cout << "All parameters validated and modified: ";
   std::cout << all << std::endl;
 
-  a1 = all.get<rangeList_t>("debug_procs");
+  a1 = all.getPtr<rangeList_t>("debug_procs");
   std::cout << "debug_procs translation: ";
-  Zoltan2::printIntegralRangeList(std::cout, a1);
+  Zoltan2::printIntegralRangeList(std::cout, *a1);
   std::cout << std::endl;
 
-  a1 = all.get<rangeList_t>("memory_procs");
+  a1 = all.getPtr<rangeList_t>("memory_procs");
   std::cout << "memory_procs translation: ";
-  Zoltan2::printIntegralRangeList(std::cout, a1);
+  Zoltan2::printIntegralRangeList(std::cout, *a1);
   std::cout << std::endl;
 
   // Print out all the documentation
