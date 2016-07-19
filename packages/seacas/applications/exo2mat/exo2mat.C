@@ -848,7 +848,7 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
   return num_sideset_sides;
 }
 
-void handle_coordinates(int exo_file, size_t num_nodes, int num_axes, bool debug)
+void handle_coordinates(int exo_file, size_t num_nodes, int num_axes)
 {
   if (debug) {
     logger("Coordinates");
@@ -1076,7 +1076,7 @@ int main(int argc, char *argv[])
   }
 
   /* nodal coordinates */
-  handle_coordinates(exo_file, num_nodes, num_axes, debug);
+  handle_coordinates(exo_file, num_nodes, num_axes);
 
   /* side sets */
   if (debug) {
