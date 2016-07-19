@@ -49,6 +49,11 @@
 #include <string>
 #include <vector>
 
+#include <cmath>
+#ifndef math_errhandling
+#define math_errhandling MATH_ERRNO
+#endif
+
 /** The SEAMS namespace is used to encapsulate the three parser classes
  * SEAMS::Parser, SEAMS::Scanner and SEAMS::Aprepro */
 namespace SEAMS {
