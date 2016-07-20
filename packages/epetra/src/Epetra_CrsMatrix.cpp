@@ -64,6 +64,14 @@
 #include <cstdlib>
 #include <typeinfo>
 
+#ifdef HAVE_EPETRA_RSB
+static bool epetra_rsb_loaded = false;
+#define EPETRA_RSB_NEW(ECSRM) new Rsb_Matrix(((Epetra_CrsMatrix&)(ECSRM)).NumMyRows(), ((Epetra_CrsMatrix&)(ECSRM)).ExpertExtractIndexOffset().Values(), ((Epetra_CrsMatrix&)(ECSRM)).ExpertExtractIndices().Values(),((Epetra_CrsMatrix&)(ECSRM)).ExpertExtractValues(),((ECSRM).UpperTriangular() || (ECSRM).LowerTriangular())?Rsb_Matrix::IsTri:Rsb_Matrix::IsGen);
+    //Rsb_p = new Rsb_Matrix(((Epetra_CrsMatrix&)Matrix).NumMyRows(), ((Epetra_CrsMatrix&)Matrix).ExpertExtractIndexOffset().Values(), ((Epetra_CrsMatrix&)Matrix).ExpertExtractIndices().Values(),((Epetra_CrsMatrix&)Matrix).ExpertExtractValues());
+#define EPETRA_RSB_INIT() if(! epetra_rsb_loaded ) { rsb_lib_init(RSB_NULL_INIT_OPTIONS); epetra_rsb_loaded = true; }
+#define EPETRA_RSB_MTX_FROM(ECSRM) EPETRA_RSB_INIT(); if ( ! Rsb_p ) Rsb_p = EPETRA_RSB_NEW(ECSRM);
+#endif /* HAVE_EPETRA_RSB */
+
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
 # include "Teuchos_VerboseObject.hpp"
 bool Epetra_CrsMatrixTraceDumpMultiply = false;
@@ -256,6 +264,9 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix)
 {
   InitializeDefaults();
   operator=(Matrix);
+#ifdef HAVE_EPETRA_RSB
+  EPETRA_RSB_MTX_FROM(Matrix);
+#endif /* HAVE_EPETRA_RSB */
 }
 
 //==============================================================================
@@ -327,7 +338,9 @@ void Epetra_CrsMatrix::InitializeDefaults() { // Initialize all attributes that 
   NormFrob_ = -1.0;
   ImportVector_ = 0;
   ExportVector_ = 0;
-
+#ifdef HAVE_EPETRA_RSB
+  Rsb_p = NULL;
+#endif /* HAVE_EPETRA_RSB */
   return;
 }
 
@@ -393,6 +406,11 @@ Epetra_CrsMatrix::~Epetra_CrsMatrix()
 //==============================================================================
 void Epetra_CrsMatrix::DeleteMemory()
 {
+#ifdef HAVE_EPETRA_RSB
+   if (Rsb_p)
+     delete Rsb_p;
+       Rsb_p = NULL;
+#endif /* HAVE_EPETRA_RSB */
   int i;
 
   if (CV_==Copy) {
@@ -1179,6 +1197,9 @@ int Epetra_CrsMatrix::FillComplete(const Epetra_Map& domain_map,
   }
 
   if (OptimizeDataStorage) { EPETRA_CHK_ERR(OptimizeStorage()); }
+#ifdef HAVE_EPETRA_RSB
+  EPETRA_RSB_MTX_FROM((*this));
+#endif /* HAVE_EPETRA_RSB */
 
   return(returnValue);
 }
@@ -3314,6 +3335,14 @@ void Epetra_CrsMatrix::UpdateExportVector(int NumVectors) const {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
 
+#ifdef HAVE_EPETRA_RSB
+  {
+    const double alpha = 1, beta = 0;
+    const int incX = 1, incY = 1;
+    Rsb_p->spmv(RSB_TRANSPOSITION_N, &alpha, x, incX, &beta, y, incY);
+    return;
+  }
+#endif /* HAVE_EPETRA_RSB */
 if (StorageOptimized() && Graph().StorageOptimized()) {
 
   double * values = All_Values();
@@ -3414,6 +3443,14 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 
+#ifdef HAVE_EPETRA_RSB
+  {
+    const double alpha = 1, beta = 0;
+    const int incX = 1, incY = 1;
+    Rsb_p->spmv(RSB_TRANSPOSITION_T, &alpha, x, incX, &beta, y, incY);
+    return;
+  }
+#endif /* HAVE_EPETRA_RSB */
 #if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || defined(Epetra_ENABLE_MKL_SPARSE)
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * values = All_Values_;
@@ -3485,6 +3522,19 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int NumVectors) const {
 
+#ifdef HAVE_EPETRA_RSB
+  {
+    const double alpha = 1, beta = 0;
+    const int incX = 1, incY = 1;
+    rsb_trans_t transA = RSB_TRANSPOSITION_N;
+    if (LDX!=0 && LDY!=0)
+      Rsb_p->spmm(transA, &alpha, NumVectors, RSB_FLAG_WANT_COLUMN_MAJOR_ORDER, X[0], LDX, &beta, Y[0], LDY);
+    else
+      for (int k=0; k < NumVectors; k++)
+        Rsb_p->spmv(transA, &alpha, X[k], incX, &beta, Y[k], incY);
+    return;
+  }
+#endif /* HAVE_EPETRA_RSB */
 #if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || (defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM))
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * values = All_Values_;
@@ -3586,6 +3636,19 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, int NumVectors)  const{
 
+#ifdef HAVE_EPETRA_RSB
+  {
+    const double alpha = 1, beta = 0;
+    const int incX = 1, incY = 1;
+    rsb_trans_t transA = RSB_TRANSPOSITION_T;
+    if (LDX!=0 && LDY!=0)
+        Rsb_p->spmm(transA, &alpha, NumVectors, RSB_FLAG_WANT_COLUMN_MAJOR_ORDER, X[0], LDX, &beta, Y[0], LDY);
+    else
+        for (int k=0; k < NumVectors; k++)
+            Rsb_p->spmv(transA, &alpha, X[k], incX, &beta, Y[k], incY);
+    return;
+  }
+#endif /* HAVE_EPETRA_RSB */
   int NumCols = NumMyCols();
 #if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || (defined(Epetra_ENABLE_MKL_SPARSE) && !defined(Epetra_DISABLE_MKL_SPARSE_MM))
   if (StorageOptimized() && Graph().StorageOptimized()) {
@@ -3678,6 +3741,15 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 
   int i, j, j0;
 
+#ifdef HAVE_EPETRA_RSB
+  {
+    /* FIXME: UnitDiagonal and Upper args ignored */
+    const double alpha = 1;
+    const int incX = 1, incY = 1;
+    Rsb_p->spsv(Trans ? RSB_TRANSPOSITION_T : RSB_TRANSPOSITION_N, &alpha, xp, incX, yp, incY);
+    return;
+  }
+#endif /* HAVE_EPETRA_RSB */
 #if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) || defined(Epetra_ENABLE_MKL_SPARSE)
   if (StorageOptimized() && Graph().StorageOptimized() && ((UnitDiagonal && NoDiagonal())|| (!UnitDiagonal && !NoDiagonal()))) {
     double * values = All_Values();
@@ -3809,6 +3881,20 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
   int i, j, j0, k;
   double diag = 0.0;
 
+#ifdef HAVE_EPETRA_RSB
+  {
+    /* FIXME: UnitDiagonal and Upper args ignored */
+    const double alpha = 1, beta = 0.0;
+    const int incX = 1, incY = 1;
+    rsb_trans_t transA = Trans ? RSB_TRANSPOSITION_T : RSB_TRANSPOSITION_N;
+    if (LDX!=0 && LDY!=0)
+        Rsb_p->spsm(transA, &alpha, NumVectors, RSB_FLAG_WANT_COLUMN_MAJOR_ORDER, &beta, Xp[0], LDX, Yp[0], LDY);
+    else
+        for (int k=0; k < NumVectors; k++)
+            Rsb_p->spsv(transA, &alpha, Xp[k], incX, Yp[k], incY);
+    return;
+  }
+#endif /* HAVE_EPETRA_RSB */
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * values = All_Values();
     int * Indices = Graph().All_Indices();

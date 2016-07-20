@@ -57,6 +57,12 @@
 #include "cask.h"
 #endif
 
+#define HAVE_EPETRA_RSB 1
+#ifdef HAVE_EPETRA_RSB
+#define RSBP_WANT_CXX11 1
+#include "rsb.hpp"
+#endif /* HAVE_EPETRA_RSB */
+
 class Epetra_Map;
 class Epetra_Import;
 class Epetra_Export;
@@ -171,6 +177,9 @@ numbers.  The ResetFlops() function resets the floating point counter.
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, public Epetra_BLAS, public virtual Epetra_RowMatrix {
+#ifdef HAVE_EPETRA_RSB
+	Rsb_Matrix *Rsb_p;
+#endif /* HAVE_EPETRA_RSB */
  public:
 
    //! @name Constructors/Destructor
