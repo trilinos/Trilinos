@@ -416,13 +416,22 @@ getLocalDiagCopyWithoutOffsetsNotFillComplete (VectorType& diag, const CrsMatrix
 
   reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
   if (gblSuccess == -1) {
-    std::ostringstream gatheredErrStrm;
-    gathervPrint (gatheredErrStrm, errStrm.str (), comm);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (gblSuccess != 1, std::runtime_error,
-       "getLocalDiagCopyWithoutOffsetsNotFillComplete threw an exception on "
-       "one or more MPI processes in the matrix's communicator."
-       << std::endl << gatheredErrStrm);
+    if (comm.getRank () == 0) {
+      // We gather into std::cerr, rather than using an
+      // std::ostringstream, because there might be a lot of MPI
+      // processes.  It could take too much memory to gather all the
+      // messages to Process 0 before printing.  gathervPrint gathers
+      // and prints one message at a time, thus saving memory.  I
+      // don't want to run out of memory while trying to print an
+      // error message; that would hide the real problem.
+      std::cerr << "getLocalDiagCopyWithoutOffsetsNotFillComplete threw an "
+        "exception on one or more MPI processes in the matrix's comunicator."
+        << std::endl;
+    }
+    gathervPrint (std::cerr, errStrm.str (), comm);
+    // Don't need to print anything here, since we've already
+    // printed to std::cerr above.
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "");
   }
   else if (gblSuccess == 0) {
     TEUCHOS_TEST_FOR_EXCEPTION
