@@ -213,19 +213,21 @@ namespace Ioss {
       }
     }
 
-    if (properties.exists("LOGGING")) {
-      int logging = properties.get("LOGGING").get_int();
-      set_logging(logging != 0);
+    {
+      bool logging;
+      if (Utils::check_set_bool_property(properties, "LOGGING", logging)) {
+	set_logging(logging);
+      }
     }
 
-    if (properties.exists("USE_GENERIC_CANONICAL_NAMES")) {
-      int generic             = properties.get("USE_GENERIC_CANONICAL_NAMES").get_int();
-      useGenericCanonicalName = (generic != 0);
-    }
+    Utils::check_set_bool_property(properties, "LOWER_CASE_VARIABLE_NAMES", lowerCaseVariableNames);
+    Utils::check_set_bool_property(properties, "USE_GENERIC_CANONICAL_NAMES", useGenericCanonicalName);
 
-    if (properties.exists("PARALLEL_CONSISTENCY")) {
-      int consistent = properties.get("PARALLEL_CONSISTENCY").get_int();
-      set_parallel_consistency(consistent == 1);
+    {
+      bool consistent;
+      if (Utils::check_set_bool_property(properties, "PARALLEL_CONSISTENCY", consistent)) {
+	set_parallel_consistency(consistent);
+      }
     }
 
     if (!is_input()) {

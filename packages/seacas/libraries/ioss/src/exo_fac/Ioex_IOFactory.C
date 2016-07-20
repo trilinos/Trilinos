@@ -196,28 +196,10 @@ namespace {
       compose_property = "COMPOSE_RESTART";
     }
 
-    if (properties.exists(compose_property)) {
-      if (properties.get(compose_property).get_type() == Ioss::Property::INTEGER) {
-        compose = properties.get(compose_property).get_int() == 1;
-      }
-      else {
-        std::string yesno = Ioss::Utils::uppercase(properties.get(compose_property).get_string());
-        if (yesno == "TRUE" || yesno == "YES" || yesno == "ON") {
-          compose = true;
-        }
-        else if (yesno == "FALSE" || yesno == "NO" || yesno == "OFF") {
-          compose = false;
-        }
-        else {
-          std::ostringstream errmsg;
-          errmsg << "ERROR: Unrecognized value found IOSS_PROPERTIES environment variable\n"
-                 << "       for " << compose_property << ". Found '" << yesno
-                 << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
-          IOSS_ERROR(errmsg);
-        }
-      }
+    if (Ioss::Utils::check_set_bool_property(properties, compose_property, compose)) {
       return compose;
     }
+      
 
     Ioss::ParallelUtils util(comm);
     std::string         env_props;

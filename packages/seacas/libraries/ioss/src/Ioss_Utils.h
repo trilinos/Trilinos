@@ -48,12 +48,9 @@ namespace Ioss {
 }
 namespace Ioss {
   class GroupingEntity;
-}
-namespace Ioss {
   class Region;
-}
-namespace Ioss {
   class SideBlock;
+  class PropertyManager;
 }
 
 #if __cplusplus > 199711L
@@ -145,6 +142,13 @@ namespace Ioss {
     static void fixup_name(char *name);
     static void fixup_name(std::string &name);
 
+    // Check whether property 'prop_name' exists and if so, set 'prop_value'
+    // based on the property value.  Either "TRUE", "YES", "ON", or 1 for true;
+    // or "FALSE", "NO", "OFF", or not equal to 1 for false.
+    // Returns true/false depending on whether property found and value set.
+    static bool check_set_bool_property(const Ioss::PropertyManager &properties,
+					const std::string &prop_name, bool &prop_value);
+    
     // Returns true if the property "omitted" exists on "block"
     static bool block_is_omitted(Ioss::GroupingEntity *block);
 

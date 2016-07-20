@@ -543,6 +543,46 @@ std::string Ioss::Utils::lowercase(const std::string &name)
   return s;
 }
 
+/** \brief Check whether property 'prop_name' exists and if so, set 'prop_value'
+ *
+ * based on the property value.  Either "TRUE", "YES", "ON", or 1 for true;
+ * or "FALSE", "NO", "OFF", or not equal to 1 for false.
+ * \param[in] properties the Ioss::PropertyManager containing the properties to be checked.
+ * \param[in] prop_name the name of the property to check whether it exists and if so, set its value. 
+ * \param[out] prop_value if prop_name exists and has a valid value, set prop_value accordingly.
+ * \returns true/false depending on whether property found and value set.
+ */
+
+bool Ioss::Utils::check_set_bool_property(const Ioss::PropertyManager &properties,
+					  const std::string &prop_name, bool &prop_value)
+{
+  bool found_property = false;
+  if (properties.exists(prop_name)) {
+    found_property = true;
+    if (properties.get(prop_name).get_type() == Ioss::Property::INTEGER) {
+      prop_value = properties.get(prop_name).get_int() == 1;
+    }
+    else {
+      std::string yesno = Ioss::Utils::uppercase(properties.get(prop_name).get_string());
+      if (yesno == "TRUE" || yesno == "YES" || yesno == "ON") {
+	prop_value = true;
+      }
+      else if (yesno == "FALSE" || yesno == "NO" || yesno == "OFF") {
+	prop_value = false;
+      }
+      else {
+	found_property = false;
+	std::ostringstream errmsg;
+	errmsg << "ERROR: Unrecognized value found IOSS_PROPERTIES environment variable\n"
+	       << "       for " << prop_name << ". Found '" << yesno
+	       << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
+	IOSS_ERROR(errmsg);
+      }
+    }
+  }
+  return found_property;
+}
+
 /** \brief Convert a string to lower case, and convert spaces to '_'.
  *
  *  The conversion is performed in place.
