@@ -51,6 +51,10 @@
 #  include "Teuchos_Details_Lapack128.hpp"
 #endif // HAVE_TPETRA_INST_FLOAT128
 
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Kokkos_Core.hpp"
+
 namespace {
 
   using Teuchos::Array;
@@ -97,17 +101,12 @@ namespace {
 
   // The "little" blocks and vectors do not depend on Tpetra's
   // GlobalOrdinal type.  This is why we only include three template
-  // parameters: Scalar (ST) and LocalOrdinal (LO).  At some point, it
-  // would make sense to include Node as well, but for now we omit it,
-  // since LittleBlock and LittleVector as yet live in host memory.
+  // parameters: Scalar (ST) and LocalOrdinal (LO).  For now, we just
+  // test with the default execution and memory spaces, but at some
+  // point, it would make sense to test over all the enabled spaces.
 
   // This example tests the factorization routine with a matrix
   // that does not require partial pivoting
-  //
-  // FIXME (mfh 10 Dec 2015) This test doesn't actually depend on
-  // LocalOrdinal or GlobalOrdinal, but it was templated on LO
-  // (LocalOrdinal) and we just want this to work for now.  It
-  // should actually be .
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, Factor, ST, LO )
   {
     using Teuchos::Array;
@@ -118,10 +117,6 @@ namespace {
     typedef Kokkos::View<LO*, device_type> int_vec_type;
     typedef Kokkos::View<ST*, device_type> scalar_vec_type;
 
-    // Tpetra's Node does the right thing with respect to
-    // Kokkos::initialize etc.
-    typename Tpetra::Vector<ST, LO>::node_type node;
-    (void) node;
     TEST_ASSERT( execution_space::is_initialized () );
     if (! execution_space::is_initialized ()) {
       return; // don't bother to continue
@@ -214,10 +209,6 @@ namespace {
     typedef Kokkos::View<LO*, device_type> int_vec_type;
     typedef Kokkos::View<ST*, device_type> scalar_vec_type;
 
-    // Tpetra's Node does the right thing with respect to
-    // Kokkos::initialize etc.
-    typename Tpetra::Vector<ST, LO>::node_type node;
-    (void) node;
     TEST_ASSERT( execution_space::is_initialized () );
     if (! execution_space::is_initialized ()) {
       return; // don't bother to continue
@@ -818,3 +809,15 @@ namespace {
 } // namespace (anonymous)
 
 
+int
+main (int argc, char* argv[])
+{
+  // Initialize MPI (if enabled) before initializing Kokkos.  This
+  // lets MPI control things like pinning processes to sockets.
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv);
+  Kokkos::initialize (argc, argv);
+  const int errCode =
+    Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
+  Kokkos::finalize ();
+  return errCode;
+}
