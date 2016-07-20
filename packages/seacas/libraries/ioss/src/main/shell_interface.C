@@ -48,7 +48,8 @@ IOShell::Interface::Interface()
     : compose_output("none"), maximum_time(0.0), minimum_time(0.0), surface_split_type(1),
       compression_level(0), shuffle(false), debug(false), statistics(false),
       do_transform_fields(false), ints_64_bit(false), reals_32_bit(false), netcdf4(false),
-      in_memory_read(false), in_memory_write(false), fieldSuffixSeparator('_')
+      in_memory_read(false), in_memory_write(false), lower_case_variable_names(true),
+      fieldSuffixSeparator('_')
 {
   enroll_options();
 }
@@ -179,6 +180,11 @@ void IOShell::Interface::enroll_options()
       "EXPERIMENTAL: file written to memory, netcdf library streams to disk at file close",
       nullptr);
 
+  options_.enroll(
+      "native_variable_names", Ioss::GetLongOption::NoValue,
+      "Do not lowercase variable names and replace spaces with underscores. Variable names are left as they appear in the input mesh file",
+      nullptr);
+
   options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
                   nullptr);
 }
@@ -288,6 +294,10 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("memory_write") != nullptr) {
     in_memory_write = true;
+  }
+
+  if (options_.retrieve("native_variable_names") != nullptr) {
+    lower_case_variable_names = false;
   }
 
   {

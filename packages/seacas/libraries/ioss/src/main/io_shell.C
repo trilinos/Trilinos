@@ -273,6 +273,9 @@ namespace {
         std::exit(EXIT_FAILURE);
       }
 
+      if (!interface.lower_case_variable_names) {
+	dbi->set_lower_case_variable_names(false);
+      }
       dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_type));
       dbi->set_field_separator(interface.fieldSuffixSeparator);
       if (interface.ints_64_bit) {

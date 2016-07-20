@@ -78,6 +78,7 @@ namespace IOShell {
     bool                     netcdf4;
     bool                     in_memory_read;
     bool                     in_memory_write;
+    bool                     lower_case_variable_names;
     char                     fieldSuffixSeparator;
   };
 }
