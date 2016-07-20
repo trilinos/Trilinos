@@ -190,63 +190,6 @@ KOKKOS_INLINE_FUNCTION
 T
 levi_civita(Index const i, Index const j, Index const k, Index const l);
 
-///
-/// Duet type. Holder of two objects of the same type.
-/// Useful as return type for functions that need to return two objects.
-///
-template<typename T>
-struct Duet
-{
-  T first;
-  T second;
-};
-
-///
-/// Triplet type. Holder of three objects of the same type.
-/// Useful as return type for functions that need to return three objects.
-///
-template<typename T>
-struct Triplet
-{
-  T first;
-  T second;
-  T third;
-};
-
-///
-/// Create a Duet structure.
-///
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-Duet<T>
-make_duet(T const & a, T const & b);
-
-///
-/// Create a Triplet structure.
-///
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-Triplet<T>
-make_triplet(T const & a, T const & b, T const & c);
-
-///
-/// Tie function template to hold values of functions
-/// that return a Duet.
-///
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-Duet<T>
-tie(T & a, T& b);
-
-///
-/// Tie function template to hold values of functions
-/// that return a Duet.
-///
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-Triplet<T>
-tie(T & a, T & b, T & c);
-
 } // namespace Intrepid
 
 #include "Intrepid2_MiniTensor_Utilities.i.h"
