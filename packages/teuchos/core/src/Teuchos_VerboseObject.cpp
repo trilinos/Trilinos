@@ -81,7 +81,7 @@ VerboseObjectBase::getDefaultOStream()
 
 // Destructor
 
-VerboseObjectBase::~VerboseObjectBase()
+VerboseObjectBase::~VerboseObjectBase() TEUCHOS_NOEXCEPT_FALSE // see note in header for clang
 {
 }
 
