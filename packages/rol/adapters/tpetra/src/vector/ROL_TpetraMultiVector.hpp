@@ -56,6 +56,96 @@
 
 namespace ROL {
 
+namespace TPMultiVector {
+
+
+  // Locally define a Kokkos wrapper functor for UnaryFunction  
+  template <class Real, 
+          class LO=Tpetra::Map<>::local_ordinal_type, 
+          class GO=Tpetra::Map<>::global_ordinal_type, 
+          class Node=Tpetra::Map<>::node_type >
+  struct unaryFunc {
+    typedef typename Tpetra::MultiVector<Real,LO,GO,Node>::dual_view_type::t_dev ViewType;
+    typedef typename ViewType::execution_space execution_space;
+    ViewType X_;
+    const Elementwise::UnaryFunction<Real>* const f_;
+  
+    unaryFunc(ViewType& X, const Elementwise::UnaryFunction<Real>* const f)
+      : X_(X), f_(f) {}  
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int i) const {
+      const int M = X_.dimension_1();
+      for(int j=0;j<M;++j) {
+        X_(i,j) = f_->apply(X_(i,j));
+      } 
+    }
+  };
+
+  // Locally define a Kokkos wrapper functor for BinaryFunction  
+  template <class Real, 
+            class LO=Tpetra::Map<>::local_ordinal_type, 
+            class GO=Tpetra::Map<>::global_ordinal_type, 
+            class Node=Tpetra::Map<>::node_type >
+   struct binaryFunc {
+    typedef typename Tpetra::MultiVector<Real,LO,GO,Node>::dual_view_type::t_dev ViewType;
+    typedef typename ViewType::execution_space execution_space;
+    ViewType X_;
+    ViewType Y_;
+    const Elementwise::BinaryFunction<Real>* const f_;
+
+    binaryFunc(ViewType& X, const ViewType& Y, const Elementwise::BinaryFunction<Real>* const f)
+      : X_(X), Y_(Y), f_(f) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int i) const {
+      const int M = X_.dimension_1();
+      for(int j=0;j<M;++j) {
+        X_(i,j) = f_->apply(X_(i,j),Y_(i,j));    
+      }
+    } 
+  };
+
+  // Locally define a Kokkos wrapper functor for ReductionOp
+  template <class Real, 
+            class LO=Tpetra::Map<>::local_ordinal_type, 
+            class GO=Tpetra::Map<>::global_ordinal_type, 
+            class Node=Tpetra::Map<>::node_type >
+  struct reduceFunc {
+    typedef typename Tpetra::MultiVector<Real,LO,GO,Node>::dual_view_type::t_dev ViewType;
+    typedef typename ViewType::execution_space execution_space;
+    ViewType X_;
+    const Elementwise::ReductionOp<Real>* const r_;
+
+    reduceFunc(const ViewType& X, const Elementwise::ReductionOp<Real>* const r)
+      : X_(X), r_(r) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int i, Real &rval) const {
+      const int M = X_.dimension_1();
+  
+      for(int j=0;j<M;++j) {
+        r_->reduce(X_(i,j),rval);
+      }
+    } 
+
+    KOKKOS_INLINE_FUNCTION
+    void init(Real &rval) const {
+      rval = r_->initialValue();
+    } 
+
+    KOKKOS_INLINE_FUNCTION
+    void join(volatile Real &globalVal, const volatile Real &localVal) const {
+      r_->reduce(localVal,globalVal);
+    } 
+       
+  };
+
+
+
+}
+
+
 // Template on the Real/Scalar type, Local Ordinal, Global Ordinal, and Node
 template <class Real, 
           class LO=Tpetra::Map<>::local_ordinal_type, 
@@ -189,79 +279,12 @@ public:
 private:
   typedef typename Tpetra::MultiVector<Real,LO,GO,Node>::dual_view_type::t_dev ViewType;
 
-  // Locally define a Kokkos wrapper functor for UnaryFunction  
-  struct unaryFunc {
-    typedef typename ViewType::execution_space execution_space;
-    ViewType X_;
-    const Elementwise::UnaryFunction<Real>* const f_;
-  
-    unaryFunc(ViewType& X, const Elementwise::UnaryFunction<Real>* const f)
-      : X_(X), f_(f) {}  
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const int i) const {
-      const int M = X_.dimension_1();
-      for(int j=0;j<M;++j) {
-        X_(i,j) = f_->apply(X_(i,j));
-      } 
-    }
-  };
-
-  // Locally define a Kokkos wrapper functor for BinaryFunction  
-  struct binaryFunc {
-    typedef typename ViewType::execution_space execution_space;
-    ViewType X_;
-    ViewType Y_;
-    const Elementwise::BinaryFunction<Real>* const f_;
-
-    binaryFunc(ViewType& X, const ViewType& Y, const Elementwise::BinaryFunction<Real>* const f)
-      : X_(X), Y_(Y), f_(f) {}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const int i) const {
-      const int M = X_.dimension_1();
-      for(int j=0;j<M;++j) {
-        X_(i,j) = f_->apply(X_(i,j),Y_(i,j));    
-      }
-    } 
-  };
-
-  // Locally define a Kokkos wrapper functor for ReductionOp
-  struct reduceFunc {
-    typedef typename ViewType::execution_space execution_space;
-    ViewType X_;
-    const Elementwise::ReductionOp<Real>* const r_;
-
-    reduceFunc(const ViewType& X, const Elementwise::ReductionOp<Real>* const r)
-      : X_(X), r_(r) {}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const int i, Real &rval) const {
-      const int M = X_.dimension_1();
-  
-      for(int j=0;j<M;++j) {
-        r_->reduce(X_(i,j),rval);
-      }
-    } 
-
-    KOKKOS_INLINE_FUNCTION
-    void init(Real &rval) const {
-      rval = r_->initialValue();
-    } 
-
-    KOKKOS_INLINE_FUNCTION
-    void join(volatile Real &globalVal, const volatile Real &localVal) const {
-      r_->reduce(localVal,globalVal);
-    } 
-       
-  };
-
 public:
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     ViewType v_lcl =  tpetra_vec_->getDualView().d_view;
         
     int lclDim = tpetra_vec_->getLocalLength();
-    unaryFunc func(v_lcl, &f);
+    TPMultiVector::unaryFunc<Real,LO,GO,Node> func(v_lcl, &f);
 
     Kokkos::parallel_for(lclDim,func);
   }
@@ -280,7 +303,7 @@ public:
        
     int lclDim = tpetra_vec_->getLocalLength();
 
-    binaryFunc func(v_lcl,x_lcl,&f);
+    TPMultiVector::binaryFunc<Real,LO,GO,Node> func(v_lcl,x_lcl,&f);
 
     Kokkos::parallel_for(lclDim,func);
 
@@ -290,7 +313,7 @@ public:
     ViewType v_lcl = tpetra_vec_->getDualView().d_view;
 
     int lclDim = tpetra_vec_->getLocalLength();
-    reduceFunc func(v_lcl, &r);
+    TPMultiVector::reduceFunc<Real,LO,GO,Node> func(v_lcl, &r);
 
     Real lclValue;
 
