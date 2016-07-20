@@ -76,12 +76,10 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_MpiComm_noncontigMap )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef Tpetra::Details::DefaultTypes::node_type node_type;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
   typedef Array<global_ordinal_type>::size_type size_type;
 
   RCP<const Comm<int> > origComm = rcp (new MpiComm<int> (MPI_COMM_WORLD));
-  RCP<node_type> node (new node_type);
   const int numProcs = origComm->getSize ();
   const int myRank = origComm->getRank ();
 
@@ -103,7 +101,7 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_MpiComm_noncontigMap )
     as<global_size_t> (numProcs - 1);
   const global_ordinal_type indexBase = 0;
   RCP<const map_type> origMap (new map_type (globalNumElts, myGids (),
-                                             indexBase, origComm, node));
+                                             indexBase, origComm));
   RCP<const map_type> newMap = origMap->removeEmptyProcesses ();
 
   // Test collectively for success, so the test doesn't hang on failure.
@@ -233,11 +231,9 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_MpiComm_contigMap )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef Tpetra::Details::DefaultTypes::node_type node_type;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
 
   RCP<const Comm<int> > origComm = rcp (new MpiComm<int> (MPI_COMM_WORLD));
-  RCP<node_type> node (new node_type);
   const int numProcs = origComm->getSize ();
   const int myRank = origComm->getRank ();
 
@@ -249,7 +245,7 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_MpiComm_contigMap )
   const size_t myNumElts = (myRank == numProcs - 1) ? 0 : numEltsPerProc;
   const global_ordinal_type indexBase = 0;
   RCP<const map_type> origMap (new map_type (globalNumElts, myNumElts,
-                                             indexBase, origComm, node));
+                                             indexBase, origComm));
   RCP<const map_type> newMap = origMap->removeEmptyProcesses ();
 
   // Test collectively for success, so the test doesn't hang on failure.
@@ -381,12 +377,10 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_SerialComm1 )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef Tpetra::Details::DefaultTypes::node_type node_type;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
   typedef Array<global_ordinal_type>::size_type size_type;
 
   RCP<const Comm<int> > origComm = rcp (new SerialComm<int>);
-  RCP<node_type> node (new node_type);
   const int numProcs = origComm->getSize ();
   const int myRank = origComm->getRank ();
 
@@ -404,7 +398,7 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_SerialComm1 )
     as<global_size_t> (numProcs);
   const global_ordinal_type indexBase = 0;
   RCP<const map_type> origMap (new map_type (globalNumElts, myGids (),
-                                             indexBase, origComm, node));
+                                             indexBase, origComm));
   RCP<const map_type> newMap = origMap->removeEmptyProcesses ();
 
   // Test collectively for success, so the test doesn't hang on failure.
@@ -528,12 +522,10 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_SerialComm2 )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef Tpetra::Details::DefaultTypes::node_type node_type;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
   typedef Array<global_ordinal_type>::size_type size_type;
 
   RCP<const Comm<int> > origComm = rcp (new SerialComm<int>);
-  RCP<node_type> node (new node_type);
   const int numProcs = origComm->getSize ();
   const int myRank = origComm->getRank ();
 
@@ -546,7 +538,7 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_SerialComm2 )
     as<global_size_t> (numProcs);
   const global_ordinal_type indexBase = 0;
   RCP<const map_type> origMap (new map_type (globalNumElts, myGids (),
-                                             indexBase, origComm, node));
+                                             indexBase, origComm));
   RCP<const map_type> newMap = origMap->removeEmptyProcesses ();
 
   // Test collectively for success, so the test doesn't hang on failure.
