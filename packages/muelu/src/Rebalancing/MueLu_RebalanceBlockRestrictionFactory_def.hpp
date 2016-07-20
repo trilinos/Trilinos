@@ -170,7 +170,7 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 
     // fix striding information for rebalanced diagonal block rebRii
     RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgRMapExtractor = bOriginalTransferOp->getRangeMapExtractor(); // original map extractor
-    Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgRMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+    Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgRMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),rgRMapExtractor->getThyraMode()));
     Teuchos::RCP<const Map> stridedRgMap = Teuchos::null;
     if(orig_stridedRgMap != Teuchos::null) {
       std::vector<size_t> stridingData = orig_stridedRgMap->getStridingData();
@@ -186,7 +186,7 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
           orig_stridedRgMap->getOffset());
     }
     RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > doRMapExtractor = bOriginalTransferOp->getDomainMapExtractor(); // original map extractor
-    Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doRMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+    Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doRMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),doRMapExtractor->getThyraMode()));
     Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
     if(orig_stridedDoMap != Teuchos::null) {
       std::vector<size_t> stridingData = orig_stridedDoMap->getStridingData();

@@ -201,7 +201,7 @@ namespace MueLu {
       // Note: we do not care about the off-diagonal blocks. We just make sure, that the
       // diagonal blocks have the corresponding striding information from the map extractors
       RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgAMapExtractor = bA->getRangeMapExtractor(); // original map extractor
-      Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgAMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+      Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgAMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),rgAMapExtractor->getThyraMode()));
       Teuchos::RCP<const Map> stridedRgMap = Teuchos::null;
       if(orig_stridedRgMap != Teuchos::null) {
         std::vector<size_t> stridingData = orig_stridedRgMap->getStridingData();
@@ -217,7 +217,7 @@ namespace MueLu {
             orig_stridedRgMap->getOffset());
       }
       RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > doAMapExtractor = bA->getDomainMapExtractor(); // original map extractor
-      Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doAMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+      Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doAMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),doAMapExtractor->getThyraMode()));
       Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
       if(orig_stridedDoMap != Teuchos::null) {
         std::vector<size_t> stridingData = orig_stridedDoMap->getStridingData();

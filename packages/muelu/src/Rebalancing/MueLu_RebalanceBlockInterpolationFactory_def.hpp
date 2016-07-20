@@ -78,6 +78,7 @@ RCP<const ParameterList> RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
+  validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Factory for generating the non-rebalanced coarse level A. We need this to make sure the non-rebalanced coarse A is calculated first before rebalancing takes place.");
   // validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
   // validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
   // validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
@@ -104,6 +105,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
 
   Input(coarseLevel, "P");
+  Input(coarseLevel, "A"); // we request the non-rebalanced coarse level A since we have to make sure it is calculated before rebalancing starts!
 
   std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
   for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
@@ -118,6 +120,8 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   FactoryMonitor m(*this, "Build", coarseLevel);
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
+  Teuchos::RCP<Matrix> nonrebCoarseA = Get< RCP<Matrix> >(coarseLevel, "A");
 
   Teuchos::RCP<Matrix> originalTransferOp = Teuchos::null;
   originalTransferOp = Get< RCP<Matrix> >(coarseLevel, "P");
@@ -199,7 +203,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
     // fix striding information for rebalanced diagonal block Pii
     RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgPMapExtractor = bOriginalTransferOp->getRangeMapExtractor(); // original map extractor
-    Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgPMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+    Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgPMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),rgPMapExtractor->getThyraMode()));
     Teuchos::RCP<const Map> stridedRgMap = Teuchos::null;
     if(orig_stridedRgMap != Teuchos::null) {
       std::vector<size_t> stridingData = orig_stridedRgMap->getStridingData();
@@ -215,7 +219,9 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
           orig_stridedRgMap->getOffset());
     } else stridedRgMap = Pii->getRangeMap();
     RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > doPMapExtractor = bOriginalTransferOp->getDomainMapExtractor(); // original map extractor
-    Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doPMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+    Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doPMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),doPMapExtractor->getThyraMode()));
+    std::cout << "found domain[" << curBlockId << "] = " << orig_stridedDoMap << std::endl;
+
     Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
     if(orig_stridedDoMap != Teuchos::null) {
       std::vector<size_t> stridingData = orig_stridedDoMap->getStridingData();
