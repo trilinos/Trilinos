@@ -193,11 +193,11 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 //
 template<typename T, Index N,  typename ES>
 Vector<T, N, ES>
-centroid(std::vector<Vector<T, N, ES> > const & points)
+centroid(std::vector<Vector<T, N, ES>> const & points)
 {
   Vector<T, N, ES> C(points[0].get_dimension());
   C.clear();
-  typedef typename std::vector<Vector<T, N, ES> >::size_type sizeT;
+  typedef typename std::vector<Vector<T, N, ES>>::size_type sizeT;
   sizeT const n = points.size();
 
   for (sizeT i = 0; i < n; ++i) {
@@ -263,7 +263,7 @@ in_normal_side(
 //
 template<typename T, typename I, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair< Vector<T, N, ES>, Vector<T, N, ES> >
+std::pair< Vector<T, N, ES>, Vector<T, N, ES>>
 bounding_box(I start, I end)
 {
   I
@@ -298,7 +298,7 @@ bounding_box(I start, I end)
 
 template<typename T, typename I,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair< Vector<T, DYNAMIC,ES>, Vector<T, DYNAMIC,ES> >
+std::pair< Vector<T, DYNAMIC,ES>, Vector<T, DYNAMIC,ES>>
 bounding_box(I start, I end)
 {
   return bounding_box<T, I, DYNAMIC,ES>(start, end);
@@ -450,12 +450,12 @@ in_hexahedron(
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-typename std::vector< Vector<T, N, ES> >::size_type
-closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES> > const & n)
+typename std::vector< Vector<T, N, ES>>::size_type
+closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES>> const & n)
 {
   assert(n.size() > 0);
 
-  typename std::vector< Vector<T, N, ES> >::size_type
+  typename std::vector< Vector<T, N, ES>>::size_type
   index = 0;
 
   Vector<T, N, ES> const
@@ -464,7 +464,7 @@ closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES> > const 
   T
   min = norm_square(v0);
 
-  for (typename std::vector< Vector<T, N, ES> >::size_type i = 1;
+  for (typename std::vector< Vector<T, N, ES>>::size_type i = 1;
       i < n.size();
       ++i) {
 
@@ -696,7 +696,7 @@ Vector<T, N, ES>
 interpolate_element(
     ELEMENT::Type element_type,
     Vector<T, M, ES> &xi,
-    std::vector<Vector<T, N, ES> > const &v)
+    std::vector<Vector<T, N, ES>> const &v)
 {
   Vector<T, N, ES> p;
 
@@ -743,8 +743,8 @@ interpolate_element(
 // \return distance matrix
 //
 template<typename T, Index N,  typename ES>
-std::vector< std::vector<T> >
-distance_matrix(std::vector< Vector<T, N, ES> > const & points)
+std::vector< std::vector<T>>
+distance_matrix(std::vector< Vector<T, N, ES>> const & points)
 {
   Index const
   number_points = points.size();

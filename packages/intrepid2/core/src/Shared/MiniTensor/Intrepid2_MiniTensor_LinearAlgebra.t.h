@@ -440,7 +440,7 @@ polynomial_coefficient(Index const order, Index const index)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 pade_polynomial_terms(Tensor<T, N, ES> const & A, Index const order)
 {
   Index const
@@ -1254,7 +1254,7 @@ namespace {
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 svd_bidiagonal(T f, T g, T h)
 {
   T fa = std::abs(f);
@@ -1347,7 +1347,7 @@ svd_bidiagonal(T f, T g, T h)
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 svd_2x2(Tensor<T, N, ES> const & A)
 {
   assert(A.get_dimension() == 2);
@@ -1382,7 +1382,7 @@ svd_2x2(Tensor<T, N, ES> const & A)
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 svd_NxN(Tensor<T, N, ES> const & A)
 {
   Tensor<T, N, ES>
@@ -1495,7 +1495,7 @@ svd_NxN(Tensor<T, N, ES> const & A)
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 svd(Tensor<T, N, ES> const & A)
 {
   Index const
@@ -1617,7 +1617,7 @@ polar_rotation(Tensor<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left(Tensor<T, N, ES> const & A)
 {
   Tensor<T, N, ES>
@@ -1636,7 +1636,7 @@ polar_left(Tensor<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_right(Tensor<T, N, ES> const & A)
 {
   Tensor<T, N, ES>
@@ -1655,7 +1655,7 @@ polar_right(Tensor<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left_eig(Tensor<T, N, ES> const & F)
 {
   assert(F.get_dimension() == 3);
@@ -1712,7 +1712,7 @@ polar_left_eig(Tensor<T, N, ES> const & F)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_right_eig(Tensor<T, N, ES> const & F)
 {
   Index const
@@ -1772,7 +1772,7 @@ polar_right_eig(Tensor<T, N, ES> const & F)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left_logV(Tensor<T, N, ES> const & F)
 {
   Index const
@@ -1844,7 +1844,7 @@ polar_left_logV_eig(Tensor<T, N, ES> const & F)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left_logV_lame(Tensor<T, N, ES> const & F)
 {
   Index const
@@ -1976,7 +1976,7 @@ namespace {
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 eig_sym_NxN(Tensor<T, N, ES> const & A)
 {
   Tensor<T, N, ES>
@@ -2059,7 +2059,7 @@ eig_sym_NxN(Tensor<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 eig_sym_2x2(Tensor<T, N, ES> const & A)
 {
   assert(A.get_dimension() == 2);
@@ -2143,7 +2143,7 @@ eig_sym_2x2(Tensor<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 eig_sym(Tensor<T, N, ES> const & A)
 {
   Index const
@@ -2174,7 +2174,7 @@ eig_sym(Tensor<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 eig_spd(Tensor<T, N, ES> const & A)
 {
   return eig_sym(A);
@@ -2187,7 +2187,7 @@ eig_spd(Tensor<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 eig_spd_cos(Tensor<T, N, ES> const & A)
 {
   Index const

@@ -686,7 +686,7 @@ check_strict_ellipticity(Tensor4<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<bool, Vector<T, N, ES> >
+std::pair<bool, Vector<T, N, ES>>
 check_strong_ellipticity(Tensor4<T, N, ES> const & A)
 {
   bool

@@ -231,7 +231,7 @@ operator!=(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B);
 ///
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N, ES> >::type
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N, ES>>::type
 operator*(S const & s, Tensor3<T, N, ES> const & A);
 
 ///
@@ -242,7 +242,7 @@ operator*(S const & s, Tensor3<T, N, ES> const & A);
 ///
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N, ES> >::type
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N, ES>>::type
 operator*(Tensor3<T, N, ES> const & A, S const & s);
 
 ///

@@ -362,7 +362,7 @@ arg_max_off_diagonal(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Vector<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Vector<T, N, ES>, Tensor<T, N, ES>>
 sort_permutation(Vector<T, N, ES> const & u);
 
 ///
@@ -370,7 +370,7 @@ sort_permutation(Vector<T, N, ES> const & u);
 /// \return \f$ A = USV^T\f$
 ///
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N,ES>, Tensor<T, N,ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N,ES>, Tensor<T, N,ES>>
 svd(Tensor<T, N, ES> const & A);
 
 ///
@@ -394,7 +394,7 @@ polar_rotation(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left(Tensor<T, N, ES> const & A);
 
 ///
@@ -404,7 +404,7 @@ polar_left(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_right(Tensor<T, N, ES> const & A);
 
 ///
@@ -414,7 +414,7 @@ polar_right(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left_eig(Tensor<T, N, ES> const & A);
 
 ///
@@ -424,7 +424,7 @@ polar_left_eig(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_right_eig(Tensor<T, N, ES> const & A);
 
 ///
@@ -433,11 +433,11 @@ polar_right_eig(Tensor<T, N, ES> const & A);
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left_logV(Tensor<T, N, ES> const & F);
 
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left_logV_eig(Tensor<T, N, ES> const & F);
 
 ///
@@ -446,7 +446,7 @@ polar_left_logV_eig(Tensor<T, N, ES> const & F);
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left_logV_lame(Tensor<T, N, ES> const & F);
 
 ///
@@ -485,7 +485,7 @@ givens(T const & a, T const & b);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 eig_sym(Tensor<T, N, ES> const & A);
 
 ///
@@ -494,7 +494,7 @@ eig_sym(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair< Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair< Tensor<T, N, ES>, Tensor<T, N, ES>>
 eig_spd(Tensor<T, N, ES> const & A);
 
 ///
@@ -505,7 +505,7 @@ eig_spd(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 eig_spd_cos(Tensor<T, N, ES> const & A);
 
 ///

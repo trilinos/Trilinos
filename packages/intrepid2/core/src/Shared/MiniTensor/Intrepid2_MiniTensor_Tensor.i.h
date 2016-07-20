@@ -920,7 +920,7 @@ operator!=(Tensor<T, N, ES> const & A, Tensor<T, N, ES> const & B)
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 typename
-lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N, ES> >::type
+lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N, ES>>::type
 operator*(S const & s, Tensor<T, N, ES> const & A)
 {
   Tensor<typename Promote<S, T>::type, N, ES>
@@ -937,7 +937,7 @@ operator*(S const & s, Tensor<T, N, ES> const & A)
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 typename
-lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N, ES> >::type
+lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N, ES>>::type
 operator*(Tensor<T, N, ES> const & A, S const & s)
 {
   Tensor<typename Promote<S, T>::type, N, ES>

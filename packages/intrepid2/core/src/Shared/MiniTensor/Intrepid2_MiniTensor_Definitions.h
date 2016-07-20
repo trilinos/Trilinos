@@ -97,7 +97,7 @@ struct is_vector {
 };
 
 template <typename T, Index N,  typename ES>
-struct is_vector< Vector<T, N, ES> > {
+struct is_vector< Vector<T, N, ES>> {
   static const bool value = true;
 };
 
@@ -113,7 +113,7 @@ struct is_tensor {
 };
 
 template <typename T, Index N,  typename ES>
-struct is_tensor< Tensor<T, N, ES> > {
+struct is_tensor< Tensor<T, N, ES>> {
   static const bool value = true;
 };
 
@@ -129,7 +129,7 @@ struct is_tensor3 {
 };
 
 template <typename T, Index N,  typename ES>
-struct is_tensor3< Tensor3<T, N, ES> > {
+struct is_tensor3< Tensor3<T, N, ES>> {
   static const bool value = true;
 };
 
@@ -145,7 +145,7 @@ struct is_tensor4 {
 };
 
 template <typename T, Index N,  typename ES>
-struct is_tensor4<Tensor4<T, N, ES> > {
+struct is_tensor4<Tensor4<T, N, ES>> {
   static const bool value = true;
 };
 
@@ -177,27 +177,27 @@ struct order_1234 {
 };
 
 template <typename T, Index N,  typename ES>
-struct order_1234< Vector<T, N, ES> > {
+struct order_1234< Vector<T, N, ES>> {
   static const bool value = true;
 };
 
 template <typename T, Index N,  typename ES>
-struct order_1234< Tensor<T, N, ES> > {
+struct order_1234< Tensor<T, N, ES>> {
   static const bool value = true;
 };
 
 template <typename T, Index N,  typename ES>
-struct order_1234< Tensor3<T, N, ES> > {
+struct order_1234< Tensor3<T, N, ES>> {
   static const bool value = true;
 };
 
 template <typename T, Index N,  typename ES>
-struct order_1234< Tensor4<T, N, ES> > {
+struct order_1234< Tensor4<T, N, ES>> {
  static const bool value = true;          
   };                        
 
 template<typename T, Index M, Index N,  typename ES>
-struct order_1234<Matrix<T, M, N, ES> >{
+struct order_1234<Matrix<T, M, N, ES>>{
   static const bool value = true;
 };
 
@@ -294,28 +294,28 @@ struct Promote<Index, complex<float>> {
 
 /// Sacado traits specializations for Vector
 template <typename T, Index N,  typename ES>
-struct ScalarType< Vector<T, N, ES> > {
+struct ScalarType< Vector<T, N, ES>> {
   typedef typename ScalarType<T>::type type;
 };
 
 template <typename T, Index N,  typename ES>
-struct ValueType< Vector<T, N, ES> > {
+struct ValueType< Vector<T, N, ES>> {
   typedef typename ValueType<T>::type type;
 };
 
 template <typename T, Index N,  typename ES>
-struct IsADType< Vector<T, N, ES> > {
+struct IsADType< Vector<T, N, ES>> {
   static bool const value = IsADType<T>::value;
 };
 
 template <typename T, Index N,  typename ES>
-struct IsScalarType< Vector<T, N, ES> > {
+struct IsScalarType< Vector<T, N, ES>> {
   static bool const value = IsScalarType<T>::value;
 };
 
 template <typename T, Index N,  typename ES>
-struct Value< Vector<T, N, ES> > {
-  typedef typename ValueType< Vector<T, N, ES> >::type value_type;
+struct Value< Vector<T, N, ES>> {
+  typedef typename ValueType< Vector<T, N, ES>>::type value_type;
   static const Vector<value_type, N, ES>
   eval(Vector<T, N, ES> const & x)
   {
@@ -330,8 +330,8 @@ struct Value< Vector<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct ScalarValue< Vector<T, N, ES> > {
-  typedef typename ScalarType< Vector<T, N, ES> >::type scalar_type;
+struct ScalarValue< Vector<T, N, ES>> {
+  typedef typename ScalarType< Vector<T, N, ES>>::type scalar_type;
   static const Vector<scalar_type, N, ES>
   eval(Vector<T, N, ES> const & x)
   {
@@ -355,45 +355,45 @@ struct StringName<Vector<T, N, ES>> {
 };
 
 template <typename T, Index N,  typename ES>
-struct IsEqual< Vector<T, N, ES> > {
+struct IsEqual< Vector<T, N, ES>> {
   static bool eval(T const & x, T const & y) { return x == y; }
 };
 
 template <typename T, Index N,  typename ES>
-struct IsStaticallySized< Vector<T, N, ES> > {
+struct IsStaticallySized< Vector<T, N, ES>> {
   static const bool value = true;
 };
 
 template <typename T,  typename ES>
-struct IsStaticallySized< Vector<T, DYNAMIC,ES> >
+struct IsStaticallySized< Vector<T, DYNAMIC,ES>>
 {
   static const bool value = false;
 };
 
 /// Sacado traits specializations for Tensor
 template <typename T, Index N,  typename ES>
-struct ScalarType< Tensor<T, N, ES> > {
+struct ScalarType< Tensor<T, N, ES>> {
   typedef typename ScalarType<T>::type type;
 };
 
 template <typename T, Index N,  typename ES>
-struct ValueType< Tensor<T, N, ES> > {
+struct ValueType< Tensor<T, N, ES>> {
   typedef typename ValueType<T>::type type;
 };
 
 template <typename T, Index N,  typename ES>
-struct IsADType< Tensor<T, N, ES> > {
+struct IsADType< Tensor<T, N, ES>> {
   static bool const value = IsADType<T>::value;
 };
 
 template <typename T, Index N,  typename ES>
-struct IsScalarType< Tensor<T, N, ES> > {
+struct IsScalarType< Tensor<T, N, ES>> {
   static bool const value = IsScalarType<T>::value;
 };
 
 template <typename T, Index N,  typename ES>
-struct Value< Tensor<T, N, ES> > {
-  typedef typename ValueType< Tensor<T, N, ES> >::type value_type;
+struct Value< Tensor<T, N, ES>> {
+  typedef typename ValueType< Tensor<T, N, ES>>::type value_type;
   static const Tensor<value_type, N, ES>
   eval(Tensor<T, N, ES> const & x)
   {
@@ -408,8 +408,8 @@ struct Value< Tensor<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct ScalarValue< Tensor<T, N, ES> > {
-  typedef typename ScalarType< Tensor<T, N, ES> >::type scalar_type;
+struct ScalarValue< Tensor<T, N, ES>> {
+  typedef typename ScalarType< Tensor<T, N, ES>>::type scalar_type;
   static const Tensor<scalar_type, N, ES>
   eval(Tensor<T, N, ES> const & x)
   {
@@ -424,7 +424,7 @@ struct ScalarValue< Tensor<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct StringName< Tensor<T, N, ES> > {
+struct StringName< Tensor<T, N, ES>> {
   static string
   eval()
   {
@@ -434,45 +434,45 @@ struct StringName< Tensor<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct IsEqual< Tensor<T, N, ES> > {
+struct IsEqual< Tensor<T, N, ES>> {
   static bool eval(T const & x, T const & y) { return x == y; }
 };
 
 template <typename T, Index N,  typename ES>
-struct IsStaticallySized< Tensor<T, N, ES> > {
+struct IsStaticallySized< Tensor<T, N, ES>> {
   static const bool value = true;
 };
 
 template <typename T,  typename ES>
-struct IsStaticallySized< Tensor<T, DYNAMIC, ES> >
+struct IsStaticallySized< Tensor<T, DYNAMIC, ES>>
 {
   static const bool value = false;
 };
 
 /// Sacado traits specializations for Tensor3
 template <typename T, Index N,  typename ES>
-struct ScalarType< Tensor3<T, N, ES> > {
+struct ScalarType< Tensor3<T, N, ES>> {
   typedef typename ScalarType<T>::type type;
 };
 
 template <typename T, Index N,  typename ES>
-struct ValueType< Tensor3<T, N, ES> > {
+struct ValueType< Tensor3<T, N, ES>> {
   typedef typename ValueType<T>::type type;
 };
 
 template <typename T, Index N,  typename ES>
-struct IsADType< Tensor3<T, N, ES> > {
+struct IsADType< Tensor3<T, N, ES>> {
   static bool const value = IsADType<T>::value;
 };
 
 template <typename T, Index N,  typename ES>
-struct IsScalarType< Tensor3<T, N, ES> > {
+struct IsScalarType< Tensor3<T, N, ES>> {
   static bool const value = IsScalarType<T>::value;
 };
 
 template <typename T, Index N,  typename ES>
-struct Value< Tensor3<T, N, ES> > {
-  typedef typename ValueType< Tensor3<T, N, ES> >::type value_type;
+struct Value< Tensor3<T, N, ES>> {
+  typedef typename ValueType< Tensor3<T, N, ES>>::type value_type;
   static const Tensor3<value_type, N, ES>
   eval(Tensor3<T, N, ES> const & x)
   {
@@ -487,8 +487,8 @@ struct Value< Tensor3<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct ScalarValue< Tensor3<T, N, ES> > {
-  typedef typename ScalarType< Tensor3<T, N, ES> >::type scalar_type;
+struct ScalarValue< Tensor3<T, N, ES>> {
+  typedef typename ScalarType< Tensor3<T, N, ES>>::type scalar_type;
   static const Tensor3<scalar_type, N, ES>
   eval(Tensor3<T, N, ES> const & x)
   {
@@ -503,7 +503,7 @@ struct ScalarValue< Tensor3<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct StringName< Tensor3<T, N, ES> > {
+struct StringName< Tensor3<T, N, ES>> {
   static string
   eval()
   {
@@ -513,46 +513,46 @@ struct StringName< Tensor3<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct IsEqual< Tensor3<T, N, ES> > {
+struct IsEqual< Tensor3<T, N, ES>> {
   static bool eval(T const & x, T const & y) { return x == y; }
 };
 
 template <typename T, Index N,  typename ES>
-struct IsStaticallySized< Tensor3<T, N, ES> >
+struct IsStaticallySized< Tensor3<T, N, ES>>
 {
   static const bool value = true;
 };
 
 template <typename T,  typename ES>
-struct IsStaticallySized< Tensor3<T, DYNAMIC,ES> >
+struct IsStaticallySized< Tensor3<T, DYNAMIC,ES>>
 {
   static const bool value = false;
 };
 
 /// Sacado traits specializations for Tensor4
 template <typename T, Index N,  typename ES>
-struct ScalarType< Tensor4<T, N, ES> > {
+struct ScalarType< Tensor4<T, N, ES>> {
   typedef typename ScalarType<T>::type type;
 };
 
 template <typename T, Index N,  typename ES>
-struct ValueType< Tensor4<T, N, ES> > {
+struct ValueType< Tensor4<T, N, ES>> {
   typedef typename ValueType<T>::type type;
 };
 
 template <typename T, Index N,  typename ES>
-struct IsADType< Tensor4<T, N, ES> > {
+struct IsADType< Tensor4<T, N, ES>> {
   static bool const value = IsADType<T>::value;
 };
 
 template <typename T, Index N,  typename ES>
-struct IsScalarType< Tensor4<T, N, ES> > {
+struct IsScalarType< Tensor4<T, N, ES>> {
   static bool const value = IsScalarType<T>::value;
 };
 
 template <typename T, Index N,  typename ES>
-struct Value< Tensor4<T, N, ES> > {
-  typedef typename ValueType< Tensor4<T, N, ES> >::type value_type;
+struct Value< Tensor4<T, N, ES>> {
+  typedef typename ValueType< Tensor4<T, N, ES>>::type value_type;
   static const Tensor4<value_type, N, ES>
   eval(Tensor4<T, N, ES> const & x)
   {
@@ -567,8 +567,8 @@ struct Value< Tensor4<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct ScalarValue< Tensor4<T, N, ES> > {
-  typedef typename ScalarType< Tensor4<T, N, ES> >::type scalar_type;
+struct ScalarValue< Tensor4<T, N, ES>> {
+  typedef typename ScalarType< Tensor4<T, N, ES>>::type scalar_type;
   static const Tensor4<scalar_type, N, ES>
   eval(Tensor4<T, N, ES> const & x)
   {
@@ -583,7 +583,7 @@ struct ScalarValue< Tensor4<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct StringName< Tensor4<T, N, ES> > {
+struct StringName< Tensor4<T, N, ES>> {
   static string
   eval()
   {
@@ -593,18 +593,18 @@ struct StringName< Tensor4<T, N, ES> > {
 };
 
 template <typename T, Index N,  typename ES>
-struct IsEqual< Tensor4<T, N, ES> > {
+struct IsEqual< Tensor4<T, N, ES>> {
   static bool eval(T const & x, T const & y) { return x == y; }
 };
 
 template <typename T, Index N,  typename ES>
-struct IsStaticallySized< Tensor4<T, N, ES> >
+struct IsStaticallySized< Tensor4<T, N, ES>>
 {
   static const bool value = true;
 };
 
 template <typename T,  typename ES>
-struct IsStaticallySized< Tensor4<T, DYNAMIC, ES> >
+struct IsStaticallySized< Tensor4<T, DYNAMIC, ES>>
 {
  static const bool value= false;
 };
