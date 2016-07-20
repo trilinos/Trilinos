@@ -224,11 +224,14 @@ namespace {
 	      bool compose_output,
 	      int  compression_level,
 	      bool compression_shuffle,
+	      bool lower_case_variable_names,
 	      int  integer_size,
 	      stk::io::HeartbeatType hb_type,
 	      int interpolation_intervals)
   {
     stk::io::StkMeshIoBroker mesh_data(MPI_COMM_WORLD);
+
+    mesh_data.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", lower_case_variable_names));
 
     bool use_netcdf4 = false;
     if (!decomp_method.empty()) {
@@ -276,6 +279,7 @@ int main(int argc, char** argv)
   bool compression_shuffle = false;
   int integer_size = 4;
   bool compose_output = false;
+  bool lc_names = true;
   std::string parallel_io = "";
   std::string heartbeat_format = "none";
   //----------------------------------
@@ -292,6 +296,7 @@ int main(int argc, char** argv)
      "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'" )
     ("compression_level", bopt::value<int>(&compression_level), "compression level [1..9] to use" )
     ("shuffle", bopt::value<bool>(&compression_shuffle), "use shuffle filter prior to compressing data: true|false" )
+    ("lower_case_variable_names", bopt::value<bool>(&lc_names), "convert variable names to lowercase and replace spaces in names with underscore (default is true): true|false" )
     ("compose_output", bopt::value<bool>(&compose_output), "create a single output file: true|false" )
     ("parallel_io_method", bopt::value<std::string>(&parallel_io),
      "Method to use for parallel io. One of mpiio, mpiposix, or pnetcdf")
@@ -345,7 +350,7 @@ int main(int argc, char** argv)
 
   driver(parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 
-	 compression_level, compression_shuffle, integer_size, hb_type,
+	 compression_level, compression_shuffle, lc_names, integer_size, hb_type,
 	 interpolation_intervals);
 
   stk::parallel_machine_finalize();
