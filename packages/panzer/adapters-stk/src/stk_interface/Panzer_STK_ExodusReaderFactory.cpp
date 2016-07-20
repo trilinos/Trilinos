@@ -103,6 +103,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
 
    // read in meta data
    stk::io::StkMeshIoBroker* meshData = new stk::io::StkMeshIoBroker(parallelMach);
+   meshData->property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
    meshData->add_mesh_database(fileName_, "exodusII", stk::io::READ_MESH);
    meshData->create_input_mesh();
    RCP<stk::mesh::MetaData> metaData = meshData->meta_data_rcp();
