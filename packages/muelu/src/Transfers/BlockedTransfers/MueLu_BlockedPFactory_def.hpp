@@ -107,6 +107,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+    FactoryMonitor m(*this, "Build", coarseLevel);
+
     RCP<Matrix> Ain = Get< RCP<Matrix> >(fineLevel, "A");
 
     RCP<BlockedCrsMatrix> A = rcp_dynamic_cast<BlockedCrsMatrix>(Ain);
