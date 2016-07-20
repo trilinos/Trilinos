@@ -3530,10 +3530,6 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
     const char tfecfFuncName[] = "getLocalDiagCopy (1-arg): ";
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> vec_type;
-    typedef typename vec_type::dual_view_type::host_mirror_space::execution_space
-      host_execution_space;
-    typedef impl_scalar_type IST;
     typedef local_ordinal_type LO;
     typedef global_ordinal_type GO;
 
@@ -3587,7 +3583,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     if (! this->getComm ().is_null ()) {
       using Teuchos::reduceAll;
-      GlobalOrdinal gblNumErrs = 0;
+      GO gblNumErrs = 0;
       reduceAll<int, GO> (* (this->getComm ()), Teuchos::REDUCE_SUM,
                           static_cast<LO> (lclNumErrs),
                           Teuchos::outArg (gblNumErrs));
