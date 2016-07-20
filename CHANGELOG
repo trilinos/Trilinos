@@ -4,6 +4,21 @@
 #                                                                             #
 ###############################################################################
 
+Release update 12.6.4 July 20, 2016
+
+1. Epetra    - Fix two uninitialized variables in IntSerialDense test.
+
+2. Epetraext - Fix compilation issues In matlab extension Issue #445.
+
+4. Sacado    -  Fix implementation of min/max for Cuda.
+
+4. Sacado    -  Add includes of non-kokkosified Sacado headers in Sacado.hpp
+
+5. Seacas    - Fix 64-bit integer issue in nemesis cmap output
+
+6. Triutils  - to build on FreeBSD 10 with clang
+
+
 Release update 12.6.3 Apr 27, 2016
 
 1. Belos - Fix issue were code that depended on Tpetra was always being
