@@ -63,7 +63,7 @@ specific unit test suites.
 int main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+  Kokkos::initialize(argc , argv); 
   bool success = false;
   bool verbose = true;
   int ierr = -1;
@@ -104,6 +104,6 @@ int main(int argc, char* argv[])
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-
+  Kokkos::finalize();
   return (success ? ierr : EXIT_FAILURE);
 }
