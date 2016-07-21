@@ -313,15 +313,19 @@ namespace Kokkos {
     // warnings with Clang 3.2 on MacOS X.
 #ifdef KOKKOS_HAVE_CUDA
     template<> int KokkosCudaWrapperNode::count = 0;
+    template<> bool KokkosCudaWrapperNode::nodeResponsibleForFinalizingExecutionSpace_ = true;
 #endif
 #ifdef KOKKOS_HAVE_OPENMP
     template<> int KokkosOpenMPWrapperNode::count = 0;
+    template<> bool KokkosOpenMPWrapperNode::nodeResponsibleForFinalizingExecutionSpace_ = true;
 #endif
 #ifdef KOKKOS_HAVE_PTHREAD
     template<> int KokkosThreadsWrapperNode::count = 0;
+    template<> bool KokkosThreadsWrapperNode::nodeResponsibleForFinalizingExecutionSpace_ = true;
 #endif
 #ifdef KOKKOS_HAVE_SERIAL
     template<> int KokkosSerialWrapperNode::count = 0;
+    template<> bool KokkosSerialWrapperNode::nodeResponsibleForFinalizingExecutionSpace_ = true;
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_PTHREAD
@@ -330,13 +334,21 @@ namespace Kokkos {
     ~KokkosDeviceWrapperNode<Kokkos::Threads> ()
     {
       count--;
-      if (count == 0 && Threads::is_initialized ()) {
+      // Only call Kokkos::Threads::finalize if the Node reference
+      // count is zero, if Kokkos::Threads is already initialized, and
+      // if Node's constructor was responsible for initializing it.
+      // (See Github Issue #510.)
+      if (count == 0 && Threads::is_initialized () && nodeResponsibleForFinalizingExecutionSpace_) {
 #ifdef KOKKOS_HAVE_CUDA
+        // If any instances of KokkosDeviceWrapperNode<Kokkos::Cuda>
+        // exist, they are responsible for calling finalize on Cuda's
+        // host execution space.
         if (! Impl::is_same<Kokkos::Threads,HostSpace::execution_space>::value ||
             KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
-#endif
+#endif // KOKKOS_HAVE_CUDA
           Threads::finalize ();
       }
+      checkDestructorEnd ();
     }
 
     template<>
@@ -365,23 +377,26 @@ namespace Kokkos {
         //   Device = args.numDevice; // Threads doesn't need this one
         // }
 
-        if(NumNUMA>0 && NumCoresPerNUMA>0)
-          Kokkos::Threads::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
-        else if (NumNUMA > 0)
-          Kokkos::Threads::initialize ( NumThreads, NumNUMA );
+        if (NumNUMA > 0 && NumCoresPerNUMA > 0) {
+          Kokkos::Threads::initialize (NumThreads, NumNUMA, NumCoresPerNUMA);
+        }
+        else if (NumNUMA > 0) {
+          Kokkos::Threads::initialize (NumThreads, NumNUMA);
+        }
         else if (NumThreads > 0) {
           if (debug) {
             cerr << "Tpetra Threads wrapper Node: NumThreads = "
                  << NumThreads << endl;
           }
-          Kokkos::Threads::initialize ( NumThreads );
+          Kokkos::Threads::initialize (NumThreads);
           if (debug) {
             cerr << "Tpetra Threads wrapper Node: Concurrency = "
                  << Kokkos::Threads::concurrency () << endl;
           }
         }
-        else
-          Kokkos::Threads::initialize ( );
+        else {
+          Kokkos::Threads::initialize ();
+        }
       }
     }
 
@@ -395,27 +410,39 @@ namespace Kokkos {
     template<>
     KokkosDeviceWrapperNode<Kokkos::OpenMP>::~KokkosDeviceWrapperNode<Kokkos::OpenMP>() {
       count--;
-      if (count == 0 && OpenMP::is_initialized ()) {
+      // Only call Kokkos::OpenMP::finalize if the Node reference
+      // count is zero, if Kokkos::OpenMP is already initialized, and
+      // if Node's constructor was responsible for initializing it.
+      // (See Github Issue #510.)
+      if (count == 0 && OpenMP::is_initialized () && nodeResponsibleForFinalizingExecutionSpace_) {
 #ifdef KOKKOS_HAVE_CUDA
+        // If any instances of KokkosDeviceWrapperNode<Kokkos::Cuda>
+        // exist, they are responsible for calling finalize on Cuda's
+        // host execution space.
         if (! Impl::is_same<Kokkos::OpenMP, HostSpace::execution_space>::value ||
             KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
-#endif
+#endif // KOKKOS_HAVE_CUDA
         OpenMP::finalize ();
       }
+      checkDestructorEnd ();
     }
 
     template<>
     void KokkosDeviceWrapperNode<Kokkos::OpenMP>::
     init (int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
       if (! Kokkos::OpenMP::is_initialized ()) {
-        if(NumNUMA>0 && NumCoresPerNUMA>0)
-          Kokkos::OpenMP::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
-        else if (NumNUMA > 0)
-          Kokkos::OpenMP::initialize ( NumThreads, NumNUMA );
-        else if (NumThreads > 0)
-          Kokkos::OpenMP::initialize ( NumThreads );
-        else
-          Kokkos::OpenMP::initialize ( );
+        if (NumNUMA > 0 && NumCoresPerNUMA > 0) {
+          Kokkos::OpenMP::initialize (NumThreads, NumNUMA, NumCoresPerNUMA);
+        }
+        else if (NumNUMA > 0) {
+          Kokkos::OpenMP::initialize (NumThreads, NumNUMA);
+        }
+        else if (NumThreads > 0) {
+          Kokkos::OpenMP::initialize (NumThreads);
+        }
+        else {
+          Kokkos::OpenMP::initialize ();
+        }
       }
     }
 
@@ -429,24 +456,28 @@ namespace Kokkos {
     template<>
     KokkosDeviceWrapperNode<Kokkos::Serial>::~KokkosDeviceWrapperNode<Kokkos::Serial>() {
       count--;
-      if (count == 0 && Serial::is_initialized ()) {
-        // FIXME (mfh 02 Nov 2014) This doesn't look right to me
-        // somehow.  What if CUDA is NOT enabled?  Wouldn't that
-        // disable the first branch of the OR, which could trigger
-        // even if CUDA is not enabled?
+      // Only call Kokkos::Serial::finalize if the Node reference
+      // count is zero, if Kokkos::Serial is already initialized, and
+      // if Node's constructor was responsible for initializing it.
+      // (See Github Issue #510.)
+      if (count == 0 && Serial::is_initialized () && nodeResponsibleForFinalizingExecutionSpace_) {
 #ifdef KOKKOS_HAVE_CUDA
+        // If any instances of KokkosDeviceWrapperNode<Kokkos::Cuda>
+        // exist, they are responsible for calling finalize on Cuda's
+        // host execution space.
         if (! Impl::is_same<Kokkos::Serial, HostSpace::execution_space>::value ||
             KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
 #endif // KOKKOS_HAVE_CUDA
           Serial::finalize ();
       }
+      checkDestructorEnd ();
     }
 
     template<>
     void KokkosDeviceWrapperNode<Kokkos::Serial>::
     init (int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
       if (! Kokkos::Serial::is_initialized ()) {
-          Kokkos::Serial::initialize ();
+        Kokkos::Serial::initialize ();
       }
     }
 
@@ -460,17 +491,28 @@ namespace Kokkos {
     template<>
     KokkosDeviceWrapperNode<Kokkos::Cuda>::~KokkosDeviceWrapperNode<Kokkos::Cuda>() {
       count--;
-      if(count==0) {
-        if(HostSpace::execution_space::is_initialized()) {
-          // make sure that no Actual DeviceWrapper node of the mirror_execution_space is in use
-          if(KokkosDeviceWrapperNode<HostSpace::execution_space>::count==0) {
-            HostSpace::execution_space::finalize();
-          }
+      if (count == 0) {
+        // Don't call finalize on the host execution space until all
+        // Node instances corresponding to the host execution space
+        // are gone.  Also, don't call finalize on it if Node wasn't
+        // responsible for calling initialize on it (see Github Issue
+        // #510).
+        if (HostSpace::execution_space::is_initialized () &&
+            KokkosDeviceWrapperNode<HostSpace::execution_space>::count == 0 &&
+            KokkosDeviceWrapperNode<HostSpace::execution_space>::nodeResponsibleForFinalizingExecutionSpace_) {
+          HostSpace::execution_space::finalize ();
         }
-        if(Cuda::is_initialized())
-          Cuda::finalize();
+        // Only call Kokkos::Cuda::finalize if the Node reference
+        // count is zero, if Kokkos::Cuda is already initialized, and
+        // if Node's constructor was responsible for initializing it.
+        // (See Github Issue #510.)
+        if (Cuda::is_initialized () && nodeResponsibleForFinalizingExecutionSpace_) {
+          Cuda::finalize ();
+        }
       }
+      checkDestructorEnd ();
     }
+
     template<>
     void KokkosDeviceWrapperNode<Kokkos::Cuda>::
     init(int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
@@ -482,28 +524,34 @@ namespace Kokkos {
         throw std::runtime_error("Using CudaWrapperNode without UVM is not allowed.");
       #endif
 
-      if(!Kokkos::HostSpace::execution_space::is_initialized()) {
-        if(NumNUMA>0 && NumCoresPerNUMA>0)
-          Kokkos::HostSpace::execution_space::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
-        else if (NumNUMA > 0)
-          Kokkos::HostSpace::execution_space::initialize ( NumThreads, NumNUMA );
-        else if (NumThreads > 0)
-          Kokkos::HostSpace::execution_space::initialize ( NumThreads );
-        else
-          Kokkos::HostSpace::execution_space::initialize ( );
+      if (! Kokkos::HostSpace::execution_space::is_initialized ()) {
+        if (NumNUMA > 0 && NumCoresPerNUMA > 0) {
+          Kokkos::HostSpace::execution_space::initialize (NumThreads, NumNUMA, NumCoresPerNUMA);
+        }
+        else if (NumNUMA > 0) {
+          Kokkos::HostSpace::execution_space::initialize (NumThreads, NumNUMA);
+        }
+        else if (NumThreads > 0) {
+          Kokkos::HostSpace::execution_space::initialize (NumThreads);
+        }
+        else {
+          Kokkos::HostSpace::execution_space::initialize ();
+        }
       }
-      Kokkos::Cuda::SelectDevice select_device(Device);
-      if(!Kokkos::Cuda::is_initialized())
-        Kokkos::Cuda::initialize(select_device);
+      Kokkos::Cuda::SelectDevice select_device (Device);
+      if (! Kokkos::Cuda::is_initialized ()) {
+        Kokkos::Cuda::initialize (select_device);
+      }
     }
+
     template<>
     std::string KokkosDeviceWrapperNode<Kokkos::Cuda>::name() {
       return std::string("Cuda/Wrapper");
     }
+#endif // KOKKOS_HAVE_CUDA
 
-#endif
-  }
-}
+  } // namespace Compat
+} // namespace Kokkos
 
 
 
