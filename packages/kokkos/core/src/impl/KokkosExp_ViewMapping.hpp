@@ -2606,22 +2606,23 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     std::is_same< typename SrcTraits::specialize , void >::value
     &&
-    ( std::is_same< typename DstTraits::array_layout , typename SrcTraits::array_layout >::value ||
+    (
+      std::is_same< typename DstTraits::array_layout , typename SrcTraits::array_layout >::value
+      ||
       (
-    (
-      std::is_same< typename DstTraits::array_layout , Kokkos::LayoutLeft >::value ||
-      std::is_same< typename DstTraits::array_layout , Kokkos::LayoutRight >::value ||
-      std::is_same< typename DstTraits::array_layout , Kokkos::LayoutStride >::value
-    )
-    &&
-    (
-      std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutLeft >::value ||
-      std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutRight >::value ||
-      std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutStride >::value
-    )
+        (
+          std::is_same< typename DstTraits::array_layout , Kokkos::LayoutLeft >::value ||
+          std::is_same< typename DstTraits::array_layout , Kokkos::LayoutRight >::value ||
+          std::is_same< typename DstTraits::array_layout , Kokkos::LayoutStride >::value
+        )
+        &&
+        (
+          std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutLeft >::value ||
+          std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutRight >::value ||
+          std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutStride >::value
         )
       )
-
+    )
   )>::type >
 {
 private:
