@@ -63,6 +63,8 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_Cloner.hpp"
 
+#include <type_traits> // NOTE (mfh 20 Jul 2016) part of fix for #508
+
 namespace {
   using std::sort;
   using std::find;
@@ -146,27 +148,39 @@ namespace {
 #ifdef HAVE_XPETRA_EPETRA
     typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
 
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-
-    const size_t numLocal = 10;
-    const size_t INVALID = OrdinalTraits<size_t>::invalid();
-
-    RCP<N1> n1(new N1());
-    RCP<N2> n2(new N2());
-
-    typedef Map<LO,GO,N1> Map1;
-    typedef Map<LO,GO,N2> Map2;
-    RCP<const Map1> map1 = MapFactory<LO,GO,N1>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
-
-    bool thrown = false;
-    try {
-      RCP<const Map2> map2 = clone(*map1, n2);
-    } catch (...) {
-      thrown = true;
+    // NOTE (mfh 20 Jul 2016) This fixes #508.  Epetra only works for
+    // Node = Xpetra::EpetraNode.  This typedef is currently defined
+    // in Xpetra_Map.hpp.
+    if (! std::is_same<N1, Xpetra::EpetraNode>::value ||
+        ! std::is_same<N2, Xpetra::EpetraNode>::value) {
+      out << "MapCloneEpetra test only makes sense if N1 and N2 are both "
+        "Xpetra::EpetraNode.  This is not the case, so I'm leaving the test "
+        "early." << std::endl;
+      return;
     }
-    // Check that Epetra throws
-    TEST_EQUALITY(thrown, true);
+    else {
+      // create a comm
+      RCP<const Comm<int> > comm = getDefaultComm();
+
+      const size_t numLocal = 10;
+      const size_t INVALID = OrdinalTraits<size_t>::invalid();
+
+      RCP<N1> n1(new N1());
+      RCP<N2> n2(new N2());
+
+      typedef Map<LO,GO,N1> Map1;
+      typedef Map<LO,GO,N2> Map2;
+      RCP<const Map1> map1 = MapFactory<LO,GO,N1>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
+
+      bool thrown = false;
+      try {
+        RCP<const Map2> map2 = clone(*map1, n2);
+      } catch (...) {
+        thrown = true;
+      }
+      // Check that Epetra throws
+      TEST_EQUALITY(thrown, true);
+    }
 #endif
   }
 
