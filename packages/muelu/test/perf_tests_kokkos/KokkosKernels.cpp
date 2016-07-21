@@ -340,9 +340,15 @@ int main(int argc, char* argv[]) {
   srand(13721);
 
   std::string node;
-  for (int i = 1; i < argc; i++)
-    if (strcmp(argv[i], "--node") == 0)
+  for (int i = 1; i < argc; i++) {
+    if (strncmp(argv[i], "--node=", 7) == 0) {
+      std::cout << "Use --node <node> instead of --node=<node>" << std::endl;
+      Kokkos::finalize();
+      return 0;
+
+    } else if (strncmp(argv[i], "--node", 6) == 0)
       node = argv[++i];
+  }
 
   std::cout << "node = " << node << std::endl;
 
