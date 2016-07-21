@@ -117,6 +117,13 @@ IF (Intrepid2_ENABLE_Boost)
     Shared/MiniTensor/Intrepid2_MiniTensor_Vector.i.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Vector.t.h
   )
+  IF (Intrepid2_ENABLE_ROL)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared/MiniTensor/rol)
+    APPEND_SET(HEADERS ${HEADERS}
+      Shared/MiniTensor/rol/Intrepid2_MiniTensor_ROL_Vector.h
+      Shared/MiniTensor/rol/Intrepid2_MiniTensor_ROL_Vector.t.h
+      )
+  ENDIF()
 ENDIF()
 
 #
