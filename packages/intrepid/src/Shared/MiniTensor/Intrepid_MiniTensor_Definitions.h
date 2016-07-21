@@ -48,6 +48,17 @@
 #include "Intrepid_ConfigDefs.hpp"
 #include "Sacado.hpp"
 
+#if defined(KOKKOS_HAVE_CUDA)
+#define MT_ERROR_EXIT(...) \
+  Kokkos::abort(#__VA_ARGS__)
+#else
+#define MT_ERROR_EXIT(...) \
+  fprintf(stderr, "ERROR in: %s\n", __PRETTY_FUNCTION__); \
+  fprintf(stderr, __VA_ARGS__); \
+  fprintf(stderr, "\n"); \
+  exit(1)
+#endif // KOKKOS_HAVE_CUDA
+
 namespace Intrepid {
 
 /// Indexing type

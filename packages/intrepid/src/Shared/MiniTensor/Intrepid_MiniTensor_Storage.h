@@ -63,7 +63,7 @@ struct check_static {
   static Index const
   maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
 
-  static_assert(D < maximum_dimension, "Dimension is too large");
+  static_assert(D > maximum_dimension, "Dimension is too large");
   static Index const value = D;
 };
 
@@ -78,12 +78,7 @@ check_dynamic(Index const dimension)
   assert(Store::IS_DYNAMIC == true);
 
   if (dimension > maximum_dimension) {
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Requested dimension (" << dimension;
-    std::cerr << ") exceeds maximum allowed: " << maximum_dimension;
-    std::cerr << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Requested dimension exceeds maximum allowed: %d", dimension);
   }
 }
 
@@ -249,6 +244,11 @@ public:
     resize(number_entries);
   }
 
+  Storage(Storage<T, N> const & s) = delete;
+
+  Storage<T, N> &
+  operator=(Storage<T, N> const & s) = delete;
+
   ~Storage()
   {
   }
@@ -306,11 +306,6 @@ public:
 
 private:
 
-  Storage(Storage<T, N> const & s);
-
-  Storage<T, N> &
-  operator=(Storage<T, N> const & s);
-
   T
   storage_[N];
 
@@ -348,6 +343,11 @@ public:
   {
     resize(number_entries);
   }
+
+  Storage(Storage<T, DYNAMIC> const & s) = delete;
+
+  Storage<T, DYNAMIC> &
+  operator=(Storage<T, DYNAMIC> const & s) = delete;
 
   ~Storage()
   {
@@ -414,11 +414,6 @@ public:
   }
 
 private:
-
-  Storage(Storage<T, DYNAMIC> const & s);
-
-  Storage<T, DYNAMIC> &
-  operator=(Storage<T, DYNAMIC> const & s);
 
   T *
   storage_{nullptr};

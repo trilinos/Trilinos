@@ -60,14 +60,16 @@ struct dimension_const<DYNAMIC, C> {
 /// Validate dimension
 template<Index D>
 struct check_static {
+
+#if defined(KOKKOS_HAVE_CUDA)
+    // Empty
+#else
   static Index const
   maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
-#if defined(KOKKOS_HAVE_CUDA)
-    // if(maximum_dimension<D) {}
-    //      Kokkos::abort("Dimension is too large");}
-#else
-  static_assert(D < maximum_dimension, "Dimension is too large");
+
+  static_assert(D > maximum_dimension, "Dimension is too large");
 #endif
+
   static Index const value = D;
 };
 
@@ -79,22 +81,11 @@ check_dynamic(Index const dimension)
   Index const
   maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
 
-#if defined(KOKKOS_HAVE_CUDA)
-    if (Store::IS_DYNAMIC == true){
-      if (dimension > maximum_dimension) {Kokkos::abort("Requested dimension exceeds maximum allowed");}
-   }
-#else
   assert(Store::IS_DYNAMIC == true);
 
   if (dimension > maximum_dimension) {
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Requested dimension (" << dimension;
-    std::cerr << ") exceeds maximum allowed: " << maximum_dimension;
-    std::cerr << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Requested dimension exceeds maximum allowed: %d", dimension);
   }
-#endif
 }
 
 /// Integer power template restricted to orders defined below
@@ -259,6 +250,11 @@ public:
     resize(number_entries);
   }
 
+  Storage(Storage<T, N, ES> const & s) = delete;
+
+  Storage<T, N, ES> &
+  operator=(Storage<T, N, ES> const & s) = delete;
+
   ~Storage()
   {
   }
@@ -266,22 +262,14 @@ public:
   T const &
   operator[](Index const i) const
   {
-#if defined(KOKKOS_HAVE_CUDA)
-   if (i>=size()) Kokkos::abort("index i in perator[] >= than size of the array");
-#else
     assert(i < size());
-#endif
     return storage_[i];
   }
 
   T &
   operator[](Index const i)
   {
-#if defined(KOKKOS_HAVE_CUDA)
-    if (i>=size()) Kokkos::abort("index i in perator[] >= than size of the array");
-#else
     assert(i < size());
-#endif
     return storage_[i];
   }
 
@@ -294,11 +282,7 @@ public:
   void
   resize(Index const number_entries)
   {
-#if defined(KOKKOS_HAVE_CUDA)
-     if (number_entries>N) Kokkos::abort (" IntrepidMiniTensor resize: number_entries>N");
-#else
     assert(number_entries <= N);
-#endif
     size_ = number_entries;
   }
 
@@ -327,11 +311,6 @@ public:
   }
 
 private:
-
-  Storage(Storage<T, N, ES> const & s);
-
-  Storage<T, N, ES> &
-  operator=(Storage<T, N, ES> const & s);
 
   T
   storage_[N];
@@ -371,6 +350,11 @@ public:
     resize(number_entries);
   }
 
+  Storage(Storage<T, DYNAMIC, ES> const & s) = delete;
+
+  Storage<T, DYNAMIC, ES> &
+  operator=(Storage<T, DYNAMIC, ES> const & s) = delete;
+
   ~Storage()
   {
     clear();
@@ -379,22 +363,14 @@ public:
   T const &
   operator[](Index const i) const
   {
-#if defined(KOKKOS_HAVE_CUDA)
-    if (i>=size()) Kokkos::abort("index i in perator[] >= than size of the array");
-#else
     assert(i < size());
-#endif
     return storage_[i];
   }
 
   T &
   operator[](Index const i)
   {
-#if defined(KOKKOS_HAVE_CUDA)
-    if (i>=size()) Kokkos::abort("index i in perator[] >= than size of the array");
-#else
     assert(i < size());
-#endif
     return storage_[i];
   }
 
@@ -444,11 +420,6 @@ public:
   }
 
 private:
-
-  Storage(Storage<T, DYNAMIC, ES> const & s);
-
-  Storage<T, DYNAMIC, ES> &
-  operator=(Storage<T, DYNAMIC, ES> const & s);
 
   T *
   storage_{nullptr};
