@@ -379,7 +379,7 @@ private:
   //! Boost for maximum eigenvalue
   double LambdaMaxBoost_;
   //! Number of Iters for Power Method
-  double PowerMethodIters_;
+  int PowerMethodIters_;
 
   //! Contains the number of successful call to ApplyInverse().
   mutable int NumApplyInverse_;
