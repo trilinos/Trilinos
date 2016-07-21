@@ -52,9 +52,15 @@ KOKKOS_INLINE_FUNCTION
 void
 swap(T & a, T & b)
 {
-  T c(a);
-  a=b;
-  b=c;
+  // Guard against the same memory location.
+  if (&a == &b) return;
+
+  // XOR algorithm
+  a ^= b;
+  b ^= a;
+  a ^= b;
+
+  return;
 }
 
 template<typename T>
@@ -62,10 +68,15 @@ KOKKOS_INLINE_FUNCTION
 T
 max(const T & a, const T & b)
 {
-  T max;
-  if (a>b) max=a;
-  else max=b;
-  return max; 
+  return a > b ? a : b;
+}
+
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+T
+min(const T & a, const T & b)
+{
+  return a < b ? a : b;
 }
 
 //
@@ -101,7 +112,7 @@ typename Sacado::ScalarType<T>::type
 not_a_number()
 {
 #if defined(KOKKOS_HAVE_CUDA)
-  return NPP_MAX_32U; 
+  return NAN;
 #else
   return std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
 #endif
@@ -119,7 +130,7 @@ typename Sacado::ScalarType<T>::type
 machine_epsilon()
 {
 #if defined(KOKKOS_HAVE_CUDA)
-  return NPP_MAX_32U;
+  return DBL_EPSILON;
 #else
   return
       std::numeric_limits<typename Sacado::ScalarType<T>::type>::epsilon();
@@ -220,7 +231,7 @@ integer_power(T const & X, Index const exponent)
 
 #if defined(KOKKOS_HAVE_CUDA)
   Index const
-  number_digits =NPP_MAX_32U;
+  number_digits = INDEX_SIZE;
 #else
 
   Index const
