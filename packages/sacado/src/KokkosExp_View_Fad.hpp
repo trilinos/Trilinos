@@ -413,6 +413,8 @@ private:
     std::is_same< typename Traits::array_layout
                 , Kokkos::LayoutRight >::value ? 1 : 0 };
 
+  typedef Sacado::integral_nonzero< unsigned , FadStaticStride > sacado_stride_type;
+
   typedef fad_value_type * handle_type ;
 
   typedef ViewArrayAnalysis< typename Traits::data_type > array_analysis ;
@@ -446,6 +448,7 @@ private:
   handle_type  m_handle ;
   offset_type  m_offset ;
   sacado_size_type m_fad_size ;
+  sacado_stride_type m_fad_stride ;
 
 public:
 
@@ -542,7 +545,7 @@ public:
   reference_type reference() const
     { return reference_type( m_handle
                            , m_fad_size.value
-                           , 1 ); }
+                           , m_fad_stride.value ); }
 
   template< typename I0 >
   KOKKOS_FORCEINLINE_FUNCTION
@@ -550,14 +553,14 @@ public:
   reference( const I0 & i0 ) const
     { return reference_type( m_handle + m_offset(i0,0)
                            , m_fad_size.value
-                           , m_offset.stride_1() ); }
+                           , m_fad_stride.value ); }
 
   template< typename I0 , typename I1 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 ) const
     { return reference_type( m_handle + m_offset(i0,i1,0)
                            , m_fad_size.value
-                           , m_offset.stride_2() ); }
+                           , m_fad_stride.value ); }
 
 
   template< typename I0 , typename I1 , typename I2 >
@@ -565,14 +568,14 @@ public:
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,0)
                            , m_fad_size.value
-                           , m_offset.stride_3() ); }
+                           , m_fad_stride.value ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,0)
                            , m_fad_size.value
-                           , m_offset.stride_4() ); }
+                           , m_fad_stride.value ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 >
@@ -581,7 +584,7 @@ public:
                           , const I4 & i4 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,0)
                            , m_fad_size.value
-                           , m_offset.stride_5() ); }
+                           , m_fad_stride.value ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 >
@@ -590,7 +593,7 @@ public:
                           , const I4 & i4 , const I5 & i5 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,0)
                            , m_fad_size.value
-                           , m_offset.stride_6() ); }
+                           , m_fad_stride.value ); }
 
 
   template< typename I0 , typename I1 , typename I2 , typename I3
@@ -600,7 +603,7 @@ public:
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,i6,0)
                            , m_fad_size.value
-                           , m_offset.stride_7() ); }
+                           , m_fad_stride.value ); }
 
 #if SACADO_SUPPORT_RANK_8
 
@@ -612,7 +615,7 @@ public:
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 , const I7 & i7 ) const
     { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,i6,0)
                            , m_fad_size.value
-                           , m_offset.stride_7() ); }
+                           , m_fad_stride.value ); }
 
 #endif
 
@@ -630,10 +633,10 @@ public:
   //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping() : m_handle(0) , m_offset() , m_fad_size(0) {}
+  KOKKOS_INLINE_FUNCTION ViewMapping() : m_handle(0) , m_offset() , m_fad_size(0) , m_fad_stride(0) {}
 
   KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
-  KOKKOS_INLINE_FUNCTION  ViewMapping & operator = ( const ViewMapping & ) = default ;
+  KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
 
   KOKKOS_INLINE_FUNCTION ViewMapping( ViewMapping && ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && ) = default ;
@@ -657,6 +660,16 @@ public:
        ( Rank == 5 ? m_offset.dimension_5() :
        ( Rank == 6 ? m_offset.dimension_6() :
                      m_offset.dimension_7() ))))))) - 1 )
+    , m_fad_stride(
+       ( Rank == 0 ? m_offset.stride_0() :
+       ( Rank == 1 ? m_offset.stride_1() :
+       ( Rank == 2 ? m_offset.stride_2() :
+       ( Rank == 3 ? m_offset.stride_3() :
+       ( Rank == 4 ? m_offset.stride_4() :
+       ( Rank == 5 ? m_offset.stride_5() :
+       ( Rank == 6 ? m_offset.stride_6() :
+                     m_offset.stride_7() ))))))))
+
     {
       const unsigned fad_dim =
        ( Rank == 0 ? m_offset.dimension_0() :
@@ -704,6 +717,16 @@ public:
     if (unsigned(FadStaticDimension) == 0 && fad_dim == 0)
       Kokkos::abort("invalid fad dimension (0) supplied!");
     m_fad_size = fad_dim - 1 ;
+
+    m_fad_stride =
+       ( Rank == 0 ? m_offset.stride_0() :
+       ( Rank == 1 ? m_offset.stride_1() :
+       ( Rank == 2 ? m_offset.stride_2() :
+       ( Rank == 3 ? m_offset.stride_3() :
+       ( Rank == 4 ? m_offset.stride_4() :
+       ( Rank == 5 ? m_offset.stride_5() :
+       ( Rank == 6 ? m_offset.stride_6() :
+                     m_offset.stride_7() )))))));
 
     const size_t alloc_size = m_offset.span() * sizeof(fad_value_type);
 
@@ -784,15 +807,17 @@ public:
   typename std::enable_if<( 
     std::is_same< S , ViewSpecializeSacadoFad >::value
     )>::type
-  assign_fad_size( D & dst , unsigned size )
-    { dst.m_fad_size = size ; }
+  assign_fad_size( D & dst , const SrcFadType & src )
+    { dst.m_fad_size = src.m_fad_size.value ;
+      dst.m_fad_stride = src.m_fad_stride.value ;
+    }
 
   template< class S , class D >
   KOKKOS_INLINE_FUNCTION static
   typename std::enable_if<(
     ! std::is_same< S , ViewSpecializeSacadoFad >::value 
     )>::type
-  assign_fad_size( D & , unsigned ) {}
+  assign_fad_size( D & , const SrcFadType & ) {}
 
   template< class DstType >
   KOKKOS_INLINE_FUNCTION static
@@ -845,7 +870,7 @@ public:
       dst.m_offset  = dst_offset_type( src.m_offset );
       dst.m_handle  = src.m_handle ;
 
-      ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst , src.m_fad_size.value );
+      ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst , src );
     }
 };
 
@@ -983,6 +1008,7 @@ public:
                                                   , extents.domain_offset(7)
                                                   ) );
       dst.m_fad_size = src.m_fad_size;
+      dst.m_fad_stride = src.m_fad_stride.value;
     }
 
 };

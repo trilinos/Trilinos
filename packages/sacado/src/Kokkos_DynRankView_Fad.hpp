@@ -54,6 +54,7 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
 
   // Compute the rank of the view from the nonzero dimension arguments.
   // For views of Fad, the rank is one less than the rank determined by the nonzero dimension args
+  KOKKOS_INLINE_FUNCTION
   static size_t computeRank( const size_t N0
                            , const size_t N1
                            , const size_t N2
@@ -77,6 +78,7 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
 
   // Compute the rank of the view from the nonzero layout arguments.
   template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
   static size_t computeRank( const Layout& layout )
   {
     return computeRank( layout.dimension[0]
@@ -373,8 +375,6 @@ public:
   };
 
 
-  //typedef typename SrcTraits::dimension dimension ;
-
   template < class Arg0 = int, class Arg1 = int, class Arg2 = int, class Arg3 = int, class Arg4 = int, class Arg5 = int, class Arg6 = int >
   struct ExtentGenerator {
     template <typename dimension>
@@ -389,14 +389,12 @@ public:
 
   template < typename T , class ... P >
   KOKKOS_INLINE_FUNCTION
-  static ret_type subview( const unsigned src_rank , Kokkos::Experimental::View< T******* , P...> const & src
-                    , Args ... args )
+  static ret_type subview( const unsigned src_rank , Kokkos::Experimental::DynRankView< T , P...> const & src , Args ... args )
   {
 
     typedef ViewMapping< traits_type, void >  DstType ;
     typedef ViewMapping< SrcTraits, void> SrcType;
     enum { FadStaticDim = SrcType::FadStaticDimension };
-
     typedef typename std::conditional< (rank==0) , ViewDimension<FadStaticDim>
       , typename std::conditional< (rank==1) , ViewDimension<0,FadStaticDim>
       , typename std::conditional< (rank==2) , ViewDimension<0,0,FadStaticDim>
@@ -451,6 +449,7 @@ public:
                          ) );
 
       dst.m_map.m_fad_size = src.m_map.m_fad_size;
+      dst.m_map.m_fad_stride = src.m_map.m_fad_stride.value;
 
       dst.m_rank = ( src_rank > 0 ? unsigned(R0) : 0 )
                  + ( src_rank > 1 ? unsigned(R1) : 0 )
@@ -464,23 +463,446 @@ public:
     }
 };
 
+// ViewMapping for copy and copy-assign from View to DynRankView
+template <unsigned> struct AssignFadDim7 {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src , const unsigned dim ) {}
+};
+
+template <> struct AssignFadDim7<0u> {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src , const unsigned dim ) {
+    dst.m_dim.N7 = src.m_dim.extent(dim);
+  }
+};
+
+
+template <unsigned , unsigned> struct AssignDim {};
+
+template <unsigned FadStaticDim> struct AssignDim<0u,FadStaticDim> {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src) {
+    dst.m_dim.N0 = 1;
+    dst.m_dim.N1 = 1;
+    dst.m_dim.N2 = 1;
+    dst.m_dim.N3 = 1;
+    dst.m_dim.N4 = 1;
+    dst.m_dim.N5 = 1;
+    dst.m_dim.N6 = 1;
+    AssignFadDim7<FadStaticDim>::eval( dst , src , 0 );
+  }
+};
+
+template <unsigned FadStaticDim> struct AssignDim<1u,FadStaticDim> {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src) {
+    dst.m_dim.N0 = src.m_dim.N0;
+    dst.m_dim.N1 = 1;
+    dst.m_dim.N2 = 1;
+    dst.m_dim.N3 = 1;
+    dst.m_dim.N4 = 1;
+    dst.m_dim.N5 = 1;
+    dst.m_dim.N6 = 1;
+    AssignFadDim7<FadStaticDim>::eval( dst , src , 1 );
+  }
+};
+
+template <unsigned FadStaticDim> struct AssignDim<2u,FadStaticDim> {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src) {
+    dst.m_dim.N0 = src.m_dim.N0;
+    dst.m_dim.N1 = src.m_dim.N1;
+    dst.m_dim.N2 = 1;
+    dst.m_dim.N3 = 1;
+    dst.m_dim.N4 = 1;
+    dst.m_dim.N5 = 1;
+    dst.m_dim.N6 = 1;
+    AssignFadDim7<FadStaticDim>::eval( dst , src , 2 );
+  }
+};
+
+template <unsigned FadStaticDim> struct AssignDim<3u,FadStaticDim> {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src) {
+    dst.m_dim.N0 = src.m_dim.N0;
+    dst.m_dim.N1 = src.m_dim.N1;
+    dst.m_dim.N2 = src.m_dim.N2;
+    dst.m_dim.N3 = 1;
+    dst.m_dim.N4 = 1;
+    dst.m_dim.N5 = 1;
+    dst.m_dim.N6 = 1;
+    AssignFadDim7<FadStaticDim>::eval( dst , src , 3 );
+  }
+};
+
+template <unsigned FadStaticDim> struct AssignDim<4u,FadStaticDim> {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src) {
+    dst.m_dim.N0 = src.m_dim.N0;
+    dst.m_dim.N1 = src.m_dim.N1;
+    dst.m_dim.N2 = src.m_dim.N2;
+    dst.m_dim.N3 = src.m_dim.N3;
+    dst.m_dim.N4 = 1;
+    dst.m_dim.N5 = 1;
+    dst.m_dim.N6 = 1;
+    AssignFadDim7<FadStaticDim>::eval( dst , src , 4 );
+  }
+};
+
+template <unsigned FadStaticDim> struct AssignDim<5u,FadStaticDim> {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src) {
+    dst.m_dim.N0 = src.m_dim.N0;
+    dst.m_dim.N1 = src.m_dim.N1;
+    dst.m_dim.N2 = src.m_dim.N2;
+    dst.m_dim.N3 = src.m_dim.N3;
+    dst.m_dim.N4 = src.m_dim.N4;
+    dst.m_dim.N5 = 1;
+    dst.m_dim.N6 = 1;
+    AssignFadDim7<FadStaticDim>::eval( dst , src , 5 );
+  }
+};
+
+template <unsigned FadStaticDim> struct AssignDim<6u,FadStaticDim> {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src) {
+    dst.m_dim.N0 = src.m_dim.N0;
+    dst.m_dim.N1 = src.m_dim.N1;
+    dst.m_dim.N2 = src.m_dim.N2;
+    dst.m_dim.N3 = src.m_dim.N3;
+    dst.m_dim.N4 = src.m_dim.N4;
+    dst.m_dim.N5 = src.m_dim.N5;
+    dst.m_dim.N6 = 1;
+    AssignFadDim7<FadStaticDim>::eval( dst , src , 6 );
+  }
+};
+
+template <unsigned FadStaticDim> struct AssignDim<7u,FadStaticDim> {
+  template <typename Src, typename Dst>
+  KOKKOS_INLINE_FUNCTION
+  static void eval(Dst& dst, const Src& src) {
+    dst.m_dim.N0 = src.m_dim.N0;
+    dst.m_dim.N1 = src.m_dim.N1;
+    dst.m_dim.N2 = src.m_dim.N2;
+    dst.m_dim.N3 = src.m_dim.N3;
+    dst.m_dim.N4 = src.m_dim.N4;
+    dst.m_dim.N5 = src.m_dim.N5;
+    dst.m_dim.N6 = src.m_dim.N6;
+    AssignFadDim7<FadStaticDim>::eval( dst , src , 7 );
+  }
+};
+
+/**\brief  Assign compatible Sacado FAD view mappings.
+ *
+ *  View<FAD>      = View<FAD>
+ *  View<ordinary> = View<FAD>
+ *  (TBD)  View<FAD> = View<ordinary>
+ */
+template< class DstTraits , class SrcTraits >
+class ViewMapping< DstTraits , SrcTraits ,
+  typename std::enable_if<(
+    std::is_same< typename DstTraits::memory_space
+                , typename SrcTraits::memory_space >::value
+    &&
+    // Destination view has FAD or ordinary
+    ( std::is_same< typename DstTraits::specialize
+                , ViewSpecializeSacadoFad >::value
+      ||
+      std::is_same< typename DstTraits::specialize , void >::value
+    )
+    &&
+    // Source view has FAD only
+    std::is_same< typename SrcTraits::specialize
+                , ViewSpecializeSacadoFad >::value
+  ), ViewToDynRankViewTag >::type >
+{
+public:
+
+  enum { is_assignable = true };
+
+  typedef Kokkos::Experimental::Impl::SharedAllocationTracker  TrackType ;
+  typedef ViewMapping< DstTraits , void >  DstType ;
+  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+
+  template< class S , class D >
+  KOKKOS_INLINE_FUNCTION static
+  typename std::enable_if<( 
+    std::is_same< S , ViewSpecializeSacadoFad >::value
+    )>::type
+  assign_fad_size( D & dst , const SrcFadType & src )
+    { dst.m_fad_size = src.m_fad_size.value ;
+      dst.m_fad_stride = src.m_fad_stride.value ;
+    }
+
+  template< class S , class D >
+  KOKKOS_INLINE_FUNCTION static
+  typename std::enable_if<(
+    ! std::is_same< S , ViewSpecializeSacadoFad >::value 
+    )>::type
+  assign_fad_size( D & , const SrcFadType & ) {}
+
+
+  template < typename DT , typename ... DP , typename ST , typename ... SP >
+  KOKKOS_INLINE_FUNCTION static
+  void assign( Kokkos::DynRankView< DT , DP... > & dst
+             , const Kokkos::View< ST , SP... >& src )
+    {
+      static_assert(
+        (
+          std::is_same< typename DstTraits::array_layout
+                      , Kokkos::LayoutLeft >::value ||
+          std::is_same< typename DstTraits::array_layout
+                      , Kokkos::LayoutRight >::value ||
+          std::is_same< typename DstTraits::array_layout
+                      , Kokkos::LayoutStride >::value
+        )
+        &&
+        (
+          std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutLeft >::value ||
+          std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutRight >::value ||
+          std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutStride >::value
+        )
+        , "View of FAD requires LayoutLeft, LayoutRight, or LayoutStride" );
+
+      static_assert(
+        std::is_same< typename DstTraits::value_type
+                    , typename SrcTraits::value_type >::value ||
+        std::is_same< typename DstTraits::value_type
+                    , typename SrcTraits::const_value_type >::value ,
+        "View assignment must have same value type or const = non-const" );
+
+      typedef ViewMapping< SrcTraits, void> SrcType;
+      enum { FadStaticDim = SrcType::FadStaticDimension };
+
+      AssignDim<SrcTraits::rank,FadStaticDim>::eval(dst.m_map.m_offset, src.m_map.m_offset);
+
+      dst.m_map.m_handle  = src.m_map.m_handle ;
+      dst.m_rank    = src.Rank ;
+
+      ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst.m_map , src.m_map );
+    }
+};
+
+} //end Impl
+
+} //end Experimental
+
+template <typename view_type>
+struct is_dynrankview_fad { static const bool value = false; };
+
+template <typename T, typename ... P>
+struct is_dynrankview_fad< DynRankView<T,P...> > {
+  typedef DynRankView<T,P...> view_type;
+  static const bool value =
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewSpecializeSacadoFad >::value;
+};
+
+template <typename T, typename ... P>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_dynrankview_fad< DynRankView<T,P...> >::value, unsigned >::type
+dimension_scalar(const DynRankView<T,P...>& view) {
+  return view.implementation_map().dimension_scalar();
 }
+
+namespace Experimental {
+// Overload of deep_copy for Fad views intializing to a constant scalar
+
+template< class DT, class ... DP >
+void deep_copy(
+  const DynRankView<DT,DP...> & view ,
+  const typename Sacado::ScalarType< typename DynRankView<DT,DP...>::value_type >::type & value
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
+    , "Can only deep copy into non-const type" );
+
+  Kokkos::Experimental::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
 }
+
+// Overload of deep_copy for Fad views intializing to a constant Fad
+template< class DT, class ... DP >
+void deep_copy(
+  const DynRankView<DT,DP...> & view ,
+  const typename DynRankView<DT,DP...>::value_type & value
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
+    , "Can only deep copy into non-const type" );
+
+  Kokkos::Experimental::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
+}
+
+template< class DstType , class SrcType >
+inline
+void deep_copy
+  ( const DstType & dst
+  , const SrcType & src
+  , typename std::enable_if<(
+  std::is_same< typename DstType::traits::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  &&
+  std::is_same< typename SrcType::traits::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  &&
+  ( Kokkos::Experimental::is_dyn_rank_view<DstType>::value || Kokkos::Experimental::is_dyn_rank_view<SrcType
+>::value )
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename DstType::traits::value_type ,
+                  typename DstType::traits::non_const_value_type >::value
+    , "deep_copy requires non-const destination type" );
+
+  typedef DstType dst_type ;
+  typedef SrcType src_type ;;
+
+  typedef typename dst_type::execution_space  dst_execution_space ;
+  typedef typename src_type::execution_space  src_execution_space ;
+  typedef typename dst_type::memory_space     dst_memory_space ;
+  typedef typename src_type::memory_space     src_memory_space ;
+
+  enum { DstExecCanAccessSrc =
+   Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename dst_execution_space::memory_space , src_memory_space >::value };
+
+  enum { SrcExecCanAccessDst =
+   Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename src_execution_space::memory_space , dst_memory_space >::value };
+
+  if ( (void *) dst.data() != (void*) src.data() ) {
+
+    // Concern: If overlapping views then a parallel copy will be erroneous.
+    // ...
+
+    // If same type, equal layout, equal dimensions, equal span, and contiguous memory then can byte-wise copy
+    if ( rank(src) == 0 && rank(dst) == 0 )
+    { 
+      typedef typename dst_type::value_type    value_type ;
+      Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , sizeof(value_type) ); 
+    }
+    else if ( std::is_same< typename DstType::traits::value_type ,
+                       typename SrcType::traits::non_const_value_type >::value &&
+         (
+           ( std::is_same< typename DstType::traits::array_layout ,
+                           typename SrcType::traits::array_layout >::value
+             &&
+             ( std::is_same< typename DstType::traits::array_layout ,
+                             typename Kokkos::LayoutLeft>::value
+             ||
+               std::is_same< typename DstType::traits::array_layout ,
+                             typename Kokkos::LayoutRight>::value
+             )
+           )
+           ||
+           (
+             rank(dst) == 1
+             &&
+             rank(src) == 1
+           )
+         ) &&
+//         dst.span_is_contiguous() && //will always fail - stride set to 0s
+//         src.span_is_contiguous() &&
+         dst.span() == src.span() &&
+         dst.dimension_0() == src.dimension_0() &&
+         dst.dimension_1() == src.dimension_1() &&
+         dst.dimension_2() == src.dimension_2() &&
+         dst.dimension_3() == src.dimension_3() &&
+         dst.dimension_4() == src.dimension_4() &&
+         dst.dimension_5() == src.dimension_5() &&
+         dst.dimension_6() == src.dimension_6() &&
+         dst.dimension_7() == src.dimension_7() ) {
+
+//      const size_t nbytes = sizeof(typename dst_type::value_type) * dst.span() * dimension_scalar(dst) ;
+      //const size_t nbytes = sizeof(typename dst_type::scalar_array_type) * dst.span() ;
+      const size_t nbytes = sizeof(typename dst_type::value_type::value_type) * dst.span() ; 
+      //dst_type::value_type is outer FAD type, dst_type::value_type::value_type is inner FAD type
+
+      Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , nbytes );
+    }
+    else if ( std::is_same< typename DstType::traits::value_type ,
+                            typename SrcType::traits::non_const_value_type >::value &&
+         (
+           ( std::is_same< typename DstType::traits::array_layout ,
+                           typename SrcType::traits::array_layout >::value
+             &&
+             std::is_same< typename DstType::traits::array_layout ,
+                          typename Kokkos::LayoutStride>::value
+           )
+           ||
+           (
+             rank(dst) == 1
+             &&
+             rank(src) == 1
+           )
+         ) &&
+//         dst.span_is_contiguous() && //will always fail - stride set to 0s
+//         src.span_is_contiguous() &&
+         dst.span() == src.span() &&
+         dst.dimension_0() == src.dimension_0() &&
+         dst.dimension_1() == src.dimension_1() &&
+         dst.dimension_2() == src.dimension_2() &&
+         dst.dimension_3() == src.dimension_3() &&
+         dst.dimension_4() == src.dimension_4() &&
+         dst.dimension_5() == src.dimension_5() &&
+         dst.dimension_6() == src.dimension_6() &&
+         dst.dimension_7() == src.dimension_7() &&
+         dst.stride_0() == src.stride_0() &&
+         dst.stride_1() == src.stride_1() &&
+         dst.stride_2() == src.stride_2() &&
+         dst.stride_3() == src.stride_3() &&
+         dst.stride_4() == src.stride_4() &&
+         dst.stride_5() == src.stride_5() &&
+         dst.stride_6() == src.stride_6() &&
+         dst.stride_7() == src.stride_7()
+         ) {
+
+      const size_t nbytes = sizeof(typename dst_type::value_type::value_type) * dst.span() ; 
+
+      Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , nbytes );
+    }
+    else if ( DstExecCanAccessSrc ) {
+      // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
+      Kokkos::Experimental::Impl::DynRankViewRemap< dst_type , src_type >( dst , src );
+    }
+    else if ( SrcExecCanAccessDst ) {
+      // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
+      Kokkos::Experimental::Impl::DynRankViewRemap< dst_type , src_type , src_execution_space >( dst , src );
+    }
+    else {
+      Kokkos::Impl::throw_runtime_exception("deep_copy given views that would require a temporary allocation");
+    }
+  }
+}
+
+} //end Experimental
+
+using Kokkos::Experimental::deep_copy;
+
 }
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-
-namespace Kokkos {
-
-// Overload of dimension_scalar() for all dynamic-rank views
-template <typename T, typename ... P>
-KOKKOS_INLINE_FUNCTION
-constexpr unsigned
-dimension_scalar(const Experimental::DynRankView<T,P...>& view) {
-  return dimension_scalar(view.ConstDownCast());
-}
-
-}
 
 #endif // defined(HAVE_SACADO_KOKKOSCONTAINERS)
 
