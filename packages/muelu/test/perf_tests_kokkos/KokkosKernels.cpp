@@ -103,7 +103,7 @@ kernel_construct(local_ordinal_type numRows) {
 }
 
 template<class scalar_type, class local_ordinal_type, class device_type>
-void kernel_coalesce_drop(Kokkos::CrsMatrix<scalar_type, local_ordinal_type, device_type> A) {
+void kernel_coalesce_drop_device(Kokkos::CrsMatrix<scalar_type, local_ordinal_type, device_type> A) {
   typedef Kokkos::CrsMatrix<scalar_type, local_ordinal_type, device_type>   local_matrix_type;
   typedef Kokkos::ArithTraits<scalar_type>                                  ATS;
   typedef typename ATS::mag_type                                            magnitude_type;
@@ -211,6 +211,87 @@ void kernel_coalesce_drop(Kokkos::CrsMatrix<scalar_type, local_ordinal_type, dev
 }
 
 template<class scalar_type, class local_ordinal_type, class device_type>
+void kernel_coalesce_drop_serial(Kokkos::CrsMatrix<scalar_type, local_ordinal_type, device_type> A) {
+  typedef Kokkos::CrsMatrix<scalar_type, local_ordinal_type, device_type>   local_matrix_type;
+  typedef Kokkos::ArithTraits<scalar_type>                                  ATS;
+  typedef typename ATS::mag_type                                            magnitude_type;
+  typedef Kokkos::View<bool*, device_type>                                  boundary_nodes_type;
+
+  auto numRows = A.numRows();
+
+  scalar_type eps = 0.05;
+
+  typedef Kokkos::RangePolicy<typename local_matrix_type::execution_space> RangePolicy;
+
+  // Stage 0: detect Dirichlet rows
+  boundary_nodes_type boundaryNodes("boundaryNodes", numRows);
+  for (int row = 0; row < numRows; row++) {
+    auto rowView = A.row (row);
+    auto length  = rowView.length;
+
+    boundaryNodes(row) = true;
+    for (decltype(length) colID = 0; colID < length; colID++)
+      if ((rowView.colidx(colID) != row) && (ATS::magnitude(rowView.value(colID)) > 1e-13)) {
+        boundaryNodes(row) = false;
+        break;
+      }
+  }
+
+  // Stage 1: calculate the number of remaining entries per row
+  typedef Kokkos::StaticCrsGraph<local_ordinal_type, Kokkos::LayoutLeft, device_type> local_graph_type;
+  typedef typename local_graph_type::row_map_type row_map_type;
+  typedef typename local_graph_type::entries_type entries_type;
+
+  typename entries_type::non_const_type diag("ghosted", numRows);
+  typename row_map_type::non_const_type rows("row_map", numRows+1);       // rows(0) = 0 automatically
+  typename entries_type::non_const_type cols("entries", 20*numRows);      // estimate
+
+  typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
+  local_ordinal_type numDropped = 0;
+
+  local_ordinal_type realnnz = 0;
+  for (int row = 0; row < numRows; row++) {
+    auto rowView = A.row (row);
+    auto length  = rowView.length;
+
+    local_ordinal_type rownnz = 0;
+    for (decltype(length) colID = 0; colID < length; colID++) {
+      local_ordinal_type col = rowView.colidx(colID);
+
+      // Avoid square root by using squared values
+      magnitude_type aiiajj = eps*eps * ATS::magnitude(diag(row))*ATS::magnitude(diag(col));                  // eps^2*|a_ii|*|a_jj|
+      magnitude_type aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));    // |a_ij|^2
+
+      if (aij2 > aiiajj || row == col) {
+        cols(rownnz++) = col;
+
+      } else {
+        numDropped++;
+      }
+
+      if (rownnz == 1) {
+        // If the only element remaining after filtering is diagonal, mark node as boundary
+        // FIXME: this should really be replaced by the following
+        //    if (indices.size() == 1 && indices[0] == row)
+        //        boundaryNodes[row] = true;
+        // We do not do it this way now because there is no framework for distinguishing isolated
+        // and boundary nodes in the aggregation algorithms
+        bndNodes(row) = true;
+      }
+    }
+    rows(row+1) = rows(row) + rownnz;
+    realnnz += rownnz;
+  }
+  boundaryNodes = bndNodes;
+
+  local_graph_type kokkosGraph(cols, rows);
+
+  LWGraph_kokkos<scalar_type, local_ordinal_type, device_type> graph(kokkosGraph);
+
+  graph.SetBoundaryNodeMap(boundaryNodes);
+}
+
+template<class scalar_type, class local_ordinal_type, class device_type>
 int main_(int argc, char **argv) {
   int n    = 100000;
   int loop = 10;
@@ -232,8 +313,14 @@ int main_(int argc, char **argv) {
   execution_space::fence();
   Kokkos::Impl::Timer timer;
 
-  for (int i = 0; i < loop; i++)
-    kernel_coalesce_drop(A);
+  if (typeid(device_type) == typeid(Kokkos::Serial)) {
+    for (int i = 0; i < loop; i++)
+      kernel_coalesce_drop_serial(A);
+
+  } else {
+    for (int i = 0; i < loop; i++)
+      kernel_coalesce_drop_device(A);
+  }
 
   double kernel_time = timer.seconds();
 
