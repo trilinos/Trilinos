@@ -73,13 +73,13 @@ namespace Ioss {
       static const uint32_t SHIFT = STYLE_SHIFT * ATTRIBUTE;
 
       enum {
-        DEFAULT     = 0x001 << SHIFT,
-        BOLD        = 0x002 << SHIFT,
-        DIM         = 0x004 << SHIFT,
-        UNDERLINED  = 0x010 << SHIFT,
-        BLINK       = 0x020 << SHIFT,
-        REVERSE     = 0x080 << SHIFT,
-        HIDDEN      = 0x100 << SHIFT
+        DEFAULT    = 0x001 << SHIFT,
+        BOLD       = 0x002 << SHIFT,
+        DIM        = 0x004 << SHIFT,
+        UNDERLINED = 0x010 << SHIFT,
+        BLINK      = 0x020 << SHIFT,
+        REVERSE    = 0x080 << SHIFT,
+        HIDDEN     = 0x100 << SHIFT
       };
     };
 
@@ -141,7 +141,7 @@ namespace Ioss {
     Style magenta(Ioss::trmclr::Foreground::MAGENTA);
     Style cyan(Ioss::trmclr::Foreground::CYAN);
     Style normal(Ioss::trmclr::Attribute::DEFAULT);
-    
+
     std::ostream &operator<<(std::ostream &os, const Style &style)
     {
       const uint32_t base    = 1 << STYLE_SHIFT;

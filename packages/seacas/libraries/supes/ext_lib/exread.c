@@ -2,23 +2,23 @@
  * Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
- *           
+ *
  * * Redistributions in binary form must reproduce the above
  *   copyright notice, this list of conditions and the following
  *   disclaimer in the documentation and/or other materials provided
  *   with the distribution.
- *                         
+ *
  * * Neither the name of Sandia Corporation nor the names of its
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
- *                                                 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,28 +30,26 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*
  * $Id: exread.c,v 1.20 2008/05/05 19:42:09 gdsjaar Exp $
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include "fortranc.h"
 #include "getline_int.h"
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 static int my_getline(char *s, int len);
 
-#if defined(ADDC_) 
-void exread_(char *prompt, char *input, FTNINT *iostat,
-	     long int PromptLength, long int InputLength )     
+#if defined(ADDC_)
+void exread_(char *prompt, char *input, FTNINT *iostat, long int PromptLength, long int InputLength)
 #else
-void exread( char *prompt, char *input, FTNINT *iostat,
-	     long int PromptLength, long int InputLength )
+void exread(char *prompt, char *input, FTNINT *iostat, long int PromptLength, long int InputLength)
 #endif
-     
+
 /*
 ************************************************************************
 C
@@ -75,26 +73,27 @@ C
   static int debug = 0;
   if (debug == 1 || isatty(0) == 0 || isatty(1) == 0) {
     int icnt;
-    
-    (void)write( 1, prompt, PromptLength );
-    icnt = my_getline( input, InputLength );
-    
+
+    (void)write(1, prompt, PromptLength);
+    icnt = my_getline(input, InputLength);
+
     /* Next evaluate the error status. */
     /* For icnt <= 0 indicate an error condition. */
-    *iostat = ( icnt > 0 ) ? 0 : -1;
-  } else {
+    *iostat = (icnt > 0) ? 0 : -1;
+  }
+  else {
     static char internal_prompt[128];
-    char *p = NULL;
+    char *      p = NULL;
 
     /* Fill line with blanks... */
-    int dlen = InputLength;
-    char *ds = input;
-    while( dlen-- > 0 )		/* Blank out the entire string. */
+    int   dlen = InputLength;
+    char *ds   = input;
+    while (dlen-- > 0) /* Blank out the entire string. */
       *ds++ = ' ';
-    
+
     strncpy(internal_prompt, prompt, PromptLength);
-    internal_prompt[PromptLength-1] = ' ';
-    internal_prompt[PromptLength]   = '\0';
+    internal_prompt[PromptLength - 1] = ' ';
+    internal_prompt[PromptLength]     = '\0';
 
     p = getline_int(internal_prompt);
 
@@ -102,14 +101,15 @@ C
       gl_histadd(p);
       int i = 0;
       /* Strip the trailing \n */
-      p[strlen(p)-1] = '\0';
-      
+      p[strlen(p) - 1] = '\0';
+
       while (i < strlen(p) && i < InputLength) {
-	input[i] = p[i];
-	++i;
+        input[i] = p[i];
+        ++i;
       }
       *iostat = 0;
-    } else {
+    }
+    else {
       *iostat = -1;
     }
   }
@@ -118,35 +118,35 @@ C
 static int my_getline(char *s, int len)
 {
   char c;
-  int dlen;
+  int  dlen;
   char nl = '\n';
 
-  char *ds;			/* A dummy argument used in nulling out s. */
+  char *ds; /* A dummy argument used in nulling out s. */
 
   dlen = len;
-  ds = s;
-  while( dlen-- > 0 )		/* Blank out the entire string. */
+  ds   = s;
+  while (dlen-- > 0) /* Blank out the entire string. */
     *ds++ = ' ';
 
-  dlen = len;			/* Now take care of business. */
-  for( ; dlen > 0; dlen-- ){
-    if (read(0, &c, 1) != 1){
+  dlen = len; /* Now take care of business. */
+  for (; dlen > 0; dlen--) {
+    if (read(0, &c, 1) != 1) {
       if (dlen == len) {
-	(void)write(1,&nl,1);		/* We've encountered the End of File */
-	return(-1);
+        (void)write(1, &nl, 1); /* We've encountered the End of File */
+        return (-1);
       }
       else
-	return(len - dlen + 1);
+        return (len - dlen + 1);
     }
-    else
-      if( c == '\n' || c == '\r' )
-	return(len - dlen + 1);
-   
+    else if (c == '\n' || c == '\r')
+      return (len - dlen + 1);
+
     *s++ = c;
   }
   /* If we get this far, we've read 'len' characters without hitting the
      end of the line.  Read until get end-of-line or end-of-file
   */
-  while (read(0, &c, 1) == 1 && c != '\n' && c != '\r');
-  return(len - dlen + 1);
+  while (read(0, &c, 1) == 1 && c != '\n' && c != '\r')
+    ;
+  return (len - dlen + 1);
 }

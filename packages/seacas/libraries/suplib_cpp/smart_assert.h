@@ -352,7 +352,7 @@ namespace smart_assert {
   if ((expr))                                                                                      \
     ;                                                                                              \
   else                                                                                             \
-  (void)::smart_assert::make_assert(#expr).print_context(__FILE__, __LINE__).SMART_ASSERT_A /**/
+    (void)::smart_assert::make_assert(#expr).print_context(__FILE__, __LINE__).SMART_ASSERT_A /**/
 
 #else
 // "release" mode
@@ -360,7 +360,7 @@ namespace smart_assert {
   if (true)                                                                                        \
     ;                                                                                              \
   else                                                                                             \
-  (void)::smart_assert::make_assert("").SMART_ASSERT_A /**/
+    (void)::smart_assert::make_assert("").SMART_ASSERT_A /**/
 
 #endif // ifdef SMART_ASSERT_DEBUG
 
@@ -368,10 +368,10 @@ namespace smart_assert {
   if ((expr))                                                                                      \
     ;                                                                                              \
   else                                                                                             \
-  (void)::smart_assert::make_assert(#expr)                                                         \
-      .error()                                                                                     \
-      .print_context(__FILE__, __LINE__)                                                           \
-      .SMART_ASSERT_A /**/
+    (void)::smart_assert::make_assert(#expr)                                                       \
+        .error()                                                                                   \
+        .print_context(__FILE__, __LINE__)                                                         \
+        .SMART_ASSERT_A /**/
 
 #define SMART_ASSERT_A(x) SMART_ASSERT_OP(x, B)
 #define SMART_ASSERT_B(x) SMART_ASSERT_OP(x, A)

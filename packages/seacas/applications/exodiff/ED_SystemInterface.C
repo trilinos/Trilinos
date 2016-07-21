@@ -51,7 +51,7 @@ namespace {
 
     if (errno == ERANGE) {
       ERROR(" Overflow or underflow occured when trying"
-	    << " to parse command line tolerance.  Aborting...\n");
+            << " to parse command line tolerance.  Aborting...\n");
       exit(1);
     }
     errno = 0;
@@ -148,8 +148,8 @@ namespace {
     }
     if (!all_flag && num_include > 0 && num_exclude > 0) {
       ERROR("Parsing error: Cannot specify both "
-	    "variables to include and exclude without using the "
-	    "'(all)' specifier.  Aborting...\n");
+            "variables to include and exclude without using the "
+            "'(all)' specifier.  Aborting...\n");
       exit(1);
     }
     if (num_include == 0 && num_exclude > 0)
@@ -175,7 +175,7 @@ namespace {
 
       if (ival1 < 1) {
         ERROR("parsing exclusion times from command "
-	      "line .. value was less than 1\n");
+              "line .. value was less than 1\n");
         exit(1);
       }
 
@@ -189,7 +189,7 @@ namespace {
 
         if (ival2 < 1) {
           ERROR("parsing exclusion times from command "
-		"line .. value was less than 1\n");
+                "line .. value was less than 1\n");
           exit(1);
         }
 
@@ -199,8 +199,8 @@ namespace {
         }
         else if (ival1 > ival2) {
           ERROR("parsing exclusion times from command "
-		"line .. first value in a range was greater than the "
-		"second.\n");
+                "line .. first value in a range was greater than the "
+                "second.\n");
           exit(1);
         }
       }
@@ -592,15 +592,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
       }
       else {
         // Check for additional unknown arguments...
-        std::cerr << trmclr::red
-		  << "\nexodiff: ERROR: Too many file arguments specified."
-                  << "\n         Probably caused by options following filenames which is no longer allowed."
+        std::cerr << trmclr::red << "\nexodiff: ERROR: Too many file arguments specified."
+                  << "\n         Probably caused by options following filenames which is no longer "
+                     "allowed."
                   << "\n         Unknown options are: ";
         while (option_index < argc) {
           std::cerr << "'" << argv[option_index++] << "' ";
         }
-        std::cerr << "\n\n"
-		  << trmclr::normal;
+        std::cerr << "\n\n" << trmclr::normal;
         return false;
       }
     }
@@ -710,8 +709,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
       }
       else {
         ERROR("parse error for -explicit keyword. "
-                     "Expected '<int|last>:<int|last>', found '"
-	      << temp << "' Aborting...\n");
+              "Expected '<int|last>:<int|last>', found '"
+              << temp << "' Aborting...\n");
         exit(1);
       }
     }
@@ -1006,8 +1005,8 @@ void SystemInterface::Parse_Command_File()
         }
         else {
           ERROR(" expected an integer "
-                       "after the \"MAX NAMES\" keyword.  "
-		"Aborting...\n");
+                "after the \"MAX NAMES\" keyword.  "
+                "Aborting...\n");
           exit(1);
         }
       }
@@ -1016,8 +1015,8 @@ void SystemInterface::Parse_Command_File()
         to_lower(tok3);
         if (!abbreviation(tok3, "tolerance", 3)) {
           ERROR(" expected \"TOLERANCE\" "
-                    << "after the \"FINAL TIME\" keyword. "
-		<< "Found \"" << tok3 << "\" instead. Aborting...\n");
+                << "after the \"FINAL TIME\" keyword. "
+                << "Found \"" << tok3 << "\" instead. Aborting...\n");
           exit(1);
         }
         std::string tok = extract_token(xline, " \n\t=,");
@@ -1420,8 +1419,8 @@ namespace {
           !abbreviation(tok, "eigen_combine", 7) && !abbreviation(tok, "ignore", 3) &&
           !abbreviation(tok, "floor", 3)) {
         ERROR("in parsing command file: unrecognized "
-                     "keyword \""
-	      << tok << "\"\n");
+              "keyword \""
+              << tok << "\"\n");
         exit(1);
       }
 
@@ -1436,7 +1435,7 @@ namespace {
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
           ERROR(" Input file specifies a tolerance type "
-		"but no tolerance\n");
+                "but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1448,7 +1447,7 @@ namespace {
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
           ERROR("Input file specifies a tolerance type "
-		"but no tolerance\n");
+                "but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1460,7 +1459,7 @@ namespace {
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
           ERROR("Input file specifies a tolerance type "
-		"but no tolerance\n");
+                "but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1472,7 +1471,7 @@ namespace {
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
           ERROR("Input file specifies a tolerance type "
-		"but no tolerance\n");
+                "but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1484,7 +1483,7 @@ namespace {
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
           ERROR("Input file specifies a tolerance type "
-		"but no tolerance\n");
+                "but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1496,7 +1495,7 @@ namespace {
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
           ERROR("Input file specifies a tolerance type "
-		"but no tolerance\n");
+                "but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1508,7 +1507,7 @@ namespace {
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
           ERROR("Input file specifies a tolerance type "
-		"but no tolerance\n");
+                "but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1520,7 +1519,7 @@ namespace {
         tok          = extract_token(xline, " \n\t=,");
         if (tok == "floor" || tok == "") {
           ERROR("Input file specifies a tolerance type "
-		"but no tolerance\n");
+                "but no tolerance\n");
           exit(1);
         }
         def_tol.value = To_Double(tok);
@@ -1563,10 +1562,10 @@ namespace {
         int idx = names.size();
         if (idx >= max_names) {
           ERROR("Number of names in tabbed list is larger "
-                       "than current limit of "
-                    << max_names << ".  To increase, use \"-maxnames <int>\" on the "
-                                    "command line or \"MAX NAMES <int>\" in the command "
-		"file.  Aborting...\n");
+                "than current limit of "
+                << max_names << ".  To increase, use \"-maxnames <int>\" on the "
+                                "command line or \"MAX NAMES <int>\" in the command "
+                                "file.  Aborting...\n");
           exit(1);
         }
 

@@ -216,17 +216,18 @@ namespace Ioss {
     {
       bool logging;
       if (Utils::check_set_bool_property(properties, "LOGGING", logging)) {
-	set_logging(logging);
+        set_logging(logging);
       }
     }
 
     Utils::check_set_bool_property(properties, "LOWER_CASE_VARIABLE_NAMES", lowerCaseVariableNames);
-    Utils::check_set_bool_property(properties, "USE_GENERIC_CANONICAL_NAMES", useGenericCanonicalName);
+    Utils::check_set_bool_property(properties, "USE_GENERIC_CANONICAL_NAMES",
+                                   useGenericCanonicalName);
 
     {
       bool consistent;
       if (Utils::check_set_bool_property(properties, "PARALLEL_CONSISTENCY", consistent)) {
-	set_parallel_consistency(consistent);
+        set_parallel_consistency(consistent);
       }
     }
 

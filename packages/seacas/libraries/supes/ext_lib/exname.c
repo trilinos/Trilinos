@@ -2,23 +2,23 @@
  * Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
- *           
+ *
  * * Redistributions in binary form must reproduce the above
  *   copyright notice, this list of conditions and the following
  *   disclaimer in the documentation and/or other materials provided
  *   with the distribution.
- *                         
+ *
  * * Neither the name of Sandia Corporation nor the names of its
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
- *                                                 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*
  * $Id: exname.c,v 1.14 2008/03/14 13:22:36 gdsjaar Exp $
@@ -68,67 +68,70 @@
  */
 #include "fortranc.h"
 #include <stdio.h>
-#include <stdlib.h>  /* getenv */
-#include <string.h>  /* strlen */
+#include <stdlib.h> /* getenv */
+#include <string.h> /* strlen */
 
-#define TRUE   1
-#define FALSE  0
+#define TRUE 1
+#define FALSE 0
 
 #define INSYMBOL "FOR0"
 #define EXSYMBOL "EXT"
 
 #if defined(ADDC_)
-void exname_( FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
+void exname_(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
 #else
-void exname( FTNINT *iunit, char *name, FTNINT *ln, long int nlen )
+void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
 #endif
 {
- char string[3];
- char symbol[7];
- int ExtSymbol;
- unsigned int DargLen;
+  char         string[3];
+  char         symbol[7];
+  int          ExtSymbol;
+  unsigned int DargLen;
 
- char *darg;
+  char *darg;
 
 #if Build64
- sprintf( string, "%02ld", labs(*iunit) );
+  sprintf(string, "%02ld", labs(*iunit));
 #else
- sprintf( string, "%02d", abs(*iunit) );
+  sprintf(string, "%02d", abs(*iunit));
 #endif
 
- if(*iunit > 0) {
-   ExtSymbol = FALSE;
-   sprintf(symbol, "%s%s", INSYMBOL, string );
- } else {
-   ExtSymbol = TRUE;
-   sprintf(symbol, "%s%s", EXSYMBOL, string );
- }
+  if (*iunit > 0) {
+    ExtSymbol = FALSE;
+    sprintf(symbol, "%s%s", INSYMBOL, string);
+  }
+  else {
+    ExtSymbol = TRUE;
+    sprintf(symbol, "%s%s", EXSYMBOL, string);
+  }
 
- if( (darg = (char *)getenv(symbol)) != (char *)NULL) {
-   /* Then under UN*X, I've found an ENVIRONMENT variable which points
-    * to a file.  Under VMS it's a logical though I think in this
-    * latter case it's redundant.
-    */
-   DargLen = strlen( darg );
-   /* We need this to give us the length of the ENVIRONMENT
-    * variable while calling strlen() only once.
-    */
-   strncpy(name, darg, DargLen );
-   *ln = DargLen;
- } else if ( !ExtSymbol ) {
+  if ((darg = (char *)getenv(symbol)) != (char *)NULL) {
+    /* Then under UN*X, I've found an ENVIRONMENT variable which points
+     * to a file.  Under VMS it's a logical though I think in this
+     * latter case it's redundant.
+     */
+    DargLen = strlen(darg);
+    /* We need this to give us the length of the ENVIRONMENT
+     * variable while calling strlen() only once.
+     */
+    strncpy(name, darg, DargLen);
+    *ln = DargLen;
+  }
+  else if (!ExtSymbol) {
 #if Build64
-   sprintf(name,"fort.%ld", labs( *iunit ) );
+    sprintf(name, "fort.%ld", labs(*iunit));
 #else
-   sprintf(name,"fort.%d", abs( *iunit ) );
+    sprintf(name, "fort.%d", abs(*iunit));
 #endif
-   *ln = strlen(name);
- } else {
-   /* Then I have referenced an external symbol that has not been
-    *  defined...
-    */
-   *name = '\0';
-   *ln = 0;
- }
+    *ln = strlen(name);
+  }
+  else {
+    /* Then I have referenced an external symbol that has not been
+     *  defined...
+     */
+    *name = '\0';
+    *ln   = 0;
+  }
 }
 /*
 ************************************************************************
@@ -149,4 +152,3 @@ C     LN        INTEGER         Length of File Name
 C
 ************************************************************************
 */
-

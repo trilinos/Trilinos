@@ -76,7 +76,7 @@ int main(int argc, char **argv)
   float *x, *y, *z;
   float *dist_fact;
   float  version, fdum;
-  float attrib[1];
+  float  attrib[1];
 
   char *coord_names[3], *qa_record[2][4], *info[3];
   char  title[MAX_LINE_LENGTH + 1], elem_type[MAX_STR_LENGTH + 1];

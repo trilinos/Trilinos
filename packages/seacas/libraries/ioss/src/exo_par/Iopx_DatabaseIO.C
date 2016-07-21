@@ -382,10 +382,10 @@ namespace Iopx {
 
     int par_mode = get_parallel_io_mode(properties);
 
-    MPI_Info info        = MPI_INFO_NULL;
-    int      app_opt_val = ex_opts(EX_VERBOSE);
-    std::string filename = get_filename();
-    
+    MPI_Info    info        = MPI_INFO_NULL;
+    int         app_opt_val = ex_opts(EX_VERBOSE);
+    std::string filename    = get_filename();
+
 #if defined(OMPI_MAJOR_VERSION)
 #if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
     // See bug description in thread at
@@ -393,11 +393,11 @@ namespace Iopx {
     // https://prod.sandia.gov/sierra-trac/ticket/14679
     // Kluge is to set cwd to pathname, open file, then set cwd back to original.
     Ioss::FileInfo file(filename);
-    std::string path = file.pathname();
-    filename = file.tailname();
+    std::string    path = file.pathname();
+    filename            = file.tailname();
 
-    char* current_cwd = getcwd(0,0); 
-    chdir(path.c_str()); 
+    char *current_cwd = getcwd(0, 0);
+    chdir(path.c_str());
 #endif
 #endif
 
@@ -417,9 +417,10 @@ namespace Iopx {
       assert(exodusFilePtr >= 0);
       // Check byte-size of integers stored on the database...
       if ((ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
-	if (myProcessor == 0) {
-	  std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte integers.\n";
-	}
+        if (myProcessor == 0) {
+          std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte "
+                       "integers.\n";
+        }
         ex_set_int64_status(exodusFilePtr, EX_ALL_INT64_API);
         set_int_byte_size_api(Ioss::USE_INT64_API);
       }
@@ -488,26 +489,24 @@ namespace Iopx {
 
     int par_mode = get_parallel_io_mode(properties);
 
-    MPI_Info info        = MPI_INFO_NULL;
-    int      app_opt_val = ex_opts(EX_VERBOSE);
-    std::string filename = get_filename();
+    MPI_Info    info        = MPI_INFO_NULL;
+    int         app_opt_val = ex_opts(EX_VERBOSE);
+    std::string filename    = get_filename();
 
 #if defined(OMPI_MAJOR_VERSION)
 #if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
     Ioss::FileInfo file(filename);
-    std::string path = file.pathname();
-    filename = file.tailname();
+    std::string    path = file.pathname();
+    filename            = file.tailname();
 
-    char* current_cwd = getcwd(0,0); 
-    chdir(path.c_str()); 
+    char *current_cwd = getcwd(0, 0);
+    chdir(path.c_str());
 #endif
 #endif
 
     if (fileExists) {
-      exodusFilePtr =
-          ex_open_par(filename.c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
-                      &io_word_size, &version, util().communicator(), info);
-
+      exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
+                                  &io_word_size, &version, util().communicator(), info);
     }
     else {
       // If the first write for this file, create it...
@@ -519,7 +518,6 @@ namespace Iopx {
       }
       exodusFilePtr = ex_create_par(filename.c_str(), mode | par_mode, &cpu_word_size,
                                     &dbRealWordSize, util().communicator(), info);
-
     }
 
 #if defined(OMPI_MAJOR_VERSION)

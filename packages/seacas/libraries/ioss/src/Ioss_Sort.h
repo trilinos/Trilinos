@@ -33,6 +33,7 @@
 #ifndef IOSS_Ioss_Sort_h
 #define IOSS_Ioss_Sort_h
 
+#include <cstddef>
 #include <vector>
 
 // This is used instead of the std::sort since we were having issues

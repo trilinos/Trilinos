@@ -81,7 +81,7 @@ template <typename INT> void Exo_Block<INT>::entity_load_params()
 
   if (err < 0) {
     ERROR("Exo_Block<INT>::Load_Block_Params(): Failed to get element"
-	  << " block parameters!  Aborting...\n");
+          << " block parameters!  Aborting...\n");
     exit(1);
   }
 
@@ -92,11 +92,11 @@ template <typename INT> void Exo_Block<INT>::entity_load_params()
 
   if (num_nodes_per_elmt < 0 || num_attr < 0) {
     ERROR("Exo_Block<INT>::Load_Block_Params(): Data appears corrupt for"
-              << " block " << id_ << "(id=" << id_ << ")!\n"
-              << "\tnum elmts = " << numEntity << '\n'
-              << "\tnum nodes per elmt = " << num_nodes_per_elmt << '\n'
-              << "\tnum attributes = " << num_attr << '\n'
-	  << " ... Aborting...\n");
+          << " block " << id_ << "(id=" << id_ << ")!\n"
+          << "\tnum elmts = " << numEntity << '\n'
+          << "\tnum nodes per elmt = " << num_nodes_per_elmt << '\n'
+          << "\tnum attributes = " << num_attr << '\n'
+          << " ... Aborting...\n");
     exit(1);
   }
 }
@@ -121,8 +121,8 @@ template <typename INT> std::string Exo_Block<INT>::Load_Connectivity()
     int err = ex_get_conn(fileId, EX_ELEM_BLOCK, id_, conn, nullptr, nullptr);
     if (err < 0) {
       ERROR("Exo_Block<INT>::Load_Connectivity(): Call to ex_get_conn"
-	    << " returned error value!  Block id = " << id_ << '\n'
-	    << "Aborting...\n");
+            << " returned error value!  Block id = " << id_ << '\n'
+            << "Aborting...\n");
       exit(1);
     }
     else if (err > 0) {

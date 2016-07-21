@@ -36,9 +36,9 @@
 #include "Tolerance.h"  // for Tolerance, etc
 #include "map.h"        // for MAP_TYPE_enum
 #include "terminal_color.h"
-#include <string>       // for string
-#include <utility>      // for pair
-#include <vector>       // for vector
+#include <string>  // for string
+#include <utility> // for pair
+#include <vector>  // for vector
 
 #define DEFAULT_MAX_NUMBER_OF_NAMES 1000
 

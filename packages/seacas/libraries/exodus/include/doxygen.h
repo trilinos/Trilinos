@@ -255,7 +255,8 @@ database.  Valid values for 'option' are:
 | EX_OPT_COMPRESSION_LEVEL | In the range [0..9]. A value of 0 indicates no compression
 | EX_OPT_COMPRESSION_SHUFFLE | 1 if enabled, 0 if disabled
 | EX_OPT_INTEGER_SIZE_API | 4 or 8 indicating byte size of integers used in api functions.
-| EX_OPT_INTEGER_SIZE_DB  | Query only, returns 4 or 8 indicating byte size of integers stored on the database.
+| EX_OPT_INTEGER_SIZE_DB  | Query only, returns 4 or 8 indicating byte size of integers stored on
+the database.
 
 The compression-related options are only available on netcdf-4 files
 since the underlying hdf5 compression functionality is used for the

@@ -122,8 +122,9 @@ extern "C" {
 */
 #define EX_MAPS_INT64_DB 0x0400 /**< All maps (id, order, ...) store int64_t values */
 #define EX_IDS_INT64_DB 0x0800  /**< All entity ids (sets, blocks, maps) are int64_t values */
-#define EX_BULK_INT64_DB 0x1000 /**< All integer bulk data (local indices, counts, maps); not ids  \
-                                   */
+#define EX_BULK_INT64_DB                                                                           \
+  0x1000 /**< All integer bulk data (local indices, counts, maps); not ids                         \
+            */
 #define EX_ALL_INT64_DB                                                                            \
   (EX_MAPS_INT64_DB | EX_IDS_INT64_DB | EX_BULK_INT64_DB) /**< All of the above... */
 
@@ -627,7 +628,7 @@ EXODUS_EXPORT int ex_large_model(int exoid);
 EXODUS_EXPORT size_t ex_header_size(int exoid);
 
 EXODUS_EXPORT void ex_err(const char *module_name, const char *message, int err_num);
-EXODUS_EXPORT const char* ex_strerror(int err_num);
+EXODUS_EXPORT const char *ex_strerror(int err_num);
 EXODUS_EXPORT void ex_get_err(const char **msg, const char **func, int *err_num);
 EXODUS_EXPORT int ex_opts(int options);
 EXODUS_EXPORT int ex_inquire(int exoid, int req_info, void_int * /*ret_int*/, float * /*ret_float*/,

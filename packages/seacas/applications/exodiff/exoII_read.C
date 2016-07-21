@@ -88,7 +88,7 @@ template <typename INT> ExoII_Read<INT>::~ExoII_Read()
       std::string err = Close_File();
       if (!err.empty())
         ERROR("ExoII_Read destructor(): closing file:"
-	      << " \"" << err << "\"\n");
+              << " \"" << err << "\"\n");
     }
 
     delete[] eblocks;
@@ -429,7 +429,7 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Node_Map()
 
   if (err < 0) {
     ERROR("Unable to load node map; "
-	  << "Exodus error = " << err << ".  Aborting...\n");
+          << "Exodus error = " << err << ".  Aborting...\n");
     exit(1);
   }
   else if (err > 0)
@@ -470,7 +470,7 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Map()
 
   if (err < 0) {
     ERROR("Unable to load element map; "
-	  << "Exodus error = " << err << ".  Aborting...\n");
+          << "Exodus error = " << err << ".  Aborting...\n");
     exit(1);
   }
   else if (err > 0)
@@ -509,7 +509,7 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Nodal_Coordinates()
     int err = ex_get_coord(file_id, x, y, z);
     if (err < 0) {
       ERROR("Failed to get "
-	    << "nodal coordinates!  Aborting...\n");
+            << "nodal coordinates!  Aborting...\n");
       exit(1);
     }
     else if (err > 0) {
@@ -560,7 +560,7 @@ std::string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index
         ex_get_var(file_id, cur_time, EX_NODAL, var_index + 1, 0, num_nodes, results[var_index]);
     if (err < 0) {
       ERROR("ExoII_Read::Load_Nodal_Results(): Failed to get "
-	    << "nodal variable values!  Aborting...\n");
+            << "nodal variable values!  Aborting...\n");
       exit(1);
     }
     else if (err > 0) {
@@ -601,7 +601,7 @@ const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
   int err = ex_get_var(file_id, t1, EX_NODAL, var_index + 1, 0, num_nodes, st_results);
   if (err < 0) {
     ERROR("ExoII_Read::Get_Nodal_Results(): Failed to get "
-	  << "nodal variable values!  Aborting...\n");
+          << "nodal variable values!  Aborting...\n");
     exit(1);
   }
 
@@ -613,7 +613,7 @@ const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
     err = ex_get_var(file_id, t2, EX_NODAL, var_index + 1, 0, num_nodes, st_results2);
     if (err < 0) {
       ERROR("ExoII_Read::Load_Nodal_Results(): Failed to get "
-	    << "nodal variable values!  Aborting...\n");
+            << "nodal variable values!  Aborting...\n");
       exit(1);
     }
 
@@ -668,7 +668,7 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Global_Results(int tim
 
   if (err < 0) {
     ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
-	  << "global variable values!  Aborting...\n");
+          << "global variable values!  Aborting...\n");
     exit(1);
   }
   else if (err > 0) {
@@ -711,7 +711,7 @@ std::string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proporti
 
   if (err < 0) {
     ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
-	  << "global variable values!  Aborting...\n");
+          << "global variable values!  Aborting...\n");
     exit(1);
   }
 
@@ -719,7 +719,7 @@ std::string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proporti
     err = ex_get_glob_vars(file_id, t2, global_vars.size(), global_vals2);
     if (err < 0) {
       ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
-	    << "global variable values!  Aborting...\n");
+            << "global variable values!  Aborting...\n");
       exit(1);
     }
 
@@ -768,8 +768,8 @@ std::string ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num, int &
     return "exodiff: ERROR:  File not open!";
   if (global_elmt_num < 1 || global_elmt_num > num_elmts) {
     std::ostringstream oss;
-    oss << "exodiff: ERROR:  global_elmt_num = " << global_elmt_num << " is out of bounds [1, " << num_elmts
-        << "]!";
+    oss << "exodiff: ERROR:  global_elmt_num = " << global_elmt_num << " is out of bounds [1, "
+        << num_elmts << "]!";
     return oss.str();
   }
 
@@ -1055,7 +1055,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   int err = ex_get_init_ext(file_id, &info);
   if (err < 0) {
     ERROR("Failed to get init data!"
-	  << " Error number = " << err << ".  Aborting...\n");
+          << " Error number = " << err << ".  Aborting...\n");
     exit(1);
   }
 
@@ -1072,13 +1072,13 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   if (dimension < 1 || dimension > 3 || num_elmt_blocks < 0 || num_node_sets < 0 ||
       num_side_sets < 0) {
     ERROR("Init data appears corrupt:\n"
-              << "         dimension = " << dimension << '\n'
-              << "         num_nodes = " << num_nodes << '\n'
-              << "         num_elmts = " << num_elmts << '\n'
-              << "         num_elmt_blocks = " << num_elmt_blocks << '\n'
-              << "         num_node_sets = " << num_node_sets << '\n'
-              << "         num_side_sets = " << num_side_sets << '\n'
-	  << " ... Aborting...\n");
+          << "         dimension = " << dimension << '\n'
+          << "         num_nodes = " << num_nodes << '\n'
+          << "         num_elmts = " << num_elmts << '\n'
+          << "         num_elmt_blocks = " << num_elmt_blocks << '\n'
+          << "         num_node_sets = " << num_node_sets << '\n'
+          << "         num_side_sets = " << num_side_sets << '\n'
+          << " ... Aborting...\n");
     exit(1);
   }
 
@@ -1087,9 +1087,9 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   if (num_qa < 0 || num_info < 0) {
     ERROR("inquire data appears corrupt:\n"
-              << "         num_qa = " << num_qa << '\n'
-              << "         num_info = " << num_info << '\n'
-	  << " ... Aborting...\n");
+          << "         num_qa = " << num_qa << '\n'
+          << "         num_info = " << num_info << '\n'
+          << " ... Aborting...\n");
     exit(1);
   }
 
@@ -1098,7 +1098,8 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   char **coords = get_name_array(3, name_length);
   err           = ex_get_coord_names(file_id, coords);
   if (err < 0) {
-    ERROR("Failed to get coordinate" << " names!  Aborting...\n");
+    ERROR("Failed to get coordinate"
+          << " names!  Aborting...\n");
     exit(1);
   }
 
@@ -1114,14 +1115,15 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     delete[] eblocks;
   eblocks = nullptr;
   if (num_elmt_blocks > 0) {
-    eblocks = new Exo_Block<INT>[num_elmt_blocks];
+    eblocks = new Exo_Block<INT>[ num_elmt_blocks ];
     SMART_ASSERT(eblocks != nullptr);
     std::vector<INT> ids(num_elmt_blocks);
 
     err = ex_get_ids(file_id, EX_ELEM_BLOCK, TOPTR(ids));
 
     if (err < 0) {
-      ERROR("Failed to get element" << " block ids!  Aborting...\n");
+      ERROR("Failed to get element"
+            << " block ids!  Aborting...\n");
       exit(1);
     }
 
@@ -1161,7 +1163,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     delete[] nsets;
   nsets = nullptr;
   if (num_node_sets > 0) {
-    nsets = new Node_Set<INT>[num_node_sets];
+    nsets = new Node_Set<INT>[ num_node_sets ];
     SMART_ASSERT(nsets != nullptr);
     std::vector<INT> ids(num_node_sets);
 
@@ -1187,7 +1189,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     delete[] ssets;
   ssets = nullptr;
   if (num_side_sets) {
-    ssets = new Side_Set<INT>[num_side_sets];
+    ssets = new Side_Set<INT>[ num_side_sets ];
     SMART_ASSERT(ssets != nullptr);
     std::vector<INT> ids(num_side_sets);
 
@@ -1245,11 +1247,11 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   if (num_global_vars < 0 || num_nodal_vars < 0 || num_elmt_vars < 0 || num_ns_vars < 0 ||
       num_ss_vars < 0) {
     ERROR("Data appears corrupt for"
-              << " number of variables !\n"
-              << "\tnum global vars  = " << num_global_vars << '\n'
-              << "\tnum nodal vars   = " << num_nodal_vars << '\n'
-              << "\tnum element vars = " << num_elmt_vars << '\n'
-	  << " ... Aborting...\n");
+          << " number of variables !\n"
+          << "\tnum global vars  = " << num_global_vars << '\n'
+          << "\tnum nodal vars   = " << num_nodal_vars << '\n'
+          << "\tnum element vars = " << num_elmt_vars << '\n'
+          << " ... Aborting...\n");
     exit(1);
   }
 
@@ -1270,7 +1272,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
        num_ss_vars > 0) &&
       num_times == 0) {
     ERROR("Consistency error -- The database contains transient variables, but no "
-	  "timesteps!\n");
+          "timesteps!\n");
     exit(1);
   }
 
@@ -1282,8 +1284,8 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   if (num_nodal_vars) {
     if (num_times == 0) {
-      ERROR("Consistency error--The database contains " << num_nodal_vars
-	    << " nodal variables, but there are no time steps defined.\n");
+      ERROR("Consistency error--The database contains "
+            << num_nodal_vars << " nodal variables, but there are no time steps defined.\n");
     }
     if (num_times) {
       results = new double *[num_nodal_vars];
@@ -1313,16 +1315,15 @@ namespace {
       for (int vg = 0; vg < num_vars; ++vg) {
         SMART_ASSERT(varnames[vg] != nullptr);
         if (std::strlen(varnames[vg]) == 0 || (int)std::strlen(varnames[vg]) > name_size) {
-          std::cerr << trmclr::red
-		    << "exodiff: ERROR: " << type << " variable names appear corrupt\n"
+          std::cerr << trmclr::red << "exodiff: ERROR: " << type
+                    << " variable names appear corrupt\n"
                     << "                A length is 0 or greater than "
                     << "name_size(" << name_size << ")\n"
                     << "                Here are the names that I received from"
                     << " a call to ex_get_var_names(...):\n";
           for (int k = 1; k <= num_vars; ++k)
             std::cerr << "\t\t" << k << ") \"" << varnames[k - 1] << "\"\n";
-          std::cerr << "                 Aborting...\n"
-		    << trmclr::normal;
+          std::cerr << "                 Aborting...\n" << trmclr::normal;
           exit(1);
         }
 

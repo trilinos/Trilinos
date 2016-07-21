@@ -147,8 +147,8 @@ namespace Ioss {
     // or "FALSE", "NO", "OFF", or not equal to 1 for false.
     // Returns true/false depending on whether property found and value set.
     static bool check_set_bool_property(const Ioss::PropertyManager &properties,
-					const std::string &prop_name, bool &prop_value);
-    
+                                        const std::string &prop_name, bool &prop_value);
+
     // Returns true if the property "omitted" exists on "block"
     static bool block_is_omitted(Ioss::GroupingEntity *block);
 
