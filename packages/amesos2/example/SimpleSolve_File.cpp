@@ -186,6 +186,7 @@ int main(int argc, char *argv[]) {
     // Print some timing statistics
     solver->printTiming(*fos);
   }
+  TimeMonitor::summarize();
   
   // We are done.
   return 0;

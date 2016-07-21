@@ -6,12 +6,6 @@
 #   COMM serial mpi
 # )
 
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   SimpleSolveFileExample
-#   SOURCES SimpleSolve_File
-#   ARGS
-#   COMM serial mpi
-# )
 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   MultipleSolvesFileExample
@@ -45,6 +39,13 @@ TRIBITS_ADD_EXECUTABLE(
   QuickSolve
   SOURCES quick_solve
   )
+ENDIF ()
+
+IF (Tpetra_INST_INT_INT)
+ TRIBITS_ADD_EXECUTABLE(
+   SimpleSolveFileExample
+  SOURCES SimpleSolve_File
+ )
 ENDIF ()
 
 IF (Tpetra_INST_INT_INT)
