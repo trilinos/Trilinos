@@ -3531,7 +3531,7 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     const char tfecfFuncName[] = "getLocalDiagCopy (1-arg): ";
     typedef local_ordinal_type LO;
-    typedef global_ordinal_type GO;
+
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       staticGraph_.is_null (), std::runtime_error,
@@ -3582,11 +3582,17 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_DEBUG
     if (! this->getComm ().is_null ()) {
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_SUM;
       using Teuchos::reduceAll;
+      typedef global_ordinal_type GO;
+
       GO gblNumErrs = 0;
-      reduceAll<int, GO> (* (this->getComm ()), Teuchos::REDUCE_SUM,
-                          static_cast<LO> (lclNumErrs),
-                          Teuchos::outArg (gblNumErrs));
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+      if (! comm.is_null ()) {
+        reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclNumErrs),
+                            outArg (gblNumErrs));
+      }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (gblNumErrs != 0, std::logic_error, "Something went wrong on "
          << gblNumErrs << " out of " << this->getComm ()->getSize ()
