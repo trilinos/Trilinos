@@ -183,7 +183,6 @@ file ID %d",
     }
 
     /* and set the last value of the index */
-    n_var_idx[0] = 0;
 
     /* get the communication map info index */
     if (index_type == NC_INT64) {
@@ -248,7 +247,6 @@ file ID %d",
     }
 
     /* and set the first value of the index */
-    e_var_idx[0] = 0;
 
     /* get the communication map info index */
     if (index_type == NC_INT64) {
