@@ -100,8 +100,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, L
 
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<node_type> node =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -122,7 +120,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, L
   const GST globalNumRows = comm->getSize () * localNumRows;
   const global_ordinal_type indexBase = 0;
 
-  RCP<const map_type> rowMap (new map_type (globalNumRows, localNumRows, indexBase, comm, node));
+  RCP<const map_type> rowMap (new map_type (globalNumRows, localNumRows, indexBase, comm));
   RCP<const map_type> domMap = rowMap;
   RCP<const map_type> ranMap = rowMap;
 
@@ -267,8 +265,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
 
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<node_type> node =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -289,7 +285,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
   const GST globalNumRows = comm->getSize () * localNumRows;
   const global_ordinal_type indexBase = 0;
 
-  RCP<const map_type> rowMap (new map_type (globalNumRows, localNumRows, indexBase, comm, node));
+  RCP<const map_type> rowMap (new map_type (globalNumRows, localNumRows, indexBase, comm));
   RCP<const map_type> domMap = rowMap;
   RCP<const map_type> ranMap = rowMap;
 

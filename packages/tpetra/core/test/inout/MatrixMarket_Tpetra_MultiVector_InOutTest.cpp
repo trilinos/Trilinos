@@ -48,8 +48,6 @@
 #include <algorithm>
 
 namespace {
-  using KokkosClassic::Details::getNode;
-
   // Ensure that X and Y have the same dimensions, and that the
   // corresponding columns of X and Y have 2-norms that differ by no
   // more than a prespecified tolerance (that accounts for rounding
@@ -123,8 +121,6 @@ namespace {
   //   (""), the file is not written.
   // \param comm [in] Communicator, over whose process(es) to
   //   distribute the returned Tpetra::MultiVector.
-  // \param node [in] Kokkos node instance (needed for creating the
-  //   Tpetra::MultiVector to return).
   // \param tolerant [in] Whether or not to parse the file tolerantly.
   // \param verbose [in] Whether to print verbose output.
   // \param debug [in] Whether to print debugging output.
@@ -133,7 +129,6 @@ namespace {
   testReadDenseFile (const std::string& inputFilename,
                      const std::string& outputFilename,
                      const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                     const Teuchos::RCP<typename MV::node_type>& node,
                      const bool tolerant,
                      const bool verbose,
                      const bool debug)
@@ -170,7 +165,7 @@ namespace {
     // Read the dense matrix from the given Matrix Market file.
     // This routine acts like an MPI barrier.
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
-    RCP<MV> X = reader_type::readDenseFile (inputFilename, comm, node,
+    RCP<MV> X = reader_type::readDenseFile (inputFilename, comm,
                                             map, tolerant, debug);
     TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::runtime_error,
       "The Tpetra::MultiVector returned from readDenseFile() is null.");
@@ -197,7 +192,7 @@ namespace {
       // We're not testing here the functionality of readDenseFile()
       // to reuse an existing Map.
       RCP<const map_type> testMap;
-      RCP<MV> Y = reader_type::readDenseFile (inputFilename, comm, node,
+      RCP<MV> Y = reader_type::readDenseFile (inputFilename, comm,
                                               testMap, tolerant, debug);
       TEUCHOS_TEST_FOR_EXCEPTION(! map->isCompatible (*testMap), std::logic_error,
         "Writing the read-in Tpetra::MultiVector X (with no input Map provided) "
@@ -252,7 +247,6 @@ namespace {
       "testReadDenseFileWithInputMap requires a nonnull input map.");
 
     RCP<const Teuchos::Comm<int> > comm = map->getComm();
-    RCP<node_type> node = map->getNode();
     const int myRank = comm->getRank ();
     if (verbose && myRank == 0) {
       cout << "testReadDenseFileWithInputMap:" << endl;
@@ -277,7 +271,7 @@ namespace {
     // Read the dense matrix from the given Matrix Market file.
     // This routine acts like an MPI barrier.
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
-    RCP<MV> X = reader_type::readDenseFile (inputFilename, comm, node,
+    RCP<MV> X = reader_type::readDenseFile (inputFilename, comm,
                                             theMap, tolerant, debug);
     TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::runtime_error,
       "The Tpetra::MultiVector returned from readDenseFile() is null.");
@@ -302,7 +296,7 @@ namespace {
       // contiguous, uniformly distributed Map.  The input Map need
       // not necessarily be contiguous or uniformly distributed.
       RCP<const map_type> testMap;
-      RCP<MV> Y = reader_type::readDenseFile (inputFilename, comm, node,
+      RCP<MV> Y = reader_type::readDenseFile (inputFilename, comm,
                                               testMap, tolerant, debug);
       assertMultiVectorsEqual<MV> (X, Y);
     }
@@ -380,9 +374,8 @@ namespace {
     // it has the same column norms as the input multivector.  This
     // assumes that reading a multivector works.
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
-    RCP<node_type> node = map->getNode();
     const bool tolerant = false; // Our own output shouldn't need tolerant mode.
-    RCP<MV> Y = reader_type::readDenseFile (outputFilename, comm, node,
+    RCP<MV> Y = reader_type::readDenseFile (outputFilename, comm,
                                             map, tolerant, debug);
     assertMultiVectorsEqual<MV> (X, Y);
   }
@@ -503,9 +496,6 @@ main (int argc, char *argv[])
       std::invalid_argument, "Failed to parse command-line arguments.");
   }
 
-  // Get a Kokkos Node instance for the particular Node type.
-  RCP<node_type> node = getNode<node_type>();
-
   // List of numbers of failed tests.
   std::vector<int> failedTests;
   // Current test number.  Increment before starting each test.  If a
@@ -538,7 +528,7 @@ main (int argc, char *argv[])
     RCP<MV> X;
     try {
       X = testReadDenseFile<MV> (inputFilename, tmpFilename, comm,
-                                 node, tolerant, verbose, debug);
+                                 tolerant, verbose, debug);
       if (outFilename != "") {
         testWriteDenseFile<MV> (outFilename, X, echo, verbose, debug);
       }
@@ -564,7 +554,7 @@ main (int argc, char *argv[])
       // Create the Map.
       RCP<const MT> map =
         rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm,
-                                          Tpetra::GloballyDistributed, node));
+                                          Tpetra::GloballyDistributed));
       try {
         RCP<MV> X2 =
           testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
@@ -624,7 +614,7 @@ main (int argc, char *argv[])
       // Create the Map.
       RCP<const MT> map =
         rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm,
-                                          Tpetra::GloballyDistributed, node));
+                                          Tpetra::GloballyDistributed));
       try {
         RCP<MV> X3 =
           testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
@@ -687,7 +677,7 @@ main (int argc, char *argv[])
       // Create the Map.
       RCP<const MT> map =
         rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm,
-                                          Tpetra::GloballyDistributed, node));
+                                          Tpetra::GloballyDistributed));
       try {
         RCP<MV> X3 =
           testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
@@ -780,7 +770,7 @@ main (int argc, char *argv[])
       // Create the Map.
       using Tpetra::createNonContigMapWithNode;
       RCP<const MT> map =
-        createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+        createNonContigMapWithNode<LO, GO, NT> (elementList(), comm);
       try {
         RCP<MV> X4 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
                                                         map, tolerant, verbose, debug);
@@ -855,7 +845,7 @@ main (int argc, char *argv[])
       // Create the Map.
       using Tpetra::createNonContigMapWithNode;
       RCP<const MT> map =
-        createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+        createNonContigMapWithNode<LO, GO, NT> (elementList(), comm);
       try {
         RCP<MV> X5 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
                                                         map, tolerant, verbose, debug);
@@ -946,7 +936,7 @@ main (int argc, char *argv[])
       // Create the Map.
       using Tpetra::createNonContigMapWithNode;
       RCP<const MT> map =
-        createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+        createNonContigMapWithNode<LO, GO, NT> (elementList(), comm);
       try {
         RCP<MV> X7 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
                                                         map, tolerant, verbose, debug);

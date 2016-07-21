@@ -60,9 +60,9 @@
 
 void
 process_command_line (bool& printedHelp,
-		      std::string& xml_file,
-		      int argc,
-		      char*argv[]);
+                      std::string& xml_file,
+                      int argc,
+                      char*argv[]);
 
 int main (int argc, char* argv[])
 {
@@ -98,7 +98,7 @@ int main (int argc, char* argv[])
       bool printedHelp = false;
       process_command_line (printedHelp, xml_file, argc, argv);
       if (printedHelp) {
-	return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
       }
     }
 
@@ -118,7 +118,7 @@ int main (int argc, char* argv[])
     //linear-problem, if a preconditioner is specified.
 
     Teuchos::RCP<BLinProb> problem =
-      build_problem<Scalar,LO,GO,Node>(test_params, comm, platform.getNode());
+      build_problem<Scalar,LO,GO,Node>(test_params, comm);
 
     //The build_solver function is located in build_solver.hpp:
 
@@ -176,9 +176,9 @@ int main (int argc, char* argv[])
 
 void
 process_command_line (bool& printedHelp,
-		      std::string& xml_file,
-		      int argc,
-		      char*argv[])
+                      std::string& xml_file,
+                      int argc,
+                      char*argv[])
 {
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("xml_file", &xml_file, "XML Parameters file");
@@ -186,7 +186,7 @@ process_command_line (bool& printedHelp,
 
   // mfh 21 Apr 2016: By ignoring options that this executable doesn't
   // recognize, we can pass them through to (e.g.,) Kokkos.
-  
+
   if (result == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
     printedHelp = true; // not an error to ask for help
   }

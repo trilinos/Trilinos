@@ -175,11 +175,6 @@ namespace Tpetra {
             pRowMap->getComm () != pComm, std::invalid_argument,
             "The specified row map's communicator (pRowMap->getComm()) is "
             "different than the given separately supplied communicator pComm.");
-          // FIXME (mfh 25 Jun 2014) This really doesn't matter either.
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            pRowMap->getNode () != pNode, std::invalid_argument,
-            "The specified row map's node (pRowMap->getNode()) is different "
-            "than the given separately supplied node pNode.");
           return pRowMap;
         }
       }

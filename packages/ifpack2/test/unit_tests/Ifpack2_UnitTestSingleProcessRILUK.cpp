@@ -273,7 +273,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
 
     RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LO,GO,Node>(rowmap,lof+2);
     //std::string aFile = "A_bw=" + Teuchos::toString(lof+2) + ".mm";
-    //RCP<crs_matrix_type> crsmatrix = reader_type::readSparseFile (aFile, comm, platform.getNode());
+    //RCP<crs_matrix_type> crsmatrix = reader_type::readSparseFile (aFile, comm);
     //crsmatrix->describe(out,Teuchos::VERB_EXTREME);
     Ifpack2::RILUK<row_matrix_type> prec(crsmatrix);
 
@@ -305,10 +305,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
     std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
     std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
     out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
-    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm, platform.getNode());
-    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm, platform.getNode());
+    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm);
+    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm);
     RCP<const map_type> rm = U->getRowMap();
-    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, platform.getNode(), rm);
+    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, rm);
 
     //compare factors
     out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
@@ -429,8 +429,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
     std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
     out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
-    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm, platform.getNode());
-    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm, platform.getNode());
+    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm);
+    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm);
     RCP<const map_type> rm = U->getRowMap();
 
     //Compare factors.  We can't use the Frobenius norm, as it uses GIDs.
@@ -477,7 +477,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     }
     out << std::endl;
 
-    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, platform.getNode(), rm);
+    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, rm);
     D->update(TST::one(),iD,-TST::one());
     Teuchos::Array<magnitudeType> norms(1);
     D->norm2(norms);
