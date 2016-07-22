@@ -4,6 +4,11 @@
 #include <cstdlib> // getenv
 #include <sstream>
 
+
+#if defined(KOKKOS_HAVE_OPENMP) || defined(KOKKOS_HAVE_PTHREAD) || defined(KOKKOS_HAVE_CUDA)
+  // The struct and function here only get used if at least one of
+  // Kokkos::Cuda, Kokkos::OpenMP, or Kokkos::Threads are enabled.
+
 namespace { // (anonymous)
 
   struct CmdLineArgs {
@@ -269,7 +274,10 @@ namespace { // (anonymous)
     }
     return argsOut;
   }
+
 } // namespace (anonymous)
+
+#endif // defined(KOKKOS_HAVE_OPENMP) || defined(KOKKOS_HAVE_PTHREAD)
 
 namespace Kokkos {
   namespace Compat {
@@ -408,8 +416,27 @@ namespace Kokkos {
 
     template<>
     void KokkosDeviceWrapperNode<Kokkos::OpenMP>::
-    init (int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
+    init (int NumThreads, int NumNUMA, int NumCoresPerNUMA, int /* Device */)
+    {
       if (! Kokkos::OpenMP::is_initialized ()) {
+
+        // Attempt to read command-line arguments that were stored in
+        // Teuchos::GlobalMPISession. User settings override these.
+        CmdLineArgs args = getCommandLineArgs ();
+
+        if (args.numThreads != -1) {
+          NumThreads = args.numThreads;
+        }
+        if (args.numNuma != -1) {
+          NumNUMA = args.numNuma;
+        }
+        if (args.deviceId != -1) {
+          NumCoresPerNUMA = args.deviceId;
+        }
+        // if (args.numDevice != -1) {
+        //   Device = args.numDevice; // OpenMP doesn't need this one
+        // }
+
         if (NumNUMA > 0 && NumCoresPerNUMA > 0) {
           Kokkos::OpenMP::initialize (NumThreads, NumNUMA, NumCoresPerNUMA);
         }
@@ -454,7 +481,11 @@ namespace Kokkos {
 
     template<>
     void KokkosDeviceWrapperNode<Kokkos::Serial>::
-    init (int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
+    init (int /* NumThreads */,
+          int /* NumNUMA */,
+          int /* NumCoresPerNUMA */,
+          int /* Device */)
+    {
       if (! Kokkos::Serial::is_initialized ()) {
         Kokkos::Serial::initialize ();
       }
@@ -494,8 +525,8 @@ namespace Kokkos {
 
     template<>
     void KokkosDeviceWrapperNode<Kokkos::Cuda>::
-    init(int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
-
+    init (int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device)
+    {
       // Setting (currently) necessary environment variables for NVIDIA UVM
 #ifdef KOKKOS_USE_CUDA_UVM
       // We want to override any existing setting of CUDA_LAUNCH_BLOCKING.
@@ -556,7 +587,28 @@ namespace Kokkos {
       throw std::runtime_error ("Using KokkosCudaWrapperNode "
                                 "(KokkosDeviceWrapperNode<Kokkos::Cuda, ...> "
                                 "without UVM is not allowed.");
-#endif
+#endif // KOKKOS_USE_CUDA_UVM
+
+      // Attempt to read command-line arguments that were stored in
+      // Teuchos::GlobalMPISession. User settings override these.
+      CmdLineArgs args = getCommandLineArgs ();
+
+      if (args.numThreads != -1) {
+        NumThreads = args.numThreads;
+      }
+      if (args.numNuma != -1) {
+        NumNUMA = args.numNuma;
+      }
+      // mfh 22 Jul 2016: Kokkos::initialize doesn't actually set
+      // NumCoresPerNUMA when it reads command-line arguments, in the
+      // Cuda case.
+      //
+      // if (args.numDevices != -1) {
+      //   NumCoresPerNUMA = args.numDevices; // ???
+      // }
+      if (args.deviceId != -1) {
+        Device = args.deviceId;
+      }
 
       if (! Kokkos::HostSpace::execution_space::is_initialized ()) {
         if (NumNUMA > 0 && NumCoresPerNUMA > 0) {
