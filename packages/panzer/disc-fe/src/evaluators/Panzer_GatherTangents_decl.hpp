@@ -88,9 +88,9 @@ private:
 
   GatherTangents();
 
-  PHX::MDField<ScalarT,Cell,NODE> dof_orientation; // will scale residual
-                                                    // by orientation to ensure
-                                                    // parallel consistency
+  PHX::MDField<const ScalarT,Cell,NODE> dof_orientation; // will scale residual
+                                                         // by orientation to ensure
+                                                         // parallel consistency
 
   Teuchos::RCP<const PureBasis> basis;
   Teuchos::RCP<const PointRule> pointRule;

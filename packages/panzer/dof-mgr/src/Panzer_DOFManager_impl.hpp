@@ -332,7 +332,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
 
-  typedef Tpetra::Vector<LO,GO> Vector;
   typedef Tpetra::Export<LO,GO,Node> Export;
   typedef Tpetra::Import<LO,GO,Node> Import;
 
@@ -968,7 +967,6 @@ DOFManager<LO,GO>::
 buildOverlapMapFromElements(const ElementBlockAccess & access) const
 {
   typedef panzer::TpetraNodeType Node;
-  typedef Tpetra::Map<LO, GO, Node> Map;
 
   /*
    * 2.  Iterate through all local elements and create the overlapVector

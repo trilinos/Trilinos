@@ -74,7 +74,7 @@ GatherTangents(
 
   // setup the orientation field
   std::string orientationFieldName = basis->name() + " Orientation";
-  dof_orientation = PHX::MDField<ScalarT,Cell,NODE>(orientationFieldName, basis_layout);
+  dof_orientation = PHX::MDField<const ScalarT,Cell,NODE>(orientationFieldName, basis_layout);
 
   // setup all basis fields that are required
   MDFieldArrayFactory af_pv(pointRule->getName()+"_");

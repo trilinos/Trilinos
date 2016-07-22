@@ -60,8 +60,8 @@ PHX_EVALUATOR_CTOR(DirichletResidual,p)
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout"); 
 
   residual = PHX::MDField<ScalarT>(residual_name, data_layout);
-  dof = PHX::MDField<ScalarT>(dof_name, data_layout);
-  value = PHX::MDField<ScalarT>(value_name, data_layout);
+  dof = PHX::MDField<const ScalarT>(dof_name, data_layout);
+  value = PHX::MDField<const ScalarT>(value_name, data_layout);
   
   this->addEvaluatedField(residual);
   this->addDependentField(dof);

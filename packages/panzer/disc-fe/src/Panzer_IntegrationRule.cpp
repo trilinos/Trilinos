@@ -128,7 +128,7 @@ void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::s
 
   Teuchos::RCP<Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>  > > intrepid_cubature;
 
-  int num_points;
+  int num_points(0);
   if (cv_type == "volume") {
     ss << ",volume)";
     intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolume<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device> >(topo));
