@@ -1465,7 +1465,8 @@ namespace Tpetra {
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
-  createLocalMap (size_t numElements, const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+  createLocalMap (const size_t numElements,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   /// \brief Nonmember constructor for a locally replicated Map with
   ///   a specified Kokkos Node.
@@ -1480,14 +1481,14 @@ namespace Tpetra {
   /// \param comm [in] The Map's communicator.
   ///
   /// \param node [in] The Kokkos Node instance.  If not provided, we
-  ///   will construct an instance of the correct type for you.
+  ///   will construct an instance for you.
   ///
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createLocalMapWithNode (size_t numElements,
+  createLocalMapWithNode (const size_t numElements,
                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                          const Teuchos::RCP<Node>& node = defaultArgNode<Node> ());
+                          const Teuchos::RCP<Node>& node = Teuchos::null);
 
   /// \brief Non-member constructor for a uniformly distributed,
   ///   contiguous Map with the default Kokkos Node.
@@ -1498,7 +1499,7 @@ namespace Tpetra {
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal> >
-  createUniformContigMap (global_size_t numElements,
+  createUniformContigMap (const global_size_t numElements,
                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   /// \brief Non-member constructor for a uniformly distributed,
@@ -1511,8 +1512,7 @@ namespace Tpetra {
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createUniformContigMapWithNode (global_size_t numElements,
                                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                  const Teuchos::RCP<Node>& node =
-                                  defaultArgNode<Node> ());
+                                  const Teuchos::RCP<Node>& node = Teuchos::null);
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
@@ -1524,9 +1524,9 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
-  createContigMap (global_size_t numElements,
-                   size_t localNumElements,
-                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+  createContigMap (const global_size_t numElements,
+                   const size_t localNumElements,
+                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with a user-specified Kokkos Node.
 
@@ -1552,8 +1552,8 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> >
-  createNonContigMap (const ArrayView<const GlobalOrdinal> &elementList,
-                      const RCP<const Teuchos::Comm<int> > &comm);
+  createNonContigMap (const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
+                      const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   /** \brief Non-member constructor for a non-contiguous Map with a user-specified Kokkos Node.
 
@@ -1563,9 +1563,9 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createNonContigMapWithNode (const ArrayView<const GlobalOrdinal> &elementList,
-                              const RCP<const Teuchos::Comm<int> > &comm,
-                              const RCP<Node> &node);
+  createNonContigMapWithNode (const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
+                              const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+                              const Teuchos::RCP<Node>& node = Teuchos::null);
 
   /** \brief Non-member constructor for a contiguous Map with user-defined weights and a user-specified Kokkos Node.
 
@@ -1575,10 +1575,10 @@ namespace Tpetra {
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createWeightedContigMapWithNode (int thisNodeWeight,
-                                   global_size_t numElements,
+  createWeightedContigMapWithNode (const int thisNodeWeight,
+                                   const global_size_t numElements,
                                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                                   const Teuchos::RCP<Node> &node);
+                                   const Teuchos::RCP<Node>& node = Teuchos::null);
 
   /** \brief Creates a one-to-one version of the given Map where each GID is owned by only one process.
 
