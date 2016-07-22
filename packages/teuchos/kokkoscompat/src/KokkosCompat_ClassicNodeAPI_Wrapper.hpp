@@ -68,6 +68,9 @@ public:
 
   /// \brief Is the Node responsible for finalizing its execution space?
   ///
+  /// \warning Do NOT read or modify this.  This is an implementation
+  ///   detail of the class.
+  ///
   /// In Node's constructor, was it ever true that count == 0 and
   /// execution_space::is_initialized()?  If so, this means that
   /// somebody else (the user, or some other library) initialized the
@@ -82,7 +85,71 @@ public:
   ///
   /// \param [in/out] params List of Node configuration parameters.
   ///   If empty, we use defaults.
-  KokkosDeviceWrapperNode (Teuchos::ParameterList& params) {
+  KokkosDeviceWrapperNode (Teuchos::ParameterList& params);
+
+  //! Default constructor (sets default parameters).
+  KokkosDeviceWrapperNode ();
+
+  //! Destructor
+  ~KokkosDeviceWrapperNode ();
+
+  //! Get a filled-in set of parameters for Node, with their default values.
+  static Teuchos::ParameterList getDefaultParameters ()
+  {
+    return Details::getDefaultNodeParameters ();
+  }
+
+  /// \brief Initialize the Node
+  ///
+  /// \warning This is an implementation detail; do not call it directly!
+  void init (int numthreads, int numnuma, int numcorespernuma, int device);
+
+  void sync () const { ExecutionSpace::fence (); }
+
+  /// \brief Return the human-readable name of this Node.
+  ///
+  /// See \ref kokkos_node_api "Kokkos Node API"
+  static std::string name();
+
+private:
+  //! Make sure that the constructor initialized everything.
+  void checkConstructorEnd () const;
+
+  //! Make sure that the destructor did its job.
+  void checkDestructorEnd () const;
+};
+
+#ifdef KOKKOS_HAVE_CUDA
+  typedef KokkosDeviceWrapperNode<Kokkos::Cuda> KokkosCudaWrapperNode;
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+  typedef KokkosDeviceWrapperNode<Kokkos::OpenMP> KokkosOpenMPWrapperNode;
+#endif
+
+#ifdef KOKKOS_HAVE_PTHREAD
+  typedef KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
+#endif
+
+#ifdef KOKKOS_HAVE_SERIAL
+  typedef KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
+#endif // KOKKOS_HAVE_SERIAL
+
+  // These definitions / initializations of class (static) variables
+  // need to precede the first use of these variables.  Otherwise,
+  // CUDA 7.5 with GCC 4.8.4 emits a warning ("explicit specialization
+  // of member ... must precede its first use").
+
+  template<class ExecutionSpace, class MemorySpace>
+  int KokkosDeviceWrapperNode<ExecutionSpace, MemorySpace>::count = 0;
+
+  template<class ExecutionSpace, class MemorySpace>
+  bool KokkosDeviceWrapperNode<ExecutionSpace, MemorySpace>::nodeResponsibleForFinalizingExecutionSpace_ = true;
+
+  template<class ExecutionSpace, class MemorySpace>
+  KokkosDeviceWrapperNode<ExecutionSpace, MemorySpace>::
+  KokkosDeviceWrapperNode (Teuchos::ParameterList& params)
+  {
     // Fix for Github Issue #510.  If count is zero, yet the execution
     // space is already initialized, then Node is not responsible for
     // finalizing the execution space.
@@ -91,10 +158,11 @@ public:
     }
 #ifdef KOKKOS_HAVE_CUDA
     // The Cuda Node also handles its host execution space.
+    typedef ::Kokkos::HostSpace::execution_space host_execution_space;
     if (count == 0 &&
         std::is_same<ExecutionSpace, ::Kokkos::Cuda>::value &&
-        ::Kokkos::HostSpace::execution_space::is_initialized ()) {
-      KokkosDeviceWrapperNode< ::Kokkos::HostSpace::execution_space>::nodeResponsibleForFinalizingExecutionSpace_ = false;
+        host_execution_space::is_initialized ()) {
+      KokkosDeviceWrapperNode<host_execution_space>::nodeResponsibleForFinalizingExecutionSpace_ = false;
     }
 #endif // KOKKOS_HAVE_CUDA
 
@@ -136,8 +204,10 @@ public:
     checkConstructorEnd ();
   }
 
-  //! Default constructor (sets default parameters).
-  KokkosDeviceWrapperNode () {
+  template<class ExecutionSpace, class MemorySpace>
+  KokkosDeviceWrapperNode<ExecutionSpace, MemorySpace>::
+  KokkosDeviceWrapperNode ()
+  {
     if (count == 0 && nodeResponsibleForFinalizingExecutionSpace_) {
       const int curNumThreads = -1; // -1 means "let Kokkos pick"
       const int curNumNUMA = -1;
@@ -150,25 +220,11 @@ public:
     checkConstructorEnd ();
   }
 
-  ~KokkosDeviceWrapperNode ();
-
-  static Teuchos::ParameterList getDefaultParameters ()
+  template<class ExecutionSpace, class MemorySpace>
+  void
+  KokkosDeviceWrapperNode<ExecutionSpace, MemorySpace>::
+  checkConstructorEnd () const
   {
-    return Details::getDefaultNodeParameters ();
-  }
-
-  void init (int numthreads, int numnuma, int numcorespernuma, int device);
-
-  void sync () const { ExecutionSpace::fence (); }
-
-  /// \brief Return the human-readable name of this Node.
-  ///
-  /// See \ref kokkos_node_api "Kokkos Node API"
-  static std::string name();
-
-private:
-  //! Make sure that the constructor initialized everything.
-  void checkConstructorEnd () const {
     TEUCHOS_TEST_FOR_EXCEPTION
       (count <= 0, std::logic_error,
        "Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpace="
@@ -195,8 +251,11 @@ private:
 #endif // KOKKOS_HAVE_CUDA
   }
 
-  //! Make sure that the destructor did its job.
-  void checkDestructorEnd () const {
+  template<class ExecutionSpace, class MemorySpace>
+  void
+  KokkosDeviceWrapperNode<ExecutionSpace, MemorySpace>::
+  checkDestructorEnd () const
+  {
     TEUCHOS_TEST_FOR_EXCEPTION
       (count < 0, std::logic_error,
        "Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpace="
@@ -232,23 +291,6 @@ private:
        "Please report this bug to the Tpetra developers.");
 #endif // KOKKOS_HAVE_CUDA
   }
-};
-
-#ifdef KOKKOS_HAVE_CUDA
-  typedef KokkosDeviceWrapperNode<Kokkos::Cuda> KokkosCudaWrapperNode;
-#endif
-
-#ifdef KOKKOS_HAVE_OPENMP
-  typedef KokkosDeviceWrapperNode<Kokkos::OpenMP> KokkosOpenMPWrapperNode;
-#endif
-
-#ifdef KOKKOS_HAVE_PTHREAD
-  typedef KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
-#endif
-
-#ifdef KOKKOS_HAVE_SERIAL
-  typedef KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
-#endif // KOKKOS_HAVE_SERIAL
 
 } // namespace Compat
 } // namespace Kokkos

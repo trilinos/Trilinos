@@ -306,28 +306,6 @@ namespace Kokkos {
       }
     } // namespace Details
 
-    // mfh 01 Jan 2014: These definitions of the class variable count
-    // need to be inside the namespace.  Declaring them as "template<>
-    // int Kokkos::Compat::KokkosCudaWrapperNode::count = 0" in the
-    // global namespace is a C++11 extension and results in compiler
-    // warnings with Clang 3.2 on MacOS X.
-#ifdef KOKKOS_HAVE_CUDA
-    template<> int KokkosCudaWrapperNode::count = 0;
-    template<> bool KokkosCudaWrapperNode::nodeResponsibleForFinalizingExecutionSpace_ = true;
-#endif
-#ifdef KOKKOS_HAVE_OPENMP
-    template<> int KokkosOpenMPWrapperNode::count = 0;
-    template<> bool KokkosOpenMPWrapperNode::nodeResponsibleForFinalizingExecutionSpace_ = true;
-#endif
-#ifdef KOKKOS_HAVE_PTHREAD
-    template<> int KokkosThreadsWrapperNode::count = 0;
-    template<> bool KokkosThreadsWrapperNode::nodeResponsibleForFinalizingExecutionSpace_ = true;
-#endif
-#ifdef KOKKOS_HAVE_SERIAL
-    template<> int KokkosSerialWrapperNode::count = 0;
-    template<> bool KokkosSerialWrapperNode::nodeResponsibleForFinalizingExecutionSpace_ = true;
-#endif // KOKKOS_HAVE_SERIAL
-
 #ifdef KOKKOS_HAVE_PTHREAD
     template<>
     KokkosDeviceWrapperNode<Kokkos::Threads>::
