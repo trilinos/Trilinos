@@ -98,6 +98,12 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
+    // Make sure that Kokkos has been initialized (Github Issue #513).
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! execution_space::is_initialized (), std::runtime_error,
+       "Tpetra::Map constructor: The Kokkos execution space has not been "
+       "initialized.  Please initialize it before creating a Map.")
+
 #ifdef HAVE_TPETRA_DEBUG
     // In debug mode only, check whether numGlobalElements and
     // indexBase are the same over all processes in the communicator.
@@ -250,6 +256,12 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
+
+    // Make sure that Kokkos has been initialized (Github Issue #513).
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! execution_space::is_initialized (), std::runtime_error,
+       "Tpetra::Map constructor: The Kokkos execution space has not been "
+       "initialized.  Please initialize it before creating a Map.")
 
 #ifdef HAVE_TPETRA_DEBUG
     // Global sum of numLocalElements over all processes.
@@ -654,6 +666,12 @@ namespace Tpetra {
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
+    // Make sure that Kokkos has been initialized (Github Issue #513).
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! execution_space::is_initialized (), std::runtime_error,
+       "Tpetra::Map constructor: The Kokkos execution space has not been "
+       "initialized.  Please initialize it before creating a Map.")
+
     // Not quite sure if I trust all code to behave correctly if the
     // pointer is nonnull but the array length is nonzero, so I'll
     // make sure the raw pointer is null if the length is zero.
@@ -677,6 +695,12 @@ namespace Tpetra {
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
+    // Make sure that Kokkos has been initialized (Github Issue #513).
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! execution_space::is_initialized (), std::runtime_error,
+       "Tpetra::Map constructor: The Kokkos execution space has not been "
+       "initialized.  Please initialize it before creating a Map.")
+
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
 
     // Not quite sure if I trust both ArrayView and View to behave
@@ -717,6 +741,12 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
+
+    // Make sure that Kokkos has been initialized (Github Issue #513).
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! execution_space::is_initialized (), std::runtime_error,
+       "Tpetra::Map constructor: The Kokkos execution space has not been "
+       "initialized.  Please initialize it before creating a Map.")
 
     // The user has specified the distribution of indices over the
     // processes, via entryList.  The distribution is not necessarily
