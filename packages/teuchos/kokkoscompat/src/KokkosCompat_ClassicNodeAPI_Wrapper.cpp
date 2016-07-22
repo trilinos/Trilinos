@@ -1,5 +1,6 @@
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include <Kokkos_Core.hpp>
+#include <cerrno>
 #include <cstdlib> // getenv
 #include <sstream>
 
@@ -496,11 +497,66 @@ namespace Kokkos {
     init(int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
 
       // Setting (currently) necessary environment variables for NVIDIA UVM
-      #ifdef KOKKOS_USE_CUDA_UVM
-        putenv("CUDA_LAUNCH_BLOCKING=1");
-      #else
-        throw std::runtime_error("Using CudaWrapperNode without UVM is not allowed.");
-      #endif
+#ifdef KOKKOS_USE_CUDA_UVM
+      // We want to override any existing setting of CUDA_LAUNCH_BLOCKING.
+      const int overwrite = 1;
+      const int errCode = setenv ("CUDA_LAUNCH_BLOCKING", "1", overwrite);
+
+      //putenv("CUDA_LAUNCH_BLOCKING=1"); // see note below
+
+      // mfh 22 Jul 2016: POSIX prefers use of setenv over putenv:
+      //
+      // http://pubs.opengroup.org/onlinepubs/009695399/functions/putenv.html
+      //
+      // There are two problems with putenv:
+      //
+      // 1. It takes its input as a nonconst pointer.  This causes a
+      //    build warning (e.g., "conversion from a string literal to
+      //    'char *' is deprecated") when using a string literal, in
+      //    this case "CUDA_LAUNCH_BLOCKING=1", as the input argument.
+      //
+      // 2. putenv does not let us fix the above build warning by
+      //    copying into a temporary nonconst char array and passing
+      //    that into putenv.  This is because putenv is free to keep
+      //    the original input pointer, rather than copying the input
+      //    string.  Thus, if anyone tries to read the environment
+      //    variable (via getenv) after the temporary array has been
+      //    freed, they would be reading invalid memory.  The above
+      //    POSIX standard entry alludes to this: "A potential error
+      //    is to call putenv() with an automatic variable as the
+      //    argument, then return from the calling function while
+      //    string is still part of the environment."
+
+      if (errCode != 0) {
+        // Printing operations may change errno, so we save it first.
+        const int savedErrno = errno;
+        std::ostringstream os;
+        os << "KokkosCudaWrapperNode attempted to call "
+          "setenv(\"CUDA_LAUNCH_BLOCKING\", \"1\", " << overwrite << "), "
+          "but it returned a nonzero error code.  ";
+        if (savedErrno == EINVAL) {
+          os << "errno == EINVAL; this should never happen, because it implies "
+            "that the input strings were NULL; they certainly were not in this "
+            "case.";
+          throw std::logic_error (os.str ());
+        }
+        else if (savedErrno == ENOMEM) {
+          // If setenv ran out of memory, we're probably in trouble
+          // and not even able to construct the error string, but
+          // we'll try regardless.
+          os << "errno == ENOMEM; this means setenv ran out of memory.";
+          throw std::runtime_error (os.str ());
+        }
+        else {
+          os << "errno != EINVAL && errno != ENOMEM; not sure what this means.";
+          throw std::runtime_error (os.str ());
+        }
+      }
+#else
+      throw std::runtime_error ("Using KokkosCudaWrapperNode "
+                                "(KokkosDeviceWrapperNode<Kokkos::Cuda, ...> "
+                                "without UVM is not allowed.");
+#endif
 
       if (! Kokkos::HostSpace::execution_space::is_initialized ()) {
         if (NumNUMA > 0 && NumCoresPerNUMA > 0) {
