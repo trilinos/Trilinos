@@ -3561,8 +3561,10 @@ namespace Tpetra {
       "diag.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
 
+#ifdef HAVE_TPETRA_DEBUG
     // Keep a count of the local number of errors.
     LO lclNumErrs = 0;
+#endif // HAVE_TPETRA_DEBUG
     if (this->isFillComplete ()) {
       diag.template modify<device_type> ();
       const auto D_lcl = diag.template getLocalView<device_type> ();
@@ -3574,10 +3576,21 @@ namespace Tpetra {
       const auto lclColMap = colMap.getLocalMap ();
       const auto lclMatrix = this->lclMatrix_;
       using ::Tpetra::Details::getDiagCopyWithoutOffsets;
-      lclNumErrs = getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap, lclColMap, lclMatrix);
+#ifdef HAVE_TPETRA_DEBUG
+      lclNumErrs = getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
+                                              lclColMap, lclMatrix);
+#else
+      (void) getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
+                                        lclColMap, lclMatrix);
+#endif // HAVE_TPETRA_DEBUG
     }
     else {
-      lclNumErrs = ::Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete (diag, *this);
+      using ::Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete;
+#ifdef HAVE_TPETRA_DEBUG
+      lclNumErrs = getLocalDiagCopyWithoutOffsetsNotFillComplete (diag, *this);
+#else
+      (void) getLocalDiagCopyWithoutOffsetsNotFillComplete (diag, *this);
+#endif // HAVE_TPETRA_DEBUG
     }
 
 #ifdef HAVE_TPETRA_DEBUG
