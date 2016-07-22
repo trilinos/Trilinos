@@ -95,6 +95,11 @@ protected:
         return HostType(hostVals.label(), s);
     }
 
+    virtual DeviceType get_new_device_vals_of_size(size_t s)
+    {
+        return DeviceType(deviceVals.label(), s);
+    }
+
 private:
     size_t mSize;
     DeviceType deviceVals;
@@ -111,10 +116,10 @@ private:
 
     void grow_to_size(size_t s)
     {
-        HostType tmp = get_new_vals_of_size(s);
+        deviceVals = get_new_device_vals_of_size(s);
+        HostType tmp = Kokkos::create_mirror_view(deviceVals);
         copy_into_bigger(tmp, hostVals);
         hostVals = tmp;
-        hostVals = Kokkos::create_mirror_view(hostVals);
     }
 
     void copy_into_bigger(HostType& dst, HostType& src)

@@ -192,15 +192,18 @@ void calculate_nodal_volume_device(const ngp::StkNgpMesh &ngpMesh,
     calculate_nodal_volume_given_elem_volume(ngpMesh, nodes, elemVolumePerNode, nodalVolume);
 }
 
-void calculate_nodal_volume(ngp::StkNgpMesh &ngpMesh, const ngp::StkNgpField &coords, ngp::StkNgpField &nodalVolume)
+void calculate_nodal_volume(ngp::StkNgpMesh &ngpMesh, stk::mesh::Selector selector, const ngp::StkNgpField &coords, ngp::StkNgpField &nodalVolume)
 {
-    ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex elem)
+    ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex elem)
     {
         calculate_nodal_volume_device(ngpMesh, elem, coords, nodalVolume);
     });
 }
 
-void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh, stk::mesh::Field<double>& nodalVolumeField, int numRepeat)
+void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh,
+                                        stk::mesh::Selector selector,
+                                        stk::mesh::Field<double>& nodalVolumeField,
+                                        int numRepeat)
 {
     const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
     ngp::StkNgpField ngpCoords(mesh, coords);
@@ -208,7 +211,7 @@ void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh, stk::mesh::Fi
     ngp::StkNgpMesh ngpMesh(mesh);
 
     for(int n=0; n<numRepeat; ++n)
-        calculate_nodal_volume(ngpMesh, ngpCoords, ngpNodalVolume);
+        calculate_nodal_volume(ngpMesh, selector, ngpCoords, ngpNodalVolume);
 
     ngpNodalVolume.copy_device_to_host(mesh, nodalVolumeField);
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
@@ -279,10 +282,11 @@ void assemble_nodal_volume_bucket_field_access(stk::mesh::BulkData& mesh,
 }
 
 void assemble_nodal_volume_from_elem_volume_entity_field_access(ngp::StkNgpMesh &ngpMesh,
+                                                                stk::mesh::Selector selector,
                                                                 const ngp::StkNgpField &elemVolumePerNode,
                                                                 ngp::StkNgpField &staticNodalVolume)
 {
-    ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex elem)
+    ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex elem)
     {
         double volumePerNode = elemVolumePerNode.get(elem, 0);
         assemble_nodal_volume_from_elem_volume_device(ngpMesh, elem, volumePerNode, staticNodalVolume);
@@ -294,58 +298,64 @@ void assemble_nodal_volume_entity_field_access(stk::mesh::BulkData& mesh,
                                                stk::mesh::Field<double>& nodalVolumeField,
                                                int numRepeat)
 {
+    stk::mesh::Selector selector = mesh.mesh_meta_data().locally_owned_part();
     repeat_for_each_entity_loop_for_algorithm(mesh, elemVolumePerNodeField, nodalVolumeField, numRepeat,
         [=](ngp::StkNgpMesh &ngpMesh, const ngp::StkNgpField &elemVolumePerNode, ngp::StkNgpField &staticNodalVolume)
         {
-            assemble_nodal_volume_from_elem_volume_entity_field_access(ngpMesh, elemVolumePerNode, staticNodalVolume);
+            assemble_nodal_volume_from_elem_volume_entity_field_access(ngpMesh, selector, elemVolumePerNode, staticNodalVolume);
         });
 }
 
 
 
 
-void expect_nodal_volume(const stk::mesh::BulkData& mesh, stk::mesh::Field<double>& nodalVolumeField, stk::mesh::Field<int>& numElemsPerNodeField, int numRepeat)
+void expect_nodal_volume(const stk::mesh::BulkData& mesh, stk::mesh::Selector selector, stk::mesh::Field<double>& nodalVolumeField, stk::mesh::Field<int>& numElemsPerNodeField, int numRepeat)
 {
-    stk::mesh::Selector selector = mesh.mesh_meta_data().locally_owned_part();
-    const stk::mesh::BucketVector& nodeBuckets = mesh.get_buckets(stk::topology::NODE_RANK, selector);
+    const stk::mesh::BucketVector& nodeBuckets = mesh.buckets(stk::topology::NODE_RANK);
     for(const stk::mesh::Bucket* bucket : nodeBuckets) {
         const double* nodalVolume = stk::mesh::field_data(nodalVolumeField, *bucket);
         const int *numElemsPerNode = stk::mesh::field_data(numElemsPerNodeField, *bucket);
         for(size_t i=0; i<bucket->size(); ++i) {
             double expectedVolume = 1.0;
-            if (numElemsPerNode[i] == 8) {
-                expectedVolume = 1.0;
+            if(selector(*bucket))
+            {
+                if (numElemsPerNode[i] == 8) {
+                    expectedVolume = 1.0;
+                }
+                else if (numElemsPerNode[i] == 4) {
+                    expectedVolume = 0.5;
+                }
+                else if (numElemsPerNode[i] == 2) {
+                    expectedVolume = 0.25;
+                }
+                else if (numElemsPerNode[i] == 1) {
+                    expectedVolume = 0.125;
+                }
+                else {
+                    ASSERT_TRUE(false) << "numElemsPerNode = " << numElemsPerNode[i];
+                }
             }
-            else if (numElemsPerNode[i] == 4) {
-                expectedVolume = 0.5;
-            }
-            else if (numElemsPerNode[i] == 2) {
-                expectedVolume = 0.25;
-            }
-            else if (numElemsPerNode[i] == 1) {
-                expectedVolume = 0.125;
-            }
-            else {
-                ASSERT_TRUE(false) << "numElemsPerNode = " << numElemsPerNode[i];
-            }
+            else
+                expectedVolume = 0.0;
 
             EXPECT_NEAR(numRepeat*expectedVolume, nodalVolume[i], 1.e-9);
         }
     }
 }
 
-void count_num_elems_per_node(const stk::mesh::BulkData& mesh, stk::mesh::Field<int>& numElemsPerNodeField)
+void count_num_elems_per_node(const stk::mesh::BulkData& mesh, stk::mesh::Selector selector, stk::mesh::Field<int>& numElemsPerNodeField)
 {
     stk::mesh::Selector ownedOrShared = mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part();
     const stk::mesh::BucketVector& nodeBuckets = mesh.get_buckets(stk::topology::NODE_RANK, ownedOrShared);
-    for(const stk::mesh::Bucket* bucket : nodeBuckets) {
-        int* numElemsPerNode = stk::mesh::field_data(numElemsPerNodeField, *bucket);
-        for(size_t i=0; i<bucket->size(); ++i) {
-            unsigned numElems = bucket->num_elements(i);
-            const stk::mesh::Entity *elems = bucket->begin_elements(i);
+    for(const stk::mesh::Bucket* nodeBucket : nodeBuckets) {
+        int* numElemsPerNode = stk::mesh::field_data(numElemsPerNodeField, *nodeBucket);
+        for(size_t i=0; i<nodeBucket->size(); ++i) {
+            unsigned numElems = nodeBucket->num_elements(i);
+            const stk::mesh::Entity *elems = nodeBucket->begin_elements(i);
             for(size_t j=0; j<numElems; ++j)
             {
-                if(mesh.bucket(elems[j]).owned())
+                const stk::mesh::Bucket &elemBucket = mesh.bucket(elems[j]);
+                if(elemBucket.owned() && selector(elemBucket))
                 {
                     numElemsPerNode[i]++;
                 }
@@ -373,7 +383,7 @@ void fill_elem_volume_per_node(const stk::mesh::BulkData& mesh, stk::mesh::Field
 class NodalVolumeCalculator : public stk::unit_test_util::MeshFixture
 {
 protected:
-    void create_mesh_and_fields(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void create_mesh_and_fields(stk::mesh::BulkData::AutomaticAuraOption auraOption, const stk::mesh::Part &part)
     {
         elemVolumePerNodeField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::ELEM_RANK, "elemVolumePerNodeField");
         stk::mesh::put_field(*elemVolumePerNodeField, get_meta().universal_part());
@@ -387,8 +397,35 @@ protected:
         meshName += sDim+"x"+sDim+"x"+sDim;
         setup_mesh(meshName, auraOption);
         std::cout << "Using mesh: "<<meshName<<", numRepeat: "<<get_num_repeat()<<std::endl;
-        count_num_elems_per_node(get_bulk(), *numElemsPerNodeField);
+    }
+
+    void fill_fields(const stk::mesh::Part &part)
+    {
+        count_num_elems_per_node(get_bulk(), part, *numElemsPerNodeField);
         fill_elem_volume_per_node(get_bulk(), *elemVolumePerNodeField);
+    }
+
+    void create_mesh_and_fill_fields(stk::mesh::BulkData::AutomaticAuraOption auraOption, const stk::mesh::Part &part)
+    {
+        create_mesh_and_fields(auraOption, part);
+        fill_fields(part);
+    }
+
+    void move_half_mesh_to_part(stk::mesh::Part &part)
+    {
+        stk::mesh::EntityVector elements;
+        stk::mesh::get_selected_entities(get_bulk().mesh_meta_data().locally_owned_part(),
+                                         get_bulk().buckets(stk::topology::ELEM_RANK),
+                                         elements);
+        size_t start = elements.size() / 2;
+
+        stk::mesh::Part *block1 = get_meta().get_part("block_1");
+        get_bulk().modification_begin();
+        for(size_t i=start; i<elements.size(); i++)
+        {
+            get_bulk().change_entity_parts(elements[i], {&part}, {block1});
+        }
+        get_bulk().modification_end();
     }
 
     int get_num_repeat()
@@ -398,57 +435,71 @@ protected:
 
     void test_nodal_volume_stkmesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        create_mesh_and_fields(auraOption);
+        create_mesh_and_fill_fields(auraOption, get_meta().universal_part());
         int numRepeat = get_num_repeat();
         double startTime = stk::wall_time();
         calculate_nodal_volume_stkmesh(get_bulk(), *nodalVolumeField, numRepeat);
         double elapsedTime = stk::wall_time() - startTime;
         std::cout<<"\t\tstkmesh: "<<elapsedTime<<" seconds"<<std::endl;
-        expect_nodal_volume(get_bulk(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
+        expect_nodal_volume(get_bulk(), get_meta().locally_owned_part(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
     }
 
     void test_nodal_volume_bucket_field_access(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        create_mesh_and_fields(auraOption);
+        create_mesh_and_fill_fields(auraOption, get_meta().universal_part());
         int numRepeat = get_num_repeat();
         double startTime = stk::wall_time();
         assemble_nodal_volume_bucket_field_access(get_bulk(), *elemVolumePerNodeField, *nodalVolumeField, numRepeat);
         double elapsedTime = stk::wall_time() - startTime;
         std::cout<<"\t\tbucket field access: "<<elapsedTime<<" seconds"<<std::endl;
-        expect_nodal_volume(get_bulk(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
+        expect_nodal_volume(get_bulk(), get_meta().locally_owned_part(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
     }
 
     void test_nodal_volume_entity_field_access(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        create_mesh_and_fields(auraOption);
+        create_mesh_and_fill_fields(auraOption, get_meta().universal_part());
         int numRepeat = get_num_repeat();
         double startTime = stk::wall_time();
         assemble_nodal_volume_entity_field_access(get_bulk(), *elemVolumePerNodeField, *nodalVolumeField, numRepeat);
         double elapsedTime = stk::wall_time() - startTime;
         std::cout<<"\t\tentity field access: "<<elapsedTime<<" seconds"<<std::endl;
-        expect_nodal_volume(get_bulk(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
+        expect_nodal_volume(get_bulk(), get_meta().locally_owned_part(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
     }
 
     void test_nodal_volume_entity_loop(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        create_mesh_and_fields(auraOption);
+        create_mesh_and_fill_fields(auraOption, get_meta().universal_part());
         int numRepeat = get_num_repeat();
         double startTime = stk::wall_time();
-        calculate_nodal_volume_entity_loop(get_bulk(), *nodalVolumeField, numRepeat);
+        calculate_nodal_volume_entity_loop(get_bulk(), get_meta().universal_part(), *nodalVolumeField, numRepeat);
         double elapsedTime = stk::wall_time() - startTime;
         std::cout<<"\t\tentity_loop: "<<elapsedTime<<" seconds"<<std::endl;
-        expect_nodal_volume(get_bulk(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
+        expect_nodal_volume(get_bulk(), get_meta().locally_owned_part(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
     }
 
     void test_nodal_volume_stkmesh_entity_loop(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        create_mesh_and_fields(auraOption);
+        create_mesh_and_fill_fields(auraOption, get_meta().universal_part());
         int numRepeat = get_num_repeat();
         double startTime = stk::wall_time();
         calculate_nodal_volume_stkmesh_entity_loop(get_bulk(), *nodalVolumeField, numRepeat);
         double elapsedTime = stk::wall_time() - startTime;
         std::cout<<"\t\tstkmesh_entity_loop: "<<elapsedTime<<" seconds"<<std::endl;
-        expect_nodal_volume(get_bulk(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
+        expect_nodal_volume(get_bulk(), get_meta().locally_owned_part(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
+    }
+
+    void test_nodal_volume_subset(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        stk::mesh::Part &block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
+        create_mesh_and_fields(auraOption, block2);
+        move_half_mesh_to_part(block2);
+        fill_fields(block2);
+        int numRepeat = get_num_repeat();
+        double startTime = stk::wall_time();
+        calculate_nodal_volume_entity_loop(get_bulk(), block2, *nodalVolumeField, numRepeat);
+        double elapsedTime = stk::wall_time() - startTime;
+        std::cout<<"\t\tentity_loop: "<<elapsedTime<<" seconds"<<std::endl;
+        expect_nodal_volume(get_bulk(), block2, *nodalVolumeField, *numElemsPerNodeField, numRepeat);
     }
 
     stk::mesh::Field<double> *elemVolumePerNodeField;
@@ -472,6 +523,9 @@ TEST_F(NodalVolumeCalculator, nodalVolumeForEachEntityLoop) {
 }
 TEST_F(NodalVolumeCalculator, stkMeshNodalVolumeForEachEntityLoop) {
     test_nodal_volume_stkmesh_entity_loop(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+TEST_F(NodalVolumeCalculator, nodalVolumeSubset) {
+    test_nodal_volume_subset(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 class EntityIndexSpace : public stk::unit_test_util::MeshFixture {};

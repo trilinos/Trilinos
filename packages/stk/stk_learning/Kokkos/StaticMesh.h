@@ -3,6 +3,8 @@
 
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
+#include <stk_util/util/StkVector.hpp>
+
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
@@ -91,16 +93,17 @@ template <typename Mesh, typename AlgorithmPerEntity>
 struct TeamFunctor
 {
     STK_FUNCTION
-    TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, const AlgorithmPerEntity f) :
+    TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::Vector<unsigned> b, const AlgorithmPerEntity f) :
         mesh(m),
         rank(r),
+        bucketIds(b),
         functor(f)
     {}
     typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ScheduleType>::member_type TeamHandleType;
     STK_FUNCTION
     void operator()(const TeamHandleType& team) const
     {
-        const int bucketIndex = team.league_rank();
+        const int bucketIndex = bucketIds.device_get(team.league_rank());
         const typename Mesh::BucketType &bucket = mesh.get_bucket(rank, bucketIndex);
         unsigned numElements = bucket.size();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements),
@@ -108,15 +111,19 @@ struct TeamFunctor
     }
     const Mesh mesh;
     const stk::mesh::EntityRank rank;
+    stk::Vector<unsigned> bucketIds;
     const AlgorithmPerEntity functor;
 };
 
 template <typename Mesh, typename AlgorithmPerEntity>
-void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const AlgorithmPerEntity &functor)
+void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor)
 {
-    unsigned numBuckets = mesh.num_buckets(rank);
+    stk::Vector<unsigned> bucketIds("bucketIds");
+    mesh.fill_bucket_ids(rank, selector, bucketIds);
+    bucketIds.copy_host_to_device();
+    unsigned numBuckets = bucketIds.size();
     Kokkos::parallel_for(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO),
-                         TeamFunctor<Mesh, AlgorithmPerEntity>(mesh, rank, functor));
+                         TeamFunctor<Mesh, AlgorithmPerEntity>(mesh, rank, bucketIds, functor));
 }
 
 //    typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ScheduleType>::member_type TeamHandleType;
@@ -174,6 +181,17 @@ private:
 };
 
 
+inline void fill_bucket_ids(const stk::mesh::BulkData &bulk,
+                     stk::mesh::EntityRank rank,
+                     const stk::mesh::Selector &selector,
+                     stk::Vector<unsigned> &bucketIds)
+{
+    const stk::mesh::BucketVector &buckets = bulk.get_buckets(rank, selector);
+    bucketIds.resize(buckets.size());
+    for(size_t i=0; i<buckets.size(); i++)
+        bucketIds[i] = buckets[i]->bucket_id();
+}
+
 
 class WrapperMesh
 {
@@ -197,6 +215,11 @@ public:
     {
         const stk::mesh::MeshIndex &meshIndex = bulk.mesh_index(entity);
         return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
+    }
+
+    void fill_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector, stk::Vector<unsigned> &bucketIds)
+    {
+        ngp::fill_bucket_ids(bulk, rank, selector, bucketIds);
     }
 
     unsigned num_buckets(stk::mesh::EntityRank rank) const
@@ -343,12 +366,12 @@ public:
     typedef StaticBucket BucketType;
     typedef Entities<ConnectedNodesType> ConnectedNodes;
 
-    StaticMesh(const stk::mesh::BulkData& bulk)
+    StaticMesh(const stk::mesh::BulkData& b) : bulk(b)
     {
         hostMeshIndices = Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror("host_mesh_indices", bulk.get_size_of_entity_index_space());
         fill_mesh_indices(stk::topology::NODE_RANK, bulk);
         fill_mesh_indices(stk::topology::ELEM_RANK, bulk);
-        fill_buckets(bulk, bulk.mesh_meta_data().locally_owned_part());
+        fill_buckets(bulk, bulk.mesh_meta_data().universal_part());
         copy_mesh_indices_to_device();
     }
 
@@ -378,6 +401,11 @@ public:
     const stk::mesh::FastMeshIndex& host_mesh_index(stk::mesh::Entity entity) const
     {
         return hostMeshIndices(entity.local_offset());
+    }
+
+    void fill_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector, stk::Vector<unsigned> &bucketIds)
+    {
+        ngp::fill_bucket_ids(get_bulk_on_host(), rank, selector, bucketIds);
     }
 
     STK_FUNCTION
@@ -453,7 +481,14 @@ private:
         deviceMeshIndices = tmp_device_mesh_indices;
     }
 
+    const stk::mesh::BulkData &get_bulk_on_host()
+    {
+        return bulk;
+    }
+
+
     typedef Kokkos::View<StaticBucket*, UVMMemSpace> BucketView;
+    const stk::mesh::BulkData &bulk;
     BucketView buckets;
     Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror hostMeshIndices;
     Kokkos::View<const stk::mesh::FastMeshIndex*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > deviceMeshIndices;
