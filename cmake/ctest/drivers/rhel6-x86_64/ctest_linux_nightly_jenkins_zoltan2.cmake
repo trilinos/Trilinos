@@ -137,48 +137,48 @@ SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTpetra_INST_DOUBLE:BOOL=TRUE"
   "-DTpetra_INST_INT_INT:BOOL=TRUE"
 )
-#RunTest( par-int-int-double )
+RunTest( par-int-int-double )
 
 
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTpetra_INST_FLOAT:BOOL=TRUE"
   "-DTpetra_INST_INT_INT:BOOL=TRUE"
 )
-#RunTest( par-int-int-float )
+RunTest( par-int-int-float )
 
 
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTpetra_INST_FLOAT:BOOL=TRUE"
   "-DTpetra_INST_INT_UNSIGNED:BOOL=TRUE"
 )
-#RunTest( par-int-unsigned-float )
+RunTest( par-int-unsigned-float )
 
 
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTpetra_INST_FLOAT:BOOL=TRUE"
   "-DTpetra_INST_INT_LONG:BOOL=TRUE"
 )
-#RunTest( par-int-long-float )
+RunTest( par-int-long-float )
 
 
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTpetra_INST_FLOAT:BOOL=TRUE"
   "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=TRUE"
 )
-#RunTest( par-int-unsignedlong-float )
+RunTest( par-int-unsignedlong-float )
 
 
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DCMAKE_CXX_FLAGS=-DTEST_STK_DATA_TYPES"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
 )
-#RunTest( par-stk )
+RunTest( par-stk )
 
 
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=FALSE"
 )
-#RunTest( par-stk-off )
+RunTest( par-stk-off )
 
 
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
@@ -186,7 +186,7 @@ SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=TRUE"
   "-DTpetra_INST_INT_LONG_LONG:BOOL=TRUE"
 )
-#RunTest( par-int-longlong-double )
+RunTest( par-int-longlong-double )
 
 
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
@@ -194,7 +194,7 @@ SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTpetra_INST_INT_INT:BOOL=TRUE"
   "-DTrilinos_ENABLE_Galeri:BOOL=TRUE"
 )
-#RunTest( par-int-int-double-galeri )
+RunTest( par-int-int-double-galeri )
 
 
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
@@ -202,7 +202,7 @@ SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTpetra_INST_INT_INT:BOOL=TRUE"
   "-DTrilinos_ENABLE_Pamgen:BOOL=TRUE"
 )
-#RunTest( par-int-int-double-pamgen )
+RunTest( par-int-int-double-pamgen )
 
     
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
@@ -210,11 +210,11 @@ SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DTpetra_INST_DOUBLE:BOOL=TRUE"
   "-DTpetra_INST_INT_INT:BOOL=TRUE"
 )
-#RunTest( ser-int-int-double )
+RunTest( ser-int-int-double )
     
 SET( EXTRA_CONFIGURE_OPTIONS ${DEFAULT_ZOLTAN2_CONFIGURE_OPTIONS}
   "-DCMAKE_BUILD_TYPE:STRING=DEBUG"
   "-DTpetra_INST_DOUBLE:BOOL=TRUE"
   "-DTpetra_INST_INT_INT:BOOL=TRUE"
 )
-#RunTest( par-debug-int-int-double )
+RunTest( par-debug-int-int-double )
