@@ -76,7 +76,7 @@ typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 
   template <typename Intrepid2Type>
@@ -97,11 +97,11 @@ namespace panzer_stk_classic {
 
     // panzer::pauseToAttach();
 
-    panzer_stk_classic::CubeHexMeshFactory mesh_factory;
+    panzer_stk::CubeHexMeshFactory mesh_factory;
 
     // setup mesh
     /////////////////////////////////////////////
-    RCP<panzer_stk_classic::STK_Interface> mesh;
+    RCP<panzer_stk::STK_Interface> mesh;
     {
        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
        pl->set("X Blocks",1);
@@ -124,10 +124,10 @@ namespace panzer_stk_classic {
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
 
-    panzer_stk_classic::PlaneMatcher side_matcher(1,2);
-    panzer_stk_classic::PlaneMatcher front_matcher(0,1);
-    mesh->addPeriodicBC(panzer_stk_classic::buildPeriodicBC_Matcher("right","left",side_matcher));
-    mesh->addPeriodicBC(panzer_stk_classic::buildPeriodicBC_Matcher("front","back",front_matcher));
+    panzer_stk::PlaneMatcher side_matcher(1,2);
+    panzer_stk::PlaneMatcher front_matcher(0,1);
+    mesh->addPeriodicBC(panzer_stk::buildPeriodicBC_Matcher("right","left",side_matcher));
+    mesh->addPeriodicBC(panzer_stk::buildPeriodicBC_Matcher("front","back",front_matcher));
 
     mesh->writeToExodus("file.exo");
 
@@ -137,7 +137,7 @@ namespace panzer_stk_classic {
          = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
 
     Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > connMngr 
-          = Teuchos::rcp(new panzer_stk_classic::STKConnManager<panzer::Ordinal64>(mesh));
+          = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
 
     Teuchos::RCP<panzer::DOFManager<int,panzer::Ordinal64> > dofManager
           = Teuchos::rcp(new panzer::DOFManager<int,panzer::Ordinal64>(connMngr,MPI_COMM_WORLD));

@@ -45,7 +45,7 @@
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STKConnManager_impl.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 template class STKConnManager<int>;
 

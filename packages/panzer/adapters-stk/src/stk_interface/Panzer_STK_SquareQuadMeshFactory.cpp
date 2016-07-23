@@ -49,7 +49,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 SquareQuadMeshFactory::SquareQuadMeshFactory(bool enableRebalance)
 {
@@ -62,7 +62,7 @@ SquareQuadMeshFactory::~SquareQuadMeshFactory()
 }
 
 //! Build the mesh object
-Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk_classic::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::SquareQuadMeshFactory::buildMesh()");
 
@@ -78,14 +78,14 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk_classic::Parall
    return mesh;
 }
 
-Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::SquareQuadMeshFactory::buildUncomittedMesh()");
 
    RCP<STK_Interface> mesh = rcp(new STK_Interface(2));
 
-   machRank_ = stk_classic::parallel_machine_rank(parallelMach);
-   machSize_ = stk_classic::parallel_machine_size(parallelMach);
+   machRank_ = stk::parallel_machine_rank(parallelMach);
+   machSize_ = stk::parallel_machine_size(parallelMach);
 
    if(xProcs_==-1) {
       // default x only decomposition
@@ -105,7 +105,7 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk_class
    return mesh;
 }
 
-void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const
+void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::SquareQuadMeshFactory::completeMeshConstruction()");
 
@@ -199,7 +199,7 @@ void SquareQuadMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void SquareQuadMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach, STK_Interface & mesh) const
+void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
 {
    typedef shards::Quadrilateral<4> QuadTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
@@ -246,7 +246,7 @@ void SquareQuadMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelM
    mesh.addNodeset("origin");
 }
 
-void SquareQuadMeshFactory::buildElements(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const
+void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
 {
    mesh.beginModification();
       // build each block
@@ -258,7 +258,7 @@ void SquareQuadMeshFactory::buildElements(stk_classic::ParallelMachine parallelM
    mesh.endModification();
 }
 
-void SquareQuadMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
+void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
    std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
@@ -288,13 +288,13 @@ void SquareQuadMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach
 
    std::stringstream blockName;
    blockName << "eblock-" << xBlock << "_" << yBlock;
-   stk_classic::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
+   stk::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
 
    // build the elements
    for(int nx=myXElems_start;nx<myXElems_end;++nx) {
       for(int ny=myYElems_start;ny<myYElems_end;++ny) {
-         stk_classic::mesh::EntityId gid = totalXElems*ny+nx+1;
-         std::vector<stk_classic::mesh::EntityId> nodes(4);
+         stk::mesh::EntityId gid = totalXElems*ny+nx+1;
+         std::vector<stk::mesh::EntityId> nodes(4);
          nodes[0] = nx+1+ny*(totalXElems+1);
          nodes[1] = nodes[0]+1;
          nodes[2] = nodes[1]+(totalXElems+1);
@@ -352,15 +352,6 @@ std::pair<int,int> SquareQuadMeshFactory::determineYElemSizeAndStart(int yBlock,
    return std::make_pair(start+nYElems_*yBlock,nume);
 }
 
-const stk_classic::mesh::Relation * SquareQuadMeshFactory::getRelationByID(unsigned ID,stk_classic::mesh::PairIterRelation relations) const
-{
-   for(std::size_t i=0;i<relations.size();i++) 
-      if(relations[i].identifier()==ID)
-         return &relations[i];
-
-   return 0;
-}
-
 void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
 {
    mesh.beginModification();
@@ -369,13 +360,13 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
    std::size_t totalYElems = nYElems_*yBlocks_;
 
    // get all part vectors
-   stk_classic::mesh::Part * left = mesh.getSideset("left");
-   stk_classic::mesh::Part * right = mesh.getSideset("right");
-   stk_classic::mesh::Part * top = mesh.getSideset("top");
-   stk_classic::mesh::Part * bottom = mesh.getSideset("bottom");
+   stk::mesh::Part * left = mesh.getSideset("left");
+   stk::mesh::Part * right = mesh.getSideset("right");
+   stk::mesh::Part * top = mesh.getSideset("top");
+   stk::mesh::Part * bottom = mesh.getSideset("bottom");
 
-   std::vector<stk_classic::mesh::Part*> vertical;
-   std::vector<stk_classic::mesh::Part*> horizontal;
+   std::vector<stk::mesh::Part*> vertical;
+   std::vector<stk::mesh::Part*> horizontal;
    for(int bx=1;bx<xBlocks_;bx++) {
      std::stringstream ss;
      ss << "vertical_" << bx-1;
@@ -387,15 +378,14 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
      horizontal.push_back(mesh.getSideset(ss.str()));
    }
 
-   std::vector<stk_classic::mesh::Entity*> localElmts;
+   std::vector<stk::mesh::Entity> localElmts;
    mesh.getMyElements(localElmts);
 
    // loop over elements adding edges to sidesets
-   std::vector<stk_classic::mesh::Entity*>::const_iterator itr;
+   std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-      stk_classic::mesh::Entity * element = (*itr);
-      stk_classic::mesh::EntityId gid = element->identifier();      
-      stk_classic::mesh::PairIterRelation relations = element->relations(mesh.getEdgeRank());
+      stk::mesh::Entity element = (*itr);
+      stk::mesh::EntityId gid = mesh.elementGlobalId(element);
 
       std::size_t nx,ny;
       ny = (gid-1) / totalXElems;
@@ -405,38 +395,38 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(nx+1==totalXElems) { 
-         stk_classic::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 1);
 
          // on the right
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,right);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,right);
       }
 
       if(nx==0) {
-         stk_classic::mesh::Entity * edge = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 3);
 
          // on the left
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,left);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,left);
       }
 
       if(nx+1!=totalXElems && ((nx+1) % nXElems_==0)) {
-         stk_classic::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 1);
 
          // on the right
-         if(edge->owner_rank()==machRank_) {
+         if(mesh.entityOwnerRank(edge)==machRank_) {
             int index = (nx+1)/nXElems_-1;
-            mesh.addEntityToSideset(*edge,vertical[index]);
+            mesh.addEntityToSideset(edge,vertical[index]);
          }
       }
 
       if(nx!=0 && (nx % nXElems_==0)) {
-         stk_classic::mesh::Entity * edge = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 3);
 
          // on the left
-         if(edge->owner_rank()==machRank_) {
+         if(mesh.entityOwnerRank(edge)==machRank_) {
             int index = nx/nXElems_-1;
-            mesh.addEntityToSideset(*edge,vertical[index]);
+            mesh.addEntityToSideset(edge,vertical[index]);
          }
       }
 
@@ -444,38 +434,38 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(ny==0) {
-         stk_classic::mesh::Entity * edge = getRelationByID(0,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 0);
 
          // on the bottom
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,bottom);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,bottom);
       }
 
       if(ny+1==totalYElems) {
-         stk_classic::mesh::Entity * edge = getRelationByID(2,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 2);
 
          // on the top
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,top);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,top);
       }
 
       if(ny!=0 && (ny % nYElems_==0)) {
-         stk_classic::mesh::Entity * edge = getRelationByID(0,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 0);
 
          // on the bottom
-         if(edge->owner_rank()==machRank_) {
+         if(mesh.entityOwnerRank(edge)==machRank_) {
             int index = ny/nYElems_-1;
-            mesh.addEntityToSideset(*edge,horizontal[index]);
+            mesh.addEntityToSideset(edge,horizontal[index]);
          }
       }
 
       if(ny+1!=totalYElems && ((ny+1) % nYElems_==0)) {
-         stk_classic::mesh::Entity * edge = getRelationByID(2,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 2);
 
          // on the top
-         if(edge->owner_rank()==machRank_) {
+         if(mesh.entityOwnerRank(edge)==machRank_) {
             int index = (ny+1)/nYElems_-1;
-            mesh.addEntityToSideset(*edge,horizontal[index]);
+            mesh.addEntityToSideset(edge,horizontal[index]);
          }
       }
    }
@@ -488,21 +478,21 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
    mesh.beginModification();
 
    // get all part vectors
-   stk_classic::mesh::Part * lower_left = mesh.getNodeset("lower_left");
-   stk_classic::mesh::Part * origin = mesh.getNodeset("origin");
+   stk::mesh::Part * lower_left = mesh.getNodeset("lower_left");
+   stk::mesh::Part * origin = mesh.getNodeset("origin");
 
-   // std::vector<stk_classic::mesh::Entity*> localElmts;
+   // std::vector<stk::mesh::Entity> localElmts;
    // mesh.getMyElements(localElmts);
 
-   Teuchos::RCP<stk_classic::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    if(machRank_==0) 
    {
       // add zero node to lower_left node set
-      stk_classic::mesh::Entity * node = bulkData->get_entity(mesh.getNodeRank(),1);
-      mesh.addEntityToNodeset(*node,lower_left);
+      stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
+      mesh.addEntityToNodeset(node,lower_left);
 
       // add zero node to origin node set
-      mesh.addEntityToNodeset(*node,origin);
+      mesh.addEntityToNodeset(node,origin);
    }
 
    mesh.endModification();

@@ -340,11 +340,11 @@ bool hasInterfaceCondition (const std::vector<panzer::BC>& bcs)
   return false;
 }
 
-Teuchos::RCP<panzer_stk_classic::STKConnManager<int> >
+Teuchos::RCP<panzer_stk::STKConnManager<int> >
 getSTKConnManager (const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
 {
-  const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> > stk_conn_mgr =
-    Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<int> >(conn_mgr);
+  const Teuchos::RCP<panzer_stk::STKConnManager<int> > stk_conn_mgr =
+    Teuchos::rcp_dynamic_cast<panzer_stk::STKConnManager<int> >(conn_mgr);
   TEUCHOS_TEST_FOR_EXCEPTION(stk_conn_mgr.is_null(), std::logic_error,
                              "There are interface conditions, but the connection manager"
                              " does not support the necessary connections.");
@@ -354,7 +354,7 @@ getSTKConnManager (const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
 void buildInterfaceConnections (const std::vector<panzer::BC>& bcs,
                                 const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
 {
-  const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> >
+  const Teuchos::RCP<panzer_stk::STKConnManager<int> >
     stk_conn_mgr = getSTKConnManager(conn_mgr);
   for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
     if (bcit->bcType() == panzer::BCT_Interface)
@@ -364,7 +364,7 @@ void buildInterfaceConnections (const std::vector<panzer::BC>& bcs,
 void checkInterfaceConnections (const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr,
                                 const Teuchos::RCP<Teuchos::Comm<int> >& comm)
 {
-  const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> >
+  const Teuchos::RCP<panzer_stk::STKConnManager<int> >
     stk_conn_mgr = getSTKConnManager(conn_mgr);
   std::vector<std::string> sidesets = stk_conn_mgr->checkAssociateElementsInSidesets(*comm);
   if ( ! sidesets.empty()) {
@@ -458,14 +458,14 @@ int main (int argc, char* argv[])
     po.integration_order = 2;
   
     // Construct mesh.
-    Teuchos::RCP<panzer_stk_classic::STK_MeshFactory> mesh_factory;
+    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
     if ( ! po.mesh_filename.empty()) {
-      mesh_factory = Teuchos::rcp(new panzer_stk_classic::STK_ExodusReaderFactory(po.mesh_filename));
+      mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory(po.mesh_filename));
     } else {
       if (po.is3d)
-        mesh_factory = Teuchos::rcp(new panzer_stk_classic::CubeHexMeshFactory);
+        mesh_factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory);
       else
-        mesh_factory = Teuchos::rcp(new panzer_stk_classic::SquareQuadMeshFactory);
+        mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
     }
   
     if (po.mesh_filename.empty()) {
@@ -492,7 +492,7 @@ int main (int argc, char* argv[])
       mesh_factory->setParameterList(pl);
     }
   
-    RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
     if (po.generate_mesh_only) {
       mesh_factory->completeMeshConstruction(*mesh, MPI_COMM_WORLD);
       mesh->writeToExodus("output.exo");
@@ -586,8 +586,8 @@ int main (int argc, char* argv[])
     // build worksets
     ////////////////////////////////////////////////////////
   
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
   
@@ -602,7 +602,7 @@ int main (int argc, char* argv[])
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
     {
       const Teuchos::RCP<panzer::ConnManager<int,int> >
-        conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh)); 
+        conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh)); 
       const bool has_interface_condition = hasInterfaceCondition(bcs);
       if (has_interface_condition)
         buildInterfaceConnections(bcs, conn_manager);
@@ -821,7 +821,7 @@ int main (int argc, char* argv[])
       // get X Epetra_Vector from ghosted container
       RCP<panzer::EpetraLinearObjContainer> ep_ghost_container =
         rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghost_container);
-      panzer_stk_classic::write_solution_data(*dofManager,*mesh,*ep_ghost_container->get_x());
+      panzer_stk::write_solution_data(*dofManager,*mesh,*ep_ghost_container->get_x());
       mesh->writeToExodus("output.exo");
     }
   

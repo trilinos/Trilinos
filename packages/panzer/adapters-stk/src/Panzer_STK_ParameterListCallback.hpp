@@ -56,7 +56,7 @@
 #include <vector>
 #include <map>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 template <typename GO> class STKConnManager;
 
@@ -69,7 +69,7 @@ class ParameterListCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos:
 public:
   ParameterListCallback(const std::string & coordFieldName,
                         const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fp,
-                        const Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > & connManager, 
+                        const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
    Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
@@ -109,7 +109,7 @@ private:
 
    std::string coordFieldName_;
    std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns_;
-   Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > connManager_;
+   Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > connManager_;
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_;
    bool coordinatesBuilt_;
  

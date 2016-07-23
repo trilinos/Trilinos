@@ -59,7 +59,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 TEUCHOS_UNIT_TEST(tLineMeshFactory, defaults)
 {

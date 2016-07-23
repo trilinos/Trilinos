@@ -59,7 +59,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 // Object describing how to sort a vector of elements using
 // local ID as the key
@@ -68,7 +68,7 @@ public:
   LocalIdCompare(const RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
 
   // Compares two stk mesh entities based on local ID
-  bool operator() (stk_classic::mesh::Entity * a,stk_classic::mesh::Entity * b) 
+  bool operator() (stk::mesh::Entity a,stk::mesh::Entity b) 
   { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b);}
 
 private:
@@ -107,7 +107,7 @@ void STKConnManager<GO>::buildLocalElementMapping()
 
    // build element block information
    //////////////////////////////////////////////
-   elements_ = Teuchos::rcp(new std::vector<stk_classic::mesh::Entity*>);
+   elements_ = Teuchos::rcp(new std::vector<stk::mesh::Entity>);
 
    // defines ordering of blocks
    std::vector<std::string> blockIds;
@@ -119,7 +119,7 @@ void STKConnManager<GO>::buildLocalElementMapping()
       std::string blockId = *idItr;
 
       // grab elements on this block
-      std::vector<stk_classic::mesh::Entity*> blockElmts;
+      std::vector<stk::mesh::Entity> blockElmts;
       stkMeshDB_->getMyElements(blockId,blockElmts); 
 
       // concatenate them into element LID lookup table
@@ -139,7 +139,7 @@ void STKConnManager<GO>::buildLocalElementMapping()
       std::string blockId = *idItr;
 
       // grab elements on this block
-      std::vector<stk_classic::mesh::Entity*> blockElmts;
+      std::vector<stk::mesh::Entity> blockElmts;
       stkMeshDB_->getNeighborElements(blockId,blockElmts); 
 
       // concatenate them into element LID lookup table
@@ -205,29 +205,31 @@ void STKConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & fp
 
 template <typename GO>
 typename STKConnManager<GO>::LocalOrdinal STKConnManager<GO>::addSubcellConnectivities(
-             stk_classic::mesh::Entity * element,unsigned subcellRank,LocalOrdinal idCnt,GlobalOrdinal offset)
+             stk::mesh::Entity element,unsigned subcellRank,LocalOrdinal idCnt,GlobalOrdinal offset)
 {
    if(idCnt<=0) 
       return 0 ;
 
    // loop over all relations of specified type
    LocalOrdinal numIds = 0;
-   stk_classic::mesh::PairIterRelation relations = element->relations(subcellRank);
-   for(std::size_t sc=0;sc<relations.size();++sc) {
-      stk_classic::mesh::Entity * subcell = relations[sc].entity();
+   stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
+   const stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>(subcellRank);
+   const size_t num_rels = bulkData.num_connectivity(element, rank);
+   stk::mesh::Entity const* relations = bulkData.begin(element, rank);
+   for(std::size_t sc=0; sc<num_rels; ++sc) {
+     stk::mesh::Entity subcell = relations[sc];
 
-      // add connectivities: adjust for STK indexing craziness
-      for(LocalOrdinal i=0;i<idCnt;i++) 
-         connectivity_.push_back(offset+idCnt*(subcell->identifier()-1)+i);
+     // add connectivities: adjust for STK indexing craziness
+     for(LocalOrdinal i=0;i<idCnt;i++)
+       connectivity_.push_back(offset+idCnt*(bulkData.identifier(subcell)-1)+i);
 
-      numIds += idCnt;
+     numIds += idCnt;
    }
-
    return numIds;
 }
 
 template <typename GO>
-void STKConnManager<GO>::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk_classic::mesh::Entity * element,
+void STKConnManager<GO>::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity element,
                                                  unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,
                                                  GlobalOrdinal offset)
 {
@@ -244,6 +246,8 @@ void STKConnManager<GO>::modifySubcellConnectivities(const panzer::FieldPattern 
 template <typename GO>
 void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
 {
+   stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
+
    // get element info from STK_Interface
    // object and build a local element mapping.
    buildLocalElementMapping();
@@ -265,7 +269,7 @@ void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
    // loop over elements and build global connectivity 
    for(std::size_t elmtLid=0;elmtLid!=elements_->size();++elmtLid) {
       GlobalOrdinal numIds = 0;
-      stk_classic::mesh::Entity * element = (*elements_)[elmtLid];
+      stk::mesh::Entity element = (*elements_)[elmtLid];
 
       // get index into connectivity array
       elmtLidToConn_[elmtLid] = connectivity_.size();
@@ -279,7 +283,7 @@ void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
       if(cellIdCnt>0) {
          // add connectivities: adjust for STK indexing craziness
          for(LocalOrdinal i=0;i<cellIdCnt;i++) 
-            connectivity_.push_back(cellOffset+cellIdCnt*(element->identifier()-1));
+            connectivity_.push_back(cellOffset+cellIdCnt*(bulkData.identifier(element)-1));
       
          numIds += cellIdCnt;
       }
@@ -300,7 +304,7 @@ template <typename GO>
 std::string STKConnManager<GO>::getBlockId(STKConnManager::LocalOrdinal localElmtId) const
 {
    // walk through the element blocks and figure out which this ID belongs to
-   stk_classic::mesh::Entity * element = (*elements_)[localElmtId];
+   stk::mesh::Entity element = (*elements_)[localElmtId];
 
    return stkMeshDB_->containingBlockId(element);
 }
@@ -324,10 +328,10 @@ void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, Glob
    if(matchedNodes==Teuchos::null) return;
 
    for(std::size_t m=0;m<matchedNodes->size();m++) {
-      stk_classic::mesh::EntityId oldNodeId = (*matchedNodes)[m].first;
+      stk::mesh::EntityId oldNodeId = (*matchedNodes)[m].first;
       std::size_t newNodeId = (*matchedNodes)[m].second;
 
-      std::vector<stk_classic::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       std::vector<int> localIds;
 
       GlobalOrdinal offset0 = 0; // to make numbering consistent with that in PeriodicBC_Matcher
@@ -388,8 +392,8 @@ void STKConnManager<GO>::associateElementsInSideset(const std::string sideset_id
 }
 
 inline std::size_t
-getElementIdx(const std::vector<stk_classic::mesh::Entity*>& elements,
-              const stk_classic::mesh::Entity* const e)
+getElementIdx(const std::vector<stk::mesh::Entity>& elements,
+              stk::mesh::Entity const e)
 {
   return static_cast<std::size_t>(
     std::distance(elements.begin(), std::find(elements.begin(), elements.end(), e)));
@@ -398,25 +402,26 @@ getElementIdx(const std::vector<stk_classic::mesh::Entity*>& elements,
 template <typename GO>
 void STKConnManager<GO>::applyInterfaceConditions()
 {  
+  stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
   elmtToAssociatedElmts_.resize(elements_->size());
   for (std::size_t i = 0; i < sidesetsToAssociate_.size(); ++i) {
-    std::vector<stk_classic::mesh::Entity*> sides;
+    std::vector<stk::mesh::Entity> sides;
     stkMeshDB_->getAllSides(sidesetsToAssociate_[i], sides);
     sidesetYieldedAssociations_[i] = ! sides.empty();
-    for (std::vector<stk_classic::mesh::Entity*>::const_iterator si = sides.begin();
+    for (std::vector<stk::mesh::Entity>::const_iterator si = sides.begin();
          si != sides.end(); ++si) {
-      const stk_classic::mesh::Entity* const side = *si;
-      const stk_classic::mesh::PairIterRelation
-        relations = side->relations(stkMeshDB_->getElementRank());
-      if (relations.size() != 2) {
+      stk::mesh::Entity side = *si;
+      const size_t num_elements = bulkData.num_elements(side);
+      stk::mesh::Entity const* elements = bulkData.begin_elements(side);
+      if (num_elements != 2) {
         // If relations.size() != 2 for one side in the sideset, then it's true
         // for all, including the first.
         TEUCHOS_ASSERT(si == sides.begin());
         sidesetYieldedAssociations_[i] = false;
         break;
       }
-      const std::size_t ea_id = getElementIdx(*elements_, relations[0].entity()),
-        eb_id = getElementIdx(*elements_, relations[1].entity());
+      const std::size_t ea_id = getElementIdx(*elements_, elements[0]),
+        eb_id = getElementIdx(*elements_, elements[1]);
       elmtToAssociatedElmts_[ea_id].push_back(eb_id);
       elmtToAssociatedElmts_[eb_id].push_back(ea_id);
     }

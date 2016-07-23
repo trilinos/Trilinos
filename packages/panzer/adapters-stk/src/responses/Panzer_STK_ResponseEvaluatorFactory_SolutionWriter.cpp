@@ -47,4 +47,4 @@
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer_stk_classic::ResponseEvaluatorFactory_SolutionWriter)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer_stk::ResponseEvaluatorFactory_SolutionWriter)

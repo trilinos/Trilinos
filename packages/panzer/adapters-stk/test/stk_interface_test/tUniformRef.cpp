@@ -83,12 +83,12 @@
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 /*
 TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)
 {
-   typedef stk_classic::mesh::Field<int> ProcIdFieldType;
+   typedef stk::mesh::Field<int> ProcIdFieldType;
 
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -105,22 +105,22 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)
    RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
    // Step 1: Build Percept data structures and pattern
-   stk_classic::mesh::fem::FEMMetaData * metaData = &*mesh->getMetaData();
+   stk::mesh::MetaData * metaData = &*mesh->getMetaData();
 
    mesh->instantiateBulkData(MPI_COMM_WORLD);
 
-   stk_classic::mesh::BulkData * bulkData = &*mesh->getBulkData();
+   stk::mesh::BulkData * bulkData = &*mesh->getBulkData();
 
-   stk_classic::percept::PerceptMesh perceptMesh(metaData,bulkData,false);
+   stk::percept::PerceptMesh perceptMesh(metaData,bulkData,false);
     
    const std::string refine="DEFAULT";
    const std::string enrich="";
    const std::string convert="";
    
-   stk_classic::adapt::BlockNamesType block_names;
+   stk::adapt::BlockNamesType block_names;
    
-   Teuchos::RCP<stk_classic::adapt::UniformRefinerPatternBase> uniformRefinePattern
-      = stk_classic::adapt::UniformRefinerPatternBase::createPattern(refine, 
+   Teuchos::RCP<stk::adapt::UniformRefinerPatternBase> uniformRefinePattern
+      = stk::adapt::UniformRefinerPatternBase::createPattern(refine, 
                                                              enrich, 
                                                              convert, 
                                                              perceptMesh, 
@@ -134,14 +134,14 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)
 
    // Step 2: Do uniform refinement
 
-   stk_classic::adapt::UniformRefiner breaker(perceptMesh, *uniformRefinePattern, mesh->getProcessorIdField());
+   stk::adapt::UniformRefiner breaker(perceptMesh, *uniformRefinePattern, mesh->getProcessorIdField());
    breaker.setDoProgressMeter(true);
 
    int num_uniform_refines = 2;
    for (int iBreak = 0; iBreak < num_uniform_refines; iBreak++) {
      out << "  ref level " << iBreak +1 << std::endl;
      breaker.doBreak();   
-     stk_classic::adapt::RefinementInfoByType::printTable(
+     stk::adapt::RefinementInfoByType::printTable(
        out, 
        breaker.getRefinementInfoByType(), 
        iBreak , 
@@ -156,7 +156,7 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)
 
 TEUCHOS_UNIT_TEST(tUniformRef, stk_exodus)
 {
-   typedef stk_classic::mesh::Field<int> ProcIdFieldType;
+   typedef stk::mesh::Field<int> ProcIdFieldType;
 
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -170,22 +170,22 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_exodus)
    RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
    // Step 1: Build Percept data structures and pattern
-   stk_classic::mesh::fem::FEMMetaData * metaData = &*mesh->getMetaData();
+   stk::mesh::MetaData * metaData = &*mesh->getMetaData();
 
    mesh->instantiateBulkData(MPI_COMM_WORLD);
 
-   stk_classic::mesh::BulkData * bulkData = &*mesh->getBulkData();
+   stk::mesh::BulkData * bulkData = &*mesh->getBulkData();
 
-   stk_classic::percept::PerceptMesh perceptMesh(metaData,bulkData,false);
+   stk::percept::PerceptMesh perceptMesh(metaData,bulkData,false);
     
    const std::string refine="DEFAULT";
    const std::string enrich="";
    const std::string convert="";
    
-   stk_classic::adapt::BlockNamesType block_names;
+   stk::adapt::BlockNamesType block_names;
    
-   Teuchos::RCP<stk_classic::adapt::UniformRefinerPatternBase> uniformRefinePattern
-      = stk_classic::adapt::UniformRefinerPatternBase::createPattern(refine, 
+   Teuchos::RCP<stk::adapt::UniformRefinerPatternBase> uniformRefinePattern
+      = stk::adapt::UniformRefinerPatternBase::createPattern(refine, 
                                                              enrich, 
                                                              convert, 
                                                              perceptMesh, 
@@ -199,14 +199,14 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_exodus)
 
    // Step 2: Do uniform refinement
 
-   stk_classic::adapt::UniformRefiner breaker(perceptMesh, *uniformRefinePattern, mesh->getProcessorIdField());
+   stk::adapt::UniformRefiner breaker(perceptMesh, *uniformRefinePattern, mesh->getProcessorIdField());
    breaker.setDoProgressMeter(true);
 
    int num_uniform_refines = 2;
    for (int iBreak = 0; iBreak < num_uniform_refines; iBreak++) {
      out << "  ref level " << iBreak +1 << std::endl;
      breaker.doBreak();   
-     stk_classic::adapt::RefinementInfoByType::printTable(
+     stk::adapt::RefinementInfoByType::printTable(
        out, 
        breaker.getRefinementInfoByType(), 
        iBreak , 

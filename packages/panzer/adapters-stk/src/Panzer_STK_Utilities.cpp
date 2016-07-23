@@ -49,9 +49,9 @@
 
 #include "Panzer_DOFManagerFEI.hpp"
 
-#include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 template <typename GlobalOrdinal>
 static void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,
@@ -65,10 +65,10 @@ void scatter_to_vector(const std::string & blockId, const panzer::DOFManagerFEI<
                        Epetra_Vector & x);
 #endif
 
-static void build_local_ids(const panzer_stk_classic::STK_Interface & mesh,
+static void build_local_ids(const panzer_stk::STK_Interface & mesh,
                             std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds);
 
-void write_cell_data(panzer_stk_classic::STK_Interface & mesh,const std::vector<double> & data,const std::string & fieldName)
+void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> & data,const std::string & fieldName)
 {
    std::vector<std::string> blocks;
    mesh.getElementBlockNames(blocks);
@@ -76,15 +76,15 @@ void write_cell_data(panzer_stk_classic::STK_Interface & mesh,const std::vector<
    // loop over element blocks
    for(std::size_t eb=0;eb<blocks.size();eb++) {
       const std::string & blockId = blocks[eb];
-      panzer_stk_classic::STK_Interface::SolutionFieldType * field = mesh.getCellField(fieldName,blockId);
+      panzer_stk::STK_Interface::SolutionFieldType * field = mesh.getCellField(fieldName,blockId);
 
-      std::vector<stk_classic::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh.getMyElements(blockId,elements);
 
       // loop over elements in this block
       for(std::size_t el=0;el<elements.size();el++) {
          std::size_t localId = mesh.elementLocalId(elements[el]);
-         double * solnData = stk_classic::mesh::field_data(*field,*elements[el]);
+         double * solnData = stk::mesh::field_data(*field,elements[el]);
          TEUCHOS_ASSERT(solnData!=0); // sanity check
          solnData[0] = data[localId];
       }
@@ -92,20 +92,20 @@ void write_cell_data(panzer_stk_classic::STK_Interface & mesh,const std::vector<
 }
 
 template <typename GlobalOrdinal>
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix)
 {
    write_solution_data(dofMngr,mesh,*x(0),prefix,postfix);
 }
 
 template 
-void write_solution_data<int>(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix);
+void write_solution_data<int>(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix);
 #ifdef PANZER_HAVE_LONG_LONG_INT
 template
-void write_solution_data<panzer::Ordinal64>(const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix);
+void write_solution_data<panzer::Ordinal64>(const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix);
 #endif
 
 template <typename GlobalOrdinal>
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
 {
    typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
@@ -132,19 +132,19 @@ void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & 
 }
 
 template
-void write_solution_data<int>(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix);
+void write_solution_data<int>(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix);
 #ifdef PANZER_HAVE_LONG_LONG_INT
 template
-void write_solution_data<panzer::Ordinal64>(const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix);
+void write_solution_data<panzer::Ordinal64>(const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix);
 #endif
 
 #ifdef PANZER_HAVE_FEI
-void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk_classic::STK_Interface & mesh,Epetra_MultiVector & x)
+void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_MultiVector & x)
 {
    read_solution_data(dofMngr,mesh,*x(0));
 }
 
-void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk_classic::STK_Interface & mesh,Epetra_Vector & x)
+void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_Vector & x)
 {
    typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
@@ -250,7 +250,7 @@ void scatter_to_vector(const std::string & blockId, const panzer::DOFManagerFEI<
 }
 #endif
 
-void build_local_ids(const panzer_stk_classic::STK_Interface & mesh,
+void build_local_ids(const panzer_stk::STK_Interface & mesh,
                    std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds)
 {
    // defines ordering of blocks
@@ -265,10 +265,10 @@ void build_local_ids(const panzer_stk_classic::STK_Interface & mesh,
       std::vector<std::size_t> & localBlockIds = *localIds[blockId];
 
       // grab elements on this block
-      std::vector<stk_classic::mesh::Entity*> blockElmts;
+      std::vector<stk::mesh::Entity> blockElmts;
       mesh.getMyElements(blockId,blockElmts);
 
-      std::vector<stk_classic::mesh::Entity*>::const_iterator itr;
+      std::vector<stk::mesh::Entity>::const_iterator itr;
       for(itr=blockElmts.begin();itr!=blockElmts.end();++itr)
          localBlockIds.push_back(mesh.elementLocalId(*itr));
 

@@ -50,7 +50,7 @@ using Teuchos::rcp;
 
 
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 SculptMeshFactory::SculptMeshFactory()
 {
@@ -63,7 +63,7 @@ SculptMeshFactory::~SculptMeshFactory()
 }
 
 //! Build the mesh object
-Teuchos::RCP<STK_Interface> SculptMeshFactory::buildMesh(stk_classic::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> SculptMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::SculptMeshFactory::buildMesh()");
 
@@ -81,14 +81,14 @@ Teuchos::RCP<STK_Interface> SculptMeshFactory::buildMesh(stk_classic::ParallelMa
    return mesh;
 }
 
-Teuchos::RCP<STK_Interface> SculptMeshFactory::buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> SculptMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::SculptMeshFactory::buildUncomittedMesh()");
 
    RCP<STK_Interface> mesh = rcp(new STK_Interface(3));
 
-   machRank_ = stk_classic::parallel_machine_rank(parallelMach);
-   machSize_ = stk_classic::parallel_machine_size(parallelMach);
+   machRank_ = stk::parallel_machine_rank(parallelMach);
+   machSize_ = stk::parallel_machine_size(parallelMach);
 
    procTuple_ = procRankToProcTuple(machRank_);
 
@@ -144,7 +144,7 @@ int SculptMeshFactory::writeDiatomFile( std::string stl_path, std::string stl_fi
   return 1;
 
 }
-int SculptMeshFactory::callSculptor(stk_classic::ParallelMachine parallelMach, char *diatom_file_name ) const 
+int SculptMeshFactory::callSculptor(stk::ParallelMachine parallelMach, char *diatom_file_name ) const 
 {
 
   char * base_exodus_file_name = NULL;
@@ -227,7 +227,7 @@ int SculptMeshFactory::callSculptor(stk_classic::ParallelMachine parallelMach, c
   return 0;
 }
 
-void SculptMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const
+void SculptMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::SculptMeshFactory::completeMeshConstruction()");
 
@@ -314,7 +314,7 @@ void SculptMeshFactory::initializeWithDefaults()
    
 }
 
-void SculptMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach, STK_Interface & mesh) const
+void SculptMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
 {
    struct MeshStorageStruct *mss = get_sculpt_mesh();
 
@@ -339,7 +339,7 @@ void SculptMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach,
 
    // add sidesets 
      int side_set_id;
-     machRank_ = stk_classic::parallel_machine_rank(parallelMach); 
+     machRank_ = stk::parallel_machine_rank(parallelMach); 
      for(int ict = 0;ict < nSidesets_;ict ++){
         std::stringstream sPostfix;
         sPostfix << "-" << mss->side_set_id[ict];
@@ -355,7 +355,7 @@ void SculptMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach,
 
 }
 
-void SculptMeshFactory::buildNodes( stk_classic::ParallelMachine paralleMach, STK_Interface &mesh ) const
+void SculptMeshFactory::buildNodes( stk::ParallelMachine paralleMach, STK_Interface &mesh ) const
 {
    struct MeshStorageStruct *mss = get_sculpt_mesh();
    int num_nodes = mss->num_nodes;
@@ -381,7 +381,7 @@ void SculptMeshFactory::buildNodes( stk_classic::ParallelMachine paralleMach, ST
 
 } 
 
-void SculptMeshFactory::buildElements(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const
+void SculptMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
 {
    struct MeshStorageStruct *mss = get_sculpt_mesh();
    int num_blocks  = mss->num_elem_blk;
@@ -413,7 +413,7 @@ void SculptMeshFactory::buildElements(stk_classic::ParallelMachine parallelMach,
    mesh.endModification();
 }
 
-void SculptMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh, int block_index, int *block_id, int elm_start, int *elements, int *nodes_per_element, int *elem_attributes, int **elmt_node_linkage ) const
+void SculptMeshFactory::buildBlock(stk::ParallelMachine parallelMach,STK_Interface & mesh, int block_index, int *block_id, int elm_start, int *elements, int *nodes_per_element, int *elem_attributes, int **elmt_node_linkage ) const
 {
 
   struct MeshStorageStruct *mss = get_sculpt_mesh();
@@ -421,7 +421,7 @@ void SculptMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,STK
    // add blocks     
    std::stringstream blockName;
    blockName << "eblock-" << block_id[block_index];
-   stk_classic::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
+   stk::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
 
 
    buildNodes( parallelMach, mesh );
@@ -433,7 +433,7 @@ void SculptMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,STK
        int maximum_nodes = elements[block_index] * nodes_per_element[block_index];
        elmt_node_linkage[block_index]        = new int[maximum_nodes];
        for(int ict = 0;ict < elements[block_index]; ict ++){
-         std::vector<stk_classic::mesh::EntityId> nodes(nodes_per_element[block_index]);
+         std::vector<stk::mesh::EntityId> nodes(nodes_per_element[block_index]);
          //std::cout<<"Element id = "<<elm_start+ ict<<std::endl;
          //std::cout<<"Element global id = "<<mss->global_element_numbers[elm_start+ ict-1]<<std::endl;
          for(int nct = 0; nct < nodes_per_element[block_index]; nct++){
@@ -443,7 +443,7 @@ void SculptMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,STK
             //std::cout<<" Node global  id = "<<nodes[nct]<<std::endl;
          }
 
-         stk_classic::mesh::EntityId gid = mss->global_element_numbers[elm_start+ ict-1];
+         stk::mesh::EntityId gid = mss->global_element_numbers[elm_start+ ict-1];
          RCP<ElementDescriptor> ed = rcp(new ElementDescriptor(gid,nodes));
          mesh.addElement(ed,block);
        }
@@ -453,7 +453,7 @@ void SculptMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,STK
      }
 }
 
-const stk_classic::mesh::Relation * SculptMeshFactory::getRelationByID(unsigned ID,stk_classic::mesh::PairIterRelation relations) const
+const stk::mesh::Relation * SculptMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
 {
    for(std::size_t i=0;i<relations.size();i++) 
       if(relations[i].identifier()==ID)
@@ -490,7 +490,7 @@ void SculptMeshFactory::addSideSets(STK_Interface & mesh) const
      
       std::stringstream sidesetName;
       sidesetName << "Sideset-" << mss->side_set_id[i];
-      stk_classic::mesh::Part * sideset = mesh.getSideset(sidesetName.str());
+      stk::mesh::Part * sideset = mesh.getSideset(sidesetName.str());
 
 
       num_elements_in_side_set[i] = mss->num_elements_in_side_set[i];
@@ -508,27 +508,27 @@ void SculptMeshFactory::addSideSets(STK_Interface & mesh) const
 
         for(int nct = 0; nct < ne; nct ++){
 
-          std::vector<stk_classic::mesh::EntityId> nodes(4);
+          std::vector<stk::mesh::EntityId> nodes(4);
 
           int sculpt_elem_id =  mss->global_element_numbers[ mss->side_set_elements[i][nct]-1 ]; 
           int sculpt_face_id = -1 ;
 
-          std::vector<stk_classic::mesh::Entity*> localElmts;
+          std::vector<stk::mesh::Entity> localElmts;
           mesh.getMyElements(localElmts);
 
-          std::vector<stk_classic::mesh::Entity*>::const_iterator itr;
+          std::vector<stk::mesh::Entity>::const_iterator itr;
           for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-            stk_classic::mesh::Entity * element = (*itr);
+            stk::mesh::Entity element = (*itr);
 
             if( element->identifier() == sculpt_elem_id )
             { 
               sculpt_face_id =  mss->side_set_faces[i][nct];
 
-              stk_classic::mesh::EntityId gid = element->identifier();
+              stk::mesh::EntityId gid = element->identifier();
  
-              stk_classic::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
+              stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
 
-              stk_classic::mesh::Entity * side = getRelationByID(sculpt_face_id-1,relations)->entity();
+              stk::mesh::Entity side = getRelationByID(sculpt_face_id-1,relations)->entity();
  
               if( side != NULL )
               {
@@ -582,15 +582,15 @@ void SculptMeshFactory::addNodeSets(STK_Interface & mesh) const
     
         std::stringstream nodesetName;
         nodesetName << "Nodeset-" << mss->node_set_id[i];
-        stk_classic::mesh::Part * nodeset = mesh.getNodeset(nodesetName.str());
+        stk::mesh::Part * nodeset = mesh.getNodeset(nodesetName.str());
 
         for( int j = 0; j < num_nodes_in_node_set[i]; j++ )
         {
            int node_id = node_set_nodes[i][j];
-           Teuchos::RCP<stk_classic::mesh::BulkData> bulkData = mesh.getBulkData();
+           Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
            if(machRank_==0)
            {  
-              stk_classic::mesh::Entity * node = bulkData->get_entity(mesh.getNodeRank(),node_id);
+              stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),node_id);
               mesh.addEntityToNodeset(*node, nodeset);
            }
         }

@@ -72,7 +72,7 @@
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
 #endif
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 namespace {
 
@@ -202,7 +202,7 @@ namespace {
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
+                   const Teuchos::RCP<panzer_stk::STKConnManager<GO> > & stkConn_manager,
                    int spatialDim,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                    const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
@@ -252,8 +252,8 @@ namespace {
           std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns;
           fillFieldPatternMap(*globalIndexer,fieldName,fieldPatterns);
 
-          Teuchos::RCP<panzer_stk_classic::ParameterListCallback<int,GO> > callback = Teuchos::rcp(new
-                panzer_stk_classic::ParameterListCallback<int,GO>(fieldName,fieldPatterns,stkConn_manager,
+          Teuchos::RCP<panzer_stk::ParameterListCallback<int,GO> > callback = Teuchos::rcp(new
+                panzer_stk::ParameterListCallback<int,GO>(fieldName,fieldPatterns,stkConn_manager,
                 Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,GO> >(globalIndexer)));
           reqHandler_local->addRequestCallback(callback);
 
@@ -346,8 +346,8 @@ namespace {
        if(determineCoordinateField(*globalIndexer,fieldName)) {
           Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
-          Teuchos::RCP<panzer_stk_classic::ParameterListCallbackBlocked<int,GO> > callback =
-                Teuchos::rcp(new panzer_stk_classic::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs));
+          Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<int,GO> > callback =
+                Teuchos::rcp(new panzer_stk::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs));
           reqHandler_local->addRequestCallback(callback);
        }
 
@@ -368,7 +368,7 @@ namespace {
 
             std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns;
             fillFieldPatternMap(*dofVec[i],fieldName,fieldPatterns);
-            panzer_stk_classic::ParameterListCallback<int,GO> plCall(fieldName,fieldPatterns,stkConn_manager,dofVec[i]);
+            panzer_stk::ParameterListCallback<int,GO> plCall(fieldName,fieldPatterns,stkConn_manager,dofVec[i]);
             plCall.buildArrayToVector();
             plCall.buildCoordinates();
 
