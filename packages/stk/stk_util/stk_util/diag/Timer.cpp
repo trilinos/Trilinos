@@ -253,10 +253,6 @@ public:
   /**
    * Member function <b>shouldRecord</b> returns true if any of the specified timer
    * bit masks are set in the enable timer bit mask.
-   *
-   * @param timer_mask    a <b>TimerMask</b> value to test the enable timer
-   *        bit mask against.
-   *
    */
   bool shouldRecord() const {
     return m_timerSet.shouldRecord(m_timerMask) && s_enabledMetricsMask;
@@ -265,8 +261,7 @@ public:
   /**
    * Member function <b>getSubtimerLapCount</b> returns the subtimer lap counter.
    *
-   * @return      a <b>Counter</b> value of the subtimer lap
-   *        counter.
+   * @return      a <b>Counter</b> value of the subtimer lap counter.
    */
   double getSubtimerLapCount() const {
     return m_subtimerLapCount;

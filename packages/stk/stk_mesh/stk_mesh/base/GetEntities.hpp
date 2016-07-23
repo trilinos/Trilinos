@@ -55,10 +55,6 @@ namespace mesh {
 //----------------------------------------------------------------------
 
 /** \brief  Local count selected entities of each type.
- *
- * \param selector
- * \param mesh
- * \param count
  */
 void count_entities( const Selector & selector ,
                      const BulkData & mesh ,
