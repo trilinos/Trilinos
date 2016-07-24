@@ -415,14 +415,18 @@ namespace Tpetra {
     //! The type of the Kokkos Node.
     typedef Node node_type;
 
+    //! The Kokkos execution space.
+    typedef typename Node::execution_space execution_space;
+    //! The Kokkos memory space.
+    typedef typename Node::memory_space memory_space;
+
     /// \brief The Kokkos device type over which to allocate Views and
     ///   perform work.
     ///
     /// A Kokkos::Device is an (execution_space, memory_space) pair.
     /// It defines where the Map's data live, and where Map might
     /// choose to execute parallel kernels.
-    typedef typename Kokkos::Device<typename Node::execution_space,
-                                    typename Node::memory_space> device_type;
+    typedef typename Node::device_type device_type;
 
     /// \brief Type of the "local" Map.
     ///
