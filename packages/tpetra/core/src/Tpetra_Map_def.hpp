@@ -59,7 +59,7 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map () :
     comm_ (new Teuchos::SerialComm<int> ()),
-    node_ (KokkosClassic::Details::getNode<Node> ()),
+    node_ (defaultArgNode<Node> ()),
     indexBase_ (0),
     numGlobalElements_ (0),
     numLocalElements_ (0),
