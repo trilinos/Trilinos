@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     Kokkos::initialize(init_args);
     Kokkos::OpenMP::print_configuration( std::cout );
 #else
-    Kokkos::initialize();
+    Kokkos::initialize(argc, argv);
 #endif
 
     testing::InitGoogleTest(&argc, argv);
