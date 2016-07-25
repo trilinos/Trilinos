@@ -142,9 +142,9 @@ public:
 
   explicit Node(Opcode opcode)
     : m_opcode(opcode),
-      m_left(0),
-      m_right(0),
-      m_other(0)
+      m_left(nullptr),
+      m_right(nullptr),
+      m_other(nullptr)
   {
       m_data.function.undefinedFunction = false;
       for(unsigned i=0; i<MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES; ++i)
