@@ -848,7 +848,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(ThyraBlockedOperator, ReorderBlockOperator2Thy
 
   Teuchos::ArrayRCP<const Scalar> xdata = xres->getData(0);
   bool bCheck = true;
-  for(int i=0; i<xres->getLocalLength(); i++) {
+  for(int i=0; i<Teuchos::as<int>(xres->getLocalLength()); i++) {
     if (i>=0  && i< 160) { if(xdata[i] != (Scalar) 7.0){ std::cout << i << " " << xdata[i] << std::endl; bCheck = false; }}
     if (i>=160 && i< 180) { if(xdata[i] != (Scalar) 4.0){std::cout << i << " " << xdata[i] << std::endl; bCheck = false; }}
     if (i>=180 && i< 190) { if(xdata[i] != (Scalar) 3.0){std::cout << i << " " << xdata[i] << std::endl; bCheck = false; }}

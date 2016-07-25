@@ -248,7 +248,7 @@ Teuchos::RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   // fill multivector data (first multivector contains the GID, the second the LID as scalar)
   Teuchos::ArrayRCP< Scalar > vv1 = vv->getDataNonConst(0);
   Teuchos::ArrayRCP< Scalar > vv2 = vv->getDataNonConst(1);
-  for(LocalOrdinal i = 0; i < vv->getLocalLength(); ++i) {
+  for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(vv->getLocalLength()); ++i) {
     vv1[i] = Teuchos::as<Scalar>(vv->getMap()->getGlobalElement(i));
     vv2[i] = Teuchos::as<Scalar>(i);
   }
