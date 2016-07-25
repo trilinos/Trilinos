@@ -86,6 +86,13 @@ class MatrixMatrix {
            to allow this function to call C.FillComplete, in cases where
            one or both of the input matrices are rectangular and it is not
            trivial to know which maps to use for the domain- and range-maps.)
+    @param keep_all_hard_zeros Optional argument, defaults to false.
+           If true, Multiply, keeps all entries in C corresponding to hard zeros.  
+	   If false, the following happens by case:
+	   A*B^T, A^T*B^T         - Does not store entries caused by hard zeros in C.
+	   A^T*B (unoptimized)    - Hard zeros are always stored (this option has no effect)
+	   A*B, A^T*B (optimized) - Hard zeros in corresponding to hard zeros in A are not stored,
+	   There are certain cases involving reuse of C, where this can be useful.	  
 
     @return error-code, 0 if successful. non-zero returns may result if A or
              B are not already Filled, or if errors occur in putting values
@@ -96,7 +103,8 @@ class MatrixMatrix {
 			const Epetra_CrsMatrix& B,
 			bool transposeB,
 			Epetra_CrsMatrix& C,
-                        bool call_FillComplete_on_result=true);
+                        bool call_FillComplete_on_result=true,
+			bool keep_all_hard_zeros=false);
 
     /** Given Epetra_CrsMatrix objects A and B, form the sum B = a*A + b*B
 
@@ -188,23 +196,27 @@ class MatrixMatrix {
 		 const Epetra_CrsMatrix & B,
 		 CrsMatrixStruct& Bview,
 		 Epetra_CrsMatrix& C,
-		 bool call_FillComplete_on_result);
+		 bool call_FillComplete_on_result,
+		 bool keep_all_hard_zeros);
 
     static int mult_A_B(const Epetra_CrsMatrix & A,
 		 CrsMatrixStruct & Aview,
 		 const Epetra_CrsMatrix & B,
 		 CrsMatrixStruct& Bview,
 		 Epetra_CrsMatrix& C,
-		 bool call_FillComplete_on_result);
+		 bool call_FillComplete_on_result,
+		 bool keep_all_hard_zeros);
 
     template<typename int_type>
     static int Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, 
-				   const CrsMatrixStruct & Bview, 
-				   Epetra_CrsMatrix & C);
+				    const CrsMatrixStruct & Bview, 
+				    Epetra_CrsMatrix & C,
+				    bool keep_all_hard_zeros);
 
     static int mult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, 
 				   const CrsMatrixStruct & Bview, 
-				   Epetra_CrsMatrix & C);
+				   Epetra_CrsMatrix & C,
+				   bool keep_all_hard_zeros);
 
     template<typename int_type>
     static int TMultiply(const Epetra_CrsMatrix& A,
@@ -212,7 +224,8 @@ class MatrixMatrix {
 			const Epetra_CrsMatrix& B,
 			bool transposeB,
 			Epetra_CrsMatrix& C,
-                        bool call_FillComplete_on_result);
+			bool call_FillComplete_on_result,
+			bool keep_all_hard_zeros);
 
     template<typename int_type>
     static int TAdd(const Epetra_CrsMatrix& A,
