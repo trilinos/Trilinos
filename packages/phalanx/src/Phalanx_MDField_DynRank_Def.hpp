@@ -354,94 +354,21 @@ setFieldData(const PHX::any& a)
 
   using NonConstDataT = typename std::remove_const<DataT>::type;
 
-  //typedef Kokkos::View<typename array_type::non_const_data_type,PHX::Device> non_const_view;
   try {
-    //m_field_data = PHX::any_cast<non_const_view>(a);
-
-    if (m_tag.dataLayout().rank() == 1) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT*,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar > 0)
-        m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-		  								      tmp.extent(0),
-										      Kokkos::dimension_scalar(tmp));
-      else
-        m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-                                                                                      tmp.extent(0));
-
-    }
-    else if (m_tag.dataLayout().rank() == 2) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT**,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 3) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT***,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-      										    tmp.extent(0),
-      										    tmp.extent(1),
-      										    tmp.extent(2),
-      										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 4) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT****,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    tmp.extent(2),
-										    tmp.extent(3),
-										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 5) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT*****,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    tmp.extent(2),
-										    tmp.extent(3),
-										    tmp.extent(4),
-										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 6) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT******,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    tmp.extent(2),
-										    tmp.extent(3),
-										    tmp.extent(4),
-										    tmp.extent(5),
-										    dim_scalar);
-    }
-    else if (m_tag.dataLayout().rank() == 7) {
-      auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT*******,PHX::Device>>(a);
-      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
-      if(dim_scalar == 0) dim_scalar = ~size_t(0);
-
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    tmp.extent(1),
-										    tmp.extent(2),
-										    tmp.extent(3),
-										    tmp.extent(4),
-										    tmp.extent(5),
-										    tmp.extent(6),
-										    dim_scalar);
-    }
+    if (m_tag.dataLayout().rank() == 1)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 2)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT**,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 3)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT***,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 4)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT****,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 5)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*****,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 6)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT******,PHX::Device>>(a);
+    else if (m_tag.dataLayout().rank() == 7)
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*******,PHX::Device>>(a);
     else {
       throw std::runtime_error("ERROR - PHX::MDField::setFieldData (DynRank) - Invalid rank!");
     }

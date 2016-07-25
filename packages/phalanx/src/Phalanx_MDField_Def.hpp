@@ -464,66 +464,7 @@ Kokkos::DynRankView<DataT,PHX::Device>
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 get_view() 
 {
-  uint64_t dim_scalar = Kokkos::dimension_scalar(m_field_data);
-  if(dim_scalar == 0)
-    dim_scalar = ~size_t(0);
-  
-  if (m_field_data.Rank == 1) {
-    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                          m_field_data.extent(0),
-                                                                          dim_scalar);
-  }
-  else if (m_field_data.Rank == 2) {
-    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                          m_field_data.extent(0),
-                                                                          m_field_data.extent(1),
-                                                                          dim_scalar);
-  }
-  else if (m_field_data.Rank == 3) {
-    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                          m_field_data.extent(0),
-                                                                          m_field_data.extent(1),
-                                                                          m_field_data.extent(2),
-                                                                          dim_scalar);
-  }
-  else if (m_field_data.Rank == 4) {
-    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                          m_field_data.extent(0),
-                                                                          m_field_data.extent(1),
-                                                                          m_field_data.extent(2),
-                                                                          m_field_data.extent(3),
-                                                                          dim_scalar);
-  }
-  else if (m_field_data.Rank == 5) {
-    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                          m_field_data.extent(0),
-                                                                          m_field_data.extent(1),
-                                                                          m_field_data.extent(2),
-                                                                          m_field_data.extent(3),
-                                                                          m_field_data.extent(4),
-                                                                          dim_scalar);
-  }
-  else if (m_field_data.Rank == 6) {
-    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                          m_field_data.extent(0),
-                                                                          m_field_data.extent(1),
-                                                                          m_field_data.extent(2),
-                                                                          m_field_data.extent(3),
-                                                                          m_field_data.extent(4),
-                                                                          m_field_data.extent(5),
-                                                                          dim_scalar);
-  }
-
-  // Must be rank 7
-  return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                        m_field_data.extent(0),
-                                                                        m_field_data.extent(1),
-                                                                        m_field_data.extent(2),
-                                                                        m_field_data.extent(3),
-                                                                        m_field_data.extent(4),
-                                                                        m_field_data.extent(5),
-                                                                        m_field_data.extent(6),
-                                                                        dim_scalar);
+  return m_field_data;
 }
 
 //*********************************************************************
@@ -535,66 +476,7 @@ const Kokkos::DynRankView<DataT,PHX::Device>
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 get_view() const
 {
-  uint64_t dim_scalar = Kokkos::dimension_scalar(m_field_data);
-  if(dim_scalar == 0)
-    dim_scalar = ~size_t(0);
-  
-  if (m_field_data.Rank == 1) {
-    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                                m_field_data.extent(0),
-                                                                                dim_scalar);
-  }
-  else if (m_field_data.Rank == 2) {
-    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                                m_field_data.extent(0),
-                                                                                m_field_data.extent(1),
-                                                                                dim_scalar);
-  }
-  else if (m_field_data.Rank == 3) {
-    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                                m_field_data.extent(0),
-                                                                                m_field_data.extent(1),
-                                                                                m_field_data.extent(2),
-                                                                                dim_scalar);
-  }
-  else if (m_field_data.Rank == 4) {
-    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                                m_field_data.extent(0),
-                                                                                m_field_data.extent(1),
-                                                                                m_field_data.extent(2),
-                                                                                m_field_data.extent(3),
-                                                                                dim_scalar);
-  }
-  else if (m_field_data.Rank == 5) {
-    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                                m_field_data.extent(0),
-                                                                                m_field_data.extent(1),
-                                                                                m_field_data.extent(2),
-                                                                                m_field_data.extent(3),
-                                                                                m_field_data.extent(4),
-                                                                                dim_scalar);
-  }
-  else if (m_field_data.Rank == 6) {
-    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                                m_field_data.extent(0),
-                                                                                m_field_data.extent(1),
-                                                                                m_field_data.extent(2),
-                                                                                m_field_data.extent(3),
-                                                                                m_field_data.extent(4),
-                                                                                m_field_data.extent(5),
-                                                                                dim_scalar);
-  }
-
-  // Must be rank 7
-  return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
-                                                                              m_field_data.extent(0),
-                                                                              m_field_data.extent(1),
-                                                                              m_field_data.extent(2),
-                                                                              m_field_data.extent(3),
-                                                                              m_field_data.extent(4),
-                                                                              m_field_data.extent(5),
-                                                                              m_field_data.extent(6),
-                                                                              dim_scalar);
+  return m_field_data;
 }
 
 //*********************************************************************
