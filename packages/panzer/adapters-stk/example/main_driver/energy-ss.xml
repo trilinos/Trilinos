@@ -23,7 +23,7 @@
         </ParameterList>
 
         <ParameterList name="Rebalance">
-          <Parameter name="Enabled" type="bool" value="true"/>
+          <Parameter name="Enabled" type="bool" value="false"/>
         </ParameterList>
 
     </ParameterList>
