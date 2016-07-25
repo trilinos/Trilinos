@@ -53,7 +53,7 @@ IF (TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
   INCLUDE_DIRECTORIES(YamlParameterList)
 ENDIF()
 
-INCLUDE_DIRECTORIES(FacadeClasses)
+INCLUDE_DIRECTORIES(${DIR}/FacadeClasses)
 
 
 ###############################################

@@ -54,8 +54,8 @@
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_FacadeClassBase.hpp"
-#include "MueLu_Facade_Simple_decl.hpp"
-#include "MueLu_Facade_BGS2x2_decl.hpp"
+#include "MueLu_Facade_Simple_def.hpp"
+#include "MueLu_Facade_BGS2x2_def.hpp"
 
 #include "MueLu_FacadeClassFactory_decl.hpp"
 

@@ -56,7 +56,7 @@
 
 namespace MueLu {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class FacadeClassFactory
   : public virtual BaseClass{
 #undef MUELU_FACADECLASSFACTORY_SHORT
