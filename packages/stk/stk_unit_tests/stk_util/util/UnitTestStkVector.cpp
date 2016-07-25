@@ -96,7 +96,7 @@ public:
     }
     size_t num_allocations() const { return numAllocations; }
 protected:
-    virtual Kokkos::View<double*>::HostMirror get_new_vals_of_size(size_t s)
+    virtual DeviceType get_new_vals_of_size(size_t s)
     {
         numAllocations++;
         return stk::Vector<double>::get_new_vals_of_size(s);

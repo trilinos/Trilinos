@@ -118,9 +118,7 @@ struct TeamFunctor
 template <typename Mesh, typename AlgorithmPerEntity>
 void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor)
 {
-    stk::Vector<unsigned> bucketIds("bucketIds");
-    mesh.fill_bucket_ids(rank, selector, bucketIds);
-    bucketIds.copy_host_to_device();
+    stk::Vector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
     unsigned numBuckets = bucketIds.size();
     Kokkos::parallel_for(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO),
                          TeamFunctor<Mesh, AlgorithmPerEntity>(mesh, rank, bucketIds, functor));
@@ -181,15 +179,16 @@ private:
 };
 
 
-inline void fill_bucket_ids(const stk::mesh::BulkData &bulk,
+inline stk::Vector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
                      stk::mesh::EntityRank rank,
-                     const stk::mesh::Selector &selector,
-                     stk::Vector<unsigned> &bucketIds)
+                     const stk::mesh::Selector &selector)
 {
     const stk::mesh::BucketVector &buckets = bulk.get_buckets(rank, selector);
-    bucketIds.resize(buckets.size());
+    stk::Vector<unsigned> bucketIds(buckets.size());
     for(size_t i=0; i<buckets.size(); i++)
         bucketIds[i] = buckets[i]->bucket_id();
+    bucketIds.copy_host_to_device();
+    return bucketIds;
 }
 
 
@@ -217,9 +216,9 @@ public:
         return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
     }
 
-    void fill_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector, stk::Vector<unsigned> &bucketIds)
+    stk::Vector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector)
     {
-        ngp::fill_bucket_ids(bulk, rank, selector, bucketIds);
+        return ngp::get_bucket_ids(bulk, rank, selector);
     }
 
     unsigned num_buckets(stk::mesh::EntityRank rank) const
@@ -403,9 +402,9 @@ public:
         return hostMeshIndices(entity.local_offset());
     }
 
-    void fill_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector, stk::Vector<unsigned> &bucketIds)
+    stk::Vector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector)
     {
-        ngp::fill_bucket_ids(get_bulk_on_host(), rank, selector, bucketIds);
+        return ngp::get_bucket_ids(get_bulk_on_host(), rank, selector);
     }
 
     STK_FUNCTION
