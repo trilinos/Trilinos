@@ -54,9 +54,8 @@ namespace Tpetra {
 namespace Experimental {
 
 /// \class BlockCrsMatrix
-/// \brief Constant block CRS matrix class.
-/// \author Mark Hoemmen
-/// \date 13 Feb 2014, 24 Feb 2014
+/// \brief Sparse matrix whose entries are small dense square blocks,
+///   all of the same dimensions.
 ///
 /// \tparam Scalar The type of the numerical entries of the matrix.
 ///   (You can use real-valued or complex-valued types here, unlike in
@@ -70,25 +69,36 @@ namespace Experimental {
 ///
 /// Please read the documentation of BlockMultiVector first.
 ///
-/// This class stores values associated with the degrees of freedom of
-/// a single mesh point contiguously, in a getBlockSize() by
-/// getBlockSize() block, in row-major format.
+/// This class implements a sparse matrix whose entries are small
+/// dense square blocks, all of the same dimensions.  The intended
+/// application is to store the discretization of a partial
+/// differential equation with multiple degrees of freedom per mesh
+/// point, where all mesh points have the same number of degrees of
+/// freedom.  This class stores values associated with the degrees of
+/// freedom of a single mesh point contiguously, in a getBlockSize()
+/// by getBlockSize() block, in row-major format.  The matrix's graph
+/// represents the mesh points, with one entry per mesh point.  This
+/// saves storage over using a CrsMatrix, which requires one graph
+/// entry per matrix entry.
 ///
-/// Since this class requires a fill-complete Tpetra::CrsGraph for
-/// construction, it has a row and column Map already.  This means
-/// that it only needs to provide access using local indices.  Users
-/// are responsible for converting from global to local indices if
-/// necessary.  Please be aware that the row Map and column Map may
-/// differ, so you may not use local row and column indices
-/// interchangeably.
+/// This class requires a fill-complete Tpetra::CrsGraph for
+/// construction.  Thus, it has a row Map and a column Map already.
+/// As a result, BlockCrsMatrix only needs to provide access using
+/// local indices.  Access using local indices is faster anyway, since
+/// conversion from global to local indices requires a hash table
+/// lookup per index.  Users are responsible for converting from
+/// global to local indices if necessary.  Please be aware that the
+/// row Map and column Map may differ, so you may not use local row
+/// and column indices interchangeably.
 ///
-/// For simplicity, this object only supports local indexing.  It can
-/// do so because both of its constructors require a fill-complete
-/// Tpetra::CrsGraph, which therefore has both a row Map and a column
-/// Map.
+/// We reserve the right to change the block layout in the future.
+/// Best practice is to use this class' little_block_type and
+/// const_little_block_type typedefs to access blocks, since their
+/// types offer access to entries in a layout-independent way.
+/// These two typedefs are both Kokkos::View specializations.
 ///
-/// Here is an example of how to fill into this object using direct
-/// views.
+/// Here is an example of how to fill into this object using
+/// raw-pointer views.
 ///
 /// \code
 /// int err = 0;
@@ -134,28 +144,32 @@ private:
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
 protected:
+  //! Implementation detail; tells
   typedef char packet_type;
 
 public:
   //! \name Public typedefs
   //@{
 
-  //! The type of entries in the matrix.
+  //! The type of entries in the matrix (that is, of each entry in each block).
   typedef Scalar scalar_type;
 
   /// \brief The implementation type of entries in the matrix.
   ///
-  /// Letting scalar_type and impl_scalar_type differ addresses a
-  /// work-around that the new ("Kokkos refactor," as opposed to
-  /// "classic") version of Tpetra uses, to deal with missing device
-  /// macros and volatile overloads in types like std::complex<T>.
+  /// Letting scalar_type and impl_scalar_type differ helps this class
+  /// work correctly for Scalar types like std::complex<T>, which lack
+  /// the necessary CUDA device macros and volatile overloads to work
+  /// correctly with Kokkos.
   typedef typename BlockMultiVector<Scalar, LO, GO, Node>::impl_scalar_type impl_scalar_type;
 
   //! The type of local indices.
   typedef LO local_ordinal_type;
   //! The type of global indices.
   typedef GO global_ordinal_type;
-  //! The Kokkos Node type.
+  /// \brief The Node type.
+  ///
+  /// Prefer device_type, execution_space, and memory_space (see
+  /// below), which relate directly to Kokkos.
   typedef Node node_type;
 
   //! The Kokkos::Device specialization that this class uses.
@@ -165,25 +179,32 @@ public:
   //! The Kokkos memory space that this class uses.
   typedef typename device_type::memory_space memory_space;
 
+  //! The implementation of Map that this class uses.
   typedef ::Tpetra::Map<LO, GO, node_type> map_type;
+  //! The implementation of MultiVector that this class uses.
   typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> mv_type;
+  //! The implementation of CrsGraph that this class uses.
   typedef Tpetra::CrsGraph<LO, GO, node_type> crs_graph_type;
 
+  //! The type used to access nonconst matrix blocks.
   typedef Kokkos::View<impl_scalar_type**,
                        Kokkos::LayoutRight,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_block_type;
+  //! The type used to access const matrix blocks.
   typedef Kokkos::View<const impl_scalar_type**,
                        Kokkos::LayoutRight,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           const_little_block_type;
+  //! The type used to access nonconst vector blocks.
   typedef Kokkos::View<impl_scalar_type*,
                        Kokkos::LayoutRight,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_vec_type;
+  //! The type used to access const vector blocks.
   typedef Kokkos::View<const impl_scalar_type*,
                        Kokkos::LayoutRight,
                        device_type,
