@@ -546,7 +546,6 @@ public:
             }
 
             Kokkos::deep_copy(bucketIndices, hostBucketIndices);
-            constBucketIndices = bucketIndices;
             Kokkos::deep_copy(deviceData, hostData);
             constDeviceData = deviceData;
         }
@@ -629,7 +628,7 @@ private:
     STK_FUNCTION
     unsigned get_index(unsigned bucketId, unsigned bucketOrd) const
     {
-        return get_index(bucketIndices(bucketId), bucketOrd, constNumPerEntity(bucketId));
+        return get_index(bucketIndices(bucketId), bucketOrd, numPerEntity(bucketId));
     }
 
     unsigned get_index_host(unsigned bucketId, unsigned bucketOrd) const
@@ -656,7 +655,6 @@ private:
         }
 
         Kokkos::deep_copy(numPerEntity, hostNumPerEntity);
-        constNumPerEntity = numPerEntity;
     }
 
     void fill_num_per_entity(const stk::mesh::BucketVector& buckets, size_t numAllBuckets, unsigned constNumPer)
@@ -669,7 +667,6 @@ private:
             hostNumPerEntity(buckets[iBucket]->bucket_id()) = constNumPer;
 
         Kokkos::deep_copy(numPerEntity, hostNumPerEntity);
-        constNumPerEntity = numPerEntity;
     }
 
     unsigned compute_alloc_size(const stk::mesh::BucketVector& buckets)
@@ -701,11 +698,9 @@ private:
 
     UnsignedType numPerEntity;
     typename UnsignedType::HostMirror hostNumPerEntity;
-    ConstUnsignedType constNumPerEntity;
 
     UnsignedType bucketIndices;
     typename UnsignedType::HostMirror hostBucketIndices;
-    ConstUnsignedType constBucketIndices;
 
     typename FieldDataType::HostMirror hostData;
     FieldDataType deviceData;
