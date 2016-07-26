@@ -93,7 +93,7 @@ namespace MueLu {
       this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Gauss-Seidel");
       this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
     } else if (smoother1 == "Jacobi") {
-      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Jacobi");
       this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
     } else if (smoother1 == "Direct") {
       this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooDirectFact1");
@@ -111,7 +111,7 @@ namespace MueLu {
       this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
       this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
     } else if (smoother2 == "Jacobi") {
-      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Jacobi");
       this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
     } else if (smoother2 == "Direct") {
       this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooDirectFact2");
