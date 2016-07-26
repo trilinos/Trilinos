@@ -234,8 +234,8 @@ bool run(const UserInputForTests &uinput,
   RCP<basic_id_t> iaRCP = rcp(reinterpret_cast<basic_id_t *>
     (adapters.mainAdapter), true);
 
-  RCP<basic_id_t> coordinateAdapterRCP = rcp(reinterpret_cast<basic_id_t *>
-    (adapters.coordinateAdapter), true);
+  RCP<Zoltan2::VectorAdapter<tMVector_t>> coordinateAdapterRCP = 
+    rcp(adapters.coordinateAdapter, true);
 
   ////////////////////////////////////////////////////////////
   // 2. construct a Zoltan2 problem
@@ -445,6 +445,7 @@ bool run(const UserInputForTests &uinput,
     ////////////////////////////////////////////////////////////
 
     comparison_source->adapter = iaRCP;
+    comparison_source->coordinateAdapterRCP = coordinateAdapterRCP;
     comparison_source->problem = problemRCP;
     comparison_source->metricObject = metricObject;
     comparison_source->problem_kind = (problem_parameters.isParameter("kind") ? 
