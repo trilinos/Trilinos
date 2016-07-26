@@ -170,8 +170,8 @@ double calculate_element_volume(const ngp::StkNgpMesh &ngpMesh,
     for(unsigned i=0; i<numElemNodes; ++i) {
         stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
         for(int j=0; j<3; ++j) {
-//            double val = coords.const_get(nodeIndex, j);
-            double val = coords.get(nodeIndex, j);
+            double val = coords.const_get(nodeIndex, j);
+//            double val = coords.get(nodeIndex, j);
             if (val > max[j])
                 max[j] = val;
             if (val < min[j])
@@ -335,11 +335,8 @@ void expect_nodal_volume(const stk::mesh::BulkData& mesh, stk::mesh::Selector se
                 else {
                     ASSERT_TRUE(false) << "numElemsPerNode = " << numElemsPerNode[i];
                 }
+                EXPECT_NEAR(numRepeat*expectedVolume, nodalVolume[i], 1.e-9);
             }
-            else
-                expectedVolume = 0.0;
-
-            EXPECT_NEAR(numRepeat*expectedVolume, nodalVolume[i], 1.e-9);
         }
     }
 }
@@ -389,7 +386,7 @@ protected:
         elemVolumePerNodeField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::ELEM_RANK, "elemVolumePerNodeField");
         stk::mesh::put_field(*elemVolumePerNodeField, part);
         nodalVolumeField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodal_volume");
-        stk::mesh::put_field(*nodalVolumeField, get_meta().universal_part());
+        stk::mesh::put_field(*nodalVolumeField, part);
         numElemsPerNodeField = &get_meta().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "numElemsPerNode");
         stk::mesh::put_field(*numElemsPerNodeField, part);
         int dim = unitTestUtils::get_command_line_option<int>("-dim", "20");
