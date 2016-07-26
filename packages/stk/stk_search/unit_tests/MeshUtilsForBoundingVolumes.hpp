@@ -483,8 +483,7 @@ inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domai
 
     localJunk tmp;
     tmp.reserve(localResults.size());
-    stk::search::communicateVector< std::pair<Identifier,Identifier>, std::pair<Identifier,Identifier> >(comm, localResults, tmp);
-
+    stk::search::communicateVector(comm, localResults, tmp);
     searchResults=tmp;
     std::sort(searchResults.begin(), searchResults.end());
 }

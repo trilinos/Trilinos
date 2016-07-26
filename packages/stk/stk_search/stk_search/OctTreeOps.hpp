@@ -578,15 +578,14 @@ void communicate(
   }
 }
 
-template <class DomainBoundingBox, class RangeBoundingBox>
+
+template <typename DomainKey, typename RangeKey>
 void communicateVector(
   stk::ParallelMachine arg_comm ,
-  const std::vector< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & send_relation ,
-        std::vector< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & recv_relation ,
+  const std::vector< std::pair< DomainKey, RangeKey> > & send_relation ,
+        std::vector< std::pair< DomainKey, RangeKey> > & recv_relation ,
         bool communicateRangeBoxInfo = true )
 {
-  typedef typename DomainBoundingBox::second_type DomainKey;
-  typedef typename RangeBoundingBox::second_type RangeKey;
   typedef std::pair<DomainKey, RangeKey> ValueType ;
 
   CommAll comm_all( arg_comm );
@@ -645,6 +644,7 @@ void communicateVector(
     }
   }
 }
+
 
 //----------------------------------------------------------------------
 // Partition a search tree among processors
