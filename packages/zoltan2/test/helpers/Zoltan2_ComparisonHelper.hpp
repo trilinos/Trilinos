@@ -84,18 +84,6 @@ class ComparisonSource
 {
   
 public:
-  
-  /*! \brief Destructor.
-   */
-  ~ComparisonSource()
-  {
-    // KDD Why are these deletes here?  Very odd.  Why would we change the 
-    // KDD adapters in the comparison source?
-    if(adapter_kind == "XpetraCrsGraph")
-      delete reinterpret_cast<xcrsGraph_adapter *>(adapter.getRawPtr())->getCoordinateInput();
-    if(adapter_kind == "XpetraCrsMatrix")
-      delete reinterpret_cast<xcrsMatrix_adapter *>(adapter.getRawPtr())->getCoordinateInput();
-  }
   /* \brief Add a timer by name to the comparison sources timers map.
    * \param name is the name of the timer to be defined
    */
@@ -108,6 +96,7 @@ public:
   RCP<Zoltan2::EvaluatePartition<basic_id_t> > metricObject;
   RCP<base_problem_t> problem;
   RCP<basic_id_t> adapter;
+  RCP<basic_id_t> coordinateAdapter;
   string problem_kind;
   string adapter_kind;
   std::map<const std::string, RCP<Time> > timers;
