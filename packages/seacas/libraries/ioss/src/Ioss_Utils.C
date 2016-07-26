@@ -327,6 +327,8 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &            face_is_
 
   face_is_member.reserve(number_sides);
 
+  const ElementTopology *unknown = Ioss::ElementTopology::factory("unknown");
+
   // Topology of faces in this face block...
   const ElementTopology *ftopo = ef_blk->topology();
 
@@ -390,9 +392,11 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &            face_is_
       topo         = block->topology()->boundary_type(side_id);
     }
 
+    bool face_topo_match = ftopo == unknown || topo == ftopo;
+    bool block_topo_match = parent_topo == unknown || block_topo == parent_topo;
     // See if the face topology and the parent element topology for
     // the current face match the topology associated with this face block.
-    if (topo == ftopo && block_topo == parent_topo &&
+    if (face_topo_match && block_topo_match &&
         (parent_block == nullptr || parent_block == block) && !block_is_omitted(block)) {
       // This face/edge  belongs in the face/edge block
       face_is_member.push_back(1);

@@ -1066,6 +1066,13 @@ namespace Iopx {
           if (I != blockOmissions.end()) {
             io_block->property_add(Ioss::Property(std::string("omitted"), 1));
           }
+	  else {
+	    // Try again with the alias...
+	    I = std::find(blockOmissions.begin(), blockOmissions.end(), alias);
+	    if (I != blockOmissions.end()) {
+	      io_block->property_add(Ioss::Property(std::string("omitted"), 1));
+	    }
+	  }
         }
         if (block_name != alias) {
           get_region()->add_alias(block_name, alias);

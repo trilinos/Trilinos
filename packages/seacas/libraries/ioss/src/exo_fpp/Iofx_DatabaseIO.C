@@ -1243,6 +1243,13 @@ namespace Iofx {
         if (I != blockOmissions.end()) {
           block->property_add(Ioss::Property(std::string("omitted"), 1));
         }
+	else {
+	  // Try again with the alias...
+	  I = std::find(blockOmissions.begin(), blockOmissions.end(), alias);
+	  if (I != blockOmissions.end()) {
+	    block->property_add(Ioss::Property(std::string("omitted"), 1));
+	  }
+	}
       }
 
       get_region()->add_alias(block_name, alias);
