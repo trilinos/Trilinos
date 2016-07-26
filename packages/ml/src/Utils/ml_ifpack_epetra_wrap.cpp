@@ -31,6 +31,7 @@
 #endif
 #include "Ifpack_Chebyshev.h"
 #include "Ifpack_BlockRelaxation.h"
+#include <climits>
 
 using namespace ML_Epetra;
 
@@ -122,7 +123,7 @@ namespace ML_Epetra{
       ML_Comm_Create(&comm);
       ML_random_vec(&dseed,1,comm);
       ML_Comm_Destroy(&comm);
-      unsigned int iseed=(unsigned int) dseed;
+      unsigned int iseed=(unsigned int) (dseed*UINT_MAX);
 
       /* Do the eigenvalue estimation*/
       if (EigenType_ == "power-method") Ifpack_Chebyshev::PowerMethod(*A,*InvDiagonal_,MaximumIterations,lambda_max,&iseed);
@@ -348,7 +349,7 @@ namespace ML_Epetra{
       ML_Comm_Create(&comm);
       ML_random_vec(&dseed,1,comm);
       ML_Comm_Destroy(&comm);
-      unsigned int iseed=(unsigned int) dseed;
+      unsigned int iseed=(unsigned int) (dseed*UINT_MAX);
       IFPACKList.get("sora: eigen-analysis: max iters",MaximumIterations);
       IFPACKList.get("sora: eigen-analysis: boost",boost);
       IFPACKList.get("sora: eigen-analysis: random seed",iseed);
