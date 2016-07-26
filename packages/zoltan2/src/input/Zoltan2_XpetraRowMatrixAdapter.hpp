@@ -98,18 +98,18 @@ public:
 
   /*! \brief Constructor   
    *    \param inmatrix The users Epetra, Tpetra, or Xpetra RowMatrix object 
-   *    \param numWeightsPerRow If row weights will be provided in setRowWeights(),
-   *        the set \c numWeightsPerRow to the number of weights per row.
+   *    \param nWeightsPerRow If row weights will be provided in setRowWeights(),
+   *        the set \c nWeightsPerRow to the number of weights per row.
    */
   XpetraRowMatrixAdapter(const RCP<const User> &inmatrix,
-                         int numWeightsPerRow=0);
+                         int nWeightsPerRow=0);
 
   /*! \brief Specify a weight for each entity of the primaryEntityType.
    *    \param weightVal A pointer to the weights for this index.
    *    \stride          A stride to be used in reading the values.  The
    *        index \c idx weight for entity \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param idx  A value between zero and one less that the \c numWeightsPerRow 
+   *    \param idx  A value between zero and one less that the \c nWeightsPerRow 
    *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of the primary 
@@ -123,7 +123,7 @@ public:
    *    \stride          A stride to be used in reading the values.  The
    *        index \c idx weight for row \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param idx  A value between zero and one less that the \c numWeightsPerRow 
+   *    \param idx  A value between zero and one less that the \c nWeightsPerRow 
    *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of rows
