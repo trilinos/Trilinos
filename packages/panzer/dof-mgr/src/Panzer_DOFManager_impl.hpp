@@ -966,8 +966,6 @@ Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
 DOFManager<LO,GO>::
 buildOverlapMapFromElements(const ElementBlockAccess & access) const
 {
-  typedef panzer::TpetraNodeType Node;
-
   /*
    * 2.  Iterate through all local elements and create the overlapVector
    *     of concerned elements.

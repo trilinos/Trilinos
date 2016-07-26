@@ -426,7 +426,7 @@ GatherSolution_BlockedTpetra(
   const Teuchos::ParameterList& p)
   : gidIndexer_(indexer)
 {
-  typedef std::vector< std::vector<std::string> > vvstring;
+  // typedef std::vector< std::vector<std::string> > vvstring;
 
   GatherSolution_Input input;
   input.setParameterList(p);

@@ -175,8 +175,6 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              LinearObjContainer & ghostedObjs,
                              bool zeroVectorRows, bool adjustX) const
 {
-   typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
-
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
    using Thyra::LinearOpBase;
