@@ -43,6 +43,8 @@
 #include <set>
 #include <stdexcept>
 #include <cctype>
+#include <sstream>
+
 
 #include <stk_util/util/string_case_compare.hpp>
 
@@ -82,9 +84,11 @@ public:
   Variable()
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
+      m_size(1),
       m_doublePtr(&m_doubleValue),
       m_doubleValue(0.0)
-  {}
+  {
+  }
 
   /**
    * Creates a new <b>Variable</b> instance.  The new variable will be local and
@@ -96,7 +100,8 @@ public:
    */
   explicit Variable(Type type)
     : m_type(type),
-      m_use(INDEPENDENT)
+      m_use(INDEPENDENT),
+      m_size(1)
   {
     switch (type) {
     case DOUBLE:
@@ -120,12 +125,14 @@ public:
    *				variable.
    *
    */
-  explicit Variable(double &address)
+  explicit Variable(double &address, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
+      m_size(definedLength),
       m_doublePtr(&address),
       m_doubleValue(0.0)
-  {}
+  {
+  }
 
   /**
    * Creates a new <b>Variable</b> instance.  The new variable will use the
@@ -137,12 +144,14 @@ public:
    *				variable.
    *
    */
-  explicit Variable(int &address)
+  explicit Variable(int &address, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(INTEGER),
       m_use(INDEPENDENT),
+      m_size(definedLength),
       m_intPtr(&address),
       m_intValue(0)
-  {}
+  {
+  }
 
   /**
    * @brief Member function <b>operator=</b> assigns a new value to the variable.
@@ -157,6 +166,9 @@ public:
   Variable &operator=(const double &value) {
     m_type = this->m_type;
     m_use = this->m_use;
+    if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
+      throw std::runtime_error("In analytic expression evaluator, invalid use of equal on multi-component variable");
+    }
     if (m_type == INTEGER)
       *m_intPtr = static_cast<int>(value);
     else if (m_type == DOUBLE)
@@ -176,6 +188,9 @@ public:
   Variable &operator=(const int &value) {
     m_type = this->m_type;
     m_use = this->m_use;
+    if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
+      throw std::runtime_error("In analytic expression evaluator, invalid use of equal on multi-component variable");
+    }
     if (m_type == INTEGER)
       *m_intPtr = value;
     else if (m_type == DOUBLE)
@@ -208,11 +223,19 @@ public:
    * @return			a <b>double</b> reference to the value.
    */
   inline double &operator[](int index) {
-    if (m_type != DOUBLE)
+    if (m_type != DOUBLE) {
       throw std::runtime_error("Only double arrays allowed");
+    }
 
-    if (m_doublePtr == 0)
+    if (m_doublePtr == nullptr) {
       throw std::runtime_error("Unbound variable");
+    }
+
+    if(index < 0 || (index+1) > m_size) {
+      std::stringstream error;
+      error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Maximum size is of variable is '"<<m_size<<"'.  ";
+      throw std::runtime_error(error.str());
+    }
 
     return m_doublePtr[index];
   }
@@ -226,9 +249,13 @@ public:
    *
    * @return			a <b>Variable</b> reference to the variable.
    */
-  inline Variable &bind(double &value_ref) {
+  inline Variable &bind(double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
+
+    //std::cout<<"Bound variable of length: "<<definedLength<<std::endl;
+
     m_type = DOUBLE;
     m_doublePtr = &value_ref;
+    m_size = definedLength;
     return *this;
   }
 
@@ -241,9 +268,10 @@ public:
    *
    * @return			a <b>Variable</b> reference to the variable.
    */
-  inline Variable &bind(int &value_ref) {
+  inline Variable &bind(int &value_ref, int definedLength=std::numeric_limits<int>::max()) {
     m_type = INTEGER;
     m_intPtr = &value_ref;
+    m_size = definedLength;
     return *this;
   }
 
@@ -257,20 +285,28 @@ public:
     switch (m_type) {
     case DOUBLE:
       m_doublePtr = &m_doubleValue;
+      m_size = 1;
       m_doubleValue = 0.0;
       break;
     case INTEGER:
       m_intPtr = &m_intValue;
+      m_size = 1;
       m_intValue = 0;
       break;
     }
     return *this;
   }
 
-  double *getAddress() const {
+  //
+  //  Get the variable pointer and its defined length
+  //
+  double* getAddress() const {
     return m_doublePtr;
   }
-  
+  int getLength() const {
+    return m_size;
+  }
+
   /**
    * @brief Member function <b>getValue</b> returns the variable value as a double.
    *
@@ -289,7 +325,8 @@ public:
 private:
   Type	        m_type;                 ///< Variable data type
   Use           m_use;                  ///< Variable is dependent or independent
-  
+  int           m_size;                 ///< Size of defined values in the double or int pointer  
+
   union {
     double *	m_doublePtr;		///< Pointer to value as double
     int *	m_intPtr;		///< Pointer to value as integer

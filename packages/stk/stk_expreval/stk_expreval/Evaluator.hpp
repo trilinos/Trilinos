@@ -210,10 +210,10 @@ public:
    * @return			an <b>Eval</b> reference to this expression
    *				evaluator.
    */
-  inline Eval &bindVariable(const std::string &name, double &value_ref) {
+  inline Eval &bindVariable(const std::string &name, double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
     VariableMap::iterator it = m_variableMap.find(name);
     if (it != m_variableMap.end())
-      (*it).second->bind(value_ref);
+      (*it).second->bind(value_ref, definedLength);
     return *this;
   }
 
