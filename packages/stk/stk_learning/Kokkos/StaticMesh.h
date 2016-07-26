@@ -521,20 +521,7 @@ public:
 
         allocate_view(deviceData, hostData, "deviceData_"+field.name(), compute_alloc_size(buckets));
 
-        for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
-        {
-            const stk::mesh::Bucket &bucket = *buckets[iBucket];
-            unsigned numPer = hostNumPerEntity(bucket.bucket_id());
-            const T* data = static_cast<T*>(stk::mesh::field_data(field, bucket));
-            for(size_t iEntity=0; iEntity<bucket.size(); iEntity++)
-            {
-                for(unsigned j=0; j<numPer; j++)
-                {
-                    unsigned index = get_index_host(bucket.bucket_id(), iEntity) + j;
-                    hostData(index) = data[iEntity*numPer + j];
-                }
-            }
-        }
+        copy_data(buckets, field, [](T &staticData, T &fieldData){staticData = fieldData;});
 
         Kokkos::deep_copy(deviceData, hostData);
         constDeviceData = deviceData;
@@ -542,25 +529,11 @@ public:
 
     void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
     {
-        stk::mesh::Selector selector = stk::mesh::selectField(field);
-        const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
-
         Kokkos::deep_copy(hostData, deviceData);
 
-        for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
-        {
-            const stk::mesh::Bucket &bucket = *buckets[iBucket];
-            unsigned numPer = hostNumPerEntity(bucket.bucket_id());
-            T* data = static_cast<T*>(stk::mesh::field_data(field, bucket));
-            for(size_t iEntity=0; iEntity<bucket.size(); iEntity++)
-            {
-                for(unsigned j=0; j<numPer; j++)
-                {
-                    unsigned index = get_index_host(bucket.bucket_id(), iEntity) + j;
-                    data[iEntity*numPer + j] = hostData(index);
-                }
-            }
-        }
+        stk::mesh::Selector selector = stk::mesh::selectField(field);
+        const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
+        copy_data(buckets, field, [](T &staticData, T &fieldData){fieldData = staticData;});
     }
 
     ~StaticField(){}
@@ -689,11 +662,28 @@ private:
     {
         deviceData = FieldDataType("deviceData", allocSize);
         hostData = Kokkos::create_mirror_view(deviceData);
-
-        for(size_t i=0; i<allocSize; ++i)
-            hostData(i) = initialValue;
+        Kokkos::deep_copy(hostData, initialValue);
         Kokkos::deep_copy(deviceData, hostData);
         constDeviceData = deviceData;
+    }
+
+    template <typename Assigner>
+    void copy_data(const stk::mesh::BucketVector& buckets, const stk::mesh::FieldBase &field, const Assigner &assigner)
+    {
+        for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
+        {
+            const stk::mesh::Bucket &bucket = *buckets[iBucket];
+            unsigned numPer = hostNumPerEntity(bucket.bucket_id());
+            T* data = static_cast<T*>(stk::mesh::field_data(field, bucket));
+            for(size_t iEntity=0; iEntity<bucket.size(); iEntity++)
+            {
+                for(unsigned j=0; j<numPer; j++)
+                {
+                    unsigned index = get_index_host(bucket.bucket_id(), iEntity) + j;
+                    assigner(hostData(index), data[iEntity*numPer + j]);
+                }
+            }
+        }
     }
 
     typedef Kokkos::View<T*> FieldDataType;
