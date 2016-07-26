@@ -297,10 +297,10 @@ public:
      *        checkpoint difference.
      */
     typename MetricTraits<T>::Type getAccumulatedLap(bool arg_checkpoint = false) const {
-      if (arg_checkpoint)
+      if (arg_checkpoint) {
         return m_accumulatedLap - m_checkpoint;
-      else
-        return m_accumulatedLap;
+      }
+      return m_accumulatedLap;
     }
 
     /**
@@ -392,8 +392,9 @@ public:
   {}
 
   Timer &operator=(const Timer &timer) {
-    if (this != &timer)
+    if (this != &timer) {
       m_timerImpl = timer.m_timerImpl;
+    }
 
     return *this;
   }
