@@ -135,8 +135,8 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
   // Irina modified
   // for (int i=0; i < scalar.size(); ++i)
   //   tmp[i] = multiplier * scalar[i];
-  for (int i=0; i < scalar.dimension(0); ++i)
-    for (int j=0; j < scalar.dimension(1); ++j)
+  for (int i=0; i < scalar.extent_int(0); ++i)
+    for (int j=0; j < scalar.extent_int(1); ++j)
        tmp(i,j) = multiplier * scalar(i,j);
 
   for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
@@ -146,8 +146,8 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
     //Irina modified
     //for (int i=0; i < field_data.size(); ++i)
     //  tmp[i] *= field_data[i];
-    for (int i=0; i < scalar.dimension(0); ++i)
-       for (int j=0; j < scalar.dimension(1); ++j)
+    for (int i=0; i < scalar.extent_int(0); ++i)
+       for (int j=0; j < scalar.extent_int(1); ++j)
           tmp(i,j) = tmp(i,j) * field_data(i,j);
   }
 

@@ -90,7 +90,7 @@ void FieldSpy<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
   std::cout << "SPY: Name = \"" << source.fieldTag().identifier() << "\" at t = " << workset.time << "\n";
   for (int cell=0;cell<workset.num_cells;++cell) {
     std::cout << "SPY: ";
-    for (int point = 0; point < source.dimension(1); ++point) {
+    for (int point = 0; point < source.extent_int(1); ++point) {
       std::cout << Sacado::ScalarValue<ScalarT>::eval(source(cell,point)) << " ";
     }
     std::cout << std::endl;
