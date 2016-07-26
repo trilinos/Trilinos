@@ -96,7 +96,6 @@ public:
   RCP<Zoltan2::EvaluatePartition<basic_id_t> > metricObject;
   RCP<base_problem_t> problem;
   RCP<basic_id_t> adapter;
-  RCP<basic_id_t> coordinateAdapter;
   string problem_kind;
   string adapter_kind;
   std::map<const std::string, RCP<Time> > timers;

@@ -445,7 +445,6 @@ bool run(const UserInputForTests &uinput,
     ////////////////////////////////////////////////////////////
 
     comparison_source->adapter = iaRCP;
-    comparison_source->coordinateAdapter = coordinateAdapterRCP;
     comparison_source->problem = problemRCP;
     comparison_source->metricObject = metricObject;
     comparison_source->problem_kind = (problem_parameters.isParameter("kind") ? 
@@ -514,6 +513,7 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   
   // get the user input for all tests
   UserInputForTests uinput(inputParameters,comm);
+
   problems.pop();
   comm->barrier();
 

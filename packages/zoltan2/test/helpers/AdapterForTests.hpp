@@ -95,7 +95,7 @@ using namespace Zoltan2_TestingFramework;
 struct AdapterWithOptionalCoordinateAdapter
 {
   Zoltan2_TestingFramework::base_adapter_t * mainAdapter = nullptr;
-  Zoltan2_TestingFramework::base_adapter_t * coordinateAdapter = nullptr;  // may be NULL if coordinates are not available
+  Zoltan2::VectorAdapter<tMVector_t> * coordinateAdapter = nullptr;  // may be NULL if coordinates are not available
 };
 
 
@@ -640,13 +640,14 @@ AdapterWithOptionalCoordinateAdapter AdapterForTests::getXpetraCrsGraphAdapterFo
                 << "XpetraCrsMatrix adapter." << std::endl;
       return adapters;
     }
-    
+
+    adapters.coordinateAdapter = reinterpret_cast<Zoltan2_TestingFramework::xpetra_mv_adapter *>(ca);
+
     // set the coordinate adapter
     reinterpret_cast<Zoltan2_TestingFramework::xcrsGraph_adapter *>
       (adapters.mainAdapter)->setCoordinateInput(
-        reinterpret_cast<Zoltan2_TestingFramework::xpetra_mv_adapter *>(ca));
+        adapters.coordinateAdapter);
 
-    adapters.coordinateAdapter = ca;
   }
   return adapters;
 }
@@ -713,7 +714,7 @@ AdapterWithOptionalCoordinateAdapter AdapterForTests::getXpetraCrsMatrixAdapterF
     
     // cast to base type
     adapters.mainAdapter = reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
-    
+
   }
   else if(input_type == "xpetra_crs_matrix")
   {
@@ -782,9 +783,13 @@ AdapterWithOptionalCoordinateAdapter AdapterForTests::getXpetraCrsMatrixAdapterF
     }
     
     // set the coordinate adapter
-    reinterpret_cast<Zoltan2_TestingFramework::xcrsMatrix_adapter *>(adapters.mainAdapter)->setCoordinateInput(reinterpret_cast<Zoltan2_TestingFramework::xpetra_mv_adapter *>(ca));
+    adapters.coordinateAdapter =
+      reinterpret_cast<Zoltan2_TestingFramework::xpetra_mv_adapter *>(ca);
 
-    adapters.coordinateAdapter = ca;
+    reinterpret_cast<Zoltan2_TestingFramework::xcrsMatrix_adapter *>
+      (adapters.mainAdapter)->setCoordinateInput(adapters.coordinateAdapter);
+
+
   }
   return adapters;
 }
