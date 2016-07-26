@@ -145,8 +145,8 @@ evaluateFields(typename Traits::EvalData workset)
 
     // Multiply tangent by orientation
     for(std::size_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<gatherFieldTangents.dimension(1);b++) {
-        for(int d=0;d<gatherFieldTangents.dimension(2);d++) {
+      for(int b=0;b<gatherFieldTangents.extent_int(1);b++) {
+        for(int d=0;d<gatherFieldTangents.extent_int(2);d++) {
           gatherFieldTangents(c,b,d) = edgeTan(c,b,d)*dof_orientation(c,b); 
         }
       }

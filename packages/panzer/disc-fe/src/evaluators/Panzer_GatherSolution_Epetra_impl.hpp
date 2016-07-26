@@ -446,7 +446,7 @@ GatherSolution_Epetra(
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
 {
-  typedef std::vector< std::vector<std::string> > vvstring;
+  // typedef std::vector< std::vector<std::string> > vvstring;
 
   GatherSolution_Input input;
   input.setParameterList(p);

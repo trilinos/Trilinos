@@ -105,8 +105,8 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
   dof_field.deep_copy(ScalarT(0.0));
 
   // copy coordinates
-  for (int i = 0; i < coordinates.dimension_0(); ++i)
-    for (int j = 0; j < coordinates.dimension_1(); ++j)
+  for (int i = 0; i < coordinates.extent_int(0); ++i)
+    for (int j = 0; j < coordinates.extent_int(1); ++j)
       intrpCoords(i,j) = Sacado::ScalarValue<ScalarT>::eval(coordinates(i,j));
 
   if(workset.num_cells>0) {

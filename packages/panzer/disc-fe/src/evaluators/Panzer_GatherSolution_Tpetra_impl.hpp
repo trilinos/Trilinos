@@ -374,7 +374,7 @@ GatherSolution_Tpetra(
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
 {
-  typedef std::vector< std::vector<std::string> > vvstring;
+  // typedef std::vector< std::vector<std::string> > vvstring;
 
   GatherSolution_Input input;
   input.setParameterList(p);
@@ -530,8 +530,6 @@ template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
 

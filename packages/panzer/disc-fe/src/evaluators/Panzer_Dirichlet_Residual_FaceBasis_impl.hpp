@@ -74,7 +74,7 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
   TEUCHOS_ASSERT(basis->isVectorBasis());
   TEUCHOS_ASSERT(basis_layout->dimension(0)==vector_layout_dof->dimension(0));
   TEUCHOS_ASSERT(basis_layout->dimension(1)==vector_layout_dof->dimension(1));
-  TEUCHOS_ASSERT(basis->dimension()==vector_layout_dof->dimension(2));
+  TEUCHOS_ASSERT(basis->dimension()==vector_layout_dof->extent_int(2));
   TEUCHOS_ASSERT(vector_layout_vector->dimension(0)==vector_layout_dof->dimension(0));
   TEUCHOS_ASSERT(vector_layout_vector->dimension(1)==vector_layout_dof->dimension(1));
   TEUCHOS_ASSERT(vector_layout_vector->dimension(2)==vector_layout_dof->dimension(2));
@@ -131,9 +131,9 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
                                            *basis->getCellTopology());
   
     for(std::size_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.dimension(1);b++) {
+      for(int b=0;b<dof.extent_int(1);b++) {
         residual(c,b) = ScalarT(0.0);
-        for(int d=0;d<dof.dimension(2);d++)
+        for(int d=0;d<dof.extent_int(2);d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceNormal(c,b,d);
       } 
     }
@@ -146,9 +146,9 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
                                            *basis->getCellTopology());
   
     for(std::size_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.dimension(1);b++) {
+      for(int b=0;b<dof.extent_int(1);b++) {
         residual(c,b) = ScalarT(0.0);
-        for(int d=0;d<dof.dimension(2);d++)
+        for(int d=0;d<dof.extent_int(2);d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceNormal(c,b,d);
       } 
     }
@@ -158,7 +158,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
     // how do we do this????
     const shards::CellTopology & parentCell = *basis->getCellTopology();
     int cellDim = parentCell.getDimension();
-    int numFaces = dof.dimension(1);
+    int numFaces = dof.extent_int(1);
 
     refFaceNormal = Kokkos::createDynRankView(residual.get_static_view(),"refFaceNormal",numFaces,cellDim);
 
@@ -185,9 +185,9 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
     }// for pCell
 
     for(std::size_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<dof.dimension(1);b++) {
+      for(int b=0;b<dof.extent_int(1);b++) {
         residual(c,b) = ScalarT(0.0);
-        for(int d=0;d<dof.dimension(2);d++)
+        for(int d=0;d<dof.extent_int(2);d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceNormal(c,b,d);
       } 
     }
@@ -203,7 +203,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
   // everything is oriented in the "positive" direction, this allows
   // sums acrossed processor to be oriented in the same way (right?)
   for(std::size_t c=0;c<workset.num_cells;c++) {
-    for(int b=0;b<dof.dimension(1);b++) {
+    for(int b=0;b<dof.extent_int(1);b++) {
       residual(c,b) *= dof_orientation(c,b);
     }
   }

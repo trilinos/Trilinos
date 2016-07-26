@@ -219,8 +219,6 @@ evaluateFields(typename TRAITS::EvalData workset)
    using Thyra::SpmdVectorBase;
    using Thyra::ProductVectorBase;
 
-   typedef BlockedEpetraLinearObjContainer BLOC;
-
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -412,8 +410,6 @@ evaluateFields(typename TRAITS::EvalData workset)
    using Thyra::SpmdVectorBase;
    using Thyra::ProductVectorBase;
 
-   typedef BlockedEpetraLinearObjContainer BLOC;
-
    std::vector<std::pair<int,GO> > GIDs;
    std::vector<int> LIDs;
 
@@ -474,7 +470,7 @@ GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIn
                              const Teuchos::ParameterList& p)
   : indexers_(indexers)
 {
-  typedef std::vector< std::vector<std::string> > vvstring;
+  // typedef std::vector< std::vector<std::string> > vvstring;
 
   GatherSolution_Input input;
   input.setParameterList(p);
