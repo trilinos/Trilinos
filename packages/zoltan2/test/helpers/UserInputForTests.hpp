@@ -1586,6 +1586,8 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
       if (nedges > 0 && nEwgts > 0) {
         for (int i=0; i < nedges; i++)
           values[i] = ewgts[i];
+        free(ewgts);
+        ewgts = NULL;
       }
 
       for (int i=0; i < nvtxs; i++){
@@ -1727,7 +1729,8 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
   
   if (haveEdges && nEwgts > 0){
 
-	/*// No longer distributing edge weights
+    // No longer distributing edge weights; they are the matrix values
+    /*
     ArrayRCP<zscalar_t> weightBuf;
     ArrayView<const zscalar_t> *wgts = new ArrayView<const zscalar_t> [nEwgts];
     
