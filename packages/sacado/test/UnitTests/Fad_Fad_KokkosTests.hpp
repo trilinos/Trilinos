@@ -202,16 +202,139 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+// To test DynRankView - View interoperabitlity
+// Deep copy of DynRankView to View
+// Assignment operator
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_DynRankView_FadFad, Interop, FadFadType, Layout, Device )
+{
+  typedef Kokkos::DynRankView<FadFadType,Layout,Device> DRViewType;
+  typedef typename DRViewType::size_type size_type;
+  typedef typename DRViewType::HostMirror host_view_type;
+
+  typedef Kokkos::View<FadFadType**,Layout,Device> NoDynViewType;
+  typedef typename NoDynViewType::HostMirror host_nondynrankview_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type outer_fad_size = global_outer_fad_size;
+  const size_type inner_fad_size = global_inner_fad_size;
+
+  // Create and fill view
+  DRViewType v1("drview1", num_rows, num_cols, outer_fad_size+1);
+  host_view_type h_v1 = Kokkos::create_mirror_view(v1);
+
+  NoDynViewType ndv2("nodview2", num_rows, num_cols, outer_fad_size+1);
+  host_nondynrankview_type h_ndv2 = Kokkos::create_mirror_view(ndv2);
+
+  for (size_type i=0; i<num_rows; ++i)
+    for (size_type j=0; j<num_cols; ++j)
+      h_v1(i,j) = generate_nested_fad<FadFadType>(num_rows,
+                                                  num_cols,
+                                                  outer_fad_size,
+                                                  inner_fad_size,
+                                                  i, j);
+  Kokkos::deep_copy(v1, h_v1); //v1 unused here
+
+  // Deep copy DynRankView to View on device
+  Kokkos::deep_copy(ndv2, h_v1);
+  // Assign View to DynRankView
+  DRViewType v2("drview2", num_rows, num_cols, outer_fad_size+1);
+  v2 = ndv2 ;
+
+  // Copy back
+  host_view_type h_v2 = Kokkos::create_mirror_view(v2);
+  Kokkos::deep_copy(h_v2, v2);
+
+  // Check
+  success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadFadType f = generate_nested_fad<FadFadType>(num_rows,
+                                                     num_cols,
+                                                     outer_fad_size,
+                                                     inner_fad_size,
+                                                     i, j);
+      success = success && checkNestedFads(f, h_v2(i,j), out);
+    }
+  }
+}
+
+
+// Deep copy of DynRankView to View
+// Copy ctor 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_DynRankView_FadFad, Interop2, FadFadType, Layout, Device )
+{
+  typedef Kokkos::DynRankView<FadFadType,Layout,Device> DRViewType;
+  typedef typename DRViewType::size_type size_type;
+  typedef typename DRViewType::HostMirror host_view_type;
+
+  typedef Kokkos::View<FadFadType**,Layout,Device> NoDynViewType;
+  typedef typename NoDynViewType::HostMirror host_nondynrankview_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type outer_fad_size = global_outer_fad_size;
+  const size_type inner_fad_size = global_inner_fad_size;
+
+  // Create and fill view
+  DRViewType v1("drview1", num_rows, num_cols, outer_fad_size+1);
+  host_view_type h_v1 = Kokkos::create_mirror_view(v1);
+
+  NoDynViewType ndv2("nodview2", num_rows, num_cols, outer_fad_size+1);
+  host_nondynrankview_type h_ndv2 = Kokkos::create_mirror_view(ndv2);
+
+  for (size_type i=0; i<num_rows; ++i)
+    for (size_type j=0; j<num_cols; ++j)
+      h_v1(i,j) = generate_nested_fad<FadFadType>(num_rows,
+                                                  num_cols,
+                                                  outer_fad_size,
+                                                  inner_fad_size,
+                                                  i, j);
+  Kokkos::deep_copy(v1, h_v1); //v1 unused here
+
+  // Deep copy DynRankView to View on device
+  Kokkos::deep_copy(ndv2, h_v1);
+  // Copy construct DynRankView from View
+  DRViewType v2(ndv2) ;
+
+  // Copy back
+  host_view_type h_v2 = Kokkos::create_mirror_view(v2);
+  Kokkos::deep_copy(h_v2, v2);
+
+  // Check
+  success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadFadType f = generate_nested_fad<FadFadType>(num_rows,
+                                                     num_cols,
+                                                     outer_fad_size,
+                                                     inner_fad_size,
+                                                     i, j);
+      success = success && checkNestedFads(f, h_v2(i,j), out);
+    }
+  }
+}
+
+
+
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_DynRankView_FadFad, DeepCopy, FadFadType, Layout, Device ) {}
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_DynRankView_FadFad, Interop, FadFadType, Layout, Device ) {}
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_DynRankView_FadFad, Interop2, FadFadType, Layout, Device ) {}
 
 #endif
 
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_FadFad, DeepCopy, F, L, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_DynRankView_FadFad, DeepCopy, F, L, D )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_DynRankView_FadFad, DeepCopy, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_DynRankView_FadFad, Interop, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_DynRankView_FadFad, Interop2, F, L, D )
 
 #define VIEW_FAD_TESTS_FD( F, D )                                       \
   using Kokkos::LayoutLeft;                                             \

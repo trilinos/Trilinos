@@ -690,6 +690,7 @@ public:
 
       dst.m_map.m_handle  = src.m_map.m_handle ;
       dst.m_rank    = src.Rank ;
+      dst.m_map.m_offset.m_stride = src.m_map.m_offset.m_stride ;
 
       ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst.m_map , src.m_map );
     }
