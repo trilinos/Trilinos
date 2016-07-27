@@ -368,9 +368,12 @@ public:
     StaticMesh(const stk::mesh::BulkData& b) : bulk(b)
     {
         hostMeshIndices = Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror("host_mesh_indices", bulk.get_size_of_entity_index_space());
-        fill_mesh_indices(stk::topology::NODE_RANK, bulk);
-        fill_mesh_indices(stk::topology::ELEM_RANK, bulk);
-        fill_buckets(bulk, bulk.mesh_meta_data().universal_part());
+        stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
+        for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
+        {
+            fill_buckets(bulk, rank, bulk.mesh_meta_data().universal_part());
+            fill_mesh_indices(bulk, rank);
+        }
         copy_mesh_indices_to_device();
     }
 
@@ -381,7 +384,7 @@ public:
     STK_FUNCTION
     ConnectedNodes get_nodes(const StaticMeshIndex &elem) const
     {
-        ConnectedNodesType nodes = buckets(elem.bucket->bucket_id()).get_nodes(elem.bucketOrd);
+        ConnectedNodesType nodes = buckets[elem.bucket->entity_rank()](elem.bucket->bucket_id()).get_nodes(elem.bucketOrd);
         return ConnectedNodes(nodes, nodes.size());
     }
 
@@ -410,55 +413,56 @@ public:
     STK_FUNCTION
     unsigned num_buckets(stk::mesh::EntityRank rank) const
     {
-        return buckets.size();
+        return buckets[rank].size();
     }
 
     STK_FUNCTION
     const StaticBucket &get_bucket(stk::mesh::EntityRank rank, unsigned index) const
     {
-        return buckets(index);
+        return buckets[rank](index);
     }
 
     void clear()
     {
-        buckets = BucketView();
+        for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<stk::topology::NUM_RANKS; rank++)
+            buckets[rank] = BucketView();
     }
 
 
 private:
 
-    void fill_buckets(const stk::mesh::BulkData& bulk, const stk::mesh::Selector& selector)
+    void fill_buckets(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank, const stk::mesh::Selector& selector)
     {
-        const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
-        unsigned numElementBuckets = elemBuckets.size();
+        const stk::mesh::BucketVector& stkBuckets = bulk.get_buckets(rank, selector);
+        unsigned numStkBuckets = stkBuckets.size();
 
-        buckets = BucketView("ElementNodeConnectivity", numElementBuckets);
+        buckets[rank] = BucketView("Buckets", numStkBuckets);
+        BucketView &bucketsOfRank = buckets[rank];
 
-        for (unsigned elemBucketIndex = 0; elemBucketIndex < numElementBuckets; ++elemBucketIndex)
+        for (unsigned iBucket = 0; iBucket < numStkBuckets; ++iBucket)
         {
-            const stk::mesh::Bucket& bucket = *elemBuckets[elemBucketIndex];
-            unsigned nodesPerElem = bucket.topology().num_nodes();
-            StaticBucket& bkt = buckets(bucket.bucket_id());
-            bkt.initialize(bucket.bucket_id(), stk::topology::ELEM_RANK, bucket.size(), nodesPerElem);
-            unsigned bucket_id = bucket.bucket_id();
+            const stk::mesh::Bucket& stkBucket = *stkBuckets[iBucket];
+            unsigned bucketId = stkBucket.bucket_id();
+            unsigned nodesPerElem = stkBucket.topology().num_nodes();
+            bucketsOfRank(bucketId).initialize(stkBucket.bucket_id(), rank, stkBucket.size(), nodesPerElem);
 
-            for(unsigned elemIndex = 0; elemIndex < bucket.size(); ++elemIndex)
+            for(unsigned iEntity = 0; iEntity < stkBucket.size(); ++iEntity)
             {
-                stk::mesh::Entity element = bucket[elemIndex];
-                buckets(bucket_id).hostEntities(elemIndex) = element;
-                const stk::mesh::Entity * elemNodes = bulk.begin_nodes(element);
+                stk::mesh::Entity entity = stkBucket[iEntity];
+                bucketsOfRank(bucketId).hostEntities(iEntity) = entity;
+                const stk::mesh::Entity * elemNodes = bulk.begin_nodes(entity);
                 for(unsigned iNode = 0; iNode < nodesPerElem; ++iNode)
                 {
-                    buckets(bucket_id).hostConnectivity(elemIndex, iNode) = elemNodes[iNode];
+                    bucketsOfRank(bucketId).hostConnectivity(iEntity, iNode) = elemNodes[iNode];
                 }
             }
         }
-        for(unsigned b=0; b<buckets.size(); ++b) {
-            buckets(b).copy_to_device();
+        for(unsigned b=0; b<bucketsOfRank.size(); ++b) {
+            bucketsOfRank(b).copy_to_device();
         }
     }
 
-    void fill_mesh_indices(stk::mesh::EntityRank rank, const stk::mesh::BulkData& bulk)
+    void fill_mesh_indices(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank)
     {
         const stk::mesh::BucketVector& bkts = bulk.buckets(rank);
 
@@ -488,7 +492,7 @@ private:
 
     typedef Kokkos::View<StaticBucket*, UVMMemSpace> BucketView;
     const stk::mesh::BulkData &bulk;
-    BucketView buckets;
+    BucketView buckets[stk::topology::NUM_RANKS];
     Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror hostMeshIndices;
     Kokkos::View<const stk::mesh::FastMeshIndex*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > deviceMeshIndices;
     //    Kokkos::View<const stk::mesh::FastMeshIndex*> device_mesh_indices;
