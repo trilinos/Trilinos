@@ -258,6 +258,17 @@ inline void scale_by(Box<T> &b, U const& c)
   }
 }
 
+template <typename T>
+inline void add_to_box(Box<T> &box, const Box<T>& addBox) {
+  box.set_box(std::min(box.get_x_min(), addBox.get_x_min()), 
+              std::min(box.get_y_min(), addBox.get_y_min()), 
+              std::min(box.get_z_min(), addBox.get_z_min()), 
+              std::max(box.get_x_max(), addBox.get_x_max()),
+              std::max(box.get_y_max(), addBox.get_y_max()), 
+              std::max(box.get_z_max(), addBox.get_z_max())); 
+}
+
+
 }} //namespace stk::search
 
 
