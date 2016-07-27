@@ -19,14 +19,13 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
 Ifpack2_UnitTestMain.cpp
-Ifpack2_UnitTestTemplate.cpp
 Ifpack2_UnitTestAdditiveSchwarz.cpp
+Ifpack2_UnitTestAmesos2solver.cpp
 Ifpack2_UnitTestBlockRelaxation.cpp
 Ifpack2_UnitTestChebyshev.cpp
 Ifpack2_UnitTestContainer.cpp
 Ifpack2_UnitTestCreateOverlapGraph.cpp
 Ifpack2_UnitTestDenseSolver.cpp
-Ifpack2_UnitTestTriDiSolver.cpp
 Ifpack2_UnitTestDiagonal.cpp
 Ifpack2_UnitTestFactory.cpp
 Ifpack2_UnitTestFiltering.cpp
@@ -38,9 +37,10 @@ Ifpack2_UnitTestOverlappingRowMatrix.cpp
 Ifpack2_UnitTestParameters.cpp
 Ifpack2_UnitTestPartitioning.cpp
 Ifpack2_UnitTestRelaxation.cpp
-Ifpack2_UnitTestAmesos2solver.cpp
-Ifpack2_UnitTestRILUK.cpp
 Ifpack2_UnitTestRBILUK.cpp
+Ifpack2_UnitTestRILUK.cpp
+Ifpack2_UnitTestTemplate.cpp
+Ifpack2_UnitTestTriDiSolver.cpp
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
@@ -112,3 +112,17 @@ IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
     STANDARD_PASS_OUTPUT
     )
 ENDIF ()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  LocalSparseTriangularSolver
+  SOURCES 
+    Ifpack2_UnitTestLocalSparseTriangularSolver.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+
+

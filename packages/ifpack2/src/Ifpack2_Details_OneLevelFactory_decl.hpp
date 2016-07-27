@@ -98,13 +98,23 @@ The create() method has two arguments:
 
 The first argument is not case sensitive.  It can assume the following
 values:
-  - "AMESOS2": returns an instance of Details::Amesos2Wrapper
-  - "CHEBYSHEV": returns an instance of Chebyshev
-  - "DENSE" or "LAPACK": returns an instance of Details::DenseSolver
-  - "DIAGONAL": returns an instance of Diagonal
-  - "ILUT": returns an instance of ILUT
-  - "RELAXATION": returns an instance of Relaxation
-  - "RILUK": returns an instance of RILUK
+<ul>
+<li> "AMESOS2": returns an instance of Details::Amesos2Wrapper (if the
+     Amesos2 package is enabled) </li>
+<li> "BANDED RELAXATION": returns an instance of BlockRelaxation with banded matrix blocks </li>
+<li> "CHEBYSHEV": returns an instance of Chebyshev </li>
+<li> "DENSE" or "LAPACK": returns an instance of Details::DenseSolver </li>
+<li> "DENSE BLOCK RELAXATION": returns an instance of BlockRelaxation with dense blocks </li>
+<li> "DIAGONAL": returns an instance of Diagonal </li>
+<li> "ILUT": returns an instance of ILUT </li>
+<li> "LOCAL SPARSE TRIDIAGONAL SOLVER": returns an instance of LocalSparseTridiagonalSolver </li>
+<li> "RBILUK": returns an instance of RBILUK (ILK(k) preconditioner for BlockCrsMatrix) </li>
+<li> "RELAXATION": returns an instance of Relaxation </li>
+<li> "RILUK": returns an instance of RILUK (ILU(k) preconditioner) </li>
+<li> "SPARSE BLOCK RELAXATION": returns an instance of BlockRelaxation with sparse blocks </li>
+<li> "TRIDIAGONAL RELAXATION": returns an instance of BlockRelaxation with tridiagonal matrix blocks </li>
+</ul>
+
 */
 template<class MatrixType>
 class OneLevelFactory {

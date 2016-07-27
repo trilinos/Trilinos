@@ -201,7 +201,6 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Chebyshev
     BandedContainer
     DenseContainer
-    TriDiContainer
     Diagonal
     DiagonalFilter
     DropFilter
@@ -210,7 +209,9 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     IdentitySolver
     ILUT
     Krylov
+    LinePartitioner
     LocalFilter
+    LocalSparseTriangularSolver
     OverlappingRowMatrix
     Relaxation
     ReorderFilter
@@ -218,7 +219,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     SingletonFilter
     SparseContainer
     SparsityFilter
-    LinePartitioner
+    TriDiContainer
     Details::Chebyshev
     Details::DenseSolver
     Details::Factory

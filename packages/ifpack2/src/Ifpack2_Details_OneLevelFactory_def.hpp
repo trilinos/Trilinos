@@ -56,6 +56,7 @@
 #include "Ifpack2_DenseContainer.hpp"
 #include "Ifpack2_SparseContainer.hpp"
 #include "Ifpack2_TriDiContainer.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver.hpp"
 
 #ifdef HAVE_IFPACK2_AMESOS2
 #  include "Ifpack2_Details_Amesos2Wrapper.hpp"
@@ -124,7 +125,10 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   }
   else if (precTypeUpper == "BLOCK_RELAXATION" ||
            precTypeUpper == "BLOCK RELAXATION" ||
-           precTypeUpper == "BLOCKRELAXATION" ) {
+           precTypeUpper == "BLOCKRELAXATION"  ||
+           precTypeUpper == "DENSE_BLOCK_RELAXATION" ||
+           precTypeUpper == "DENSE BLOCK RELAXATION" ||
+           precTypeUpper == "DENSEBLOCKRELAXATION" ) {
     // FIXME (mfh 22 May 2014) We would prefer to have the choice of
     // dense or sparse blocks (the "container type") be a run-time
     // decision.  This will require refactoring BlockRelaxation so
@@ -143,7 +147,7 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     // now, we default to use dense blocks.
     //typedef SparseContainer<row_matrix_type, ILUT<row_matrix_type>> container_type;
 #ifdef HAVE_IFPACK2_AMESOS2
-    typedef SparseContainer<row_matrix_type, Details::Amesos2Wrapper<row_matrix_type>> container_type;
+    typedef SparseContainer<row_matrix_type, Details::Amesos2Wrapper<row_matrix_type> > container_type;
     prec = rcp (new BlockRelaxation<row_matrix_type, container_type> (matrix));
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Ifpack2::Details::OneLevelFactory: "
@@ -168,6 +172,15 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   }
   else if (precTypeUpper == "IDENTITY" || precTypeUpper == "IDENTITY_SOLVER") {
     prec = rcp (new IdentitySolver<row_matrix_type> (matrix));
+  }
+
+  else if (precTypeUpper == "LOCAL SPARSE TRIANGULAR SOLVER" ||
+           precTypeUpper == "LOCAL_SPARSE_TRIANGULAR_SOLVER" ||
+           precTypeUpper == "LOCALSPARSETRIANGULARSOLVER" ||
+           precTypeUpper == "SPARSE TRIANGULAR SOLVER" ||
+           precTypeUpper == "SPARSE_TRIANGULAR_SOLVER" ||
+           precTypeUpper == "SPARSETRIANGULARSOLVER") {
+    prec = rcp (new LocalSparseTriangularSolver<row_matrix_type> (matrix));
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
