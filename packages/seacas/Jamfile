@@ -177,7 +177,7 @@ alias install-targets
 # This rule provides a common name for the multiple install rules.
 
 explicit install-user-include ;
-alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include3 install-user-include4 install-user-include4b install-user-include5 ;
+alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include3 install-user-include4 install-user-include5 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -219,13 +219,6 @@ install install-user-include4
   : [ path.glob-tree $(seacas-root)/libraries/exodus_for/include : *.inc ]
   : <location>$(install-root)/seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus_for/include
-  ;
-
-explicit install-user-include4b ;
-install install-user-include4b
-  : [ path.glob-tree $(seacas-root)/libraries/exoIIv2for32/include : *.inc ]
-  : <location>$(install-root)/seacas/include/exodus
-    <install-source-root>$(seacas-root)/libraries/exoIIv2for32/include
   ;
 
 explicit install-user-include5 ;
@@ -845,7 +838,7 @@ lib exoIIv2for32
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exoIIv2for32/include
+        <include>$(seacas-root)/libraries/exodus_for/include
 	<define>DEFAULT_REAL_INT
     ]
     [ ifuserbuild
@@ -859,7 +852,7 @@ lib exoIIv2for32
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exoIIv2for32/include
+        <include>$(seacas-root)/libraries/exodus_for/include
 	<define>DEFAULT_REAL_INT
     ]
     [ ifuserbuild
