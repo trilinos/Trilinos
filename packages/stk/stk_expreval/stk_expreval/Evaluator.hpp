@@ -69,6 +69,7 @@ public:
    *
    * @param expr		a <b>std::string</b> const reference to the
    *				expression to be parsed.
+   *
    */
   Eval(VariableMap::Resolver &resolver = VariableMap::getDefaultResolver(), const std::string &expr = "");
 
@@ -150,23 +151,10 @@ public:
     return m_parseStatus;
   }
 
-  /**
-   * @brief Member function <b>setValue</b> assigns a variables value in the
-   * variable map.
-   *
-   * @param name		a <b>std::string</b> const reference of the name of the
-   *				variable.
-   *
-   * @param value		a <b>double</b> value to be assigned to the
-   *				variable.
-   *
-   * @return			an <b>Eval</b> reference to this expression
-   *				evaluator.
-   */
-  inline Eval &setValue(const std::string &name, double value) {
+  inline Eval &setValue(const std::string &name, double* value, int definedLength) {
     VariableMap::iterator it = m_variableMap.find(name);
     if (it != m_variableMap.end())
-      *(*it).second = value;
+      (*it).second->bind(*value, definedLength);
     return *this;
   }
 

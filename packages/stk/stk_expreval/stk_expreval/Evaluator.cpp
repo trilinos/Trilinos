@@ -206,10 +206,11 @@ Node::eval() const
 
   case OPCODE_RVALUE:
     /* Directly access the variable */
-    if (m_left)
-      return (*m_data.variable.variable)[m_left->eval()];
-    else
+    if (m_left) {
+      return m_data.variable.variable->getArrayValue(m_left->eval());
+    } else {
       return m_data.variable.variable->getValue();
+    }
 
   case OPCODE_MULTIPLY:
     return m_left->eval()*m_right->eval();
@@ -269,7 +270,7 @@ Node::eval() const
 
   case OPCODE_ASSIGN:
     if (m_left)
-      return (*m_data.variable.variable)[m_left->eval()] = m_right->eval();
+      return m_data.variable.variable->getArrayValue(m_left->eval()) = m_right->eval();
     else {
       *m_data.variable.variable = m_right->eval();
       return m_data.variable.variable->getValue();

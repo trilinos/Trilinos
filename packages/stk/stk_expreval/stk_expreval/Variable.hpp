@@ -214,15 +214,14 @@ public:
 
   /**
    * @brief Member function <b>operator[]</b> returns a value from an array of
-   * double values.  No bounds checkin is performed.  Not even if the variable is and
-   * array is checked.
+   * double values.  
    *
    * @param index		a <b>int</b> value of the zero based index into the
    *				array to retrieve the value.
    *
    * @return			a <b>double</b> reference to the value.
    */
-  inline double &operator[](int index) {
+  inline double& getArrayValue(int index) const {
     if (m_type != DOUBLE) {
       throw std::runtime_error("Only double arrays allowed");
     }
@@ -233,7 +232,7 @@ public:
 
     if(index < 0 || (index+1) > m_size) {
       std::stringstream error;
-      error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Maximum size is of variable is '"<<m_size<<"'.  ";
+      error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 0 to '"<<m_size-1<<"'.  ";
       throw std::runtime_error(error.str());
     }
 
