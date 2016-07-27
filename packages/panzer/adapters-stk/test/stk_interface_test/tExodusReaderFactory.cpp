@@ -175,8 +175,6 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, exo_scaling)
 {
   {
-    typedef stk::mesh::Field<double,stk::mesh::Cartesian> CoordField;
-
     // These should correspond to the node coordinates, in order, in the
     // mesh file "basic.gen" as read above.
     double good_node_coords[15][2] = {{0.0, 0.0},

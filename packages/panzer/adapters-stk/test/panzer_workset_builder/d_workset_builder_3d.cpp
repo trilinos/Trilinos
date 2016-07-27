@@ -73,6 +73,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 void testIpMatch(const panzer::WorksetDetails& d0, const panzer::WorksetDetails& d1,
                  const std::size_t num_cells, Teuchos::FancyOStream& out, bool& success);
 
+/*
 namespace {
 std::string prws (const panzer::Workset& w) {
   std::stringstream ss;
@@ -82,7 +83,8 @@ std::string prws (const panzer::Workset& w) {
     const panzer::WorksetDetails& d = w.details(i);
     for (size_t j = 0; j < d.int_rules.size(); ++j) {
       const panzer::IntegrationValues2<double>& ir = *d.int_rules[j];
-      const size_t num_ip = ir.ip_coordinates.dimension(1), num_dim = ir.ip_coordinates.dimension(2);
+      const int num_ip = ir.ip_coordinates.dimension(1);
+      const size_t num_dim = ir.ip_coordinates.dimension(2);
       ss << "int_rule " << j << ":\n";
       ss << "cub_points:\n";
       for (int ip = 0; ip < num_ip; ++ip) {
@@ -103,7 +105,7 @@ std::string prws (const panzer::Workset& w) {
       for (size_t cell = 0; cell < w.num_cells; ++cell) {
         ss << "cell " << cell << ":\n";
         ss << "ip_coordinates:\n";
-        for (size_t ip = 0; ip < num_ip; ++ip) {
+        for (int ip = 0; ip < num_ip; ++ip) {
           for (size_t dim = 0; dim < num_dim; ++dim)
             ss << " " << ir.ip_coordinates(cell, ip, dim);
           ss << "\n";
@@ -140,6 +142,7 @@ std::string prws (const panzer::Workset& w) {
   return ss.str();
 }
 }
+*/
 
 TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
 {

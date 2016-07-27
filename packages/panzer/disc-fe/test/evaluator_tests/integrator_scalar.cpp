@@ -97,7 +97,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
+  // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 4, dim = 2;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;
@@ -137,7 +137,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarType<typename EvalType::ScalarT> ScalarType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->dimension(0)));
@@ -221,7 +220,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
+  // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;
@@ -269,7 +268,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarType<typename EvalType::ScalarT> ScalarType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->dimension(0)));
@@ -353,7 +351,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
+  // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;
@@ -401,7 +399,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarType<typename EvalType::ScalarT> ScalarType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->dimension(0)));

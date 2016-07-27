@@ -149,8 +149,8 @@ namespace panzer {
       PHX::Device::fence();
       
       // Check
-      for (int cell = 0; cell < a.dimension_0(); ++cell)
-	for (int pt=0; pt < a.dimension_1(); ++pt)
+      for (int cell = 0; cell < a.extent_int(0); ++cell)
+	for (int pt=0; pt < a.extent_int(1); ++pt)
 	  TEST_FLOATING_EQUALITY(a(cell,pt),2.0,tolerance);
     }
 

@@ -371,7 +371,7 @@ void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 operator()(const ScalarsTag, const unsigned c ) const
 {
   for (int i=0;i<numValues;i++) {
-    for (int j = 0; j < sum.dimension_1(); ++j)
+    for (int j = 0; j < sum.extent_int(1); ++j)
       sum(c,j) += scalars(i)*value_views[i](c,j);
   }
 }
@@ -384,7 +384,7 @@ void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 operator()(const NoScalarsTag, const unsigned c ) const
 {
   for (int i=0;i<numValues;i++) {
-    for (int j = 0; j < sum.dimension_1(); ++j)
+    for (int j = 0; j < sum.extent_int(1); ++j)
       sum(c,j) += value_views[i](c,j);
   }
 }

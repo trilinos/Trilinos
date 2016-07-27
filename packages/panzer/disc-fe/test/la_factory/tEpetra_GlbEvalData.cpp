@@ -87,7 +87,6 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
 
   typedef Thyra::VectorBase<double> Thyra_Vector;
   typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
-  typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
 
@@ -242,9 +241,7 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef Thyra::VectorBase<double> Thyra_Vector;
   typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
-  typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
 
   Teuchos::RCP<Teuchos::MpiComm<Thyra::Ordinal> > tComm = Teuchos::rcp(new Teuchos::MpiComm<Thyra::Ordinal>(MPI_COMM_WORLD));
   Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -384,10 +381,6 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  typedef Thyra::VectorBase<double> Thyra_Vector;
-  typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
-  typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
 

@@ -73,7 +73,6 @@ Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildMesh(stk::ParallelMach
 
    using Teuchos::RCP;
    using Teuchos::rcp;
-   typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
    
    RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
 

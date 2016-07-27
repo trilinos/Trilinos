@@ -298,14 +298,14 @@ computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::P
 						     intrepidBasis->getBaseCellTopology().getDimension());
       basisCoords->getDofCoords(coords);
       TEUCHOS_ASSERT(coords.rank()==2);
-      TEUCHOS_ASSERT(coords.dimension(1)==baseDimension);
+      TEUCHOS_ASSERT(coords.extent_int(1)==baseDimension);
 
-      for(int i=0;i<coords.dimension(0);i++)
-         for(int d=0;d<coords.dimension(1);d++)
+      for(int i=0;i<coords.extent_int(0);i++)
+         for(int d=0;d<coords.extent_int(1);d++)
             centroid(0,d) += coords(i,d);
 
       // take the average
-      for(int d=0;d<coords.dimension(1);d++)
+      for(int d=0;d<coords.extent_int(1);d++)
          centroid(0,d) /= coords.dimension(0);
 
       return;

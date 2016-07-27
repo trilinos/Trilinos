@@ -380,8 +380,6 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, adjustDirichlet)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
  
-   typedef EpetraLinearObjContainer ELOC;
-
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
          = rcp(new unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
 

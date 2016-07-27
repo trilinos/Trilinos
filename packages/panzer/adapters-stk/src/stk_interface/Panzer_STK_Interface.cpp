@@ -616,7 +616,7 @@ void STK_Interface::getOwnedElementsSharingNode(stk::mesh::Entity node,std::vect
       stk::mesh::Entity element = relations[i];
 
      // if owned by this processor
-      if(bulkData_->parallel_owner_rank(element) == procRank_) {
+      if(bulkData_->parallel_owner_rank(element) == static_cast<int>(procRank_)) {
          elements.push_back(element);
          relIds.push_back(rel_ids[i]);
       }

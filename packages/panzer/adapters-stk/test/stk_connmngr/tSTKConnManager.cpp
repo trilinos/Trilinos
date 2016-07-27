@@ -497,7 +497,7 @@ namespace {
 void testAssociatedNeighbors(const STKConnManager<int>& connMngr, const int vals[][3],
                              Teuchos::FancyOStream& out, bool& success)
 {
-  for (int i = 0; i < sizeof(vals)/sizeof(*vals); ++i) {
+  for (int i = 0; i < static_cast<int>(sizeof(vals)/sizeof(*vals)); ++i) {
     const std::size_t sz = connMngr.getAssociatedNeighbors(vals[i][0]).size();
     TEST_EQUALITY(sz, vals[i][1]);
     if (sz)

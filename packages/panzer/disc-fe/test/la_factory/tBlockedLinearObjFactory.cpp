@@ -306,8 +306,6 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
    int myRank = tComm->getRank();
    int numProc = tComm->getSize();
  
-   typedef BlockedEpetraLinearObjContainer BLOC;
-
    RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    out << "Built indexer = " << blkIndexer << std::endl;
@@ -393,8 +391,6 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
    int myRank = tComm->getRank();
    int numProc = tComm->getSize();
  
-   typedef BlockedEpetraLinearObjContainer BLOC;
-
    RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > la_factory
