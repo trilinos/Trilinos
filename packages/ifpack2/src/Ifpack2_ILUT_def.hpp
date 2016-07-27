@@ -48,13 +48,13 @@
 #pragma clang system_header
 #endif
 
-#include <Ifpack2_Heap.hpp>
-#include <Ifpack2_LocalFilter.hpp>
-#include <Ifpack2_Parameters.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-
+#include "Ifpack2_Heap.hpp"
+#include "Ifpack2_LocalFilter.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
+#include "Ifpack2_Parameters.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Teuchos_Time.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 namespace Ifpack2 {
 
@@ -378,6 +378,19 @@ void ILUT<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     IsInitialized_ = false;
     IsComputed_ = false;
     A_local_ = Teuchos::null;
+
+    // The sparse triangular solvers get a triangular factor as their
+    // input matrix.  The triangular factors L_ and U_ are getting
+    // reset, so we reset the solvers' matrices to null.  Do that
+    // before setting L_ and U_ to null, so that latter step actually
+    // frees the factors.
+    if (! L_solver_.is_null ()) {
+      L_solver_->setMatrix (Teuchos::null);
+    }
+    if (! U_solver_.is_null ()) {
+      U_solver_->setMatrix (Teuchos::null);
+    }
+
     L_ = Teuchos::null;
     U_ = Teuchos::null;
     A_ = A;
@@ -752,6 +765,14 @@ void ILUT<MatrixType>::compute ()
     // FIXME (mfh 03 Apr 2013) Do we need to supply a domain and range Map?
     L_->fillComplete();
     U_->fillComplete();
+
+    L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> (L_));
+    L_solver_->initialize ();
+    L_solver_->compute ();
+
+    U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> (U_));
+    U_solver_->initialize ();
+    U_solver_->compute ();
   }
   ComputeTime_ += timer.totalElapsedTime ();
   IsComputed_ = true;
@@ -830,16 +851,20 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     RCP<MV> Y_mid = rcp (new MV (Y.getMap (), Y.getNumVectors ()));
 
     if (mode == Teuchos::NO_TRANS) { // Solve L U Y = X
-      L_->template localSolve<scalar_type, scalar_type> (*X_temp, *Y_mid, mode);
+      L_solver_->apply (*X_temp, *Y_mid, mode);
+
       // FIXME (mfh 20 Aug 2013) Is it OK to use Y_temp for both the
       // input and the output?
-      U_->template localSolve<scalar_type, scalar_type> (*Y_mid, *Y_temp, mode);
+
+      U_solver_->apply (*Y_mid, *Y_temp, mode);
     }
     else { // Solve U^* L^* Y = X
-      U_->template localSolve<scalar_type, scalar_type> (*X_temp, *Y_mid, mode);
+      U_solver_->apply (*X_temp, *Y_mid, mode);
+
       // FIXME (mfh 20 Aug 2013) Is it OK to use Y_temp for both the
       // input and the output?
-      L_->template localSolve<scalar_type, scalar_type> (*Y_mid, *Y_temp, mode);
+
+      L_solver_->apply (*Y_mid, *Y_temp, mode);
     }
 
     if (beta == Teuchos::ScalarTraits<scalar_type>::zero ()) {

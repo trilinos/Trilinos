@@ -49,9 +49,9 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
-
 #include "Ifpack2_ScalingType.hpp"
 #include "Ifpack2_IlukGraph.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
 
 #include <type_traits>
 
@@ -581,8 +581,12 @@ protected:
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
+  //! Sparse triangular solver for L
+  Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > L_solver_;
   //! The U (upper triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> U_;
+  //! Sparse triangular solver for U
+  Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > U_solver_;
   //! The diagonal entries of the ILU(k) factorization.
   Teuchos::RCP<vec_type> D_;
 
@@ -590,10 +594,10 @@ protected:
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
   typedef typename node_type::device_type  kokkos_device;
   typedef typename kokkos_device::execution_space kokkos_exe;
-  
+
   static_assert( std::is_same< kokkos_exe,
-		 Kokkos::OpenMP>::value,
-		 "Kokkos node type not supported by exepertimentalthread basker RILUK decl");
+                 Kokkos::OpenMP>::value,
+                 "Kokkos node type not supported by exepertimentalthread basker RILUK decl");
 
   Teuchos::RCP< BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP> >
   myBasker;

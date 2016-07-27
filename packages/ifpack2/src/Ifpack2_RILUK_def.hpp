@@ -45,6 +45,7 @@
 
 #include "Ifpack2_LocalFilter.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver.hpp"
 
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
 #include <shylubasker_def.hpp>
@@ -114,6 +115,19 @@ RILUK<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     isComputed_ = false;
     A_local_crs_ = Teuchos::null;
     Graph_ = Teuchos::null;
+
+    // The sparse triangular solvers get a triangular factor as their
+    // input matrix.  The triangular factors L_ and U_ are getting
+    // reset, so we reset the solvers' matrices to null.  Do that
+    // before setting L_ and U_ to null, so that latter step actually
+    // frees the factors.
+    if (! L_solver_.is_null ()) {
+      L_solver_->setMatrix (Teuchos::null);
+    }
+    if (! U_solver_.is_null ()) {
+      U_solver_->setMatrix (Teuchos::null);
+    }
+
     L_ = Teuchos::null;
     U_ = Teuchos::null;
     D_ = Teuchos::null;
@@ -363,8 +377,8 @@ setParameters (const Teuchos::ParameterList& params)
     // Accept the default value.
   }
 
-  //Experimental 
-  //Note: just following RILUK original style. 
+  //Experimental
+  //Note: just following RILUK original style.
   //Do not think catch is the method for this. JDB
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
   try {
@@ -376,7 +390,7 @@ setParameters (const Teuchos::ParameterList& params)
   catch (InvalidParameterName&) {
     //Use default
   }
- 
+
   try {
     basker_threads = params.get<int> ("fact: iluk experimental basker threads");
   }
@@ -411,8 +425,8 @@ setParameters (const Teuchos::ParameterList& params)
       hts_nthreads_ = params.get<int> (name);
   }
 # endif
-#endif 
-  
+#endif
+
   // "Commit" the values only after validating all of them.  This
   // ensures that there are no side effects if this routine throws an
   // exception.
@@ -565,60 +579,60 @@ void RILUK<MatrixType>::initialize ()
 
     if(!isExperimental_)
       {
-	Graph_->initialize ();
-	allocate_L_and_U ();
-	initAllValues (*A_local_crs_);
+        Graph_->initialize ();
+        allocate_L_and_U ();
+        initAllValues (*A_local_crs_);
       }
     else
       {
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
-	typedef typename node_type::device_type    kokkos_device;
-	typedef typename kokkos_device::execution_space kokkos_exe;
-	typedef typename crs_matrix_type::local_matrix_type kokkos_csr_matrix;
+        typedef typename node_type::device_type    kokkos_device;
+        typedef typename kokkos_device::execution_space kokkos_exe;
+        typedef typename crs_matrix_type::local_matrix_type kokkos_csr_matrix;
 
-	static_assert( std::is_same< kokkos_exe, 
-		       Kokkos::OpenMP>::value, 
-		       "Kokkos node type not supported by experimental thread basker RILUK");
+        static_assert( std::is_same< kokkos_exe,
+                       Kokkos::OpenMP>::value,
+                       "Kokkos node type not supported by experimental thread basker RILUK");
 
 
-	myBasker = rcp( new BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP>);
-	myBasker->Options.no_pivot     = true;
-	myBasker->Options.transpose    = true; //CRS not CCS
-	myBasker->Options.symmetric    = false;
-	myBasker->Options.realloc      = true;
-	myBasker->Options.btf          = false;
-	myBasker->Options.incomplete   = true;
-	myBasker->Options.inc_lvl      = LevelOfFill_;
-	myBasker->Options.user_fill    = basker_user_fill;
-	myBasker->Options.same_pattern = false;
-	myBasker->SetThreads(basker_threads);
-	basker_reuse = false;
-	
-	kokkos_csr_matrix kcsr = A_local_crs_->getLocalMatrix();
+        myBasker = rcp( new BaskerNS::Basker<local_ordinal_type, scalar_type, Kokkos::OpenMP>);
+        myBasker->Options.no_pivot     = true;
+        myBasker->Options.transpose    = true; //CRS not CCS
+        myBasker->Options.symmetric    = false;
+        myBasker->Options.realloc      = true;
+        myBasker->Options.btf          = false;
+        myBasker->Options.incomplete   = true;
+        myBasker->Options.inc_lvl      = LevelOfFill_;
+        myBasker->Options.user_fill    = basker_user_fill;
+        myBasker->Options.same_pattern = false;
+        myBasker->SetThreads(basker_threads);
+        basker_reuse = false;
 
-	local_ordinal_type* r_ptr;
-	r_ptr = new local_ordinal_type[(local_ordinal_type)A_local_crs_->getNodeNumRows()+1];
+        kokkos_csr_matrix kcsr = A_local_crs_->getLocalMatrix();
 
-	//Still need to convert
-	//Lost on why Trilinos uses such odd types for row_ptrs
-	for(local_ordinal_type bi = 0; 
-	    bi < A_local_crs_->getNodeNumRows()+1; bi++)
-	  {
-	    r_ptr[bi] = (local_ordinal_type)kcsr.graph.row_map(bi);
-	  }
+        local_ordinal_type* r_ptr;
+        r_ptr = new local_ordinal_type[(local_ordinal_type)A_local_crs_->getNodeNumRows()+1];
 
-	int basker_error = 
-	myBasker->Symbolic(
-	 ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
-	 ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
-	 ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
-	 r_ptr,
-	 &(kcsr.graph.entries(0)),
-	 &(kcsr.values(0)));
+        //Still need to convert
+        //Lost on why Trilinos uses such odd types for row_ptrs
+        for(local_ordinal_type bi = 0;
+            bi < A_local_crs_->getNodeNumRows()+1; bi++)
+          {
+            r_ptr[bi] = (local_ordinal_type)kcsr.graph.row_map(bi);
+          }
 
-	TEUCHOS_TEST_FOR_EXCEPTION(
+        int basker_error =
+        myBasker->Symbolic(
+         ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
+         ((local_ordinal_type)A_local_crs_->getNodeNumCols()),
+         ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
+         r_ptr,
+         &(kcsr.graph.entries(0)),
+         &(kcsr.values(0)));
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
         basker_error != 0, std::logic_error, "Ifpack2::RILUK::initialize:"
-	 "Error in basker Symbolic");
+         "Error in basker Symbolic");
 
 
 #else
@@ -628,7 +642,7 @@ void RILUK<MatrixType>::initialize ()
       "Try again with -DIFPACK2_ILUK_EXPERIMENAL.");
 #endif
       }
-    
+
   } // Stop timing
 
   isInitialized_ = true;
@@ -797,6 +811,7 @@ initAllValues (const row_matrix_type& A)
 template<class MatrixType>
 void RILUK<MatrixType>::compute ()
 {
+  using Teuchos::rcp;
   const char prefix[] = "Ifpack2::RILUK::compute: ";
 
   // initialize() checks this too, but it's easier for users if the
@@ -960,56 +975,64 @@ void RILUK<MatrixType>::compute ()
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! U_->isUpperTriangular (), std::runtime_error,
       "Ifpack2::RILUK::compute: U isn't lower triangular.");
-  } 
-  else{
+
+    L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> (L_));
+    L_solver_->initialize ();
+    L_solver_->compute ();
+
+    U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> (U_));
+    U_solver_->initialize ();
+    U_solver_->compute ();
+  }
+  else {
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
     Teuchos::Time timerbasker ("RILUK::basercompute");
     {
       //
       if(basker_reuse == false)
-	{
-	  //We don't have to reimport Matrix because same
-	  {
-	    //Teuchos::TimeMonitor timeMon(timerbasker);
-	    myBasker->Factor_Inc(0);
-	    basker_reuse = true;
-	  }
-	}
+        {
+          //We don't have to reimport Matrix because same
+          {
+            //Teuchos::TimeMonitor timeMon(timerbasker);
+            myBasker->Factor_Inc(0);
+            basker_reuse = true;
+          }
+        }
       else
-	{
-	  //Do we need to import Matrix with file again?
-	  myBasker->Options.same_pattern = true;
-	  
-	  typedef typename crs_matrix_type::local_matrix_type kokkos_csr_matrix;
-	  kokkos_csr_matrix kcsr = A_local_crs_->getLocalMatrix();
+        {
+          //Do we need to import Matrix with file again?
+          myBasker->Options.same_pattern = true;
 
-	  
-	 local_ordinal_type* r_ptr;
-	r_ptr = new local_ordinal_type[(local_ordinal_type)A_local_crs_->getNodeNumRows()+1];
+          typedef typename crs_matrix_type::local_matrix_type kokkos_csr_matrix;
+          kokkos_csr_matrix kcsr = A_local_crs_->getLocalMatrix();
 
-	//Still need to convert
-	//Lost on why Trilinos uses such odd types for row_ptrs
-	for(local_ordinal_type bi = 0; bi < A_local_crs_->getNodeNumRows()+1; bi++)
-	  {
-	    r_ptr[bi] = (local_ordinal_type)kcsr.graph.row_map(bi);
-	  }
 
-	int basker_error = 
-	myBasker->Factor(
-	 ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
-	 ((local_ordinal_type)A_local_crs_->getNodeNumCols()), 
-	 ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
-	 r_ptr,
-	 &(kcsr.graph.entries(0)),
-	 &(kcsr.values(0)));
-	
-	//myBasker->DEBUG_PRINT();
+         local_ordinal_type* r_ptr;
+        r_ptr = new local_ordinal_type[(local_ordinal_type)A_local_crs_->getNodeNumRows()+1];
 
-	TEUCHOS_TEST_FOR_EXCEPTION(
+        //Still need to convert
+        //Lost on why Trilinos uses such odd types for row_ptrs
+        for(local_ordinal_type bi = 0; bi < A_local_crs_->getNodeNumRows()+1; bi++)
+          {
+            r_ptr[bi] = (local_ordinal_type)kcsr.graph.row_map(bi);
+          }
+
+        int basker_error =
+        myBasker->Factor(
+         ((local_ordinal_type)A_local_crs_->getNodeNumRows()),
+         ((local_ordinal_type)A_local_crs_->getNodeNumCols()),
+         ((local_ordinal_type)A_local_crs_->getNodeNumEntries()),
+         r_ptr,
+         &(kcsr.graph.entries(0)),
+         &(kcsr.values(0)));
+
+        //myBasker->DEBUG_PRINT();
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
         basker_error != 0, std::logic_error, "Ifpack2::RILUK::initialize:"
-	 "Error in basker compute");
-	 
-	
+         "Error in basker compute");
+
+
         }
     }
 # ifdef IFPACK2_HTS_EXPERIMENTAL
@@ -1020,18 +1043,18 @@ void RILUK<MatrixType>::compute ()
       Teuchos::Time hts_buildL ("hts_buildL");
       Teuchos::Time basker_getU("basker_getU");
       Teuchos::Time hts_buildU ("hts_buildU");
-      
+
 
       hts_mgr_ = Teuchos::rcp(new HTSManager());
       local_ordinal_type* p, * q;
       local_ordinal_type nnz;
 
-     
-      
+
+
       myBasker->GetPerm(&p, &q);
-      
+
       {
-	
+
         HTSData d;
         myBasker->GetL(d.n, nnz, &d.ir, &d.jc, &d.v);
         d.sort();
@@ -1045,7 +1068,7 @@ void RILUK<MatrixType>::compute ()
         HTSData d;
         myBasker->GetU(d.n, nnz, &d.ir, &d.jc, &d.v);
         d.sort();
-       
+
         typename HTST::CrsMatrix* T = HTST::make_CrsMatrix(d.n, d.ir, d.jc, d.v, true);
         hts_mgr_->Uimpl = HTST::preprocess(T, 1, hts_nthreads_, true, 0, q);
 
@@ -1055,7 +1078,7 @@ void RILUK<MatrixType>::compute ()
 
     }
 # endif
-  
+
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
        0==1, std::runtime_error,
@@ -1127,31 +1150,31 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     if (alpha == one && beta == zero) {
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
         // Start by solving L C = X for C.  C must have the same Map
-        // as D.  We have to use a temp multivector, since
-        // localSolve() does not allow its input and output to alias
-        // one another.
+        // as D.  We have to use a temp multivector, since our
+        // implementation of triangular solves does not allow its
+        // input and output to alias one another.
         //
         // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
         MV C (D_->getMap (), X.getNumVectors ());
-        L_->localSolve (X, C, mode);
+        L_solver_->apply (X, C, mode);
 
         // Solve D Y_tmp = C.  Y_tmp must have the same Map as C, and
         // the operation lets us do this in place in C, so we can
         // write "solve D C = C for C."
         C.elementWiseMultiply (one, *D_, C, zero);
 
-        U_->localSolve (C, Y, mode); // Solve U Y = C.
+        U_solver_->apply (C, Y, mode); // Solve U Y = C.
       }
       else { // Solve U^P (D^P (U^P Y)) = X for Y (where P is * or T).
 
         // Start by solving U^P C = X for C.  C must have the same Map
-        // as D.  We have to use a temp multivector, since
-        // localSolve() does not allow its input and output to alias
-        // one another.
+        // as D.  We have to use a temp multivector, since our
+        // implementation of triangular solves does not allow its
+        // input and output to alias one another.
         //
         // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
         MV C (D_->getMap (), X.getNumVectors ());
-        U_->localSolve (X, C, mode);
+        U_solver_->apply (X, C, mode);
 
         // Solve D^P Y_tmp = C.  Y_tmp must have the same Map as C,
         // and the operation lets us do this in place in C, so we can
@@ -1162,7 +1185,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         // D_, not just with D_ itself.
         C.elementWiseMultiply (one, *D_, C, zero);
 
-        L_->localSolve (C, Y, mode); // Solve L^P Y = C.
+        L_solver_->apply (C, Y, mode); // Solve L^P Y = C.
       }
     }
     else { // alpha != 1 or beta != 0
@@ -1178,7 +1201,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Y.update (alpha, Y_tmp, beta);
       }
     }
-  } 
+  }
   else
     {
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
@@ -1186,7 +1209,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       Teuchos::ArrayRCP<const scalar_type> YY;
       XX = X.get1dView();
       YY = Y.get1dView();
-      
+
 # ifdef IFPACK2_HTS_EXPERIMENTAL
       if (use_hts_) {
         HTST::solve_omp(hts_mgr_->Limpl, const_cast<scalar_type*>(XX.getRawPtr()),
@@ -1196,13 +1219,13 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       } else
 # endif
       {
-        myBasker->Solve(((local_ordinal_type)X.getNumVectors()), 
+        myBasker->Solve(((local_ordinal_type)X.getNumVectors()),
                         (const_cast<scalar_type *>(XX.getRawPtr())),
                         (const_cast<scalar_type *>(YY.getRawPtr())));
       }
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(
-      0==1, std::runtime_error, 
+      0==1, std::runtime_error,
       "Ifpack2::RILUK::apply: Experimental no enabled");
 #endif
     }//end isExperimental
