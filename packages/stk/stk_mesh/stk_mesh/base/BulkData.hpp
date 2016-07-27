@@ -117,6 +117,12 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                              const stk::mesh::PartVector& parts_for_creating_side,
                              const stk::mesh::PartVector& boundary_mesh_parts);
 
+namespace impl {
+stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
+                                          stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
+                                          stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
+}
+
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
 struct sharing_info
@@ -343,6 +349,13 @@ public:
    * creates the new entity in the 'universal' part.
    */
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id);// Mod Mark
+
+  Entity declare_solo_side(EntityId ent_id, const PartVector& parts);
+
+  Entity declare_element_side(Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts = {});
+
+  Entity declare_element_side(const stk::mesh::EntityId global_side_id, stk::mesh::Entity elem, const unsigned local_side_id,
+                              const stk::mesh::PartVector& parts);
 
   /** \brief Add sharing information about a newly-created node
    *
@@ -1095,6 +1108,7 @@ protected: //functions
 
   void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities);
   void change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys);
+  void update_side_elem_permutations(Entity side);
   void resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
                                          std::vector<SideSharingData>& sideSharingDataReceived);
   void add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities);
@@ -1324,6 +1338,10 @@ private:
                                         stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
                                         const stk::mesh::PartVector& parts_for_creating_side,
                                         const stk::mesh::PartVector* boundary_mesh_parts);
+
+  friend stk::mesh::Entity impl::connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
+                                                   stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
+                                                   stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);

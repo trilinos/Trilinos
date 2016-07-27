@@ -13,6 +13,17 @@ namespace mesh
 void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)
 {
     //connect_side_to_elem(sideEntity, elemEntity, elemSide);
+    if (!m_localMapper.does_entity_have_local_id(elemEntity)) {
+        std::cerr<<"no local id for "<<(m_bulk_data.is_valid(elemEntity) ? "valid" : "invalid")<<" elem "
+                << m_bulk_data.identifier(elemEntity) << ", local_offset="<<elemEntity.local_offset();
+        if (m_bulk_data.is_valid(elemEntity)) {
+            std::cerr<<" " << m_bulk_data.bucket(elemEntity).topology()
+                    << ", owned="<<m_bulk_data.bucket(elemEntity).owned()
+                    << ", bucket="<<m_bulk_data.bucket(elemEntity).bucket_id()
+                    <<", bucket_ord="<<m_bulk_data.mesh_index(elemEntity).bucket_ordinal;
+        }
+        std::cerr<<std::endl;
+    }
     stk::mesh::impl::LocalId elemLocalId = m_localMapper.entity_to_local(elemEntity);
     connect_side_to_coincident_elements(sideEntity, elemLocalId, elemSide);
     connect_side_to_adjacent_elements(sideEntity, elemLocalId, elemSide);

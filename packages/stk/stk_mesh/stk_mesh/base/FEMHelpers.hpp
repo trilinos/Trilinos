@@ -61,11 +61,6 @@ Entity declare_element( BulkData & mesh ,
   return declare_element(mesh, vec, elem_id, node_ids);
 }
 
-Entity declare_element_side(BulkData& bulkData,
-                            Entity elem,
-                            const unsigned side_ordinal,
-                            const stk::mesh::PartVector& add_parts = stk::mesh::PartVector());
-
 /** \brief  Create (or find) an element side.
  *
  *  The element must be a member of a Part with a topology.
@@ -75,13 +70,7 @@ Entity declare_element_side( BulkData & mesh ,
 			     const stk::mesh::EntityId global_side_id ,
 			     Entity elem ,
 			     const unsigned local_side_id ,
-			     const stk::mesh::PartVector& parts);
-
-Entity declare_element_side( BulkData & mesh ,
-                             const stk::mesh::EntityId global_side_id ,
-                             Entity elem ,
-                             const unsigned local_side_id ,
-                             stk::mesh::Part* part = NULL);
+			     const stk::mesh::PartVector& parts = {});
 
 /** \brief  Create (or find) an element edge.
  *
@@ -103,24 +92,7 @@ Entity declare_element_side( BulkData & mesh ,
                                Entity elem ,
                                Entity side ,
                                const unsigned local_side_id ,
-                               const stk::mesh::PartVector& parts);
-
-Entity declare_element_side( BulkData & mesh ,
-                               Entity elem ,
-                               Entity side ,
-                               const unsigned local_side_id ,
                                stk::mesh::Part* part = NULL);
-
-
-/** \brief  Create (or find) an element edge.
- *
- *  The element must be a member of a Part with a topology.
- */
-Entity declare_element_edge( BulkData & mesh ,
-                               Entity elem ,
-                               Entity edge ,
-                               const unsigned local_edge_id ,
-                               const stk::mesh::PartVector& parts = stk::mesh::PartVector());
 
 /** \brief finds oridinal and permutation of an entity relative to a parent entity
  *

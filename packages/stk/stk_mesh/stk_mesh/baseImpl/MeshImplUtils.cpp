@@ -655,6 +655,69 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData 
   }
 }
 
+Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
+        const unsigned relationOrdinal, const PartVector& parts, stk::topology entity_top)
+{
+    stk::topology elem_top = mesh.bucket(elem).topology();
+
+    std::vector<unsigned> entity_node_ordinals(entity_top.num_nodes());
+    elem_top.sub_topology_node_ordinals(mesh.entity_rank(entity), relationOrdinal, entity_node_ordinals.begin());
+
+    const stk::mesh::Entity *elem_nodes = mesh.begin_nodes(elem);
+    EntityVector entity_top_nodes(entity_top.num_nodes());
+    elem_top.sub_topology_nodes(elem_nodes, mesh.entity_rank(entity), relationOrdinal, entity_top_nodes.begin());
+
+    Permutation perm = mesh.find_permutation(elem_top, elem_nodes, entity_top, &entity_top_nodes[0], relationOrdinal);
+
+    OrdinalVector ordinal_scratch;
+    ordinal_scratch.reserve(64);
+    PartVector part_scratch;
+    part_scratch.reserve(64);
+
+    stk::mesh::PartVector initialParts;
+    initialParts.reserve(parts.size() + 1);
+    initialParts = parts;
+    initialParts.push_back(&mesh.mesh_meta_data().get_topology_root_part(entity_top));
+    mesh.change_entity_parts(entity, initialParts);
+
+    const stk::mesh::ConnectivityOrdinal *side_ordinals = mesh.begin_ordinals(elem, mesh.entity_rank(entity));
+    unsigned num_sides = mesh.count_valid_connectivity(elem, mesh.entity_rank(entity));
+
+    bool elem_to_side_exists = false;
+    for(unsigned i = 0; i < num_sides; ++i)
+    {
+        if(side_ordinals[i] == relationOrdinal)
+        {
+            elem_to_side_exists = true;
+            break;
+        }
+    }
+
+    if(!elem_to_side_exists)
+    {
+        mesh.declare_relation(elem, entity, relationOrdinal, perm, ordinal_scratch, part_scratch);
+    }
+
+    const unsigned num_side_nodes = mesh.count_valid_connectivity(entity, stk::topology::NODE_RANK);
+    if(0 == num_side_nodes)
+    {
+        Permutation node_perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+        Entity const *elem_nodes_local = mesh.begin_nodes(elem);
+        for(unsigned i = 0; i < entity_top.num_nodes(); ++i)
+        {
+            Entity node = elem_nodes_local[entity_node_ordinals[i]];
+            mesh.declare_relation(entity, node, i, node_perm, ordinal_scratch, part_scratch);
+        }
+    }
+    else
+    {
+        ThrowAssertMsg(num_side_nodes == entity_top.num_nodes(),
+                "declare_element_to_entity: " << mesh.entity_key(entity) << " already exists with different number of nodes.");
+    }
+
+    return entity;
+}
+
 
 
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
@@ -674,7 +737,7 @@ stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
         }
     }
     if (!bulk.is_valid(new_face)) {
-        new_face = stk::mesh::declare_element_side(bulk, new_face_global_id, elem, side_ordinal, parts);
+        new_face = bulk.declare_element_side(new_face_global_id, elem, side_ordinal, parts);
     } else {
         bulk.change_entity_parts(new_face, parts );
     }

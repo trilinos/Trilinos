@@ -223,7 +223,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                     if (par_dimen == 1) {
                         if(bulk.mesh_meta_data().spatial_dimension()==2 && behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
                         {
-                            stk::mesh::declare_element_side(bulk, elem, side_ordinal, add_parts);
+                            bulk.declare_element_side(elem, side_ordinal, add_parts);
                         }
                         else
                         {
@@ -242,7 +242,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                         }
                         else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
                             if(bulk.bucket(elem).owned()) {
-                                stk::mesh::declare_element_side(bulk, elem, side_ordinal, add_parts);
+                                bulk.declare_element_side(elem, side_ordinal, add_parts);
                             }
                             else
                             {
@@ -298,7 +298,7 @@ void unpack_and_declare_element_side(stk::CommSparse & comm, stk::mesh::BulkData
     ThrowRequireWithSierraHelpMsg(bulk.is_valid(elem));
     stk::mesh::PartVector add_parts;
     stk::mesh::impl::convert_part_ordinals_to_parts(bulk.mesh_meta_data(), partOrdinals, add_parts);
-    stk::mesh::declare_element_side(bulk, elem, sideOrdinal, add_parts);
+    bulk.declare_element_side(elem, sideOrdinal, add_parts);
 }
 
 void move_sidset_to_follow_element(stk::mesh::BulkData &bulk, const stk::mesh::EntityIdProcMap &elemIdMovedToProc, const std::vector<ElemSidePartOrds> &sidesToMove)

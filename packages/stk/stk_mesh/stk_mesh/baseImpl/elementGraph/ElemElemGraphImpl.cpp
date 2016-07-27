@@ -32,14 +32,16 @@ unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData)
         return count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
 }
 
-void fill_topologies(stk::mesh::BulkData& bulkData,
-                                                             stk::mesh::impl::ElementLocalIdMapper & localMapper,
-                                                             std::vector<stk::topology>& element_topologies)
+void fill_topologies(const stk::mesh::BulkData& bulkData,
+                     const stk::mesh::impl::ElementLocalIdMapper & localMapper,
+                     std::vector<stk::topology>& element_topologies)
 {
     const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    for(const stk::mesh::Bucket* bucket : elemBuckets)
-        for(stk::mesh::Entity element : *bucket)
+    for(const stk::mesh::Bucket* bucket : elemBuckets) {
+        for(stk::mesh::Entity element : *bucket) {
             element_topologies[localMapper.entity_to_local(element)] = bucket->topology();
+        }
+    }
 }
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData,
@@ -331,7 +333,7 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
 {
     stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
 
-    stk::mesh::Entity side = bulkData.declare_entity(side_rank, side_global_id, parts);
+    stk::mesh::Entity side = bulkData.internal_declare_entity(side_rank, side_global_id, parts);
 
     // connect element to side
     bulkData.declare_relation(element, side, side_ordinal, side_permutation);

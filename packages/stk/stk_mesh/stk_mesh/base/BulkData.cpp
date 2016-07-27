@@ -802,22 +802,102 @@ void BulkData::initialize_arrays()
 
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id)
 {
-    PartVector parts(1, &mesh_meta_data().universal_part());
-    return internal_declare_entity(ent_rank, ent_id, parts);
+//    ThrowRequireMsg(ent_rank != mesh_meta_data().side_rank(),"declare_entity(SIDE) 1");
+//    if (ent_rank == mesh_meta_data().side_rank()) {
+//        std::cerr<<"";
+//    }
+    return internal_declare_entity(ent_rank, ent_id, {&mesh_meta_data().universal_part()});
 }
 
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part)
 {
-    PartVector parts(1, &part);
-    return internal_declare_entity( ent_rank, ent_id, parts);
+//    ThrowRequireMsg(ent_rank != mesh_meta_data().side_rank(),"declare_entity(SIDE) 2");
+//    if (ent_rank == mesh_meta_data().side_rank()) {
+//        std::cerr<<"";
+//    }
+    return internal_declare_entity( ent_rank, ent_id, {&part});
 }
 
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                  const PartVector & parts )
 {
+//    ThrowRequireMsg(ent_rank != mesh_meta_data().side_rank(),"declare_entity(SIDE) 3");
+//    if (ent_rank == mesh_meta_data().side_rank()) {
+//        std::cerr<<"";
+//    }
     return internal_declare_entity(ent_rank, ent_id, parts);
 }
 
+Entity BulkData::declare_solo_side( EntityId ent_id, const PartVector & parts )
+{
+    return internal_declare_entity(mesh_meta_data().side_rank(), ent_id, parts);
+}
+
+Entity BulkData::declare_element_side(Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
+{
+    stk::mesh::Entity sideEntity = stk::mesh::impl::get_side_for_element(*this, elem, side_ordinal);
+    if(this->is_valid(sideEntity))
+    {
+        this->change_entity_parts(sideEntity, add_parts, {});
+    }
+    else
+    {
+        stk::mesh::EntityId global_side_id = impl::side_id_formula(*this, elem, side_ordinal);
+        sideEntity = this->declare_element_side(global_side_id, elem, side_ordinal, add_parts);
+        if (this->has_face_adjacent_element_graph()) {
+            stk::mesh::ElemElemGraph &graph = this->get_face_adjacent_element_graph();
+            stk::mesh::SideConnector sideConnector = graph.get_side_connector();
+            sideConnector.connect_side_to_all_elements(sideEntity, elem, side_ordinal);
+        }
+    }
+    return sideEntity;
+}
+
+void verify_declare_element_side(
+        const BulkData & mesh,
+        const Entity elem,
+        const unsigned local_side_id
+        )
+{
+    stk::topology elem_top = mesh.bucket(elem).topology();
+
+    ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
+            "Element[" << mesh.identifier(elem) << "] has no defined topology");
+
+    stk::topology invalid = stk::topology::INVALID_TOPOLOGY;
+    stk::topology side_top =
+            ((elem_top != stk::topology::INVALID_TOPOLOGY) && (local_side_id < elem_top.num_sides()) )
+            ? elem_top.side_topology(local_side_id) : invalid;
+
+    ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && local_side_id >= elem_top.num_sides(),
+            "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
+            "local_side_id exceeds " << elem_top.name() << ".num_sides() = " << elem_top.num_sides());
+
+    ThrowErrorMsgIf( side_top == stk::topology::INVALID_TOPOLOGY,
+            "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
+            "No element topology found");
+}
+
+Entity BulkData::declare_element_side(
+        const stk::mesh::EntityId global_side_id,
+        Entity elem,
+        const unsigned local_side_id,
+        const stk::mesh::PartVector& parts)
+{
+    verify_declare_element_side(*this, elem, local_side_id);
+
+    stk::topology elem_top = this->bucket(elem).topology();
+    stk::topology side_top = elem_top.side_topology(local_side_id);
+
+    Entity side = this->get_entity(side_top.rank(), global_side_id);
+    if(!this->is_valid(side))
+    {
+        PartVector empty_parts;
+        side = this->internal_declare_entity(side_top.rank(), global_side_id, empty_parts);
+        impl::connect_element_to_entity(*this, elem, side, local_side_id, parts, side_top);
+    }
+    return side;
+}
 
 void BulkData::add_node_sharing( Entity node, int sharing_proc )
 {
@@ -1110,12 +1190,50 @@ void BulkData::generate_new_ids_given_reserved_ids(stk::topology::rank_t rank, s
     requestedIds = generate_parallel_unique_ids(maxAllowedId, ids_in_use, numIdsNeeded, this->parallel());
 }
 
+void get_graph_reserved_side_ids(const stk::mesh::BulkData& bulk, std::vector<uint64_t>& ids_in_use)
+{
+    const stk::mesh::SideIdPool& graphSideIdPool = bulk.get_face_adjacent_element_graph().get_side_id_pool();
+    const stk::mesh::EntityIdVector& graphReservedSideIds = graphSideIdPool.get_all_ids();
+    ids_in_use.reserve(ids_in_use.size() + graphReservedSideIds.size());
+    for(stk::mesh::EntityId reservedSideId : graphReservedSideIds) {
+        ids_in_use.insert(ids_in_use.end(), reservedSideId);
+    }
+}
+
+void get_all_potential_elem_side_ids_by_formula(const stk::mesh::BulkData& bulk, std::vector<uint64_t>& ids_in_use)
+{
+    const stk::mesh::BucketVector& elemBuckets = bulk.buckets(stk::topology::ELEM_RANK);
+    unsigned numElemSides = 0;
+    for(const stk::mesh::Bucket* bptr : elemBuckets) {
+        unsigned numSidesPerElem = bptr->topology().num_sides();
+        numElemSides += numSidesPerElem * bptr->size();
+    }
+    ids_in_use.reserve(ids_in_use.size()+numElemSides);
+
+    for(const stk::mesh::Bucket* bptr : elemBuckets) {
+        const stk::mesh::Bucket& bkt = *bptr;
+        unsigned numSidesPerElem = bptr->topology().num_sides();
+        for(size_t i=0; i<bkt.size(); ++i) {
+            for(unsigned j=0; j<numSidesPerElem; ++j) {
+                stk::mesh::EntityId sideId = bulk.identifier(bkt[i])*10 + j + 1; //1-based: 10*elem + side-ord
+                ids_in_use.push_back(sideId);
+            }
+        }
+    }
+}
+
 void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds) const
 {
     size_t maxNumNeeded = get_max_num_ids_needed_across_all_procs(*this, numIdsNeeded);
     if ( maxNumNeeded == 0 ) return;
 
     std::vector<uint64_t> ids_in_use = this->internal_get_ids_in_use(rank);
+
+    if (has_face_adjacent_element_graph() && rank == mesh_meta_data().side_rank()) {
+        get_graph_reserved_side_ids(*this, ids_in_use);
+        get_all_potential_elem_side_ids_by_formula(*this, ids_in_use);
+        stk::util::sort_and_unique(ids_in_use);
+    }
 
     uint64_t maxAllowedId = get_max_allowed_id();
 
@@ -3798,6 +3916,23 @@ void BulkData::change_connectivity_for_edge_or_face(stk::mesh::Entity side, cons
     }
 }
 
+void BulkData::update_side_elem_permutations(Entity side)
+{
+    const stk::mesh::Entity* sideNodes = begin_nodes(side);
+
+    unsigned numElems = num_elements(side);
+    const stk::mesh::Entity* elems = begin_elements(side);
+    const stk::mesh::ConnectivityOrdinal* side_elem_ords = begin_element_ordinals(side);
+    const stk::mesh::Permutation* side_elem_perms = begin_element_permutations(side);
+    for(unsigned i=0; i<numElems; ++i) {
+        std::pair<bool,unsigned> equiv = stk::mesh::side_equivalent(*this, elems[i], side_elem_ords[i], sideNodes);
+        ThrowRequireMsg(equiv.first,"ERROR, side not equivalent to element-side");
+        stk::mesh::Permutation correctPerm = static_cast<stk::mesh::Permutation>(equiv.second);
+        internal_declare_relation(elems[i], side, side_elem_ords[i], correctPerm);
+        ThrowRequireMsg(side_elem_perms[i] == correctPerm, "ERROR, failed to set permutation");
+    }
+}
+
 void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
                                                  std::vector<SideSharingData>& sideSharingDataReceived)
 {
@@ -4367,11 +4502,10 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
 // If there is no communication information then the
 // entity must be removed from the communication list.
 {
-  EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
   bool changed = false ;
-  for ( ; i != m_entity_comm_list.end() ; ++i ) {
-      if ( i->entity_comm == NULL || i->entity_comm->comm_map.empty() ) {
-          i->key = EntityKey();
+  for (EntityCommListInfo& entityCommInfo : m_entity_comm_list) {
+      if (entityCommInfo.entity_comm == NULL || entityCommInfo.entity_comm->comm_map.empty() ) {
+          entityCommInfo.key = EntityKey();
           changed = true;
       }
   }
@@ -6889,7 +7023,7 @@ void BulkData::destroy_dependent_ghosts( Entity entity, EntityProcVec& entitiesT
       ThrowRequireMsg( !upwardRelationOfEntityIsInClosure, this->entity_rank(e) << " with id " << this->identifier(e) << " should not be in closure." );
 
       // Recursion
-      if (this->bucket(e).in_aura())// && !this->in_receive_custom_ghost(this->entity_key(e)))
+      if (this->is_valid(e) && this->bucket(e).in_aura())
       {
           this->destroy_dependent_ghosts( e, entitiesToRemoveFromSharing );
       }

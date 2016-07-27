@@ -171,7 +171,7 @@ protected:
     {
         get_bulk().modification_begin();
         if(get_bulk().parallel_rank() == 0)
-            stk::mesh::declare_element_side(get_bulk(), get_bulk().get_entity(stk::topology::ELEM_RANK, firstHexId), 5, {});
+            get_bulk().declare_element_side(get_bulk().get_entity(stk::topology::ELEM_RANK, firstHexId), 5, {});
         get_bulk().modification_end();
     }
     void create_adjacent_hex_on_last_proc()

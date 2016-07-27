@@ -168,6 +168,9 @@ public:
     {
         return m_idMapper.local_to_entity(localId);
     }
+
+    const SideIdPool& get_side_id_pool() const { return m_sideIdPool; }
+
 protected:
     void fill_graph();
     void update_number_of_parallel_edges();

@@ -30,8 +30,7 @@ public:
         mSuggestedIds.clear();
     }
 
-protected:
-    const stk::mesh::EntityIdVector &get_all_ids()
+    const stk::mesh::EntityIdVector &get_all_ids() const
     {
         return mSuggestedIds;
     }

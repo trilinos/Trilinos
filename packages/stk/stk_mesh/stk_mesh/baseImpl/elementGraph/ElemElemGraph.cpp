@@ -845,7 +845,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                                                 << " between elem " << bulkData.identifier(element_with_perm_0)<< " and " << bulkData.identifier(element_with_perm_4)
                                                 << " in elem-elem-graph");
 
-                                side = stk::mesh::declare_element_side(bulkData, side_global_id, element_with_perm_0, side_id_needed, parts);
+                                side = bulkData.declare_element_side(side_global_id, element_with_perm_0, side_id_needed, parts);
 
                                 const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(side);
                                 unsigned num_side_nodes = bulkData.num_nodes(side);
@@ -1563,7 +1563,7 @@ stk::mesh::Entity ElemElemGraph::add_side_to_mesh(const stk::mesh::impl::Element
         add_parts.push_back(&m_bulk_data.mesh_meta_data().get_topology_root_part(side_top));
         stk::mesh::EntityId sideId = m_sideIdPool.get_available_id();
         ThrowRequireMsg(!impl::is_id_already_in_use_locally(m_bulk_data, m_bulk_data.mesh_meta_data().side_rank(), sideId), "Program error. Id in use.");
-        side = stk::mesh::declare_element_side(m_bulk_data, sideId, element, side_ordinal, add_parts);
+        side = m_bulk_data.declare_element_side(sideId, element, side_ordinal, add_parts);
     }
     return side;
 }
