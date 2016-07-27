@@ -137,6 +137,14 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 				 << std::endl);
     }
   }
+
+  // Insert contributed fields into a separate node list
+  const auto& contributedFields = p->contributedFields();
+  for (auto i=contributedFields.cbegin(); i != contributedFields.cend(); ++i) {
+    auto& set = contributed_field_to_node_index_[(*i)->identifier()];
+    set.insert(static_cast<int>(nodes_.size()-1));
+  }
+
 }
 
 //=======================================================================
@@ -164,31 +172,61 @@ sortAndOrderEvaluators()
   Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Phalanx::SortAndOrderEvaluatorsNew"));
 #endif
   
+  // *************************
   // Color all nodes white, reset the discovery and final times
+  // *************************
   for (auto& n : nodes_)
     n.resetDfsParams(PHX::Color::WHITE);
 
   topoSortEvalIndex.clear();
 
+  // *************************
+  // Insert contributed fields into the field_to_node_index_ if there
+  // is no evalautor already assigned. Here we support two cases - (1)
+  // there is an evalautor that "evalautes" the field and is already
+  // assigned but other evaluators declared as "contributor" for the
+  // same field are present and (2) there no evaluators that
+  // "evaluate" the field, only "contributors". In the second case, we
+  // need to pick one of the contributors and insert it into
+  // field_to_node_index_ for the dfs algortihm to work. We also need
+  // to remove this from the contributed_field_to_node_index_ so that
+  // it does not have a cyclic dependency with itself.
+  // *************************
+  // for (const auto& contrib_field : contributed_field_to_node_index_) {
+  //   const auto& identifier = contrib_field.first;
+  //   auto node_index_it = field_to_node_index_.find(identifier);
+  //   if (node_index_it == field_to_node_index_.end()) {
+  //     field_to_node_index_.insert(std::make_pair(identifier, *contrib_field.second.begin()));
+  //     contributed_field_to_node_index_[identifier].erase(field_to_node_index_[identifier]);
+  //   }
+  // }
+
+  // *************************
   // Loop over required fields
+  // *************************
   int time = 0;
   for (const auto& req_field : required_fields_) {
 
+    // Look in evaluated fields
     auto node_index_it = field_to_node_index_.find(req_field->identifier());
-
     if (node_index_it == field_to_node_index_.end()) {
+
+      // If failed to find, look in contributed fields
+      auto contrib_field_search = contributed_field_to_node_index_.find(req_field->identifier());
+      if (contrib_field_search == contributed_field_to_node_index_.end()) {
+
+        if (write_graphviz_file_on_error_)
+          this->writeGraphvizFileNew(graphviz_filename_for_errors_, true, true);
       
-      if (write_graphviz_file_on_error_)
-	this->writeGraphvizFileNew(graphviz_filename_for_errors_, true, true);
-      
-      TEUCHOS_TEST_FOR_EXCEPTION(node_index_it == field_to_node_index_.end(),
-				 PHX::missing_evaluator_exception,
-				 *this
-				 << "\n\nERROR: The required field \""
-				 << req_field->identifier() 
+        TEUCHOS_TEST_FOR_EXCEPTION(node_index_it == field_to_node_index_.end(),
+                                   PHX::missing_evaluator_exception,
+                                   *this
+                                   << "\n\nERROR: The required field \""
+                                   << req_field->identifier() 
 				 << "\" does not have an evaluator. Current "
-				 << "list of Evaluators are printed above this "
-				 << "error message.\n");
+                                   << "list of Evaluators are printed above this "
+                                   << "error message.\n");
+      }
     }
     
     auto& node = nodes_[node_index_it->second];
@@ -202,6 +240,27 @@ sortAndOrderEvaluators()
     const auto& fields = (nodes_[topoSortEvalIndex[i]]).get()->evaluatedFields();
     fields_.insert(fields_.end(),fields.cbegin(),fields.cend());
   }
+
+  // Contributed fields: If a field is only evaluated with
+  // "contributed" fields, then it is not in the list of
+  // evaluatedFields and therefore not in the fields to allocate
+  // vector above. We need to find such fields and add them to the
+  // list of fields to allocate.
+  for (std::size_t i = 0; i < topoSortEvalIndex.size(); i++) {
+    const auto& contrib_fields = (nodes_[topoSortEvalIndex[i]]).get()->contributedFields();
+    for (auto& cfield : contrib_fields) {
+      const auto& check_it = std::find_if(fields_.begin(), fields_.end(),[&cfield](const Teuchos::RCP<PHX::FieldTag>& f)
+                                          {
+                                            if (*f == *cfield)
+                                              return true;
+                                            return false;
+                                          }
+                                          );
+      if (check_it == fields_.end())
+        fields_.push_back(cfield);
+    }
+  }
+
 
   this->createEvalautorBindingFieldMap();
 
@@ -226,33 +285,64 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
   {
     const auto& req_fields = node.get()->dependentFields(); 
     for (const auto& field : req_fields) {
-      auto node_index_it = field_to_node_index_.find(field->identifier());
 
+      // Look in evalauted fields
+      auto node_index_it = field_to_node_index_.find(field->identifier());
       if (node_index_it == field_to_node_index_.end()) {
 
-	if (write_graphviz_file_on_error_)
-	  this->writeGraphvizFileNew(graphviz_filename_for_errors_, true, true);
-	
-	TEUCHOS_TEST_FOR_EXCEPTION(node_index_it == field_to_node_index_.end(),
-				   PHX::missing_evaluator_exception,
-				   *this
-				   << "\n\nERROR: The required field \""
-				   << field->identifier() 
-				   << "\" does not have an evaluator. Current "
-				   << "list of Evaluators are printed above this "
-				   << "error message.\n\n"
-				   << "\nPlease inspect the DagManager output above, or \n"
-				   << "visually inspect the error graph that was dumped by \n"
-				   << "running the graphviz dot program on the file\n" 
-				   << graphviz_filename_for_errors_ << ": \n\n"
-				   << "dot -Tjpg -o error.jpg " 
-				   << graphviz_filename_for_errors_ << "\n\n"
-				   << "The above command generates a jpg file, \"error.jpg\"\n"
-				   << "that you can view in any web browser/graphics program.\n");
+        // If failed to find, look in contributed fields
+        auto contrib_field_search = contributed_field_to_node_index_.find(field->identifier());
+        if (contrib_field_search == contributed_field_to_node_index_.end()) {
+
+          if (write_graphviz_file_on_error_)
+            this->writeGraphvizFileNew(graphviz_filename_for_errors_, true, true);
+          
+          TEUCHOS_TEST_FOR_EXCEPTION(node_index_it == field_to_node_index_.end(),
+                                     PHX::missing_evaluator_exception,
+                                     *this
+                                     << "\n\nERROR: The required field \""
+                                     << field->identifier() 
+                                     << "\" does not have an evaluator. Current "
+                                     << "list of Evaluators are printed above this "
+                                     << "error message.\n\n"
+                                     << "\nPlease inspect the DagManager output above, or \n"
+                                     << "visually inspect the error graph that was dumped by \n"
+                                     << "running the graphviz dot program on the file\n" 
+                                     << graphviz_filename_for_errors_ << ": \n\n"
+                                     << "dot -Tjpg -o error.jpg " 
+                                     << graphviz_filename_for_errors_ << "\n\n"
+                                     << "The above command generates a jpg file, \"error.jpg\"\n"
+                                     << "that you can view in any web browser/graphics program.\n");
+        }
       }
 
-      node.addAdjacency(node_index_it->second);
+      if (node_index_it != field_to_node_index_.end())
+        node.addAdjacency(node_index_it->second);
+
+      // For required contributed fields, add the extra evaluators as adjacencies too.
+      {
+        auto contrib_field_search = contributed_field_to_node_index_.find(field->identifier());
+        if (contrib_field_search != contributed_field_to_node_index_.end()) {
+          const auto& node_list_to_add = contrib_field_search->second;
+          for (auto node_to_add : node_list_to_add)
+            node.addAdjacency(node_to_add);
+        }
+      }
     }
+    
+    // For "contributed" fields, if an evalautor exists that also
+    // "evalautes" this field, then we assume that the evalautor that
+    // "evalautes" the field performs the initialization of the field
+    // for the contributions. So the contributed fields must have a
+    // dependency on the evalauted field evalautor.
+    const auto& contrib_fields = node.get()->contributedFields(); 
+    for (const auto& cfield : contrib_fields) {
+      const auto& evaluated_field_search = field_to_node_index_.find(cfield->identifier());
+      if (evaluated_field_search != field_to_node_index_.end()) {
+        node.addAdjacency(evaluated_field_search->second);
+      }
+    }
+    
   }
 
   for (auto& adj_node_index : node.adjacencies()) {
@@ -305,6 +395,9 @@ printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
   os << "Name=" << e.getName() << "\n";
   os << "  *Evaluated Fields:\n";
   for (const auto& f : e.evaluatedFields()) 
+    os << "    " << f->identifier() << "\n";
+  os << "  *Contributed Fields:\n";
+  for (const auto& f : e.contributedFields()) 
     os << "    " << f->identifier() << "\n";
   os << "  *Dependent Fields:\n";
   if (e.dependentFields().size() > 0) {
@@ -459,13 +552,17 @@ writeGraphvizFileNew(const std::string filename,
   // Loop over required fields
   int missing_node_index = nodes_.size();
   for (const auto& req_field : required_fields_) {
+    // Look in evaluated fields
     auto node_index_it = field_to_node_index_.find(req_field->identifier());
-
     if (node_index_it == field_to_node_index_.end()) {
-      ofs << missing_node_index 
-	  << " ["  << "fontcolor=\"red\"" << ", label=\"  ** MISSING EVALUATOR **\\n    " 
-	  << req_field->identifier() << "    **** MISSING ****\"]\n";     
-      missing_node_index += 1;
+      // If failed to find, look in contributed fields
+      auto contrib_field_search = contributed_field_to_node_index_.find(req_field->identifier());
+      if (contrib_field_search == contributed_field_to_node_index_.end()) {
+        ofs << missing_node_index 
+            << " ["  << "fontcolor=\"red\"" << ", label=\"  ** MISSING EVALUATOR **\\n    " 
+            << req_field->identifier() << "    **** MISSING ****\"]\n";     
+        missing_node_index += 1;
+      }
     }
     else {
       auto& node = nodes_copy[node_index_it->second];
@@ -498,19 +595,48 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
     std::string font_color = "";
     std::vector<std::string> dependent_field_labels;
 
+    // Dependent field adjacencies
     const auto& req_fields = node.get()->dependentFields(); 
     for (const auto& field : req_fields) {
+      // Look in evaluated fields
       auto node_index_it = field_to_node_index_.find(field->identifier());
-      
-      // failed to find node
       if (node_index_it == field_to_node_index_.end()) {
-	font_color = "red";
-	std::string dependent_field_label = field->identifier() + "    **** MISSING ****";
-	dependent_field_labels.emplace(dependent_field_labels.end(),dependent_field_label);
+        // If failed to find, look in contributed fields
+        auto contrib_field_search = contributed_field_to_node_index_.find(field->identifier());
+        if (contrib_field_search == contributed_field_to_node_index_.end()) {
+          font_color = "red";
+          std::string dependent_field_label = field->identifier() + "    **** MISSING ****";
+          dependent_field_labels.emplace(dependent_field_labels.end(),dependent_field_label);
+        }
+        else
+          dependent_field_labels.push_back(field->identifier());
       }
       else {
-	dependent_field_labels.push_back(field->identifier());	
-	node.addAdjacency(node_index_it->second);
+        dependent_field_labels.push_back(field->identifier());
+        if (node_index_it != field_to_node_index_.end()) {
+          node.addAdjacency(node_index_it->second);
+        }
+      }
+
+      // Add contributed field dependencies
+      const auto& contrib_node_index_set_it = contributed_field_to_node_index_.find(field->identifier());
+      if (contrib_node_index_set_it != contributed_field_to_node_index_.end()) {
+        for (const auto& cnode_index : (*contrib_node_index_set_it).second) {
+          node.addAdjacency(cnode_index);
+        }
+      }
+    }
+
+    // For "contributed" fields, if an evalautor exists that also
+    // "evalautes" this field, then we assume that the evalautor that
+    // "evalautes" the field performs the initialization of the field
+    // for the contributions. So the contributed fields must have a
+    // dependency on the evalauted field evalautor.
+    const auto& contrib_fields = node.get()->contributedFields(); 
+    for (const auto& cfield : contrib_fields) {
+      const auto& evaluated_field_search = field_to_node_index_.find(cfield->identifier());
+      if (evaluated_field_search != field_to_node_index_.end()) {
+        node.addAdjacency(evaluated_field_search->second);
       }
     }
 
@@ -522,6 +648,12 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
       ofs << "\\n   Evaluates:";
       const auto& eval_fields = node.get()->evaluatedFields(); 
       for (const auto& field : eval_fields)
+	ofs << "\\n      " << field->identifier();
+    }
+    if (writeEvaluatedFields) {
+      ofs << "\\n   Contributes:";
+      const auto& contrib_fields = node.get()->contributedFields(); 
+      for (const auto& field : contrib_fields)
 	ofs << "\\n      " << field->identifier();
     }
     if (writeDependentFields) {

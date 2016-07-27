@@ -101,6 +101,13 @@ namespace PHX {
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     evaluatedFields() const = 0;
 
+    /*! \brief Returns vector of fields that contribute partially to
+        the evaluation of a field. This allows users to spread the
+        evaluation of a field over multiple evaluators.
+     */
+    virtual const std::vector< Teuchos::RCP<FieldTag> >& 
+    contributedFields() const = 0;
+
     //! Returns vector of fields needed to compute the evaluated fields.
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     dependentFields() const = 0;

@@ -59,6 +59,7 @@ namespace PHX {
     void evaluateFields(typename Traits::EvalData d);
     void evaluates(const std::string& field_name);
     void requires(const std::string& field_name);
+    void contributes(const std::string& field_name);
   };
   
 }

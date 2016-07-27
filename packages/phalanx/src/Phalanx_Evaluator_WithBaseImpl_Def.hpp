@@ -131,6 +131,48 @@ addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
+addContributedField(const PHX::FieldTag& ft)
+{ 
+  PHX::FTPredRef pred(ft);
+  std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
+    std::find_if(contributed_.begin(), contributed_.end(), pred);
+  
+  if ( test == contributed_.end() )
+    contributed_.push_back(ft.clone());
+}
+
+//**********************************************************************
+template<typename Traits>
+template<typename DataT>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+addContributedField(const PHX::Field<DataT>& f)
+{ 
+  this->addContributedField(f.fieldTag());
+
+  using NCF = PHX::MDField<DataT>;
+  (this->unmanaged_field_binders_)[f.fieldTag().identifier()] = 
+    PHX::UnmanagedMemoryBinder<NCF>(const_cast<NCF*>(&f));
+}
+
+//**********************************************************************
+template<typename Traits>
+template<typename DataT,
+	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+addContributedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
+                    Tag4,Tag5,Tag6,Tag7>& f)
+{ 
+  this->addContributedField(f.fieldTag());
+
+  using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  (this->unmanaged_field_binders_)[f.fieldTag().identifier()] = 
+    PHX::UnmanagedMemoryBinder<NCF>(const_cast<NCF*>(&f));
+}
+
+//**********************************************************************
+template<typename Traits>
+void PHX::EvaluatorWithBaseImpl<Traits>::
 addDependentField(const PHX::FieldTag& ft)
 {
   PHX::FTPredRef pred(ft);
@@ -212,6 +254,12 @@ template<typename Traits>
 const std::vector< Teuchos::RCP<PHX::FieldTag> >&
 PHX::EvaluatorWithBaseImpl<Traits>::evaluatedFields() const
 { return evaluated_; }
+
+//**********************************************************************
+template<typename Traits>
+const std::vector< Teuchos::RCP<PHX::FieldTag> >&
+PHX::EvaluatorWithBaseImpl<Traits>::contributedFields() const
+{ return contributed_; }
 
 //**********************************************************************
 template<typename Traits>

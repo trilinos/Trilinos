@@ -49,6 +49,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <tuple>
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_config.hpp"
@@ -180,7 +181,8 @@ namespace PHX {
         fields in evalautors. Be careful not to corrupt the actual
         vector.
      */
-    std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& getEvaluatorsBindingField(const PHX::FieldTag& ft);
+    std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& 
+    getEvaluatorsBindingField(const PHX::FieldTag& ft);
 
   protected:
 
@@ -213,6 +215,10 @@ namespace PHX {
 
     //! Hash map of field key to evaluator index.
     std::unordered_map<std::string,int> field_to_node_index_;
+
+    //! Hash map of contributed field key to evaluator index.
+    std::unordered_map<std::string,std::unordered_set<int>>
+      contributed_field_to_node_index_;
     
     //! All fields that are needed for the evaluation.
     std::vector< Teuchos::RCP<PHX::FieldTag> > fields_;
