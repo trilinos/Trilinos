@@ -140,11 +140,12 @@ public:
   enum { MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES = 5 };
   enum { MAXIMUM_FUNCTION_NAME_LENGTH = 32 };
 
-  explicit Node(Opcode opcode)
+  explicit Node(Opcode opcode, Eval* owner)
     : m_opcode(opcode),
       m_left(nullptr),
       m_right(nullptr),
-      m_other(nullptr)
+      m_other(nullptr),
+      m_owner(owner)
   {
       m_data.function.undefinedFunction = false;
       for(unsigned i=0; i<MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES; ++i)
@@ -183,9 +184,10 @@ public:
     } function;
   } m_data;
 
-  Node *m_left;
-  Node *m_right;
-  Node *m_other;
+  Node* m_left;
+  Node* m_right;
+  Node* m_other;
+  Eval* m_owner;
 };
 
 
@@ -207,7 +209,7 @@ Node::eval() const
   case OPCODE_RVALUE:
     /* Directly access the variable */
     if (m_left) {
-      return m_data.variable.variable->getArrayValue(m_left->eval());
+      return m_data.variable.variable->getArrayValue(m_left->eval(), m_owner->getArrayOffsetType());
     } else {
       return m_data.variable.variable->getValue();
     }
@@ -270,7 +272,7 @@ Node::eval() const
 
   case OPCODE_ASSIGN:
     if (m_left)
-      return m_data.variable.variable->getArrayValue(m_left->eval()) = m_right->eval();
+      return m_data.variable.variable->getArrayValue(m_left->eval(),  m_owner->getArrayOffsetType()) = m_right->eval();
     else {
       *m_data.variable.variable = m_right->eval();
       return m_data.variable.variable->getValue();
@@ -945,12 +947,14 @@ parseRValue(
 
 Eval::Eval(
   VariableMap::Resolver & resolver,
-  const std::string & expression)
+  const std::string & expression,
+  Variable::ArrayOffset arrayOffsetType)
   : m_variableMap(resolver),
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
-    m_headNode(nullptr)
+    m_headNode(nullptr),
+    m_arrayOffsetType(arrayOffsetType)
 {}
 
 Eval::~Eval()
@@ -963,7 +967,7 @@ Node *
 Eval::newNode(
   int           opcode)
 {
-  Node *new_node = new Node(static_cast<Opcode>(opcode));
+  Node *new_node = new Node(static_cast<Opcode>(opcode), this);
   m_nodes.push_back(new_node);
   return new_node;
 }

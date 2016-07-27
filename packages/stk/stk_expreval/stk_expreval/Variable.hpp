@@ -74,8 +74,9 @@ public:
    * <b>int</b> are currently supported.
    *
    */
-  enum Type {DOUBLE, INTEGER};
-  enum Use {DEPENDENT, INDEPENDENT};
+  enum Type        {DOUBLE, INTEGER};
+  enum Use         {DEPENDENT, INDEPENDENT};
+  enum ArrayOffset {ZERO_BASED_INDEX, ONE_BASED_INDEX};
   
   /**
    * Creates a new <b>Variable</b> instance.
@@ -221,7 +222,7 @@ public:
    *
    * @return			a <b>double</b> reference to the value.
    */
-  inline double& getArrayValue(int index) const {
+  inline double& getArrayValue(int index, ArrayOffset offsetType) const {
     if (m_type != DOUBLE) {
       throw std::runtime_error("Only double arrays allowed");
     }
@@ -230,14 +231,25 @@ public:
       throw std::runtime_error("Unbound variable");
     }
 
-    if(index < 0 || (index+1) > m_size) {
-      std::stringstream error;
-      error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 0 to '"<<m_size-1<<"'.  ";
-      throw std::runtime_error(error.str());
+    if(offsetType == ZERO_BASED_INDEX) {
+      if(index < 0 || (index+1) > m_size) {
+        std::stringstream error;
+        error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 0 to '"<<m_size-1<<"'.  ";
+        throw std::runtime_error(error.str());
+      }
+      return m_doublePtr[index];
+    } else if (offsetType == ONE_BASED_INDEX) {
+      if(index < 1 || (index) > m_size) {
+        std::stringstream error;
+        error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 1 to '"<<m_size<<"'.  ";
+        throw std::runtime_error(error.str());
+      }
+      return m_doublePtr[index-1];
+    } else {
+      throw std::runtime_error("Invalid internal state of expression evalutor");
+      return m_doublePtr[0];
     }
-
-    return m_doublePtr[index];
-  }
+  } 
 
   /**
    * @brief Member function <b>bind</b> binds variable to the address of the

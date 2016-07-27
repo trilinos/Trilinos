@@ -71,7 +71,7 @@ public:
    *				expression to be parsed.
    *
    */
-  Eval(VariableMap::Resolver &resolver = VariableMap::getDefaultResolver(), const std::string &expr = "");
+  Eval(VariableMap::Resolver &resolver = VariableMap::getDefaultResolver(), const std::string &expr = "", const Variable::ArrayOffset arrayOffsetType = Variable::ZERO_BASED_INDEX);
 
 private:
   explicit Eval(const Eval &);
@@ -286,6 +286,8 @@ public:
    */
   bool undefinedFunction() const;
 
+  Variable::ArrayOffset getArrayOffsetType() {return m_arrayOffsetType;}
+
 private:
   VariableMap		m_variableMap;		///< Variable map
   UndefinedFunctionSet	m_undefinedFunctionSet;	///< Vector of undefined functions
@@ -296,6 +298,7 @@ private:
 
   Node *		m_headNode;		///< Head of compiled expression
   std::vector<Node *>   m_nodes;                ///< Allocated nodes
+  Variable::ArrayOffset m_arrayOffsetType;      ///< Zero or one based array indexing
 };
 
 } // namespace expreval
