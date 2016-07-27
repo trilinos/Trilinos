@@ -79,13 +79,15 @@ TEST_F(NgpHowTo, loopOverFaces)
 }
 
 unsigned count_num_elems(ngp::StkNgpMesh ngpMesh,
+                         ngp::StkNgpField ngpField,
                          stk::mesh::EntityRank rank,
                          stk::mesh::Part &part)
 {
     Kokkos::View<unsigned*> numElems("numElems", 1);
     ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
     {
-        Kokkos::atomic_add(&numElems(0), 1u);
+        unsigned fieldValue = static_cast<unsigned>(ngpField.get(entity, 0));
+        Kokkos::atomic_add(&numElems(0), fieldValue);
     });
     Kokkos::View<unsigned*>::HostMirror numElemsHost = Kokkos::create_mirror_view(numElems);
     Kokkos::deep_copy(numElemsHost, numElems);
@@ -99,7 +101,7 @@ void set_num_elems_in_field_on_device(stk::mesh::BulkData &bulk,
 {
     ngp::StkNgpField ngpField(bulk, field);
     ngp::StkNgpMesh ngpMesh(bulk);
-    unsigned numElems = count_num_elems(ngpMesh, rank, part);
+    unsigned numElems = count_num_elems(ngpMesh, ngpField, rank, part);
     ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
     {
         ngpField.get(entity, 0) = numElems;
@@ -111,7 +113,7 @@ TEST_F(NgpHowTo, exerciseAura)
 {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField");
-    double init = 0.0;
+    double init = 1.0;
     stk::mesh::put_field(field, get_meta().universal_part(), &init);
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
