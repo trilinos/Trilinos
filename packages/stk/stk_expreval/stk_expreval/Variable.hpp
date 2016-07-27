@@ -312,6 +312,12 @@ public:
    * @return			a <b>double</b> value of the value of the variable.
    */
   inline double getValue() const {
+
+    if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
+      throw std::runtime_error("Invalid direct access of array variable, must access by index");
+    }
+
+
     switch (m_type) {
     case DOUBLE:
       return *m_doublePtr;
