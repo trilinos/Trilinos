@@ -759,9 +759,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     if (alpha == one && beta == zero) {
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
         // Start by solving L C = X for C.  C must have the same Map
-        // as D.  We have to use a temp multivector, since
-        // localSolve() does not allow its input and output to alias
-        // one another.
+        // as D.  We have to use a temp multivector, since our
+        // implementation of triangular solves does not allow its
+        // input and output to alias one another.
         //
         // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
         const local_ordinal_type numVectors = xBlock.getNumVectors();
