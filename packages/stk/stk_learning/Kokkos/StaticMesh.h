@@ -371,7 +371,7 @@ public:
         stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
         for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
         {
-            fill_buckets(bulk, rank, bulk.mesh_meta_data().universal_part());
+            fill_buckets(bulk, rank);
             fill_mesh_indices(bulk, rank);
         }
         copy_mesh_indices_to_device();
@@ -431,9 +431,9 @@ public:
 
 private:
 
-    void fill_buckets(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank, const stk::mesh::Selector& selector)
+    void fill_buckets(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank)
     {
-        const stk::mesh::BucketVector& stkBuckets = bulk.get_buckets(rank, selector);
+        const stk::mesh::BucketVector& stkBuckets = bulk.buckets(rank);
         unsigned numStkBuckets = stkBuckets.size();
 
         buckets[rank] = BucketView("Buckets", numStkBuckets);

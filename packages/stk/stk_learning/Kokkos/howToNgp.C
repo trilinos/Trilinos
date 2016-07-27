@@ -6,6 +6,7 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_util/stk_config.h>
 
@@ -76,3 +77,51 @@ TEST_F(NgpHowTo, loopOverFaces)
         for(stk::mesh::Entity node : *bucket)
             EXPECT_EQ(13.0, *stk::mesh::field_data(field, node));
 }
+
+unsigned count_num_elems(ngp::StkNgpMesh ngpMesh,
+                         stk::mesh::EntityRank rank,
+                         stk::mesh::Part &part)
+{
+    Kokkos::View<unsigned*> numElems("numElems", 1);
+    ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
+    {
+        Kokkos::atomic_add(&numElems(0), 1u);
+    });
+    Kokkos::View<unsigned*>::HostMirror numElemsHost = Kokkos::create_mirror_view(numElems);
+    Kokkos::deep_copy(numElemsHost, numElems);
+    return numElemsHost(0);
+}
+
+void set_num_elems_in_field_on_device(stk::mesh::BulkData &bulk,
+                         stk::mesh::EntityRank rank,
+                         stk::mesh::Part &part,
+                         stk::mesh::Field<double> &field)
+{
+    ngp::StkNgpField ngpField(bulk, field);
+    ngp::StkNgpMesh ngpMesh(bulk);
+    unsigned numElems = count_num_elems(ngpMesh, rank, part);
+    ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
+    {
+        ngpField.get(entity, 0) = numElems;
+    });
+    ngpField.copy_device_to_host(bulk, field);
+}
+
+TEST_F(NgpHowTo, exerciseAura)
+{
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+    auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField");
+    double init = 0.0;
+    stk::mesh::put_field(field, get_meta().universal_part(), &init);
+    std::string meshDesc =
+        "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
+         1,2,HEX_8,5,6,7,8,9,10,11,12";
+    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+
+    set_num_elems_in_field_on_device(get_bulk(), stk::topology::ELEM_RANK, get_meta().universal_part(), field);
+
+    for(const stk::mesh::Bucket *bucket : get_bulk().get_buckets(stk::topology::ELEM_RANK, get_meta().universal_part()))
+        for(stk::mesh::Entity elem : *bucket)
+            EXPECT_EQ(2.0, *stk::mesh::field_data(field, elem));
+}
+
