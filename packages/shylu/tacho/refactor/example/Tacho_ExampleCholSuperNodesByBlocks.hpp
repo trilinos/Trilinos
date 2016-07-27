@@ -580,10 +580,18 @@ namespace Tacho {
       
       for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
         for (ordinal_type i=0;i<m;++i) {
-          error += Util::abs(XX.Value(i, rhs) - RR.Value(i, rhs));
-          norm  += Util::abs(RR.Value(i, rhs));
+          {
+            const auto val = Util::abs(XX.Value(i, rhs) - RR.Value(i, rhs));
+            error += val*val;
+          }
+          {
+            const auto val = Util::abs(RR.Value(i, rhs));
+            norm  += val*val;
+          }
         }
       }
+      error = std::sqrt(error);
+      norm  = std::sqrt(norm);
 
       std::cout << std::scientific;
       std::cout << "CholSuperNodesByBlocks:: error = " << error
