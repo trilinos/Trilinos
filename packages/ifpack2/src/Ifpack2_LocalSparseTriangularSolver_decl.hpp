@@ -59,9 +59,25 @@ namespace Ifpack2 {
 /// \brief "Preconditioner" that solves local sparse triangular systems.
 /// \tparam MatrixType Specialization of Tpetra::RowMatrix.
 ///
-/// "Local" means "per MPI process."  The matrix itself may be
-/// distributed across multiple MPI processes, but this class works on
-/// each MPI process' part of the matrix separately.
+/// This class solves local sparse triangular systems.  "Local" means
+/// "per MPI process."  The matrix itself may be distributed across
+/// multiple MPI processes, but this class works on each MPI process'
+/// part of the matrix, and the input and output multivectors,
+/// separately.  (See this class' constructor for details.)
+///
+/// This effectively assumes that the global matrix is block diagonal.
+/// Triangular solves usually imply that these blocks are square.  If
+/// a particular triangular solver knows how to deal with nonsquare
+/// blocks, though, this is allowed.
+///
+/// The implementation currently requires that the input
+/// Tpetra::RowMatrix actually be a Tpetra::CrsMatrix.  This lets us
+/// optimize without necessarily copying data structures.  We may
+/// relax this restriction in the future.
+///
+/// If you are writing a new Ifpack2 class that needs to solve local
+/// sparse triangular systems stored as Tpetra::CrsMatrix, use this
+/// class <i>only</i>.
 template<class MatrixType>
 class LocalSparseTriangularSolver :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -103,6 +119,19 @@ public:
   /// \param A [in] The input sparse matrix.  Though its type is
   ///   Tpetra::RowMatrix for consistency with other Ifpack2 solvers,
   ///   this must be a Tpetra::CrsMatrix specialization.
+  ///
+  /// The input matrix A may be distributed across multiple MPI
+  /// processes.  This class' apply() method will use A's Import
+  /// object, if it exists, to Import the input MultiVector from the
+  /// domain Map to the column Map.  It will also use A's Export
+  /// object, if it exists, to Export the output MultiVector from the
+  /// row Map to the range Map.  Thus, to avoid MPI communication and
+  /// local permutations, construct A so that the row, column, range,
+  /// and domain Maps are all identical.
+  ///
+  /// On the other hand, you may encode local permutations in the
+  /// matrix's Maps, and let Import and/or Export execute them for
+  /// you.
   ///
   /// The input matrix must have local properties corresponding to the
   /// way in which one wants to solve.  ("Local" means "to each MPI
@@ -179,7 +208,11 @@ public:
   /// \brief Apply the original input matrix.
   ///
   /// \param X [in] MultiVector input.
-  /// \param Y [in/out] Result of applying the matrix A to X.
+  /// \param Y [in/out] Result of applying Op(A) to X, where Op(A) is
+  ///   A (mode == Teuchos::NO_TRANS), the transpose of A (<tt>mode ==
+  ///   Teuchos::TRANS</tt>), or the conjugate transpose of A
+  ///   (<tt>mode == Teuchos::CONJ_TRANS</tt>)
+  /// \param mode [in] See above.
   void
   applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
               global_ordinal_type, node_type>& X,
@@ -283,6 +316,24 @@ private:
   double computeTime_;
   double applyTime_;
 
+  /// \brief The purely local part of apply().
+  ///
+  /// This is where all implementation effort should go.  If you want
+  /// to plug in a new triangular solver, put it here.  No MPI
+  /// communication (use of Import or Export) happens here.
+  ///
+  /// \param X [in] Input MultiVector; distributed according to the
+  ///   input matrix's column Map.
+  /// \param Y [in/out] Output MultiVector; distributed according to
+  ///   the input matrix's row Map.  On input: Initial guess, if
+  ///   applicable.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::TRANS)
+  ///   or conjugate transpose (Teuchos::CONJ_TRANS).  The default
+  ///   (Teuchos::NO_TRANS) is not to apply the transpose or conjugate
+  ///   transpose.
+  /// \param alpha [in] Scalar factor by which to multiply the result
+  ///   of applying this operator to X.
+  /// \param beta [in] Scalar factor for Y.
   void
   localApply (const MV& X,
               MV& Y,
