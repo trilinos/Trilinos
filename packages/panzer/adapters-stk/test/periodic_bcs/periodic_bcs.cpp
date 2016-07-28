@@ -160,7 +160,7 @@ namespace panzer {
        int node_u = -1;   // number for node above edge
        int flag   = 0;    // flag should be 2 after this loop
 
-       for(int j=0;j<sideCoords.size();j++) {
+       for(std::size_t j=0;j<sideCoords.size();j++) {
          if ((std::abs(sideCoords[j][0] - coord[0]) < 1e-14) && (std::abs(sideCoords[j][1] - (coord[1]-1.0/8.0)) < 1e-14)){
             node_l = j;
             flag++;

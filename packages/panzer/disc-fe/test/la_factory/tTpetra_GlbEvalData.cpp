@@ -79,7 +79,6 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
 
   typedef Thyra::VectorBase<double> Thyra_Vector;
   typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
-  typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
 
   typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
   typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
@@ -255,11 +254,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, blocked)
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef Thyra::VectorBase<double> Thyra_Vector;
   typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
-  typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
 
-  typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
   typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
   typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
 
@@ -401,10 +397,6 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  typedef Thyra::VectorBase<double> Thyra_Vector;
-  typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
-  typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
 
   typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
   typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;

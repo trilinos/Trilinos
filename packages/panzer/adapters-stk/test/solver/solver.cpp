@@ -280,8 +280,7 @@ namespace panzer {
 
     // Set output arguments to evalModel call
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
-    int num_g = outArgs.Ng(); // Number of *vectors* of responses
-    assert (num_g == 1);
+    assert(outArgs.Ng() == 1); // Number of *vectors* of responses
 
     //RCP<Thyra::MultiVectorBase<double> > dgdp =
     //Thyra::createMembers(*thyra_me->get_x_space(),numParams);
@@ -563,8 +562,7 @@ namespace panzer {
 
     // Set output arguments to evalModel call
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
-    int num_g = outArgs.Ng(); // Number of *vectors* of responses
-    assert (num_g == 1);
+    assert(outArgs.Ng() == 1); // Number of *vectors* of responses
     
     // Solution vector is returned as extra respons vector
     RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*thyra_me->get_x_space());

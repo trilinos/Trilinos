@@ -125,13 +125,11 @@ namespace panzer {
 
     // Test a transient me
     {
-      typedef Thyra::ModelEvaluatorBase MEB;
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
       typedef Thyra::VectorBase<double> VectorType;
       typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
-      typedef panzer::ExplicitModelEvaluator<double> ExpPME;
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;

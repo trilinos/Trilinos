@@ -506,11 +506,7 @@ namespace panzer_stk {
   {
     using Teuchos::RCP;
 
-  #ifdef HAVE_MPI
     Teuchos::RCP<const Teuchos::MpiComm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-  #else
-     Teuchos::RCP<Teuchos::Comm<int> > tcomm = THIS IS WRONG PANZER DOESN'T SUPPORT SERIAL
-  #endif
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);

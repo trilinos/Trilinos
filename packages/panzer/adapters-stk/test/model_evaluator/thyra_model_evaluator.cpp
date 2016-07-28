@@ -211,7 +211,6 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
       typedef Thyra::VectorBase<double> VectorType;
-      typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
       bool build_transient_support = false;
@@ -286,11 +285,7 @@ namespace panzer {
     panzer::registerScalarParameter("DUMMY_B",*ap.gd->pl,5.0);
 
     {
-      typedef Thyra::ModelEvaluatorBase MEB;
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
-      typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
-      typedef Thyra::VectorBase<double> VectorType;
-      typedef Thyra::LinearOpBase<double> OperatorType;
       typedef Thyra::SpmdVectorBase<double> SpmdVector;
       typedef panzer::ModelEvaluator<double> PME;
 
@@ -415,8 +410,6 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase MEB;
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
-      typedef Thyra::VectorBase<double> VectorType;
-      typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
       bool build_transient_support = false;
@@ -532,8 +525,6 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase MEB;
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
-      typedef Thyra::VectorBase<double> VectorType;
-      typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
       bool build_transient_support = false;
@@ -558,8 +549,6 @@ namespace panzer {
       RCP<Thyra::VectorBase<double> > f = Thyra::createMember(me->get_f_space());
       RCP<Thyra::VectorBase<double> > fd = Thyra::createMember(me->get_f_space());
       RCP<Thyra::VectorBase<double> > dfdp = Thyra::createMember(me->get_f_space());
-
-      double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
 
       // TEST DfDp
       /////////////////////////////////////////////////////
@@ -613,7 +602,6 @@ namespace panzer {
   // Testing Ditributed Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
     typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
     typedef panzer::ModelEvaluator<double> PME;
@@ -757,7 +745,6 @@ namespace panzer {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -882,7 +869,6 @@ namespace panzer {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -1008,9 +994,7 @@ namespace panzer {
   //    previously set nominal values (like the inital condition)
   TEUCHOS_UNIT_TEST(model_evaluator, nominal_values)
   {
-    typedef Thyra::ModelEvaluatorBase MEB;
     typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
-    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
     typedef panzer::ModelEvaluator<double> PME;
 
     using Teuchos::RCP;

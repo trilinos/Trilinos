@@ -130,9 +130,9 @@ template<typename EvalT, typename TRAITS>
 template<int NUM_FIELD_MULT>
 KOKKOS_INLINE_FUNCTION
 void Integrator_BasisTimesVector<EvalT, TRAITS>::operator()(const FieldMultTag<NUM_FIELD_MULT> &, const size_t &cell) const {
-  const int nqp = vectorField.dimension_1(), ndim = vectorField.dimension_2();
-  const int nfm = kokkos_field_multipliers.dimension_0();
-  const int nbf = weighted_basis_vector.dimension_1();
+  const int nqp = vectorField.extent_int(1), ndim = vectorField.extent_int(2);
+  const int nfm = kokkos_field_multipliers.extent_int(0);
+  const int nbf = weighted_basis_vector.extent_int(1);
 
   for (int lbf = 0; lbf < nbf; lbf++)
     residual(cell,lbf) = 0.0;

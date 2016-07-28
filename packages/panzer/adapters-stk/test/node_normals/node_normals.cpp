@@ -258,7 +258,7 @@ namespace panzer {
       *pout << "local element id = " << element->first << std::endl;
       TEST_EQUALITY(values.size(),24);
 
-      for (int point = 0; point < values.dimension(0); ++point) {
+      for (int point = 0; point < values.extent_int(0); ++point) {
 	*pout << "  value(" << point << "," << 0 << ") = " << values(point,0) << std::endl;
 	*pout << "  value(" << point << "," << 1 << ") = " << values(point,1) << std::endl;
 	*pout << "  value(" << point << "," << 2 << ") = " << values(point,2) << std::endl;

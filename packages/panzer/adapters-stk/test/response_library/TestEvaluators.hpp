@@ -91,7 +91,7 @@ PHX_EVALUATE_FIELDS(TestEvaluator,workset)
    if(this->wda(workset).block_id=="block_1")
       extra = 44.3;
 
-   for(int i=0;i<dogValues.dimension(0);i++) {
+   for(int i=0;i<dogValues.extent_int(0);i++) {
       dogValues(i) = double(i) + 1.0 + extra;
       hrsValues(i) = -double(i) - 5.5 + extra;
    }

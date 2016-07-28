@@ -83,7 +83,7 @@ PHX_POST_REGISTRATION_SETUP(RandomFieldEvaluator,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(RandomFieldEvaluator,workset)
 {
-   for(int i=0;i<field.size();i++)
+   for(int i=0;i<static_cast<int>(field.size());i++)
       field[i] = double(std::rand())/double(RAND_MAX);
 }
 

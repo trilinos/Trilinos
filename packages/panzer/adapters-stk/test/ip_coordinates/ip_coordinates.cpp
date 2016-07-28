@@ -96,8 +96,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(response_library_stk2, test)
   {
-    typedef Traits::Residual EvalT;
-
     using Teuchos::RCP;
 
 

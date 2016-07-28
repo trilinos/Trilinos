@@ -505,7 +505,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
@@ -655,7 +654,6 @@ namespace panzer {
   {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
-    typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;

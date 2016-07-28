@@ -209,36 +209,34 @@ namespace panzer {
        point_coords_jac_inv(point_rule_basis->getName()+"_"+"jac_inv",point_rule_basis->dl_tensor);
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual,Cell,IP,Dim,Dim>(point_coords_jac_inv);
 
-    typedef panzer::ArrayTraits<double,Kokkos::DynRankView<double,PHX::Device> >::size_type size_type;
-
-    for(size_type c=0;c<basis_q1->numCells();c++) {
+    for(int c=0;c<basis_q1->numCells();c++) {
        double dx = 0.5;
        double dy = 0.5;
-       for(size_type p=0;p<num_points;p++) {
+       for(int p=0;p<num_points;p++) {
           double x = dx*(point_coordinates(p,0)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,0); 
           double y = dy*(point_coordinates(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
           TEST_FLOATING_EQUALITY(point_coords(c,p,0),x,1e-10);
           TEST_FLOATING_EQUALITY(point_coords(c,p,1),y,1e-10);
        }
 
-       for(size_type p=0;p<basis_q1->cardinality();p++) {
+       for(int p=0;p<basis_q1->cardinality();p++) {
           double x = dx*(workset.bases[1]->basis_coordinates_ref(p,0)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,0); 
           double y = dy*(workset.bases[1]->basis_coordinates_ref(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
           TEST_FLOATING_EQUALITY(point_coords_basis(c,p,0),x,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_basis(c,p,1),y,1e-10);
        }
 
-       for(size_type p=0;p<num_points;p++)
+       for(int p=0;p<num_points;p++)
           TEST_FLOATING_EQUALITY(point_coords_jac_det(c,p),dx*dy/4.0,1e-10);
 
-       for(size_type p=0;p<num_points;p++) {
+       for(int p=0;p<num_points;p++) {
           TEST_FLOATING_EQUALITY(point_coords_jac(c,p,0,0),dx/2.0,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac(c,p,0,1),0.0,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac(c,p,1,0),0.0,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac(c,p,1,1),dy/2.0,1e-10);
        }
 
-       for(size_type p=0;p<num_points;p++) {
+       for(int p=0;p<num_points;p++) {
           TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,0,0),1.0/(dx/2.0),1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,0,1),0.0,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,1,0),0.0,1e-10);
@@ -610,9 +608,6 @@ namespace panzer {
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
   {
-    typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
-
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);

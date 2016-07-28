@@ -526,9 +526,6 @@ namespace panzer {
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
   {
-    typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
-
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);

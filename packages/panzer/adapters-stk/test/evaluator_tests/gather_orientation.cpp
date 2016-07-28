@@ -195,11 +195,11 @@ namespace panzer {
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_q1);
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_qedge1);
 
-    for(int i=0;i<fieldData_q1.size();i++) {
+    for(int i=0;i<static_cast<int>(fieldData_q1.size());i++) {
        TEST_EQUALITY(fieldData_q1[i],1);
     }
 
-    for(int i=0;i<fieldData_qedge1.dimension(0);i++) {
+    for(int i=0;i<fieldData_qedge1.extent_int(0);i++) {
        TEST_EQUALITY(fieldData_qedge1(i,0), 1);
        TEST_EQUALITY(fieldData_qedge1(i,1), 1);
        TEST_EQUALITY(fieldData_qedge1(i,2),-1);
@@ -218,9 +218,6 @@ namespace panzer {
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
   {
-    typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
-
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);

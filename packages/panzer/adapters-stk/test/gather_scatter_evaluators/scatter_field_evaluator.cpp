@@ -115,7 +115,7 @@ namespace panzer {
      std::size_t numcells = workset.num_cells;
 
      for(std::size_t n=0;n<numcells;n++) {
-        for(std::size_t v=0;v<nodes;v++) {
+        for(int v=0;v<nodes;v++) {
            xcoord(n,v) = this->wda(workset).cell_vertex_coordinates(n,v,0);
         }
      }
@@ -340,9 +340,6 @@ namespace panzer {
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution)
   {
-    typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
-
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);

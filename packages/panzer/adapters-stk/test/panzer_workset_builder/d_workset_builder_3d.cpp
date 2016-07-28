@@ -83,7 +83,7 @@ std::string prws (const panzer::Workset& w) {
     const panzer::WorksetDetails& d = w.details(i);
     for (size_t j = 0; j < d.int_rules.size(); ++j) {
       const panzer::IntegrationValues2<double>& ir = *d.int_rules[j];
-      const int num_ip = ir.ip_coordinates.dimension(1);
+      const int num_ip = ir.ip_coordinates.extent_int(1);
       const size_t num_dim = ir.ip_coordinates.dimension(2);
       ss << "int_rule " << j << ":\n";
       ss << "cub_points:\n";
