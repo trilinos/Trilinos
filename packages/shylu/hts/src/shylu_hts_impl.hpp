@@ -62,8 +62,8 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   struct Box {
     Int r0, c0, nr, nc;
     Box () : r0(0), c0(0), nr(0), nc(0) {}
-    Box (const Int r0, const Int c0, const Int nr, const Int nc)
-      : r0(r0), c0(c0), nr(nr), nc(nc) {}
+    Box (const Int ir0, const Int ic0, const Int inr, const Int inc)
+      : r0(ir0), c0(ic0), nr(inr), nc(inc) {}
   };
 
   struct ConstCrsMatrix {
@@ -76,11 +76,11 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     bool conj;
     mutable typename HTS<Int, Size, Sclr>::Deallocator* deallocator;
 
-    ConstCrsMatrix (const Int nrow, const Int ncol, const Size* ir,
-                    const Int* jc, const Sclr* d, Direction::Enum dir,
-                    const bool conj, bool deallocate)
-      : m(nrow), n(ncol), ir(ir), jc(jc), d(d), dir(dir), conj(conj),
-        deallocator(0), deallocate_(deallocate)
+    ConstCrsMatrix (const Int inrow, const Int incol, const Size* iir,
+                    const Int* ijc, const Sclr* id, Direction::Enum idir,
+                    const bool iconj, bool ideallocate)
+      : m(inrow), n(incol), ir(iir), jc(ijc), d(id), dir(idir), conj(iconj),
+        deallocator(0), deallocate_(ideallocate)
     {}
     ~ConstCrsMatrix();
 
@@ -96,8 +96,8 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     Int* const jc; // col
     Sclr* d;
 
-    CrsMatrix (const Int nrow, const Int ncol, Size* ir, Int* jc, Sclr* d)
-      : m(nrow), n(ncol), ir(ir), jc(jc), d(d)
+    CrsMatrix (const Int nrow, const Int ncol, Size* iir, Int* ijc, Sclr* id)
+      : m(nrow), n(ncol), ir(iir), jc(ijc), d(id)
     {}
     ~CrsMatrix();
   };
@@ -149,7 +149,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   public:
     virtual ~Segmenter () {}
     Size nnz (const Int idx) const { return nnz_[idx]; }
-    const Array<Int>& p () const { return p_; }
+    const Array<Int>& get_p () const { return p_; }
   };
 
   // Segment a CRS matrix into blocks for threaded MVP.
@@ -222,9 +222,9 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     ~SerialBlock () { clear(); }
     void clear();
     // Cropped r0.
-    Int r0 () const { return r0_; }
+    Int get_r0 () const { return r0_; }
     // Cropped nr.
-    Int nr () const { return nr_; }
+    Int get_nr () const { return nr_; }
     void init(const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
               const InitInfo& in);
     void init_metadata(const CrsMatrix& T, Int r0, Int c0, Int nr, Int nc,
@@ -235,13 +235,13 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     bool inited () const { return d_; }
     void n1Axpy(const Sclr* x, const Int ldx, const Int nrhs,
                 Sclr* y, const Int ldy) const;
-    Size nnz () const { return nnz_; }
+    Size get_nnz () const { return nnz_; }
     bool is_sparse () const { return ir_; }
 
     // For analysis; not algorithms.
     // Cropped c0 and nc.
-    Int c0 () const { return c0_; }
-    Int nc () const { return nc_; }
+    Int get_c0 () const { return c0_; }
+    Int get_nc () const { return nc_; }
   };
 
   // Threaded block matrix.
@@ -260,7 +260,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     ~TMatrix () { clear(); }
     bool empty () const { return is_empty_; }
     bool parallel () const { return is_parallel_; }
-    Int nr () const { return nr_; }
+    Int get_nr () const { return nr_; }
     void init(const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
               const InitInfo& in, const Int block_0_nnz_os = 0,
               const int tid_offset = 0);
@@ -299,8 +299,8 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   public:
     Tri () : n_(0), r0_(0) {}
     virtual ~Tri () {}
-    Int n () const { return n_; }
-    Int r0 () const { return r0_; }
+    Int get_n () const { return n_; }
+    Int get_r0 () const { return r0_; }
   protected:
     Int n_, r0_;
     static const bool is_lo_ = true;
@@ -339,7 +339,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     void reinit_numeric(const CrsMatrix& T, const bool invert = false);
     void solve(const Sclr* b, const Int ldb, Sclr* x, const Int ldx,
                const Int nrhs) const;
-    Size nnz () const { return nnz_; }
+    Size get_nnz () const { return nnz_; }
     bool inited () const { return d_ || m_; }
 
   private: // For inverse of on-diag triangle.
@@ -544,10 +544,10 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   struct Shape {
     const bool is_lower, is_triangular;
     const bool has_full_diag; // Valid only if is_triangular.
-    Shape (const bool is_lower, const bool is_triangular,
-           const bool has_full_diag)
-      : is_lower(is_lower), is_triangular(is_triangular),
-        has_full_diag(has_full_diag) {}
+    Shape (const bool iis_lower, const bool iis_triangular,
+           const bool ihas_full_diag)
+      : is_lower(iis_lower), is_triangular(iis_triangular),
+        has_full_diag(ihas_full_diag) {}
   };
 
   class PermVec {
@@ -576,7 +576,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
       Sclr* d;
       Int idx, n;
       Tri () : d(0), idx(0), n(0) {}
-      Tri (const Int idx, Sclr* const d, const Int n) : d(d), idx(idx), n(n) {}
+      Tri (const Int iidx, Sclr* const id, const Int in) : d(id), idx(iidx), n(in) {}
     };
     DenseTrisInverter(Array<Tri>& tris);
     void compute();
@@ -666,9 +666,9 @@ struct HTS<Int, Size, Sclr>::CrsMatrix
   : public htsimpl::Impl<Int, Size, Sclr>::ConstCrsMatrix
 {
   typedef typename htsimpl::Impl<Int, Size, Sclr>::ConstCrsMatrix CCM;
-  CrsMatrix (const Int nrow, const Size* ir, const Int* jc, const Sclr* d,
-             const typename htsimpl::Direction::Enum dir, const bool conj)
-    : CCM(nrow, nrow, ir, jc, d, dir, conj, false)
+  CrsMatrix (const Int inrow, const Size* iir, const Int* ijc, const Sclr* id,
+             const typename htsimpl::Direction::Enum idir, const bool iconj)
+    : CCM(inrow, inrow, iir, ijc, id, idir, iconj, false)
   {}
 };
 

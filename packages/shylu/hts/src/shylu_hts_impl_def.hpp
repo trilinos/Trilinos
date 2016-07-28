@@ -284,9 +284,9 @@ inline Array<T>::Array (std::size_t n)
 { optclear_and_resize(n); }
 
 template<typename T>
-inline Array<T>::Array (std::size_t n, const T& init)
+inline Array<T>::Array (std::size_t n, const T& val)
   : p_(0), n_(0), cap_(0)
-{ optclear_and_resize(n, init); }
+{ optclear_and_resize(n, val); }
 
 template<typename T>
 inline void Array<T>::clear () {
@@ -333,10 +333,10 @@ inline void Array<T>::optclear_and_resize_ft (std::size_t n) {
 }
 
 template<typename T>
-inline void Array<T>::optclear_and_resize (std::size_t n, const T& init) {
+inline void Array<T>::optclear_and_resize (std::size_t n, const T& val) {
   optclear_and_resize(n);
   for (std::size_t i = 0; i < n_; ++i)
-    memcpy(p_ + i, &init, sizeof(init));
+    memcpy(p_ + i, &val, sizeof(val));
 }
 
 template<typename T>
@@ -426,9 +426,9 @@ inline void Impl<Int, Size, Sclr>::Partition::alloc_d () {
 }
 
 template<typename Int, typename Size, typename Sclr>
-inline void Impl<Int, Size, Sclr>::Partition::alloc_A_idxs (const Size nnz) {
+inline void Impl<Int, Size, Sclr>::Partition::alloc_A_idxs (const Size innz) {
   assert( ! A_idxs);
-  this->nnz = nnz;
+  this->nnz = innz;
   A_idxs = Allocnator<Size>(nnz, "Partition::alloc_A_idxs").release();
 }
 
@@ -737,13 +737,13 @@ locrsrow_schedule_sns1 (const ConstCrsMatrix& L, Array<Int>& w,
         Int level = -1;
         const Size jlim = ir[r+1];
         for (Size j = ir[r]; j < jlim; ++j) {
-          const Int c = jc[j];
-          if (c >= tlim) {
+          const Int col = jc[j];
+          if (col >= tlim) {
             frontier[r - tlim] = j;
             w[r] = level;
             break;
           }
-          level = std::max(level, w[c]);
+          level = std::max(level, w[col]);
         }
       }
       // Implied barrier from parfor.
@@ -812,8 +812,8 @@ locrsrow_schedule (const ConstCrsMatrix& L, const Int sns, Array<Int>& w,
               frontier[r - tlim] = j;
               break;
             }
-            const Int sc = c / sns;
-            level = std::max(level, w[sc]);
+            const Int scol = c / sns;
+            level = std::max(level, w[scol]);
           }
         }
         w[sr] = level;
@@ -1552,7 +1552,7 @@ init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                         const Int roff, const InitInfo& in,
                         const CrsSegmenter& seg) {
   // Serial if block is too small.
-  const Int nseg = seg.p().size() - 1;
+  const Int nseg = seg.get_p().size() - 1;
   is_parallel_ = nseg > 1 || tid_os_ > 0;
   if (nseg == 1) {
     bs_.optclear_and_reserve(1);
@@ -1560,7 +1560,7 @@ init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
     bs_.back().init_metadata(A, r0, c0, nr, nc, in);
     ros_.optclear_and_resize(1, roff);
   } else {
-    const Array<Int>& p = seg.p();
+    const Array<Int>& p = seg.get_p();
     const Int n = static_cast<Int>(p.size()) - 1;
     ros_.optclear_and_resize(n, 0);
     bs_.optclear_and_resize(n, SerialBlock());
@@ -1573,7 +1573,7 @@ init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
 
   is_empty_ = true;
   for (size_t i = 0; i < bs_.size(); ++i)
-    if (bs_[i].nnz() != 0) {
+    if (bs_[i].get_nnz() != 0) {
       is_empty_ = false;
       break;
     }
@@ -1611,7 +1611,7 @@ inline Int Impl<Int, Size, Sclr>::
 TMatrix::block_r0 (const int tid) const {
   const int id = tid - tid_os_;
   if (id < 0) return 0;
-  return bs_[id].r0();
+  return bs_[id].get_r0();
 }
 
 template<typename Int, typename Size, typename Sclr>
@@ -1619,7 +1619,7 @@ inline Int Impl<Int, Size, Sclr>::
 TMatrix::block_nr (const int tid) const {
   const int id = tid - tid_os_;
   if (id < 0) return 0;
-  return bs_[id].nr();
+  return bs_[id].get_nr();
 }
 
 template<typename Int, typename Size, typename Sclr>
@@ -2302,7 +2302,7 @@ RecursiveTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
     max_diag_tri_ = 0;
     Int max_nthreads = 0;
     for (size_t i = 0; i < nd_.t.size(); ++i) {
-      max_diag_tri_ = std::max(max_diag_tri_, nd_.t[i].n());
+      max_diag_tri_ = std::max(max_diag_tri_, nd_.t[i].get_n());
       max_nthreads = std::max(max_nthreads, nd_.t[i].nthreads());
     }
     wrk_.optclear_and_resize(max_diag_tri_ * in.max_nrhs);
@@ -2391,7 +2391,7 @@ RecursiveTri::invert_ondiag_tris () {
       DtiTri& dti = dtris[k++];
       dti.idx = i;
       dti.d = t.dense_tri();
-      dti.n = t.n();
+      dti.n = t.get_n();
     }
   }
   DenseTrisInverter dti(dtris);
@@ -2474,7 +2474,7 @@ RecursiveTri::p2p_init () {
     // Consider each tri or MVP block in solution order.
     if (ti > 0) { // Tri block. First tri has no dependencies.
       const Tri& t = nd_.t[ti];
-      const Int r0 = t.r0(), nr = t.n();
+      const Int r0 = t.get_r0(), nr = t.get_n();
       Int k = nd_.t_idx[ti-1];
       for (Int r = r0, rlim = r0 + nr; r < rlim; ++r) {
         assert(r < this->n_);
@@ -2574,12 +2574,12 @@ LevelSetTri::init_lsets (const LevelSetter& lstr,
 
 template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
-LevelSetTri::init (const CrsMatrix& T, const Int r0, const Int c0,
-                   const Int n, const InitInfo& in) {
-  n_ = n;
-  t_.optclear_and_resize(in.nthreads, Thread());
+LevelSetTri::init (const CrsMatrix& T, const Int, const Int,
+                   const Int in, const InitInfo& info) {
+  n_ = in;
+  t_.optclear_and_resize(info.nthreads, Thread());
 
-  ps_.optclear_and_resize(in.nthreads);
+  ps_.optclear_and_resize(info.nthreads);
   bool ok = true;
 # pragma omp parallel
   do {
@@ -2606,12 +2606,12 @@ LevelSetTri::init (const CrsMatrix& T, const Int r0, const Int c0,
         nr = lsp_[ils+1] - r0,
         nc = lsp_[ils+1] + mvp_block_nc_;
 
-      CrsSegmenter seg(T, r0, c0, nr, nc, in.nthreads, ls_blk_sz_);
-      const Array<Int>& p = seg.p();
+      CrsSegmenter seg(T, r0, c0, nr, nc, info.nthreads, ls_blk_sz_);
+      const Array<Int>& p = seg.get_p();
       assert(p[1] >= p[0]);
       const Int nseg = static_cast<Int>(p.size()) - 1;
 
-      for (int tid1 = 0; tid1 < in.nthreads; ++tid1) {
+      for (int tid1 = 0; tid1 < info.nthreads; ++tid1) {
         Thread& t1 = t_[tid1];
         if (tid1 < nseg) {
           t1.p[ils] = p[tid1];
@@ -3779,7 +3779,7 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
     *t_barrier = step;
   } else {
     // Solve T wrk_ = x.
-    t.solve(x, ldx, wrk_.data(), t.n(), nrhs);
+    t.solve(x, ldx, wrk_.data(), t.get_n(), nrhs);
     { // Wait for the block row MVPs to finish.
       const Int done = (step << 1);
       inv_tri_done[tid] = done;
@@ -3791,7 +3791,7 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
     const Int row_start = t.block_row_start(tid), nr = t.block_nr(tid);
     for (Int irhs = 0; irhs < nrhs; ++irhs)
       memcpy(x + irhs*ldx + row_start,
-             wrk_.data() + irhs*t.n() + row_start,
+             wrk_.data() + irhs*t.get_n() + row_start,
              nr*sizeof(Sclr));
     { // Wait for the memcpy's to finish.
       const Int done = (step << 1) + 1;
@@ -3831,7 +3831,7 @@ RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
     if (tid < t.nthreads())
       ondiag_solve(t, x, ldx, nrhs, tid, 0, t_barrier, inv_tri_done); }
   if ( ! nd_.os.empty()) {
-    os += nd_.t[0].n();
+    os += nd_.t[0].get_n();
     x_osi = x + nd_.os[0];
     x_os = x + os;
   } else {
@@ -3853,7 +3853,7 @@ RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
       ondiag_solve(t, x_os, ldx, nrhs, tid, i+1, t_barrier, inv_tri_done);
 #     pragma omp flush
     }
-    os += t.n();
+    os += t.get_n();
     x_osi = x + nd_.os[i+1];
     x_os = x + os;
   }
@@ -3879,11 +3879,11 @@ TriSolver::solve (const Sclr* b, const Int nrhs, Sclr* x, const Sclr alpha,
 #     pragma omp barrier
       lst_.solve(px, px, n_, nrhs);
       // No barrier needed here because lst_.solve does it.
-      if (t_.n()) t_.solve(px, px, n_, nrhs);
+      if (t_.get_n()) t_.solve(px, px, n_, nrhs);
 #     pragma omp barrier
       perm_.to_outside(x, nrhs, alpha, beta, ldx);
     } else {
-      if (t_.n()) {
+      if (t_.get_n()) {
 #       pragma omp barrier
         t_.solve(px, px, n_, nrhs);
       }
