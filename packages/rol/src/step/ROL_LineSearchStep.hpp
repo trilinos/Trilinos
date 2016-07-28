@@ -337,7 +337,7 @@ public:
     lineSearch_->run(step_state->searchSize,fval_,ls_nfval_,ls_ngrad_,gs,s,x,obj,bnd);
 
     // Make correction if maximum function evaluations reached
-    if(!acceptLastAlpha_) {  
+    if(!acceptLastAlpha_) {
       lineSearch_->setMaxitUpdate(step_state->searchSize,fval_,algo_state.value);
     }
 
