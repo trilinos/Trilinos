@@ -45,6 +45,7 @@
 #define ROL_SINGLETONKUSUOKA_HPP
 
 #include "ROL_MixedQuantileQuadrangle.hpp"
+#include "ROL_DistributionFactory.hpp"
 
 /** @ingroup risk_group
     \class ROL::SingletonKusuoka
@@ -93,9 +94,17 @@ private:
   std::vector<Real> wts_;
   std::vector<Real> pts_;
 
-  void checkInputs(void) const {
+  void checkInputs(Teuchos::RCP<Distribution<Real> > &dist = Teuchos::null) const {
     TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
       ">>> ERROR (ROL::SingletonKusuoka): PlusFunction pointer is null!");
+    if ( dist != Teuchos::null) {
+      Real lb = dist->lowerBound();
+      Real ub = dist->upperBound();
+      TEUCHOS_TEST_FOR_EXCEPTION(lb < static_cast<Real>(0), std::invalid_argument,
+        ">>> ERROR (ROL::SingletonKusuoka): Distribution lower bound less than zero!");
+      TEUCHOS_TEST_FOR_EXCEPTION(ub > static_cast<Real>(1), std::invalid_argument,
+        ">>> ERROR (ROL::SingletonKusuoka): Distribution upper bound greater than one!");
+    }
   }
 
 protected:
@@ -107,15 +116,60 @@ protected:
      mqq_ = Teuchos::rcp(new MixedQuantileQuadrangle<Real>(pts,wts,pf));
   }
 
+  void buildQuadFromDist(std::vector<Real> &pts, std::vector<Real> &wts,
+                   const int nQuad, const Teuchos::RCP<Distribution<Real> > &dist) const {
+    Real half(0.5), one(1), N(nQuad);
+    wts.clear(); wts.resize(nQuad);
+    pts.clear(); pts.resize(nQuad);
+    wts[0] = half/(N-half);
+    pts[0] = dist->lowerBound();
+    for (int i = 1; i < nQuad; ++i) {
+      wts[i] = one/(N-half);
+      pts[i] = dist->invertCDF(static_cast<Real>(i)/N);
+    }
+  }
+
 public:
   SingletonKusuoka(void) : RiskMeasure<Real>() {}
+
+  SingletonKusuoka( const Teuchos::RCP<Distribution<Real> > &dist,
+                    const int nQuad,
+                    const Teuchos::RCP<PlusFunction<Real> > &pf)
+    : RiskMeasure<Real>() {
+    // Build generalized trapezoidal rule
+    std::vector<Real> wts(nQuad), pts(nQuad);
+    buildQuadFromDist(pts,wts,nQuad,dist);
+    // Build mixed quantile quadrangle risk measure
+    buildMixedQuantile(pts,wts,pf);
+    // Check inputs
+    checkInputs(dist);
+  }
+
+  SingletonKusuoka(Teuchos::ParameterList &parlist)
+    : RiskMeasure<Real>() {
+    // Parse parameter list
+    Teuchos::ParameterList &list
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Singleton Kusuoka");
+    int nQuad = list.get("Number of Quadrature Points",5);
+    // Build distribution
+    Teuchos::RCP<Distribution<Real> > dist = DistributionFactory<Real>(list);
+    // Build plus function approximation
+    Teuchos::RCP<PlusFunction<Real> > pf = Teuchos::rcp(new PlusFunction<Real>(list));
+    // Build generalized trapezoidal rule
+    std::vector<Real> wts(nQuad), pts(nQuad);
+    buildQuadFromDist(pts,wts,nQuad,dist);
+    // Build mixed quantile quadrangle risk measure
+    buildMixedQuantile(pts,wts,pf);
+    // Check inputs
+    checkInputs(dist);
+  }
 
   SingletonKusuoka( const std::vector<Real> &pts, const std::vector<Real> &wts,
                     const Teuchos::RCP<PlusFunction<Real> > &pf)
     : RiskMeasure<Real>() {
+    buildMixedQuantile(pts,wts,pf);
     // Check inputs
     checkInputs();
-    buildMixedQuantile(pts,wts,pf);
   }
 
   Real computeStatistic(const Vector<Real> &x) const {

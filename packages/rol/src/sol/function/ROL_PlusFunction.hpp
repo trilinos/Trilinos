@@ -63,9 +63,18 @@ public:
   }
 
   PlusFunction(Teuchos::ParameterList &parlist) {
-    Real param = parlist.get("Smoothing Parameter",1.);
-    param_ = ((param <= 0) ? 1. : param);
-    dist_  = DistributionFactory<Real>(parlist);
+    Real param(1.e-1), zero(0), one(1);
+    Teuchos::ParameterList pfList;
+    if (parlist.isSublist("Plus Function")) {
+      param = parlist.sublist("Plus Function").get("Smoothing Parameter",1.);
+      pfList = parlist.sublist("Plus Function");
+    }
+    else {
+      param = parlist.get("Smoothing Parameter",1.);
+      pfList = parlist;
+    }
+    param_ = ((param <= zero) ? one : param);
+    dist_  = DistributionFactory<Real>(pfList);
   }
 
   Real evaluate(Real input, int deriv) {

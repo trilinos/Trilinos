@@ -99,16 +99,11 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
     lower.resize(nStatistic,ROL_NINF<Real>());
     upper.resize(nStatistic,ROL_INF<Real>());
   }
-  else if ( name == "Super Quantile Quadrangle" ) {
+  else if ( name == "Super Quantile Quadrangle" ||
+            name == "Chebyshev-Kusuoka"         ||
+            name == "Singleton Kusuoka" ) {
     Teuchos::ParameterList &list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Super Quantile Quadrangle");
-    nStatistic = list.get("Number of Quadrature Points",5);
-    lower.resize(nStatistic,ROL_NINF<Real>());
-    upper.resize(nStatistic,ROL_INF<Real>());
-  }
-  else if ( name == "Chebyshev-Kusuoka" ) {
-    Teuchos::ParameterList &list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev-Kusuoka");
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist(name);
     nStatistic = list.get("Number of Quadrature Points",5);
     lower.resize(nStatistic,ROL_NINF<Real>());
     upper.resize(nStatistic,ROL_INF<Real>());
@@ -178,17 +173,10 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
           upper.push_back(ROL_INF<Real>());
         }
       }
-      else if ( riskString[i] == "Super Quantile Quadrangle" ) {
-        Teuchos::ParameterList &SQlist = list.sublist("Super Quantile Quadrangle");
-        int nSQQstat = SQlist.get("Number of Quadrature Points",5);
-        nStatistic += nSQQstat;
-        for (int j = 0; j < nSQQstat; ++j) {
-          lower.push_back(ROL_NINF<Real>());
-          upper.push_back(ROL_INF<Real>());
-        }
-      }
-      else if ( riskString[i] == "Chebyshev-Kusuoka" ) {
-        Teuchos::ParameterList &SQlist = list.sublist("Chebyshev-Kusuoka");
+      else if ( riskString[i] == "Super Quantile Quadrangle" ||
+                riskString[i] == "Chebyshev-Kusuoka"         ||
+                riskString[i] == "Singleton Kusuoka" ) {
+        Teuchos::ParameterList &SQlist = list.sublist(riskString[i]);
         int nSQQstat = SQlist.get("Number of Quadrature Points",5);
         nStatistic += nSQQstat;
         for (int j = 0; j < nSQQstat; ++j) {

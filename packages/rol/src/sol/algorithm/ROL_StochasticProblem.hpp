@@ -386,6 +386,10 @@ public:
             ChebyshevKusuoka<Real> sqq(*parlist_);
             val = static_cast<SingletonKusuoka<Real> >(sqq).computeStatistic(*vec_);
           }
+          else if ( risk == "Singleton Kusuoka" ) {
+            SingletonKusuoka<Real> sqq(*parlist_);
+            val = sqq.computeStatistic(*vec_);
+          }
           else if ( risk == "Quantile-Radius Quadrangle" ) {
             Real half(0.5);
             val = half*(x.getStatistic(0) + x.getStatistic(1));
