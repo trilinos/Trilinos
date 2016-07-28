@@ -92,19 +92,8 @@ ResponseScatterEvaluator_ProbeBase(
   using Teuchos::rcp;
 
   // the field manager will allocate all of these fields
-  if (basis_->getElementSpace() == PureBasis::HGRAD ||
-      basis_->getElementSpace() == PureBasis::CONST) {
-
-    scalarField_ =
-      PHX::MDField<const ScalarT,Cell,BASIS>(fieldName,ir.dl_scalar);
-    this->addDependentField(scalarField_);
-  }
-  else if (basis_->getElementSpace() == PureBasis::HCURL ||
-           basis_->getElementSpace() == PureBasis::HDIV) {
-    vectorField_ =
-      PHX::MDField<const ScalarT,Cell,BASIS,Dim>(fieldName,ir.dl_vector);
-    this->addDependentField(vectorField_);
-  }
+  field_ = PHX::MDField<const ScalarT,Cell,BASIS>(fieldName,basis_->functional);
+  this->addDependentField(field_);
 
   num_basis = basis->cardinality();
   num_dim = basis->dimension();
@@ -141,14 +130,7 @@ void ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
 postRegistrationSetup(typename Traits::SetupData d,
                       PHX::FieldManager<Traits>& fm)
 {
-  if (basis_->getElementSpace() == PureBasis::HGRAD ||
-      basis_->getElementSpace() == PureBasis::CONST) {
-    this->utils.setFieldData(scalarField_,fm);
-  }
-  else if (basis_->getElementSpace() == PureBasis::HCURL ||
-           basis_->getElementSpace() == PureBasis::HDIV) {
-    this->utils.setFieldData(vectorField_,fm);
-  }
+  this->utils.setFieldData(field_,fm);
 }
 
 template<typename EvalT, typename Traits, typename LO, typename GO>
@@ -284,23 +266,11 @@ evaluateFields(typename Traits::EvalData d)
     return;
 
   // Get field coefficients for cell
-  Kokkos::DynRankView<ScalarT,PHX::Device> field_coeffs;
-  if (basis_->getElementSpace() == PureBasis::CONST ||
-      basis_->getElementSpace() == PureBasis::HGRAD) {
-    field_coeffs =
-      Kokkos::createDynRankView(scalarField_.get_static_view(), "field_val",
-                                1, num_basis); // Cell, Basis
-    for (size_t i=0; i<num_basis; ++i)
-      field_coeffs(0,i) = scalarField_(cellIndex_,i);
-  }
-  else if (basis_->getElementSpace() == PureBasis::HCURL ||
-           basis_->getElementSpace() == PureBasis::HDIV) {
-    field_coeffs =
-      Kokkos::createDynRankView(vectorField_.get_static_view(), "field_val",
-                                1, num_basis); // Cell, Basis
-    for (size_t i=0; i<num_basis; ++i)
-      field_coeffs(0,i) = vectorField_(cellIndex_,i,fieldComponent_);
-  }
+  Kokkos::DynRankView<ScalarT,PHX::Device> field_coeffs =
+    Kokkos::createDynRankView(field_.get_static_view(), "field_val",
+                              1, num_basis); // Cell, Basis
+  for (size_t i=0; i<num_basis; ++i)
+    field_coeffs(0,i) = field_(cellIndex_,i);
 
   // Evaluate FE interpolant at point
   Kokkos::DynRankView<ScalarT,PHX::Device> field_val =

@@ -130,8 +130,7 @@ protected:
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
 
   Teuchos::RCP<PHX::FieldTag> scatterHolder_; // dummy target
-  PHX::MDField<const ScalarT,Cell,BASIS> scalarField_; // holds scalar field values
-  PHX::MDField<const ScalarT,Cell,BASIS,Dim> vectorField_; // holds vector field values
+  PHX::MDField<const ScalarT,Cell,BASIS> field_; // holds field values
   Teuchos::RCP<ProbeScatterBase> scatterObj_;
 
   int cellIndex_;
