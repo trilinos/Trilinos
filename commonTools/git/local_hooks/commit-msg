@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+#
+# Check to make sure commit message is formatted correctly
+#
+
+import sys
+
+commitLogFileName = sys.argv[1]
+commitLogFileStr = open(commitLogFileName, "r").read()
+
+firstLine = commitLogFileStr.splitlines()[0]
+
+firstLineLen = len(firstLine)
+maxSummaryLen = 120
+suggestedSummaryLen = 72
+
+if (firstLineLen > maxSummaryLen):
+  print("***")
+  print("*** ERROR: Summary line is "+str(firstLineLen)+" > "+str(maxSummaryLen)+" chars long!  Commit rejected!")
+  print("***")
+  print("*** Summary line: "+firstLine)
+  print("***")
+  print("*** NOTE: Your rejected commit message is in the file ./git/COMMIT_EDITMSG")
+  print("***")
+  sys.exit(1)
+elif (firstLineLen > suggestedSummaryLen):
+  print("***")
+  print("*** WARNING: Summary line is "+str(firstLineLen)+" > "+str(suggestedSummaryLen)+" chars long!")
+  print("***")
+  print("*** NOTE: Please use 'git commit --amend' to reduce length of summary line!")
+  print("***")
+
+# If we get here then it is okay to make the commit
+sys.exit(0)
