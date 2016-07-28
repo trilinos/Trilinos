@@ -69,6 +69,8 @@ public:
     this->SetUpMyDBCInfo(true, dbc_side);
     this->process_loading_information(parlist);
 //With new modification on boundary traction, ComputeLocalForceVec should go after SetUpMyBCInfo and process_loading_information
+    //this->AssembleSystemGraph();
+    this->AssembleSystemGraph();
     this->AssembleSystemMats();
     this->ComputeLocalForceVec();
     this->AssembleRHSVector();
@@ -87,9 +89,14 @@ public:
   // construct solvers with new material
   void constructSolverWithNewMaterial(void) {
     bool ifInit = false;
+    {
+    #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*SolverUpdateTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+    #endif
     this->ComputeLocalSystemMats(ifInit);
     this->AssembleSystemMats();
     this->MatrixRemoveDBC();
+    }
     this->ConstructSolvers();
   }
   //
@@ -105,10 +112,15 @@ public:
 
   void ApplyJacobian1ToVec(Teuchos::RCP<Tpetra::MultiVector<> > &Ju,
                      const Teuchos::RCP<const Tpetra::MultiVector<> > &u) {
+    #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+    #endif
+    this->matA_dirichlet_->apply(*u, *Ju);
     // Jv is myUniqueMap_
     // u is myUniqueMap_
     // v should be myCellMap_
     //
+    /*
     Teuchos::RCP<Tpetra::MultiVector<> > Ju_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer(u->getMap(), u_overlap->getMap());
@@ -145,12 +157,16 @@ public:
     Tpetra::Export<> exporter(Ju_overlap->getMap(), Ju->getMap());
     //Ju->doExport(*Ju_overlap, exporter, Tpetra::REPLACE);
     Ju->doExport(*Ju_overlap, exporter, Tpetra::ADD);
+    */
   }
 
   void ApplyInverseJacobian1ToVec(Teuchos::RCP<Tpetra::MultiVector<> > &InvJu,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const bool ifTrans) {
     //Ju is matA->getDomainMap();
+    #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*LUSubstitutionTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+    #endif
     this->getSolver(ifTrans)->setB(u);
     this->getSolver(ifTrans)->setX(InvJu);
     this->getSolver(ifTrans)->solve();
@@ -163,6 +179,9 @@ public:
     // u is myUniqueMap_
     // v should be myCellMap_
     //
+    #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+    #endif
     Teuchos::RCP<Tpetra::MultiVector<> > Jv_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer(u->getMap(), u_overlap->getMap());
@@ -170,29 +189,29 @@ public:
     //apply BC here, KU
     this->ApplyBCToVec (u_overlap);
     Teuchos::ArrayRCP<const Real> uData = u_overlap->get1dView();
-    
+
     Teuchos::RCP<Tpetra::MultiVector<> > v_local = Tpetra::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
     Tpetra::Export<> exporter1(v->getMap(), this->myCellMap_);
     v_local->doExport(*v, exporter1, Tpetra::REPLACE);
     Teuchos::ArrayRCP<const Real> vData = v_local->get1dView();
-    
+
     Real SIMPDScale(0), localV(0), sum(0), zero(0);
     Intrepid::FieldContainer<Real> localDisp(this->numLocalDofs_);
-    
+
     for(int i=0; i<this->numCells_; i++) {
       SIMPDScale = this->SIMPmaterial_[i]->getSIMPFirstDerivativeScaleFactor();
       localV = vData[v_local->getMap()->getLocalElement(this->myCellIds_[i])];
-    
+
       localDisp.initialize(zero);
       for(int j=0; j<this->numLocalDofs_; j++) {
         localDisp(j) = uData[u_overlap->getMap()->getLocalElement(this->cellDofs_(this->myCellIds_[i], j))];
-      }    
+      }
 
-      for(int j=0; j<this->numLocalDofs_; j++) {	
-    	if(this->check_myGlobalDof_on_boundary(this->cellDofs_(this->myCellIds_[i],j))) {
+      for(int j=0; j<this->numLocalDofs_; j++) {
+        if(this->check_myGlobalDof_on_boundary(this->cellDofs_(this->myCellIds_[i],j))) {
           Jv_overlap -> replaceGlobalValue(this->cellDofs_(this->myCellIds_[i], j), 0, localDisp(j));
         }
-    	else {
+        else {
           sum = zero;
           for(int k=0; k<this->numLocalDofs_; k++) {
             if( !this->check_myGlobalDof_on_boundary(this->cellDofs_(this->myCellIds_[i],k)) ) {
@@ -215,35 +234,38 @@ public:
     // u should be myUniqueMap_
     // v should be myUniqueMap_
     //
+    #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+    #endif
     Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer1(u->getMap(), u_overlap->getMap());
     u_overlap->doImport(*u, importer1, Tpetra::REPLACE);
     //only apply BC to u
     this->ApplyBCToVec (u_overlap);
     Teuchos::ArrayRCP<const Real> uData = u_overlap->get1dView();
-    
+
     Teuchos::RCP<Tpetra::MultiVector<> > v_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer2(v->getMap(), v_overlap->getMap());
     v_overlap->doImport(*v, importer2, Tpetra::REPLACE);
     //ApplyBCToVec (v_overlap);
     Teuchos::ArrayRCP<const Real> vData = v_overlap->get1dView();
-    
+
     Intrepid::FieldContainer<Real> u_local(this->numLocalDofs_);
     Intrepid::FieldContainer<Real> v_local(this->numLocalDofs_);
-    
+
     Real SIMPDScale(0), sum(0), zero(0);
     for(int i=0; i<this->numCells_; i++) {
       SIMPDScale = this->SIMPmaterial_[i]->getSIMPFirstDerivativeScaleFactor();
       u_local.initialize(zero);
       v_local.initialize(zero);
-        
+
       for(int j=0; j<this->numLocalDofs_; j++) {
         u_local(j) = uData[u_overlap->getMap()->getLocalElement(this->cellDofs_(this->myCellIds_[i], j))];
         v_local(j) = vData[v_overlap->getMap()->getLocalElement(this->cellDofs_(this->myCellIds_[i], j))];
       }
-    
+
       sum = zero;
-      for(int j=0; j<this->numLocalDofs_; j++) {	
+      for(int j=0; j<this->numLocalDofs_; j++) {
         if(this->check_myGlobalDof_on_boundary(this->cellDofs_(this->myCellIds_[i],j))) {
           sum += u_local(j) * v_local(j);
         }
@@ -255,8 +277,8 @@ public:
           }
         }
       }
-      //put value into myDensityDerivative_ 
-      Jv -> replaceGlobalValue(this->myCellIds_[i], 0, sum);	
+      //put value into myDensityDerivative_
+      Jv -> replaceGlobalValue(this->myCellIds_[i], 0, sum);
     }
   }
 
@@ -269,43 +291,46 @@ public:
     // v should be myCellMap_
     // w shluld be myUniqueMapi_
     //
+    #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+    #endif
     Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer1(u->getMap(), u_overlap->getMap());
     u_overlap->doImport(*u, importer1, Tpetra::REPLACE);
     //only apply BC to U
     this->ApplyBCToVec (u_overlap);
     Teuchos::ArrayRCP<const Real> uData = u_overlap->get1dView();
-    
+
     Tpetra::Export<> exporter(v->getMap(), this->myCellMap_);
     Teuchos::RCP<Tpetra::MultiVector<> > v_local = Tpetra::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
     v_local->doExport(*v, exporter, Tpetra::REPLACE);
     Teuchos::ArrayRCP<const Real> vData = v_local->get1dView();
-    
+
     Teuchos::RCP<Tpetra::MultiVector<> > w_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer2(w->getMap(), w_overlap->getMap());
     w_overlap->doImport(*w, importer2, Tpetra::REPLACE);
     //ApplyBCToVec (w_overlap);
     Teuchos::ArrayRCP<const Real> wData = w_overlap->get1dView();
-    
+
     Intrepid::FieldContainer<Real> u_local(this->numLocalDofs_);
     Intrepid::FieldContainer<Real> w_local(this->numLocalDofs_);
-    
+
     Real SIMPDDScale(0), localV(0), sum(0), zero(0);
-    
+
     for(int i=0; i<this->numCells_; i++) {
       SIMPDDScale = this->SIMPmaterial_[i]->getSIMPSecondDerivativeScaleFactor();
       localV = vData[v_local->getMap()->getLocalElement(this->myCellIds_[i])];
-    
+
       u_local.initialize(zero);
       w_local.initialize(zero);
-        
+
       for(int j=0; j<this->numLocalDofs_; j++) {
         u_local(j) = uData[u_overlap->getMap()->getLocalElement(this->cellDofs_(this->myCellIds_[i], j))];
         w_local(j) = wData[w_overlap->getMap()->getLocalElement(this->cellDofs_(this->myCellIds_[i], j))];
       }
-    
-      sum = zero;	
-      for(int j=0; j<this->numLocalDofs_; j++) {	
+
+      sum = zero;
+      for(int j=0; j<this->numLocalDofs_; j++) {
         if(this->check_myGlobalDof_on_boundary(this->cellDofs_(this->myCellIds_[i],j))) {
           sum += u_local(j) * w_local(j);
         }
@@ -317,8 +342,8 @@ public:
           }
         }
       }
-      //put value into myDensityDerivative_ 
-      Hvw -> replaceGlobalValue(this->myCellIds_[i], 0, sum);	
+      //put value into myDensityDerivative_
+      Hvw -> replaceGlobalValue(this->myCellIds_[i], 0, sum);
     }
   }
 

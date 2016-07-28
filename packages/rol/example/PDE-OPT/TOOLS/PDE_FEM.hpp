@@ -70,6 +70,15 @@
 #include "Amesos2.hpp"
 #include "./dofmanager.hpp"
 
+// Global Timers.
+#ifdef ROL_TIMERS
+Teuchos::RCP<Time> FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Factorization Time in PDEFEM");
+Teuchos::RCP<Time> LUSubstitutionTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: LU Substitution Time in PDEFEM");
+Teuchos::RCP<Time> SolverUpdateTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Solver Update Time in PDEFEM");
+Teuchos::RCP<Time> LocalAssemblyTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Local Assembly Time in PDEFEM");
+Teuchos::RCP<Time> ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Constraint Derivative Application Time in PDEFEM");
+#endif
+
 template<class Real>
 class PDE_FEM {
 
@@ -83,6 +92,11 @@ protected:
               
   Teuchos::RCP<Teuchos::ParameterList> parlist_;
   Teuchos::RCP<const Teuchos::Comm<int> > commPtr_;
+  Teuchos::RCP<Teuchos::Time::Time> timerSolverFactorization_;
+  Teuchos::RCP<Teuchos::Time::Time> timerSolverSubstitution_;
+  Teuchos::RCP<Teuchos::Time::Time> timerAssemblyNonlinear_;
+  Teuchos::RCP<Teuchos::Time::Time> timerSolverUpdate_;
+  Teuchos::RCP<Teuchos::Time::Time> timerLocalAssembly_;
   Teuchos::RCP<std::ostream> outStream_;
     
   int numLocalDofs_;
@@ -101,10 +115,10 @@ protected:
   Teuchos::RCP<Tpetra::CrsGraph<> >     matGraph_;
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matA_;
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matA_dirichlet_;
-//  Teuchos::RCP<Tpetra::CrsMatrix<> >    matA_dirichlet_trans_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >    matA_dirichlet_trans_;
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matM_;
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matM_dirichlet_;
-//  Teuchos::RCP<Tpetra::CrsMatrix<> >    matM_dirichlet_trans_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >    matM_dirichlet_trans_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecUd_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecF_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecF_overlap_;
@@ -125,7 +139,7 @@ protected:
   std::vector<Real> myPointLoadVals_;
 
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_;
-//  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_trans_;
+  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_trans_;
 
   shards::CellTopology cellType_;
   
@@ -167,7 +181,9 @@ protected:
 public:
 
   // constructor
+  //PDE_FEM() {}
   PDE_FEM() {}
+
   // destructor
   virtual ~PDE_FEM() {}
   
@@ -365,11 +381,10 @@ public:
   
   virtual void SetUpTrueDataOnNodes(void) { }
   
-  virtual void AssembleSystemMats(void) { 
+  virtual void AssembleSystemGraph(void) { 
     /****************************************/
-    /*** Assemble global data structures. ***/
+    /*** Assemble global graph structure. ***/
     /****************************************/
-    // Assemble graph.
     matGraph_ = Teuchos::rcp(new Tpetra::CrsGraph<>(myUniqueMap_, 0));
     Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs_.getData();
     for (int i=0; i<numCells_; ++i) {
@@ -378,38 +393,57 @@ public:
       }
     }
     matGraph_->fillComplete();
+  }
+
+  virtual void AssembleSystemMats(void) { 
+    /****************************************/
+    /*** Assemble global data structures. ***/
+    /****************************************/
     // Assemble matrices.
     // Stiffness matrix A.
     matA_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matGraph_));
+    matA_dirichlet_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matGraph_));
     int numLocalMatEntries = numLocalDofs_ * numLocalDofs_;
+    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs_.getData();
     Teuchos::ArrayRCP<const Real> gradgradArrayRCP = gradgradMats_->getData();
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs_; ++j) {
         matA_->sumIntoGlobalValues(cellDofs_(myCellIds_[i],j),
                                    cellDofsArrayRCP(myCellIds_[i] * numLocalDofs_, numLocalDofs_),
                                    gradgradArrayRCP(i*numLocalMatEntries+j*numLocalDofs_, numLocalDofs_));
+        matA_dirichlet_->sumIntoGlobalValues(cellDofs_(myCellIds_[i],j),
+                                             cellDofsArrayRCP(myCellIds_[i] * numLocalDofs_, numLocalDofs_),
+                                             gradgradArrayRCP(i*numLocalMatEntries+j*numLocalDofs_, numLocalDofs_));
       }
     }
     matA_->fillComplete();
+    matA_dirichlet_->fillComplete();
     // Mass matrix M.
+/*
     matM_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matGraph_));
+    matM_dirichlet_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matGraph_));
     Teuchos::ArrayRCP<const Real> valvalArrayRCP = valvalMats_->getData();
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs_; ++j) {
         matM_->sumIntoGlobalValues(cellDofs_(myCellIds_[i],j),
                                    cellDofsArrayRCP(myCellIds_[i]*numLocalDofs_, numLocalDofs_),
                                    valvalArrayRCP(i*numLocalMatEntries+j*numLocalDofs_, numLocalDofs_));
+        matM_dirichlet_->sumIntoGlobalValues(cellDofs_(myCellIds_[i],j),
+                                             cellDofsArrayRCP(myCellIds_[i]*numLocalDofs_, numLocalDofs_),
+                                             valvalArrayRCP(i*numLocalMatEntries+j*numLocalDofs_, numLocalDofs_));
       }
     }
     matM_->fillComplete();
+    matM_dirichlet_->fillComplete();
+*/
   }
-  
-  
+
   virtual void AssembleRHSVector(void) {
     // Assemble vectors.
     // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_         = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
-    vecF_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
+    vecF_           = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_dirichlet_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_overlap_   = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
     // assembly on the overlap map
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs_; ++j) {
@@ -429,6 +463,7 @@ public:
     // change map
     Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap()); // redistribution
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+    vecF_dirichlet_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);    // from the overlap map to the unique map
   }
   
   
@@ -633,14 +668,14 @@ public:
   virtual void EnforceDBC(void) {
     // Apply Dirichlet conditions.
     // zero out row and column, make matrix symmetric
-    Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
-    matA_dirichlet_ = matA_->clone(node);
-    matM_dirichlet_ = matM_->clone(node);
-    vecF_dirichlet_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
-    Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
+    //Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
+    //matA_dirichlet_ = matA_->clone(node);
+    //matM_dirichlet_ = matM_->clone(node);
+    //vecF_dirichlet_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    //Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
  
     matA_dirichlet_->resumeFill();
-    matM_dirichlet_->resumeFill();
+    //matM_dirichlet_->resumeFill();
  
     int gDof;
     for(int i=0; i<numCells_; i++) {
@@ -653,14 +688,14 @@ public:
           Teuchos::Array<Real> canonicalValues(numRowEntries, 0);
           Teuchos::Array<Real> zeroValues(numRowEntries, 0);
           matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
-          matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+          //matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
           for (int k=0; k<indices.size(); k++) {
             if (indices[k] == gDof) {
               canonicalValues[k] = 1.0;
             }
           }
           matA_dirichlet_->replaceGlobalValues(gDof, indices, canonicalValues);
-          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+          //matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
           vecF_dirichlet_->replaceGlobalValue (gDof, 0, 0);
         }
  
@@ -672,65 +707,108 @@ public:
             indices[k] = myDirichletDofs_[k];
           }
           matA_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
-          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+          //matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
         }
       }
     }
     matA_dirichlet_->fillComplete();
-    matM_dirichlet_->fillComplete();
+    //matM_dirichlet_->fillComplete();
+
+//    GenerateTransposedMats();
+//    ConstructSolvers();
+//    ConstructAdjointSolvers();
   }
+
+//  virtual void MatrixRemoveDBC(void) {
+//    // Apply Dirichlet conditions.
+//    // zero out row and column, make matrix symmetric
+//    //Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
+//    //matA_dirichlet_ = matA_->clone(node);
+//    //matM_dirichlet_ = matM_->clone(node);
+// 
+//    matA_dirichlet_->resumeFill();
+//    matM_dirichlet_->resumeFill();
+// 
+//    int gDof;
+//    for(int i=0; i<numCells_; i++) {
+//      for(int j=0; j<numLocalDofs_; j++) {
+//        gDof = cellDofs_(myCellIds_[i], j);
+//        if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof)) {
+//          size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(gDof);
+//          Teuchos::Array<int> indices(numRowEntries, 0);
+//          Teuchos::Array<Real> values(numRowEntries, 0);
+//          Teuchos::Array<Real> canonicalValues(numRowEntries, 0);
+//          Teuchos::Array<Real> zeroValues(numRowEntries, 0);
+//          matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+//          matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+//          for (int k=0; k<indices.size(); k++) {
+//            if (indices[k] == gDof) {
+//              canonicalValues[k] = 1.0;
+//            }
+//          }
+//          matA_dirichlet_->replaceGlobalValues(gDof, indices, canonicalValues);
+//          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+//        }
+// 
+//        if (!check_myGlobalDof_on_boundary(gDof)) {
+//          size_t numDBCDofs = myDirichletDofs_.size();
+//          Teuchos::Array<int> indices(numDBCDofs, 0);
+//          Teuchos::Array<Real> zeroValues(numDBCDofs, 0);
+//          for (int k=0; k<indices.size(); k++) {
+//            indices[k] = myDirichletDofs_[k];
+//          }
+//          matA_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+//          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+//        }
+//      }
+//    }
+//    matA_dirichlet_->fillComplete();
+//    matM_dirichlet_->fillComplete();
+//  }
 
   virtual void MatrixRemoveDBC(void) {
     // Apply Dirichlet conditions.
     // zero out row and column, make matrix symmetric
-    Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
-    matA_dirichlet_ = matA_->clone(node);
-    matM_dirichlet_ = matM_->clone(node);
- 
     matA_dirichlet_->resumeFill();
-    matM_dirichlet_->resumeFill();
+    //matM_dirichlet_->resumeFill();
  
-    int gDof;
-    for(int i=0; i<numCells_; i++) {
-      for(int j=0; j<numLocalDofs_; j++) {
-        gDof = cellDofs_(myCellIds_[i], j);
-        if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof)) {
-          size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(gDof);
-          Teuchos::Array<int> indices(numRowEntries, 0);
-          Teuchos::Array<Real> values(numRowEntries, 0);
-          Teuchos::Array<Real> canonicalValues(numRowEntries, 0);
-          Teuchos::Array<Real> zeroValues(numRowEntries, 0);
-          matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
-          matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
-          for (int k=0; k<indices.size(); k++) {
-            if (indices[k] == gDof) {
-              canonicalValues[k] = 1.0;
-            }
+    for (int i=0; i<myDirichletDofs_.size(); ++i) {
+      if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {
+        size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(myDirichletDofs_[i]);
+        Teuchos::Array<int> indices(numRowEntries, 0);    
+        Teuchos::Array<Real> values(numRowEntries, 0);
+        Teuchos::Array<Real> canonicalValues(numRowEntries, 0);    
+        Teuchos::Array<Real> zeroValues(numRowEntries, 0);    
+        matA_dirichlet_->getGlobalRowCopy(myDirichletDofs_[i], indices, values, numRowEntries);
+        //matM_dirichlet_->getGlobalRowCopy(myDirichletDofs_[i], indices, values, numRowEntries);
+        for (int j=0; j<indices.size(); ++j) {
+          if (myDirichletDofs_[i] == indices[j]) {
+            canonicalValues[j] = 1.0;
           }
-          matA_dirichlet_->replaceGlobalValues(gDof, indices, canonicalValues);
-          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
         }
- 
-        if (!check_myGlobalDof_on_boundary(gDof)) {
-          size_t numDBCDofs = myDirichletDofs_.size();
-          Teuchos::Array<int> indices(numDBCDofs, 0);
-          Teuchos::Array<Real> zeroValues(numDBCDofs, 0);
-          for (int k=0; k<indices.size(); k++) {
-            indices[k] = myDirichletDofs_[k];
-          }
-          matA_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
-          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+        matA_dirichlet_->replaceGlobalValues(myDirichletDofs_[i], indices, canonicalValues);
+        //matM_dirichlet_->replaceGlobalValues(myDirichletDofs_[i], indices, zeroValues);
+        for (int j=0; j<indices.size(); ++j) {
+          Teuchos::Array<int> ind(1, myDirichletDofs_[i]);
+          Teuchos::Array<Real> valA(1, canonicalValues[j]); 
+          Teuchos::Array<Real> valM(1, zeroValues[j]); 
+          matA_dirichlet_->replaceGlobalValues(indices[j], ind, valA);
+          //matM_dirichlet_->replaceGlobalValues(indices[j], ind, valM);
         }
       }
     }
     matA_dirichlet_->fillComplete();
-    matM_dirichlet_->fillComplete();
+    //matM_dirichlet_->fillComplete();
+
+//    GenerateTransposedMats();
+//    ConstructSolvers();
+//    ConstructAdjointSolvers();
   }
 
   virtual void VectorRemoveDBC(void) {
     // Apply Dirichlet conditions.
-    vecF_dirichlet_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
-    Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
+    //vecF_dirichlet_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    //Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
  
     int gDof(0);
     for(int i=0; i<numCells_; i++) {
@@ -742,29 +820,31 @@ public:
       }
     }
   }
-/*
+
   virtual void GenerateTransposedMats() {
     // Create matrix transposes.
     Tpetra::RowMatrixTransposer<> transposerA(matA_dirichlet_);
-    Tpetra::RowMatrixTransposer<> transposerM(matM_dirichlet_);
+    //Tpetra::RowMatrixTransposer<> transposerM(matM_dirichlet_);
     matA_dirichlet_trans_ = transposerA.createTranspose();
-    matM_dirichlet_trans_ = transposerM.createTranspose();
+    //matM_dirichlet_trans_ = transposerM.createTranspose();
   }
-*/
+
 
   virtual void ConstructSolvers(void) {
     // Construct solver using Amesos2 factory.
+    #ifdef ROL_TIMERS
+    Teuchos::TimeMonitor LocalTimer(*FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+    #endif
     try {
       solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_);
-      //solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("PardisoMKL", matA_dirichlet_);
     }
     catch (std::invalid_argument e) {
       std::cout << e.what() << std::endl;
     }
+    // Perform factorization.
     solverA_->numericFactorization();
   }
 
-/*
   virtual void ConstructAdjointSolvers() {
     // Construct solver using Amesos2 factory.
     try{
@@ -774,7 +854,6 @@ public:
     }
     solverA_trans_->numericFactorization();
   }
-*/
 
   Teuchos::RCP<Tpetra::CrsMatrix<> > getMatA(const bool &transpose = false) const {
     if (transpose) {
@@ -895,7 +974,7 @@ public:
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> >   matWriter;
     matWriter.writeSparseFile("stiffness_mat", matA_);
     matWriter.writeSparseFile("dirichlet_mat", matA_dirichlet_);
-    matWriter.writeSparseFile("mass_mat", matM_);
+    //matWriter.writeSparseFile("mass_mat", matM_);
     matWriter.writeDenseFile("Ud_vec", vecUd_);
   }
 

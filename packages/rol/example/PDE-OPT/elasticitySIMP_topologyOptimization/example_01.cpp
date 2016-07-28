@@ -74,7 +74,7 @@
 #include "constraint.hpp"
 #include "volume_constraint.hpp"
 
-#include <fenv.h>
+//#include <fenv.h>
 
 typedef double RealT;
 
@@ -83,7 +83,7 @@ Teuchos::RCP<Tpetra::MultiVector<> > createTpetraVector(const Teuchos::RCP<const
 }
 
 int main(int argc, char *argv[]) {
-  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
+  //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
@@ -255,6 +255,9 @@ int main(int argc, char *argv[]) {
     data->outputTpetraVector(z_rcp, "density.txt");
     data->outputTpetraVector(u_rcp, "state.txt");
     data->outputTpetraVector(zscale_rcp, "weights.txt");
+
+    // Get a summary from the time monitor.
+    TimeMonitor::summarize();
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

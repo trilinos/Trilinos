@@ -149,9 +149,12 @@ public:
 
   virtual void ComputeLocalSystemMats(bool ifInitial) {
     int full_lfs = this->lfs_ * this->spaceDim_;
-    if(!ifInitial) { 
+    if(!ifInitial) {
+      #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*LocalAssemblyTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+      #endif
       renewMaterialVector();	
-      this->gradgradMats_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, full_lfs));
+      //this->gradgradMats_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, full_lfs));
       Construct_CBmats(ifInitial);
       Intrepid::FunctionSpaceTools::integrate<Real>(*this->gradgradMats_, // compute local grad.grad (stiffness) matrices
                                                     *this->CBMat_,

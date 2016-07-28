@@ -42,7 +42,7 @@
 // @HEADER
 
 /*! \file  meshmanager.hpp
-    \brief Defines the MeshManger classes.
+    \brief Defines the MeshManager classes.
 */
 
 #ifndef MESHMANAGER_HPP

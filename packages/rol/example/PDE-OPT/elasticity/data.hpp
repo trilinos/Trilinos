@@ -63,6 +63,7 @@ ElasticityData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
 	this->SetParallelStructure();
 	this->SetUpLocalIntrepidArrays();
 	this->ComputeLocalSystemMats();
+	this->AssembleSystemGraph();
 	this->AssembleSystemMats();
 	//Setup DBC information, do not specify any bc sides, use coordinates to determine the BC instead
 	std::vector<int> dbc_side {};

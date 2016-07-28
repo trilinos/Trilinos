@@ -65,6 +65,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <ROL_Vector.hpp>
+#include <ROL_config.h>
 
 /** \def    ROL_NUM_CHECKDERIV_STEPS
     \brief  Number of steps for derivative checks.

@@ -1,4 +1,6 @@
 
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
@@ -15,6 +17,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   "Enable a host of runtime debug checking."
   ${Trilinos_ENABLE_DEBUG}
   )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
+  ROL_TIMERS
+  "Build ROL with Teuchos TimeMonitors enabled."
+  OFF
+  )
+
+MESSAGE("-- " "Configuring ROL with " ${PACKAGE_NAME}_ENABLE_TIMERS=${${PACKAGE_NAME}_ENABLE_TIMERS})
+
 
 #
 # C) Add the libraries, tests, and examples

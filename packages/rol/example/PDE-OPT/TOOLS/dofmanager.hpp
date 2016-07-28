@@ -381,6 +381,6 @@ private:
     }
   } // computeFieldDofs
 
-};
+}; // DofManager
 
 #endif
