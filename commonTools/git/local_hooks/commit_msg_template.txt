@@ -1,7 +1,7 @@
 # A) <Package>: Imperative one-line summary about 72 chars (#WXYZ)
 
 
-# B) (After 2 newline!) Explain your changes in new paragraph (wrapped to
+# B) (After 2 newlines!) Explain your changes in new paragraph (wrapped to
 # about 72 chars wide).
 
 
