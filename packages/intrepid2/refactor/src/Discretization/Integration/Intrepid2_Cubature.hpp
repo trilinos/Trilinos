@@ -176,6 +176,16 @@ namespace Intrepid2 {
       return 0;
     }
 
+    /** \brief Returns dimension of the integration domain.
+     */
+    virtual
+    ordinal_type
+    getAccuracy() const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
+      return 0;
+    }
+
     /** \brief Returns cubature name.
      */
     virtual

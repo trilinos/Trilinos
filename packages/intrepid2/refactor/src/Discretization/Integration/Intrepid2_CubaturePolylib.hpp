@@ -165,6 +165,7 @@ namespace Intrepid2 {
     /** \brief Returns max. degree of polynomials that are integrated exactly.
         The return vector has size 1.
     */
+    virtual
     ordinal_type
     getAccuracy() const {
       return degree_;

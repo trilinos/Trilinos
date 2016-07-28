@@ -139,6 +139,15 @@ namespace Intrepid2 {
       return "CubatureTensor";
     }
 
+    virtual
+    ordinal_type 
+    getAccuracy() const {
+      ordinal_type r_val = 0;
+      for (auto i=0;i<numCubatures_;++i)
+        r_val = Util::max(r_val, cubatures_[i].getAccuracy());
+      return r_val;
+    }
+
     /** \brief Return the number of cubatures.
      */
     ordinal_type getNumCubatures() const {
