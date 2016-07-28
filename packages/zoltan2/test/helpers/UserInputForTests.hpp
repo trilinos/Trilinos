@@ -396,7 +396,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
   string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
   if (loc != string::npos)
     zoltan1 = true;
-  
+
   if (zoltan1)
     readZoltanTestData(path, testData, distributeInput);
   else
@@ -1369,12 +1369,13 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
 void UserInputForTests::readZoltanTestData(string path, string testData,
                                            bool distributeInput)
 {
-  
   int rank = tcomm_->getRank();
   FILE *graphFile = NULL;
   FILE *coordFile = NULL;
   FILE *assignFile = NULL;
   int fileInfo[3];
+
+  for (int i = 0; i < CHACO_LINE_LENGTH; i++) chaco_line[i] = '\0';
   
   if (rank == 0){
     // set chacho graph file name
