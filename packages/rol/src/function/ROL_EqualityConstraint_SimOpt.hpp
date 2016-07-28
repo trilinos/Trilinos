@@ -1117,8 +1117,8 @@ public:
       hist << std::scientific << std::setprecision(8);
       hist << "\nTest SimOpt consistency of inverse adjoint Jacobian_1: \n  ||v-inv(adj(J))adj(J)v|| = "
            << dnorm << "\n";
-      hist << "  ||v||                   = " << vnorm << "\n";
-      hist << "  Relative Error          = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
+      hist << "  ||v||                    = " << vnorm << "\n";
+      hist << "  Relative Error           = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
       outStream << hist.str();
     }
     return dnorm;

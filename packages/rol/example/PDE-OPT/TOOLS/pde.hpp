@@ -112,7 +112,7 @@ public:
   virtual std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() = 0;
 
   virtual void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &cellNodes,
-                            const std::vector<Teuchos::RCP<BoundaryCells<Real> > > &bdryCells) = 0;
+                            const Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<Real> > > > &bdryCells) = 0;
 
 }; // PDE
 

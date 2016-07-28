@@ -521,7 +521,7 @@ private:
   } // computeCellToEdgeMap
 
 
-  void computeSideSets() {
+  virtual void computeSideSets() {
 
     meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(1));
     int numSides = 4;
@@ -663,7 +663,7 @@ private:
   }
 
  
-  void computeSideSets() {
+  virtual void computeSideSets() {
     
     using std::vector;
     using Intrepid::FieldContainer;

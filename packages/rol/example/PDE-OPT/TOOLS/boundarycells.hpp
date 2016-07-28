@@ -52,27 +52,29 @@
 #include "Teuchos_RCP.hpp"
 #include <vector>
 
+enum EBoundaryType {
+  DIRICHLET = 0,
+  NEUMANN,
+  ROBIN,
+  USERDEFINED,
+  LAST
+};
+
 template <class Real>
 class BoundaryCells {
 private:
-// boundary_type_:
-// 0 dirichlet
-// 1 neumann
-// 2 robin
-
   const int boundaryID_;
-  const int boundaryType_;
+  const EBoundaryType boundaryType_;
   const std::vector<int> localCellIndex_;
   const Teuchos::RCP<Intrepid::FieldContainer<Real> > cellNodes_;
   const int localCellSideID_;
 
 public:
-
-  BoundaryCells(const int boundaryID,
-                const int boundaryType,
-                const std::vector<int> localCellIndex,
-                const Teuchos::RCP<Intrepid::FieldContainer<Real> > cellNodes,
-                const int localCellSideID)
+  BoundaryCells(const int &boundaryID,
+                const EBoundaryType &boundaryType,
+                const std::vector<int> &localCellIndex,
+                const Teuchos::RCP<Intrepid::FieldContainer<Real> > &cellNodes,
+                const int &localCellSideID)
     : boundaryID_(boundaryID),
       boundaryType_(boundaryType),
       localCellIndex_(localCellIndex),
@@ -83,7 +85,7 @@ public:
     return boundaryID_; 
   }
    
-  const int getBoundaryType(void) const {
+  const EBoundaryType getBoundaryType(void) const {
     return boundaryType_; 
   }
   

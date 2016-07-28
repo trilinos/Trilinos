@@ -116,7 +116,7 @@ private:
 
   // Set in SetCellNodes
   Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
-  std::vector<Teuchos::RCP<BoundaryCells<Real> > > bdryCellNodes_;
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
 
   // Finite element vectors and matrices
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matJ1_;
@@ -291,7 +291,7 @@ private:
       }
     }
     // Build boundary cell nodes
-    bdryCellNodes_.clear();
+    bdryCellNodes_ = Teuchos::null;
     // Set PDE cell nodes
     pde_->setCellNodes(volCellNodes_,bdryCellNodes_);
   }
