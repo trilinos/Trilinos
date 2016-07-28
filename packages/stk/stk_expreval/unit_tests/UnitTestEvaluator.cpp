@@ -70,6 +70,119 @@ TEST( UnitTestEvaluator, testEvaluateEmptyString)
     EXPECT_EQ(0.0, result);
 }
 
+TEST( UnitTestEvaluator, testIndexing)
+{
+  double y[3] = {1.1, 2.2, 3.3};
+
+  {
+    //  
+    //  Check basic indexing with default zero offset
+    //
+    std::string expr0 = "y[0] + y[1] + y[2]";
+    stk::expreval::Eval expr_eval0(stk::expreval::VariableMap::getDefaultResolver(), expr0.c_str());
+    expr_eval0.parse();
+    expr_eval0.bindVariable("y", *y, 3);
+    double result = expr_eval0.evaluate();
+    EXPECT_EQ(6.6, result);
+  }
+
+  {
+    //  
+    //  Check basic indexing with default one offset
+    //
+    std::string expr1 = "y[1] + y[2] + y[3]";
+    stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), expr1.c_str(), stk::expreval::Variable::ONE_BASED_INDEX);
+    expr_eval1.parse();
+    expr_eval1.bindVariable("y", *y, 3);
+    double result = expr_eval1.evaluate();
+    EXPECT_EQ(6.6, result);
+  }
+
+  {
+    //
+    //  Error check for index above valid range
+    //
+    std::string expr1 = "y[0] + y[1] + y[3]";
+    stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), expr1.c_str(), stk::expreval::Variable::ZERO_BASED_INDEX);
+    expr_eval1.parse();
+    expr_eval1.bindVariable("y", *y, 3);
+    try {
+      expr_eval1.evaluate();
+    } 
+    catch (std::runtime_error &x) {
+      std::string errMess = x.what();
+      EXPECT_EQ(0, strcmp(errMess.c_str(),  "Attempting to access invalid component '3' in analytic function.  Valid components are 0 to '2'.  "));
+    }
+  }
+
+  {
+    //
+    //  Error check for index below valid range
+    //
+    std::string expr1 = "y[0] + y[1] + y[2]";
+    stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), expr1.c_str(), stk::expreval::Variable::ONE_BASED_INDEX);
+    expr_eval1.parse();
+    expr_eval1.bindVariable("y", *y, 3);
+    try {
+      expr_eval1.evaluate();
+    } 
+    catch (std::runtime_error &x) {
+      std::string errMess = x.what();
+      EXPECT_EQ(0, strcmp(errMess.c_str(),  "Attempting to access invalid component '0' in analytic function.  Valid components are 1 to '3'.  "));
+    }
+  }
+
+  {
+    //
+    //  Error check for lack of index
+    //
+    std::string expr1 = "y";
+    stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), expr1.c_str(), stk::expreval::Variable::ONE_BASED_INDEX);
+    expr_eval1.parse();
+    expr_eval1.bindVariable("y", *y, 3);
+    try {
+      expr_eval1.evaluate();
+    } 
+    catch (std::runtime_error &x) {
+      std::string errMess = x.what();
+      EXPECT_EQ(0, strcmp(errMess.c_str(),  "Invalid direct access of array variable, must access by index"));
+    }
+  }
+
+  {
+    //  
+    //  Check for variable index
+    //
+    std::string expr0 = "z=1; y[0] + y[z] + y[2]";
+    stk::expreval::Eval expr_eval0(stk::expreval::VariableMap::getDefaultResolver(), expr0.c_str());
+    expr_eval0.parse();
+    expr_eval0.bindVariable("y", *y, 3);
+    double result = expr_eval0.evaluate();
+    EXPECT_EQ(6.6, result);
+  }
+
+  {
+    //  
+    //  Check for compound index
+    //
+    std::string expr0 = "y[z[2]] + y[z[1]] + y[2]";
+    stk::expreval::Eval expr_eval0(stk::expreval::VariableMap::getDefaultResolver(), expr0.c_str());
+    expr_eval0.parse();
+
+    double z[3] = {2.0, 1.0, 0};
+
+    expr_eval0.bindVariable("y", *y, 3);
+    expr_eval0.bindVariable("z", *z, 3);
+    double result = expr_eval0.evaluate();
+    EXPECT_EQ(6.6, result);
+  }
+
+
+}
+
+
+
+
 bool
 checkUndefinedFunction(
     const char *	expr)
