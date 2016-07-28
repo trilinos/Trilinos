@@ -279,7 +279,7 @@ namespace Intrepid2 {
       
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type cell, value_type &dst) const {
-        const bool hasNegativeDet = (_inputDet(cell) < 0.0);
+        const bool hasNegativeDet = (_inputDet(cell, 0) < 0.0);
         dst |= hasNegativeDet;
         
         const auto sign = (hasNegativeDet ? -1.0 : 1.0);

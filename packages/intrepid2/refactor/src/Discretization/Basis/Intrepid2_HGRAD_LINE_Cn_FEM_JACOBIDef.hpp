@@ -72,23 +72,25 @@ namespace Intrepid2 {
       // cardinality of the evaluation order
       const auto card = order + 1;
       ordinal_type opDn = operatorDn;
+
+      const auto pts = Kokkos::subdynrankview( input, Kokkos::ALL(), 0 );
+      const auto np = input.dimension(0);
+
       switch (opType) {
       case OPERATOR_VALUE: {
-        const auto np = input.dimension(0);
         const Kokkos::View<typename outputViewType::value_type*,
             Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
         for (auto p=0;p<card;++p) {
           auto poly = Kokkos::subdynrankview( output, p, Kokkos::ALL() );
-          Polylib::Serial::JacobiPolynomial(np, input, poly, null, p, alpha, beta);
+          Polylib::Serial::JacobiPolynomial(np, pts, poly, null, p, alpha, beta);
         }
         break;
       }
       case OPERATOR_GRAD: 
       case OPERATOR_D1: {
-        const auto np = input.dimension(0);
         for (auto p=0;p<card;++p) {
           auto polyd = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );
-          Polylib::Serial::JacobiPolynomialDerivative(np, input, polyd, p, alpha, beta);      
+          Polylib::Serial::JacobiPolynomialDerivative(np, pts, polyd, p, alpha, beta);      
         }
         break;
       }
@@ -114,7 +116,6 @@ namespace Intrepid2 {
                 output(p, i, j) = 0.0;
         }
         {
-          const auto np = input.dimension(0);
           const Kokkos::View<typename outputViewType::value_type*,
             Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
 
@@ -124,7 +125,7 @@ namespace Intrepid2 {
               scaleFactor *= 0.5*(p + alpha + beta + i);
             
             const auto poly = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );        
-            Polylib::Serial::JacobiPolynomial(np, input, poly, null, p-opDn, alpha+opDn, beta+opDn);
+            Polylib::Serial::JacobiPolynomial(np, pts, poly, null, p-opDn, alpha+opDn, beta+opDn);
             for (auto i=0;i<np;++i) 
               poly(i) = scaleFactor*poly(i);
           }

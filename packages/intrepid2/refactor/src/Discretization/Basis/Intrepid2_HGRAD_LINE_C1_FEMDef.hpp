@@ -64,7 +64,7 @@ namespace Intrepid2 {
              const inputPointViewType  input ) {
     switch (opType) {
     case OPERATOR_VALUE : {
-      const auto x = input();
+      const auto x = input(0);
 
       output(0) = (1.0 - x)/2.0;
       output(1) = (1.0 + x)/2.0;
