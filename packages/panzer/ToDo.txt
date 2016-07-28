@@ -4,3 +4,11 @@ Panzer_Integrator_TransientBasisTimesScalar.hpp
 Panzer_Neumann_Residual.hpp
 Panzer_ReorderADValues_Evaluator.hpp
 
+2. 2016.07.26: The rebalance capability is not supported in new
+STK. So in the transition from STK classic, two tests had to have
+their rebalance testing disabled:
+
+Trilinos/packages/panzer/adapters-stk/example/main_driver/energy-ss.xml
+Trilinos/packages/panzer/adapters-stk/example/main_driver/energy-ss-loca-eigenvalue.xml
+
+When we get rebalance back, we need to reenable the option on these tests.

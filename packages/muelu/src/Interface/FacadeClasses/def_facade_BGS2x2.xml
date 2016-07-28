@@ -1,0 +1,392 @@
+<facade>
+  <general>
+    <name>BGS2x2</name>
+    <description>This is a facade class for a 2x2 block preconditioner using BGS as block smoother</description>
+  </general>
+
+  <input-defaults>
+    <parameter>
+      <name>Block 1: dofs per node</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of DOFs per node for first block</description>
+    </parameter>
+    <parameter>
+      <name>Block 2: dofs per node</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of DOFs per node for second block</description>
+    </parameter>
+    
+    <parameter>
+      <name>Block 1: smoother</name>
+      <type>string</type>
+      <default>Symmetric Gauss-Seidel</default>
+      <description>Relaxation smoother type for block 1</description>
+    </parameter>
+    <parameter>
+      <name>Block 1: level-of-fill</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Level of fill for ILU</description>
+    </parameter>   
+    <parameter>
+      <name>Block 1: relaxation: sweeps</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of relaxation sweeps for block 1</description>
+    </parameter>
+    <parameter>
+      <name>Block 1: relaxation: damping factor</name>
+      <type>double</type>
+      <default>1.0</default>
+      <description>Damping factor for block 1</description>
+    </parameter>
+    <parameter>
+      <name>Block 1: transfer smoothing</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Use Petrov-Galerkin smoothed aggregation method for building transfers</description>
+    </parameter>
+    
+    <parameter>
+      <name>Block 2: smoother</name>
+      <type>string</type>
+      <default>Symmetric Gauss-Seidel</default>
+      <description>Relaxation smoother type for block 2</description>
+    </parameter>
+    <parameter>
+      <name>Block 2: level-of-fill</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Level of fill for ILU</description>
+    </parameter>
+   
+    <parameter>
+      <name>Block 2: relaxation: sweeps</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Number of relaxation sweeps for block 2</description>
+    </parameter>
+    <parameter>
+      <name>Block 2: relaxation: damping factor</name>
+      <type>double</type>
+      <default>1.0</default>
+      <description>Damping factor for block 2</description>
+    </parameter>
+    <parameter>
+      <name>Block 2: transfer smoothing</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Use (symmetric) smoothed aggregation method for building transfers</description>
+    </parameter>
+
+    <parameter>
+      <name>BGS: damping factor</name>
+      <type>double</type>
+      <default>1.0</default>
+      <description>Damping factor for SIMPLE block smoother</description>
+    </parameter>
+
+    <parameter>
+      <name>max levels</name>
+      <type>int</type>
+      <default>5</default>
+      <description>Maximum number of multigrid levels</description>
+    </parameter>
+    <parameter>
+      <name>coarse: max size</name>
+      <type>int</type>
+      <default>25000</default>
+      <description>Maximum coarse size</description>
+    </parameter>
+    <parameter>
+      <name>verbosity</name>
+      <type>string</type>
+      <default>High</default>
+      <description>Verbosity level</description>
+    </parameter>
+  </input-defaults>
+  
+  <!-- This block may contain some decision logic for the string replacement code 
+       It runs before the standard string replacement of the defaults in the default
+       parameter list  
+  -->
+  <interpreter-logic>
+    
+    std::string smoother1 = inputParameters.get&lt;std::string&gt;("Block 1: smoother");
+    if(smoother1 == "ILU") {
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooILUFact1");
+    } else if (smoother1 == "Symmetric Gauss-Seidel" || smoother1 == "SGS") {
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Symmetric Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
+    } else if (smoother1 == "Symmetric Gauss-Seidel" || smoother1 == "GS") {
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
+    } else if (smoother1 == "Jacobi") {
+      this->ReplaceString(finalString, "XXXBlock 1: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooFact1");
+    } else if (smoother1 == "Direct") {
+      this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooDirectFact1");
+    } else {
+      this->GetOStream(Errors) &lt;&lt; "Invalid smoother type for block 1: " &lt;&lt; smoother1 &lt;&lt; ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." &lt;&lt; std::endl;
+    }
+    
+    std::string smoother2 = inputParameters.get&lt;std::string&gt;("Block 2: smoother");
+    if(smoother2 == "ILU") {
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooILUFact2");
+    } else if (smoother2 == "Symmetric Gauss-Seidel" || smoother2 == "SGS") {
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Symmetric Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
+    } else if (smoother2 == "Symmetric Gauss-Seidel" || smoother2 == "GS") {
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
+    } else if (smoother2 == "Jacobi") {
+      this->ReplaceString(finalString, "XXXBlock 2: relaxation: typeYYY", "Gauss-Seidel");
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooFact2");
+    } else if (smoother2 == "Direct") {
+      this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooDirectFact2");
+    } else {
+      this->GetOStream(Errors) &lt;&lt; "Invalid smoother type for block 2: " &lt;&lt; smoother2 &lt;&lt; ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." &lt;&lt; std::endl;
+    }
+    
+    if(inputParameters.get&lt;bool&gt;("Block 1: transfer smoothing") == true) {
+      this->ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myPFact1");
+      this->ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myRFact1");
+    } else {
+      this->ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myTentativePFact1");
+      this->ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myTransPFact1");
+    }
+    if(inputParameters.get&lt;bool&gt;("Block 2: transfer smoothing") == true) {
+      this->ReplaceString(finalString, "XXXBlock 2: prolongatorYYY", "myPFact2");
+      this->ReplaceString(finalString, "XXXBlock 2: restrictor YYY", "myRFact2");
+    } else {
+      this->ReplaceString(finalString, "XXXBlock 2: prolongatorYYY", "myTentativePFact2");
+      this->ReplaceString(finalString, "XXXBlock 2: restrictor YYY", "myTransPFact2");
+    }
+  </interpreter-logic>
+  
+  <xml-template>
+"&lt;ParameterList name=\"MueLu\"&gt;"
+"  &lt;ParameterList name=\"Factories\"&gt;"
+"    &lt;ParameterList name=\"mySubBlockAFactory1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"SubBlockAFactory\"/&gt;"
+"      &lt;Parameter name=\"block row\"                 type=\"int\"     value=\"0\"/&gt;"
+"      &lt;Parameter name=\"block col\"                 type=\"int\"     value=\"0\"/&gt;"
+"      &lt;Parameter name=\"Range map: Striding info\"  type=\"string\"  value=\"{ XXXBlock 1: dofs per nodeYYY }\"/&gt;"
+"      &lt;Parameter name=\"Domain map: Striding info\" type=\"string\"  value=\"{ XXXBlock 1: dofs per nodeYYY }\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myAggFact1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"UncoupledAggregationFactory\"/&gt;"
+"      &lt;Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"5\"/&gt;"
+"      &lt;Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"1\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;!-- tell the tenative prolongator that we have 2 DOFs per node on the coarse levels --&gt;"
+"    &lt;ParameterList name=\"myCoarseMap1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"CoarseMapFactory\"/&gt;"
+"      &lt;Parameter name=\"Striding info\" type=\"string\" value=\"{ XXXBlock 1: dofs per nodeYYY }\"/&gt;"
+"      &lt;Parameter name=\"Strided block id\" type=\"int\" value=\"-1\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myTentativePFact1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"TentativePFactory\"/&gt;"
+"      &lt;Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory1\"/&gt;"
+"      &lt;Parameter name=\"Aggregates\" type=\"string\" value=\"myAggFact1\"/&gt;"
+"      &lt;Parameter name=\"CoarseMap\" type=\"string\" value=\"myCoarseMap1\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myPFact1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"PgPFactory\"/&gt;"
+"      &lt;Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory1\"/&gt;"
+"      &lt;Parameter name=\"P\" type=\"string\" value=\"myTentativePFact1\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myRFact1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"GenericRFactory\"/&gt;"
+"      &lt;Parameter name=\"P\" type=\"string\" value=\"myPFact1\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;!-- We have to use Nullspace1 here. If \"Nullspace1\" is not set the"
+"         Factory creates the default null space containing of constant"
+"         vectors --&gt;"
+"    &lt;ParameterList name=\"myNspFact1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"NullspaceFactory\"/&gt;"
+"      &lt;Parameter name=\"Fine level nullspace\" type=\"string\" value=\"Nullspace1\"/&gt;"
+"      &lt;Parameter name=\"Nullspace1\" type=\"string\" value=\"myTentativePFact1\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;!-- BLOCK 2 (for submatrix A_{11}) PRESSURE PART --&gt;"
+"    &lt;ParameterList name=\"mySubBlockAFactory2\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"SubBlockAFactory\"/&gt;"
+"      &lt;Parameter name=\"block row\"                 type=\"int\"     value=\"1\"/&gt;"
+"      &lt;Parameter name=\"block col\"                 type=\"int\"     value=\"1\"/&gt;"
+"      &lt;Parameter name=\"Range map: Striding info\"  type=\"string\"  value=\"{ XXXBlock 2: dofs per nodeYYY }\"/&gt;"
+"      &lt;Parameter name=\"Domain map: Striding info\" type=\"string\"  value=\"{ XXXBlock 2: dofs per nodeYYY }\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;!-- tell the tenative prolongator that we have 2 DOFs per node on the coarse levels --&gt;"
+"    &lt;ParameterList name=\"myCoarseMap2\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"CoarseMapFactory\"/&gt;"
+"      &lt;Parameter name=\"Striding info\" type=\"string\" value=\"{ XXXBlock 2: dofs per nodeYYY }\"/&gt;"
+"      &lt;Parameter name=\"Strided block id\" type=\"int\" value=\"-1\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myTentativePFact2\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"TentativePFactory\"/&gt;"
+"      &lt;Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory2\"/&gt;"
+"      &lt;Parameter name=\"Aggregates\" type=\"string\" value=\"myAggFact1\"/&gt;"
+"      &lt;Parameter name=\"CoarseMap\" type=\"string\" value=\"myCoarseMap2\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myPFact2\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"SaPFactory\"/&gt;"
+"      &lt;Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory2\"/&gt;"
+"      &lt;Parameter name=\"P\" type=\"string\" value=\"myTentativePFact2\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myRFact2\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"TransPFactory\"/&gt;"
+"      &lt;Parameter name=\"P\" type=\"string\" value=\"myPFact2\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myNspFact2\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"NullspaceFactory\"/&gt;"
+"      &lt;Parameter name=\"Fine level nullspace\" type=\"string\" value=\"Nullspace2\"/&gt;"
+"      &lt;Parameter name=\"Nullspace2\" type=\"string\" value=\"myTentativePFact2\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;!-- FACTORY MANAGERS --&gt;"
+""
+"    &lt;!-- Multigrid setup for velocity block (A_{00}) --&gt;"
+"    &lt;ParameterList name=\"myFirstGroup\"&gt;"
+"      &lt;Parameter name=\"group\" type=\"string\" value=\"FactoryManager\"/&gt;"
+"      &lt;Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory1\"/&gt;"
+"      &lt;Parameter name=\"P\" type=\"string\" value=\"myPFact1\"/&gt;"
+"      &lt;Parameter name=\"R\" type=\"string\" value=\"myRFact1\"/&gt;"
+"      &lt;Parameter name=\"Aggregates\" type=\"string\" value=\"myAggFact1\"/&gt;"
+"      &lt;Parameter name=\"Nullspace\" type=\"string\" value=\"myNspFact1\"/&gt;"
+"      &lt;Parameter name=\"CoarseMap\" type=\"string\" value=\"myCoarseMap1\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;!-- Multigrid setup for pressure block (A_{11}) --&gt;"
+"    &lt;ParameterList name=\"mySecondGroup\"&gt;"
+"      &lt;Parameter name=\"group\" type=\"string\" value=\"FactoryManager\"/&gt;"
+"      &lt;Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory2\"/&gt;"
+"      &lt;Parameter name=\"P\" type=\"string\" value=\"myPFact2\"/&gt;"
+"      &lt;Parameter name=\"R\" type=\"string\" value=\"myRFact2\"/&gt;"
+"      &lt;Parameter name=\"Aggregates\" type=\"string\" value=\"myAggFact1\"/&gt;&lt;!-- reuse aggs from PRESSURE block! --&gt;"
+"      &lt;Parameter name=\"Nullspace\" type=\"string\" value=\"myNspFact2\"/&gt;"
+"      &lt;Parameter name=\"CoarseMap\" type=\"string\" value=\"myCoarseMap2\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;!-- BLOCK TRANSFER operators --&gt;"
+""
+"    &lt;ParameterList name=\"myBlockedPFact\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"BlockedPFactory\"/&gt;"
+"      &lt;!-- factory manager for block 1 --&gt;"
+"      &lt;ParameterList name=\"block1\"&gt;"
+"         &lt;Parameter name=\"group\" type=\"string\" value=\"myFirstGroup\"/&gt;"
+"      &lt;/ParameterList&gt;"
+"      &lt;!-- factory manager for block 2 --&gt;"
+"      &lt;ParameterList name=\"block2\"&gt;"
+"        &lt;Parameter name=\"group\" type=\"string\" value=\"mySecondGroup\"/&gt;"
+"      &lt;/ParameterList&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myBlockedRFact\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"GenericRFactory\"/&gt;"
+"      &lt;Parameter name=\"P\" type=\"string\" value=\"myBlockedPFact\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myBlockedRAPFact\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"BlockedRAPFactory\"/&gt;"
+"      &lt;Parameter name=\"P\" type=\"string\" value=\"myBlockedPFact\"/&gt;"
+"      &lt;Parameter name=\"R\" type=\"string\" value=\"myBlockedRFact\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;!-- BLOCK SMOOTHERS --&gt;"
+"    &lt;ParameterList name=\"mySmooFact1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"TrilinosSmoother\"/&gt;"
+"      &lt;Parameter name=\"type\" type=\"string\" value=\"RELAXATION\"/&gt;"
+"      &lt;ParameterList name=\"ParameterList\"&gt;"
+"        &lt;Parameter name=\"relaxation: type\" type=\"string\" value=\"XXXBlock 1: relaxation: typeYYY\"/&gt;"
+"        &lt;Parameter name=\"relaxation: sweeps\" type=\"int\"    value=\"XXXBlock 1: relaxation: sweepsYYY\"/&gt;"
+"        &lt;Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"XXXBlock 1: relaxation: damping factorYYY\"/&gt;"
+"      &lt;/ParameterList&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"mySmooILUFact1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"TrilinosSmoother\"/&gt;"
+"      &lt;Parameter name=\"type\" type=\"string\" value=\"ILU\"/&gt;"
+"      &lt;ParameterList name=\"ParameterList\"&gt;"
+"        &lt;Parameter name=\"fact: level-of-fill\" type=\"int\" value=\"XXXBlock 1: level-of-fillYYY\"/&gt;"
+"      &lt;/ParameterList&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"mySmooDirectFact1\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"DirectSolver\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"mySmooFact2\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"TrilinosSmoother\"/&gt;"
+"      &lt;Parameter name=\"type\" type=\"string\" value=\"RELAXATION\"/&gt;"
+"      &lt;ParameterList name=\"ParameterList\"&gt;"
+"        &lt;Parameter name=\"relaxation: type\" type=\"string\" value=\"XXXBlock 2: relaxation: typeYYY\"/&gt;"
+"        &lt;Parameter name=\"relaxation: sweeps\" type=\"int\"    value=\"XXXBlock 2: relaxation: sweepsYYY\"/&gt;"
+"        &lt;Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"XXXBlock 2: relaxation: damping factorYYY\"/&gt;"
+"      &lt;/ParameterList&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"mySmooILUFact2\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"TrilinosSmoother\"/&gt;"
+"      &lt;Parameter name=\"type\" type=\"string\" value=\"ILU\"/&gt;"
+"      &lt;ParameterList name=\"ParameterList\"&gt;"
+"        &lt;Parameter name=\"fact: level-of-fill\" type=\"int\" value=\"XXXBlock 2: level-of-fillYYY\"/&gt;"
+"      &lt;/ParameterList&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"mySmooDirectFact2\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"DirectSolver\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"    &lt;ParameterList name=\"myBlockSmoother\"&gt;"
+"      &lt;Parameter name=\"factory\" type=\"string\" value=\"BlockedGaussSeidelSmoother\"/&gt;"
+"      &lt;Parameter name=\"Sweeps\" type=\"int\" value=\"1\"/&gt;"
+"      &lt;Parameter name=\"Damping factor\" type=\"double\" value=\"XXXBGS: damping factorYYY\"/&gt;"
+"      &lt;!-- factory manager for block 1 --&gt;"
+"      &lt;ParameterList name=\"block1\"&gt;"
+"        &lt;Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory1\"/&gt;"
+"        &lt;Parameter name=\"Smoother\" type=\"string\" value=\"XYZSmoother1XYZ\"/&gt;"
+"      &lt;/ParameterList&gt;"
+"      &lt;!-- factory manager for block 2 --&gt;"
+"      &lt;ParameterList name=\"block2\"&gt;"
+"        &lt;Parameter name=\"A\" type=\"string\" value=\"mySubBlockAFactory2\"/&gt;"
+"        &lt;Parameter name=\"Smoother\" type=\"string\" value=\"XYZSmoother2XYZ\"/&gt;"
+"      &lt;/ParameterList&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"  &lt;/ParameterList&gt;"
+"  &lt;!-- end Factories --&gt;"
+""
+"  &lt;!-- Definition of the multigrid preconditioner --&gt;"
+"  &lt;ParameterList name=\"Hierarchy\"&gt;"
+""
+"    &lt;Parameter name=\"max levels\"          type=\"int\"      value=\"XXXmax levelsYYY\"/&gt;"
+"    &lt;Parameter name=\"coarse: max size\"    type=\"int\"      value=\"XXXcoarse: max sizeYYY\"/&gt;"
+"    &lt;Parameter name=\"verbosity\"           type=\"string\"   value=\"XXXverbosityYYY\"/&gt;"
+""
+"    &lt;ParameterList name=\"AllLevel\"&gt;"
+"      &lt;Parameter name=\"startLevel\"        type=\"int\"      value=\"0\"/&gt;"
+"      &lt;Parameter name=\"Smoother\"          type=\"string\"   value=\"myBlockSmoother\"/&gt;"
+"      &lt;Parameter name=\"CoarseSolver\"      type=\"string\"   value=\"myBlockSmoother\"/&gt;"
+"      &lt;Parameter name=\"P\"                 type=\"string\"   value=\"myBlockedPFact\"/&gt;"
+"      &lt;Parameter name=\"R\"                 type=\"string\"   value=\"myBlockedRFact\"/&gt;"
+"      &lt;Parameter name=\"A\"                 type=\"string\"   value=\"myBlockedRAPFact\"/&gt;"
+"    &lt;/ParameterList&gt;"
+""
+"  &lt;/ParameterList&gt;"
+"&lt;/ParameterList&gt;"
+  </xml-template>
+</facade>

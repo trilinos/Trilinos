@@ -27,6 +27,7 @@ INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UserAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Headers)
 INCLUDE_DIRECTORIES(${DIR}/Interface)
+INCLUDE_DIRECTORIES(${DIR}/Interface/FacadeClasses)
 INCLUDE_DIRECTORIES(${DIR}/Misc)
 INCLUDE_DIRECTORIES(${DIR}/MueCentral)
 INCLUDE_DIRECTORIES(${DIR}/Rebalancing)
@@ -338,6 +339,7 @@ APPEND_GLOB(HEADERS */*/*/*.hpp)
 # NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(HEADERS_INTERFACE "")
 APPEND_GLOB(HEADERS_INTERFACE Interface//*.hpp)
+APPEND_GLOB(HEADERS_INTERFACE Interface/FacadeClasses/*.hpp)
 LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
 
@@ -374,6 +376,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/BrickAggregation NOSIERRABJ
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UncoupledAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UserAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface/FacadeClasses NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Misc NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/MueCentral NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Rebalancing NOSIERRABJAM)
@@ -408,8 +411,11 @@ ENDIF()
 SET(SOURCES_INTERFACE "")
 APPEND_GLOB(SOURCES_INTERFACE Interface//*.cpp)
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
@@ -438,6 +444,7 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

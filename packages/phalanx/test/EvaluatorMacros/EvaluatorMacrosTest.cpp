@@ -79,7 +79,6 @@ TEUCHOS_UNIT_TEST(evaluator_macros, basic)
   // Mock evaluators for testing MACRO definitions
   using Ev1 = EvaluatorWithMacros1<MyTraits::Residual,MyTraits>;
   using Ev2 = EvaluatorWithMacros2<MyTraits::Residual,MyTraits>;
-  using plist = Teuchos::ParameterList;
   
   {
     auto plist_a = Teuchos::parameterList("A"); 

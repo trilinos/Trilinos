@@ -11,7 +11,7 @@
 
 #include <unordered_set>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 namespace {
    //! A dummy response for local use, is only used by the response library

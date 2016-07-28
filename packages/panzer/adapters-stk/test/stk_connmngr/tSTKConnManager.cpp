@@ -70,7 +70,7 @@ using Teuchos::rcp;
 
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 typedef shards::Quadrilateral<4> QuadTopo;
 
@@ -114,8 +114,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
 {
    using Teuchos::RCP;
 
-   int numProcs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int myRank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
@@ -223,8 +223,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
 {
    using Teuchos::RCP;
 
-   int numProcs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int myRank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
@@ -306,8 +306,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, noConnectivityClone)
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
 
-   int numProcs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int myRank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
@@ -455,8 +455,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
 {
    using Teuchos::RCP;
 
-   int numProcs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   // int myRank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   // int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    RCP<STK_Interface> mesh = build2DMesh(2,2,2,2); // 4x4 elements
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -510,8 +510,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks_interface)
 {
    using Teuchos::RCP;
 
-   const int numProcs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   const int myRank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   const int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   const int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    const RCP<STK_Interface> mesh = build2DMesh(2,1,2,1);
    TEST_ASSERT( ! mesh.is_null());

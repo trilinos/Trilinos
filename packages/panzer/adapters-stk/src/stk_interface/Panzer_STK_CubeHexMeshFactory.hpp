@@ -47,7 +47,7 @@
 #include <Panzer_STK_MeshFactory.hpp>
 #include <Panzer_STK_Interface.hpp>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 class STK_Interface;
 
@@ -65,10 +65,10 @@ public:
    virtual ~CubeHexMeshFactory();
 
    //! Build the mesh object
-   Teuchos::RCP<STK_Interface> buildMesh(stk_classic::ParallelMachine parallelMach) const;
+   Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
 
-   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const;
-   virtual void completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const;
+   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
+   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;
 
    //! From ParameterListAcceptor
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);
@@ -82,9 +82,9 @@ public:
 protected: 
    void initializeWithDefaults();
 
-   void buildMetaData(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const;
-   void buildElements(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const;
-   void buildBlock(stk_classic::ParallelMachine machRank,int xBlock,int yBlock,int zBlock,STK_Interface & mesh) const;
+   void buildMetaData(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;
+   void buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;
+   void buildBlock(stk::ParallelMachine machRank,int xBlock,int yBlock,int zBlock,STK_Interface & mesh) const;
 
    std::pair<panzer::Ordinal64,panzer::Ordinal64> determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const;
    std::pair<panzer::Ordinal64,panzer::Ordinal64> determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const;
@@ -93,9 +93,6 @@ protected:
    void addSides(STK_Interface & mesh) const; // this adds side entities only (does not inject them into side sets)
    void addSideSets(STK_Interface & mesh) const;
    void addNodeSets(STK_Interface & mesh) const;
-
-   // search through relations for the one matching the ID: for use with addSideSets
-   const stk_classic::mesh::Relation * getRelationByID(unsigned ID,stk_classic::mesh::PairIterRelation edges) const;
 
    double x0_, y0_, z0_;
    double xf_, yf_, zf_;

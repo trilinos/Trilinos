@@ -55,7 +55,7 @@
 // **********************************************************************
 
 template<typename EvalT, typename Traits> 
-panzer_stk_classic::GatherRefCoords<EvalT, Traits>::
+panzer_stk::GatherRefCoords<EvalT, Traits>::
 GatherRefCoords(const Teuchos::RCP<const STK_Interface> & mesh,
                 const panzer::BasisIRLayout & basis,
                 const std::string & fieldName)
@@ -73,7 +73,7 @@ GatherRefCoords(const Teuchos::RCP<const STK_Interface> & mesh,
 
 // **********************************************************************
 template<typename EvalT, typename Traits> 
-void panzer_stk_classic::GatherRefCoords<EvalT, Traits>::
+void panzer_stk::GatherRefCoords<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
@@ -83,16 +83,16 @@ postRegistrationSetup(typename Traits::SetupData d,
 
 // **********************************************************************
 template<typename EvalT, typename Traits> 
-void panzer_stk_classic::GatherRefCoords<EvalT, Traits>::
+void panzer_stk::GatherRefCoords<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   const std::vector<stk_classic::mesh::Entity*> & localElements = *mesh_->getElementsOrderedByLID();
+   const std::vector<stk::mesh::Entity> & localElements = *mesh_->getElementsOrderedByLID();
  
    // for convenience pull out some objects from workset
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    // convert to a vector of entity objects
-   std::vector<stk_classic::mesh::Entity*> selected_elements;
+   std::vector<stk::mesh::Entity> selected_elements;
    for(std::size_t cell=0;cell<localCellIds.size();cell++)
      selected_elements.push_back(localElements[localCellIds[cell]]);
 

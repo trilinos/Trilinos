@@ -47,4 +47,4 @@
 #include "Panzer_STK_GatherRefCoords.hpp"
 #include "Panzer_STK_GatherRefCoords_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer_stk_classic::GatherRefCoords)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer_stk::GatherRefCoords)

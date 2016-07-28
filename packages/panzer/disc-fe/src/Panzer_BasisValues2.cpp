@@ -229,8 +229,8 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
   // so we evaluate the basis in a loop over cells.
   for (size_type icell = 0; icell < num_cells; ++icell)
   {
-    for (size_type ip = 0; ip < num_ip; ++ip)
-      for (size_type d = 0; d < num_dim; ++d)
+    for (int ip = 0; ip < num_ip; ++ip)
+      for (int d = 0; d < num_dim; ++d)
          dyn_cub_points(ip,d) = cell_cub_points(icell,ip,d);
 
     if(elmtspace==PureBasis::CONST) {
@@ -240,8 +240,8 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                  Intrepid2::OPERATOR_VALUE);
 
        // transform values method just transfers values to array with cell index - no need to call
-       for (size_type b = 0; b < num_card; ++b)
-          for (size_type ip = 0; ip < num_ip; ++ip) 
+       for (int b = 0; b < num_card; ++b)
+          for (int ip = 0; ip < num_ip; ++ip) 
              basis_scalar(icell,b,ip) = dyn_basis_ref_scalar(b,ip);
 
     }
@@ -252,8 +252,8 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                  Intrepid2::OPERATOR_VALUE);
 
        // transform values method just transfers values to array with cell index - no need to call
-       for (size_type b = 0; b < num_card; ++b)
-          for (size_type ip = 0; ip < num_ip; ++ip) 
+       for (int b = 0; b < num_card; ++b)
+          for (int ip = 0; ip < num_ip; ++ip) 
              basis_scalar(icell,b,ip) = dyn_basis_ref_scalar(b,ip);
 
        if(compute_derivatives) {
@@ -267,18 +267,18 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                     Intrepid2::OPERATOR_GRAD);
 
           int cellInd = 0;
-          for (size_type ip = 0; ip < num_ip; ++ip)
-             for (size_type d1 = 0; d1 < num_dim; ++d1)
-               for (size_type d2 = 0; d2 < num_dim; ++d2)
+          for (int ip = 0; ip < num_ip; ++ip)
+             for (int d1 = 0; d1 < num_dim; ++d1)
+               for (int d2 = 0; d2 < num_dim; ++d2)
                   dyn_jac_inv(cellInd,ip,d1,d2) = jac_inv(icell,ip,d1,d2);
 
           Intrepid2::FunctionSpaceTools::HGRADtransformGRAD<Scalar>(dyn_grad_basis,
                                                                    dyn_jac_inv,
                                                                    dyn_grad_basis_ref);
 
-          for (size_type b = 0; b < num_card; ++b)
-            for (size_type ip = 0; ip < num_ip; ++ip) 
-              for (size_type d = 0; d < num_dim; ++d)
+          for (int b = 0; b < num_card; ++b)
+            for (int ip = 0; ip < num_ip; ++ip) 
+              for (int d = 0; d < num_dim; ++d)
                  grad_basis(icell,b,ip,d) = dyn_grad_basis(0,b,ip,d);
 
         }
@@ -294,18 +294,18 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
       ArrayDynamic dyn_jac_inv = af.buildArray<Scalar,Cell,IP,Dim,Dim>("dyn_jac_inv",one_cell,num_ip,num_dim,num_dim);
 
       int cellInd = 0;
-      for (size_type ip = 0; ip < num_ip; ++ip)
-        for (size_type d1 = 0; d1 < num_dim; ++d1)
-          for (size_type d2 = 0; d2 < num_dim; ++d2)
+      for (int ip = 0; ip < num_ip; ++ip)
+        for (int d1 = 0; d1 < num_dim; ++d1)
+          for (int d2 = 0; d2 < num_dim; ++d2)
               dyn_jac_inv(cellInd,ip,d1,d2) = jac_inv(icell,ip,d1,d2);
 
       Intrepid2::FunctionSpaceTools::HCURLtransformVALUE<Scalar>(dyn_basis_vector,
                                                                 dyn_jac_inv,
                                                                 dyn_basis_ref_vector);
 
-      for (size_type b = 0; b < num_card; ++b)
-        for (size_type ip = 0; ip < num_ip; ++ip) 
-          for (size_type d = 0; d < num_dim; ++d) 
+      for (int b = 0; b < num_card; ++b)
+        for (int ip = 0; ip < num_ip; ++ip) 
+          for (int d = 0; d < num_dim; ++d) 
              basis_vector(icell,b,ip,d) = dyn_basis_vector(0,b,ip,d);
 
       if(compute_derivatives && num_dim ==2) {
@@ -319,15 +319,15 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                     Intrepid2::OPERATOR_CURL);
 
           int cellInd = 0;
-          for (size_type ip = 0; ip < num_ip; ++ip)
+          for (int ip = 0; ip < num_ip; ++ip)
               dyn_jac_det(cellInd,ip) = jac_det(icell,ip);
 
           Intrepid2::FunctionSpaceTools::HDIVtransformDIV<Scalar>(dyn_curl_basis_scalar,
                                                                  dyn_jac_det,
                                                                  dyn_curl_basis_ref_scalar);
 
-          for (size_type b = 0; b < num_card; ++b)
-            for (size_type ip = 0; ip < num_ip; ++ip) 
+          for (int b = 0; b < num_card; ++b)
+            for (int ip = 0; ip < num_ip; ++ip) 
                 curl_basis_scalar(icell,b,ip) = dyn_curl_basis_scalar(0,b,ip);
 
       }
@@ -343,11 +343,11 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                     Intrepid2::OPERATOR_CURL);
 
           int cellInd = 0;
-          for (size_type ip = 0; ip < num_ip; ++ip)
+          for (int ip = 0; ip < num_ip; ++ip)
           {
              dyn_jac_det(cellInd,ip) = jac_det(icell,ip);
-             for (size_type d1 = 0; d1 < num_dim; ++d1)
-                for (size_type d2 = 0; d2 < num_dim; ++d2)
+             for (int d1 = 0; d1 < num_dim; ++d1)
+                for (int d2 = 0; d2 < num_dim; ++d2)
                   dyn_jac(cellInd,ip,d1,d2) = jac(icell,ip,d1,d2);
           }
 
@@ -356,9 +356,9 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                                                    dyn_jac_det,
                                                                    dyn_curl_basis_ref);
 
-          for (size_type b = 0; b < num_card; ++b)
-            for (size_type ip = 0; ip < num_ip; ++ip) 
-               for (size_type d = 0; d < num_dim; ++d) 
+          for (int b = 0; b < num_card; ++b)
+            for (int ip = 0; ip < num_ip; ++ip) 
+               for (int d = 0; d < num_dim; ++d) 
                   curl_basis_vector(icell,b,ip,d) = dyn_curl_basis(0,b,ip,d);
 
       }
@@ -377,11 +377,11 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
       ArrayDynamic dyn_jac_det = af.buildArray<Scalar,Cell,IP>("dyn_jac_det",one_cell,num_ip);
 
       int cellInd = 0;
-      for (size_type ip = 0; ip < num_ip; ++ip)
+      for (int ip = 0; ip < num_ip; ++ip)
       {
         dyn_jac_det(cellInd,ip) = jac_det(icell,ip);
-        for (size_type d1 = 0; d1 < num_dim; ++d1)
-          for (size_type d2 = 0; d2 < num_dim; ++d2)
+        for (int d1 = 0; d1 < num_dim; ++d1)
+          for (int d2 = 0; d2 < num_dim; ++d2)
               dyn_jac(cellInd,ip,d1,d2) = jac(icell,ip,d1,d2);
       }
 
@@ -389,9 +389,9 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                                                dyn_jac,dyn_jac_det,
                                                                dyn_basis_ref_vector);
 
-       for (size_type b = 0; b < num_card; ++b)
-         for (size_type ip = 0; ip < num_ip; ++ip) 
-           for (size_type d = 0; d < num_dim; ++d) 
+       for (int b = 0; b < num_card; ++b)
+         for (int ip = 0; ip < num_ip; ++ip) 
+           for (int d = 0; d < num_dim; ++d) 
               basis_vector(icell,b,ip,d) = dyn_basis_vector(0,b,ip,d);
 
        if(compute_derivatives) {
@@ -406,8 +406,8 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                                                   dyn_jac_det,
                                                                   dyn_div_basis_ref);
 
-           for (size_type b = 0; b < num_card; ++b)
-             for (size_type ip = 0; ip < num_ip; ++ip) 
+           for (int b = 0; b < num_card; ++b)
+             for (int ip = 0; ip < num_ip; ++ip) 
                  div_basis(icell,b,ip) = dyn_div_basis(0,b,ip);
   
         }
@@ -431,8 +431,8 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
 
   ArrayDynamic dyn_cub_points = af.buildArray<Scalar,IP,Dim>("dyn_cub_points",  num_quad,num_dim);
 
-  for (size_type ip = 0; ip < num_quad; ++ip)
-    for (size_type d = 0; d < num_dim; ++d)
+  for (int ip = 0; ip < num_quad; ++ip)
+    for (int d = 0; d < num_dim; ++d)
       dyn_cub_points(ip,d) = cub_points(ip,d);
 
   PureBasis::EElementSpace elmtspace = getElementSpace();
@@ -442,8 +442,8 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
     intrepid_basis->getValues(dyn_basis_ref_scalar, dyn_cub_points, 
                               Intrepid2::OPERATOR_VALUE);
 
-    for (size_type b = 0; b < num_card; ++b)
-      for (size_type ip = 0; ip < num_quad; ++ip) 
+    for (int b = 0; b < num_card; ++b)
+      for (int ip = 0; ip < num_quad; ++ip) 
         basis_ref_scalar(b,ip) = dyn_basis_ref_scalar(b,ip);
   }
   else if(elmtspace==PureBasis::HDIV || elmtspace==PureBasis::HCURL) {
@@ -452,9 +452,9 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
     intrepid_basis->getValues(dyn_basis_ref_vector, dyn_cub_points, 
                               Intrepid2::OPERATOR_VALUE);
 
-    for (size_type b = 0; b < num_card; ++b)
-      for (size_type ip = 0; ip < num_quad; ++ip) 
-        for (size_type d = 0; d < num_dim; ++d) 
+    for (int b = 0; b < num_card; ++b)
+      for (int ip = 0; ip < num_quad; ++ip) 
+        for (int d = 0; d < num_dim; ++d) 
            basis_ref_vector(b,ip,d) = dyn_basis_ref_vector(b,ip,d);
   }
   else { TEUCHOS_ASSERT(false); }
@@ -465,9 +465,9 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
     intrepid_basis->getValues(dyn_grad_basis_ref, dyn_cub_points, 
                               Intrepid2::OPERATOR_GRAD);
 
-    for (size_type b = 0; b < num_card; ++b)
-      for (size_type ip = 0; ip < num_quad; ++ip) 
-        for (size_type d = 0; d < num_dim; ++d) 
+    for (int b = 0; b < num_card; ++b)
+      for (int ip = 0; ip < num_quad; ++ip) 
+        for (int d = 0; d < num_dim; ++d) 
            grad_basis_ref(b,ip,d) = dyn_grad_basis_ref(b,ip,d);
   }
   else if(elmtspace==PureBasis::HCURL && compute_derivatives && num_dim==2) {
@@ -476,8 +476,8 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
     intrepid_basis->getValues(dyn_curl_basis_ref, dyn_cub_points, 
                               Intrepid2::OPERATOR_CURL);
 
-    for (size_type b = 0; b < num_card; ++b)
-      for (size_type ip = 0; ip < num_quad; ++ip) 
+    for (int b = 0; b < num_card; ++b)
+      for (int ip = 0; ip < num_quad; ++ip) 
         curl_basis_ref_scalar(b,ip) = dyn_curl_basis_ref(b,ip);
   }
   else if(elmtspace==PureBasis::HCURL && compute_derivatives && num_dim==3) {
@@ -486,9 +486,9 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
     intrepid_basis->getValues(dyn_curl_basis_ref, dyn_cub_points, 
                               Intrepid2::OPERATOR_CURL);
 
-    for (size_type b = 0; b < num_card; ++b)
-      for (size_type ip = 0; ip < num_quad; ++ip) 
-        for (size_type d = 0; d < num_dim; ++d) 
+    for (int b = 0; b < num_card; ++b)
+      for (int ip = 0; ip < num_quad; ++ip) 
+        for (int d = 0; d < num_dim; ++d) 
            curl_basis_ref_vector(b,ip,d) = dyn_curl_basis_ref(b,ip,d);
   }
   else if(elmtspace==PureBasis::HDIV && compute_derivatives) {
@@ -497,8 +497,8 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
     intrepid_basis->getValues(dyn_div_basis_ref, dyn_cub_points, 
                               Intrepid2::OPERATOR_DIV);
 
-    for (size_type b = 0; b < num_card; ++b)
-      for (size_type ip = 0; ip < num_quad; ++ip) 
+    for (int b = 0; b < num_card; ++b)
+      for (int ip = 0; ip < num_quad; ++ip) 
         div_basis_ref(b,ip) = dyn_div_basis_ref(b,ip);
   }
 
@@ -513,8 +513,8 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
       coords->getDofCoords(dyn_basis_coordinates_ref);
 
       // fill in basis coordinates
-      for (size_type i = 0; i < basis_coordinates_ref.dimension(0); ++i)
-        for (size_type j = 0; j < basis_coordinates_ref.dimension(1); ++j)
+      for (int i = 0; i < basis_coordinates_ref.extent_int(0); ++i)
+        for (int j = 0; j < basis_coordinates_ref.extent_int(1); ++j)
           basis_coordinates_ref(i,j) = dyn_basis_coordinates_ref(i,j); 
     }
   }

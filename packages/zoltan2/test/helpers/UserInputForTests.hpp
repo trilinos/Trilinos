@@ -1075,7 +1075,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
   M_ = toMatrix;
 
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  
+
   // Open the coordinate file.
   
   fname.str("");
@@ -1298,7 +1298,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
                       "UserInputForTests Galeri::Xpetra::BuildProblem failed");
   
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  
+
   // Compute the coordinates for the matrix rows.
   
   if (verbose_ && tcomm_->getRank() == 0)
@@ -2569,7 +2569,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
   }
   
   char * file_data = new char[len];
-  file_data[len] = '\0'; // critical to null terminate buffer
+  file_data[len-1] = '\0'; // critical to null terminate buffer // MDM added -1 as this was a buffer overwrite
   if(rank == 0){
     file.read(file_data,len); // if proc 0 then read file
   }

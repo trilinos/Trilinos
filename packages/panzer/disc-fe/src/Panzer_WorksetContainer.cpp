@@ -387,7 +387,6 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
 
   typedef double Scalar;                          // orientation container scalar type
   typedef PHX::MDField<Scalar,Cell,BASIS> Array; // orientation container array type
-  typedef std::pair<std::string,Teuchos::RCP<const PureBasis> > StrConstBasisPair;
 
   /////////////////////////////////
   // this is for side worksets //
