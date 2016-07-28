@@ -104,6 +104,12 @@ initialize ()
     (G.is_null (), std::logic_error, prefix << "A_ and A_crs_ are nonnull, "
      "but A_'s RowGraph G is null.  "
      "Please report this bug to the Ifpack2 developers.");
+  // At this point, the graph MUST be fillComplete.  The "initialize"
+  // (symbolic) part of setup only depends on the graph structure, so
+  // the matrix itself need not be fill complete.
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! G->isFillComplete (), std::runtime_error, "If you call this method, "
+     "the matrix's graph must be fill complete.  It is not.");
 
   isInitialized_ = true;
   ++numInitialize_;
@@ -123,6 +129,10 @@ compute ()
   TEUCHOS_TEST_FOR_EXCEPTION
     (A_crs_.is_null (), std::logic_error, prefix << "A_ is nonnull, but "
      "A_crs_ is null.  Please report this bug to the Ifpack2 developers.");
+  // At this point, the matrix MUST be fillComplete.
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A_crs_->isFillComplete (), std::runtime_error, "If you call this "
+     "method, the matrix must be fill complete.  It is not.");
 
   if (! isInitialized_) {
     initialize ();
@@ -157,12 +167,27 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
     (! isComputed (), std::runtime_error, prefix << "If compute() has not yet "
      "been called, or if you have changed the matrix via setMatrix(), you must "
      "call compute() before you may call this method.");
+  // If isComputed() is true, it's impossible for the matrix to be
+  // null, or for it not to be a Tpetra::CrsMatrix.
   TEUCHOS_TEST_FOR_EXCEPTION
     (A_.is_null (), std::logic_error, prefix << "A_ is null.  "
      "Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION
     (A_crs_.is_null (), std::logic_error, prefix << "A_crs_ is null.  "
      "Please report this bug to the Ifpack2 developers.");
+  // However, it _is_ possible that the user called resumeFill() on
+  // the matrix, after calling compute().  This is NOT allowed.
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A_crs_->isFillComplete (), std::runtime_error, "If you call this "
+     "method, the matrix must be fill complete.  It is not.  This means that "
+     " you must have called resumeFill() on the matrix before calling apply(). "
+     "This is NOT allowed.  Note that this class may use the matrix's data in "
+     "place without copying it.  Thus, you cannot change the matrix and expect "
+     "the solver to stay the same.  If you have changed the matrix, first call "
+     "fillComplete() on it, then call compute() on this object, before you call"
+     " apply().  You do NOT need to call setMatrix, as long as the matrix "
+     "itself (that is, its address in memory) is the same.");
+
   auto G = A_->getGraph ();
   TEUCHOS_TEST_FOR_EXCEPTION
     (G.is_null (), std::logic_error, prefix << "A_ and A_crs_ are nonnull, "
