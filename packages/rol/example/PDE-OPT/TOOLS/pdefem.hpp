@@ -116,7 +116,9 @@ private:
 
   // Set in SetCellNodes
   Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  bdryCellIds_;
+  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > >  bdryCellLocIds_;
+  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
 
   // Finite element vectors and matrices
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matJ1_;
@@ -225,7 +227,7 @@ private:
         }
         break;
     }
-      
+
     Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
     int numLocalDofs = cellDofs.dimension(1);
     if ( verbose_ ) {
@@ -291,9 +293,34 @@ private:
       }
     }
     // Build boundary cell nodes
-    bdryCellNodes_ = Teuchos::null;
+    bdryCellIds_    = meshMgr_->getSideSets();
+    int numSideSets = bdryCellIds_->size();
+    if (numSideSets > 0) {
+      bdryCellNodes_.resize(numSideSets);
+      bdryCellLocIds_.resize(numSideSets);
+      for (int i=0; i<numSideSets; ++i) {
+        int numLocSides = (*bdryCellIds_)[i].size();
+        bdryCellNodes_[i].resize(numLocSides);
+        bdryCellLocIds_[i].resize(numLocSides);
+        for (int j=0; j<numLocSides; ++j) {
+          int numCellsSide = (*bdryCellIds_)[i][j].dimension(0);
+          bdryCellLocIds_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCellsSide));
+          bdryCellNodes_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numNodesPerCell, spaceDim));
+          for (int k=0; k<numCellsSide; ++k) {
+            int idx = (*bdryCellIds_)[i][j](k);
+            (*bdryCellLocIds_[i][j])(k) = myCellIds_[idx];
+            for (int l=0; l<numNodesPerCell; ++l) {
+              for (int m=0; m<spaceDim; ++m) {
+                (*bdryCellNodes_[i][j])(k, l, m) = nodes(ctn(myCellIds_[idx],l), m);
+              }
+            }
+          }
+        }
+      }
+    }
+    bdryCellNodes_.resize(numSideSets);
     // Set PDE cell nodes
-    pde_->setCellNodes(volCellNodes_,bdryCellNodes_);
+    pde_->setCellNodes(volCellNodes_, bdryCellNodes_, bdryCellLocIds_);
   }
 
   void getCoeffFromStateVector(Teuchos::RCP<Intrepid::FieldContainer<Real> > &xcoeff,

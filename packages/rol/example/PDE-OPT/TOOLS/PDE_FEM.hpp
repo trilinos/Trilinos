@@ -72,11 +72,16 @@
 
 // Global Timers.
 #ifdef ROL_TIMERS
-Teuchos::RCP<Time> FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Factorization Time in PDEFEM");
-Teuchos::RCP<Time> LUSubstitutionTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: LU Substitution Time in PDEFEM");
-Teuchos::RCP<Time> SolverUpdateTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Solver Update Time in PDEFEM");
-Teuchos::RCP<Time> LocalAssemblyTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Local Assembly Time in PDEFEM");
-Teuchos::RCP<Time> ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Constraint Derivative Application Time in PDEFEM");
+Teuchos::RCP<Teuchos::Time> FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
+  TimeMonitor::getNewCounter("ROL: Factorization Time in PDEFEM");
+Teuchos::RCP<Teuchos::Time> LUSubstitutionTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
+  TimeMonitor::getNewCounter("ROL: LU Substitution Time in PDEFEM");
+Teuchos::RCP<Teuchos::Time> SolverUpdateTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
+  TimeMonitor::getNewCounter("ROL: Solver Update Time in PDEFEM");
+Teuchos::RCP<Teuchos::Time> LocalAssemblyTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
+  TimeMonitor::getNewCounter("ROL: Local Assembly Time in PDEFEM");
+Teuchos::RCP<Teuchos::Time> ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
+  TimeMonitor::getNewCounter("ROL: Constraint Derivative Application Time in PDEFEM");
 #endif
 
 template<class Real>
@@ -89,14 +94,9 @@ protected:
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
   Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface_;
   Intrepid::FieldContainer<int> cellDofs_;
-              
+
   Teuchos::RCP<Teuchos::ParameterList> parlist_;
   Teuchos::RCP<const Teuchos::Comm<int> > commPtr_;
-  Teuchos::RCP<Teuchos::Time::Time> timerSolverFactorization_;
-  Teuchos::RCP<Teuchos::Time::Time> timerSolverSubstitution_;
-  Teuchos::RCP<Teuchos::Time::Time> timerAssemblyNonlinear_;
-  Teuchos::RCP<Teuchos::Time::Time> timerSolverUpdate_;
-  Teuchos::RCP<Teuchos::Time::Time> timerLocalAssembly_;
   Teuchos::RCP<std::ostream> outStream_;
     
   int numLocalDofs_;

@@ -160,7 +160,8 @@ public:
   }
 
   void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &volCellNodes,
-                    const Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<Real> > > > &bdryCells) {
+                    const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
+                    const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > > &bdryCellLocIds) {
     volCellNodes_ = volCellNodes;
     // Finite element definition.
     fe_vol_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
