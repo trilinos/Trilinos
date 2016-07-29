@@ -57,8 +57,39 @@ class PDE_Constraint : public ROL::EqualityConstraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<PDE_FEM<Real> > fem_;
 
+  bool computeJ1_, computeJ2_;
+  bool computeH11_, computeH12_, computeH21_, computeH22_;
+
 public:
-  PDE_Constraint(const Teuchos::RCP<PDE_FEM<Real> > &fem) : fem_(fem) {}
+  PDE_Constraint(const Teuchos::RCP<PDE_FEM<Real> > &fem)
+    : fem_(fem), computeJ1_(true), computeJ2_(true),
+      computeH11_(true), computeH12_(true), computeH21_(true), computeH22_(true) {}
+
+  using ROL::EqualityConstraint_SimOpt<Real>::update_1;
+  void update_1(const ROL::Vector<Real> &u, bool flag = true, int iter = -1) {
+    if (flag && iter > -1) {
+      computeJ1_ = true;
+    }
+  }
+
+  using ROL::EqualityConstraint_SimOpt<Real>::update_2;
+  void update_2(const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
+    if (flag && iter > -1) {
+      computeJ2_ = true;
+    }
+  }
+
+  using ROL::EqualityConstraint_SimOpt<Real>::update;
+  void update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
+    update_1(u,flag,iter);
+    update_2(z,flag,iter);
+    if (flag && iter > -1) {
+      computeH11_ = true;
+      computeH12_ = true;
+      computeH21_ = true;
+      computeH22_ = true;
+    }
+  }
 
   using ROL::EqualityConstraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
@@ -80,12 +111,15 @@ public:
       (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
     Teuchos::RCP<const Tpetra::MultiVector<> > vp =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    if (computeJ1_) {
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-    fem_->assembleJacobian1(*up,*zp);
+      fem_->assembleJacobian1(*up,*zp);
+      computeJ1_ = false;
+    }
     fem_->getJacobian1(false)->apply(*vp,*jvp);
   }
 
@@ -96,12 +130,15 @@ public:
       (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
     Teuchos::RCP<const Tpetra::MultiVector<> > vp =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    if (computeJ2_) {
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-    fem_->assembleJacobian2(*up,*zp);
+      fem_->assembleJacobian2(*up,*zp);
+      computeJ2_ = false;
+    }
     fem_->getJacobian2(false)->apply(*vp,*jvp);
   }
 
@@ -112,12 +149,15 @@ public:
       (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ajv)).getVector();
     Teuchos::RCP<const Tpetra::MultiVector<> > vp =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    if (computeJ1_) {
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-    fem_->assembleJacobian1(*up,*zp);
+      fem_->assembleJacobian1(*up,*zp);
+      computeJ1_ = false;
+    }
     fem_->getJacobian1(true)->apply(*vp,*ajvp);
   }
 
@@ -128,12 +168,15 @@ public:
       (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ajv)).getVector();
     Teuchos::RCP<const Tpetra::MultiVector<> > vp =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    if (computeJ2_) {
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-    fem_->assembleJacobian2(*up,*zp);
+      fem_->assembleJacobian2(*up,*zp);
+      computeJ2_ = false;
+    }
     fem_->getJacobian2(true)->apply(*vp,*ajvp);
   }
 
@@ -143,16 +186,19 @@ public:
     try {
       Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
         (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > wp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > vp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      if (computeH11_) {
+        Teuchos::RCP<const Tpetra::MultiVector<> > wp =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
+        Teuchos::RCP<const Tpetra::MultiVector<> > up =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+        Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleHessian11(*up,*zp,*wp);
+        fem_->assembleHessian11(*up,*zp,*wp);
+        computeH11_ = false;
+      }
       fem_->getHessian11()->apply(*vp,*ahwvp);
     }
     catch (Exception::Zero &zero) {
@@ -166,16 +212,19 @@ public:
     try {
       Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
         (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > wp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > vp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      if (computeH12_) {
+        Teuchos::RCP<const Tpetra::MultiVector<> > wp =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
+        Teuchos::RCP<const Tpetra::MultiVector<> > up =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+        Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleHessian12(*up,*zp,*wp);
+        fem_->assembleHessian12(*up,*zp,*wp);
+        computeH12_ = false;
+      }
       fem_->getHessian12()->apply(*vp,*ahwvp);
     }
     catch (Exception::Zero &zero) {
@@ -189,16 +238,19 @@ public:
     try {
       Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
         (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > wp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > vp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      if (computeH21_) {
+        Teuchos::RCP<const Tpetra::MultiVector<> > wp =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
+        Teuchos::RCP<const Tpetra::MultiVector<> > up =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+        Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleHessian21(*up,*zp,*wp);
+        fem_->assembleHessian21(*up,*zp,*wp);
+        computeH21_ = false;
+      }
       fem_->getHessian21()->apply(*vp,*ahwvp);
     }
     catch (Exception::Zero &zero) {
@@ -212,16 +264,19 @@ public:
     try {
       Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
         (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > wp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > vp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      if (computeH22_) {
+        Teuchos::RCP<const Tpetra::MultiVector<> > wp =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
+        Teuchos::RCP<const Tpetra::MultiVector<> > up =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+        Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleHessian22(*up,*zp,*wp);
+        fem_->assembleHessian22(*up,*zp,*wp);
+        computeH22_ = false;
+      }
       fem_->getHessian22()->apply(*vp,*ahwvp);
     }
     catch (Exception::Zero &zero) {
@@ -236,13 +291,16 @@ public:
       (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ijv)).getVector();
     Teuchos::RCP<const Tpetra::MultiVector<> > vp =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    if (computeJ1_) {
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-    fem_->assembleJacobian1(*up,*zp);
-    fem_->solve(ijvp,vp,false,false);
+      fem_->assembleJacobian1(*up,*zp);
+      computeJ1_ = false;
+    }
+    fem_->solve(ijvp,vp,false);
   }
 
 
@@ -252,13 +310,16 @@ public:
       (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(iajv)).getVector();
     Teuchos::RCP<const Tpetra::MultiVector<> > vp =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    if (computeJ1_) {
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-    fem_->assembleJacobian1(*up,*zp);
-    fem_->solve(iajvp,vp,true,false);
+      fem_->assembleJacobian1(*up,*zp);
+      computeJ1_ = false;
+    }
+    fem_->solve(iajvp,vp,true);
   }
 
 };
