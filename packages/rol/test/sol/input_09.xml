@@ -43,10 +43,10 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-6"  />
-    <Parameter name="Constraint Tolerance" type="double" value="1.e-6"  />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
     <Parameter name="Step Tolerance"       type="double" value="1.e-12" />
-    <Parameter name="Iteration Limit"      type="int"    value="100"    />
+    <Parameter name="Iteration Limit"      type="int"    value="200"    />
   </ParameterList>
 
   <!-- ===========  STOCHASTIC OPTIMIZATION LIBRARY SUBLIST  =========== -->

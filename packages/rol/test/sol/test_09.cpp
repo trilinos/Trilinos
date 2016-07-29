@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Singleton Kusuoka");
     int nQuadLo = 0;
-    int nQuadUp = 21;
+    int nQuadUp = 10;
     for (int i = nQuadLo; i < nQuadUp; ++i) {
       int order = i+1; //std::pow(2,i+1);
       list.sublist("SOL").sublist("Risk Measure").sublist("Singleton Kusuoka").set("Number of Quadrature Points",order);
@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
                  << std::setw(20) << objErr[i]
                  << std::endl;
     }
-    errorFlag += ((objErr[19] > static_cast<RealT>(1.e-3)) ? 1 : 0);
+    errorFlag += ((objErr[19] > static_cast<RealT>(1.e-2)) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

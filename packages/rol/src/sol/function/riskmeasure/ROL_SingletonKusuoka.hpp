@@ -118,14 +118,27 @@ protected:
 
   void buildQuadFromDist(std::vector<Real> &pts, std::vector<Real> &wts,
                    const int nQuad, const Teuchos::RCP<Distribution<Real> > &dist) const {
-    Real half(0.5), one(1), N(nQuad);
+    const Real lo = dist->lowerBound(), hi = dist->upperBound();
+    const Real half(0.5), one(1), N(nQuad);
     wts.clear(); wts.resize(nQuad);
     pts.clear(); pts.resize(nQuad);
-    wts[0] = half/(N-half);
-    pts[0] = dist->lowerBound();
-    for (int i = 1; i < nQuad; ++i) {
-      wts[i] = one/(N-half);
-      pts[i] = dist->invertCDF(static_cast<Real>(i)/N);
+    if ( hi >= one ) {
+      wts[0] = half/(N-half);
+      pts[0] = lo;
+      for (int i = 1; i < nQuad; ++i) {
+        wts[i] = one/(N-half);
+        pts[i] = dist->invertCDF(static_cast<Real>(i)/N);
+      }
+    }
+    else {
+      wts[0] = half/(N-one);
+      pts[0] = lo;
+      for (int i = 1; i < nQuad-1; ++i) {
+        wts[i] = one/(N-one);
+        pts[i] = dist->invertCDF(static_cast<Real>(i)/N);
+      }
+      wts[nQuad-1] = half/(N-one);
+      pts[nQuad-1] = hi;
     }
   }
 
