@@ -51,8 +51,8 @@
 
   <!-- ===========  STOCHASTIC OPTIMIZATION LIBRARY SUBLIST  =========== -->
   <ParameterList name="SOL">
-    <Parameter name = "Stochastic Optimization Type"     type="string" value="Risk Neutral" />
-    <Parameter name = "Store Sampled Value and Gradient" type="bool"   value="true"         />
+    <Parameter name = "Stochastic Optimization Type"     type="string" value="Risk Averse" />
+    <Parameter name = "Store Sampled Value and Gradient" type="bool"   value="true"        />
 
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="CVaR" />
@@ -62,9 +62,11 @@
 
         <ParameterList name="Distribution">
           <Parameter name="Name" type="string" value="Beta" />
-          <ParameterList name="Beta">
-            <Parameter name="Shape 1" type="double" value="0.5" />
-            <Parameter name="Shape 2" type="double" value="0.5" />
+          <ParameterList name="Kumaraswamy">
+            <Parameter name="Lower Bound" type="double" value="0.0"  />
+            <Parameter name="Upper Bound" type="double" value="1.0"  />
+            <Parameter name="Exponent 1"  type="double" value="10.0" />
+            <Parameter name="Exponent 2"  type="double" value="2.0"  />
           </ParameterList>
         </ParameterList>
 

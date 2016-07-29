@@ -168,10 +168,6 @@ int main(int argc, char* argv[]) {
     unsigned dim = 4;
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
     Teuchos::RCP<ROL::Vector<RealT> > x = Teuchos::rcp(new ROL::StdVector<RealT>(x_rcp));
-    Teuchos::RCP<std::vector<RealT> > xp_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > xp = Teuchos::rcp(new ROL::StdVector<RealT>(xp_rcp));
-    Teuchos::RCP<std::vector<RealT> > diff_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > diff = Teuchos::rcp(new ROL::StdVector<RealT>(diff_rcp));
     Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
     Teuchos::RCP<ROL::Vector<RealT> > d = Teuchos::rcp(new ROL::StdVector<RealT>(d_rcp));
     setRandomVector(*d_rcp);
@@ -201,45 +197,45 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* SUPER QUANTILE QUADRANGLE ******************************************/
     /**********************************************************************************************/
-    RealT val(0);
-    diff->zero(); xp->zero();
-    std::vector<RealT> error(20), norm(20), obj(20), objErr(20);
+    RealT one(1), err(0);
+    int nQuadLo = 0, nQuadUp = 21, order = 0;
+    std::vector<RealT> norm(nQuadUp-nQuadLo), obj(nQuadUp-nQuadLo);
     *outStream << "\nSINGLETON KUSUOKA RISK MEASURE\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Singleton Kusuoka");
-    int nQuadLo = 0;
-    int nQuadUp = 10;
+    std::vector<Teuchos::RCP<std::vector<RealT> > > hist(nQuadUp-nQuadLo,Teuchos::null);
+    std::vector<Teuchos::RCP<ROL::StdVector<RealT> > > hvec(nQuadUp-nQuadLo,Teuchos::null);
     for (int i = nQuadLo; i < nQuadUp; ++i) {
-      int order = i+1; //std::pow(2,i+1);
+      order = i+1;
       list.sublist("SOL").sublist("Risk Measure").sublist("Singleton Kusuoka").set("Number of Quadrature Points",order);
       setRandomVector(*x_rcp);
-      obj[i] = setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+      obj[i-nQuadLo] = setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+      norm[i]  = x->norm();
+      hist[i-nQuadLo] = Teuchos::rcp(new std::vector<RealT>(dim));
+      hvec[i-nQuadLo] = Teuchos::rcp(new ROL::StdVector<RealT>(hist[i-nQuadLo]));
+      hvec[i-nQuadLo]->set(*x);
       printSolution(*x_rcp,*outStream);
-      diff->set(*xp); diff->axpy(static_cast<RealT>(-1.0),*x);
-      error[i] = diff->norm();
-      norm[i] = x->norm();
-      objErr[i] = std::abs(val-obj[i]);
-      val = obj[i];
-      xp->set(*x);
     }
     *outStream << std::right
                << std::setw(20) << "Num quad"
                << std::setw(20) << "norm x"
-               << std::setw(20) << "norm diff"
+               << std::setw(20) << "x error"
                << std::setw(20) << "obj val"
-               << std::setw(20) << "obj diff"
+               << std::setw(20) << "obj error"
                << std::endl;
-    for (int i = nQuadLo; i < nQuadUp; ++i) {
+    for (int i = nQuadLo; i < nQuadUp-1; ++i) {
+      hvec[i-nQuadLo]->axpy(-one,*x);
+      err = std::abs(obj[i]-obj[nQuadUp-nQuadLo-1]);
       *outStream << std::fixed << std::setprecision(0) << std::right
                  << std::setw(20) << static_cast<RealT>(i+1)
                  << std::scientific << std::setprecision(11) << std::right
                  << std::setw(20) << norm[i]
-                 << std::setw(20) << error[i]
+                 << std::setw(20) << hvec[i-nQuadLo]->norm()
                  << std::setw(20) << obj[i]
-                 << std::setw(20) << objErr[i]
+                 << std::setw(20) << err
                  << std::endl;
     }
-    errorFlag += ((objErr[19] > static_cast<RealT>(1.e-2)) ? 1 : 0);
+    errorFlag += ((err > static_cast<RealT>(1.e-2)) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
