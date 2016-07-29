@@ -70,7 +70,7 @@ public:
     Teuchos::RCP<const std::vector<Real> > ex
         = Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
 
-    const Real val(0);
+    Real val(0);
     for (int i=0; i<nvars_; ++i) {
       val += (*ex)[i] + alpha_ * (*ex)[i] * (*ex)[i];
     }
