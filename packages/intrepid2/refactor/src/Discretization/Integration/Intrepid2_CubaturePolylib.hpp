@@ -50,32 +50,12 @@
 #define __INTREPID2_CUBATURE_POLYLIB_HPP__
 
 #include "Intrepid2_ConfigDefs.hpp"
-#include "Intrepid2_Cubature.hpp"
+#include "Intrepid2_CubatureDirect.hpp"
 
 #include "Intrepid2_Polylib.hpp"
 
 
 namespace Intrepid2 {
-
-  namespace Impl {
-    class CubaturePolylib {
-    public:
-
-      static ordinal_type
-      getNumPoints( const ordinal_type degree,
-                    const EPolyType polytype );
-
-      template<typename cubPointValueType,  class ...cubPointProperties,
-               typename cubWeightValueType, class ...cubWeightProperties>
-      static void
-      getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-                   Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
-                   const ordinal_type degree,
-                   const double alpha,
-                   const double beta,
-                   const EPolyType polytype );
-    };
-  }
 
   /** \class Intrepid2::CubaturePolylib
       \brief Utilizes cubature (integration) rules contained in the library Polylib
@@ -94,65 +74,15 @@ namespace Intrepid2 {
            typename pointValueType = double,
            typename weightValueType = double>
   class CubaturePolylib
-    : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
-  private:
-
-    /** \brief The degree of polynomials that are integrated
-        exactly by this cubature rule.
-    */
-    ordinal_type degree_;
-
-    /** \brief Dimension of integration domain.
-     */
-    ordinal_type dimension_;
-
-    /** \brief Type of integration points.
-     */
-    EPolyType polytype_;
-
-    /** \brief Jacobi parameter alpha and beta.
-     */
-    double alpha_, beta_;
-
+    : public CubatureDirect<ExecSpaceType,pointValueType,weightValueType> {
   public:
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType; 
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
-
-    virtual
-    void
-    getCubature( pointViewType  cubPoints,
-                 weightViewType cubWeights ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < this->getNumPoints() ||
-                                    cubPoints.dimension(1)  < this->getDimension() ||
-                                    cubWeights.dimension(0) < this->getNumPoints(), std::out_of_range,
-                                    ">>> ERROR (CubaturePolylib): Insufficient space allocated for cubature points or weights.");
-#endif
-      Impl::CubaturePolylib::getCubature( cubPoints,
-                                          cubWeights,
-                                          degree_,
-                                          alpha_,
-                                          beta_,
-                                          polytype_
-                                          );
-    }
-
-    /** \brief Returns the number of cubature points.
-     */
-    virtual
-    ordinal_type
-    getNumPoints() const {
-      return Impl::CubaturePolylib::getNumPoints( degree_, polytype_ );
-    }
-
-    /** \brief Returns dimension of integration domain.
-     */
-    virtual
-    ordinal_type
-    getDimension() const {
-      return dimension_;
-    }
+    CubaturePolylib( const ordinal_type degree,
+                     const EPolyType polytype = POLYTYPE_GAUSS,
+                     const double alpha = 0.0,
+                     const double beta = 0.0 );
 
     /** \brief Returns cubature name.
      */
@@ -162,19 +92,6 @@ namespace Intrepid2 {
       return "CubaturePolylib";
     }
 
-    /** \brief Returns max. degree of polynomials that are integrated exactly.
-        The return vector has size 1.
-    */
-    virtual
-    ordinal_type
-    getAccuracy() const {
-      return degree_;
-    }
-
-    CubaturePolylib( const ordinal_type degree,
-                     const EPolyType polytype = POLYTYPE_GAUSS,
-                     const double alpha = 0.0,
-                     const double beta = 0.0 );
 
   };
 
