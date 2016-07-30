@@ -65,6 +65,8 @@
 #include "Intrepid2_CubatureTensorPyr.hpp"
 //#include "Intrepid2_CubaturePolygon.hpp"
 
+#include "Intrepid2_CubaturePolylib.hpp"
+
 namespace Intrepid2 {
   
   /** \class Intrepid2::DefaultCubatureFactory
@@ -87,7 +89,8 @@ namespace Intrepid2 {
              typename weightValueType = double>
     static Teuchos::RCP<Cubature<ExecSpaceType,pointValueType,weightValueType> > 
     create( const shards::CellTopology       cellTopology,
-            const std::vector<ordinal_type> &degree );
+            const std::vector<ordinal_type> &degree,
+            const EPolyType                  polytype = POLYTYPE_MAX );
 
     
     /** \brief Factory method.
@@ -103,7 +106,8 @@ namespace Intrepid2 {
              typename weightValueType = double>
     static Teuchos::RCP<Cubature<ExecSpaceType,pointValueType,weightValueType> > 
     create( const shards::CellTopology  cellTopology,
-            const ordinal_type          degree );
+            const ordinal_type          degree,
+            const EPolyType             polytype = POLYTYPE_MAX );
 
 
     /** \brief Factory method for polygon cubature.
