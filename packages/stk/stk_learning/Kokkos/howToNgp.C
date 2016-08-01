@@ -1,4 +1,4 @@
-#include <ngp/StaticMesh.hpp>
+#include <ngp/Ngp.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_mesh/base/MetaData.hpp>

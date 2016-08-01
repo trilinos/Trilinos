@@ -42,7 +42,7 @@
 */
 
 #include "mtk_kokkos.h"
-#include <ngp/StaticMesh.hpp>
+#include <ngp/Ngp.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
@@ -52,6 +52,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/StkVector.hpp>
@@ -92,7 +93,7 @@ void calculate_nodal_volume_given_elem_nodes_stkmesh(const stk::mesh::Entity* el
     }
 }
 
-typedef Kokkos::TeamPolicy<HostExecSpace, ngp::ScheduleType> HostTeamPolicyType;
+typedef Kokkos::TeamPolicy<ngp::HostExecSpace, ngp::ScheduleType> HostTeamPolicyType;
 typedef HostTeamPolicyType::member_type HostTeamHandleType;
 
 void calculate_nodal_volume_stkmesh(stk::mesh::BulkData& mesh, stk::mesh::Field<double>& nodalVolumeField, int numRepeat)
@@ -104,7 +105,7 @@ void calculate_nodal_volume_stkmesh(stk::mesh::BulkData& mesh, stk::mesh::Field<
     unsigned numBuckets = elemBuckets.size();
     for(int n=0; n<numRepeat; ++n)
     {
-        Kokkos::parallel_for(Kokkos::TeamPolicy< HostExecSpace >(numBuckets, Kokkos::AUTO),
+        Kokkos::parallel_for(Kokkos::TeamPolicy< ngp::HostExecSpace >(numBuckets, Kokkos::AUTO),
         [&] (const HostTeamHandleType& team)
         {
             const int elementBucketIndex = team.league_rank();
@@ -130,11 +131,10 @@ void calculate_nodal_volume_stkmesh_entity_loop(stk::mesh::BulkData& mesh,
     const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
     for(int n=0; n<numRepeat; ++n)
     {
-        ngp::for_each_entity_run_stkmesh(mesh, stk::topology::ELEM_RANK, [&](stk::mesh::FastMeshIndex elem)
+        stk::mesh::impl::for_each_entity_run(mesh, stk::topology::ELEM_RANK, [&](stk::mesh::BulkData& bulk, stk::mesh::MeshIndex elem)
         {
-            const stk::mesh::Bucket *bucket = mesh.buckets(stk::topology::ELEM_RANK)[elem.bucket_id];
-            const stk::mesh::Entity* elemNodes = bucket->begin_nodes(elem.bucket_ord);
-            const unsigned numNodesPerElem = bucket->topology().num_nodes();
+            const stk::mesh::Entity* elemNodes = elem.bucket->begin_nodes(elem.bucket_ordinal);
+            const unsigned numNodesPerElem = elem.bucket->topology().num_nodes();
             calculate_nodal_volume_given_elem_nodes_stkmesh(elemNodes, numNodesPerElem, coords, nodalVolumeField);
         });
     }

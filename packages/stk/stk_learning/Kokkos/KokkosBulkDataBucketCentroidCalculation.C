@@ -1,5 +1,5 @@
 #include "KokkosBulkDataCentroidCalculation.h"
-#include <ngp/StaticMesh.hpp>
+#include <ngp/Ngp.hpp>
 
 
 struct GpuGatherBucketScratchData
