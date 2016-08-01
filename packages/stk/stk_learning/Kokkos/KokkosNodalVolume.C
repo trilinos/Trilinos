@@ -88,7 +88,7 @@ void calculate_nodal_volume_given_elem_nodes_stkmesh(const stk::mesh::Entity* el
     for(unsigned j = 0; j < numNodesPerElem; ++j)
     {
         double* nodalVolume = stk::mesh::field_data(nodalVolumeField, elemNodes[j]);
-        Kokkos::atomic_add(nodalVolume, elemVolumePerNode);
+        ngp::atomic_add(nodalVolume, elemVolumePerNode);
     }
 }
 
@@ -155,7 +155,7 @@ void calculate_nodal_volume_given_elem_volume(const ngp::StkNgpMesh &ngpMesh,
     for(unsigned j = 0; j < numNodesPerElem; ++j)
     {
         double* v = &nodalVolume.get(ngpMesh, nodes[j], 0);
-        Kokkos::atomic_add(v, elemVolumePerNode);
+        ngp::atomic_add(v, elemVolumePerNode);
     }
 }
 

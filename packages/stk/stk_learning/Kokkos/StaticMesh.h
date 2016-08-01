@@ -707,6 +707,15 @@ private:
 };
 
 
+template <typename T> STK_FUNCTION
+void atomic_add(T *dest, const T src)
+{
+#if defined(KOKKOS_HAVE_CUDA) || defined(KOKKOS_HAVE_OPENMP)
+    Kokkos::atomic_add(dest, src);
+#else
+    *dest += src;
+#endif
+}
 
 
 #ifdef KOKKOS_HAVE_CUDA
