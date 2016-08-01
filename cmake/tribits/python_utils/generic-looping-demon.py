@@ -106,15 +106,15 @@ clp.add_option(
 import sys
 
 if not options.command:
-  print "\nError, you must set the --command argument!"
+  print("\nError, you must set the --command argument!")
   sys.exit(1)
 
 if not options.loopInterval:
-  print "\nError, you must set the --loop-interval argument!"
+  print("\nError, you must set the --loop-interval argument!")
   sys.exit(1)
 
 if not (options.runTill or options.todayRunTill):
-  print "\nError, you must set either the --run-till or --today-run-till argument!"
+  print("\nError, you must set either the --run-till or --today-run-till argument!")
   sys.exit(1)
 
 
@@ -122,17 +122,17 @@ if not (options.runTill or options.todayRunTill):
 # Echo the command-line
 #
 
-print ""
-print "**************************************************************************"
-print "Script: generic-looping-demon.py \\"
+print("")
+print("**************************************************************************")
+print("Script: generic-looping-demon.py \\")
+print("  --command='" + options.command + "' \\")
+print("  --loop-interval='" + options.loopInterval + "' \\")
 
-print "  --command='"+options.command+"' \\"
-print "  --loop-interval='"+options.loopInterval+"' \\"
 if options.runTill:
-  print "  --run-till='"+options.runTill+"' \\"
+  print("  --run-till='" + options.runTill + "' \\")
 if options.todayRunTill:
-  print "  --run-till='"+options.todayRunTill+"' \\"
-print "  --pause-file='"+options.pauseFile+"' \\"
+  print("  --run-till='" + options.todayRunTill + "' \\")
+print("  --pause-file='" + options.pauseFile + "' \\")
 
 
 #
@@ -177,21 +177,22 @@ elif options.todayRunTill:
   finalDateTime = parseDateTimeString(todayDateStr+" "+options.todayRunTill)
 
 if pauseFileExists(options.pauseFile):
-  print "\nThe file "+options.pauseFile+" exists at start so deleteing it!"
+  print("\nThe file " + options.pauseFile + " exists at start so deleteing it!")
   os.remove(options.pauseFile)
 
-print "\nThe script will run iterations till = " + formatDateTime(finalDateTime) + "\n"
+print("\nThe script will run iterations till = " + formatDateTime(finalDateTime)
+      + "\n")
 
 currentTime = datetime.datetime.now()
 iteration = 0
 
 while currentTime < finalDateTime:
-  print "*****************************************************************************\n" \
-    + str(iteration) + ":" \
-    + " current time = " + formatDateTime(currentTime) \
-    + ", final time = " + formatDateTime(finalDateTime)
+  print("*********************************************************************"
+        "********\n" + str(iteration) + ":" + " current time = " +
+        formatDateTime(currentTime) + ", final time = " +
+        formatDateTime(finalDateTime))
   if pauseFileExists(options.pauseFile):
-    print "\nThe file "+options.pauseFile+" exists so skipping this iteration!"
+    print("\nThe file " + options.pauseFile + " exists so skipping this iteration!")
   else:
     echoRunSysCmnd(options.command, throwExcept=False, timeCmnd=True)
   echoRunSysCmnd("sleep "+options.loopInterval)

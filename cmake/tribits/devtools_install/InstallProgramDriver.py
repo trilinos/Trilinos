@@ -66,7 +66,7 @@ class InstallProgramDriver:
 
     versionCmndArgName = "--"+productBaseName+"-version"    
     for arg in sys.argv[1:]:
-      #print "arg = '"+arg+"'"
+      #print("arg = '"+arg+"'")
       arg_and_value = arg.split("=")
       if len(arg_and_value) and arg_and_value[0] == versionCmndArgName:
         self.productVersion = arg_and_value[1].strip()
@@ -230,7 +230,7 @@ in order to remove the intermediate source and build files.
     if options.doAll:
       cmndLine += "  --do-all \\\n"
 
-    print cmndLine
+    print(cmndLine)
 
     if options.showDefaults:
       return 0;
@@ -259,67 +259,67 @@ in order to remove the intermediate source and build files.
 
     self.installObj.setup(options)
 
-    print ""
-    print "A) Download the source for "+productName+" ..."
-    print ""
+    print("")
+    print("A) Download the source for "+productName+" ...")
+    print("")
     
     if options.download:
       self.installObj.doDownload()
     else:
-      print "Skipping on request ..."
+      print("Skipping on request ...")
     
-    print ""
-    print "B) Untar the tarball(s) and set up ready to configure ..."
-    print ""
+    print("")
+    print("B) Untar the tarball(s) and set up ready to configure ...")
+    print("")
     
     if options.untar:
       self.installObj.doUntar()
     else:
-      print "Skipping on request ..."
+      print("Skipping on request ...")
     
     
-    print ""
-    print "C) Configure "+productName+" ..."
-    print ""
+    print("")
+    print("C) Configure "+productName+" ...")
+    print("")
     
     
     if options.configure:
       self.installObj.doConfigure()
     else:
-      print "Skipping on request ..."
+      print("Skipping on request ...")
     
     
-    print ""
-    print "D) Build "+productName+" ..."
-    print ""
+    print("")
+    print("D) Build "+productName+" ...")
+    print("")
     
     if options.build:
       self.installObj.doBuild()
     else:
-      print "Skipping on request ..."
+      print("Skipping on request ...")
     
     
-    print ""
-    print "E) Install "+productName+" ..."
-    print ""
+    print("")
+    print("E) Install "+productName+" ...")
+    print("")
     
     if options.install:
       self.installObj.doInstall()
       fixupInstallPermissions(options, options.installDir)
     else:
-      print "Skipping on request ..."
+      print("Skipping on request ...")
     
     
-    print ""
-    print "D) Final instructions for using "+productName+" ..."
-    print ""
+    print("")
+    print("D) Final instructions for using "+productName+" ...")
+    print("")
     
     if options.showFinalInstructions:
-      print self.installObj.getFinalInstructions()
+      print(self.installObj.getFinalInstructions())
     else:
-      print "Skipping on request ..."
+      print("Skipping on request ...")
     
-    print "\n[End]"
+    print("\n[End]")
 
 
 #
@@ -387,16 +387,13 @@ def echoInsertPermissionsOptions(inOptions):
 
 def fixupInstallPermissions(inOptions, installDir):
   if inOptions.installOwner:
-    print "\n*** Changing owner to '"+inOptions.installOwner+"':"
-    echoRunSysCmnd("chown -R "+inOptions.installOwner+" "+installDir)
+    print("\n*** Changing owner to '" + inOptions.installOwner + "':")
+    echoRunSysCmnd("chown -R " + inOptions.installOwner + " " + installDir)
   if inOptions.installGroup:
-    print "\n*** Changing group to '"+inOptions.installGroup+"' and giving group read/execute:"
-    echoRunSysCmnd("chgrp -R "+inOptions.installGroup+" "+installDir)
-    echoRunSysCmnd("chmod -R g+rX "+installDir)
+    print("\n*** Changing group to '" + inOptions.installGroup + "' and giving "
+          "group read/execute:")
+    echoRunSysCmnd("chgrp -R " + inOptions.installGroup + " " + installDir)
+    echoRunSysCmnd("chmod -R g+rX " + installDir)
   if inOptions.installForAll:
-    print "\n*** Allowing everyone to read/execute:"
-    echoRunSysCmnd("chmod -R a+rX "+installDir)
-
-
-
-
+    print("\n*** Allowing everyone to read/execute:")
+    echoRunSysCmnd("chmod -R a+rX " + installDir)

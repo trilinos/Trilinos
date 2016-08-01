@@ -36,7 +36,7 @@ def tree(dir, padding, options, depth, top_level=False):
   if top_level: init_prefix += '  '
   else: init_prefix += fileDirPrefix
 
-  print init_prefix + basename(abspath(dir)) + '/'
+  print(init_prefix + basename(abspath(dir)) + '/')
 
   padding = padding + ' '
 
@@ -50,7 +50,7 @@ def tree(dir, padding, options, depth, top_level=False):
   for file in files:
     count += 1
     if not print_compact:
-      print padding + verticalLineChar
+      print(padding + verticalLineChar)
     path = dir + sep + file
     if isdir(path):
       if count == len(files):
@@ -59,10 +59,10 @@ def tree(dir, padding, options, depth, top_level=False):
         if (depth == None) or (depth > 0):
           tree(path, padding + verticalLineChar, options, depth)
         else:
-          print padding + fileDirPrefix + file + "/" 
+          print(padding + fileDirPrefix + file + "/")
           
     else:
-      print padding + fileDirPrefix + file
+      print(padding + fileDirPrefix + file)
 
 
 usageHelp = r""" tree.py [-f] [-c] <PATH>
@@ -97,13 +97,13 @@ def main():
   (options, args) = clp.parse_args()
 
   if len(args) != 1:
-    print "Error: Need to specify path a single path argument.  See, see --help"
+    print("Error: Need to specify path a single path argument.  See, see --help")
     sys.exit(1)
   path = args[0]
 
   if not isdir(path):
-    print "ERROR: \'"+path+"\' is not a directory!"
-    print "See --help!"
+    print("ERROR: \'" + path + "\' is not a directory!")
+    print("See --help!")
     exit(1)
 
   depth = options.depth

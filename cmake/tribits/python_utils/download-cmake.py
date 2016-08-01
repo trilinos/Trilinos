@@ -227,7 +227,7 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
     if not os.path.exists(basedir):
       raise
 
-  print "Querying " + url + "..."
+  print("Querying " + url + "...")
 
   proxies = None # if None, use proxy from env var http_proxy
   if not options.httpProxy == "":
@@ -236,7 +236,7 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
   opener = urllib.FancyURLopener(proxies=proxies)
   opener.retrieve(url, filename)
 
-  print "Detecting ..."
+  print("Detecting ...")
 
   lines = []
   regex = re.compile(
@@ -261,8 +261,8 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
     version = versionRegEx.match(line).group(1)
 
     if version == "" or version == line:
-      print "error: line does not match version extraction regex"
-      print " line: [" + line + "]"
+      print("error: line does not match version extraction regex")
+      print(" line: [" + line + "]")
       sys.exit(1)
 
     date = dateRegEx.match(version).group(1)
@@ -291,18 +291,18 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
       whref = href
       w = 1
     else:
-      print "error: unexpected non-matching line"
+      print("error: unexpected non-matching line")
       sys.exit(1)
 
     count = count + 1
 
     if l == 1 and m == 1 and w == 1:
       found = 1
-      print "Detected latest available CMake " + vdir + " build: " + version
+      print("Detected latest available CMake " + vdir + " build: " + version)
       break
 
   if not found:
-    print "error: could not find a " + vdir + " version with all 3 platforms available"
+    print("error: could not find a " + vdir + " version with all 3 platforms available")
     return ()
 
   return (('linux2', lhref, version), ('darwin', mhref, version), ('win32', whref, version))
@@ -313,7 +313,7 @@ def Download(basedir, url):
   href = cmps[1]
   filename = ''.join([basedir, "/", href])
 
-  print 'Downloading ' + href + '...'
+  print('Downloading ' + href + '...')
 
   try:
     createDir(basedir)
@@ -334,15 +334,15 @@ def Extract(basedir, url):
   href = cmps[1]
   filename = ''.join([basedir, "/", href])
 
-  print 'Extracting ' + href + '...'
+  print('Extracting ' + href + '...')
 
   if href[-4:] == ".zip":
     if sys.version < '2.6':
       if sys.platform == 'win32':
-        print "error: cannot extract zip files on win32 with older python < 2.6"
+        print("error: cannot extract zip files on win32 with older python < 2.6")
       else:
-        print "warning: avoiding zipfile.extractall on older python < 2.6"
-        print "         skipping this extraction..."
+        print("warning: avoiding zipfile.extractall on older python < 2.6")
+        print("         skipping this extraction...")
     else:
       z = zipfile.ZipFile(filename)
       z.extractall(basedir)
@@ -350,10 +350,10 @@ def Extract(basedir, url):
   else:
     if sys.version < '2.6':
       if sys.platform == 'win32':
-        print "error: cannot extract tar files on win32 with older python < 2.6"
+        print("error: cannot extract tar files on win32 with older python < 2.6")
       else:
-        print "warning: avoiding tarfile.extractall on older python < 2.6"
-        print "         trying command line tar instead..."
+        print("warning: avoiding tarfile.extractall on older python < 2.6")
+        print("         trying command line tar instead...")
         origDir = os.getcwd()
         echoChDir(basedir)
         echoRunSysCmnd("tar -xzf " + href)
@@ -375,13 +375,16 @@ def Install(basedir, url):
 
   dirname = ''.join([basedir, "/", href])
 
-  print 'Installing ' + href + '...'
-  print '  src dir: [' + dirname + ']'
-  print '  dst dir: [' + options.installDir + ']'
+  print('Installing ' + href + '...')
+  print('  src dir: [' + dirname + ']')
+  print('  dst dir: [' + options.installDir + ']')
 
   if sys.platform == 'win32':
     if os.path.exists(options.installDir):
-      print "error: --install-dir '" + options.installDir + "' already exists - remove it or rename it and try again -- or manually copy the source directory '" + dirname + "' to the final installation location..."
+      print("error: --install-dir '" + options.installDir + "' already exists -"
+            " remove it or rename it and try again -- or manually copy the "
+            "source directory '" + dirname + "' to the final installation "
+            "location...")
       sys.exit(1)
 
     shutil.copytree(dirname, options.installDir)
@@ -419,7 +422,8 @@ def Install(basedir, url):
       pre = "bin"
 
     if pre == '':
-      print "error: could not determine CMake install tree structure - cannot create symlinks into unexpected directory structure"
+      print("error: could not determine CMake install tree structure - cannot "
+            "create symlinks into unexpected directory structure")
       sys.exit(1)
 
     if not os.path.exists(options.symlinksDir):
@@ -427,7 +431,7 @@ def Install(basedir, url):
 
     for exe in ('ccmake', 'cmake', 'cmake-gui', 'cmakexbuild', 'cpack', 'ctest'):
       if os.path.exists(options.installDir + "/" + pre + "/" + exe):
-        print "Creating " + exe + " symlink..."
+        print("Creating " + exe + " symlink...")
         echoRunSysCmnd("ln -fs \"" + options.installDir + "/" + pre + "/" + exe + "\" \"" + options.symlinksDir + "/" + exe + "\"")
 
 
@@ -440,8 +444,8 @@ def DownloadForPlatform(p):
 
 
 def PrintDetectedDownloads(detected):
-  print ""
-  print "Detected CMake downloads available:"
+  print("")
+  print("Detected CMake downloads available:")
 
   sorted_keys = detected.keys()
   sorted_keys.sort()
@@ -454,12 +458,12 @@ def PrintDetectedDownloads(detected):
         detected_urls.append(cmake_baseurl + "/" + k + "/" + v[1])
 
   for u in detected_urls:
-    print "[" + u + "]"
+    print("[" + u + "]")
 
 
 def PrintVerifiedDownloads():
-  print ""
-  print "Verified CMake downloads:"
+  print("")
+  print("Verified CMake downloads:")
 
   verified_urls = list()
 
@@ -480,7 +484,7 @@ def PrintVerifiedDownloads():
       verified_urls.append(v[1])
 
   for u in verified_urls:
-    print "[" + u + "]"
+    print("[" + u + "]")
 
 
 # Read file "CMakeVersions.py" from the same directory that this script lives
@@ -522,38 +526,40 @@ def ReadWriteCMakeVersionsFile(download_dir, detected):
     else:
       fw.write(line)
 
-  print ""
-  print "Wrote new '" + wfname + "' -- copy to '" + rfname + "' (if different) to use newly detected installers."
+  print("")
+  print("Wrote new '" + wfname + "' -- copy to '" + rfname + "' (if different) "
+        "to use newly detected installers.")
 
 
 #
 # The main script
 #
 
-print ""
-print "**************************************************************************"
-print "Script: download-cmake.py \\"
+print("")
+print("**************************************************************************")
+print("Script: download-cmake.py \\")
 
 if options.allPlatforms:
-  print "  --all-platforms \\"
-print "  --http-proxy="+options.httpProxy+" \\"
-print "  --install-dir="+options.installDir+" \\"
-print "  --installer-type="+options.installerType+" \\"
+  print("  --all-platforms \\")
+print("  --http-proxy=" + options.httpProxy + " \\")
+print("  --install-dir=" + options.installDir + " \\")
+print("  --installer-type=" + options.installerType + " \\")
 if options.skipDetect:
-  print "  --skip-detect \\"
+  print("  --skip-detect \\")
 if options.skipDownload:
-  print "  --skip-download \\"
+  print("  --skip-download \\")
 if options.skipExtract:
-  print "  --skip-extract \\"
+  print("  --skip-extract \\")
 if options.skipInstall:
-  print "  --skip-install \\"
+  print("  --skip-install \\")
 if options.symlinks:
-  print "  --symlinks \\"
+  print("  --symlinks \\")
 if options.symlinksDir != '':
-  print "  --symlinks-dir="+options.symlinksDir+" \\"
+  print("  --symlinks-dir=" + options.symlinksDir + " \\")
 
 if not options.httpProxy and not default_http_proxy:
-  print "\nWARNING: Could not detect default http proxy for '"+hostname+"'!"
+  print("\nWARNING: Could not detect default http proxy for '" + hostname +
+        "'!")
 
 download_dir = "download_area"
 
@@ -567,17 +573,17 @@ if options.installerType == 'rc':
 if options.installerType == 'dev':
   binaries = cmake_dev_binaries
 if binaries == None:
-  print "error: unknown --installer-type: [" + options.installerType + "]"
+  print("error: unknown --installer-type: [" + options.installerType + "]")
   sys.exit(1)
 
-print ""
-print ""
-print "A) Detect the latest available builds of CMake ..."
-print "    (requires network access to www.cmake.org)"
-print ""
+print("")
+print("")
+print("A) Detect the latest available builds of CMake ...")
+print("    (requires network access to www.cmake.org)")
+print("")
 
 if options.skipDetect:
-  print "Skipping on request ..."
+  print("Skipping on request ...")
 else:
   detected = dict()
 
@@ -591,40 +597,40 @@ else:
   ReadWriteCMakeVersionsFile(download_dir, detected)
 
 
-print ""
-print ""
-print "B) Download CMake for --installer-type '" + options.installerType + "' ..."
-print "    (requires network access to www.cmake.org)"
-print ""
+print("")
+print("")
+print("B) Download CMake for --installer-type '" + options.installerType + "' ...")
+print("    (requires network access to www.cmake.org)")
+print("")
 
 if options.skipDownload:
-  print "Skipping on request ..."
+  print("Skipping on request ...")
 else:
   for binary in binaries:
     if DownloadForPlatform(binary[0]):
       Download(download_dir, binary[1])
 
 
-print ""
-print ""
-print "C) Extract the CMake install tree ..."
-print ""
+print("")
+print("")
+print("C) Extract the CMake install tree ...")
+print("")
 
 if options.skipExtract:
-  print "Skipping on request ..."
+  print("Skipping on request ...")
 else:
   for binary in binaries:
     if DownloadForPlatform(binary[0]):
       Extract(download_dir, binary[1])
 
 
-print ""
-print ""
-print "D) Install (copy the CMake install tree) ..."
-print ""
+print("")
+print("")
+print("D) Install (copy the CMake install tree) ...")
+print("")
 
 if options.skipInstall:
-  print "Skipping on request ..."
+  print("Skipping on request ...")
 else:
   for binary in binaries:
     if binary[0] == sys.platform:

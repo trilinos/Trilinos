@@ -68,5 +68,5 @@ emailBody = ""\
   +"PWD:      "+pwd
 
 cmnd = "echo \""+emailBody+"\" | mailx -s \""+msg+"\" "+emailAddress
-print cmnd
+print(cmnd)
 os.system(cmnd)

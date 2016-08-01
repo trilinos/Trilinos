@@ -37,7 +37,13 @@
 # ************************************************************************
 # @HEADER
 
-import urllib2
+try:
+  # Python 2
+  from urllib2 import urlopen
+except ImportError:
+  # Python 3
+  from urllib.request import urlopen
+
 import json
 import datetime
 import pprint
@@ -63,21 +69,21 @@ def getCDashIndexQueryUrl(cdashUrl, projectName, date, filterFields):
 
 # Given a CDash query URL, return the full Python CDash data-structure
 def extractCDashApiQueryData(cdashApiQueryUrl):
-  response = urllib2.urlopen(cdashApiQueryUrl)
+  response = urlopen(cdashApiQueryUrl)
   return json.load(response)
 
 
 # Collect CDash index.php build summary fields
 def collectCDashIndexBuildSummaryFields(fullCDashIndexBuild):
   summaryBuild = {
-    u'buildname' : fullCDashIndexBuild.get('buildname', 'missing_build_name'),
-    u'update' : \
+    u('buildname') : fullCDashIndexBuild.get('buildname', 'missing_build_name'),
+    u('update') : \
       fullCDashIndexBuild.get('update', {'errors':9999,'this_field_was_missing':1}),
-    u'configure' : \
+    u('configure') : \
       fullCDashIndexBuild.get('configure', {'error':9999,'this_field_was_missing':1}),
-    u'compilation' : \
+    u('compilation') : \
       fullCDashIndexBuild.get('compilation', {'error':9999,'this_field_was_missing':1}),
-    u'test' : \
+    u('test') : \
      fullCDashIndexBuild.get('test', {'fail':9999, 'notrun':9999,'this_field_was_missing':1} ),
     }
   return summaryBuild
@@ -168,7 +174,7 @@ def cdashIndexBuildsPass(summaryCDashIndexBuilds):
   for build in summaryCDashIndexBuilds:
     if not cdashIndexBuildPasses(build):
       buildsPass = False
-      buildFailedMsg = "Error, the build "+str(build)+" failed!"
+      buildFailedMsg = "Error, the build " + sorted_dict_str(build) + " failed!"
       break
   return (buildsPass, buildFailedMsg)
 
@@ -228,7 +234,7 @@ def queryCDashAndDeterminePassFail(cdashUrl, projectName, date, filterFields,
   # Get the query data
   cdashQueryUrl = getCDashIndexQueryUrl(cdashUrl, projectName, date, filterFields)
   if printCDashUrl:
-    print "Getting data from:\n\n  "+cdashQueryUrl 
+    print("Getting data from:\n\n  " + cdashQueryUrl )
   fullCDashIndexBuilds = extractCDashApiQueryData_in(cdashQueryUrl)
   summaryCDashIndexBuilds = getCDashIndexBuildsSummary(fullCDashIndexBuilds)
   # Determine pass/fail

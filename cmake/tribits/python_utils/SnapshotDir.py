@@ -196,7 +196,7 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
       defaultOptions = DefaultOptions()
       defaultOptions.setDefaultDefaults()
 
-    #print "cmndLineArgs =", cmndLineArgs
+    #print("cmndLineArgs = " + str(cmndLineArgs))
   
     #
     # A) Get the command-line options
@@ -266,28 +266,28 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
     # B) Echo the command-line
     #
   
-    print ""
-    print "**************************************************************************"
-    print "Script: snapshot-dir.py \\"
+    print("")
+    print("**************************************************************************")
+    print("Script: snapshot-dir.py \\")
 
-    print "  --orig-dir='"+options.origDir+"' \\"
-    print "  --dest-dir='"+options.destDir+"' \\"
+    print("  --orig-dir='" + options.origDir + "' \\")
+    print("  --dest-dir='" + options.destDir + "' \\")
     if options.assertCleanOrigDir:
-      print "  --assert-clean-orig-dir \\"
+      print("  --assert-clean-orig-dir \\")
     else:
-      print "  --allow-dirty-orig-dir \\"
+      print("  --allow-dirty-orig-dir \\")
     if options.assertCleanDestDir:
-      print "  --assert-clean-dest-dir \\"
+      print("  --assert-clean-dest-dir \\")
     else:
-      print "  --allow-dirty-dest-dir \\"
+      print("  --allow-dirty-dest-dir \\")
     if options.doCommit:
-      print "  --do-commit \\"
+      print("  --do-commit \\")
     else:
-      print "  --skip-commit \\"
+      print("  --skip-commit \\")
     if options.doRsync:
-      print "  --do-rsync \\"
+      print("  --do-rsync \\")
     else:
-      print "  --skip-rsync \\"
+      print("  --skip-rsync \\")
   
     if options.showDefaults:
       return  # All done!
@@ -310,42 +310,42 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
 def snapshotDir(inOptions):
 
   #
-  print "\nA) Assert that orig-dir is 100% clean with all changes committed\n"
+  print("\nA) Assert that orig-dir is 100% clean with all changes committed\n")
   #
 
   if inOptions.assertCleanOrigDir:
    assertCleanGitDir(inOptions.origDir, "origin",
       "The created snapshot commit would not have the correct origin commit info!" )
   else:
-    print "Skipping on request!"
+    print("Skipping on request!")
 
   #
-  print "\nB) Assert that dest-dir is 100% clean with all changes committed\n"
+  print("\nB) Assert that dest-dir is 100% clean with all changes committed\n")
   #
 
   if inOptions.assertCleanDestDir:
     assertCleanGitDir(inOptions.destDir, "destination",
       "Location changes in the destination directory would be overritten and lost!")
   else:
-    print "Skipping on request!"
+    print("Skipping on request!")
 
   #
-  print "\nC) Get info from git commit from origDir [optional]\n"
+  print("\nC) Get info from git commit from origDir [optional]\n")
   #
 
   # Get the repo for origin
   (remoteRepoName, remoteBranch, remoteRepoUrl) = \
      getGitRepoUrl(inOptions.origDir)
-  print "origin remote name = '"+remoteRepoName+"'"
-  print "origin remote branch = '"+remoteBranch+"'"
-  print "origin remote URL = '"+remoteRepoUrl+"'"
+  print("origin remote name = '" + remoteRepoName + "'")
+  print("origin remote branch = '" + remoteBranch + "'")
+  print("origin remote URL = '" + remoteRepoUrl + "'")
 
   # Get the last commit message
   originLastCommitMsg = getLastCommitMsg(inOptions.origDir)
-  print "\norigin commit message:\n\n" + originLastCommitMsg + "\n"
+  print("\norigin commit message:\n\n" + originLastCommitMsg + "\n")
 
   #
-  print "\nD) Run rsync to add and remove files and dirs between two directories\n"
+  print("\nD) Run rsync to add and remove files and dirs between two directories\n")
   #
 
   if inOptions.doRsync:
@@ -369,10 +369,10 @@ def snapshotDir(inOptions):
 
   else:
 
-    print "\nSkipping rsync on request!"
+    print("\nSkipping rsync on request!")
 
   #
-  print "\nE) Create a new commit in destination directory [optional]"
+  print("\nE) Create a new commit in destination directory [optional]")
   #
 
   origDirLast = inOptions.origDir.split("/")[-2]
@@ -388,10 +388,10 @@ def snapshotDir(inOptions):
     "\n"+\
     originLastCommitMsg
 
-  print "\nGeneratting commit with commit message:\n"
-  print "---------------------------------------"
-  print commitMessage
-  print "---------------------------------------"
+  print("\nGeneratting commit with commit message:\n")
+  print("---------------------------------------"    )
+  print(commitMessage                                )
+  print("---------------------------------------"    )
 
   if inOptions.doCommit:
 
@@ -407,7 +407,7 @@ def snapshotDir(inOptions):
 
   else:
 
-    print "\nSkipping commit on request!\n"
+    print("\nSkipping commit on request!\n")
 
   #
   # F) Success! (if you get this far)
@@ -436,7 +436,7 @@ def assertCleanGitDir(dirPath, dirName, explanation):
       +explanation
       )
   else:
-    print "The "+dirName+" git directory '"+dirPath+"' is clean!"
+    print("The " + dirName + " git directory '" + dirPath + "' is clean!")
 
   # NOTE: The above git diff command will not catch unknown files but that is
   # not a huge risk for the use cases that I am concerned with.
@@ -460,17 +460,17 @@ def getGitRepoUrl(gitDir):
 
   # Get the list of remote repos
   remoteReposListStr = getCmndOutput("git remote -v", workingDir=gitDir)
-  #print "remoteReposListStr =", remoteReposListStr
+  #print("remoteReposListStr = " + remoteReposListStr)
 
   # Loop through looking for remoteRepoName
   for remoteRepo in remoteReposListStr.splitlines():
 
-    #print "remoteRepo = '"+remoteRepo+"'"
+    #print("remoteRepo = '" + remoteRepo + "'")
     if remoteRepo == "":
       continue
     
     remoteRepoList = remoteRepo.split(" ")
-    #print "remoteRepoList =", remoteRepoList
+    #print("remoteRepoList = " + str(remoteRepoList))
 
     # Remove empty items
     k = 0
@@ -478,12 +478,12 @@ def getGitRepoUrl(gitDir):
       if remoteRepoList[k] == "":
         del remoteRepoList[k]
       k += 1
-    #print "remoteRepoList =", remoteRepoList
+    #print("remoteRepoList = " + str(remoteRepoList))
 
     # Get the remote name and URL
     (repoName, repoUrl) = remoteRepoList[0].split("\t")
-    #print "repoName = '"+repoName+"'"
-    #print "repoUrl = '"+repoUrl+"'"
+    #print("repoName = '" + repoName + "'")
+    #print("repoUrl  = '" + repoUrl  + "'")
 
     # Grab the URL if the remote name matches
     if repoName == remoteRepoName:

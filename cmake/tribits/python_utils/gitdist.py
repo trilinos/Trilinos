@@ -1,5 +1,31 @@
 #!/usr/bin/env python
 
+#
+# Byte array / string / unicode support across Python 2 & 3
+#
+# Note that the str class in Python 2 is an ASCII string (byte) array and in
+# Python 3 it is a Unicode object. For Python 3 code that is backward compatible
+# with Python 2, we sometimes need version-specific conversion functions to give
+# us the data type we desire. These functions are:
+#
+#     b(x)    return a byte array of str x, much like b'<string const>' in
+#             Python 3
+#     s(x)    return a version-specific str object equivalent to x
+#
+import sys
+if sys.version_info < (3,):
+  # Python 2
+  def b(x): return x
+  def s(x): return x
+else:
+  # Python 3
+  import codecs
+  def b(x): return codecs.latin_1_encode(x)[0]
+  def s(x):
+    try:
+      return x.decode("utf-8")
+    except AttributeError:
+      return x
 
 #
 # Pieces of the --help documentation
@@ -42,18 +68,18 @@ helpTopicDefaultIdx = 0;
 helpTopicsDict = {}
 
 
-helpUsageHeader = r"""gitdist [gitdist arguments] [git arguments]
+helpUsageHeader = r"""gitdist [gitdist arguments] <raw-git-command> [git arguments]
        gitdist [gitdist arguments] dist-repo-status
 
-Run git recursively over a set of git repos in a multi-repository git project
-(see --dist-help=overview --help).  This script also includes other tools like
+Run git over a set of git repos in a multi-repository git project (see
+--dist-help=overview --help).  This script also includes other tools like
 printing a compact repo status table (see --dist-help=dist-repo-status) and
-tracking versions through multi-repository SHA1 version files (see
+tracking compatible versions through multi-repository SHA1 version files (see
 --dist-help=repo-versions).
 
 The options in [gitdist options] are prefixed with '--dist-' and are pulled
-out before running 'git [git arguments]' in each local git repo that is
-processed (see --dist-help=repo-selection-and-setup).
+out before running 'git <raw-git-command> [git arguments]' in each local git
+repo that is processed (see --dist-help=repo-selection-and-setup).
 """
 
 
@@ -62,11 +88,11 @@ OVERVIEW:
 
 Running:
 
-  $ gitdist [gitdist options] [git arguments]
+  $ gitdist [gitdist options] <raw-git-command> [git arguments]
 
-will distribute git commands specified by [git arguments] across the current
-base git repo and the set of git repos listed in the file ./.gitdist (or the
-file ./.gitdist.default, or the argument
+will distribute git commands specified by '<raw-git-command> [git arguments]'
+across the current base git repo and the set of git repos listed in the file
+./.gitdist (or the file ./.gitdist.default, or the argument
 --dist-extra-repos=<repo0>,<repo1>,..., see
 --dist-help=repo-selection-and-setup).
 
@@ -182,6 +208,7 @@ extra repos to process will be read from the file '.gitdist.default' in the
 current directory.  The format of this files '.gitdist' and '.gitdist.default'
 is to have one repo relative directory per line, for example:
 
+  $ cat .gitdist
   ExtraRepo1
   ExtraRepo1/ExtraRepo2
   ExtraRepo3
@@ -206,7 +233,7 @@ cloning and organizing the local git repo. For the example listed here, one
 would clone the base repo 'BaseRepo' and the three extra git repos, set up a
 .gitdist file, and then add ignores for the extra cloned repos like:
 
-  # Clone and organize the git repos
+  # A) Clone and organize the git repos
   $ git clone git@some.url:BaseRepo.git
   $ cd BaseRepo/
   $ git clone git@some.url:ExtraRepo1.git
@@ -215,20 +242,20 @@ would clone the base repo 'BaseRepo' and the three extra git repos, set up a
   $ cd ..
   $ git clone git@some.url:ExtraRepo3.git
 
-  # Create .gitdist
+  # B) Create .gitdist
   $ echo ExtraRepo1 > .gitdist
   $ echo ExtraRepo1/ExtraRepo2 >> .gitdist
   $ echo ExtraRepo3 >> .gitdist
 
-  # Add ignores in base repo
+  # C) Add ignores in base repo
   $ echo /ExtraRepo1/ >> .git/info/exclude
   $ echo /ExtraRepo3/ >> .git/info/exclude
 
-  # Add ignore in nexted extra repo
+  # D) Add ignore in nested extra repo
   $ echo /ExtraRepo2/ >> ExtraRepo1/.git/info/exclude
 
 (Note that one may instead add the above ignores to the version-controlled
-files BaseRepo/.gitignore and ExtraRepo1/.gitignore instead.)
+files BaseRepo/.gitignore and ExtraRepo1/.gitignore.)
 
 This produces the local repo structure:
 
@@ -244,11 +271,11 @@ This produces the local repo structure:
 
 After this setup, running:
 
-  $ gitdist [git command and options]
+  $ gitdist <raw-git-command> [git arguments]
 
 in the 'BaseRepo/ 'directory will automatically distribute a given command
 across the base repo 'BaseRepo/ and the extra repos ExtraRepo1/,
-ExtraRepo1/ExtraRepo2/, and ExtraRepo3/, in order.
+ExtraRepo1/ExtraRepo2/, and ExtraRepo3/, in that order.
 
 To simplify the setup for the usage of gitdist for a given set of local git
 repos, one may choose to instead create the file .gitdist.default in the base
@@ -397,7 +424,7 @@ exclude them with:
 
   $ gitdist --dist-not-extra-repos=RepoX,RepoY,... \
     --dist-version-file=RepoVersion.txt \
-    [git arguments]
+    <raw-git-comand> [git arguments]
 """
 helpTopicsDict.update( { 'repo-versions' : repoVersionFilesHelp } )
 
@@ -557,10 +584,10 @@ Other usage tips:
    'gitdist checkout <branch>' to work correctly.
 
  - For many git commands, it is better to process only repos that are changed
-   w.r.t. their tracking branch with 'gitdist-mod [git arguments]'.  For
-   example, to see the status of only changed repos use 'gitdist-mod status'.
-   This allows the usage of gitdist to scale well when there are even 100s of
-   git repos.
+   w.r.t. their tracking branch with 'gitdist-mod <raw-git-command> [git
+   arguments]'.  For example, to see the status of only changed repos use
+   'gitdist-mod status'.  This allows the usage of gitdist to scale well when
+   there are even 100s of git repos.
 
  - As an exception to the last item, a few different types of git commands
     tend to be run on all the git repos like 'gitdist pull', 'gitdist
@@ -707,7 +734,7 @@ def getDistHelpTopicStr(helpTopicVal):
 
 
 def getUsageHelpStr(helpTopicArg):
-  #print "helpTopicArg =", helpTopicArg
+  #print("helpTopicArg = " + helpTopicArg)
   usageHelpStr = helpUsageHeader
   if helpTopicArg == "":
     # No help topic option so just use the standard help header
@@ -718,15 +745,15 @@ def getUsageHelpStr(helpTopicArg):
       # Option not formatted correctly, set let error handler get it."
       return ""
     (helpTopicArgName, helpTopicVal) = helpTopicArg.split("=")
-    #print "helpTopicArgName =", helpTopicArgName
-    #print "helpTopicVal =", helpTopicVal
+    #print("helpTopicArgName = " + helpTopicArgName)
+    #print("helpTopicVal = " + helpTopicVal)
     usageHelpStr += getDistHelpTopicStr(helpTopicVal)
   return usageHelpStr
 
 
 def filterWarningsGen(lines): 
   for line in lines:
-    if not line.startswith('warning') and not line.startswith('error'): yield line
+    if not line.startswith(b('warning')) and not line.startswith(b('error')): yield line
 
 
 # Filter warning and error lines from output
@@ -751,21 +778,21 @@ def getCmndOutput(cmnd, rtnCode=False):
 # Run a command and syncronize the output
 def runCmnd(options, cmnd):
   if options.debug:
-    print "*** Running command:", cmnd
+    print("*** Running command: %s" % cmnd)
   if options.noOpt:
-    print cmnd
+    print(cmnd)
   else:
     child = subprocess.Popen(cmnd, stdout=subprocess.PIPE).stdout
     output = child.read()
     sys.stdout.flush()
-    print output
+    print(output)
     sys.stdout.flush()
 
 
 # Determine if a command exists:
 def commandExists(cmnd):
   whichCmnd = getCmndOutput("which "+cmnd).strip()
-  #print "whichCmnd =", whichCmnd
+  #print("whichCmnd = %s" % whichCmnd)
   if os.path.exists(whichCmnd):
     return True
   return False
@@ -837,14 +864,14 @@ def getCommandlineOps():
   helpTopicArg = "" 
 
   for arg in argv:
-    #print "\narg = '"+arg+"'"
+    #print("\narg = '" + arg + "'")
     matchedNativeArg = False
     for nativeArgName in nativeArgNames:
-      #print "\nnativeArgName ='"+nativeArgName+"'"
+      #print("\nnativeArgName ='" + nativeArgName + "'")
       currentArgName = arg[0:len(nativeArgName)]
-      #print "currentArgName = '"+currentArgName+"'"
+      #print("currentArgName = '" + currentArgName + "'")
       if currentArgName == nativeArgName:
-        #print "\nMatches native arg!"
+        #print("\nMatches native arg!")
         nativeArgs.append(arg)
         matchedNativeArg = True
         if currentArgName == distHelpArgName:
@@ -853,19 +880,19 @@ def getCommandlineOps():
     matchedNativeCmnd = False
     for nativeCmndName in nativeCmndNames:
       if arg == nativeCmndName:
-        #print "\nMatches native cmnd!"
+        #print("\nMatches native cmnd!")
         nativeCmnds.append(nativeCmndName)
         matchedNativeCmnd = True
         break
     if not (matchedNativeArg or matchedNativeCmnd):
-      #print "\nDoes *not* match native arg!"
+      #print("\nDoes *not* match native arg!")
       otherArgs.append(arg)
-    #print "\nnativeArgs =", nativeArgs
-    #print "otherArgs =", otherArgs
+    #print("\nnativeArgs = " + str(nativeArgs))
+    #print("otherArgs = " + str(otherArgs))
 
-  #print "\nnativeArgs =", nativeArgs
-  #print "nativeCmnds =", nativeCmnds
-  #print "otherArgs =", otherArgs
+  #print("\nnativeArgs = " + str(nativeArgs))
+  #print("nativeCmnds = " + str(nativeCmnds))
+  #print("otherArgs = " + str(otherArgs))
 
   if len(nativeCmnds) == 0:
     nativeCmnd = None
@@ -885,7 +912,7 @@ def getCommandlineOps():
 
   addOptionParserChoiceOption(
     distHelpArgName, "helpTopic", [""]+helpTopics+["all"], 0,
-    "Print a gitdist help topic with -dist-help=HELPTOPIC.  Using" \
+    "Print a gitdist help topic.  Using" \
     +" --dist-help=all prints all help topics.  If" \
     +" --help is also specified, then the help usage header and" \
     +" command-line 'options' are also printed." ,
@@ -894,11 +921,11 @@ def getCommandlineOps():
   clp.add_option(
     withGitArgName, dest="useGit", type="string",
     default=defaultGit,
-    help="The (path) to the git executable to use for each git repo command."
+    help="Path to the git executable to use for each git repo command."
     +"  By default, gitdist will use 'git' in the environment.  If it can't find"
     +" 'git' in the environment, then it will require setting"
-    +" --dist-use-git=<git command> (which is typically only  used in automated"
-    +" testing). (default='"+defaultGit+"')"
+    +" --dist-use-git=<path-to-git>.  (Typically only  used in automated"
+    +" testing.) (default='"+defaultGit+"')"
     )
 
   clp.add_option(
@@ -908,7 +935,7 @@ def getCommandlineOps():
     +" If left empty '', then the list of extra repos to process is taken from"
     +" the file ./.gitdist (which lists the relative path of each extra git repo"
     +" separated by newlines).  If the file"
-    +" ./.gitdist does not exist, then the exgtra repos listed in the file"
+    +" ./.gitdist does not exist, then the extra repos listed in the file"
     +" ./.gitdist.default are processed.  If the file"
     +" the file ./.gitdist.default is missing, then no extra repos are"
     +" processed.  Also, any git repos listed that don't exist are ignored."
@@ -920,22 +947,23 @@ def getCommandlineOps():
     notExtraRepoArgName, dest="notExtraRepos", type="string",
     default="",
     help="Comma-separated list of extra repo relative paths" \
-    +" '<repoX>,<repoY>,...' to *not* to process. (default='')"
+    +" '<repoX>,<repoY>,...' to *not* process. (default='')"
     )
 
   clp.add_option(
     notBaseRepoArgName, dest="processBaseRepo", action="store_false",
-    help="If set, don't process or run the git command in the base git repo.",
+    help="If set, don't process the base git repo.",
     default=True )
 
   clp.add_option(
     modifiedOnlyName, dest="modifiedOnly", action="store_true",
-    help="If set, then only git repos where the command" \
+    help="If set, then only git repos that have changes w.r.t." \
+      " their tracking branches will be processed.  That is, only repos" \
+      " that have modified or untracked files or where" \
       " 'git diff --name-only ^<tracking-branch>' returns non-empty output" \
       " will be processed (where <tracking-branch> is returned" \
-      " from 'rev-parse --abbrev-ref --symbolic-full-name @{u})'.  In order words," \
-      " if a git repo is unchanged w.r.t. its tracking branch, then that local git" \
-      " is skipped.  If a repo does not have a tracking branch, then the repo will" \
+      " from 'rev-parse --abbrev-ref --symbolic-full-name @{u})'." \
+      "  If a local repo does not have a tracking branch, then the repo will" \
       " be skipped as well.  Therefore, be careful to first run 'gitdist-status'" \
       " (see --dist-help=dist-repo-status) to see the" \
       " status of each local git repo to know which repos don't have tracking branches.",
@@ -990,17 +1018,18 @@ def getCommandlineOps():
   #
 
   if options.helpTopic:
-    print getDistHelpTopicStr(options.helpTopic)
+    print(getDistHelpTopicStr(options.helpTopic))
     sys.exit(0)
 
   if not nativeCmnd and len(otherArgs) == 0:
-    print addColorToErrorMsg(options.useColor,
-      "Must specify git command. See 'git --help' for options.")
+    print(addColorToErrorMsg(options.useColor,
+                             "Must specify git command. See 'git --help' for "
+                             "options."))
     sys.exit(1)
 
   if not options.useGit:
-    print addColorToErrorMsg(options.useColor,
-      "Can't find git, please set --dist-use-git")
+    print(addColorToErrorMsg(options.useColor,
+                             "Can't find git, please set --dist-use-git"))
     sys.exit(1)
 
   #
@@ -1046,7 +1075,7 @@ def requoteCmndLineArgsIntoArray(inArgs):
       newArg = arg
     else:
       newArg = splitArg[0]+"="+'='.join(splitArg[1:])
-    #print "\nnewArg =", newArg
+    #print("\nnewArg =" + newArg)
     argsArray.append(newArg)
   return argsArray
 
@@ -1058,16 +1087,16 @@ def getRepoVersionDictFromRepoVersionFileString(repoVersionFileStr):
   len_repoVersionFileStrList = len(repoVersionFileStrList)
   i = 0
   while i < len_repoVersionFileStrList:
-    #print "i = ", i
+    #print("i = %d" % i)
     repoDirLine = repoVersionFileStrList[i]
-    #print "repoDirLine = '"+repoDirLine+"'"
+    #print("repoDirLine = '" + repoDirLine + "'")
     if repoDirLine[0:3] == "***":
       repoDir = repoDirLine.split(":")[1].strip()
-      #print "repoDir = '"+repoDir+"'"
+      #print("repoDir = '" + repoDir + "'")
       repoVersionLine = repoVersionFileStrList[i+1]
-      #print "repoVersionLine = '"+repoVersionLine+"'"
+      #print("repoVersionLine = '" + repoVersionLine + "'")
       repoSha1 = repoVersionLine.split(" ")[0].strip()
-      #print "repoSha1 = '"+repoSha1+"'"
+      #print("repoSha1 = '" + repoSha1 + "'")
       repoVersionDict.update({repoDir : repoSha1})
     else:
       break
@@ -1096,9 +1125,11 @@ def assertAndGetRepoVersionFromDict(repoDirName, repoVersionDict):
   if repoVersionDict:
     repoSha1 = repoVersionDict.get(repoDirName, "")
     if not repoSha1:
-      print addColorToErrorMsg(options.useColor,
-        "Extra repo '"+repoDirName+"' is not in the list of extra repos "+\
-        str(repoVersionDict.keys()[1:])+" read in from version file.")
+      print(addColorToErrorMsg(options.useColor,
+                               "Extra repo '" + repoDirName + "' is not in the "
+                               + "list of extra repos " +
+                               str(repoVersionDict.keys()[1:]) + " read in from"
+                               + " version file."))
       sys.exit(3)
     return repoSha1
   else:
@@ -1115,20 +1146,20 @@ def replaceRepoVersionInCmndLineArg(cmndLineArg, verToken, repoDirName, repoSha1
 def replaceRepoVersionInCmndLineArgs(cmndLineArgsArray, repoDirName, \
   repoVersionDict, repoVersionDict2 \
   ):
-  #print "repoDirName =", repoDirName
+  #print("repoDirName = %s" % repoDirName)
   repoSha1 = assertAndGetRepoVersionFromDict(repoDirName, repoVersionDict)
   repoSha1_2 = assertAndGetRepoVersionFromDict(repoDirName, repoVersionDict2)
-  #print "repoSha1 =", repoSha1
-  #print "repoSha1_2 =", repoSha1_2
+  #print("repoSha1 =   " + repoSha1  )
+  #print("repoSha1_2 = " + repoSha1_2)
   cmndLineArgsArrayRepo = []
   for cmndLineArg in cmndLineArgsArray:
-    #print "cmndLineArg =", cmndLineArg
+    #print("cmndLineArg = " + cmndLineArg)
     newCmndLineArg = replaceRepoVersionInCmndLineArg(cmndLineArg, \
       "_VERSION_", repoDirName, repoSha1)
-    #print "newCmndLineArg =", newCmndLineArg
+    #print("newCmndLineArg = " + newCmndLineArg)
     newCmndLineArg = replaceRepoVersionInCmndLineArg(newCmndLineArg, \
       "_VERSION2_", repoDirName, repoSha1_2)
-    #print "newCmndLineArg =", newCmndLineArg
+    #print("newCmndLineArg = " + newCmndLineArg)
     cmndLineArgsArrayRepo.append(newCmndLineArg)
   return cmndLineArgsArrayRepo
 
@@ -1172,7 +1203,7 @@ def getLocalBranch(options, getCmndOutputFunc):
       localBranch = filteredLines[0].strip()
     else:
       localBranch = "<AMBIGUOUS-HEAD>"
-    return localBranch
+    return s(localBranch)
   return ""
 
 
@@ -1182,7 +1213,7 @@ def getTrackingBranch(options, getCmndOutputFunc):
     options.useGit + " rev-parse --abbrev-ref --symbolic-full-name @{u}",
     rtnCode=True )
   if rtnCode == 0:
-    return trackingBranch.strip()
+    return s(trackingBranch.strip())
   return ""
   # Above, if the command failed, there is likely no tracking branch.
   # However, this could fail for other reasons so it is a little dangerous to
@@ -1191,19 +1222,22 @@ def getTrackingBranch(options, getCmndOutputFunc):
 
 # Get number of commits as a str wr.t.t tracking branch
 def getNumCommitsWrtTrackingBranch(options, trackingBranch, getCmndOutputFunc):
+  #print("type(options.useGit) =", type(options.useGit))
+  #print("type(trackingBranch) =", type(trackingBranch))
   if trackingBranch == "":
     return ""
-  (summaryLines, rtnCode) = getCmndOutputFunc(
-    options.useGit + " shortlog -s HEAD ^"+trackingBranch, rtnCode=True )
+  (summaryLines, rtnCode) = \
+    getCmndOutputFunc(options.useGit + " shortlog -s HEAD ^" +
+                      trackingBranch, rtnCode=True)
   if rtnCode != 0:
     raise Exception(summaryLines)
   numCommits = 0
   summaryLines = summaryLines.strip()
   if summaryLines:
     for summaryLine in filterWarnings(summaryLines.splitlines()):
-      #print "summaryLine = '"+summaryLine+"'"
+      #print("summaryLine = '" + summaryLine + "'")
       numAuthorCommits = int(summaryLine.strip().split()[0].strip())
-      #print "numAuthorCommits =", numAuthorCommits
+      #print("numAuthorCommits = " + numAuthorCommits)
       numCommits += numAuthorCommits
   return str(numCommits)
   # NOTE: Above, we would like to use 'git ref-list --count' but that is not
@@ -1227,19 +1261,19 @@ def getNumModifiedAndUntracked(options, getCmndOutputFunc):
     numModified = 0
     numUntracked = 0
     for line in rawStatusOutput.splitlines():
-      if matchFieldOneOrTwo(line.find("M")):
+      if matchFieldOneOrTwo(line.find(b("M"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find("A")):
+      elif matchFieldOneOrTwo(line.find(b("A"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find("D")):
+      elif matchFieldOneOrTwo(line.find(b("D"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find("T")):
+      elif matchFieldOneOrTwo(line.find(b("T"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find("U")):
+      elif matchFieldOneOrTwo(line.find(b("U"))):
         numModified += 1
-      elif matchFieldOneOrTwo(line.find("R")):
+      elif matchFieldOneOrTwo(line.find(b("R"))):
         numModified += 1
-      elif line.find("??") == 0:
+      elif line.find(b("??")) == 0:
         numUntracked += 1
     return (str(numModified), str(numUntracked))
   return ("", "")
@@ -1260,11 +1294,11 @@ class RepoStatsStruct:
 
   def __str__(self):
     return "{" \
-     "branch='"+self.branch+"'," \
-     " trackingBranch='"+self.trackingBranch+"'," \
-     " numCommits='"+self.numCommits+"'," \
-     " numModified='"+self.numModified+"'," \
-     " numUntracked='"+self.numUntracked+"'" \
+     "branch='" + self.branch + "'," \
+     " trackingBranch='" + self.trackingBranch + "'," \
+     " numCommits='" + self.numCommits + "'," \
+     " numModified='" + self.numModified + "'," \
+     " numUntracked='" + self.numUntracked + "'" \
      "}"
 
   def numCommitsInt(self):
@@ -1280,7 +1314,7 @@ class RepoStatsStruct:
     return int(self.numUntracked)
 
   def hasLocalChanges(self):
-    if self.numCommitsInt()+self.numModifiedInt()+self.numUntrackedInt() > 0:
+    if self.numCommitsInt() + self.numModifiedInt() + self.numUntrackedInt() > 0:
       return True
     return False
 
@@ -1288,12 +1322,18 @@ class RepoStatsStruct:
 def getRepoStats(options, getCmndOutputFunc=None):
   if not getCmndOutputFunc:
     getCmndOutputFunc = getCmndOutput
-  branch = getLocalBranch(options, getCmndOutputFunc)
+  branch         = getLocalBranch(options, getCmndOutputFunc)
   trackingBranch = getTrackingBranch(options, getCmndOutputFunc)
-  numCommits = getNumCommitsWrtTrackingBranch(options, trackingBranch, getCmndOutputFunc)
-  (numModified, numUntracked) = getNumModifiedAndUntracked(options, getCmndOutputFunc)
-  return RepoStatsStruct(branch, trackingBranch,
-   numCommits, numModified, numUntracked)
+  numCommits     = getNumCommitsWrtTrackingBranch(options,
+                                                  trackingBranch,
+                                                  getCmndOutputFunc)
+  (numModified, numUntracked) = getNumModifiedAndUntracked(options,
+                                                           getCmndOutputFunc)
+  return RepoStatsStruct(branch,
+                         trackingBranch,
+                         numCommits,
+                         numModified,
+                         numUntracked)
 
 
 def convertZeroStrToEmpty(strIn):
@@ -1340,9 +1380,8 @@ if __name__ == '__main__':
   if nativeCmnd == "dist-repo-status":
     distRepoStatus = True
     if len(otherArgs) > 0:
-      print "Error, passing in extra git commands/args =" \
-        "'"+" ".join(otherArgs)+"' with special comamnd 'dist-repo-status" \
-        " is not allowed!"
+      print("Error, passing in extra git commands/args ='" + " ".join(otherArgs)
+            + "' with special comamnd 'dist-repo-status is not allowed!")
       sys.exit(1)
   else:
     distRepoStatus = False
@@ -1352,14 +1391,14 @@ if __name__ == '__main__':
   repoVersionDict2 = getRepoVersionDictFromRepoVersionFile(options.versionFile2)
 
   # Reform the commandline arguments correctly
-  #print "otherArgs =", otherArgs
+  #print("otherArgs = ", str(otherArgs))
   cmndLineArgsArray = requoteCmndLineArgsIntoArray(otherArgs)
 
   # Get the reference base directory
   baseDir = os.getcwd()
 
   if options.debug:
-    print "*** Using git:", options.useGit
+    print("*** Using git: " + str(options.useGit))
 
   # Get the name of the base repo
   baseRepoName = getBaseDirNameFromPath(baseDir)
@@ -1384,13 +1423,15 @@ if __name__ == '__main__':
   # Process the base git repo
   if processBaseRepo:
     if distRepoStatus:
-      repoStatTable.insertRepoStat(getBaseRepoTblName(baseRepoName), baseRepoStats, repoID)
+      repoStatTable.insertRepoStat(getBaseRepoTblName(baseRepoName),
+                                   baseRepoStats, repoID)
     else:
-      print ""
-      print "*** Base Git Repo: "+addColorToRepoDir(options.useColor, baseRepoName)
+      print("")
+      print("*** Base Git Repo: " +
+            addColorToRepoDir(options.useColor, baseRepoName))
       if options.debug:
-        print "*** Tracking branch for git repo" \
-          " '"+baseRepoName+"' = '"+baseRepoStats.trackingBranch+"'"
+        print("*** Tracking branch for git repo '" + baseRepoName + "' = '" +
+              baseRepoStats.trackingBranch + "'")
       sys.stdout.flush()
       runRepoCmnd(options, cmndLineArgsArray, baseRepoName, baseDir,
         repoVersionDict, repoVersionDict2)
@@ -1407,7 +1448,7 @@ if __name__ == '__main__':
       repoDoesExistsAndNotExcluded = True
       # cd into extrarepo dir
       if options.debug:
-        print "\n*** Changing to directory "+extraRepo,
+        print("\n*** Changing to directory " + extraRepo)
       os.chdir(extraRepo)
       # Get repo stats
       if options.modifiedOnly or distRepoStatus:
@@ -1426,16 +1467,16 @@ if __name__ == '__main__':
         repoStatTable.insertRepoStat(extraRepo, extraRepoStats, repoID)
         processThisExtraRepo = False
       else:
-        print ""
-        print "*** Git Repo: "+addColorToRepoDir(options.useColor, extraRepo)
+        print("")
+        print("*** Git Repo: " + addColorToRepoDir(options.useColor, extraRepo))
         sys.stdout.flush()
         if options.debug:
-          print "*** Tracking branch for git repo" \
-           " '"+extraRepo+"' = '"+extraRepoStats.trackingBranch+"'"
+          print("*** Tracking branch for git repo '" + extraRepo + "' = '" +
+                extraRepoStats.trackingBranch + "'")
         runRepoCmnd(options, cmndLineArgsArray, extraRepo, baseDir, \
           repoVersionDict, repoVersionDict2)
         if options.debug:
-          print "*** Changing to directory "+baseDir
+          print("*** Changing to directory " + baseDir)
 
     if repoDoesExistsAndNotExcluded:
       repoID += 1
@@ -1443,13 +1484,12 @@ if __name__ == '__main__':
     os.chdir(baseDir)
 
   if distRepoStatus:
-    print createAsciiTable(repoStatTable.getTableData())
+    print(createAsciiTable(repoStatTable.getTableData()))
     if options.printLegend:
-      print distRepoStatusLegend
+      print(distRepoStatusLegend)
     else:
-      print "(tip: to see a legend, pass in --dist-legend.)" 
+      print("(tip: to see a legend, pass in --dist-legend.)")
   else:
-    print ""
+    print("")
 
   sys.stdout.flush()
-

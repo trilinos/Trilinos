@@ -69,6 +69,7 @@ INCLUDE(ParseVariableArguments)
 #     [XHOST <host0> <host1> ...]
 #     [HOSTTYPE <hosttype0> <hosttype1> ...]
 #     [XHOSTTYPE <hosttype0> <hosttype1> ...]
+#     [EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...]
 #     [DIRECTORY <dir>]
 #     [TESTONLYLIBS <lib0> <lib1> ...]
 #     [IMPORTEDLIBS <lib0> <lib1> ...]
@@ -164,6 +165,11 @@ INCLUDE(ParseVariableArguments)
 #
 #     The list of host types for which **not** to enable the test (see
 #     `TRIBITS_ADD_TEST()`_).
+#
+#   ``EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...``
+#
+#     If specified, gives the names of CMake variables that must evaluate to
+#     true, or the test will not be added (see `TRIBITS_ADD_TEST()`_).
 #
 #   ``TESTONLYLIBS <lib0> <lib1> ...``
 #
@@ -320,7 +326,7 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     #prefix
     PARSE
     #lists
-    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
+    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
     #options
     "NOEXEPREFIX;NOEXESUFFIX;ADD_DIR_TO_NAME;INSTALLABLE"
     ${ARGN}

@@ -358,7 +358,7 @@ def getCmndLineOptions(cmndLineArgs, skipEchoCmndLine=False):
     if options.doAll:
       cmndLine +=  "  --do-all \\\n"
 
-    print cmndLine
+    print(cmndLine)
 
     if options.showDefaults:
       sys.exit(0);
@@ -368,17 +368,17 @@ def getCmndLineOptions(cmndLineArgs, skipEchoCmndLine=False):
   #
 
   if options.installDir == "":
-    print "\nError, you must set --install-dir=<dev_env_base>!"
+    print("\nError, you must set --install-dir=<dev_env_base>!")
     raise Exception("Bad input option --install-dir")
   options.installDir = os.path.abspath(os.path.expanduser(options.installDir))
 
   if options.commonTools == "all":
     options.commonTools = ",".join(commonToolsArray)
-  #print "options.commonTools = '"+options.commonTools+"'"
+  #print("options.commonTools = '"+options.commonTools+"'")
 
   if options.compilerToolset == "all":
     options.compilerToolset = ",".join(compilerToolsetArray)
-  #print "options.compilerToolset = '"+options.compilerToolset+"'"
+  #print("options.compilerToolset = '"+options.compilerToolset+"'")
 
   if options.doAll:
     options.doInitialSetup = True
@@ -417,9 +417,9 @@ def substituteStrings(inputStr, subPairArray):
   inputStrArray = inputStr.splitlines()
   if inputStrArray[-1] == "": inputStrArray = inputStrArray[0:-1]
   for line in inputStrArray:
-    #print "line = '"+line+"'"
+    #print("line = '"+line+"'")
     for (str1, str2) in subPairArray:
-      #print "(str1, str2) =", (str1, str2)
+      #print("(str1, str2) =", (str1, str2))
       line = line.replace(str1, str2)
     outputStr += (line + "\n")
   return outputStr
@@ -478,7 +478,7 @@ def downloadToolSource(toolName, toolVer, gitUrlBase, inOptions):
 
   toolDir = toolName+"-"+toolVer
 
-  print "\nDownloading the source for "+toolDir+" ..."
+  print("\nDownloading the source for " + toolDir + " ...")
 
   outFile = toolDir+"-download.log"
   workingDir=scratch_dir
@@ -486,20 +486,20 @@ def downloadToolSource(toolName, toolVer, gitUrlBase, inOptions):
   targetToolSrcDir = workingDir+"/"+toolSrcBaseDir
 
   if os.path.exists(targetToolSrcDir):
-    print "\nRemoving existing directory '"+targetToolSrcDir+"' ..."
+    print("\nRemoving existing directory '" + targetToolSrcDir + "' ...")
     cmnd = "rm -rf "+targetToolSrcDir
     if not inOptions.skipOp:
       echoRunSysCmnd(cmnd)
     else:
-      print "\nRunning: "+cmnd
+      print("\nRunning: " + cmnd)
 
   cmnd = "git clone "+gitUrlBase+toolSrcBaseDir+" "+targetToolSrcDir
   if not inOptions.skipOp:
     echoRunSysCmnd(cmnd, workingDir=workingDir, outFile=outFile, timeCmnd=True)
   else:
-    print "\nRunning: "+cmnd
-    print "\n  Running in working directory: "+workingDir
-    print "\n   Writing console output to file "+outFile
+    print("\nRunning: " + cmnd)
+    print("\n  Running in working directory: " + workingDir)
+    print("\n   Writing console output to file " + outFile)
 
 
 #
@@ -511,7 +511,7 @@ def installToolFromSource(toolName, toolVer, installBaseDir,
 
   toolDir = toolName+"-"+toolVer
 
-  print "\nInstalling "+toolDir+" ..."
+  print("\nInstalling " + toolDir + " ...")
 
   outFile = toolDir+"-install.log"
   workingDir=scratch_dir
@@ -530,10 +530,10 @@ def installToolFromSource(toolName, toolVer, installBaseDir,
     echoRunSysCmnd(cmnd, workingDir=workingDir, outFile=outFile, timeCmnd=True,
       extraEnv=extraEnv)
   else:
-    print "\nRunning: "+cmnd
-    print "\n  Running in working directory: "+workingDir
-    print "\n  Appending environment:", extraEnv
-    print "\n  Writing console output to file "+outFile
+    print("\nRunning: " + cmnd)
+    print("\n  Running in working directory: " + workingDir)
+    print("\n  Appending environment: " + extraEnv)
+    print("\n  Writing console output to file " + outFile)
 
 
 #
@@ -549,18 +549,18 @@ def main(cmndLineArgs):
   inOptions = getCmndLineOptions(cmndLineArgs)
 
   if inOptions.skipOp:
-    print "\n***"
-    print "*** NOTE: --no-op provided, will only trace actions and not touch the filesystem!"
-    print "***\n"
+    print("\n***")
+    print("*** NOTE: --no-op provided, will only trace actions and not touch the filesystem!")
+    print("***\n")
 
   commonToolsSelected = \
     getToolsSelectedArray(inOptions.commonTools, commonToolsArray)
-  print "\nSelected common tools =", commonToolsSelected
+  print("\nSelected common tools = " + commonToolsSelected)
   commonToolsSelectedSet = set(commonToolsSelected)
 
   compilerToolsetSelected = \
     getToolsSelectedArray(inOptions.compilerToolset, compilerToolsetArray)
-  print "\nSelected compiler toolset =", compilerToolsetSelected
+  print("\nSelected compiler toolset = " + compilerToolsetSelected)
   compilerToolsetSelectedSet = set(compilerToolsetSelected)
 
   gccVersion=gcc_version_default #ToDo: Make variable!
@@ -568,7 +568,8 @@ def main(cmndLineArgs):
   dev_env_base_dir = inOptions.installDir
 
   ###
-  print "\n\nA) Setup the install directory <dev_env_base> = '"+dev_env_base_dir+"':\n"
+  print("\n\nA) Setup the install directory <dev_env_base> ='" +
+        dev_env_base_dir + "':\n")
   ###
 
   dev_env_base_exists = os.path.exists(dev_env_base_dir)
@@ -585,33 +586,34 @@ def main(cmndLineArgs):
   if inOptions.doInitialSetup:
 
     if not dev_env_base_exists:
-      print "Creating directory '"+dev_env_base_dir+"' ..."
+      print("Creating directory '" + dev_env_base_dir + "' ...")
       if not inOptions.skipOp:
         os.makedirs(dev_env_base_dir)
 
     if not common_tools_exists:
-      print "Creating directory '"+common_tools_dir+"' ..."
+      print("Creating directory '" + common_tools_dir + "' ...")
       if not inOptions.skipOp:
         os.makedirs(common_tools_dir)
 
     # Always create this directory so we can write the load_dev_env.sh script!
     if not compiler_toolset_base_exists:
-      print "Creating directory '"+compiler_toolset_base_dir+"' ..."
+      print("Creating directory '" + compiler_toolset_base_dir + "' ...")
       if not inOptions.skipOp:
         os.makedirs(compiler_toolset_base_dir)
 
     if not compiler_toolset_exists:
-      print "Creating directory '"+compiler_toolset_dir+"' ..."
+      print("Creating directory '" + compiler_toolset_dir + "' ...")
       if not inOptions.skipOp:
         os.makedirs(compiler_toolset_dir)
 
-    print "Writing new files "+inOptions.loadDevEnvFileBaseName+".[sh,csh] ..."
+    print("Writing new files " + inOptions.loadDevEnvFileBaseName +
+          ".[sh,csh] ...")
     if not inOptions.skipOp:
       writeLoadDevEnvFiles(dev_env_base_dir, compiler_toolset_base_dir, inOptions)
 
   else:
 
-    print "Skipping setup of the install directory by request!"
+    print("Skipping setup of the install directory by request!")
 
     assertInstallDirExists(dev_env_base_dir, inOptions)
     assertInstallDirExists(common_tools_dir, inOptions)
@@ -619,7 +621,7 @@ def main(cmndLineArgs):
     assertInstallDirExists(compiler_toolset_dir, inOptions)
 
   ###
-  print "\n\nB) Download all sources for each selected tool:\n"
+  print("\n\nB) Download all sources for each selected tool:\n")
   ###
 
   if inOptions.doDownload:
@@ -642,18 +644,18 @@ def main(cmndLineArgs):
 
   else:
 
-    print "Skipping download of the source for the tools on request!"
+    print("Skipping download of the source for the tools on request!")
     if inOptions.doInstall:
-      print "NOTE: The downloads had better be there for the install!"
+      print("NOTE: The downloads had better be there for the install!")
 
   ###
-  print "\n\nC) Untar, configure, build and install each selected tool:\n" 
+  print("\n\nC) Untar, configure, build and install each selected tool:\n")
   ###
 
   if inOptions.doInstall:
 
     if "gitdist" in commonToolsSelectedSet:
-      print "\nInstalling gitdist ..."
+      print("\nInstalling gitdist ...")
       echoRunSysCmnd("cp "+pythonUtilsDir+"/gitdist "+common_tools_dir+"/")
       InstallProgramDriver.fixupInstallPermissions(inOptions, common_tools_dir)
 
@@ -690,26 +692,26 @@ def main(cmndLineArgs):
 
   else:
 
-    print "Skipping install of the tools on request!"
+    print("Skipping install of the tools on request!")
 
   ###
-  print "\n\nD) Final instructions for using installed dev env:"
+  print("\n\nD) Final instructions for using installed dev env:")
   ###
     
   if inOptions.showFinalInstructions:
-    print "\nTo use the new dev env, just source the file:\n"
-    print "  source "+compiler_toolset_base_dir+"/load_dev_env.sh\n"
-    print "for sh or bash shells (or load_dev_env.csh for csh shell).\n"
-    print "TIP: Add this source to your ~/.bash_profile!"
+    print("\nTo use the new dev env, just source the file:\n")
+    print("  source " + compiler_toolset_base_dir + "/load_dev_env.sh\n")
+    print("for sh or bash shells (or load_dev_env.csh for csh shell).\n")
+    print("TIP: Add this source to your ~/.bash_profile!")
   else:
-    print "Skipping on request ..."
+    print("Skipping on request ...")
 
   if inOptions.skipOp:
-    print "\n***"
-    print "*** NOTE: --no-op provided, only traced actions that would have been taken!"
-    print "***"
+    print("\n***")
+    print("*** NOTE: --no-op provided, only traced actions that would have been taken!")
+    print("***")
   
-  print "\n[End]"
+  print("\n[End]")
 
 
 #
@@ -719,8 +721,8 @@ def main(cmndLineArgs):
 if __name__ == '__main__':
   try:
     sys.exit(main(sys.argv[1:]))
-  except Exception, e:
-    print e, "\n"
+  except Exception as e:
+    print(e)
+    print()
     printStackTrace()
     sys.exit(1)
-

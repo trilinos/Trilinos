@@ -47,14 +47,12 @@ Python module containing general support functions for creating scripts
 
 import sys
 if sys.version < '2.6':
-   print "Error, Python version is "+sys.version+" < 2.6!"
+   print("Error, Python version is " + sys.version + " < 2.6!")
    sys.exit(1)
 
 #
 # Import commands
 #
-
-import sys
 import os
 import re
 import math
@@ -64,6 +62,35 @@ import datetime
 import optparse
 import traceback
 
+#
+# Byte array / string / unicode support across Python 2 & 3
+#
+# Note that the str class in Python 2 is an ASCII string (byte) array and in
+# Python 3 it is a Unicode object. For Python 3 code that is backward compatible
+# with Python 2, we sometimes need version-specific conversion functions to give
+# us the data type we desire. These functions are:
+#
+#     b(x)    return a byte array of str x, much like b'<string const>' in
+#             Python 3
+#     s(x)    return a version-specific str object equivalent to x
+#     u(x)    return a unicode object equivalent to x, much like
+#             u'<string const>' in Python 2
+#
+if sys.version_info < (3,):
+   # Python 2
+   def b(x): return x
+   def s(x): return x
+   def u(x): return unicode(x)
+else:
+   # Python 3
+   import codecs
+   def b(x): return codecs.latin_1_encode(x)[0]
+   def s(x):
+      try:
+         return x.decode("utf-8")
+      except AttributeError:
+         return x
+   def u(x): return x
 
 verboseDebug = False
 
@@ -74,7 +101,7 @@ verboseDebug = False
 
 rePlatformName = re.compile(r"^[a-zA-Z]+")
 platformStr = rePlatformName.findall(sys.platform)[0]
-#print "\nplatformStr =", platformStr
+#print("\nplatformStr = " + platformStr)
 
 
 ######################################
@@ -148,15 +175,15 @@ def arrayToFormattedString(array_in, offsetStr = ""):
 
 
 def extractLinesAfterRegex(string_in, regex_in):
-  #print "regex_in =", regex_in
+  #print("regex_in = " + regex_in)
   reMatch = re.compile(regex_in)
   linesExtracted = ""
   foundRegex = False
   for line in string_in.strip().splitlines():
-    #print "line = '" + line + "'"
+    #print("line = '" + line + "'")
     if not foundRegex:
       matchObj = reMatch.match(line)
-      #print "matchObj =", matchObj
+      #print("matchObj = " + matchObj)
       if matchObj:
         foundRegex = True
     if foundRegex:
@@ -165,30 +192,50 @@ def extractLinesAfterRegex(string_in, regex_in):
 
 
 def extractLinesMatchingRegex(string_in, regex_in):
-  #print "regex_in =", regex_in
+  #print("regex_in = " + regex_in)
+  string_in = s(string_in)
   reMatch = re.compile(regex_in)
   linesExtracted = ""
   for line in string_in.strip().splitlines():
-    #print "line = '" + line + "'"
+    #print("line = '" + line + "'")
     matchObj = reMatch.match(line)
-    #print "matchObj =", matchObj
+    #print("matchObj = " + matchObj)
     if matchObj:
       linesExtracted += line + "\n"
   return linesExtracted
-# NOTE: ABove is *NOT* using tested!
+# NOTE: Above is *NOT* using tested!
 
 
 def extractLinesMatchingSubstr(string_in, substr_in):
-  #print "substr_in = '"+substr_in+"'"
+  #print("substr_in = '" + substr_in + "'")
+  string_in = s(string_in)
   linesExtracted = ""
   for line in string_in.strip().splitlines():
-    #print "line = '" + line + "'"
+    #print("line = '" + line + "'")
     if substr_in in line:
-      #print "matched '"+substr_in+"'"
+      #print("matched '" + substr_in + "'")
       linesExtracted += line + "\n"
   return linesExtracted
 # NOTE: Above is *NOT* unit tested!
- 
+
+
+# Convert a dictionary to a string, using a sorted set of keys.
+#
+# This is needed to provide a portable string representation across various
+# versions of Python and platforms (see TriBITS GitHub Issue #119).
+def sorted_dict_str(d):
+  items = []
+  keys = list(d.keys())
+  keys.sort()
+  for key in keys:
+    if isinstance(d[key], dict):
+      value = sorted_dict_str(d[key])
+    else:
+      value = repr(d[key])
+    items.append(repr(key) + ": " + value)
+  return "{" + ", ".join(items) + "}"
+
+
 
 ##############################################
 # System command unit testing utiltities
@@ -239,7 +286,7 @@ class SysCmndInterceptor:
     return self.__interceptedCmndStructList[:]
 
   def doProcessInterceptedCmnd(self, cmnd):
-    #print "doProcessInterceptedCmnd(): cmnd='"+cmnd+"'"
+    #print("doProcessInterceptedCmnd(): cmnd='" + cmnd + "'")
     if self.isFallThroughCmnd(cmnd):
       return False
     if len(self.__interceptedCmndStructList) > 0:
@@ -263,8 +310,8 @@ class SysCmndInterceptor:
       raise Exception("Error, cmnd='"+cmnd+"' is past the last expected command!")
     ics = self.__interceptedCmndStructList[0]
     if not re.match(ics.cmndRegex, cmnd):
-      raise Exception("Error, cmnd='"+cmnd+"' did not match the" \
-        " expected regex='"+ics.cmndRegex+"'!")
+      raise Exception("Error, cmnd='" + cmnd + "' did not match the" \
+                      " expected regex='" + ics.cmndRegex + "'!")
     self.__interceptedCmndStructList.pop(0)
     return (ics.cmndReturn, ics.cmndOutput)
 
@@ -276,13 +323,13 @@ class SysCmndInterceptor:
   def readCommandsFromStr(self, cmndsStr):
     lines = cmndsStr.splitlines()
     for line in lines:
-      #print "line: '"+line+"'"
+      #print("line: '" + line + "'")
       if line == "":
         continue
       splitArray = line.split(':')
       (tag, entry) = (splitArray[0], ':'.join(splitArray[1:]))
       #(tag, entry) = line.split(':')
-      #print "(tag, entry) =", (tag, entry)
+      #print("(tag, entry) = " + str((tag, entry)))
       if tag == "FT":
         self.__fallThroughCmndRegexList.append(entry.strip())
       elif tag == "IT":
@@ -293,9 +340,10 @@ class SysCmndInterceptor:
         cmndReturn = entryArray[1]
         cmndOutput = ""
         for cmndOutputEntry in entryArray[2:]:
-          #print "cmndOutputEntry = {"+cmndOutputEntry+"}"
+          #print("cmndOutputEntry = {" + cmndOutputEntry + "}")
           cmndOutput += cmndOutputEntry.strip()[1:-1]+"\n"
-        #print "(cmndRegex, cmndReturn, cmndOutput) =", (cmndRegex, cmndReturn, cmndOutput)
+        #print("(cmndRegex, cmndReturn, cmndOutput) = " +
+        #      str((cmndRegex, cmndReturn, cmndOutput)))
         self.__interceptedCmndStructList.append(
           InterceptedCmndStruct(cmndRegex.strip(), int(cmndReturn), cmndOutput)
           )
@@ -305,7 +353,8 @@ class SysCmndInterceptor:
   def assertAllCommandsRun(self):
     if len(self.__interceptedCmndStructList) > 0:
       raise Exception("Error, all of the commands have not been run starting with" \
-        " the command "+str(self.__interceptedCmndStructList[0])+"!")
+                      " the command " + str(self.__interceptedCmndStructList[0])
+                      + "!")
 
 
 g_sysCmndInterceptor = SysCmndInterceptor()
@@ -316,23 +365,25 @@ cmndInterceptsFile = os.environ.get(
   "GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE","")
 if cmndInterceptsFile:
   cmndInterceptsFileStr = open(cmndInterceptsFile, 'r').read()
-  print "\nReading system command intercepts from file '"+cmndInterceptsFile+"' with contents:\n" \
-    "-----------------------------------\n" \
-    +cmndInterceptsFileStr+ \
-    "-----------------------------------\n"
+  print("\nReading system command intercepts from file '" +
+        cmndInterceptsFile                                +
+        "' with contents:\n"                              +
+        "-----------------------------------\n"           +
+        cmndInterceptsFileStr                             +
+        "-----------------------------------\n")
   g_sysCmndInterceptor.readCommandsFromStr(cmndInterceptsFileStr)
   g_sysCmndInterceptor.setAllowExtraCmnds(False)
 
 
 # Dump all commands being performed?
-g_dumpAllSysCmnds = os.environ.has_key("GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS")
+g_dumpAllSysCmnds = "GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS" in os.environ
 
 
 def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
   workingDir="", getStdErr=False \
   ):
   if g_dumpAllSysCmnds:
-    print "\nDUMP SYS CMND: " + cmnd + "\n"
+    print("\nDUMP SYS CMND: " + cmnd + "\n")
   if outFile!=None and rtnOutput==True:
     raise Exception("Error, both outFile and rtnOutput can not be true!") 
   if g_sysCmndInterceptor.doProcessInterceptedCmnd(cmnd):
@@ -340,7 +391,7 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
     if rtnOutput:
       if cmndOutput==None:
         raise Exception("Error, the command '"+cmnd+"' gave None output when" \
-          " non-null output was expected!")
+                        " non-null output was expected!")
       return (cmndOutput, cmndReturn)
     if outFile:
       writeStrToFile(outFile, cmndOutput)  
@@ -365,10 +416,10 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
         child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
           env=fullEnv)
       data = child.stdout.read()
-      #print "data = '"+str(data)+"'"
+      #print("data = '" + str(data) + "'")
       child.wait()
       rtnCode = child.returncode
-      #print "rtnCode = '"+str(rtnCode)+"'"
+      #print("rtnCode = '" + str(rtnCode) + "'")
       rtnObject = (data, rtnCode)
     else:
       outFileHandle = None
@@ -397,11 +448,11 @@ def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir="",
     outFileHandle = None
     rtnCode = runSysCmndInterface(cmnd, outFile=outFile, extraEnv=extraEnv,
       workingDir=workingDir)
-  except OSError, e:
+  except OSError as e:
     rtnCode = 1 # Just some error code != 0 please!
   if rtnCode != 0 and throwExcept:
-    raise RuntimeError('Error, the command \'%s\' failed with error code %d' \
-      % (cmnd,rtnCode) )
+    raise RuntimeError("Error, the command '%s' failed with error code %d"
+                       % (cmnd, rtnCode))
   return rtnCode
 
 
@@ -411,15 +462,15 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
   ):
   """Echo command to be run and run command with runSysCmnd()"""
   if verbose:
-    print "\nRunning: "+cmnd+"\n"
+    print("\nRunning: " + cmnd + "\n")
     if workingDir:
-      print "  Running in working directory: "+workingDir+" ...\n"
+      print("  Running in working directory: " + workingDir + " ...\n")
     if extraEnv:
-      print "  Appending environment:", extraEnv, "\n"
+      print("  Appending environment:" + extraEnv + "\n")
     if outFile:
-      print "  Writing console output to file "+outFile+" ..."
+      print("  Writing console output to file " + outFile + " ...")
   if msg and verbose:
-    print "  "+msg+"\n"
+    print("  " + msg + "\n")
   t1 = time.time()
   totalTimeMin = -1.0
   try:
@@ -429,7 +480,7 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
       t2 = time.time()
       totalTimeMin = (t2-t1)/60.0
       if verbose:
-        print "\n  Runtime for command = %f minutes" % totalTimeMin
+        print("\n  Runtime for command = %f minutes" % totalTimeMin)
   if returnTimeCmnd:
     return (rtn, totalTimeMin)
   return rtn
@@ -443,7 +494,7 @@ def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir
     getStdErr=getStdErr)
   if errCode != 0:
     if throwOnError:
-      raise RuntimeError, '%s failed w/ exit code %d:\n\n%s' % (cmnd, errCode, data)
+      raise RuntimeError('%s failed w/ exit code %d:\n\n%s' % (cmnd, errCode, data))
   dataToReturn = data
   if stripTrailingSpaces:
     dataToReturn = data.rstrip()
@@ -453,10 +504,10 @@ def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir
 
 
 def pidStillRunning(pid):
-  #print "\npid = '"+pid+"'"
+  #print("\npid = '" + pid + "'")
   cmnd = "kill -s 0 "+pid
   cmndReturn = runSysCmnd(cmnd, False)
-  #print "\ncmndReturn =", cmndReturn
+  #print("\ncmndReturn = " + cmndReturn)
   return cmndReturn == 0
 
 
@@ -490,7 +541,7 @@ def downDirsArray(numDownDirs):
   downDirsPathArray = []
   for i in range(0, numDownDirs):
     downDirsPathArray.append("..")
-  #print "\ndownDirsPathArray =", downDirsPathArray
+  #print("\ndownDirsPathArray = " + downDirsPathArray)
   return downDirsPathArray
 
 
@@ -500,52 +551,51 @@ def normalizePath(path):
 
 def echoChDir(dirName, verbose=True):
   if verbose:
-    print "\nChanging current directory to \'"+dirName+"\'"
+    print("\nChanging current directory to \'" + dirName + "\'")
   if not os.path.isdir(dirName):
     raise OSError("Error, the directory \'"+dirName+"\' does not exist in the" \
       + " base directory \'"+os.getcwd()+"\"!" )
   os.chdir(dirName)
   if verbose:
-    print "\nCurrent directory is \'"+os.getcwd()+"\'\n"
+    print("\nCurrent directory is \'" + os.getcwd() + "\'\n")
 
 
 def createDir(dirName, cdIntoDir=False, verbose=False):
   """Create a directory if it does not exist"""
   if os.path.exists(dirName):
     if not os.path.isdir(dirName):
-      errMsg = "\nError the path '"+dirName+"'already exists but it is not a directory!"
-      if verbose: print errMsg
+      errMsg = "\nError the path '" + dirName + \
+               "'already exists but it is not a directory!"
+      if verbose: print(errMsg)
       raise RuntimeError(errMsg)
-    if verbose: print "\nThe directory", dirName, "already exists!"
+    if verbose: print("\nThe directory " + dirName + "already exists!")
   else:
-    if verbose: print "\nCreating directory "+dirName+" ..."
+    if verbose: print("\nCreating directory " + dirName + " ...")
     os.mkdir(dirName)
   if cdIntoDir:
     echoChDir(dirName, verbose=verbose)
 
 
 def createDirsFromPath(path):
-  #print "\npath =", path
+  #print("\npath = " + path)
   pathList = path.split("/")
-  #print "\npathList =", pathList
+  #print("\npathList = " + pathList)
   if not pathList[0]:
     currDir = "/"
   for dir in pathList:
     currDir = os.path.join(currDir, dir)
     if currDir and not os.path.exists(currDir):
-      #print "\ncurrDir =", currDir
+      #print("\ncurrDir = " + currDir)
       createDir(currDir)
 
 
 def expandDirsDict(trilinosDirsDict_inout):
 
-  for dir in trilinosDirsDict_inout.keys():
+  for dir in list(trilinosDirsDict_inout):
     subdirsList = dir.split("/")
-    #print "\nsubdirsList =", subdirsList
-    for i in range(0, len(subdirsList)):
-      trilinosDirsDict_inout.update(
-        { joinDirs(subdirsList[:i+1]) : 0 }
-        )
+    #print("\nsubdirsList = " + subdirsList)
+    for i in range(len(subdirsList)):
+      trilinosDirsDict_inout.update({joinDirs(subdirsList[:i+1]) : 0})
 
 
 def removeIfExists(fileName):
@@ -556,7 +606,7 @@ def removeIfExists(fileName):
 def removeDirIfExists(dirName, verbose=False):
   if os.path.exists(dirName):
     if verbose:
-      print "Removing existing directory '"+dirName+"' ..."
+      print("Removing existing directory '" + dirName + "' ...")
     echoRunSysCmnd("rm -rf "+dirName)
 
 
@@ -586,7 +636,7 @@ def isEmptyDir( absDir ):
 
 def getDirSizeInGb(dir):
   sizeIn1024Kb = int(getCmndOutput("du -s "+dir).split('\t')[0])
-  #print "\nsizeIn1024Kb =", sizeIn1024Kb
+  #print("\nsizeIn1024Kb = " + str(sizeIn1024Kb))
   return float(sizeIn1024Kb)/1e+6 # Size in Gb!
 
 
@@ -611,12 +661,12 @@ def cleanBadPath(inputPath):
 
 
 def getRelativePathFrom1to2(absPath1, absPath2):
-  #print "\nabsPath1 =", absPath1
-  #print "\nabsPath2 =", absPath2
+  #print("\nabsPath1 =" + absPath1)
+  #print("\nabsPath2 =" + absPath2)
   absPath1_array = absPath1.split('/')
   absPath2_array = absPath2.split('/')
-  #print "\nabsPath1_array =", absPath1_array
-  #print "\nabsPath2_array =", absPath2_array
+  #print("\nabsPath1_array =" + absPath1_array)
+  #print("\nabsPath2_array =" + absPath2_array)
   absPath1_array_len = len(absPath1_array)
   absPath2_array_len = len(absPath2_array)
   maxBaseDirDepth = min(absPath1_array_len, absPath2_array_len) 
@@ -627,20 +677,20 @@ def getRelativePathFrom1to2(absPath1, absPath2):
     if dir1 != dir2:
       break
     baseDirDepth = baseDirDepth + 1
-  #print "\nbaseDirDepth =", baseDirDepth
+  #print("\nbaseDirDepth = %d" % baseDirDepth)
   numDownDirs = absPath1_array_len - baseDirDepth
-  #print "\nnumDownDirs =", numDownDirs
+  #print("\nnumDownDirs = %d" % numDownDirs)
   if numDownDirs > 0:
     downDirPath = joinDirs(downDirsArray(numDownDirs))
   else:
     downDirPath = "."
-  #print "\ndownDirPath = '" + downDirPath + "'"
+  #print("\ndownDirPath = '" + downDirPath + "'")
   if baseDirDepth == absPath2_array_len:
     upDirPath = "."
   else:
     upDirPath = joinDirs(absPath2_array[baseDirDepth:])
-  #print "\nupDirPath =", upDirPath
-  #print "\nupDirPath = '" + upDirPath + "'"
+  #print("\nupDirPath = "  + upDirPath      )
+  #print("\nupDirPath = '" + upDirPath + "'")
   relPath = os.path.join(downDirPath, upDirPath)
   if relPath == "./.":
     return "."
@@ -651,16 +701,16 @@ def getExecBaseDir(execName):
   whichOutput = getCmndOutput("type -p "+execName, True, False)
   # Handle the outpue 'execName is execFullPath' output
   execFullPath = whichOutput.split(' ')[-1]
-  #print "\nexecFullPath =", execFullPath
+  #print("\nexecFullPath = " + execFullPath)
   execNameMatchRe = r"^(.+)/"+execName
   execNameGroups = re.findall(execNameMatchRe, execFullPath)
-  #print "\nexecNameGroups =", execNameGroups
+  #print("\nexecNameGroups = " + execNameGroups)
   if not execNameGroups:
     return None
   execBaseDir = execNameGroups[0]
-  #print "\nexecBaseDir = \""+execBaseDir+"\""
+  #print("\nexecBaseDir = \"" + execBaseDir + "\"")
   #execBaseDir = cleanBadPath(execBaseDir)
-  #print "\nexecBaseDir = \""+execBaseDir+"\""
+  #print("\nexecBaseDir = \"" + execBaseDir + "\"")
   return execBaseDir
 
 
@@ -738,7 +788,7 @@ def requoteCmndLineArgs(inArgs):
       newArg = arg
     else:
       newArg = splitArg[0]+"=\""+'='.join(splitArg[1:])+"\""
-    #print "\nnewArg =", newArg
+    #print("\nnewArg = " + newArg)
     argsStr = argsStr+" "+newArg
   return argsStr
 
@@ -771,7 +821,7 @@ class ConfigurableOptionParser(optparse.OptionParser):
     modifies the default and help arguments before dispatching them to
     the base class implementation.
     """
-    if kwargs.has_key('default'):
+    if 'default' in kwargs:
       for arg in args:
         kwargs['default'] = self._configuration.get(arg, kwargs['default'])
     optparse.OptionParser.add_option(self, *args, **kwargs)
@@ -793,7 +843,7 @@ class ErrorCaptureOptionParser(optparse.OptionParser):
     optparse.OptionParser.__init__(self, usage, version)
     __sawError = False
   def error(self, msg):
-    raise "Received error message: "+msg
+    raise Exception("Received error message: " + msg)
 
 
 ######################################
@@ -814,8 +864,8 @@ def createIndexHtmlBrowserList(baseDir, fileDirList = None):
   # Fill in links to directories first
   for fd in fileDirList:
     absFd = baseDir+"/"+fd
-    #print "isfile("+fd+") =", os.path.isfile(absFd)
-    #print "isdir("+fd+") =", os.path.isdir(absFd)
+    #print("isfile(" + fd + ") = " + str(os.path.isfile(absFd)))
+    #print("isdir("  + fd + ") = " + str(os.path.isdir(absFd) ))
     if not os.path.isfile(absFd):
       htmlList = htmlList \
                  +"<li>dir: <a href=\""+fd+"\">"+fd+"</a></li>\n"
@@ -853,22 +903,22 @@ def createHtmlBrowserFiles(absBaseDir, depth, verbose=False):
   """Create a hierarchy of index.html files that will build a directory/file
   browser for a web server that will not allow directory/file browsing."""
 
-  #print "\nEntering createHtmlBrowserFiles("+absBaseDir+",%d"%(depth)+")"
+  #print("\nEntering createHtmlBrowserFiles(" + absBaseDir + ",%d" % (depth) + ")")
 
   # Get the list of all of the files/directories in absBaseDir
   fileDirList = os.listdir(absBaseDir)
   fileDirList.sort()
-  #print "\nfileDirList =", fileDirList
+  #print("\nfileDirList = " + str(fileDirList)
   #sys.stdout.flush()
 
   # Get the index.html file HTML
   indexHtml = createIndexHtmlBrowserFile(absBaseDir, fileDirList)
-  #print "\nindexHtml:\n", indexHtml
+  #print("\nindexHtml:\n" + indexHtml)
 
   # Write the index.html file
   indexFileName = absBaseDir+"/index.html"
   if verbose:
-    print "\nWriting "+indexFileName
+    print("\nWriting " + indexFileName)
   open(indexFileName,'w').write(indexHtml)
 
   # Loop through all of the directories and recursively call this function
@@ -877,7 +927,9 @@ def createHtmlBrowserFiles(absBaseDir, depth, verbose=False):
       absFd = absBaseDir+"/"+fd
       if os.path.isdir(absFd):
         subDir = absFd
-        #print "\nCalling createHtmlBrowserFiles("+subDir+",%d"%(depth-1)+")"
+        #print("\nCalling createHtmlBrowserFiles(" + subDir + ",%d" % (depth-1)
+        #      + ")")
         createHtmlBrowserFiles(absBaseDir+"/"+fd,depth-1)
 
-  #print "\nLeaving createHtmlBrowserFiles("+absBaseDir+",%d"%(depth)+")"
+  #print("\nLeaving createHtmlBrowserFiles(" + absBaseDir + ",%d" % (depth) +
+  #      ")") 

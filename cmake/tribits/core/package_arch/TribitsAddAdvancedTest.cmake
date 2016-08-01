@@ -73,6 +73,7 @@ INCLUDE(PrintVar)
 #     [XHOST <host0> <host1> ...]
 #     [HOSTTYPE <hosttype0> <hosttype1> ...]
 #     [XHOSTTYPE <hosttype0> <hosttype1> ...]
+#     [EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...]
 #     [FINAL_PASS_REGULAR_EXPRESSION <regex> |
 #       FINAL_FAIL_REGULAR_EXPRESSION <regex>]
 #     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
@@ -90,7 +91,7 @@ INCLUDE(PrintVar)
 #
 # Each atomic test case is either a package-built executable or just a basic
 # command.  An atomic test command block ``TEST_<idx>`` (i.e. ``TEST_0``,
-# ``TEST_1``, ...) takes the form::
+# ``TEST_1``, ..., up to ``TEST_19``) takes the form::
 #
 #   TEST_<idx>
 #      (EXEC <exeRootName> [NOEXEPREFIX] [NOEXESUFFIX] [ADD_DIR_TO_NAME]
@@ -191,7 +192,7 @@ INCLUDE(PrintVar)
 #     ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
 #     specified, then the default number of processes for an MPI build will be
 #     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
-#     ignored.  For MPI builds with all ``TEST_<IDX> CMND`` blocks,
+#     ignored.  For MPI builds with all ``TEST_<idx> CMND`` blocks,
 #     ``<overallNumProcs>`` is used to set the property ``PROCESSORS``. (see
 #     `Running multiple tests at the same time
 #     (TRIBITS_ADD_ADVANCED_TEST())`_).  **WARNING!** If just running a serial
@@ -203,7 +204,7 @@ INCLUDE(PrintVar)
 #
 #   ``OVERALL_NUM_TOTAL_CORES_USED <overallNumTotalCoresUsed>``
 #
-#     Used for ``NUM_TOTAL_CORES_USED`` if missing in a ``TEST_<IDX>`` block.
+#     Used for ``NUM_TOTAL_CORES_USED`` if missing in a ``TEST_<idx>`` block.
 #
 #   ``CATEGORIES <category0> <category1> ...``
 #
@@ -229,6 +230,11 @@ INCLUDE(PrintVar)
 #
 #     The list of host types for which **not** to enable the test (see
 #     `TRIBITS_ADD_TEST()`_).
+#
+#   ``EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...``
+#
+#     If specified, gives the names of CMake variables that must evaluate to
+#     true, or the test will not be added (see `TRIBITS_ADD_TEST()`_).
 #
 #   ``ENVIRONMENT <var1>=<value1> <var2>=<value2> ..``.
 #
@@ -419,6 +425,12 @@ INCLUDE(PrintVar)
 # below their ``TEST_<idx>`` argument and before the next test block (see
 # `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
+# **WARNING:** The current implementation limits the number of ``TEST_<idx>``
+# cases to just 20 (i.e. ``<idx>=0...19``).  And if more test cases are added
+# (e.g. ``TEST_20``), the current implementation can't detect that case and
+# the resulting behavior is undefined.  This restriction will be removed in a
+# future version of TriBITS.
+#
 # .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
 #
 # **Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
@@ -455,9 +467,9 @@ INCLUDE(PrintVar)
 # behaviors and what is allowed and what is not allowed.
 #
 # For the most part, the "overall" arguments and the arguments inside of any
-# individual ``TEST_<idx>`` blocks can be listed can appear in any order but
-# there are restrictions related to the grouping of overall arguments and
-# ``TEST_<idx>`` blocks which are as follows:
+# individual ``TEST_<idx>`` blocks can be listed in any order but there are
+# restrictions related to the grouping of overall arguments and ``TEST_<idx>``
+# blocks which are as follows:
 #
 # * The ``<testNameBase>`` argument must be the first listed (it is the only
 #   positional argument).
@@ -546,12 +558,13 @@ INCLUDE(PrintVar)
 # **Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # In order to see what tests get added and if not then why, configure with
-# ``${PROJECT_NAME}_TRACE_ADD_TEST=ON``.  That will print one line per show
-# that the test got added and if not then why the test was not added (i.e. due
-# to ``COMM``, ``OVERALL_NUM_MPI_PROCS``, ``NUM_MPI_PROCS``, ``CATEGORIES``,
-# ``HOST``, ``XHOST``, ``HOSTTYPE``, or ``XHOSTTYPE``).
+# ``${PROJECT_NAME}_TRACE_ADD_TEST=ON``.  That will print one line per test
+# that shows that the test got added or not and if not then why the test was
+# not added (i.e. due to ``COMM``, ``OVERALL_NUM_MPI_PROCS``,
+# ``NUM_MPI_PROCS``, ``CATEGORIES``, ``HOST``, ``XHOST``, ``HOSTTYPE``, or
+# ``XHOSTTYPE``).
 #
-# Likely the best way to debugging test generation using this function is to
+# Likely the best way to debug test generation using this function is to
 # examine the generated file ``<testName>.cmake`` in the current binary
 # directory (see `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_) and
 # the generated ``CTestTestfile.cmake`` file that should list this test case.
@@ -597,7 +610,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
      #prefix
      PARSE
      #lists
-     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
+     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      #options
      "FAIL_FAST;RUN_SERIAL;SKIP_CLEAN_OVERALL_WORKING_DIRECTORY"
      ${ARGN}
@@ -1053,13 +1066,3 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   ENDIF()
 
 ENDFUNCTION()
-
-# PERFORMANCE NOTES:
-#
-# We might be able to improve the performance of the parsing by limiting the
-# number of TEST_<I> blocks up front by setting a varible that will fix it.
-# This might just be set as a local variable in the CMakeLists.txt file where
-# this function is called from.  The other option is to just read through the
-# input arguments to parse first and look for the highest TEST_<idx> and use
-# that instead to build the list of tests.  This would just be a linear search
-# it could be a big pay off for very long lists.
