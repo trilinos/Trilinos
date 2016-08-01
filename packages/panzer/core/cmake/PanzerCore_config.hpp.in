@@ -22,6 +22,7 @@ namespace panzer {
   #define PANZER_ORDINAL64_IS_INT
   typedef int Ordinal64;
 #endif
+typedef int index_t;
 }
 
 @PANZER_TEUCHOS_TIME_MONITOR_DECLARATIONS@

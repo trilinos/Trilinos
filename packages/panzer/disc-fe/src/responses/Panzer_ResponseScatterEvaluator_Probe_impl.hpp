@@ -149,7 +149,7 @@ computeBasisValues(typename Traits::EvalData d)
   // Find which cell contains our point
   cellIndex_ = -1;
   bool haveProbe = false;
-  for (int cell=0; cell<static_cast<int>(d.num_cells); ++cell) {
+  for (index_t cell=0; cell<static_cast<int>(d.num_cells); ++cell) {
     CTD::checkPointwiseInclusion(inCell,
                                  physical_points_cell,
                                  this->wda(d).cell_vertex_coordinates,

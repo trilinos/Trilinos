@@ -93,7 +93,7 @@ PHX_EVALUATE_FIELDS(Convection,workset)
 { 
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
   
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {    
+  for (panzer::index_t cell = 0; cell < workset.num_cells; ++cell) {    
     for (size_type point = 0; point < conv.dimension(1); ++point) {
       
       conv(cell,point) = 0.0;

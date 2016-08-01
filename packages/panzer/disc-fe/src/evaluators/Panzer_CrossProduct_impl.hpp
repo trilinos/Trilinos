@@ -99,14 +99,14 @@ PHX_POST_REGISTRATION_SETUP(CrossProduct,sd,fm)
 PHX_EVALUATE_FIELDS(CrossProduct,workset)
 { 
   if(useScalarField) {
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (int p = 0; p < num_pts; ++p) {
         vec_a_cross_vec_b(cell,p) = vec_a(cell,p,0)*vec_b(cell,p,1)-vec_a(cell,p,1)*vec_b(cell,p,0);
       }
     }
   }
   else {
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (int p = 0; p < num_pts; ++p) {
         vec_a_cross_vec_b(cell,p,0) =   vec_a(cell,p,1)*vec_b(cell,p,2)-vec_a(cell,p,2)*vec_b(cell,p,1);
         vec_a_cross_vec_b(cell,p,1) = -(vec_a(cell,p,0)*vec_b(cell,p,2)-vec_a(cell,p,2)*vec_b(cell,p,0));

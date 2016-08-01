@@ -110,7 +110,7 @@ PHX_POST_REGISTRATION_SETUP(CellAverage,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(CellAverage,workset)
 { 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     
     // start with no average
     average(cell) = 0.0;

@@ -143,7 +143,7 @@ evaluateFields(typename Traits::EvalData workset)
   // This code duplicates Intrepid2::getPhysicalFaceNormals to avoid converting local
   // data structures to and from Intrepid data structures.
   // Note that the magnitude of the normal is related to the area of the physical face.
-  for(std::size_t c=0;c<workset.num_cells;c++) {
+  for(index_t c=0;c<workset.num_cells;c++) {
     for(int f = 0; f < numFaces; f++) {
 
       std::vector<double> faceTanU(3);

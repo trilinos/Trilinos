@@ -138,7 +138,7 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
        field != field_multipliers.end(); ++field) {
     PHX::MDField<ScalarT,Cell,IP> field_data = *field;
 
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
         ScalarT tmpVar = field_data(cell,qp);  
 
@@ -152,7 +152,7 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
   const BasisValues2<double> & bv = *this->wda(workset).bases[basis_index];
 
   // perform integration and vector dot product (at the same time! whoah!)
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t basis = 0; basis < num_nodes; ++basis) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
         for (std::size_t dim = 0; dim < num_dim; ++dim) {
@@ -168,7 +168,7 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
     }
   }
 #else
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+  for (index_t cell = 0; cell < workset.num_cells; ++cell)
   {
     for (std::size_t qp = 0; qp < num_qp; ++qp)
     {

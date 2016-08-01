@@ -106,7 +106,7 @@ PHX_EVALUATE_FIELDS(InterfaceResidual,workset)
 { 
   residual.deep_copy(ScalarT(0.0));
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t ip = 0; ip < num_ip; ++ip) {
       normal_dot_flux(cell,ip) = ScalarT(0.0);
       for (std::size_t dim = 0; dim < num_dim; ++dim) {
@@ -117,7 +117,7 @@ PHX_EVALUATE_FIELDS(InterfaceResidual,workset)
 
   // const Kokkos::DynRankView<double,PHX::Device> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basis_index];
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t basis = 0; basis < residual.dimension(1); ++basis) {
       for (std::size_t qp = 0; qp < num_ip; ++qp) {
         residual(cell,basis) += normal_dot_flux(cell,qp)*bv->weighted_basis_scalar(cell,basis,qp);

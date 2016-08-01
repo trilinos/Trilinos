@@ -130,7 +130,7 @@ evaluateFields(typename Traits::EvalData workset)
   }
 
   // Loop over the faces of the workset cells. An inner quadrature loop should exist too.
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int p = 0; p < num_pts; ++p) {
       result(cell,p) = ScalarT(0.0);
       for (int dim = 0; dim < num_dim; ++dim)

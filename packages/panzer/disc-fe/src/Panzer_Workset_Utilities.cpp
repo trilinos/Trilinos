@@ -116,7 +116,7 @@ namespace panzer {
         << " block_id = \"" << wda(workset).block_id << "\""
         << " num_cells = \"" << workset.num_cells << "\"\n";
      os << "   cell_local_ids = [ "; 
-     for(std::size_t i=0;i<workset.num_cells;i++) 
+     for(index_t i=0;i<workset.num_cells;i++) 
         os << wda(workset).cell_local_ids[i] << " ";
      os << "]\n";
      os << "   ir_degrees = [ "; 
@@ -131,7 +131,7 @@ namespace panzer {
      os << "   int rule = "; wda(workset).int_rules[0]->int_rule->print(os); os << "\n";
      os << "   basis = "; wda(workset).bases[0]->panzer_basis->print(os); os << "\n";
 
-     for(std::size_t i=0;i<workset.num_cells;i++) {
+     for(index_t i=0;i<workset.num_cells;i++) {
         os << "   cell " << i << " vertices =\n";
         for(int j=0;j<wda(workset).cell_vertex_coordinates.dimension(1);j++) {
            os << "      ";

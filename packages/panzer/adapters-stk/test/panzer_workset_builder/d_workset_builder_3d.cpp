@@ -71,7 +71,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
                         std::vector<panzer::BC>& bcs, const int integration_order);
 
 void testIpMatch(const panzer::WorksetDetails& d0, const panzer::WorksetDetails& d1,
-                 const std::size_t num_cells, Teuchos::FancyOStream& out, bool& success);
+                 const index_t num_cells, Teuchos::FancyOStream& out, bool& success);
 
 /*
 namespace {
@@ -288,14 +288,14 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 }
 
 void testIpMatch(const panzer::WorksetDetails& d0, const panzer::WorksetDetails& d1,
-                 const std::size_t num_cells, Teuchos::FancyOStream& out, bool& success)
+                 const index_t num_cells, Teuchos::FancyOStream& out, bool& success)
 {
 #define TED01(m) TEST_EQUALITY(d0.m, d1.m)
   TED01(int_rules.size());
   for (std::size_t iri = 0; iri < d0.int_rules.size(); ++iri) {
     const std::size_t num_ip = d0.int_rules[iri]->cub_points.dimension(0),
       num_dim = d0.int_rules[iri]->cub_points.dimension(1);
-    for (std::size_t cell = 0; cell < num_cells; ++cell)
+    for (index_t cell = 0; cell < num_cells; ++cell)
       for (std::size_t ip = 0; ip < num_ip; ++ip)
         for (std::size_t dim = 0; dim < num_dim; ++dim)
           TED01(int_rules[iri]->ip_coordinates(cell, ip, dim));

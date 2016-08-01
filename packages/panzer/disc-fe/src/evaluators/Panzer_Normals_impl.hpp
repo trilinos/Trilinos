@@ -99,7 +99,7 @@ PHX_EVALUATE_FIELDS(Normals,workset)
     if(normalize) {
       // normalize vector: getPhysicalSideNormals does not 
       // return normalized vectors
-      for(std::size_t c=0;c<workset.num_cells;c++) {
+      for(index_t c=0;c<workset.num_cells;c++) {
         for(std::size_t q=0;q<num_qp;q++) {
           ScalarT norm = 0.0;
    

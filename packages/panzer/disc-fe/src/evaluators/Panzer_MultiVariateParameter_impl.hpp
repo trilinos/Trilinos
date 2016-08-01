@@ -98,7 +98,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   for (int i=0; i<num_param; ++i)
     sum += param[i]->getValue();
 
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
          pt < target_field.dimension(1); ++pt) {
       target_field(cell,pt) = sum;

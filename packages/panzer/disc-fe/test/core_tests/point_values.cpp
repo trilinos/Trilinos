@@ -134,7 +134,7 @@ namespace panzer {
        for(size_type d=0;d<base_cell_dimension;d++)
           TEST_EQUALITY(point_values.coords_ref(p,d),point_coordinates(p,d));
 
-    for(size_type c=0;c<num_cells;c++) {
+    for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(size_type p=0;p<num_points;p++) {
@@ -376,7 +376,7 @@ namespace panzer {
           TEST_EQUALITY(point_values.coords_ref(p,d).val(),point_coordinates(p,d).val());
 
     // check the shifted values (ensure physical mapping)
-    for(size_type c=0;c<num_cells;c++) {
+    for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
@@ -388,7 +388,7 @@ namespace panzer {
     }
 
     // check the jacobian
-    for(size_type c=0;c<num_cells;c++) {
+    for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
@@ -398,7 +398,7 @@ namespace panzer {
           TEST_FLOATING_EQUALITY(point_values.jac(c,p,1,1).val(),dy/2.0,1e-10);
        }
     }
-    for(size_type c=0;c<num_cells;c++) {
+    for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
@@ -416,7 +416,7 @@ namespace panzer {
       out << "  " << point_values.jac_det[c]  << ", " << c << std::endl;
 
     // check the inverse jacobian
-    for(size_type c=0;c<num_cells;c++) {
+    for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {

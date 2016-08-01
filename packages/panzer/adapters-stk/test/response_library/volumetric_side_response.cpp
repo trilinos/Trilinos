@@ -226,7 +226,7 @@ namespace panzer_stk {
         TEST_ASSERT(!(*worksets)[0].int_rules[0]->int_rule->isSide());
 
         panzer::Workset & current = (*worksets)[0];
-        for(std::size_t i=0;i<current.num_cells;i++) {
+        for(panzer::index_t i=0;i<current.num_cells;i++) {
           out << "Cell ID =  " << current.cell_local_ids[i] << std::endl;
         }
      

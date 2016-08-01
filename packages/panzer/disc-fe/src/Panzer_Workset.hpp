@@ -93,7 +93,7 @@ namespace panzer {
   struct Workset : public WorksetDetails {
     Workset() {}
 
-    std::size_t num_cells;
+    index_t num_cells;
     int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
     
     double alpha;

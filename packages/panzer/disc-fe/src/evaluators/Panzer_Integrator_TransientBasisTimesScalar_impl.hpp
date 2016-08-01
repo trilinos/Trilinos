@@ -124,7 +124,7 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
     
    Kokkos::deep_copy (residual.get_static_view(), ScalarT(0.0));
 
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
 	tmp(cell,qp) = multiplier * scalar(cell,qp);
 	for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();

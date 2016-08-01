@@ -198,7 +198,7 @@ panzer::buildWorksets(const WorksetNeeds & needs,
   // Copy cell vertex coordinates into local workset arrays
   std::size_t offset = 0;
   for (std::vector<panzer::Workset>::iterator wkst = worksets.begin(); wkst != worksets.end(); ++wkst) {
-    for (std::size_t cell = 0; cell < wkst->num_cells; ++cell)
+    for (index_t cell = 0; cell < wkst->num_cells; ++cell)
       for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates.dimension(1)); ++ vertex)
 	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates.dimension(2)); ++ dim) {
 	  //wkst->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);

@@ -133,7 +133,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
                                             this->wda(workset).subcell_index, 
                                            *basis->getCellTopology());
 
-    for(std::size_t c=0;c<workset.num_cells;c++) {
+    for(index_t c=0;c<workset.num_cells;c++) {
       for(int b=0;b<dof.extent_int(1);b++) {
         for(int d=0;d<dof.extent_int(2);d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
@@ -158,7 +158,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
     }
 
     // Loop over workset faces and edge points
-    for(std::size_t c=0;c<workset.num_cells;c++) {
+    for(index_t c=0;c<workset.num_cells;c++) {
       for(int pt = 0; pt < numEdges; pt++) {
 
         // Apply parent cell Jacobian to ref. edge tangent
@@ -171,7 +171,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
       }// for pt
     }// for pCell
 
-    for(std::size_t c=0;c<workset.num_cells;c++) {
+    for(index_t c=0;c<workset.num_cells;c++) {
       for(int b=0;b<dof.extent_int(1);b++) {
         for(int d=0;d<dof.extent_int(2);d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
@@ -187,7 +187,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   // loop over residuals scaling by orientation. This gurantees
   // everything is oriented in the "positive" direction, this allows
   // sums acrossed processor to be oriented in the same way (right?)
-  for(std::size_t c=0;c<workset.num_cells;c++) {
+  for(index_t c=0;c<workset.num_cells;c++) {
     for(int b=0;b<dof.extent_int(1);b++) {
       residual(c,b) *= dof_orientation(c,b);
     }

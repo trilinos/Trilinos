@@ -116,7 +116,7 @@ evaluateFields(typename Traits::EvalData workset)
   // coordinates for a set of points, then all y coordinates and if
   // required all z coordinates.
   for (int dim = 0; dim < iv.ip_coordinates.extent_int(2); ++dim)
-    for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+    for (index_t cell = 0; cell < workset.num_cells; ++cell)
       for (int ip = 0; ip < iv.ip_coordinates.extent_int(1); ++ip)
         tmpCoords_[dim].push_back(iv.ip_coordinates(static_cast<int>(cell),ip,dim));
 }
