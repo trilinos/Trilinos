@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 
 
 #
