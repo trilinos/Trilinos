@@ -19,6 +19,7 @@ ADD_SUBDIRECTORIES(
   Merge
   MultiVector
   MultiVectorFiller
+  Node
   PerformanceCGSolve
   Platform
   Utils
