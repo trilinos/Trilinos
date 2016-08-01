@@ -42,7 +42,7 @@
 */
 
 #include "mtk_kokkos.h"
-#include "StaticMesh.h"
+#include <ngp/StaticMesh.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
