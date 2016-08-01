@@ -113,7 +113,7 @@ public:
 
   virtual void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &cellNodes,
                             const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
-                            const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > > &bdryCellLocIds) = 0;
+                            const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) = 0;
 
 }; // PDE
 

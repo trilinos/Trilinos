@@ -105,6 +105,7 @@ private:
   // Set in SetParallelStructure
   int numCells_;
   Teuchos::Array<int> myCellIds_;
+  Teuchos::Array<int> cellOffsets_;
   Teuchos::RCP<const Tpetra::Map<> > myOverlapStateMap_;
   Teuchos::RCP<const Tpetra::Map<> > myUniqueStateMap_;
   Teuchos::RCP<const Tpetra::Map<> > myOverlapControlMap_;
@@ -117,7 +118,8 @@ private:
   // Set in SetCellNodes
   Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
   Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  bdryCellIds_;
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > >  bdryCellLocIds_;
+  //std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > >  bdryCellLocIds_;
+  std::vector<std::vector<std::vector<int> > >  bdryCellLocIds_;
   std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
 
   // Finite element vectors and matrices
@@ -141,16 +143,16 @@ private:
   void setCommunicator(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                        Teuchos::ParameterList &parlist,
                        std::ostream &outStream = std::cout) {
-    if (verbose_ && myRank_==0) {
-      outStream << "Initializing communicator objective." << std::endl;
-    }
     comm_ = comm;
     // Get number of processors and my rank
     myRank_    = comm->getRank();
     numProcs_  = comm->getSize();
     // Parse parameter list
     verbose_ = parlist.sublist("PDE FEM").get("Verbose Output",false);
-    if ( verbose_ && myRank_==0 ) {
+    if (verbose_ && myRank_==0 ) {
+      outStream << "Initialized communicator. " << std::endl;
+    }
+    if (verbose_ && myRank_==0 ) {
       outStream << "Total number of processors: " << numProcs_ << std::endl;
     }
   }
@@ -158,18 +160,15 @@ private:
   void setPDE(const Teuchos::RCP<PDE<Real> > &pde,
               Teuchos::ParameterList &parlist,
               std::ostream &outStream = std::cout) {
-    if (verbose_ && myRank_==0) {
-      outStream << "Initializing PDE objective." << std::endl;
-    }
     pde_ = pde;
+    if (verbose_ && myRank_==0) {
+      outStream << "Initialized PDE." << std::endl;
+    }
   }
 
   void setDiscretization(Teuchos::ParameterList &parlist,
                          const Teuchos::RCP<MeshManager<Real> > &meshMgr = Teuchos::null,
                          std::ostream &outStream = std::cout) {
-    if (verbose_ && myRank_==0) {
-      outStream << "Initializing discretization (MeshManager and DofManager)." << std::endl;
-    }
     if ( meshMgr != Teuchos::null ) {
       // Use MeshManager object if supplied
       meshMgr_ = meshMgr;
@@ -179,20 +178,21 @@ private:
     }
     basisPtrs_ = pde_->getFields();
     dofMgr_ = Teuchos::rcp(new DofManager<Real>(meshMgr_,basisPtrs_));
+    if (verbose_ && myRank_==0) {
+      outStream << "Initialized discretization (MeshManager and DofManager)." << std::endl;
+    }
   }
 
   void setParallelStructure(Teuchos::ParameterList &parlist,
                             std::ostream &outStream = std::cout) {
-    if (verbose_ && myRank_==0) {
-      outStream << "Initializing parallel structure." << std::endl;
-    }
     int cellSplit = parlist.sublist("Geometry").get<int>("Partition type");
     /****************************************************/
     /*** Build parallel communication infrastructure. ***/
     /****************************************************/
     // Partition the cells in the mesh.  We use a basic quasi-equinumerous partitioning,
     // where the remainder, if any, is assigned to the last processor.
-    Teuchos::Array<int> myGlobalIds, cellOffsets(numProcs_, 0);
+    Teuchos::Array<int> myGlobalIds;
+    cellOffsets_.assign(numProcs_, 0);
     int totalNumCells = meshMgr_->getNumCells();
     int cellsPerProc  = totalNumCells / numProcs_;
     numCells_         = cellsPerProc;
@@ -203,8 +203,8 @@ private:
           numCells_ += totalNumCells % numProcs_;
         }
         for (int i=1; i<numProcs_; ++i) {
-          cellOffsets[i] = cellOffsets[i-1] + cellsPerProc
-            + (static_cast<int>(i==1))*(totalNumCells % numProcs_);
+          cellOffsets_[i] = cellOffsets_[i-1] + cellsPerProc
+                            + (static_cast<int>(i==1))*(totalNumCells % numProcs_);
         }
         break;
       case 1:
@@ -213,7 +213,7 @@ private:
           numCells_ += totalNumCells % numProcs_;
         }
         for (int i=1; i<numProcs_; ++i) {
-          cellOffsets[i] = cellOffsets[i-1] + cellsPerProc;
+          cellOffsets_[i] = cellOffsets_[i-1] + cellsPerProc;
         }
         break;
       case 2:
@@ -222,22 +222,22 @@ private:
           numCells_++;
         }
         for (int i=1; i<numProcs_; ++i) {
-          cellOffsets[i] = cellOffsets[i-1] + cellsPerProc
-            + (static_cast<int>(i-1<(totalNumCells%numProcs_)));
+          cellOffsets_[i] = cellOffsets_[i-1] + cellsPerProc
+                            + (static_cast<int>(i-1<(totalNumCells%numProcs_)));
         }
         break;
     }
 
     Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
     int numLocalDofs = cellDofs.dimension(1);
-    if ( verbose_ ) {
-      outStream << "Cell offsets across processors: " << cellOffsets
+    if (verbose_) {
+      outStream << "Cell offsets across processors: " << cellOffsets_
                 << std::endl;
     }
     for (int i=0; i<numCells_; ++i) {
-      myCellIds_.push_back(cellOffsets[myRank_]+i);
+      myCellIds_.push_back(cellOffsets_[myRank_]+i);
       for (int j=0; j<numLocalDofs; ++j) {
-        myGlobalIds.push_back( cellDofs(cellOffsets[myRank_]+i,j) );
+        myGlobalIds.push_back( cellDofs(cellOffsets_[myRank_]+i,j) );
       }
     }
     std::sort(myGlobalIds.begin(), myGlobalIds.end());
@@ -275,6 +275,10 @@ private:
     }
     matJ1Graph_->fillComplete();
     matJ2Graph_ = matJ1Graph_;
+
+    if (verbose_ && myRank_==0) {
+      outStream << "Initialized parallel structures." << std::endl;
+    }
   }
 
   void setCellNodes(void) {
@@ -304,23 +308,42 @@ private:
         bdryCellLocIds_[i].resize(numLocSides);
         for (int j=0; j<numLocSides; ++j) {
           int numCellsSide = (*bdryCellIds_)[i][j].dimension(0);
-          bdryCellLocIds_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCellsSide));
-          bdryCellNodes_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numNodesPerCell, spaceDim));
           for (int k=0; k<numCellsSide; ++k) {
-            int idx = (*bdryCellIds_)[i][j](k);
-            (*bdryCellLocIds_[i][j])(k) = myCellIds_[idx];
+            int idx = mapGlobalToLocalCellId((*bdryCellIds_)[i][j](k));
+            if (idx > -1) {
+              bdryCellLocIds_[i][j].push_back(idx);
+              //if (myRank_==1) {std::cout << "\nrank " << myRank_ << "   bcid " << i << "  " << j << "  " << k << "  " << myCellIds_[idx] << "  " << idx;}
+            }
+          }
+          int myNumCellsSide = bdryCellLocIds_[i][j].size();
+          if (myNumCellsSide > 0) {
+            bdryCellNodes_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(myNumCellsSide, numNodesPerCell, spaceDim));
+          }
+          for (int k=0; k<myNumCellsSide; ++k) {
             for (int l=0; l<numNodesPerCell; ++l) {
               for (int m=0; m<spaceDim; ++m) {
-                (*bdryCellNodes_[i][j])(k, l, m) = nodes(ctn(myCellIds_[idx],l), m);
+                (*bdryCellNodes_[i][j])(k, l, m) = nodes(ctn(myCellIds_[bdryCellLocIds_[i][j][k]],l), m);
               }
             }
           }
+          //if ((myRank_==1) && (myNumCellsSide > 0)) {std::cout << (*bdryCellNodes_[i][j]);}
         }
       }
     }
     bdryCellNodes_.resize(numSideSets);
     // Set PDE cell nodes
     pde_->setCellNodes(volCellNodes_, bdryCellNodes_, bdryCellLocIds_);
+  }
+
+  int mapGlobalToLocalCellId(const int & gid) {
+    int minId = cellOffsets_[myRank_];
+    int maxId = cellOffsets_[myRank_]+numCells_-1;
+    if ((gid >= minId) && (gid <= maxId)) {
+      return (gid - cellOffsets_[myRank_]);
+    }
+    else {
+      return -1;
+    }
   }
 
   void getCoeffFromStateVector(Teuchos::RCP<Intrepid::FieldContainer<Real> > &xcoeff,
@@ -694,6 +717,7 @@ public:
     Teuchos::RCP<Intrepid::FieldContainer<int> >  cellToNodeMapPtr = meshMgr_->getCellToNodeMap();
     Intrepid::FieldContainer<Real>  &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
+    outStream << std::endl;
     outStream << "Number of nodes = " << meshMgr_->getNumNodes() << std::endl;
     outStream << "Number of cells = " << meshMgr_->getNumCells() << std::endl;
     outStream << "Number of edges = " << meshMgr_->getNumEdges() << std::endl;
