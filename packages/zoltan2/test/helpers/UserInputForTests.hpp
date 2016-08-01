@@ -1031,10 +1031,8 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << fname.str() << std::endl;
 
-  // This reader has some problems.  "Pattern" matrices
-  // cannot be read.  Until the
-  // reader is fixed, we'll have to get inputs that are consistent with
-  // the reader. (Tpetra bug 5611 and 5624)
+  // FIXME (mfh 01 Aug 2016) Tpetra::MatrixMarket::Reader has a graph
+  // ("pattern" matrix) reader.  Call its readSparseGraphFile method.
 
   RCP<tcrsMatrix_t> toMatrix;
   RCP<tcrsMatrix_t> fromMatrix;
