@@ -1,10 +1,10 @@
 opt=-O3
 CXX=g++
-CXXFLAGS=$(opt) -Wall -pedantic -fopenmp -DNO_BLAS
+CXXFLAGS=$(opt) -Wall -pedantic -DNO_BLAS -DUSE_COMPLEX -Wshadow -fopenmp
 LDFLAGS=-fopenmp
 # If using MKL:
-# CXXFLAGS=$(opt) -Wall -pedantic -fopenmp -DUSE_MKL -mkl
-# LDFLAGS=-fopenmp -mkl
+# CXXFLAGS=-DUSE_MKL
+# LDFLAGS=-mkl
 
 SOURCES=hts_test.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
@@ -20,4 +20,4 @@ hts_test: $(OBJECTS)
 clean:
 	rm -f *.o hts_test
 
-hts_test.o: hts_test_util.hpp hts.hpp hts_impl.hpp hts_impl_def.hpp
+hts_test.o: hts_test_util.hpp hts.hpp hts_decl.hpp hts_impl.hpp hts_impl_def.hpp
