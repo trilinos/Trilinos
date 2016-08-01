@@ -125,7 +125,7 @@ namespace Xpetra {
         // plausibility check
         for(size_t v = 0; v < maps.size(); ++v) {
           TEUCHOS_TEST_FOR_EXCEPTION(maps[v]->getMinAllGlobalIndex() != 0, std::logic_error,
-                                             "logic error. When using Thyra-style numbering all sub-block maps must start with zero as GID.");
+                                             "logic error. When using Thyra-style numbering all sub-block maps must start with zero as GID. Map block " << v << " starts with GID " << maps[v]->getMinAllGlobalIndex());
         }
 
         // store submaps in Thyra-style ordering
