@@ -514,6 +514,24 @@ public:
     Intrepid::FunctionSpaceTools::evaluate<Real>(*fGrads, *inCoeffs, *gradPhysical_);
   }
 
+  /** \brief Computes integral of the product or dot-product of interpolated
+             FE fields f1 and f2, indexed by (C,P), for values, or (C,P,D),
+             for gradients.
+  */
+  void computeIntegral(const Teuchos::RCP<Intrepid::FieldContainer<Real> > & integral,
+                       const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & f1,
+                       const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & f2) const {
+    int nc = integral->dimension(0);
+    Intrepid::FieldContainer<Real> f2Weighted(nc);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(f2Weighted,              // multiply with weighted measure
+                                                               *cellWeightedMeasure_,
+                                                               *f2);
+    Intrepid::FunctionSpaceTools::integrate<Real>(*integral,                            // compute norm squared of local error
+                                                  *f1,
+                                                  f2Weighted,
+                                                  Intrepid::COMP_CPP);
+  }
+
   /** \brief Returns the degrees of freedom corresponding to the localSideId.
              NEEDS TO BE IMPLEMENTED!
   */
