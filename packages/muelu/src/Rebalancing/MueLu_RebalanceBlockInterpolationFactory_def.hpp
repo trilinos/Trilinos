@@ -79,15 +79,9 @@ RCP<const ParameterList> RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal
 
   validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
   validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Factory for generating the non-rebalanced coarse level A. We need this to make sure the non-rebalanced coarse A is calculated first before rebalancing takes place.");
-  // validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
-  // validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
-  // validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
-  // validParamList->set< RCP<const FactoryBase> >("Importer",       Teuchos::null, "Factory of the importer object used for the rebalancing");
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   // SET_VALID_ENTRY("repartition: use subcommunicators");
 #undef SET_VALID_ENTRY
-  // validParamList->set< int >                   ("write start",               -1, "First level at which coordinates should be written to file");
-  // validParamList->set< int >                   ("write end",                 -1, "Last level at which coordinates should be written to file");
 
   // TODO validation: "P" parameter valid only for type="Interpolation" and "R" valid only for type="Restriction". Like so:
   // if (paramList.isEntry("type") && paramList.get("type) == "Interpolation) {
@@ -130,16 +124,25 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > (originalTransferOp);
   TEUCHOS_TEST_FOR_EXCEPTION(bOriginalTransferOp==Teuchos::null, Exceptions::BadCast, "MueLu::RebalanceBlockTransferFactory::Build: input matrix P or R is not of type BlockedCrsMatrix! error.");
 
-  // plausibility check
-  TEUCHOS_TEST_FOR_EXCEPTION(bOriginalTransferOp->Rows() != 2,Exceptions::RuntimeError, "MueLu::RebalanceBlockTransferFactory::Build: number of block rows of transfer operator is not equal 2. error.");
-  TEUCHOS_TEST_FOR_EXCEPTION(bOriginalTransferOp->Cols() != 2,Exceptions::RuntimeError, "MueLu::RebalanceBlockTransferFactory::Build: number of block columns of transfer operator is not equal 2. error.");
+  RCP<const MapExtractor> rangeMapExtractor = bOriginalTransferOp->getRangeMapExtractor();
+  RCP<const MapExtractor> domainMapExtractor = bOriginalTransferOp->getDomainMapExtractor();
+
+  // check if GIDs for full maps have to be sorted:
+  // For the Thyra mode ordering they do not have to be sorted since the GIDs are
+  // numbered as 0...n1,0...,n2 (starting with zero for each subblock). The MapExtractor
+  // generates unique GIDs during the construction.
+  // For Xpetra style, the GIDs have to be reordered. Such that one obtains a ordered
+  // list of GIDs in an increasing ordering. In Xpetra, the GIDs are all unique through
+  // out all submaps.
+  bool bThyraRangeGIDs  = rangeMapExtractor->getThyraMode();
+  bool bThyraDomainGIDs = domainMapExtractor->getThyraMode();
 
   // declare variables for maps of blocked rebalanced prolongation operator
-  std::vector<GO> fullRangeMapVector;
-  std::vector<GO> fullDomainMapVector;
+  std::vector<GO> fullRangeMapVector;                             // contains all range GIDs on current processor
+  std::vector<GO> fullDomainMapVector;                            // contains all domain GIDs on current processor
   std::vector<RCP<const Map> > subBlockPRangeMaps;
   std::vector<RCP<const Map> > subBlockPDomainMaps;
-  subBlockPRangeMaps.reserve(bOriginalTransferOp->Rows());       // reserve size for block P operators
+  subBlockPRangeMaps.reserve(bOriginalTransferOp->Rows());        // reserve size for block P operators
   subBlockPDomainMaps.reserve(bOriginalTransferOp->Cols());       // reserve size for block P operators
 
   std::vector<Teuchos::RCP<Matrix> > subBlockRebP;
@@ -160,6 +163,14 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     Teuchos::RCP<CrsMatrixWrap> Pwii = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Pii);
     TEUCHOS_TEST_FOR_EXCEPTION(Pwii == Teuchos::null,Xpetra::Exceptions::BadCast, "MueLu::RebalanceBlockTransferFactory::Build: block " << curBlockId << " is not of type CrsMatrixWrap. We need an underlying CsrMatrix to replace domain map and importer!");
 
+    // TODO run this only in the debug version
+    TEUCHOS_TEST_FOR_EXCEPTION(bThyraRangeGIDs == true && Pii->getRowMap()->getMinAllGlobalIndex() != 0,
+        Exceptions::RuntimeError,
+        "MueLu::RebalanceBlockInterpolationFactory::Build: inconsistent Thyra GIDs. Thyra global ids for block range " << curBlockId << " start with " << Pii->getRowMap()->getMinAllGlobalIndex() << " but should start with 0");
+    TEUCHOS_TEST_FOR_EXCEPTION(bThyraDomainGIDs == true && Pii->getColMap()->getMinAllGlobalIndex() != 0,
+        Exceptions::RuntimeError,
+        "MueLu::RebalanceBlockInterpolationFactory::Build: inconsistent Thyra GIDs. Thyra global ids for block domain " << curBlockId << " start with " << Pii->getColMap()->getMinAllGlobalIndex() << " but should start with 0");
+
     // rebalance P11
     if(rebalanceImporter != Teuchos::null) {
       std::stringstream ss; ss << "Rebalancing prolongator block P(" << curBlockId << "," << curBlockId << ")";
@@ -176,7 +187,6 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
       // To achieve this, P is copied into a new matrix that is not fill-completed.
       // The doImport() operation is just used here to make a copy of P: the importer is trivial and there is no data movement involved.
       // The reordering actually happens during the fillComplete() with domainMap == rebalanceImporter->getTargetMap().
-
       RCP<const Import> newImporter;
       {
         SubFactoryMonitor subM(*this, "Rebalancing prolongator  -- fast map replacement", coarseLevel);
@@ -202,8 +212,8 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     }
 
     // fix striding information for rebalanced diagonal block Pii
-    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgPMapExtractor = bOriginalTransferOp->getRangeMapExtractor(); // original map extractor
-    Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgPMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),rgPMapExtractor->getThyraMode()));
+    //RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgPMapExtractor = bOriginalTransferOp->getRangeMapExtractor(); // original map extractor
+    Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),rangeMapExtractor->getThyraMode()));
     Teuchos::RCP<const Map> stridedRgMap = Teuchos::null;
     if(orig_stridedRgMap != Teuchos::null) {
       std::vector<size_t> stridingData = orig_stridedRgMap->getStridingData();
@@ -218,9 +228,9 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
           orig_stridedRgMap->getStridedBlockId(),
           orig_stridedRgMap->getOffset());
     } else stridedRgMap = Pii->getRangeMap();
-    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > doPMapExtractor = bOriginalTransferOp->getDomainMapExtractor(); // original map extractor
-    Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doPMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),doPMapExtractor->getThyraMode()));
-    std::cout << "found domain[" << curBlockId << "] = " << orig_stridedDoMap << std::endl;
+
+    //RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > doPMapExtractor = bOriginalTransferOp->getDomainMapExtractor(); // original map extractor
+    Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),domainMapExtractor->getThyraMode()));
 
     Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
     if(orig_stridedDoMap != Teuchos::null) {
@@ -244,18 +254,22 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
       Pii->CreateView("stridedMaps", stridedRgMap, stridedDoMap);
 
     // append strided row map (= range map) to list of range maps.
-    Teuchos::RCP<const Map> rangeMapii = Pii->getRowMap("stridedMaps"); //Pii->getRangeMap();
+    Teuchos::RCP<const Map> rangeMapii = Pii->getRowMap("stridedMaps"); // strided range map
     subBlockPRangeMaps.push_back(rangeMapii);
     Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = Pii->getRangeMap()->getNodeElementList();
+    // append the GIDs in the end. Do not sort if we have Thyra style GIDs
     fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMapii.begin(), nodeRangeMapii.end());
-    sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
+    if(bThyraRangeGIDs == false)
+      sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
 
     // append strided col map (= domain map) to list of range maps.
-    Teuchos::RCP<const Map> domainMapii = Pii->getColMap("stridedMaps"); //Pii->getDomainMap();
+    Teuchos::RCP<const Map> domainMapii = Pii->getColMap("stridedMaps"); // strided domain map
     subBlockPDomainMaps.push_back(domainMapii);
     Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = Pii->getDomainMap()->getNodeElementList();
+    // append the GIDs in the end. Do not sort if we have Thyra style GIDs
     fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMapii.begin(), nodeDomainMapii.end());
-    sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
+    if(bThyraDomainGIDs == false)
+      sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
 
     curBlockId++; // increase block id index
 
@@ -320,12 +334,12 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   }
 
   // build map extractors
-  Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rangeMapExtractor  =
-      Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(fullRangeMap,  subBlockPRangeMaps);
-  Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domainMapExtractor =
-      Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(fullDomainMap, subBlockPDomainMaps);
+  Teuchos::RCP<const MapExtractor> rebrangeMapExtractor  =
+      MapExtractorFactory::Build(fullRangeMap,  subBlockPRangeMaps, bThyraRangeGIDs);
+  Teuchos::RCP<const MapExtractor> rebdomainMapExtractor =
+      MapExtractorFactory::Build(fullDomainMap, subBlockPDomainMaps, bThyraDomainGIDs);
 
-  Teuchos::RCP<BlockedCrsMatrix> bRebP = Teuchos::rcp(new BlockedCrsMatrix(rangeMapExtractor,domainMapExtractor,10));
+  Teuchos::RCP<BlockedCrsMatrix> bRebP = Teuchos::rcp(new BlockedCrsMatrix(rebrangeMapExtractor,rebdomainMapExtractor,10));
   for(size_t i = 0; i<subBlockPRangeMaps.size(); i++) {
      Teuchos::RCP<CrsMatrixWrap> crsOpii = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(subBlockRebP[i]);
      TEUCHOS_TEST_FOR_EXCEPTION(crsOpii == Teuchos::null,Xpetra::Exceptions::BadCast, "MueLu::RebalanceBlockTransferFactory::Build: block P" << i << " is not of type CrsMatrixWrap.");
@@ -334,8 +348,6 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   bRebP->fillComplete();
 
   Set(coarseLevel, "P", Teuchos::rcp_dynamic_cast<Matrix>(bRebP));
-
-
 } // Build
 
 } // namespace MueLu
