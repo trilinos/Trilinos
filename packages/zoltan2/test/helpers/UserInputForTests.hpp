@@ -132,7 +132,7 @@ public:
   typedef Tpetra::Export<zlno_t, zgno_t, znode_t> export_t;
   typedef Tpetra::Import<zlno_t, zgno_t, znode_t> import_t;
   typedef map_t::node_type default_znode_t;
-  
+
 
   /*! \brief Constructor that reads in a matrix/graph from disk.
    *   \param path is the path to the test data.  In the case of
@@ -152,11 +152,11 @@ public:
    *  directory and \c testData is \c brack2_3, then we'll read
    *  in ch_brack2_3/brack2_3.graph and ch_brack2_3/brack2_3.coords.
    */
-  
+
   UserInputForTests(string path, string testData,
                     const RCP<const Comm<int> > &c, bool debugInfo=false,
                     bool distributeInput=true);
-  
+
   /*! \brief Constructor that generates an arbitrary sized sparse matrix.
    *   \param x the x dimension of the mesh that generates the matrix.
    *   \param y the y dimension of the mesh that generates the matrix.
@@ -176,7 +176,7 @@ public:
   UserInputForTests(int x, int y, int z, string matrixType,
                     const RCP<const Comm<int> > &c, bool debugInfo=false,
                     bool distributeInput=true);
-  
+
   /*! \brief Constructor that can generate a sp matrix or read a
    *      matrix/graph file defined in an input parameter list.
    *   \param pList the parameter list containing input options
@@ -194,186 +194,186 @@ public:
    */
   UserInputForTests(const ParameterList &pList,
                     const RCP<const Comm<int> > &c);
-  
+
   /*! \brief Generate lists of random scalars.
    */
   static void getUIRandomData(unsigned int seed, zlno_t length,
                               zscalar_t min, zscalar_t max, ArrayView<ArrayRCP<zscalar_t > > data);
-  
+
   RCP<tMVector_t> getUICoordinates();
-  
+
   RCP<tMVector_t> getUIWeights();
-  
+
   RCP<tMVector_t> getUIEdgeWeights();
-  
+
   RCP<tcrsMatrix_t> getUITpetraCrsMatrix();
-  
+
   RCP<tcrsGraph_t> getUITpetraCrsGraph();
-  
+
   RCP<tVector_t> getUITpetraVector();
-  
+
   RCP<tMVector_t> getUITpetraMultiVector(int nvec);
-  
+
   RCP<xcrsMatrix_t> getUIXpetraCrsMatrix();
-  
+
   RCP<xcrsGraph_t> getUIXpetraCrsGraph();
-  
+
   RCP<xVector_t> getUIXpetraVector();
-  
+
   RCP<xMVector_t> getUIXpetraMultiVector(int nvec);
-  
+
 #ifdef HAVE_ZOLTAN2_PAMGEN
   PamgenMesh * getPamGenMesh(){return this->pamgen_mesh.operator->();}
 #endif
-  
+
 #ifdef HAVE_EPETRA_DATA_TYPES
   RCP<Epetra_CrsGraph> getUIEpetraCrsGraph();
-  
+
   RCP<Epetra_CrsMatrix> getUIEpetraCrsMatrix();
-  
+
   RCP<Epetra_Vector> getUIEpetraVector();
-  
+
   RCP<Epetra_MultiVector> getUIEpetraMultiVector(int nvec);
 #endif
   bool hasInput();
-  
+
   bool hasInputDataType(const string &input_type);
-  
+
   bool hasUICoordinates();
-  
+
   bool hasUIWeights();
-  
+
   bool hasUIEdgeWeights();
-  
+
   bool hasUITpetraCrsMatrix();
-  
+
   bool hasUITpetraCrsGraph();
-  
+
   bool hasUITpetraVector();
-  
+
   bool hasUITpetraMultiVector();
-  
+
   bool hasUIXpetraCrsMatrix();
-  
+
   bool hasUIXpetraCrsGraph();
-  
+
   bool hasUIXpetraVector();
-  
+
   bool hasUIXpetraMultiVector();
-  
+
   bool hasPamgenMesh();
 #ifdef HAVE_EPETRA_DATA_TYPES
   bool hasUIEpetraCrsGraph();
-  
+
   bool hasUIEpetraCrsMatrix();
-  
+
   bool hasUIEpetraVector();
-  
+
   bool hasUIEpetraMultiVector();
 
 #endif
-  
+
 private:
-  
+
   bool verbose_;
-  
+
   const RCP<const Comm<int> > tcomm_;
-  
+
   bool havePamgenMesh;
 #ifdef HAVE_ZOLTAN2_PAMGEN
   RCP<PamgenMesh> pamgen_mesh;
 #endif
-  
+
   RCP<tcrsMatrix_t> M_;
   RCP<xcrsMatrix_t> xM_;
-  
+
   RCP<tMVector_t> xyz_;
   RCP<tMVector_t> vtxWeights_;
   RCP<tMVector_t> edgWeights_;
-  
+
 #ifdef HAVE_EPETRA_DATA_TYPES
   RCP<const Epetra_Comm> ecomm_;
   RCP<Epetra_CrsMatrix> eM_;
   RCP<Epetra_CrsGraph> eG_;
 #endif
-  
+
   // Read a Matrix Market file into M_
   // using Tpetra::MatrixMarket::Reader.
   // If there are "Tim Davis" style coordinates
   // that go with the file,  read those into xyz_.
-  
+
   void readMatrixMarketFile(string path, string testData,bool distributeInput = true);
-  
+
   // Build matrix M_ from a mesh and a problem type
   // with Galeri::Xpetra.
-  
+
   void buildCrsMatrix(int xdim, int ydim, int zdim, string type,
                       bool distributeInput);
-  
+
   // Read a Zoltan1 Chaco or Matrix Market file
   // into M_.  If it has geometric coordinates,
   // read them into xyz_.  If it has weights,
   // read those into vtxWeights_ and edgWeights_.
   void readZoltanTestData(string path, string testData,
                           bool distributeInput);
-  
+
   // Read Zoltan data that is in a .graph file.
   void getUIChacoGraph(FILE *fptr, bool haveAssign, FILE *assignFile,
                        string name, bool distributeInput);
-  
+
   // Read Zoltan data that is in a .coords file.
   void getUIChacoCoords(FILE *fptr, string name);
-  
+
   //  Chaco reader code: This code is copied from zoltan/ch.
   //  It might benefit from a rewrite and simplification.
-  
+
   //  Chaco reader helper functions:  copied from zoltan/ch
   static const int CHACO_LINE_LENGTH=200;
   char chaco_line[CHACO_LINE_LENGTH];    /* space to hold values */
   int chaco_offset;        /* offset into line for next data */
   int chaco_break_pnt;    /* place in sequence to pause */
   int chaco_save_pnt;        /* place in sequence to save */
-  
+
   double chaco_read_val(FILE* infile, int *end_flag);
   int chaco_read_int(FILE* infile, int *end_flag);
   void chaco_flush_line(FILE*);
-  
+
   // Chaco graph reader:  copied from zoltan/ch
   int chaco_input_graph(FILE *fin, const char *inname, int **start,
                         int **adjacency, int  *nvtxs, int  *nVwgts,
                         float **vweights, int  *nEwgts, float **eweights);
-  
+
   // Chaco coordinate reader:  copied from zoltan/ch
   int chaco_input_geom(FILE *fingeom, const char *geomname, int nvtxs,
                        int  *igeom, double **x, double **y, double **z);
-  
+
   // Chaco coordinate reader:  copied from zoltan/ch
   int chaco_input_assign(FILE *finassign, const char *assignname, int nvtxs,
                          short *assignments);
-  
-  
+
+
   // Read a GeomGen.txt file into M_
   // Read coordinates into xyz_.
   // If iti has weights read those to vtxWeights_
   // and edgeWeights_
   void readGeometricGenTestData(string path, string testData);
-  
+
   // Geometry Gnearatory helper function
   void readGeoGenParams(string paramFileName,
                         ParameterList &geoparams);
-  
+
   // utility methods used when reading geom gen files
-  
+
   static string trim_right_copy(const string& s,
                                 const string& delimiters = " \f\n\r\t\v" );
-  
+
   static string trim_left_copy(const string& s,
                                const string& delimiters = " \f\n\r\t\v" );
-  
+
   static string trim_copy(const string& s,
                           const string& delimiters = " \f\n\r\t\v" );
-  
-  
+
+
   // Read a pamgen mesh
   void readPamgenMeshFile(string path, string testData);
 #ifdef HAVE_ZOLTAN2_PAMGEN
@@ -401,7 +401,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     readZoltanTestData(path, testData, distributeInput);
   else
     readMatrixMarketFile(path, testData);
-  
+
 #ifdef HAVE_EPETRA_DATA_TYPES
   ecomm_ = Xpetra::toEpetra(c);
 #endif
@@ -432,13 +432,13 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
       matrixType = string("Laplace3D");
     else
       throw std::runtime_error("input");
-    
+
     if (verbose_ && tcomm_->getRank() == 0)
       std::cout << "UserInputForTests, Matrix type : " << matrixType << std::endl;
   }
-  
+
   buildCrsMatrix(x, y, z, matrixType, distributeInput);
-  
+
 #ifdef HAVE_EPETRA_DATA_TYPES
   ecomm_ = Xpetra::toEpetra(c);
 #endif
@@ -453,30 +453,30 @@ ecomm_(), eM_(), eG_(),
 #endif
 chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 {
-  
+
   // get options
   bool distributeInput = true, debugInfo = true;
-  
+
   if(pList.isParameter("distribute input"))
     distributeInput = pList.get<bool>("distribute input");
-  
+
   if(pList.isParameter("debug"))
     debugInfo = pList.get<bool>("debug");
   this->verbose_ = debugInfo;
-  
+
   if(pList.isParameter("input file"))
   {
-    
+
     // get input path
     string path(".");
     if(pList.isParameter("input path"))
       path = pList.get<string>("input path");
-    
+
     string testData = pList.get<string>("input file");
-    
+
     // find out if we are working from the zoltan1 test diretory
     USERINPUT_FILE_FORMATS file_format = MATRIX_MARKET;
-    
+
     // find out if we are using the geometric generator
     if(pList.isParameter("file type") && pList.get<string>("file type") == "Geometric Generator")
       file_format = GEOMGEN;
@@ -486,7 +486,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     }
     else if(pList.isParameter("file type") && pList.get<string>("file type") == "Chaco")
       file_format = CHACO; // this flag calls read ZoltanTestData, which calls the chaco readers...
-    
+
     // read the input file
     switch (file_format) {
       case GEOMGEN: readGeometricGenTestData(path,testData); break;
@@ -496,16 +496,16 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     }
 
   }else if(pList.isParameter("x") || pList.isParameter("y") || pList.isParameter("z")){
-    
+
     int x,y,z;
     x = y = z = 0;
     if(pList.isParameter("x")) x = pList.get<int>("x");
     if(pList.isParameter("y")) y = pList.get<int>("y");
     if(pList.isParameter("z")) z = pList.get<int>("z");
-    
+
     string problemType = "";
     if(pList.isParameter("equation type")) problemType = pList.get<string>("equation type");
-    
+
     if (problemType.size() == 0){ /** default behavior */
       int dim = 0;
       if (x > 0) dim++;
@@ -519,22 +519,22 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
         problemType = string("Laplace3D");
       else
         throw std::runtime_error("input");
-      
+
       if (verbose_ && tcomm_->getRank() == 0)
         std::cout << "UserInputForTests, Matrix type : " << problemType << std::endl;
     }
-    
-    
+
+
     buildCrsMatrix(x, y, z, problemType, distributeInput);
-    
+
   }else{
     std::cerr << "Input file block undefined!" << std::endl;
   }
-  
+
 #ifdef HAVE_EPETRA_DATA_TYPES
   ecomm_ = Xpetra::toEpetra(c);
 #endif
-  
+
 }
 
 
@@ -573,7 +573,7 @@ RCP<Zoltan2_TestingFramework::tVector_t> UserInputForTests::getUITpetraVector()
 {
   RCP<tVector_t> V = rcp(new tVector_t(M_->getRowMap(),  1));
   V->randomize();
-  
+
   return V;
 }
 
@@ -581,7 +581,7 @@ RCP<Zoltan2_TestingFramework::tMVector_t> UserInputForTests::getUITpetraMultiVec
 {
   RCP<tMVector_t> mV = rcp(new tMVector_t(M_->getRowMap(), nvec));
   mV->randomize();
-  
+
   return mV;
 }
 
@@ -618,27 +618,27 @@ RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
   RCP<const tcrsGraph_t> tgraph = M_->getCrsGraph();
   RCP<const Tpetra::Map<zlno_t, zgno_t> > trowMap = tgraph->getRowMap();
   RCP<const Tpetra::Map<zlno_t, zgno_t> > tcolMap = tgraph->getColMap();
-  
+
   int nElts = static_cast<int>(trowMap->getGlobalNumElements());
   int nMyElts = static_cast<int>(trowMap->getNodeNumElements());
   int base = trowMap->getIndexBase();
   ArrayView<const int> gids = trowMap->getNodeElementList();
-  
+
   Epetra_BlockMap erowMap(nElts, nMyElts,
                           gids.getRawPtr(), 1, base, *ecomm_);
-  
+
   Array<int> rowSize(nMyElts);
   for (int i=0; i < nMyElts; i++){
     rowSize[i] = static_cast<int>(M_->getNumEntriesInLocalRow(i+base));
   }
-  
+
   size_t maxRow = M_->getNodeMaxNumRowEntries();
   Array<int> colGids(maxRow);
   ArrayView<const int> colLid;
-  
+
   eG_ = rcp(new Epetra_CrsGraph(Copy, erowMap,
                                 rowSize.getRawPtr(), true));
-  
+
   for (int i=0; i < nMyElts; i++){
     tgraph->getLocalRowView(i+base, colLid);
     for (int j=0; j < colLid.size(); j++)
@@ -655,14 +655,14 @@ RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
     throw std::runtime_error("could not read mtx file");
   RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
   eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
-  
+
   size_t maxRow = M_->getNodeMaxNumRowEntries();
   int nrows = egraph->NumMyRows();
   int base = egraph->IndexBase();
   const Epetra_BlockMap &rowMap = egraph->RowMap();
   const Epetra_BlockMap &colMap = egraph->ColMap();
   Array<int> colGid(maxRow);
-  
+
   for (int i=0; i < nrows; i++){
     ArrayView<const int> colLid;
     ArrayView<const zscalar_t> nz;
@@ -735,7 +735,7 @@ bool UserInputForTests::hasInputDataType(const string &input_type)
   else if(input_type == "epetra_crs_matrix")
     return this->hasUIEpetraCrsMatrix();
 #endif
-  
+
   return false;
 }
 
@@ -827,7 +827,7 @@ void UserInputForTests::getUIRandomData(unsigned int seed, zlno_t length,
 {
   if (length < 1)
     return;
-  
+
   size_t dim = data.size();
   for (size_t i=0; i < dim; i++){
     zscalar_t *tmp = new zscalar_t [length];
@@ -835,7 +835,7 @@ void UserInputForTests::getUIRandomData(unsigned int seed, zlno_t length,
       throw (std::bad_alloc());
     data[i] = Teuchos::arcp(tmp, 0, length, true);
   }
-  
+
   zscalar_t scalingFactor = (max-min) / RAND_MAX;
   srand(seed);
   for (size_t i=0; i < dim; i++){
@@ -874,31 +874,30 @@ void UserInputForTests::readGeometricGenTestData(string path,
 
   std::ostringstream fname;
   fname << path << "/" << testData << ".txt";
-  
-  RCP<default_znode_t> dnode = rcp (new default_znode_t ());
+
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << fname.str() << std::endl;
-  
+
   Teuchos::ParameterList geoparams("geo params");
   readGeoGenParams(fname.str(),geoparams);
-  
+
   geometricgen_t * gg = new geometricgen_t(geoparams, this->tcomm_);
-  
+
   // get coordinate and point info
   int coord_dim = gg->getCoordinateDimension();
   int numWeightsPerCoord = gg->getNumWeights();
   zlno_t numLocalPoints = gg->getNumLocalCoords();
   zgno_t numGlobalPoints = gg->getNumGlobalCoords();
-  
+
   // allocate an array of coordinate arrays
   zscalar_t **coords = new zscalar_t * [coord_dim];
   for(int i = 0; i < coord_dim; ++i){
     coords[i] = new zscalar_t[numLocalPoints];
   }
-  
+
   // get a copy of the data
   gg->getLocalCoordinatesCopy(coords);
-  
+
   // get an array of arrays of weight data (if any)
   zscalar_t **weight = NULL;
   if (numWeightsPerCoord) {
@@ -907,18 +906,18 @@ void UserInputForTests::readGeometricGenTestData(string path,
     for(int i = 0; i < numWeightsPerCoord; ++i){
       weight[i] = new zscalar_t[numLocalPoints];
     }
-    
+
     // get a copy of the weight data
     gg->getLocalWeightsCopy(weight);
   }
-  
+
   delete gg; // free up memory from geom gen
-  
-  
+
+
   // make a Tpetra map
   RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp =
   rcp(new Tpetra::Map<zlno_t, zgno_t, znode_t>(numGlobalPoints, numLocalPoints, 0, this->tcomm_));
-  
+
   // make an array of array views containing the coordinate data
   Teuchos::Array<Teuchos::ArrayView<const zscalar_t> > coordView(coord_dim);
   for (int i=0; i < coord_dim; i++){
@@ -931,12 +930,12 @@ void UserInputForTests::readGeometricGenTestData(string path,
       coordView[i] = a;
     }
   }
-  
+
   // set the xyz_ multivector
   xyz_ = RCP<tMVector_t>(new
                          tMVector_t(mp, coordView.view(0, coord_dim),
                                     coord_dim));
-  
+
   // set the vtx weights
   if (numWeightsPerCoord) {
     // make an array of array views containing the weight data
@@ -951,7 +950,7 @@ void UserInputForTests::readGeometricGenTestData(string path,
         weightView[i] = a;
       }
     }
-    
+
     vtxWeights_ = RCP<tMVector_t>(new tMVector_t(mp, weightView.view(0, numWeightsPerCoord),
                                                  numWeightsPerCoord));
   }
@@ -959,18 +958,18 @@ void UserInputForTests::readGeometricGenTestData(string path,
 
 void UserInputForTests::readGeoGenParams(string paramFileName,
                                          ParameterList &geoparams){
-  
+
   const char param_comment = '#';
-  
+
   std::string input = "";
   char inp[25000];
   for(int i = 0; i < 25000; ++i){
     inp[i] = 0;
   }
-  
+
   bool fail = false;
   if(this->tcomm_->getRank() == 0){
-    
+
     fstream inParam(paramFileName.c_str());
     if (inParam.fail())
     {
@@ -995,9 +994,9 @@ void UserInputForTests::readGeoGenParams(string paramFileName,
       }
     }
   }
-  
-  
-  
+
+
+
   int size = (int)input.size();
   if(fail){
     size = -1;
@@ -1028,22 +1027,22 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
 {
   std::ostringstream fname;
   fname << path << "/" << testData << ".mtx";
-  
-  RCP<default_znode_t> dnode = rcp (new default_znode_t ());
+
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << fname.str() << std::endl;
-  
+
   // This reader has some problems.  "Pattern" matrices
   // cannot be read.  Until the
   // reader is fixed, we'll have to get inputs that are consistent with
   // the reader. (Tpetra bug 5611 and 5624)
-  
+
   RCP<tcrsMatrix_t> toMatrix;
   RCP<tcrsMatrix_t> fromMatrix;
   bool aok = true;
   try{
-    fromMatrix = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
-                                                                    fname.str(), tcomm_, dnode, true, true, false);
+    typedef Tpetra::MatrixMarket::Reader<tcrsMatrix_t> reader_type;
+    fromMatrix = reader_type::readSparseFile(fname.str(), tcomm_,
+                                             true, true, false);
     if(!distributeInput)
     {
       if (verbose_ && tcomm_->getRank() == 0)
@@ -1065,33 +1064,33 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
     }
   }catch (std::exception &e) {
     if (tcomm_->getRank() == 0)
-      std::cout << "UserInputForTests unable to read matrix market file:" 
+      std::cout << "UserInputForTests unable to read matrix market file:"
                 << fname.str() << std::endl;
     aok = false;
   }
-  TEST_FAIL_AND_THROW(*tcomm_, aok, 
+  TEST_FAIL_AND_THROW(*tcomm_, aok,
                       "UserInputForTests unable to read matrix market file");
-  
+
   M_ = toMatrix;
 
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 
   // Open the coordinate file.
-  
+
   fname.str("");
   fname << path << "/" << testData << "_coord.mtx";
-  
+
   size_t coordDim = 0, numGlobalCoords = 0;
   size_t msg[2]={0,0};
   ArrayRCP<ArrayRCP<zscalar_t> > xyz;
   std::ifstream coordFile;
-  
+
   if (tcomm_->getRank() == 0){
-    
+
     if (verbose_)
       std::cout << "UserInputForTests, Read: " <<
       fname.str() << std::endl;
-    
+
     int fail = 0;
     try{
       coordFile.open(fname.str().c_str());
@@ -1099,14 +1098,14 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
     catch (std::exception &e){ // there is no coordinate file
       fail = 1;
     }
-    
+
     if (!fail){
-      
+
       // Read past banner to number and dimension of coordinates.
-      
+
       char c[256];
       bool done=false;
-      
+
       while (!done && !fail && coordFile.good()){
         coordFile.getline(c, 256);
         if (!c[0])
@@ -1121,13 +1120,13 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
             fail=1;
         }
       }
-      
+
       if (done){
-        
+
         // Read in the coordinates.
-        
+
         xyz = Teuchos::arcp(new ArrayRCP<zscalar_t> [coordDim], 0, coordDim);
-        
+
         for (size_t dim=0; !fail && dim < coordDim; dim++){
           size_t idx;
           zscalar_t *tmp = new zscalar_t [numGlobalCoords];
@@ -1135,49 +1134,49 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
             fail = 1;
           else{
             xyz[dim] = Teuchos::arcp(tmp, 0, numGlobalCoords);
-            
+
             for (idx=0; !coordFile.eof() && idx < numGlobalCoords; idx++){
               coordFile.getline(c, 256);
               std::istringstream s(c);
               s >> tmp[idx];
             }
-            
+
             if (idx < numGlobalCoords)
               fail = 1;
           }
         }
-        
+
         if (fail){
           ArrayRCP<zscalar_t> emptyArray;
           for (size_t dim=0; dim < coordDim; dim++)
             xyz[dim] = emptyArray;   // free the memory
-          
+
           coordDim = 0;
         }
       }
       else{
         fail = 1;
       }
-      
+
       coordFile.close();
     }
-    
+
     msg[0] = coordDim;
     msg[1] = numGlobalCoords;
   }
-  
+
   // Broadcast coordinate dimension
   Teuchos::broadcast<int, size_t>(*tcomm_, 0, 2, msg);
-  
+
   coordDim = msg[0];
   numGlobalCoords = msg[1];
-  
+
   if (coordDim == 0)
     return;
-  
+
   zgno_t base;
   RCP<const map_t> toMap;
-  
+
   if (!M_.is_null()){
     base = M_->getIndexBase();
     const RCP<const map_t> &mapM = M_->getRowMap();
@@ -1189,59 +1188,59 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
       std::cout << "Matrix was null. ";
       std::cout << "Constructing distribution map for coordinate vector." <<  std::endl;
     }
-    
+
     base = 0;
     if(!distributeInput)
     {
       if (verbose_ && tcomm_->getRank() == 0)
         std::cout << "Constructing serial distribution map for coordinates." <<  std::endl;
-      
+
       size_t numLocalCoords = this->tcomm_->getRank() == 0 ? numGlobalCoords : 0;
       toMap = rcp(new map_t(numGlobalCoords,numLocalCoords, base, tcomm_));
     }else{
       toMap = rcp(new map_t(numGlobalCoords, base, tcomm_));
     }
   }
-  
+
   // Export coordinates to their owners
-  
+
   xyz_ = rcp(new tMVector_t(toMap, coordDim));
-  
+
   ArrayRCP<ArrayView<const zscalar_t> > coordLists(coordDim);
-  
+
   if (tcomm_->getRank() == 0){
-    
+
     for (size_t dim=0; dim < coordDim; dim++)
       coordLists[dim] = xyz[dim].view(0, numGlobalCoords);
-    
+
     zgno_t *tmp = new zgno_t [numGlobalCoords];
     if (!tmp)
       throw std::bad_alloc();
-    
+
     ArrayRCP<const zgno_t> rowIds = Teuchos::arcp(tmp, 0, numGlobalCoords);
-    
+
     zgno_t basePlusNumGlobalCoords = base + static_cast<zgno_t>(numGlobalCoords);
     for (zgno_t id=base; id < basePlusNumGlobalCoords; id++)
       *tmp++ = id;
-    
+
     RCP<const map_t> fromMap = rcp(new map_t(numGlobalCoords,
                                              rowIds.view(0, numGlobalCoords), base, tcomm_));
-    
+
     tMVector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
-    
+
     export_t exporter(fromMap, toMap);
-    
+
     xyz_->doExport(allCoords, exporter, Tpetra::INSERT);
   }
   else{
-    
+
     RCP<const map_t> fromMap = rcp(new map_t(numGlobalCoords,
                                              ArrayView<zgno_t>(), base, tcomm_));
-    
+
     tMVector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
-    
+
     export_t exporter(fromMap, toMap);
-    
+
     xyz_->doExport(allCoords, exporter, Tpetra::INSERT);
   }
 }
@@ -1253,7 +1252,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   Teuchos::CommandLineProcessor tclp;
   Galeri::Xpetra::Parameters<zgno_t> params(tclp,
                                             xdim, ydim, zdim, problemType);
-  
+
   RCP<const Tpetra::Map<zlno_t, zgno_t> > map;
   if (distributeInput)
     map = rcp(new Tpetra::Map<zlno_t, zgno_t>(params.GetNumGlobalElements(),
@@ -1265,12 +1264,12 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
     map = rcp(new Tpetra::Map<zlno_t, zgno_t>(nGlobalElements, nLocalElements, 0,
                                               tcomm_));
   }
-  
+
   if (verbose_ && tcomm_->getRank() == 0){
-    
+
     std::cout << "Matrix is " << (distributeInput ? "" : "not");
     std::cout << "distributed." << endl;
-    
+
     std::cout << "UserInputForTests, Create matrix with " << problemType;
     std::cout << " (and " << xdim;
     if (zdim > 0)
@@ -1279,11 +1278,11 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
       std::cout << " x"  << ydim << " x 1";
     else
       std::cout << "x 1 x 1";
-    
+
     std::cout << " mesh)" << std::endl;
-    
+
   }
-  
+
   bool aok = true;
   try{
     RCP<Galeri::Xpetra::Problem<Tpetra::Map<zlno_t, zgno_t>, Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t>, Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t> > > Pr =
@@ -1294,18 +1293,18 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   catch (std::exception &e) {    // Probably not enough memory
     aok = false;
   }
-  TEST_FAIL_AND_THROW(*tcomm_, aok, 
+  TEST_FAIL_AND_THROW(*tcomm_, aok,
                       "UserInputForTests Galeri::Xpetra::BuildProblem failed");
-  
+
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 
   // Compute the coordinates for the matrix rows.
-  
+
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout <<
     "UserInputForTests, Implied matrix row coordinates computed" <<
     std::endl;
-  
+
   ArrayView<const zgno_t> gids = map->getNodeElementList();
   zlno_t count = static_cast<zlno_t>(gids.size());
   int dim = 3;
@@ -1315,9 +1314,9 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   else if (problemType == string("Laplace1D") ||
            problemType == string("Identity"))
     dim = 1;
-  
+
   Array<ArrayRCP<zscalar_t> > coordinates(dim);
-  
+
   if (count > 0){
     for (int i=0; i < dim; i++){
       zscalar_t *c = new zscalar_t [count];
@@ -1325,7 +1324,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
         throw(std::bad_alloc());
       coordinates[i] = Teuchos::arcp(c, 0, count, true);
     }
-    
+
     if (dim==3){
       zscalar_t *x = coordinates[0].getRawPtr();
       zscalar_t *y = coordinates[1].getRawPtr();
@@ -1353,12 +1352,12 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
         x[i] = zscalar_t(gids[i]);
     }
   }
-  
+
   Array<ArrayView<const zscalar_t> > coordView(dim);
   if (count > 0)
     for (int i=0; i < dim; i++)
       coordView[i] = coordinates[i].view(0,count);
-  
+
   xyz_ = rcp(new tMVector_t(map, coordView.view(0, dim), dim));
 #else
   throw std::runtime_error("Galeri input requested but Trilinos is "
@@ -1376,23 +1375,23 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
   int fileInfo[3];
 
   for (int i = 0; i < CHACO_LINE_LENGTH; i++) chaco_line[i] = '\0';
-  
+
   if (rank == 0){
     // set chacho graph file name
     std::ostringstream chGraphFileName;
     chGraphFileName << path << "/" << testData << ".graph";
-    
+
     // set chaco graph
     std::ostringstream chCoordFileName;
     chCoordFileName << path << "/" << testData << ".coords";
-    
+
     // set chaco graph
     std::ostringstream chAssignFileName;
     chAssignFileName << path << "/" << testData << ".assign";
 
     // open file
     graphFile = fopen(chGraphFileName.str().c_str(), "r");
-    
+
     if(!graphFile) // maybe the user is using the default zoltan1 path convention
     {
       chGraphFileName.str("");
@@ -1405,14 +1404,14 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
       // the user has not provided a valid path to the file
       graphFile = fopen(chGraphFileName.str().c_str(), "r");
     }
-    
+
     memset(fileInfo, 0, sizeof(int) * 3); // set fileinfo to 0's
     if (graphFile){
       fileInfo[0] = 1;
       if (verbose_ && tcomm_->getRank() == 0)
         std::cout << "UserInputForTests, open " <<
         chGraphFileName.str () << std::endl;
-      
+
       coordFile = fopen(chCoordFileName.str().c_str(), "r");
       if (coordFile){
         fileInfo[1] = 1;
@@ -1435,22 +1434,22 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
       }
     }
   }
-  
+
   // broadcast whether we have graphs and coords to all processes
   Teuchos::broadcast<int, int>(*tcomm_, 0, 3, fileInfo);
-  
+
   bool haveGraph = (fileInfo[0] == 1);
   bool haveCoords = (fileInfo[1] == 1);
   bool haveAssign = (fileInfo[2] == 1);
-  
+
   if (haveGraph){
     // builds M_, vtxWeights_, and edgWeights_ and closes file.
     try{
-      getUIChacoGraph(graphFile, haveAssign, assignFile, 
+      getUIChacoGraph(graphFile, haveAssign, assignFile,
                       testData, distributeInput);
     }
     Z2_FORWARD_EXCEPTIONS
-    
+
     if (haveCoords){
       // builds xyz_ and closes the file.
       try{
@@ -1459,7 +1458,7 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
       Z2_FORWARD_EXCEPTIONS
     }
   }
-  
+
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 }
 
@@ -1479,22 +1478,22 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
   ArrayRCP<const size_t> rowSizes;
   int fail = 0;
   bool haveEdges = true;
-  
+
   if (rank == 0){
-    
+
     memset(graphCounts, 0, 5*sizeof(int));
-    
+
     // Reads in the file and closes it when done.
     fail = chaco_input_graph(fptr, fname.c_str(), &start, &adj,
                              &nvtxs, &nVwgts, &vwgts, &nEwgts, &ewgts);
-    
+
     // There are Zoltan2 test graphs that have no edges.
-    
+
     // nEwgts must be 1 or 0 - add error
 
     if (start == NULL)
       haveEdges = false;
-    
+
     if (verbose_)
     {
       std::cout << "UserInputForTests, " << nvtxs << " vertices,";
@@ -1505,23 +1504,23 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
       std::cout << nVwgts << " vertex weights, ";
       std::cout << nEwgts << " edge weights" << std::endl;
     }
-    
+
     if (nvtxs==0)
       fail = true;
-    
+
     if (fail){
       Teuchos::broadcast<int, int>(*tcomm_, 0, 5, graphCounts);
       throw std::runtime_error("Unable to read chaco file");
     }
-    
+
     if (haveEdges)
       nedges = start[nvtxs];
-    
+
     nzPerRow = new size_t [nvtxs];
     if (!nzPerRow)
       throw std::bad_alloc();
     rowSizes = arcp(nzPerRow, 0, nvtxs, true);
-    
+
     if (haveEdges){
       for (int i=0; i < nvtxs; i++){
         nzPerRow[i] = start[i+1] - start[i];
@@ -1532,56 +1531,56 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     else{
       memset(nzPerRow, 0, sizeof(size_t) * nvtxs);
     }
-    
+
     // Make sure base gid is zero.
-    
+
     if (nedges){
       int chbase = adj[0];
       for (int i=1; i < nedges; i++)
         if (adj[i] < chbase)
           chbase = adj[i];
-      
+
       if (chbase > 0){
         for (int i=0; i < nedges; i++)
           adj[i] -= chbase;
       }
     }
-    
+
     graphCounts[0] = nvtxs;
     graphCounts[1] = nedges;
     graphCounts[2] = nVwgts;
     graphCounts[3] = nEwgts;
     graphCounts[4] = (int)maxRowLen; // size_t maxRowLen will fit; it is <= (int-int)
   }
-  
+
   Teuchos::broadcast<int, int>(*tcomm_, 0, 5, graphCounts);
-  
+
   if (graphCounts[0] == 0)
     throw std::runtime_error("Unable to read chaco file");
-  
+
   haveEdges = (graphCounts[1] > 0);
-  
+
   RCP<tcrsMatrix_t> fromMatrix;
   RCP<const map_t> fromMap;
-  
+
   // Create a Tpetra::CrsMatrix where rank 0 has entire matrix.
   if (rank == 0){
     fromMap = rcp(new map_t(nvtxs, nvtxs, base, tcomm_));
-    
+
     fromMatrix =
     rcp(new tcrsMatrix_t(fromMap, rowSizes, Tpetra::StaticProfile));
-    
+
     if (haveEdges){
-      
+
       zgno_t *edgeIds = new zgno_t [nedges];
       if (nedges && !edgeIds)
         throw std::bad_alloc();
       for (int i=0; i < nedges; i++)
         edgeIds[i] = adj[i];
-      
+
       free(adj);
       adj = NULL;
-      
+
       zgno_t *nextId = edgeIds;
       Array<zscalar_t> values(nedges, 1.0);
       if (nedges > 0 && nEwgts > 0) {
@@ -1598,11 +1597,11 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
           nextId += nzPerRow[i];
         }
       }
-      
+
       delete [] edgeIds;
       edgeIds = NULL;
     }
-    
+
     fromMatrix->fillComplete();
   }
   else{
@@ -1611,17 +1610,17 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     nVwgts = graphCounts[2];
     nEwgts  = graphCounts[3];
     maxRowLen = graphCounts[4];
-    
+
     // Create a Tpetra::CrsMatrix where rank 0 has entire matrix.
-    
+
     fromMap = rcp(new map_t(nvtxs, 0, base, tcomm_));
-    
+
     fromMatrix =
     rcp(new tcrsMatrix_t(fromMap, rowSizes, Tpetra::StaticProfile));
-    
+
     fromMatrix->fillComplete();
   }
-  
+
 #ifdef KDDKDDPRINT
   if (rank == 0) {
     size_t sz = fromMatrix->getNodeMaxNumRowEntries();
@@ -1638,11 +1637,11 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     }
   }
 #endif
-  
+
   RCP<const map_t> toMap;
   RCP<tcrsMatrix_t> toMatrix;
   RCP<import_t> importer;
-  
+
   if (distributeInput) {
     if (haveAssign) {
       // Read assignments from Chaco assignment file
@@ -1652,15 +1651,15 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
       }
       // Broadcast coordinate dimension
       Teuchos::broadcast<int, short>(*tcomm_, 0, nvtxs, assignments);
-    
+
       // Build map with my vertices
       Teuchos::Array<zgno_t> mine;
       for (int i = 0; i < nvtxs; i++) {
-        if (assignments[i] == rank) 
+        if (assignments[i] == rank)
           mine.push_back(i);
       }
-    
-      Tpetra::global_size_t dummy = 
+
+      Tpetra::global_size_t dummy =
               Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
       toMap = rcp(new map_t(dummy, mine(), base, tcomm_));
       delete [] assignments;
@@ -1670,7 +1669,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
       toMap = rcp(new map_t(nvtxs, base, tcomm_));
     }
     toMatrix = rcp(new tcrsMatrix_t(toMap, maxRowLen));
-    
+
     // Import the data.
     importer = rcp(new import_t(fromMap, toMap));
     toMatrix->doImport(*fromMatrix, *importer, Tpetra::INSERT);
@@ -1680,24 +1679,24 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     toMap = fromMap;
     toMatrix = fromMatrix;
   }
-  
+
   M_ = toMatrix;
-  
+
   // Vertex weights, if any
-  
+
   typedef ArrayRCP<const ArrayView<const zscalar_t> > arrayArray_t;
-  
+
   if (nVwgts > 0){
-    
+
     ArrayRCP<zscalar_t> weightBuf;
     ArrayView<const zscalar_t> *wgts = new ArrayView<const zscalar_t> [nVwgts];
-    
+
     if (rank == 0){
       size_t len = nVwgts * nvtxs;
       zscalar_t *buf = new zscalar_t [len];
       if (!buf) throw std::bad_alloc();
       weightBuf = arcp(buf, 0, len, true);
-      
+
       for (int widx=0; widx < nVwgts; widx++){
         wgts[widx] = ArrayView<const zscalar_t>(buf, nvtxs);
         float *vw = vwgts + widx;
@@ -1705,16 +1704,16 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
           buf[i] = *vw;
         buf += nvtxs;
       }
-      
+
       free(vwgts);
       vwgts = NULL;
     }
-    
+
     arrayArray_t vweights = arcp(wgts, 0, nVwgts, true);
-    
+
     RCP<tMVector_t> fromVertexWeights =
     rcp(new tMVector_t(fromMap, vweights.view(0, nVwgts), nVwgts));
-    
+
     RCP<tMVector_t> toVertexWeights;
     if (distributeInput) {
       toVertexWeights = rcp(new tMVector_t(toMap, nVwgts));
@@ -1722,27 +1721,27 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     }
     else
       toVertexWeights = fromVertexWeights;
-    
+
     vtxWeights_ = toVertexWeights;
   }
-  
+
   // Edge weights, if any
-  
+
   if (haveEdges && nEwgts > 0){
 
     // No longer distributing edge weights; they are the matrix values
     /*
     ArrayRCP<zscalar_t> weightBuf;
     ArrayView<const zscalar_t> *wgts = new ArrayView<const zscalar_t> [nEwgts];
-    
+
     toMap = rcp(new map_t(nedges, M_->getNodeNumEntries(), base, tcomm_));
-    
+
     if (rank == 0){
       size_t len = nEwgts * nedges;
       zscalar_t *buf = new zscalar_t [len];
       if (!buf) throw std::bad_alloc();
       weightBuf = arcp(buf, 0, len, true);
-      
+
       for (int widx=0; widx < nEwgts; widx++){
         wgts[widx] = ArrayView<const zscalar_t>(buf, nedges);
         float *ew = ewgts + widx;
@@ -1750,7 +1749,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
           buf[i] = *ew;
         buf += nedges;
       }
-      
+
       free(ewgts);
       ewgts = NULL;
       fromMap = rcp(new map_t(nedges, nedges, base, tcomm_));
@@ -1758,9 +1757,9 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     else{
       fromMap = rcp(new map_t(nedges, 0, base, tcomm_));
     }
-    
+
     arrayArray_t eweights = arcp(wgts, 0, nEwgts, true);
-    
+
     RCP<tMVector_t> fromEdgeWeights;
     RCP<tMVector_t> toEdgeWeights;
     RCP<import_t> edgeImporter;
@@ -1774,7 +1773,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     }
     else
       toEdgeWeights = fromEdgeWeights;
-    
+
     edgWeights_ = toEdgeWeights;
     */
 
@@ -1807,36 +1806,36 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
   int ndim=0;
   double *x=NULL, *y=NULL, *z=NULL;
   int fail = 0;
-  
+
   size_t globalNumVtx = M_->getGlobalNumRows();
-  
+
   if (rank == 0){
-    
+
     // This function is from the Zoltan C-library.
-    
+
     // Reads in the file and closes it when done.
     fail = chaco_input_geom(fptr, fname.c_str(), (int)globalNumVtx,
                             &ndim, &x, &y, &z);
-    
+
     if (fail)
       ndim = 0;
-    
+
     if (verbose_){
       std::cout << "UserInputForTests, read " << globalNumVtx;
       std::cout << " " << ndim << "-dimensional coordinates." << std::endl;
     }
   }
-  
+
   Teuchos::broadcast<int, int>(*tcomm_, 0, 1, &ndim);
-  
+
   if (ndim == 0)
     throw std::runtime_error("Can't read coordinate file");
-  
+
   ArrayRCP<ArrayRCP<const zscalar_t> > coords(ndim);
   zlno_t len = 0;
-  
+
   if (rank == 0){
-    
+
     for (int dim=0; dim < ndim; dim++){
       zscalar_t *v = new zscalar_t [globalNumVtx];
       if (!v)
@@ -1845,30 +1844,30 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
       double *val = (dim==0 ? x : (dim==1 ? y : z));
       for (size_t i=0; i < globalNumVtx; i++)
         v[i] = zscalar_t(val[i]);
-      
+
       free(val);
     }
-    
+
     len = static_cast<zlno_t>(globalNumVtx);
   }
-  
+
   RCP<const map_t> fromMap = rcp(new map_t(globalNumVtx, len, 0, tcomm_));
   RCP<const map_t> toMap = M_->getRowMap();
   RCP<import_t> importer = rcp(new import_t(fromMap, toMap));
-  
+
   Array<ArrayView<const zscalar_t> > coordData;
   for (int dim=0; dim < ndim; dim++)
     coordData.push_back(coords[dim].view(0, len));
-  
+
   RCP<tMVector_t> fromCoords =
   rcp(new tMVector_t(fromMap, coordData.view(0, ndim), ndim));
-  
+
   RCP<tMVector_t> toCoords = rcp(new tMVector_t(toMap, ndim));
-  
+
   toCoords->doImport(*fromCoords, *importer, Tpetra::INSERT);
-  
+
   xyz_ = toCoords;
-  
+
 }
 
 ///////////  Chaco reader -- copied from zoltan/ch //////////////////////////
@@ -1887,9 +1886,9 @@ double  UserInputForTests::chaco_read_val(
   int     white_seen; /* have I detected white space yet? */
   int     done;       /* checking for end of scan */
   int     i;          /* loop counter */
-  
+
   *end_flag = 0;
-  
+
   if (chaco_offset == 0 || chaco_offset >= chaco_break_pnt) {
     if (chaco_offset >= chaco_break_pnt) { /* Copy rest of line back to beginning. */
       length_left = CHACO_LINE_LENGTH - chaco_save_pnt - 1;
@@ -1902,15 +1901,15 @@ double  UserInputForTests::chaco_read_val(
       length = CHACO_LINE_LENGTH;
       length_left = 0;
     }
-    
+
     /* Now read next line, or next segment of current one. */
     ptr2 = fgets(&chaco_line[length_left], length, infile);
-    
+
     if (ptr2 == (char *) NULL) {    /* We've hit end of file. */
       *end_flag = -1;
       return((double) 0.0);
     }
-    
+
     if ((chaco_line[CHACO_LINE_LENGTH - 2] != '\n') && (chaco_line[CHACO_LINE_LENGTH - 2] != '\f')
         && (strlen(chaco_line) == CHACO_LINE_LENGTH - 1)){
       /* Line too long.  Find last safe place in chaco_line. */
@@ -1936,10 +1935,10 @@ double  UserInputForTests::chaco_read_val(
     else {
       chaco_break_pnt = CHACO_LINE_LENGTH;
     }
-    
+
     chaco_offset = 0;
   }
-  
+
   while (isspace((int)(chaco_line[chaco_offset])) && chaco_offset < CHACO_LINE_LENGTH) chaco_offset++;
   if (chaco_line[chaco_offset] == '%' || chaco_line[chaco_offset] == '#') {
     *end_flag = 1;
@@ -1948,10 +1947,10 @@ double  UserInputForTests::chaco_read_val(
     }
     return((double) 0.0);
   }
-  
+
   ptr = &(chaco_line[chaco_offset]);
   val = strtod(ptr, &ptr2);
-  
+
   if (ptr2 == ptr) {    /* End of input line. */
     chaco_offset = 0;
     *end_flag = 1;
@@ -1960,7 +1959,7 @@ double  UserInputForTests::chaco_read_val(
   else {
     chaco_offset = (int) (ptr2 - chaco_line) / sizeof(char);
   }
-  
+
   return(val);
 }
 
@@ -1978,9 +1977,9 @@ int UserInputForTests::chaco_read_int(
   int     white_seen;    /* have I detected white space yet? */
   int     done;        /* checking for end of scan */
   int     i;        /* loop counter */
-  
+
   *end_flag = 0;
-  
+
   if (chaco_offset == 0 || chaco_offset >= chaco_break_pnt) {
     if (chaco_offset >= chaco_break_pnt) { /* Copy rest of line back to beginning. */
       length_left = CHACO_LINE_LENGTH - chaco_save_pnt - 1;
@@ -1993,15 +1992,15 @@ int UserInputForTests::chaco_read_int(
       length = CHACO_LINE_LENGTH;
       length_left = 0;
     }
-    
+
     /* Now read next line, or next segment of current one. */
     ptr2 = fgets(&chaco_line[length_left], length, infile);
-    
+
     if (ptr2 == (char *) NULL) {    /* We've hit end of file. */
       *end_flag = -1;
       return(0);
     }
-    
+
     if ((chaco_line[CHACO_LINE_LENGTH - 2] != '\n') && (chaco_line[CHACO_LINE_LENGTH - 2] != '\f')
         && (strlen(chaco_line) == CHACO_LINE_LENGTH - 1)){
       /* Line too long.  Find last safe place in line. */
@@ -2027,10 +2026,10 @@ int UserInputForTests::chaco_read_int(
     else {
       chaco_break_pnt = CHACO_LINE_LENGTH;
     }
-    
+
     chaco_offset = 0;
   }
-  
+
   while (isspace((int)(chaco_line[chaco_offset])) && chaco_offset < CHACO_LINE_LENGTH) chaco_offset++;
   if (chaco_line[chaco_offset] == '%' || chaco_line[chaco_offset] == '#') {
     *end_flag = 1;
@@ -2039,10 +2038,10 @@ int UserInputForTests::chaco_read_int(
     }
     return(0);
   }
-  
+
   ptr = &(chaco_line[chaco_offset]);
   val = (int) strtol(ptr, &ptr2, 10);
-  
+
   if (ptr2 == ptr) {    /* End of input chaco_line. */
     chaco_offset = 0;
     *end_flag = 1;
@@ -2051,7 +2050,7 @@ int UserInputForTests::chaco_read_int(
   else {
     chaco_offset = (int) (ptr2 - chaco_line) / sizeof(char);
   }
-  
+
   return(val);
 }
 
@@ -2060,7 +2059,7 @@ void UserInputForTests::chaco_flush_line(
 )
 {
   char    c;        /* character being read */
-  
+
   c = fgetc(infile);
   while (c != '\n' && c != '\f')
     c = fgetc(infile);
@@ -2100,20 +2099,20 @@ int UserInputForTests::chaco_input_graph(
   int     neighbor;        /* neighbor of current vertex */
   int     error_flag;    /* error reading input? */
   int     j;        /* loop counters */
-  
+
   /* Read first line  of input (= nvtxs, narcs, option). */
   /* The (decimal) digits of the option variable mean: 1's digit not zero => input
    edge weights 10's digit not zero => input vertex weights 100's digit not zero
    => include vertex numbers */
-  
+
   *start = NULL;
   *adjacency = NULL;
   *vweights = NULL;
   *eweights = NULL;
-  
+
   error_flag = 0;
   line_num = 0;
-  
+
   /* Read any leading comment lines */
   end_flag = 1;
   while (end_flag == 1) {
@@ -2126,7 +2125,7 @@ int UserInputForTests::chaco_input_graph(
     fclose(fin);
     return(1);
   }
-  
+
   narcs = chaco_read_int(fin, &end_flag);
   if (narcs < 0) {
     printf("ERROR in graph file `%s':", inname);
@@ -2134,7 +2133,7 @@ int UserInputForTests::chaco_input_graph(
     fclose(fin);
     return(1);
   }
-  
+
   /*  Check if vertex or edge weights are used */
   if (!end_flag) {
     option = chaco_read_int(fin, &end_flag);
@@ -2144,11 +2143,11 @@ int UserInputForTests::chaco_input_graph(
   using_vwgts = option - 10 * (option / 10);
   option /= 10;
   vtxnums = option - 10 * (option / 10);
-  
+
   /* Get weight info from Chaco option */
   (*nVwgts) = using_vwgts;
   (*nEwgts) = using_ewgts;
-  
+
   /* Read numbers of weights if they are specified separately */
   if (!end_flag && using_vwgts==1){
     j = chaco_read_int(fin, &end_flag);
@@ -2158,32 +2157,32 @@ int UserInputForTests::chaco_input_graph(
     j = chaco_read_int(fin, &end_flag);
     if (!end_flag) (*nEwgts) = j;
   }
-  
+
   /* Discard rest of line */
   while (!end_flag)
     j = chaco_read_int(fin, &end_flag);
-  
+
   /* Allocate space for rows and columns. */
   *start = (int *) malloc((unsigned) (*nvtxs + 1) * sizeof(int));
   if (narcs != 0)
     *adjacency = (int *) malloc((unsigned) (2 * narcs + 1) * sizeof(int));
   else
     *adjacency = NULL;
-  
+
   if (using_vwgts)
     *vweights = (float *) malloc((unsigned) (*nvtxs) * (*nVwgts) * sizeof(float));
   else
     *vweights = NULL;
-  
+
   if (using_ewgts)
     *eweights = (float *)
     malloc((unsigned) (2 * narcs + 1) * (*nEwgts) * sizeof(float));
   else
     *eweights = NULL;
-  
+
   adjptr = *adjacency;
   ewptr = *eweights;
-  
+
   sum_edges = 0;
   nedges = 0;
   (*start)[0] = 0;
@@ -2192,7 +2191,7 @@ int UserInputForTests::chaco_input_graph(
   new_vertex = 1;
   while ((using_vwgts || vtxnums || narcs) && end_flag != -1) {
     ++line_num;
-    
+
     /* If multiple input lines per vertex, read vertex number. */
     if (vtxnums) {
       j = chaco_read_int(fin, &end_flag);
@@ -2219,10 +2218,10 @@ int UserInputForTests::chaco_input_graph(
     }
     else
       vertex = ++vtx;
-    
+
     if (vertex > *nvtxs)
       break;
-    
+
     /* If vertices are weighted, read vertex weight. */
     if (using_vwgts && new_vertex) {
       for (j=0; j<(*nVwgts); j++){
@@ -2236,32 +2235,32 @@ int UserInputForTests::chaco_input_graph(
         (*vweights)[(vertex-1)*(*nVwgts)+j] = weight;
       }
     }
-    
+
     nedge = 0;
-    
+
     /* Read number of adjacent vertex. */
     neighbor = chaco_read_int(fin, &end_flag);
-    
+
     while (!end_flag) {
       skip_flag = 0;
-      
+
       if (using_ewgts) {    /* Read edge weight if it's being input. */
         for (j=0; j<(*nEwgts); j++){
           eweight = chaco_read_val(fin, &end_flag);
-          
+
           if (end_flag) {
             printf("ERROR in graph file `%s':", inname);
             printf(" not enough weights for edge (%d,%d).\n", vertex, neighbor);
             fclose(fin);
             return (1);
           }
-          
+
           else {
             *ewptr++ = eweight;
           }
         }
       }
-      
+
       /* Add edge to data structure. */
       if (!skip_flag) {
         if (++nedges > 2*narcs) {
@@ -2274,15 +2273,15 @@ int UserInputForTests::chaco_input_graph(
         *adjptr++ = neighbor;
         nedge++;
       }
-      
+
       /* Read number of next adjacent vertex. */
       neighbor = chaco_read_int(fin, &end_flag);
     }
-    
+
     sum_edges += nedge;
     (*start)[vertex] = sum_edges;
   }
-  
+
   /* Make sure there's nothing else in file. */
   flag = 0;
   while (!flag && end_flag != -1) {
@@ -2290,9 +2289,9 @@ int UserInputForTests::chaco_input_graph(
     if (!end_flag)
       flag = 1;
   }
-  
+
   (*start)[*nvtxs] = sum_edges;
-  
+
   if (vertex != 0) {        /* Normal file was read. */
     if (narcs) {
     }
@@ -2307,7 +2306,7 @@ int UserInputForTests::chaco_input_graph(
       *eweights = NULL;
     }
   }
-  
+
   else {
     /* Graph was empty */
     free(*start);
@@ -2320,9 +2319,9 @@ int UserInputForTests::chaco_input_graph(
     *start = NULL;
     *adjacency = NULL;
   }
-  
+
   fclose(fin);
-  
+
   return (error_flag);
 }
 
@@ -2344,7 +2343,7 @@ int UserInputForTests::chaco_input_geom(
   int     end_flag;        /* return conditional */
   int     ndims;        /* number of values in an input line */
   int     i=0;        /* loop counter */
-  
+
   *x = *y = *z = NULL;
   line_num = 0;
   end_flag = 1;
@@ -2352,13 +2351,13 @@ int UserInputForTests::chaco_input_geom(
     xc = chaco_read_val(fingeom, &end_flag);
     ++line_num;
   }
-  
+
   if (end_flag == -1) {
     printf("No values found in geometry file `%s'\n", geomname);
     fclose(fingeom);
     return (1);
   }
-  
+
   ndims = 1;
   yc = chaco_read_val(fingeom, &end_flag);
   if (end_flag == 0) {
@@ -2370,16 +2369,16 @@ int UserInputForTests::chaco_input_geom(
       if (!end_flag) {
         printf("Too many values on input line of geometry file `%s'\n",
                geomname);
-        
+
         printf(" Maximum dimensionality is 3\n");
         fclose(fingeom);
         return (1);
       }
     }
   }
-  
+
   *igeom = ndims;
-  
+
   *x = (double *) malloc((unsigned) nvtxs * sizeof(double));
   (*x)[0] = xc;
   if (ndims > 1) {
@@ -2390,7 +2389,7 @@ int UserInputForTests::chaco_input_geom(
     *z = (double *) malloc((unsigned) nvtxs * sizeof(double));
     (*z)[0] = zc;
   }
-  
+
   for (nread = 1; nread < nvtxs; nread++) {
     ++line_num;
     if (ndims == 1) {
@@ -2403,7 +2402,7 @@ int UserInputForTests::chaco_input_geom(
       i = fscanf(fingeom, "%lf%lf%lf", &((*x)[nread]), &((*y)[nread]),
                  &((*z)[nread]));
     }
-    
+
     if (i == EOF) {
       printf("Too few lines of values in geometry file; nvtxs=%d, but only %d read\n",
              nvtxs, nread);
@@ -2417,7 +2416,7 @@ int UserInputForTests::chaco_input_geom(
       return (1);
     }
   }
-  
+
   /* Check for spurious extra stuff in file. */
   flag = 0;
   end_flag = 0;
@@ -2426,82 +2425,82 @@ int UserInputForTests::chaco_input_geom(
     if (!end_flag)
       flag = 1;
   }
-  
+
   fclose(fingeom);
-  
+
   return (0);
 }
 
 // Chaco input assignments from filename.assign; copied from Zoltan
 
 int UserInputForTests::chaco_input_assign(
-  FILE *finassign,		/* input assignment file */
-  const char *inassignname,		/* name of input assignment file */
-  int nvtxs,		/* number of vertices to output */
-  short *assignment)		/* values to be printed */
+  FILE *finassign,              /* input assignment file */
+  const char *inassignname,             /* name of input assignment file */
+  int nvtxs,            /* number of vertices to output */
+  short *assignment)            /* values to be printed */
 {
-    int       flag;		/* logical conditional */
-    int       end_flag;		/* return flag from read_int() */
-    int       i, j;		/* loop counter */
+    int       flag;             /* logical conditional */
+    int       end_flag;         /* return flag from read_int() */
+    int       i, j;             /* loop counter */
 
     /* Get the assignment vector one line at a time, checking as you go. */
     /* First read past any comments at top. */
     end_flag = 1;
     while (end_flag == 1) {
-	assignment[0] = chaco_read_int(finassign, &end_flag);
+        assignment[0] = chaco_read_int(finassign, &end_flag);
     }
 
     if (assignment[0] < 0) {
-	printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
-	       1, inassignname, assignment[0]);
-	fclose(finassign);
-	return (1);
+        printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
+               1, inassignname, assignment[0]);
+        fclose(finassign);
+        return (1);
     }
 
     if (end_flag == -1) {
-	printf("ERROR: No values found in assignment file `%s'\n", inassignname);
-	fclose(finassign);
-	return (1);
+        printf("ERROR: No values found in assignment file `%s'\n", inassignname);
+        fclose(finassign);
+        return (1);
     }
 
     flag = 0;
     if (assignment[0] > nvtxs)
-	flag = assignment[1];
+        flag = assignment[1];
     for (i = 1; i < nvtxs; i++) {
-	j = fscanf(finassign, "%hd", &(assignment[i]));
-	if (j != 1) {
-	    printf("ERROR: Too few values in assignment file `%s'.\n", inassignname);
-	    fclose(finassign);
-	    return (1);
-	}
-	if (assignment[i] < 0) {
-	    printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
-		   i+1, inassignname, assignment[i]);
-	    fclose(finassign);
-	    return (1);
-	}
-	if (assignment[i] > nvtxs) {	/* warn since probably an error */
-	    if (assignment[i] > flag)
-		flag = assignment[i];
-	}
+        j = fscanf(finassign, "%hd", &(assignment[i]));
+        if (j != 1) {
+            printf("ERROR: Too few values in assignment file `%s'.\n", inassignname);
+            fclose(finassign);
+            return (1);
+        }
+        if (assignment[i] < 0) {
+            printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
+                   i+1, inassignname, assignment[i]);
+            fclose(finassign);
+            return (1);
+        }
+        if (assignment[i] > nvtxs) {    /* warn since probably an error */
+            if (assignment[i] > flag)
+                flag = assignment[i];
+        }
     }
 
     if (flag) {
-	printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
-	printf("         More assignment sets (%d) than vertices (%d)\n", flag, nvtxs);
+        printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
+        printf("         More assignment sets (%d) than vertices (%d)\n", flag, nvtxs);
     }
 
     /* Check for spurious extra stuff in file. */
     flag = 0;
     end_flag = 0;
     while (!flag && end_flag != -1) {
-	chaco_read_int(finassign, &end_flag);
-	if (!end_flag)
-	    flag = 1;
+        chaco_read_int(finassign, &end_flag);
+        if (!end_flag)
+            flag = 1;
     }
     if (flag) {
-	printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
-	printf("         Numerical data found after expected end of file\n");
+        printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
+        printf("         Numerical data found after expected end of file\n");
     }
 
     fclose(finassign);
@@ -2515,7 +2514,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
   int rank = this->tcomm_->getRank();
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTestsBD::readPamgenFile, Read: " << testData << std::endl;
-  
+
   size_t len;
   std::fstream file;
   int dimension;
@@ -2524,9 +2523,9 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
     std::ostringstream meshFileName;
     meshFileName << path << "/" << testData << ".pmgen";
     // open file
-    
+
     file.open(meshFileName.str(), ios::in);
-    
+
     if(!file.is_open()) // may be a problem with path or filename
     {
       if(verbose_ && tcomm_->getRank() == 0)
@@ -2542,7 +2541,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
       file.seekg (0,file.end);
       len = file.tellg();
       file.seekg (0);
-      
+
       // get dimension
       dimension = 2;
       std::string line;
@@ -2555,39 +2554,39 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
           break;
         }
       }
-      
+
       file.clear();
       file.seekg(0, ios::beg);
     }
   }
-  
+
   // broadcast the file size
   this->tcomm_->broadcast(0,sizeof(int), (char *)&dimension);
   this->tcomm_->broadcast(0,sizeof(size_t),(char *)&len);
   this->tcomm_->barrier();
-  
+
   if(len == 0){
     if(verbose_ && tcomm_->getRank() == 0)
       std::cout << "Pamgen Mesh file size == 0, exiting UserInputForTests early." << endl;
     return;
   }
-  
+
   char * file_data = new char[len];
   file_data[len-1] = '\0'; // critical to null terminate buffer // MDM added -1 as this was a buffer overwrite
   if(rank == 0){
     file.read(file_data,len); // if proc 0 then read file
   }
-  
+
   // broadcast the file to the world
   this->tcomm_->broadcast(0,(int)len,file_data);
   this->tcomm_->barrier();
 
   // Create the PamgenMesh
-  
+
   this->pamgen_mesh = rcp(new PamgenMesh);
   this->havePamgenMesh = true;
   pamgen_mesh->createMesh(file_data,dimension,this->tcomm_);
-  
+
   // save mesh info
   pamgen_mesh->storeMesh();
   this->tcomm_->barrier();
@@ -2597,7 +2596,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
 
   // set adjacency graph
   this->setPamgenAdjacencyGraph();
-  
+
   this->tcomm_->barrier();
   if(rank == 0) file.close();
   delete [] file_data;
@@ -2622,21 +2621,21 @@ void UserInputForTests::setPamgenCoordinateMV()
     elem_coords[i] = new zscalar_t[numelements];
     memcpy(elem_coords[i],&pamgen_mesh->element_coord[i*numelements],sizeof(double) * numelements);
   }
-  
+
   // make a Tpetra map
   typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
   RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp;
   //   mp = rcp(new map_t(numGlobalElements, numelements, 0, this->tcomm_)); // constructo 1
-  
+
 //  Array<zgno_t>::size_type numEltsPerProc = numelements;
   Array<zgno_t> elementList(numelements);
   for (Array<zgno_t>::size_type k = 0; k < numelements; ++k) {
     elementList[k] = pamgen_mesh->element_order_map[k];
   }
-  
+
   mp = rcp (new map_t (numGlobalElements, elementList, 0, this->tcomm_)); // constructor 2
-  
-  
+
+
   // make an array of array views containing the coordinate data
   Teuchos::Array<Teuchos::ArrayView<const zscalar_t> > coordView(dimension);
   for (int i = 0; i < dimension; i++){
@@ -2649,7 +2648,7 @@ void UserInputForTests::setPamgenCoordinateMV()
       coordView[i] = a;
     }
   }
-  
+
   // set the xyz_ multivector
   xyz_ = RCP<tMVector_t>(new
                          tMVector_t(mp, coordView.view(0, dimension),
@@ -2660,16 +2659,16 @@ void UserInputForTests::setPamgenAdjacencyGraph()
 {
 //  int rank = this->tcomm_->getRank();
 //  if(rank == 0) cout << "Making a graph from our pamgen mesh...." << endl;
-  
+
   // Define Types
 //  typedef zlno_t lno_t;
 //  typedef zgno_t gno_t;
   typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
-  
+
   // get info for setting up map
   size_t local_nodes = (size_t)this->pamgen_mesh->num_nodes;
   size_t local_els = (size_t)this->pamgen_mesh->num_elem;
-  
+
   size_t global_els = (size_t)this->pamgen_mesh->num_elems_global; // global rows
   size_t global_nodes = (size_t)this->pamgen_mesh->num_nodes_global; //global columns
   // make map with global elements assigned to this mesh
@@ -2677,36 +2676,36 @@ void UserInputForTests::setPamgenAdjacencyGraph()
 //  if(rank == 0) cout << "Building Rowmap: " << endl;
   RCP<const map_t> rowMap = rcp(new map_t(global_els,0,this->tcomm_));
   RCP<const map_t> rangeMap = rowMap;
-  
+
   // make domain map
   RCP<const map_t> domainMap = rcp(new map_t(global_nodes,0,this->tcomm_));
-  
+
   // make the element-node adjacency matrix
   Teuchos::RCP<tcrsMatrix_t> C = rcp(new tcrsMatrix_t(rowMap,0));
-  
-  
+
+
   Array<zgno_t> g_el_ids(local_els);
   for (size_t k = 0; k < local_els; ++k) {
     g_el_ids[k] = pamgen_mesh->global_element_numbers[k]-1;
   }
-  
+
   Array<zgno_t> g_node_ids(local_nodes);
   for (size_t k = 0; k < local_nodes; ++k) {
     g_node_ids[k] = pamgen_mesh->global_node_numbers[k]-1;
   }
-  
+
   int blks = this->pamgen_mesh->num_elem_blk;
-  
+
   zlno_t el_no = 0;
   zscalar_t one = static_cast<zscalar_t>(1);
-  
+
 //  if(rank == 0) cout << "Writing C... " << endl;
   for(int i = 0; i < blks; i++)
   {
     int el_per_block = this->pamgen_mesh->elements[i];
     int nodes_per_el = this->pamgen_mesh->nodes_per_element[i];
     int * connect = this->pamgen_mesh->elmt_node_linkage[i];
-    
+
     for(int j = 0; j < el_per_block; j++)
     {
       const zgno_t gid = static_cast<zgno_t>(g_el_ids[el_no]);
@@ -2720,10 +2719,10 @@ void UserInputForTests::setPamgenAdjacencyGraph()
       el_no++;
     }
   }
-  
+
   C->fillComplete(domainMap, rangeMap);
-  
-  
+
+
   // Compute product C*C'
 //  if(rank == 0) cout << "Compute Multiplication C... " << endl;
   RCP<tcrsMatrix_t> A = rcp(new tcrsMatrix_t(rowMap,0));
@@ -2733,14 +2732,14 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   // make graph
 //  if(rank == 0) cout << "Writing M_... " << endl;
   this->M_ = rcp(new tcrsMatrix_t(rowMap,0));
-  
+
 //  if(rank == 0) cout << "\nSetting graph of connectivity..." << endl;
   for(zgno_t gid : rowMap->getNodeElementList())
   {
     size_t numEntriesInRow = A->getNumEntriesInGlobalRow (gid);
     Array<zscalar_t> rowvals (numEntriesInRow);
     Array<zgno_t> rowinds (numEntriesInRow);
-    
+
     // modified
     Array<zscalar_t> mod_rowvals;
     Array<zgno_t> mod_rowinds;
@@ -2756,7 +2755,7 @@ void UserInputForTests::setPamgenAdjacencyGraph()
     }
      this->M_->insertGlobalValues(gid, mod_rowinds, mod_rowvals);
   }
-  
+
   this->M_->fillComplete();
   this->xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
   //  if(rank == 0) cout << "Completed M... " << endl;
