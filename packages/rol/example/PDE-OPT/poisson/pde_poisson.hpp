@@ -62,11 +62,21 @@
 template <class Real>
 class PDE_Poisson : public PDE<Real> {
 private:
+  // Finite element basis information
   Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  // Cell cubature information
   Teuchos::RCP<Intrepid::Cubature<Real> > cellCub_;
+  // Cell node information
   Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
+  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
+  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > > bdryCellLocIds_;
+  // Finite element definition
   Teuchos::RCP<FE<Real> > fe_vol_;
+
+  Real DirichletFunc(const Real x, const Real y) const {
+    return 0;
+  }
 
 public:
   PDE_Poisson(Teuchos::ParameterList &parlist) {
@@ -106,6 +116,26 @@ public:
     Intrepid::FunctionSpaceTools::integrate<Real>(*res, *gradU_eval, *(fe_vol_->gradNdetJ()), Intrepid::COMP_CPP, false);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res, *valU_eval, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res, *valZ_eval, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
+
+    // Apply Dirichlet conditions
+    int numSideSets = bdryCellNodes_.size();
+    if (numSideSets > 0) {
+      for (int i = 0; i < numSideSets; ++i) {
+        int numLocalSideIds = bdryCellNodes_[i].size();
+        for (int j = 0; j < numLocalSideIds; ++j) {
+          int numCellsSide = bdryCellNodes_[i][j]->dimension(0);
+          std::vector<int> fidx = fe_vol_->getBoundaryDofs(j);
+          int numBdryDofs = fidx.size();
+          for (int k = 0; k < numCellsSide; ++k) {
+            int cidx = (*bdryCellLocIds_[i][j])(k);
+            for (int l = 0; l < numBdryDofs; ++l) {
+              Real x(0), y(0);
+              (*res)(cidx,fidx[l]) = (*u_coeff)(cidx,fidx[l]) - DirichletFunc(x,y);
+            }
+          }
+        }
+      }
+    }
   }
 
   void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
@@ -163,6 +193,8 @@ public:
                     const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) {
     volCellNodes_ = volCellNodes;
+    bdryCellNodes_ = bdryCellNodes;
+    bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
     fe_vol_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
   }

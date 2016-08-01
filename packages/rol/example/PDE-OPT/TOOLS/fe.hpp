@@ -514,6 +514,13 @@ public:
     Intrepid::FunctionSpaceTools::evaluate<Real>(*fGrads, *inCoeffs, *gradPhysical_);
   }
 
+  /** \brief Returns the degrees of freedom corresponding to the localSideId.
+             NEEDS TO BE IMPLEMENTED!
+  */
+  std::vector<int> getBoundaryDofs(const int localSideId) const {
+    return std::vector<int>(0);
+  }
+
 }; // FE
 
 #endif

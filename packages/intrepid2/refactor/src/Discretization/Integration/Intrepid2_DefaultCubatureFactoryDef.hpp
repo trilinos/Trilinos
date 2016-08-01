@@ -56,7 +56,8 @@ namespace Intrepid2 {
   Teuchos::RCP<Cubature<SpT,PT,WT> > 
   DefaultCubatureFactory::
   create( const shards::CellTopology       cellTopology,
-          const std::vector<ordinal_type> &degree ) {
+          const std::vector<ordinal_type> &degree,
+          const EPolyType                  polytype ) {
 
     // Create generic cubature.
     Teuchos::RCP<Cubature<SpT,PT,WT> > r_val;
@@ -65,7 +66,10 @@ namespace Intrepid2 {
     case shards::Line<>::key: {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 1, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-      r_val = Teuchos::rcp(new CubatureDirectLineGauss<SpT,PT,WT>(degree[0]));
+      if (isValidPolyType(polytype))
+        r_val = Teuchos::rcp(new CubaturePolylib<SpT,PT,WT>(degree[0], polytype));
+      else
+        r_val = Teuchos::rcp(new CubatureDirectLineGauss<SpT,PT,WT>(degree[0]));
       break;
     }
     case shards::Triangle<>::key: {
@@ -77,7 +81,11 @@ namespace Intrepid2 {
     case shards::Quadrilateral<>::key: {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 2, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-      {
+      if (isValidPolyType(polytype)) {
+        const auto x_line = CubaturePolylib<SpT,PT,WT>(degree[0], polytype);
+        const auto y_line = ( degree[1] == degree[0] ? x_line : CubaturePolylib<SpT,PT,WT>(degree[1], polytype) );
+        r_val = Teuchos::rcp(new CubatureTensor<SpT,PT,WT>( x_line, y_line ));
+      } else {
         const auto x_line = CubatureDirectLineGauss<SpT,PT,WT>(degree[0]);
         const auto y_line = ( degree[1] == degree[0] ? x_line : CubatureDirectLineGauss<SpT,PT,WT>(degree[1]) );
         r_val = Teuchos::rcp(new CubatureTensor<SpT,PT,WT>( x_line, y_line ));
@@ -93,7 +101,14 @@ namespace Intrepid2 {
     case shards::Hexahedron<>::key: {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 3, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-      {
+      if (isValidPolyType(polytype)) {
+        const auto x_line = CubaturePolylib<SpT,PT,WT>(degree[0], polytype);
+        const auto y_line = ( degree[1] == degree[0] ? x_line : CubaturePolylib<SpT,PT,WT>(degree[1], polytype) );
+        const auto z_line = ( degree[2] == degree[0] ? x_line : 
+                              degree[2] == degree[1] ? y_line : CubaturePolylib<SpT,PT,WT>(degree[2], polytype) );
+
+        r_val = Teuchos::rcp(new CubatureTensor<SpT,PT,WT>( x_line, y_line, z_line ));
+      } else {
         const auto x_line = CubatureDirectLineGauss<SpT,PT,WT>(degree[0]);
         const auto y_line = ( degree[1] == degree[0] ? x_line : CubatureDirectLineGauss<SpT,PT,WT>(degree[1]) );
         const auto z_line = ( degree[2] == degree[0] ? x_line : 
@@ -131,7 +146,7 @@ namespace Intrepid2 {
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key)    &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key)      &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key)       &&
-                                      (cellTopology.getBaseCellTopologyData()->key != shards::Pyramid<>::key)       &&
+                                      (cellTopology.getBaseCellTopologyData()->key != shards::Pyramid<>::key)          &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key) ),
                                     std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Invalid cell topology prevents cubature creation.");
@@ -145,10 +160,11 @@ namespace Intrepid2 {
   Teuchos::RCP<Cubature<SpT,PT,WT> > 
   DefaultCubatureFactory::
   create( const shards::CellTopology cellTopology,
-          const ordinal_type         degree ) {
+          const ordinal_type         degree,
+          const EPolyType            polytype ) {
     // uniform order for 3 axes
     const std::vector<ordinal_type> degreeArray(3, degree);
-    return create<SpT,PT,WT>(cellTopology, degreeArray);
+    return create<SpT,PT,WT>(cellTopology, degreeArray, polytype);
   }
 
 

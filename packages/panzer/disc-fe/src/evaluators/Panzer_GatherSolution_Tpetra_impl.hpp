@@ -250,7 +250,7 @@ GatherSolution_Tpetra(
       tangentFields_[fd].resize(tangent_field_names[fd].size());
       for (std::size_t i=0; i<tangent_field_names[fd].size(); ++i) {
         tangentFields_[fd][i] =
-          PHX::MDField<const ScalarT,Cell,NODE>(tangent_field_names[fd][i],basis->functional);
+          PHX::MDField<const RealT,Cell,NODE>(tangent_field_names[fd][i],basis->functional);
         this->addDependentField(tangentFields_[fd][i]);
       }
     }
@@ -335,14 +335,45 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
 
-   // gather operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+   typedef typename PHX::MDField<ScalarT,Cell,NODE>::array_type::reference_type reference_type;
 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+   if (has_tangent_fields_) {
+     // gather operation for each cell in workset
+     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      // loop over the fields to be gathered
-      for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
+       LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+
+       // loop over the fields to be gathered
+       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
+         int fieldNum = fieldIds_[fieldIndex];
+         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+
+         const std::vector< PHX::MDField<const RealT,Cell,NODE> >& tf_ref =
+           tangentFields_[fieldIndex];
+         const std::size_t num_tf = tf_ref.size();
+
+         // loop over basis functions and fill the fields
+         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+           int offset = elmtOffset[basis];
+           LO lid = LIDs[offset];
+           reference_type gf_ref = (gatherFields_[fieldIndex])(worksetCellIndex,basis);
+           gf_ref.val() = x_array[lid];
+           for (std::size_t i=0; i<num_tf; ++i)
+             gf_ref.fastAccessDx(i) = tf_ref[i](worksetCellIndex,basis);
+         }
+       }
+     }
+   }
+   else {
+     // gather operation for each cell in workset
+     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+       std::size_t cellLocalId = localCellIds[worksetCellIndex];
+
+       LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+
+       // loop over the fields to be gathered
+       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
          const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
 
@@ -350,16 +381,11 @@ evaluateFields(typename TRAITS::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             LO lid = LIDs[offset];
-            if (!has_tangent_fields_)
-              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x_array[lid];
-            else {
-              (gatherFields_[fieldIndex])(worksetCellIndex,basis).val() = x_array[lid];
-              for (std::size_t i=0; i<tangentFields_[fieldIndex].size(); ++i)
-                (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(i) =
-                  tangentFields_[fieldIndex][i](worksetCellIndex,basis).val();
-            }
+            reference_type gf_ref = (gatherFields_[fieldIndex])(worksetCellIndex,basis);
+            gf_ref.val() = x_array[lid];
          }
-      }
+       }
+     }
    }
 }
 

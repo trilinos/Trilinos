@@ -62,6 +62,7 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 
 #ifdef HAVE_ZOLTAN_EPETRA
@@ -158,10 +159,12 @@ int main(int argc, char *argv[])
     Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
 
+  typedef Tpetra::RowMatrix<zscalar_t,zlno_t,zgno_t,znode_t> trmatrix_t;
   typedef Tpetra::CrsMatrix<zscalar_t,zlno_t,zgno_t,znode_t> tmatrix_t;
   typedef Tpetra::CrsGraph<zlno_t,zgno_t,znode_t> tgraph_t;
   typedef Tpetra::Vector<zscalar_t,zlno_t,zgno_t,znode_t> tvector_t;
   typedef Tpetra::MultiVector<zscalar_t,zlno_t,zgno_t,znode_t> tmvector_t;
+  typedef Xpetra::RowMatrix<zscalar_t,zlno_t,zgno_t,znode_t> xrmatrix_t;
   typedef Xpetra::CrsMatrix<zscalar_t,zlno_t,zgno_t,znode_t> xmatrix_t;
   typedef Xpetra::CrsGraph<zlno_t,zgno_t,znode_t> xgraph_t;
   typedef Xpetra::Vector<zscalar_t,zlno_t,zgno_t,znode_t> xvector_t;
@@ -182,11 +185,55 @@ int main(int argc, char *argv[])
   TEST_FAIL_AND_EXIT(*comm, aok, "input ", 1);
 
   /////////////////////////////////////////////////////////////////
+  //   Tpetra::RowMatrix
   //   Tpetra::CrsMatrix
   //   Tpetra::CrsGraph
   //   Tpetra::Vector
   //   Tpetra::MultiVector
   /////////////////////////////////////////////////////////////////
+
+  // XpetraTraits<Tpetra::RowMatrix<zscalar_t, zlno_t, zgno_t, znode_t> >
+  {
+    RCP<tmatrix_t> M;
+    RCP<trmatrix_t> rM;
+
+    try{
+      M = uinput->getUITpetraCrsMatrix();
+    }
+    catch(std::exception &e){
+      aok = false;
+      std::cout << e.what() << std::endl;
+    }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getTpetraCrsMatrix ", 1);
+    rM = Teuchos::rcp_dynamic_cast<trmatrix_t>(M);
+
+    if (rank== 0)
+      std::cout << "Original Tpetra matrix " << rM->getGlobalNumRows()
+        << " x " << rM->getGlobalNumCols() << std::endl;
+
+    rM->describe(*outStream,v);
+
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(rM->getRowMap()));
+
+    zgno_t localNumRows = newRowIds.size();
+
+    RCP<const trmatrix_t> newM;
+    try{
+      newM = Zoltan2::XpetraTraits<trmatrix_t>::doMigration(*rM,
+        localNumRows, newRowIds.getRawPtr());
+    }
+    catch(std::exception &e){
+      aok = false;
+      std::cout << e.what() << std::endl;
+    }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<tmatrix_t>::doMigration ", 1);
+
+    if (rank== 0)
+      std::cout << "Migrated Tpetra matrix" << std::endl;
+
+    newM->describe(*outStream,v);
+  }
 
   // XpetraTraits<Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> >
   {
@@ -352,11 +399,58 @@ int main(int argc, char *argv[])
   }
 
   /////////////////////////////////////////////////////////////////
+  //   Xpetra::RowMatrix
   //   Xpetra::CrsMatrix
   //   Xpetra::CrsGraph
   //   Xpetra::Vector
   //   Xpetra::MultiVector
   /////////////////////////////////////////////////////////////////
+
+  // XpetraTraits<Xpetra::RowMatrix<zscalar_t, zlno_t, zgno_t, znode_t> >
+  {
+    RCP<tmatrix_t> M;
+    RCP<trmatrix_t> trM;
+    RCP<xrmatrix_t> xrM;
+
+    try{
+      M = uinput->getUITpetraCrsMatrix();
+    }
+    catch(std::exception &e){
+      aok = false;
+      std::cout << e.what() << std::endl;
+    }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getXpetraCrsMatrix ", 1);
+    trM = Teuchos::rcp_dynamic_cast<trmatrix_t>(M);
+    xrM = Zoltan2::XpetraTraits<trmatrix_t>::convertToXpetra(trM);
+
+    if (rank== 0)
+      std::cout << "Original Xpetra matrix" << std::endl;
+
+    M->describe(*outStream,v);
+
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(xrM->getRowMap()));
+
+    zgno_t localNumRows = newRowIds.size();
+
+    RCP<const xrmatrix_t> newM;
+    try{
+      newM = Zoltan2::XpetraTraits<xrmatrix_t>::doMigration(*xrM,
+        localNumRows, newRowIds.getRawPtr());
+    }
+    catch(std::exception &e){
+      aok = false;
+      std::cout << e.what() << std::endl;
+    }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<xmatrix_t>::doMigration ", 1);
+
+    if (rank== 0)
+      std::cout << "Migrated Xpetra matrix" << std::endl;
+
+    // TODO KDD Need to find way to produce output; 
+    // TODO KDD Xpetra::RowMatrix does not have a describe() method
+    // (Teuchos::rcp_dynamic_cast<const xmatrix_t>(newM))->describe(*outStream,v);
+  }
 
   // XpetraTraits<Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> >
   {

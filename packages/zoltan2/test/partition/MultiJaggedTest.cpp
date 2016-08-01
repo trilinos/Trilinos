@@ -150,10 +150,10 @@ string trim_copy(
 template <typename Adapter>
 void print_boxAssign_result(
   const char *str,
-  int dim, 
+  int dim,
   typename Adapter::scalar_t *lower,
   typename Adapter::scalar_t *upper,
-  size_t nparts, 
+  size_t nparts,
   typename Adapter::part_t *parts
 )
 {
@@ -162,7 +162,7 @@ void print_boxAssign_result(
   std::cout << ") x (";
   for (int j = 0; j < dim; j++) std::cout << upper[j] << " ";
 
-  if (nparts == 0) 
+  if (nparts == 0)
     std::cout << ") does not overlap any parts" << std::endl;
   else {
     std::cout << ") overlaps parts ";
@@ -189,9 +189,9 @@ int run_pointAssign_tests(
 
     // test correctness of pointAssign for owned points
     {
-      const typename Adapter::part_t *solnPartView = 
+      const typename Adapter::part_t *solnPartView =
                                       problem->getSolution().getPartListView();
-     
+
       size_t numPoints = coords->getLocalLength();
       for (size_t localID = 0; localID < numPoints; localID++) {
 
@@ -205,7 +205,7 @@ int run_pointAssign_tests(
         }
         CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + ": pointAssign -- OwnedPoints");
 
-        std::cout << me << " Point " << localID 
+        std::cout << me << " Point " << localID
                   << " gid " << coords->getMap()->getGlobalElement(localID)
                   << " (" << pointDrop[0];
         if (coordDim > 1) std::cout << " " << pointDrop[1];
@@ -229,13 +229,13 @@ int run_pointAssign_tests(
     }
 
     {
-      const vector<Zoltan2::coordinateModelPartBox<zscalar_t, 
+      const vector<Zoltan2::coordinateModelPartBox<zscalar_t,
                                                    typename Adapter::part_t> >
             pBoxes = problem->getSolution().getPartBoxesView();
       for (size_t i = 0; i < pBoxes.size(); i++) {
-        zscalar_t *lmin = pBoxes[i].getlmins(); 
+        zscalar_t *lmin = pBoxes[i].getlmins();
         zscalar_t *lmax = pBoxes[i].getlmaxs();;
-        std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId() 
+        std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId()
                   << " (" << lmin[0] << "," << lmin[1] << ","
                   << (coordDim > 2 ? lmin[2] : 0) << ") x "
                   << " (" << lmax[0] << "," << lmax[1] << ","
@@ -268,7 +268,7 @@ int run_pointAssign_tests(
       if (coordDim > 2) std::cout << " " << pointDrop[2];
       std::cout << ")  part " << part << std::endl;
     }
-    
+
     // test a point that's way out there
     {
       for (int i = 0; i < coordDim; i++) pointDrop[i] = i*5;
@@ -315,7 +315,7 @@ int run_boxAssign_tests(
     sprintf(mechar, "%d", problem->getComm()->getRank());
     string me(mechar);
 
-    const vector<Zoltan2::coordinateModelPartBox<zscalar_t, 
+    const vector<Zoltan2::coordinateModelPartBox<zscalar_t,
                                                  typename Adapter::part_t> >
           pBoxes = problem->getSolution().getPartBoxesView();
     size_t nBoxes = pBoxes.size();
@@ -326,7 +326,7 @@ int run_boxAssign_tests(
       typename Adapter::part_t *parts;
       size_t pickabox = nBoxes / 2;
       for (int i = 0; i < coordDim; i++) {
-        zscalar_t dd = 0.2 * (pBoxes[pickabox].getlmaxs()[i] - 
+        zscalar_t dd = 0.2 * (pBoxes[pickabox].getlmaxs()[i] -
                               pBoxes[pickabox].getlmins()[i]);
         lower[i] = pBoxes[pickabox].getlmins()[i] + dd;
         upper[i] = pBoxes[pickabox].getlmaxs()[i] - dd;
@@ -337,7 +337,7 @@ int run_boxAssign_tests(
       }
       CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + " boxAssign -- smaller");
       if (nparts > 1) {
-        std::cout << me << " FAIL boxAssign error: smaller test, nparts > 1" 
+        std::cout << me << " FAIL boxAssign error: smaller test, nparts > 1"
                   << std::endl;
         ierr++;
       }
@@ -352,7 +352,7 @@ int run_boxAssign_tests(
       typename Adapter::part_t *parts;
       size_t pickabox = nBoxes / 2;
       for (int i = 0; i < coordDim; i++) {
-        zscalar_t dd = 0.2 * (pBoxes[pickabox].getlmaxs()[i] - 
+        zscalar_t dd = 0.2 * (pBoxes[pickabox].getlmaxs()[i] -
                               pBoxes[pickabox].getlmins()[i]);
         lower[i] = pBoxes[pickabox].getlmins()[i] - dd;
         upper[i] = pBoxes[pickabox].getlmaxs()[i] + dd;
@@ -366,7 +366,7 @@ int run_boxAssign_tests(
       // larger box should have at least two parts in it for k > 1.
       if ((nBoxes > 1) && (nparts < 2)) {
         std::cout << me << " FAIL boxAssign error: "
-                  << "larger test, nparts < 2" 
+                  << "larger test, nparts < 2"
                   << std::endl;
         ierr++;
       }
@@ -380,7 +380,7 @@ int run_boxAssign_tests(
         }
       if (!found_pickabox) {
         std::cout << me << " FAIL boxAssign error: "
-                  << "larger test, pickabox not found" 
+                  << "larger test, pickabox not found"
                   << std::endl;
         ierr++;
       }
@@ -389,7 +389,7 @@ int run_boxAssign_tests(
                                       lower, upper, nparts, parts);
       delete [] parts;
     }
-     
+
     // test a box that includes all parts
     {
       size_t nparts;
@@ -400,9 +400,9 @@ int run_boxAssign_tests(
       }
       for (size_t j = 0; j < nBoxes; j++) {
         for (int i = 0; i < coordDim; i++) {
-          if (pBoxes[j].getlmins()[i] <= lower[i]) 
+          if (pBoxes[j].getlmins()[i] <= lower[i])
             lower[i] = pBoxes[j].getlmins()[i];
-          if (pBoxes[j].getlmaxs()[i] >= upper[i]) 
+          if (pBoxes[j].getlmaxs()[i] >= upper[i])
             upper[i] = pBoxes[j].getlmaxs()[i];
         }
       }
@@ -415,7 +415,7 @@ int run_boxAssign_tests(
       // global box should have all parts
       if (nparts != nBoxes) {
         std::cout << me << " FAIL boxAssign error: "
-                  << "global test, nparts found " << nparts 
+                  << "global test, nparts found " << nparts
                   << " != num global parts " << nBoxes
                   << std::endl;
         ierr++;
@@ -435,7 +435,7 @@ int run_boxAssign_tests(
         lower[i] -= 2.;
         upper[i] += 2.;
       }
-      
+
       try {
         problem->getSolution().boxAssign(coordDim, lower, upper,
                                          nparts, &parts);
@@ -445,7 +445,7 @@ int run_boxAssign_tests(
       // bigdomain box should have all parts
       if (nparts != nBoxes) {
         std::cout << me << " FAIL boxAssign error: "
-                  << "bigdomain test, nparts found " << nparts 
+                  << "bigdomain test, nparts found " << nparts
                   << " != num global parts " << nBoxes
                   << std::endl;
         ierr++;
@@ -456,7 +456,7 @@ int run_boxAssign_tests(
     }
 
     // test a box that is way out there
-    // Assuming lower and upper are still set to at least the global box 
+    // Assuming lower and upper are still set to at least the global box
     // boundary from the previous test
     {
       size_t nparts;
@@ -476,7 +476,7 @@ int run_boxAssign_tests(
       // TODO:  this result should be changed in boxAssign definition
       if (nparts != 0) {
         std::cout << me << " FAIL boxAssign error: "
-                  << "outthere test, nparts found " << nparts 
+                  << "outthere test, nparts found " << nparts
                   << " != zero"
                   << std::endl;
         ierr++;
@@ -571,13 +571,13 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     int ierr = 0;
     Teuchos::ParameterList geoparams("geo params");
     readGeoGenParams(paramFile, geoparams, comm);
-    GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t> *gg = 
+    GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t> *gg =
     new GeometricGen::GeometricGenerator<zscalar_t,zlno_t,zgno_t,znode_t>(geoparams,
                                                                       comm);
 
     int coord_dim = gg->getCoordinateDimension();
     int numWeightsPerCoord = gg->getNumWeights();
-    zlno_t numLocalPoints = gg->getNumLocalCoords(); 
+    zlno_t numLocalPoints = gg->getNumLocalCoords();
     zgno_t numGlobalPoints = gg->getNumGlobalCoords();
     zscalar_t **coords = new zscalar_t * [coord_dim];
     for(int i = 0; i < coord_dim; ++i){
@@ -611,11 +611,11 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         }
     }
 
-    RCP<tMVector_t> tmVector = RCP<tMVector_t>(new 
+    RCP<tMVector_t> tmVector = RCP<tMVector_t>(new
                                    tMVector_t(mp, coordView.view(0, coord_dim),
                                               coord_dim));
 
-    RCP<const tMVector_t> coordsConst = 
+    RCP<const tMVector_t> coordsConst =
                           Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
     vector<const zscalar_t *> weights;
     if(numWeightsPerCoord){
@@ -664,7 +664,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     if(migration_check_option >= 0)
         params->set("mj_migration_option", migration_check_option);
     if(migration_imbalance_cut_off >= 0)
-        params->set("mj_minimum_migration_imbalance", 
+        params->set("mj_minimum_migration_imbalance",
                     double(migration_imbalance_cut_off));
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
@@ -682,7 +682,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     // create metric object
 
-    RCP<quality_t> metricObject = 
+    RCP<quality_t> metricObject =
       rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
@@ -775,13 +775,13 @@ int testFromDataFile(
         params->set("mj_migration_option", migration_check_option);
     }
     if(migration_imbalance_cut_off >= 0){
-        params->set("mj_minimum_migration_imbalance", 
+        params->set("mj_minimum_migration_imbalance",
                     double (migration_imbalance_cut_off));
     }
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
-        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(ia, 
+        problem = new Zoltan2::PartitioningProblem<inputAdapter_t>(ia,
                                                    params.getRawPtr(),
                                                    comm);
     }
@@ -800,13 +800,13 @@ int testFromDataFile(
     const size_t bvnvecs = coords->getNumVectors();
     const size_t bvsize = coords->getNumVectors() * coords->getLocalLength();
 
-    ArrayRCP<inputAdapter_t::scalar_t> *bvtpetravectors = 
+    ArrayRCP<inputAdapter_t::scalar_t> *bvtpetravectors =
             new ArrayRCP<inputAdapter_t::scalar_t>[bvnvecs];
     for (size_t i = 0; i < bvnvecs; i++)
       bvtpetravectors[i] = coords->getDataNonConst(i);
 
     int idx = 0;
-    inputAdapter_t::gno_t *bvgids = new 
+    inputAdapter_t::gno_t *bvgids = new
                            inputAdapter_t::gno_t[coords->getLocalLength()];
     inputAdapter_t::scalar_t *bvcoordarr = new inputAdapter_t::scalar_t[bvsize];
     for (inputAdapter_t::lno_t j = 0; j < bvlen; j++) {
@@ -834,7 +834,7 @@ int testFromDataFile(
 
     Zoltan2::PartitioningProblem<bvadapter_t> *bvproblem;
     try {
-      bvproblem = new Zoltan2::PartitioningProblem<bvadapter_t>(&bvia, 
+      bvproblem = new Zoltan2::PartitioningProblem<bvadapter_t>(&bvia,
                                                  params.getRawPtr(),
                                                  comm);
     }
@@ -849,13 +849,13 @@ int testFromDataFile(
     for (inputAdapter_t::lno_t i = 0; i < bvlen; i++) {
       if (problem->getSolution().getPartListView()[i] !=
           bvproblem->getSolution().getPartListView()[i])
-        cout << bvme << " " << i << " " 
-             << coords->getMap()->getGlobalElement(i) << " " << bvgids[i] 
+        cout << bvme << " " << i << " "
+             << coords->getMap()->getGlobalElement(i) << " " << bvgids[i]
              << ": XMV " << problem->getSolution().getPartListView()[i]
              << "; BMV " << bvproblem->getSolution().getPartListView()[i]
              << "  :  FAIL" << endl;
     }
-  
+
     delete [] bvgids;
     delete [] bvcoordarr;
     delete [] bvtpetravectors;
@@ -868,7 +868,7 @@ int testFromDataFile(
               problem->getSolution().getPartListView();
         for (int i = 0; i < len; i++)
             cout << comm->getRank()
-            << " lid " << i 
+            << " lid " << i
             << " gid " << coords->getMap()->getGlobalElement(i)
             << " part " << zparts[i] << endl;
     }
@@ -1034,7 +1034,7 @@ int testFromSeparateDataFiles(
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {
-        problem = 
+        problem =
           new Zoltan2::PartitioningProblem<inputAdapter_t>(ia,
                                                            params.getRawPtr(),
                                                            comm);
@@ -1260,6 +1260,7 @@ void print_usage(char *executable){
 int main(int argc, char *argv[])
 {
     Teuchos::GlobalMPISession session(&argc, &argv);
+    Kokkos::initialize (argc, argv);
     //cout << argv << endl;
 
     RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
@@ -1349,7 +1350,7 @@ int main(int argc, char *argv[])
             break;
 #endif
         default:
-            ierr = GeometricGenInterface(tcomm, numParts, imbalance, fname, 
+            ierr = GeometricGenInterface(tcomm, numParts, imbalance, fname,
                     pqParts, paramFile, k,
                     migration_check_option,
                     migration_all_to_all_type,
@@ -1381,5 +1382,6 @@ int main(int argc, char *argv[])
             cerr << s << endl;
     }
 
+    Kokkos::finalize ();
     return 0;
 }

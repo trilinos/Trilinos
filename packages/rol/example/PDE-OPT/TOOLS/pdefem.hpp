@@ -114,6 +114,10 @@ private:
   Teuchos::RCP<const Tpetra::Map<> > myUniqueResidualMap_;
   Teuchos::RCP<Tpetra::CrsGraph<> >  matJ1Graph_;
   Teuchos::RCP<Tpetra::CrsGraph<> >  matJ2Graph_;
+  Teuchos::RCP<Tpetra::CrsGraph<> >  matH11Graph_;
+  Teuchos::RCP<Tpetra::CrsGraph<> >  matH12Graph_;
+  Teuchos::RCP<Tpetra::CrsGraph<> >  matH21Graph_;
+  Teuchos::RCP<Tpetra::CrsGraph<> >  matH22Graph_;
 
   // Set in SetCellNodes
   Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
@@ -137,6 +141,9 @@ private:
   // Linear solvers for Jacobian and adjoint Jacobian
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_;
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_trans_;
+
+  bool isJ1Transposed_, isJ2Transposed_;
+  bool isSolverConstructed_, isSolverTransConstructed_;
 
 private:
 
@@ -275,6 +282,21 @@ private:
     }
     matJ1Graph_->fillComplete();
     matJ2Graph_ = matJ1Graph_;
+    matH11Graph_ = matJ1Graph_;
+    matH12Graph_ = matJ1Graph_;
+    matH21Graph_ = matJ2Graph_;
+    matH22Graph_ = matJ2Graph_;
+    // Initialize residual vectors
+    vecR_           = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueResidualMap_, 1, true));
+    vecR_overlap_   = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapResidualMap_, 1, true));
+    // Initialize Jacobian matrices
+    matJ1_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ1Graph_));
+    matJ2_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ2Graph_));
+    // Initialize Hessian matrices
+    matH11_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH11Graph_));
+    matH12_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH12Graph_));
+    matH21_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH21Graph_));
+    matH22_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH22Graph_));
 
     if (verbose_ && myRank_==0) {
       outStream << "Initialized parallel structures." << std::endl;
@@ -384,242 +406,6 @@ private:
     }
   }
 
-public:
-  // destructor
-  virtual ~PDE_FEM() {}
-
-  // Constuctor: Discretization set from ParameterList
-  PDE_FEM(const Teuchos::RCP<PDE<Real> > &pde,
-          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-          Teuchos::ParameterList &parlist,
-          std::ostream &outStream = std::cout) {
-    setCommunicator(comm,parlist,outStream);
-    setPDE(pde,parlist,outStream);
-    setDiscretization(parlist,Teuchos::null,outStream);
-    setParallelStructure(parlist,outStream);
-    setCellNodes();
-  }
-
-  // Constructor: Discretization set from MeshManager input
-  PDE_FEM(const Teuchos::RCP<PDE<Real> > &pde,
-          const Teuchos::RCP<MeshManager<Real> > &meshMgr,
-          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-          Teuchos::ParameterList &parlist,
-          std::ostream &outStream = std::cout) {
-    setCommunicator(comm,parlist,outStream);
-    setPDE(pde,parlist,outStream);
-    setDiscretization(parlist,meshMgr,outStream);
-    setParallelStructure(parlist,outStream);
-    setCellNodes();
-  }
-
-  void assembleResidual(const Tpetra::MultiVector<> &u,
-                        const Tpetra::MultiVector<> &z) {
-    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-    int numLocalDofs = cellDofs.dimension(1);
-    vecR_           = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueResidualMap_, 1, true));
-    vecR_overlap_   = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapResidualMap_, 1, true));
-    // Initialize res
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > res;
-    // Get u_coeff from u and z_coeff from z
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff, z_coeff;
-    getCoeffFromStateVector(u_coeff,u);
-    getCoeffFromControlVector(z_coeff,z);
-    // Compute PDE residual
-    pde_->residual(res,u_coeff,z_coeff);
-    // assembly on the overlap map
-    for (int i=0; i<numCells_; ++i) {
-      for (int j=0; j<numLocalDofs; ++j) {
-        vecR_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                          0,
-                                          (*res)[i*numLocalDofs+j]);
-      }
-    }
-    // change map
-    Tpetra::Export<> exporter(vecR_overlap_->getMap(), vecR_->getMap()); // redistribution
-    vecR_->doExport(*vecR_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
-  }
-
-  void assembleJacobian1(const Tpetra::MultiVector<> &u,
-                         const Tpetra::MultiVector<> &z) { 
-    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-    int numLocalDofs = cellDofs.dimension(1);
-    int numLocalMatEntries = numLocalDofs * numLocalDofs;
-    matJ1_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ1Graph_));
-    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
-    // Initialize jac
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > jac;
-    // Get u_coeff from u and z_coeff from z
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff, z_coeff;
-    getCoeffFromStateVector(u_coeff,u);
-    getCoeffFromControlVector(z_coeff,z);
-    // Compute PDE Jacobian
-    pde_->Jacobian_1(jac,u_coeff,z_coeff);
-    Teuchos::ArrayRCP<const Real> jacArrayRCP = jac->getData();
-    for (int i=0; i<numCells_; ++i) {
-      for (int j=0; j<numLocalDofs; ++j) {
-        matJ1_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                    cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                    jacArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
-      }
-    }
-    matJ1_->fillComplete();
-    // Create matrix transposes.
-    Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
-    matJ1_trans_ = transposerJ1.createTranspose();
-  }
-
-  void assembleJacobian2(const Tpetra::MultiVector<> &u,
-                         const Tpetra::MultiVector<> &z) { 
-    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-    int numLocalDofs = cellDofs.dimension(1);
-    int numLocalMatEntries = numLocalDofs * numLocalDofs;
-    matJ2_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ2Graph_));
-    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > jac, u_coeff, z_coeff;
-    // Get u_coeff from u and z_coeff from z
-    getCoeffFromStateVector(u_coeff,u);
-    getCoeffFromControlVector(z_coeff,z);
-    // Compute PDE Jacobian
-    pde_->Jacobian_2(jac,u_coeff,z_coeff);
-    Teuchos::ArrayRCP<const Real> jacArrayRCP = jac->getData();
-    for (int i=0; i<numCells_; ++i) {
-      for (int j=0; j<numLocalDofs; ++j) {
-        matJ2_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                    cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                    jacArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
-      }
-    }
-    matJ2_->fillComplete();
-    // Create matrix transposes.
-    Tpetra::RowMatrixTransposer<> transposerJ2(matJ2_);
-    matJ2_trans_ = transposerJ2.createTranspose();
-  }
-
-  void assembleHessian11(const Tpetra::MultiVector<> &u,
-                         const Tpetra::MultiVector<> &z,
-                         const Tpetra::MultiVector<> &l) { 
-    try {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > hess, u_coeff, z_coeff, l_coeff;
-      // Get u_coeff from u and z_coeff from z
-      getCoeffFromStateVector(u_coeff,u);
-      getCoeffFromControlVector(z_coeff,z);
-      getCoeffFromStateVector(l_coeff,l);
-      // Compute PDE Hessian
-      pde_->Hessian_11(hess,u_coeff,z_coeff,l_coeff);
-      // Assemble PDE Hessian
-      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-      int numLocalDofs = cellDofs.dimension(1);
-      int numLocalMatEntries = numLocalDofs * numLocalDofs;
-      matH11_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ1Graph_));
-      Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
-      Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
-      for (int i=0; i<numCells_; ++i) {
-        for (int j=0; j<numLocalDofs; ++j) {
-          matH11_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
-        }
-      }
-      matH11_->fillComplete();
-    } catch (Exception::Zero &zero) {
-      throw Exception::Zero(">>> Zero Hessian.");
-    }
-  }
-
-  void assembleHessian12(const Tpetra::MultiVector<> &u,
-                         const Tpetra::MultiVector<> &z,
-                         const Tpetra::MultiVector<> &l) { 
-    try {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > hess, u_coeff, z_coeff, l_coeff;
-      // Get u_coeff from u and z_coeff from z
-      getCoeffFromStateVector(u_coeff,u);
-      getCoeffFromControlVector(z_coeff,z);
-      getCoeffFromStateVector(l_coeff,l);
-      // Compute PDE Hessian
-      pde_->Hessian_12(hess,u_coeff,z_coeff,l_coeff);
-      // Assemble PDE Hessian
-      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-      int numLocalDofs = cellDofs.dimension(1);
-      int numLocalMatEntries = numLocalDofs * numLocalDofs;
-      matH12_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ1Graph_));
-      Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
-      Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
-      for (int i=0; i<numCells_; ++i) {
-        for (int j=0; j<numLocalDofs; ++j) {
-          matH12_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
-        }
-      }
-      matH12_->fillComplete();
-    } catch (Exception::Zero &zero) {
-      throw Exception::Zero(">>> Zero Hessian.");
-    }
-  }
-
-  void assembleHessian21(const Tpetra::MultiVector<> &u,
-                         const Tpetra::MultiVector<> &z,
-                         const Tpetra::MultiVector<> &l) { 
-    try {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > hess, u_coeff, z_coeff, l_coeff;
-      // Get u_coeff from u and z_coeff from z
-      getCoeffFromStateVector(u_coeff,u);
-      getCoeffFromControlVector(z_coeff,z);
-      getCoeffFromStateVector(l_coeff,l);
-      // Compute PDE Hessian
-      pde_->Hessian_21(hess,u_coeff,z_coeff,l_coeff);
-      // Assemble PDE Hessian
-      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-      int numLocalDofs = cellDofs.dimension(1);
-      int numLocalMatEntries = numLocalDofs * numLocalDofs;
-      matH21_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ2Graph_));
-      Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
-      Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
-      for (int i=0; i<numCells_; ++i) {
-        for (int j=0; j<numLocalDofs; ++j) {
-          matH21_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
-        }
-      }
-      matH21_->fillComplete();
-    } catch (Exception::Zero &zero) {
-      throw Exception::Zero(">>> Zero Hessian.");
-    }
-  }
-
-  void assembleHessian22(const Tpetra::MultiVector<> &u,
-                         const Tpetra::MultiVector<> &z,
-                         const Tpetra::MultiVector<> &l) { 
-    try {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > hess, u_coeff, z_coeff, l_coeff;
-      // Get u_coeff from u and z_coeff from z
-      getCoeffFromStateVector(u_coeff,u);
-      getCoeffFromControlVector(z_coeff,z);
-      getCoeffFromStateVector(l_coeff,l);
-      // Compute PDE Hessian
-      pde_->Hessian_11(hess,u_coeff,z_coeff,l_coeff);
-      // Assemble PDE Hessian
-      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-      int numLocalDofs = cellDofs.dimension(1);
-      int numLocalMatEntries = numLocalDofs * numLocalDofs;
-      matH22_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ2Graph_));
-      Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
-      Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
-      for (int i=0; i<numCells_; ++i) {
-        for (int j=0; j<numLocalDofs; ++j) {
-          matH22_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
-        }
-      }
-      matH22_->fillComplete();
-    } catch (Exception::Zero &zero) {
-      throw Exception::Zero(">>> Zero Hessian.");
-    }
-  }
-
   void constructSolver(const bool transpose = false) {
     // Construct solver using Amesos2 factory.
 //    #ifdef ROL_TIMERS
@@ -646,36 +432,309 @@ public:
     }
   }
 
+public:
+  // destructor
+  virtual ~PDE_FEM() {}
+
+  // Constuctor: Discretization set from ParameterList
+  PDE_FEM(const Teuchos::RCP<PDE<Real> > &pde,
+          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+          Teuchos::ParameterList &parlist,
+          std::ostream &outStream = std::cout)
+    : isJ1Transposed_(false),
+      isJ2Transposed_(false),
+      isSolverConstructed_(false),
+      isSolverTransConstructed_(false) {
+    setCommunicator(comm,parlist,outStream);
+    setPDE(pde,parlist,outStream);
+    setDiscretization(parlist,Teuchos::null,outStream);
+    setParallelStructure(parlist,outStream);
+    setCellNodes();
+  }
+
+  // Constructor: Discretization set from MeshManager input
+  PDE_FEM(const Teuchos::RCP<PDE<Real> > &pde,
+          const Teuchos::RCP<MeshManager<Real> > &meshMgr,
+          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+          Teuchos::ParameterList &parlist,
+          std::ostream &outStream = std::cout)
+    : isJ1Transposed_(false),
+      isJ2Transposed_(false),
+      isSolverConstructed_(false),
+      isSolverTransConstructed_(false) {
+    setCommunicator(comm,parlist,outStream);
+    setPDE(pde,parlist,outStream);
+    setDiscretization(parlist,meshMgr,outStream);
+    setParallelStructure(parlist,outStream);
+    setCellNodes();
+  }
+
+  void assembleResidual(const Tpetra::MultiVector<> &u,
+                        const Tpetra::MultiVector<> &z) {
+    const Real zero(0);
+    vecR_->scale(zero);
+    vecR_overlap_->scale(zero);
+    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    int numLocalDofs = cellDofs.dimension(1);
+    // Initialize res
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > res;
+    // Get u_coeff from u and z_coeff from z
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Compute PDE residual
+    pde_->residual(res,u_coeff,z_coeff);
+    // assembly on the overlap map
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs; ++j) {
+        vecR_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                          0,
+                                          (*res)[i*numLocalDofs+j]);
+      }
+    }
+    // change map
+    Tpetra::Export<> exporter(vecR_overlap_->getMap(), vecR_->getMap()); // redistribution
+    vecR_->doExport(*vecR_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+  }
+
+  void assembleJacobian1(const Tpetra::MultiVector<> &u,
+                         const Tpetra::MultiVector<> &z) {
+    const Real zero(0);
+    matJ1_->resumeFill();
+    matJ1_->setAllToScalar(zero);
+    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    int numLocalDofs = cellDofs.dimension(1);
+    int numLocalMatEntries = numLocalDofs * numLocalDofs;
+    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+    // Initialize jac
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > jac;
+    // Get u_coeff from u and z_coeff from z
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff, z_coeff;
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Compute PDE Jacobian
+    pde_->Jacobian_1(jac,u_coeff,z_coeff);
+    Teuchos::ArrayRCP<const Real> jacArrayRCP = jac->getData();
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs; ++j) {
+        matJ1_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                    cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                    jacArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+      }
+    }
+    matJ1_->fillComplete();
+    isJ1Transposed_ = false;
+    isSolverConstructed_ = false;
+    isSolverTransConstructed_ = false;
+  }
+
+  void assembleJacobian2(const Tpetra::MultiVector<> &u,
+                         const Tpetra::MultiVector<> &z) { 
+    const Real zero(0);
+    matJ2_->resumeFill();
+    matJ2_->setAllToScalar(zero);
+    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    int numLocalDofs = cellDofs.dimension(1);
+    int numLocalMatEntries = numLocalDofs * numLocalDofs;
+    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > jac, u_coeff, z_coeff;
+    // Get u_coeff from u and z_coeff from z
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Compute PDE Jacobian
+    pde_->Jacobian_2(jac,u_coeff,z_coeff);
+    Teuchos::ArrayRCP<const Real> jacArrayRCP = jac->getData();
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs; ++j) {
+        matJ2_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                    cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                    jacArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+      }
+    }
+    matJ2_->fillComplete();
+    // Create matrix transposes.
+    Tpetra::RowMatrixTransposer<> transposerJ2(matJ2_);
+    matJ2_trans_ = transposerJ2.createTranspose();
+    isJ2Transposed_ = false;
+  }
+
+  void assembleHessian11(const Tpetra::MultiVector<> &u,
+                         const Tpetra::MultiVector<> &z,
+                         const Tpetra::MultiVector<> &l) { 
+    try {
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > hess, u_coeff, z_coeff, l_coeff;
+      // Get u_coeff from u and z_coeff from z
+      getCoeffFromStateVector(u_coeff,u);
+      getCoeffFromControlVector(z_coeff,z);
+      getCoeffFromStateVector(l_coeff,l);
+      // Compute PDE Hessian
+      pde_->Hessian_11(hess,u_coeff,z_coeff,l_coeff);
+      // Zero Hessian
+      const Real zero(0);
+      matH11_->resumeFill();
+      matH11_->setAllToScalar(zero);
+      // Assemble PDE Hessian
+      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+      int numLocalDofs = cellDofs.dimension(1);
+      int numLocalMatEntries = numLocalDofs * numLocalDofs;
+      Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+      Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
+      for (int i=0; i<numCells_; ++i) {
+        for (int j=0; j<numLocalDofs; ++j) {
+          matH11_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+        }
+      }
+      matH11_->fillComplete();
+    } catch (Exception::Zero &zero) {
+      throw Exception::Zero(">>> Zero Hessian.");
+    }
+  }
+
+  void assembleHessian12(const Tpetra::MultiVector<> &u,
+                         const Tpetra::MultiVector<> &z,
+                         const Tpetra::MultiVector<> &l) { 
+    try {
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > hess, u_coeff, z_coeff, l_coeff;
+      // Get u_coeff from u and z_coeff from z
+      getCoeffFromStateVector(u_coeff,u);
+      getCoeffFromControlVector(z_coeff,z);
+      getCoeffFromStateVector(l_coeff,l);
+      // Compute PDE Hessian
+      pde_->Hessian_12(hess,u_coeff,z_coeff,l_coeff);
+      // Zero Hessian
+      const Real zero(0);
+      matH12_->resumeFill();
+      matH12_->setAllToScalar(zero);
+      // Assemble PDE Hessian
+      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+      int numLocalDofs = cellDofs.dimension(1);
+      int numLocalMatEntries = numLocalDofs * numLocalDofs;
+      Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+      Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
+      for (int i=0; i<numCells_; ++i) {
+        for (int j=0; j<numLocalDofs; ++j) {
+          matH12_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+        }
+      }
+      matH12_->fillComplete();
+    } catch (Exception::Zero &zero) {
+      throw Exception::Zero(">>> Zero Hessian.");
+    }
+  }
+
+  void assembleHessian21(const Tpetra::MultiVector<> &u,
+                         const Tpetra::MultiVector<> &z,
+                         const Tpetra::MultiVector<> &l) { 
+    try {
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > hess, u_coeff, z_coeff, l_coeff;
+      // Get u_coeff from u and z_coeff from z
+      getCoeffFromStateVector(u_coeff,u);
+      getCoeffFromControlVector(z_coeff,z);
+      getCoeffFromStateVector(l_coeff,l);
+      // Compute PDE Hessian
+      pde_->Hessian_21(hess,u_coeff,z_coeff,l_coeff);
+      // Zero Hessian
+      const Real zero(0);
+      matH21_->resumeFill();
+      matH21_->setAllToScalar(zero);
+      // Assemble PDE Hessian
+      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+      int numLocalDofs = cellDofs.dimension(1);
+      int numLocalMatEntries = numLocalDofs * numLocalDofs;
+      Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+      Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
+      for (int i=0; i<numCells_; ++i) {
+        for (int j=0; j<numLocalDofs; ++j) {
+          matH21_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+        }
+      }
+      matH21_->fillComplete();
+    } catch (Exception::Zero &zero) {
+      throw Exception::Zero(">>> Zero Hessian.");
+    }
+  }
+
+  void assembleHessian22(const Tpetra::MultiVector<> &u,
+                         const Tpetra::MultiVector<> &z,
+                         const Tpetra::MultiVector<> &l) { 
+    try {
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > hess, u_coeff, z_coeff, l_coeff;
+      // Get u_coeff from u and z_coeff from z
+      getCoeffFromStateVector(u_coeff,u);
+      getCoeffFromControlVector(z_coeff,z);
+      getCoeffFromStateVector(l_coeff,l);
+      // Compute PDE Hessian
+      pde_->Hessian_11(hess,u_coeff,z_coeff,l_coeff);
+      // Zero Hessian
+      const Real zero(0);
+      matH22_->resumeFill();
+      matH22_->setAllToScalar(zero);
+      // Assemble PDE Hessian
+      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+      int numLocalDofs = cellDofs.dimension(1);
+      int numLocalMatEntries = numLocalDofs * numLocalDofs;
+      Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+      Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
+      for (int i=0; i<numCells_; ++i) {
+        for (int j=0; j<numLocalDofs; ++j) {
+          matH22_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+        }
+      }
+      matH22_->fillComplete();
+    } catch (Exception::Zero &zero) {
+      throw Exception::Zero(">>> Zero Hessian.");
+    }
+  }
+
   void solve(Teuchos::RCP<Tpetra::MultiVector<> > &u,
        const Teuchos::RCP<const Tpetra::MultiVector<> > &r,
-       const bool transpose = false,
-       const bool isSolverConstructed = false) {
-    if ( !isSolverConstructed ) {
-      constructSolver(transpose);
-    }
+       const bool transpose = false) {
     if ( transpose ) {
+      if (!isJ1Transposed_) {
+        // Create matrix transposes.
+        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
+        matJ1_trans_ = transposerJ1.createTranspose();
+        isJ1Transposed_ = true;
+      }
+      if (!isSolverTransConstructed_) {
+        constructSolver(true);
+        isSolverTransConstructed_ = true;
+      }
       solver_trans_->setX(u);
       solver_trans_->setB(r);
       solver_trans_->solve();
     }
     else {
+      if (!isSolverConstructed_) {
+        constructSolver(false);
+        isSolverConstructed_ = true;
+      }
       solver_->setX(u);
       solver_->setB(r);
       solver_->solve();
     }
   }
 
-  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > getSolver(const bool transpose = false) const {
-    if (transpose) {
-      return solver_trans_;
-    }
-    else {
-      return solver_;
-    }
+  Teuchos::RCP<Tpetra::MultiVector<> > getResidual(void) const {
+    return vecR_;
   }
 
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getJacobian1(const bool transpose = false) const {
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getJacobian1(const bool transpose = false) {
     if ( transpose ) {
+      if (!isJ1Transposed_) {
+        // Create matrix transposes.
+        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
+        matJ1_trans_ = transposerJ1.createTranspose();
+        isJ1Transposed_ = true;
+      }
       return matJ1_trans_;
     }
     else {
@@ -683,8 +742,14 @@ public:
     }
   }
 
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getJacobian2(const bool transpose = false) const {
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getJacobian2(const bool transpose = false) {
     if ( transpose ) {
+      if (!isJ2Transposed_) {
+        // Create matrix transposes.
+        Tpetra::RowMatrixTransposer<> transposerJ2(matJ2_);
+        matJ2_trans_ = transposerJ2.createTranspose();
+        isJ2Transposed_ = true;
+      }
       return matJ2_trans_;
     }
     else {
@@ -706,10 +771,6 @@ public:
 
   Teuchos::RCP<Tpetra::CrsMatrix<> > getHessian22(void) const {
     return matH22_;
-  }
-
-  Teuchos::RCP<Tpetra::MultiVector<> > getResidual() const {
-    return vecR_;
   }
 
   void printMeshData(std::ostream &outStream) const {
