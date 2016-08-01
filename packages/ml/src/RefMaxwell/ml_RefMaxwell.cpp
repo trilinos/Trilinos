@@ -210,25 +210,27 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
   /* Build the TMT Matrix */
   if(!HasOnlyDirichletNodes){
-    //    ML_Epetra_PtAP(*Ms_Matrix_,*D0_Matrix_,TMT_Matrix_,verbose_);
+    printf("CMS: Building TMT Matrix\n");
     ML_Epetra_PtAP(*SM_Matrix_,*D0_Matrix_,TMT_Matrix_,verbose_);
     Remove_Zeroed_Rows(*TMT_Matrix_,1e-10);
   }/*end if */
 
   /* Build the TMT-Agg Matrix */
+    printf("CMS: Building TMT-Agg Matrix\n");
   if(aggregate_with_sigma) {
 #ifdef ENABLE_MS_MATRIX
-    ML_Epetra_PtAP(*Ms_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    Epetra_PtAP(*Ms_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
 #else
-    ML_Epetra_PtAP(*SM_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    Epetra_PtAP(*SM_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
 #endif
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with SM or Ms\n");
   }
   else {
-    ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with M1\n");
   }
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
+  printf("CMS: Finished the obvious stuff\n");
 
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[1]));
@@ -360,7 +362,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   if(use_local_nodal_solver){
     if(verbose_ && !Comm_->MyPID()) printf("RefMaxwell: Local Nodal Solver ENABLED\n");
     // EXPERIMENTAL: Local nodal solver
-    ML_Epetra::ML_Epetra_PtAP(*TMT_Matrix_,*NodesToLocalNodes,LocalNodalMatrix,false);
+    ML_Epetra::Epetra_PtAP(*TMT_Matrix_,*NodesToLocalNodes,LocalNodalMatrix,false);
     Teuchos::ParameterList ListN=List_.get("refmaxwell: local nodal list",dummy);
     if (ListN.name() == "refmaxwell: local nodal list") ListN.setName("refmaxwell: 11list");
     SetDefaults("SA",ListN,0,0,false);

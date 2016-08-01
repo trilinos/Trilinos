@@ -48,6 +48,10 @@
 using namespace Teuchos;
 #endif
 
+#ifdef HAVE_ML_EPETRAEXT
+#include "EpetraExt_MatrixMatrix.h"
+#endif
+
 
 // ======================================================================
 
@@ -955,6 +959,22 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
   ML_Operator2EpetraCrsMatrix(A,*Result,mnz,true,bob,base);
 #endif
 }/*end Epetra_CrsMatrix_Wrap_ML_Operator*/
+
+
+// ======================================================================
+//! Does an P^TAP for Epetra_CrsMatrices using ML's kernels.
+int ML_Epetra::Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool verbose){
+#ifdef HAVE_ML_EPETRAEXT
+  Epetra_CrsMatrix AP(Copy,A.RowMap(),0);
+  Result = new Epetra_CrsMatrix(Copy,P.DomainMap(),0);
+
+  EPETRA_CHK_ERR(EpetraExt::MatrixMatrix::Multiply(A,false,P,false,AP,true));
+  EPETRA_CHK_ERR(EpetraExt::MatrixMatrix::Multiply(P,true,AP,false,*Result,true));
+  return 0;
+#else
+  return -1;
+#endif
+}/*end ML_Epetra_PtAP */
 
 
 // ======================================================================

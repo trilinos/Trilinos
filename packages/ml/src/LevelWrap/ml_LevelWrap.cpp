@@ -162,8 +162,13 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   }
   else{
     // Do RAP
+#ifdef HAVE_ML_EPETRAEXT
+    if(use_pt_) Epetra_PtAP(*A0_,*P0_,A1,false);
+#else
     if(use_pt_) ML_Epetra_PtAP(*A0_,*P0_,A1,false);
+#endif
     else ML_Epetra_RAP(*A0_,*P0_,*R0_,A1,false);
+
     A1_=rcp<Epetra_CrsMatrix>(A1);
   }
 
