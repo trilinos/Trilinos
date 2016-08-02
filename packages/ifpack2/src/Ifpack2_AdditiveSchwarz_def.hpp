@@ -62,9 +62,7 @@
 #include "Ifpack2_Details_LinearSolver.hpp"
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
-#include "Xpetra_RowMatrix.hpp"
-#include "Xpetra_TpetraRowMatrix.hpp"
-#include "Zoltan2_XpetraRowMatrixAdapter.hpp"
+#include "Zoltan2_TpetraRowMatrixAdapter.hpp"
 #include "Zoltan2_OrderingProblem.hpp"
 #include "Zoltan2_OrderingSolution.hpp"
 #endif

@@ -52,7 +52,7 @@
 
 #include <string>
 
-#include <Zoltan2_XpetraRowMatrixAdapter.hpp>
+#include <Zoltan2_TpetraRowMatrixAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
