@@ -78,7 +78,8 @@ namespace Intrepid2 {
       r_val = Teuchos::rcp(new CubatureDirectTriDefault<SpT,PT,WT>(degree[0]));
       break;
     }
-    case shards::Quadrilateral<>::key: {
+    case shards::Quadrilateral<>::key: 
+    case shards::ShellQuadrilateral<>::key: {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 2, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       if (isValidPolyType(polytype)) {
@@ -144,6 +145,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key)             &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key)         &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key)    &&
+                                      (cellTopology.getBaseCellTopologyData()->key != shards::ShellQuadrilateral<>::key)    &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key)      &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key)       &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Pyramid<>::key)          &&

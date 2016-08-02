@@ -59,6 +59,7 @@ namespace Intrepid2 {
   // Front interface
   // -----------------------------------------------------------------------------------------
 
+  template<typename pointValueType, class ...pointProperties>
   ordinal_type
   PointTools::
   getLatticeSize( const shards::CellTopology cellType,
