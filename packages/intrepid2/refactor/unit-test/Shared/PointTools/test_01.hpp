@@ -146,10 +146,8 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
       try {
         ordinal_type nthrow = 0, ncatch = 0;
-        const auto sizeQ = pts::getLatticeSize<ValueType,DeviceSpaceType>(shards::getCellTopologyData<shards::Quadrilateral<4> >(), 3, 0);
-        INTREPID2_TEST_ERROR_EXPECTED(sizeQ);
-        const auto sizeH = pts::getLatticeSize<ValueType,DeviceSpaceType>(shards::getCellTopologyData<shards::Hexahedron<8> >(), 3, 0 );
-        INTREPID2_TEST_ERROR_EXPECTED( sizeH );
+        INTREPID2_TEST_ERROR_EXPECTED((pts::getLatticeSize<ValueType,DeviceSpaceType>(shards::getCellTopologyData<shards::Quadrilateral<4> >(), 3, 0)));
+        INTREPID2_TEST_ERROR_EXPECTED((pts::getLatticeSize<ValueType,DeviceSpaceType>(shards::getCellTopologyData<shards::Hexahedron<8> >(), 3, 0 )));
 
         if (nthrow != ncatch) {
           errorFlag++;
