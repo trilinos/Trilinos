@@ -399,7 +399,7 @@ namespace impl {
 
 void create_edges( BulkData & mesh )
 {
-  create_edges(mesh, mesh.mesh_meta_data().universal_part(), 0 );
+  create_edges(mesh, mesh.mesh_meta_data().universal_part(), nullptr );
 }
 
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges )

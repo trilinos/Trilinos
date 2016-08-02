@@ -39,10 +39,11 @@ namespace stk {
 
     class BulkData;
     class Selector;
+    class Part;
     
     namespace experimental {
     void create_faces( BulkData & mesh );
-    void create_faces( BulkData & mesh, const Selector & element_selector);
+    void create_faces( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_faces = nullptr);
     void create_faces( BulkData & mesh, bool connect_faces_to_edges);
     void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges);
     }
