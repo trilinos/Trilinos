@@ -24,13 +24,13 @@ class ElemElemGraphUpdater : public stk::mesh::ModificationObserver
 {
 public:
     ElemElemGraphUpdater(stk::mesh::BulkData &bulk, stk::mesh::ElemElemGraph &elemGraph_)
-    : bulkData(bulk), elemGraph(elemGraph_)
+    : bulkData(bulk), elemGraph(elemGraph_), changeEntityOwnerInProgress(false)
     {
     }
 
     virtual void entity_added(stk::mesh::Entity entity)
     {
-        if(bulkData.entity_rank(entity) == stk::topology::ELEM_RANK)
+        if(bulkData.entity_rank(entity) == stk::topology::ELEM_RANK && !changeEntityOwnerInProgress)
         {
             elementsAdded.push_back(entity);
         }
@@ -71,9 +71,15 @@ public:
         maxNumAdded = reducedValues[0];
     }
 
+    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    {
+        changeEntityOwnerInProgress = true;
+    }
+
     virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
     {
         elemGraph.fill_from_mesh();
+        changeEntityOwnerInProgress = false;
     }
 private:
     stk::mesh::BulkData &bulkData;
@@ -82,6 +88,7 @@ private:
     stk::mesh::EntityVector elementsAdded;
     stk::mesh::impl::DeletedElementInfoVector elementsDeleted;
     size_t maxNumAdded = 0;
+    bool changeEntityOwnerInProgress;
 };
 
 }} // end stk mesh namespaces

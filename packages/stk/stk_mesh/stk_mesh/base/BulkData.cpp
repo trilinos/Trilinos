@@ -382,7 +382,7 @@ void unpack_entity_keys_from_procs(stk::CommSparse &comm, std::vector<stk::mesh:
 void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, const stk::mesh::Selector *only_consider_second_element_from_this_selector)
 {
     std::vector<shared_entity_type> shared_entities;
-    this->markEntitiesForResolvingSharingInfoUsingNodes(entityRank, shared_entities);
+    this->markEntitiesForResolvingSharingInfoUsingNodes(entityRank, false, shared_entities);
     std::sort(shared_entities.begin(), shared_entities.end());
 
     // shared_edges[0] will contain all the edges this processor shares with processor 0
@@ -4013,16 +4013,23 @@ void BulkData::use_elem_elem_graph_to_determine_shared_entities(std::vector<stk:
     std::sort(shared_entities.begin(), shared_entities.end(), stk::mesh::EntityLess(*this));
 }
 
+void BulkData::use_nodes_to_resolve_sharing(stk::mesh::EntityRank rank, std::vector<Entity>& shared_new, bool onlyConsiderSoloSides)
+{
+    std::vector<shared_entity_type> potentially_shared_entities;
+    markEntitiesForResolvingSharingInfoUsingNodes(rank, onlyConsiderSoloSides, potentially_shared_entities);
+    set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map( potentially_shared_entities );
+    extract_entity_from_shared_entity_type(potentially_shared_entities, shared_new);
+}
+
 void BulkData::fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new)
 {
-    if(m_elemElemGraph != nullptr &&  rank == mesh_meta_data().side_rank())
+    if (this->has_face_adjacent_element_graph() && rank == mesh_meta_data().side_rank()) {
         use_elem_elem_graph_to_determine_shared_entities(shared_new);
-    else
-    {
-        std::vector<shared_entity_type> potentially_shared_entities;
-        markEntitiesForResolvingSharingInfoUsingNodes(rank, potentially_shared_entities);
-        set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map( potentially_shared_entities );
-        extract_entity_from_shared_entity_type(potentially_shared_entities, shared_new);
+        const bool onlyConsiderSoloSides = true;
+        use_nodes_to_resolve_sharing(rank, shared_new, onlyConsiderSoloSides);
+    }
+    else {
+        use_nodes_to_resolve_sharing(rank, shared_new);
     }
 }
 
@@ -6038,7 +6045,7 @@ void BulkData::sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes)
 }
 
 //----------------------------------------------------------------------
-void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities)
+void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, bool onlyConsiderSoloSides, std::vector<shared_entity_type>& shared_entities)
 {
     const stk::mesh::BucketVector& entity_buckets = this->buckets(entityRank);
     const bool add_node_sharing_called = this->internal_add_node_sharing_called();
@@ -6056,6 +6063,12 @@ void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRa
             {
               // No nodes newly shared and entity has not had nodes added, so entity cannot become shared.
               continue;
+            }
+
+            const bool isSide = entityRank==this->mesh_meta_data().side_rank();
+            const bool isSoloSide = isSide && (this->num_elements(entity)==0);
+            if (isSide && onlyConsiderSoloSides && !isSoloSide) {
+                continue;
             }
 
             if ( num_nodes_on_entity > 1 )

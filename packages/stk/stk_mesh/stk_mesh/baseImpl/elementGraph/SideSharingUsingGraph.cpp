@@ -86,6 +86,10 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, stk::mesh::ElemElemGraph &
     for(size_t i=0;i<sidesThatNeedFixing.size();++i)
     {
         stk::mesh::impl::ElementViaSidePair elementAndSide = get_element_and_side_ordinal(bulkData, sidesThatNeedFixing[i]);
+        if (elementAndSide.element.local_offset() == 0) {
+            //solo side !!!
+            continue;
+        }
         stk::mesh::impl::LocalId localElemId = graph.get_local_element_id(elementAndSide.element);
         for(const stk::mesh::GraphEdge& edge : graph.get_edges_for_element(localElemId))
         {

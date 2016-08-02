@@ -466,7 +466,7 @@ void ElemElemGraph::write_graph(std::ostream& out, const std::string preamble) c
     std::ostringstream os;
     os << preamble;
     os << "Graph for processor " << m_bulk_data.parallel_rank() << std::endl;
-    for(size_t localId=0;localId<m_graph.get_num_elements_in_graph();++localId)
+    for(size_t localId=0;localId<this->size();++localId)
     {
         stk::mesh::Entity e = m_idMapper.local_to_entity(localId);
         os << "Element " << m_bulk_data.identifier(e) << " has connections: ";
@@ -996,7 +996,6 @@ void ElemElemGraph::collect_local_shell_connectivity_data(const stk::mesh::impl:
                                                           std::vector<impl::ElementSidePair> &deletedShells)
 {
     for (const stk::mesh::impl::DeletedElementInfo &deletedElementInfo : elements_to_delete) {
-//        ThrowRequireMsg(m_bulk_data.is_valid(elem_to_delete), "Do not delete entities before removing from ElemElemGraph. Contact sierra-help@sandia.gov for support.");
         stk::mesh::Entity elem_to_delete = deletedElementInfo.entity;
 
         if (deletedElementInfo.isShell) {
@@ -1204,19 +1203,24 @@ void ElemElemGraph::reconnect_volume_elements_across_deleted_shells(std::vector<
     impl::ElemSideToProcAndFaceId shellNeighborsToReconnect;
     for (const impl::ShellConnectivityData& data : shellConnectivityList) {
         stk::mesh::Entity localElement = m_bulk_data.get_entity(stk::topology::ELEM_RANK, data.m_nearElementId);
-        stk::mesh::impl::LocalId localElemLocalId = m_idMapper.entity_to_local(localElement);
-        if(!is_connected_to_shell_on_side(localElemLocalId, data.m_nearElementSide))
+        if (m_bulk_data.is_valid(localElement))
         {
-            if (data.m_nearElementProc == m_bulk_data.parallel_rank() && data.m_farElementProc == m_bulk_data.parallel_rank()) {
-                impl::LocalId localElementId = get_local_element_id(localElement);
-                stk::mesh::Entity remoteElement = m_bulk_data.get_entity(stk::topology::ELEM_RANK, data.m_farElementId);
-                impl::LocalId remoteElementId = get_local_element_id(remoteElement);
-                m_graph.add_edge(stk::mesh::GraphEdge(localElementId, data.m_nearElementSide, remoteElementId, data.m_farElementSide));
-            }
-            else {
-                shellNeighborsToReconnect.insert(
-                        std::pair<impl::EntitySidePair, impl::ProcFaceIdPair>(impl::EntitySidePair(localElement, data.m_nearElementSide),
-                                impl::ProcFaceIdPair(data.m_farElementProc, 0)));
+            stk::mesh::impl::LocalId localElemLocalId = m_idMapper.entity_to_local(localElement);
+            if(!is_connected_to_shell_on_side(localElemLocalId, data.m_nearElementSide))
+            {
+                if (data.m_nearElementProc == m_bulk_data.parallel_rank() && data.m_farElementProc == m_bulk_data.parallel_rank()) {
+                    impl::LocalId localElementId = get_local_element_id(localElement);
+                    stk::mesh::Entity remoteElement = m_bulk_data.get_entity(stk::topology::ELEM_RANK, data.m_farElementId);
+                    if (m_bulk_data.is_valid(remoteElement)) {
+                        impl::LocalId remoteElementId = get_local_element_id(remoteElement);
+                        m_graph.add_edge(stk::mesh::GraphEdge(localElementId, data.m_nearElementSide, remoteElementId, data.m_farElementSide));
+                    }
+                }
+                else {
+                    shellNeighborsToReconnect.insert(
+                            std::pair<impl::EntitySidePair, impl::ProcFaceIdPair>(impl::EntitySidePair(localElement, data.m_nearElementSide),
+                                    impl::ProcFaceIdPair(data.m_farElementProc, 0)));
+                }
             }
         }
     }
@@ -1241,6 +1245,7 @@ stk::mesh::impl::DeletedElementInfoVector ElemElemGraph::filter_delete_elements_
 void ElemElemGraph::delete_elements(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete_argument)
 {
     stk::mesh::impl::DeletedElementInfoVector elements_to_delete = filter_delete_elements_argument(elements_to_delete_argument);
+
     std::vector<impl::ShellConnectivityData> shellConnectivityList;
     std::vector<impl::ElementSidePair> deletedNonCoincidentShells;
     collect_local_shell_connectivity_data(elements_to_delete, shellConnectivityList, deletedNonCoincidentShells);

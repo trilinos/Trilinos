@@ -320,7 +320,7 @@ public:
 
     void my_markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::shared_entity_type>& shared_entities)
     {
-        markEntitiesForResolvingSharingInfoUsingNodes(entityRank, shared_entities);
+        markEntitiesForResolvingSharingInfoUsingNodes(entityRank, false, shared_entities);
     }
 
     void my_fillSharedEntities(std::vector<stk::mesh::shared_entity_type> & shared_entity_map, std::vector<std::vector<stk::mesh::shared_entity_type> > &shared_entities)

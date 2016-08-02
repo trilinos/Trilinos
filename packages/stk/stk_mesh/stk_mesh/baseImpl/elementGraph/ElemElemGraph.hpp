@@ -114,7 +114,7 @@ public:
 
     void delete_elements(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete);
 
-    size_t size() {return m_graph.get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
+    size_t size() const {return m_graph.get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 

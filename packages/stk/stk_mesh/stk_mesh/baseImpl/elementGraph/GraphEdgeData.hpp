@@ -65,6 +65,11 @@ public:
     void delete_edge(const GraphEdge &graphEdge);
     void delete_all_edges(impl::LocalId elem);
     void clear();
+    void delete_vertex(stk::mesh::impl::LocalId id)
+    {
+        m_graphEdges.erase(m_graphEdges.begin()+id);
+    }
+
 private:
     std::vector<GraphEdgesForElement> m_graphEdges;
     size_t m_numEdges = 0;
