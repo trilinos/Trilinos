@@ -43,8 +43,8 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_XpetraRowMatrixAdapter.hpp
-    \brief Defines the XpetraRowMatrixAdapter class.
+/*! \file Zoltan2_TpetraRowMatrixAdapter.hpp
+    \brief Defines the TpetraRowMatrixAdapter class.
 */
 
 #ifndef _ZOLTAN2_XPETRAROWMATRIXADAPTER_HPP_
@@ -52,21 +52,16 @@
 
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
-#include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_PartitioningHelpers.hpp>
 
-#include <Xpetra_RowMatrix.hpp>
+#include <Tpetra_RowMatrix.hpp>
 
 namespace Zoltan2 {
 
 //////////////////////////////////////////////////////////////////////////////
-/*!  \brief Provides access for Zoltan2 to Xpetra::RowMatrix data.
+/*!  \brief Provides access for Zoltan2 to Tpetra::RowMatrix data.
 
-    \todo we assume FillComplete has been called.  We should support
-                objects that are not FillCompleted.
-    \todo add RowMatrix
-
-    The \c scalar_t type, representing use data such as matrix values, is
+    The \c scalar_t type, representing user data such as matrix values, is
     used by Zoltan2 for weights, coordinates, part sizes and
     quality metrics.
     Some User types (like Tpetra::RowMatrix) have an inherent scalar type,
@@ -78,7 +73,7 @@ namespace Zoltan2 {
 */
 
 template <typename User, typename UserCoord=User>
-  class XpetraRowMatrixAdapter : public MatrixAdapter<User,UserCoord> {
+  class TpetraRowMatrixAdapter : public MatrixAdapter<User,UserCoord> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -87,21 +82,20 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
 #endif
 
   /*! \brief Destructor
    */
-  ~XpetraRowMatrixAdapter() { }
+  ~TpetraRowMatrixAdapter() { }
 
   /*! \brief Constructor   
-   *    \param inmatrix The users Epetra, Tpetra, or Xpetra RowMatrix object 
+   *    \param inmatrix The user's Tpetra RowMatrix object 
    *    \param nWeightsPerRow If row weights will be provided in setRowWeights(),
    *        the set \c nWeightsPerRow to the number of weights per row.
    */
-  XpetraRowMatrixAdapter(const RCP<const User> &inmatrix,
+  TpetraRowMatrixAdapter(const RCP<const User> &inmatrix,
                          int nWeightsPerRow=0);
 
   /*! \brief Specify a weight for each entity of the primaryEntityType.
@@ -214,10 +208,9 @@ private:
 
   RCP<Environment> env_;    // for error messages, etc.
 
-  RCP<const User> inmatrix_;
-  RCP<const xmatrix_t> matrix_;
-  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
-  RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
+  RCP<const User> matrix_;
+  RCP<const Tpetra::Map<lno_t, gno_t, node_t> > rowMap_;
+  RCP<const Tpetra::Map<lno_t, gno_t, node_t> > colMap_;
   lno_t base_;
   ArrayRCP<lno_t> offset_;
   ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
@@ -228,6 +221,9 @@ private:
   ArrayRCP<bool> numNzWeight_;
 
   bool mayHaveDiagonalEntries;
+
+  RCP<User> doMigration(const User &from, size_t numLocalRows,
+                        const gno_t *myNewRows) const;
 };
 
 /////////////////////////////////////////////////////////////////
@@ -235,20 +231,15 @@ private:
 /////////////////////////////////////////////////////////////////
 
 template <typename User, typename UserCoord>
-  XpetraRowMatrixAdapter<User,UserCoord>::XpetraRowMatrixAdapter(
+  TpetraRowMatrixAdapter<User,UserCoord>::TpetraRowMatrixAdapter(
     const RCP<const User> &inmatrix, int nWeightsPerRow):
       env_(rcp(new Environment)),
-      inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
+      matrix_(inmatrix), rowMap_(), colMap_(), base_(),
       offset_(), columnIds_(),
       nWeightsPerRow_(nWeightsPerRow), rowWeights_(), numNzWeight_(),
       mayHaveDiagonalEntries(true)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  try {
-    matrix_ = rcp_const_cast<const xmatrix_t>(
-           XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(inmatrix)));
-  }
-  Z2_FORWARD_EXCEPTIONS
 
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
@@ -287,7 +278,7 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void XpetraRowMatrixAdapter<User,UserCoord>::setWeights(
+  void TpetraRowMatrixAdapter<User,UserCoord>::setWeights(
     const scalar_t *weightVal, int stride, int idx)
 {
   if (this->getPrimaryEntityType() == MATRIX_ROW)
@@ -305,7 +296,7 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void XpetraRowMatrixAdapter<User,UserCoord>::setRowWeights(
+  void TpetraRowMatrixAdapter<User,UserCoord>::setRowWeights(
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -319,7 +310,7 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void XpetraRowMatrixAdapter<User,UserCoord>::setWeightIsDegree(
+  void TpetraRowMatrixAdapter<User,UserCoord>::setWeightIsDegree(
     int idx)
 {
   if (this->getPrimaryEntityType() == MATRIX_ROW)
@@ -336,7 +327,7 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void XpetraRowMatrixAdapter<User,UserCoord>::setRowWeightIsNumberOfNonZeros(
+  void TpetraRowMatrixAdapter<User,UserCoord>::setRowWeightIsNumberOfNonZeros(
     int idx)
 {
   env_->localInputAssertion(__FILE__, __LINE__,
@@ -349,7 +340,7 @@ template <typename User, typename UserCoord>
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
   template <typename Adapter>
-    void XpetraRowMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
+    void TpetraRowMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 
@@ -358,14 +349,13 @@ template <typename User, typename UserCoord>
   ArrayRCP<gno_t> importList;
   try{
     numNewRows = Zoltan2::getImportList<Adapter,
-                                        XpetraRowMatrixAdapter<User,UserCoord> >
+                                        TpetraRowMatrixAdapter<User,UserCoord> >
                                        (solution, this, importList);
   }
   Z2_FORWARD_EXCEPTIONS;
 
   // Move the rows, creating a new matrix.
-  RCP<User> outPtr = XpetraTraits<User>::doMigration(in, numNewRows,
-                                                     importList.getRawPtr());
+  RCP<User> outPtr = doMigration(in, numNewRows, importList.getRawPtr());
   out = outPtr.get();
   outPtr.release();
 }
@@ -373,7 +363,7 @@ template <typename User, typename UserCoord>
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
   template <typename Adapter>
-    void XpetraRowMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
+    void TpetraRowMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
       const User &in, RCP<User> &out, 
       const PartitioningSolution<Adapter> &solution) const
 { 
@@ -382,14 +372,89 @@ template <typename User, typename UserCoord>
   ArrayRCP<gno_t> importList;
   try{
     numNewRows = Zoltan2::getImportList<Adapter,
-                                        XpetraRowMatrixAdapter<User,UserCoord> >
+                                        TpetraRowMatrixAdapter<User,UserCoord> >
                                        (solution, this, importList);
   }
   Z2_FORWARD_EXCEPTIONS;
 
   // Move the rows, creating a new matrix.
-  out = XpetraTraits<User>::doMigration(in, numNewRows,
-                                        importList.getRawPtr());
+  out = doMigration(in, numNewRows, importList.getRawPtr());
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+template < typename User, typename UserCoord>
+RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
+  const User &from,
+  size_t numLocalRows, 
+  const gno_t *myNewRows
+) const
+{
+  // Since cannot create a Tpetra::RowMatrix, do the migration into 
+  // a Tpetra::CrsMatrix object.
+  typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
+  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsmatrix_t;
+  lno_t base = 0;
+
+  // source map
+  const RCP<const map_t> &smap = from.getRowMap();
+  gno_t numGlobalRows = smap->getGlobalNumElements();
+
+  // target map
+  ArrayView<const gno_t> rowList(myNewRows, numLocalRows);
+  const RCP<const Teuchos::Comm<int> > &comm = from.getComm();
+  RCP<const map_t> tmap = rcp(new map_t(numGlobalRows, rowList, base, comm));
+
+  // importer
+  Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
+
+  // target matrix
+  // Chris Siefert proposed using the following to make migration 
+  // more efficient.  
+  // By default, the Domain and Range maps are the same as in "from".
+  // As in the original code, we instead set them both to tmap.  
+  // The assumption is a square matrix.
+  // TODO:  what about rectangular matrices?  
+  // TODO:  Should choice of domain/range maps be an option to this function?
+
+  // KDD 3/7/16:  disabling Chris' new code to avoid dashboard failures;
+  // KDD 3/7/16:  can re-enable when issue #114 is fixed.
+  // KDD 3/7/16:  when re-enable CSIEFERT code, can comment out
+  // KDD 3/7/16:  "Original way" code.
+  // CSIEFERT RCP<tcrsmatrix_t> M;
+  // CSIEFERT from.importAndFillComplete(M, importer, tmap, tmap);
+
+  // Original way we did it:
+  //
+  int oldNumElts = smap->getNodeNumElements();
+  int newNumElts = numLocalRows;
+
+  // number of non zeros in my new rows
+  typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
+  vector_t numOld(smap);  // TODO These vectors should have scalar=size_t,
+  vector_t numNew(tmap);  // but ETI does not yet support that.
+  for (int lid=0; lid < oldNumElts; lid++){
+    numOld.replaceGlobalValue(smap->getGlobalElement(lid),
+      scalar_t(from.getNumEntriesInLocalRow(lid)));
+  }
+  numNew.doImport(numOld, importer, Tpetra::INSERT);
+
+  // TODO Could skip this copy if could declare vector with scalar=size_t.
+  ArrayRCP<size_t> nnz(newNumElts);
+  if (newNumElts > 0){
+    ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
+    for (int lid=0; lid < newNumElts; lid++){
+      nnz[lid] = static_cast<size_t>(ptr[lid]);
+    }
+  }
+
+  RCP<tcrsmatrix_t> M = rcp(new tcrsmatrix_t(tmap, nnz,
+                                               Tpetra::StaticProfile));
+  M->doImport(from, importer, Tpetra::INSERT);
+  M->fillComplete();
+
+  // End of original way we did it.
+  return Teuchos::rcp_dynamic_cast<User>(M);
 }
 
 }  //namespace Zoltan2

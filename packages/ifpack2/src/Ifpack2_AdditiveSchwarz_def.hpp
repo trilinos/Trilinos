@@ -1445,11 +1445,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcpFromRef;
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
-  typedef Xpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> XpetraMatrixType;
-  typedef Xpetra::TpetraRowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> XpetraTpetraMatrixType;
-#endif
-
   TEUCHOS_TEST_FOR_EXCEPTION(
     Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::"
     "initialize: The matrix to precondition is null.  You must either pass "
@@ -1495,9 +1490,12 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 
     // FIXME (mfh 18 Nov 2013) Shouldn't this come from the Zoltan2 sublist?
     ReorderingAlgorithm_ = List_.get<std::string> ("order_method", "rcm");
-    XpetraTpetraMatrixType XpetraMatrix (ActiveMatrix);
-    typedef Zoltan2::XpetraRowMatrixAdapter<XpetraMatrixType> z2_adapter_type;
-    z2_adapter_type Zoltan2Matrix (rcpFromRef (XpetraMatrix));
+
+    typedef Zoltan2::TpetraRowMatrixAdapter<row_matrix_type> z2_adapter_type;
+    RCP<const row_matrix_type> constActiveMatrix = 
+              Teuchos::rcp_const_cast<const row_matrix_type>(ActiveMatrix);
+    z2_adapter_type Zoltan2Matrix (constActiveMatrix);
+
     typedef Zoltan2::OrderingProblem<z2_adapter_type> ordering_problem_type;
 #ifdef HAVE_MPI
     // Grab the MPI Communicator and build the ordering problem with that

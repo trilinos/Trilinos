@@ -124,6 +124,15 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_scorec_unit_tests
 ENDIF()
  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraRowMatrixInput
+  SOURCES input/TpetraRowMatrixInput.cpp 
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraTraits
   SOURCES input/XpetraTraits.cpp 
   NUM_MPI_PROCS 4

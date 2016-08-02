@@ -54,7 +54,6 @@
 #include <Zoltan2_Standards.hpp>
 
 #include <Xpetra_TpetraCrsMatrix.hpp>
-#include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <Tpetra_Vector.hpp>
 
@@ -204,93 +203,6 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 
     // End of original way we did it.
     return M;
-  }
-};
-
-//////////////////////////////////////////////////////////////////////////////
-// Tpetra::RowMatrix
-template <typename scalar_t,
-          typename lno_t,
-          typename gno_t,
-          typename node_t>
-struct XpetraTraits<Tpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> >
-{
-  typedef typename Xpetra::RowMatrix<scalar_t,lno_t,gno_t,node_t> xmatrix_t;
-  typedef typename Xpetra::TpetraRowMatrix<scalar_t,lno_t,gno_t,node_t> xtmatrix_t;
-  typedef typename Tpetra::RowMatrix<scalar_t,lno_t,gno_t,node_t> tmatrix_t;
-  typedef typename Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> tcrsmatrix_t;
-
-  static inline RCP<xmatrix_t> convertToXpetra(const RCP<tmatrix_t> &a)
-  {
-    return rcp(new xtmatrix_t(a));
-  }
-
-  static RCP<tmatrix_t> doMigration(const tmatrix_t &from,
-      size_t numLocalRows, const gno_t *myNewRows)
-  {
-    // Do the migration to a Tpetra::CrsMatrix object.
-    typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
-    lno_t base = 0;
-
-    // source map
-    const RCP<const map_t> &smap = from.getRowMap();
-    gno_t numGlobalRows = smap->getGlobalNumElements();
-
-    // target map
-    ArrayView<const gno_t> rowList(myNewRows, numLocalRows);
-    const RCP<const Teuchos::Comm<int> > &comm = from.getComm();
-    RCP<const map_t> tmap = rcp(new map_t(numGlobalRows, rowList, base, comm));
-
-    // importer
-    Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
-
-    // target matrix
-    // Chris Siefert proposed using the following to make migration 
-    // more efficient.  
-    // By default, the Domain and Range maps are the same as in "from".
-    // As in the original code, we instead set them both to tmap.  
-    // The assumption is a square matrix.
-    // TODO:  what about rectangular matrices?  
-    // TODO:  Should choice of domain/range maps be an option to this function?
-
-    // KDD 3/7/16:  disabling Chris' new code to avoid dashboard failures;
-    // KDD 3/7/16:  can re-enable when issue #114 is fixed.
-    // KDD 3/7/16:  when re-enable CSIEFERT code, can comment out
-    // KDD 3/7/16:  "Original way" code.
-    // CSIEFERT RCP<tcrsmatrix_t> M;
-    // CSIEFERT from.importAndFillComplete(M, importer, tmap, tmap);
-
-    // Original way we did it:
-    //
-    int oldNumElts = smap->getNodeNumElements();
-    int newNumElts = numLocalRows;
-    
-    // number of non zeros in my new rows
-    typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
-    vector_t numOld(smap);  // TODO These vectors should have scalar=size_t,
-    vector_t numNew(tmap);  // but ETI does not yet support that.
-    for (int lid=0; lid < oldNumElts; lid++){
-      numOld.replaceGlobalValue(smap->getGlobalElement(lid),
-        scalar_t(from.getNumEntriesInLocalRow(lid)));
-    }
-    numNew.doImport(numOld, importer, Tpetra::INSERT);
-   
-    // TODO Could skip this copy if could declare vector with scalar=size_t.
-    ArrayRCP<size_t> nnz(newNumElts);
-    if (newNumElts > 0){
-      ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
-      for (int lid=0; lid < newNumElts; lid++){
-        nnz[lid] = static_cast<size_t>(ptr[lid]);
-      }
-    }
-    
-    RCP<tcrsmatrix_t> M = rcp(new tcrsmatrix_t(tmap, nnz,
-                                               Tpetra::StaticProfile));
-    M->doImport(from, importer, Tpetra::INSERT);
-    M->fillComplete();
-
-    // End of original way we did it.
-    return Teuchos::rcp_dynamic_cast<tmatrix_t>(M);
   }
 };
 
@@ -677,46 +589,6 @@ struct XpetraTraits<Xpetra::CrsGraph<lno_t, gno_t, node_t> >
   }
 };
 
-
-
-//////////////////////////////////////////////////////////////////////////////
-// Xpetra::RowMatrix
-template <typename scalar_t,
-          typename lno_t,
-          typename gno_t,
-          typename node_t>
-struct XpetraTraits<Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> >
-{
-  typedef Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> x_matrix_t;
-  typedef Xpetra::TpetraRowMatrix<scalar_t, lno_t, gno_t, node_t> xt_matrix_t;
-  typedef Tpetra::RowMatrix<scalar_t,lno_t,gno_t,node_t> t_matrix_t;
-
-  static inline RCP<x_matrix_t> convertToXpetra(const RCP<x_matrix_t > &a)
-  {
-    return a;
-  }
-
-  static RCP<x_matrix_t> doMigration(const x_matrix_t &from,
-      size_t numLocalRows, const gno_t *myNewRows)
-  {
-    Xpetra::UnderlyingLib lib = from.getRowMap()->lib();
-
-    if (lib == Xpetra::UseEpetra){
-       throw std::logic_error("compiler should have used specialization");
-    } else{
-      // Do the import with the Tpetra::RowMatrix traits object
-      const xt_matrix_t *xtm = dynamic_cast<const xt_matrix_t *>(&from);
-      RCP<const t_matrix_t> tm = xtm->getTpetra_RowMatrix();
-
-      RCP<t_matrix_t> tmnew =
-         XpetraTraits<t_matrix_t>::doMigration(*tm, numLocalRows, myNewRows);
-
-      RCP<x_matrix_t> xmnew = XpetraTraits<t_matrix_t>::convertToXpetra(tmnew);
-
-      return xmnew;
-    }
-  }
-};
 
 //////////////////////////////////////////////////////////////////////////////
 // Xpetra::CrsGraph specialization
