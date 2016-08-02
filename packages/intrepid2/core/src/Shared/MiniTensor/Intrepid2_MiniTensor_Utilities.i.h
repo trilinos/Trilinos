@@ -47,6 +47,9 @@
 
 namespace Intrepid2 {
 
+//
+//
+//
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 void
@@ -63,6 +66,9 @@ swap(T & a, T & b)
   return;
 }
 
+//
+//
+//
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
@@ -71,6 +77,9 @@ max(const T & a, const T & b)
   return a > b ? a : b;
 }
 
+//
+//
+//
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
@@ -81,6 +90,7 @@ min(const T & a, const T & b)
 
 //
 // Sign function
+//
 template <typename T>
 KOKKOS_INLINE_FUNCTION
 int

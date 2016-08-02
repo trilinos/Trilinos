@@ -288,7 +288,7 @@ inline
 void
 TensorBase<T, ST>::set_dimension(Index const dimension, Index const order)
 {
-  dimension_ = dimension == DYNAMIC ? 0 : dimension;
+  dimension_ = dimension == DYNAMIC ? DYNAMIC : dimension;
 
   Index const
   number_components = integer_power(dimension, order);
@@ -336,7 +336,25 @@ inline
 void
 TensorBase<T, ST>::set_number_components(Index const number_components)
 {
+  Index const
+  prev_number_components = get_number_components();
+
+  if (number_components == prev_number_components) return;
+
+  if (number_components < prev_number_components) {
+    for (Index i{number_components}; i < prev_number_components; ++i) {
+      (*this)[i] = not_a_number<T>();
+    }
+  }
+
   components_.resize(number_components);
+
+  if (number_components > prev_number_components) {
+    for (Index i{prev_number_components}; i < number_components; ++i) {
+      (*this)[i] = not_a_number<T>();
+    }
+  }
+
   return;
 }
 
@@ -390,11 +408,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     break;
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Unknown specification of value for filling components.";
-    std::cerr << '\n';
-    exit(1);
+    MT_ERROR_EXIT("Unknown specification of value for filling components.");
     break;
   }
 

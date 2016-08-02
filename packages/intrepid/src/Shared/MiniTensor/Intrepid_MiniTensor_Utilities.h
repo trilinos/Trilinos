@@ -47,6 +47,27 @@
 
 namespace Intrepid {
 
+//
+//swap function
+//
+template<typename T>
+void
+swap(T & a, T & b);
+
+//
+// max function
+//
+template<typename T>
+T
+max(const T & a,const  T & b);
+
+//
+// max function
+//
+template<typename T>
+T
+min(const T & a,const  T & b);
+
 ///
 /// Sign function
 ///

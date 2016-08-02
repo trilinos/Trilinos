@@ -46,6 +46,7 @@
 #include "Sacado.hpp"
 
 namespace Intrepid2 {
+
 //
 //swap function
 //
@@ -55,13 +56,20 @@ void
 swap(T & a, T & b);
 
 //
-//max function
+// max function
 //
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
 max(const T & a,const  T & b);
 
+//
+// max function
+//
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+T
+min(const T & a,const  T & b);
 
 ///
 /// Sign function
