@@ -18,6 +18,7 @@ namespace ngp
 
 const unsigned MAX_NUM_FIELD_STATES = 6;
 
+template<typename T>
 class NgpStatedField
 {
 public:
@@ -36,9 +37,9 @@ public:
         return numStates;
     }
     STK_FUNCTION
-    ngp::StkNgpField get_field_of_state(stk::mesh::FieldState fs)
+    ngp::StkNgpField get_field_of_state(stk::mesh::FieldState state)
     {
-        return fields[fs];
+        return fields[state];
     }
     STK_FUNCTION
     void increment_state()
@@ -48,6 +49,31 @@ public:
             fields[i] = fields[i-1];
         fields[0] = oldLast;
     }
+
+    template <typename Mesh> STK_FUNCTION
+    T& get(stk::mesh::FieldState state, const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        return fields[state].get(ngpMesh, entity, component);
+    }
+
+    template <typename Mesh> STK_FUNCTION
+    const T& const_get(stk::mesh::FieldState state, const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        return fields[state].const_get(ngpMesh, entity, component);
+    }
+
+    template <typename MeshIndex> STK_FUNCTION
+    T& get(stk::mesh::FieldState state, MeshIndex entity, int component) const
+    {
+        return fields[state].get(entity, component);
+    }
+
+    template <typename MeshIndex> STK_FUNCTION
+    const T& const_get(stk::mesh::FieldState state, MeshIndex entity, int component) const
+    {
+        return fields[state].const_get(entity, component);
+    }
+
 private:
     unsigned numStates;
     ngp::StkNgpField fields[MAX_NUM_FIELD_STATES];
