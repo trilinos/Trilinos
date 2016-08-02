@@ -61,6 +61,8 @@ INCLUDE_DIRECTORIES(${DIR}/FacadeClasses)
 SET(HEADERS "")
 APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
 APPEND_GLOB(HEADERS *.hpp)
+APPEND_GLOB(HEADERS ${DIR}/FacadeClasses/*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/YamlParameterList/*.hpp)
 
 ###############################################
 SET(SOURCES "")
