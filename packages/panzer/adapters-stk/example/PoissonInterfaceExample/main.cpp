@@ -177,7 +177,7 @@ void assembleAndSolve (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& a
                                             panzer::LinearObjContainer::F |
                                             panzer::LinearObjContainer::Mat, *ghost_container);
 
-  double bnorm;
+  double bnorm(0);
   Teuchos::RCP<Epetra_Vector> x, dx;
   Teuchos::RCP<Epetra_CrsMatrix> A;
   // Newton iteration.

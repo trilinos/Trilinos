@@ -86,7 +86,7 @@ void SineSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
 { 
   using panzer::index_t;
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < solution.dimension(1); ++point) {
+    for (int point = 0; point < solution.extent_int(1); ++point) {
 
       const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
