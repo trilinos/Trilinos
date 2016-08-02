@@ -116,7 +116,7 @@ namespace Intrepid2 {
                                   std::invalid_argument ,
                                   ">>> ERROR (PointTools::getLattice): order and offset must be positive values." );
 
-    const auto latticeSize = getLatticeSize( cell, order, offset );
+    const auto latticeSize = getLatticeSize<pointValueType,pointProperties...>( cell, order, offset );
     const auto spaceDim = cell.getDimension();
     
     INTREPID2_TEST_FOR_EXCEPTION( points.dimension(0) != latticeSize ||
