@@ -56,12 +56,28 @@ class QoI_L2Tracking_Poisson : public QoI<Real> {
 private:
   Teuchos::RCP<FE<Real> > fe_;
 
-  Real TargetFunc(const Real x, const Real y) const {
-    return 0;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > target_;
+
+  Real targetFunc(const std::vector<Real> x) const {
+    return x[0]*x[0] + x[1]*x[1];
   }
 
 public:
-  QoI_L2Tracking_Poisson(const Teuchos::RCP<FE<Real> > &fe) : fe_(fe) {}
+  QoI_L2Tracking_Poisson(const Teuchos::RCP<FE<Real> > &fe) : fe_(fe) {
+    int c = fe_->cubPts()->dimension(0);
+    int p = fe_->cubPts()->dimension(1);
+    int d = fe_->cubPts()->dimension(2);
+    std::vector<Real> pt(d);
+    target_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p));
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        for (int k = 0; k < d; ++k) {
+          pt[k] = (*fe_->cubPts())(i,j,k);
+        }
+        (*target_)(i,j) = targetFunc(pt);
+      }
+    }
+  }
 
   void value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -71,11 +87,15 @@ public:
     int p = fe_->cubPts()->dimension(1);
     // Initialize output val
     val = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
-    // Build local state tracking term
+    // Evaluate state on FE basis
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     fe_->evaluateValue(valU_eval, u_coeff);
+    // Compute difference between state and target
+    Intrepid::RealSpaceTools<Real>::subtract(*valU_eval,*target_);
+    // Compute squared L2-norm of diff
     fe_->computeIntegral(val,valU_eval,valU_eval);
+    // Scale by one half
     Intrepid::RealSpaceTools<Real>::scale(*val,static_cast<Real>(0.5));
   }
 
@@ -88,10 +108,13 @@ public:
     int f = fe_->N()->dimension(1);
     // Initialize output grad
     grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-    // Build local gradient of state tracking term
+    // Evaluate state on FE basis
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     fe_->evaluateValue(valU_eval, u_coeff);
+    // Compute difference between state and target
+    Intrepid::RealSpaceTools<Real>::subtract(*valU_eval,*target_);
+    // Compute gradient of squared L2-norm of diff
     Intrepid::FunctionSpaceTools::integrate<Real>(*grad,
                                                   *valU_eval,
                                                   *(fe_->NdetJ()),
