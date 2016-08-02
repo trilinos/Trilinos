@@ -110,12 +110,13 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, Factor, ST, LO )
   {
     using Teuchos::Array;
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
     typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
     typedef typename device_type::execution_space execution_space;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
-    typedef Kokkos::View<ST**, Kokkos::LayoutLeft, device_type> block_type;
+    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, device_type> block_type;
     typedef Kokkos::View<LO*, device_type> int_vec_type;
-    typedef Kokkos::View<ST*, device_type> scalar_vec_type;
+    typedef Kokkos::View<IST*, device_type> scalar_vec_type;
 
     TEST_ASSERT( execution_space::is_initialized () );
     if (! execution_space::is_initialized ()) {
@@ -146,7 +147,7 @@ namespace {
     LO info;
 
     lapack_type lapackOBJ;
-    lapackOBJ.GETRF(3,3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),&info);
+    lapackOBJ.GETRF (3, 3, reinterpret_cast<ST*> (true_A.ptr_on_device ()), 3, true_piv.ptr_on_device(), &info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute our factorization
@@ -154,24 +155,26 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the two solutions
-    Teuchos::ArrayView<ST> ptr1(A.ptr_on_device(),9);
-    Teuchos::ArrayView<ST> ptr2(true_A.ptr_on_device(),9);
+    Teuchos::ArrayView<ST> ptr1 (reinterpret_cast<ST*> (A.ptr_on_device ()), 9);
+    Teuchos::ArrayView<ST> ptr2 (reinterpret_cast<ST*> (true_A.ptr_on_device ()), 9);
     TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
     TEST_COMPARE_ARRAYS( ipiv, true_piv );
 
     // Create a RHS
     scalar_vec_type rhs("rhs",3);
-    rhs(0) = 100;
-    rhs(1) = 200;
-    rhs(2) = 300;
+    rhs(0) = 100.0;
+    rhs(1) = 200.0;
+    rhs(2) = 300.0;
 
     scalar_vec_type true_rhs("truerhs",3,1);
     for(int i=0; i<3; i++)
       true_rhs(i) = rhs(i);
 
     // Compute the true solution
-    lapackOBJ.GETRS('n',3,1,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),
-        true_rhs.ptr_on_device(),3,&info);
+    lapackOBJ.GETRS ('n', 3, 1, reinterpret_cast<ST*> (true_A.ptr_on_device ()),
+                     3, true_piv.ptr_on_device (),
+                     reinterpret_cast<ST*> (true_rhs.ptr_on_device ()), 3,
+                     &info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute our solution
@@ -179,8 +182,8 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the solutions
-    Teuchos::ArrayView<ST> ptr3(rhs.ptr_on_device(),3);
-    Teuchos::ArrayView<ST> ptr4(true_rhs.ptr_on_device(),3);
+    Teuchos::ArrayView<ST> ptr3 (reinterpret_cast<ST*> (rhs.ptr_on_device ()), 3);
+    Teuchos::ArrayView<ST> ptr4 (reinterpret_cast<ST*> (true_rhs.ptr_on_device ()), 3);
     TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, 1e-10 );
 
     // Compute the inverse
@@ -189,7 +192,9 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute the true inverse
-    lapackOBJ.GETRI(3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),work.ptr_on_device(),3,&info);
+    lapackOBJ.GETRI (3, reinterpret_cast<ST*> (true_A.ptr_on_device ()), 3,
+                     true_piv.ptr_on_device (),
+                     reinterpret_cast<ST*> (work.ptr_on_device ()), 3, &info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the inverses
@@ -202,12 +207,13 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, FactorPivot, ST, LO )
   {
     using Teuchos::Array;
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
     typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
     typedef typename device_type::execution_space execution_space;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
-    typedef Kokkos::View<ST**, Kokkos::LayoutLeft, device_type> block_type;
+    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, device_type> block_type;
     typedef Kokkos::View<LO*, device_type> int_vec_type;
-    typedef Kokkos::View<ST*, device_type> scalar_vec_type;
+    typedef Kokkos::View<IST*, device_type> scalar_vec_type;
 
     TEST_ASSERT( execution_space::is_initialized () );
     if (! execution_space::is_initialized ()) {
@@ -216,15 +222,15 @@ namespace {
 
     // Create a matrix
     block_type A("A",3,3);
-    A(2,0) = 10;
-    A(2,1) = 2;
-    A(2,2) = 3;
-    A(0,0) = 4;
-    A(0,1) = 20;
-    A(0,2) = 5;
-    A(1,0) = 6;
-    A(1,1) = 7;
-    A(1,2) = 30;
+    A(2,0) = 10.0;
+    A(2,1) = 2.0;
+    A(2,2) = 3.0;
+    A(0,0) = 4.0;
+    A(0,1) = 20.0;
+    A(0,2) = 5.0;
+    A(1,0) = 6.0;
+    A(1,1) = 7.0;
+    A(1,2) = 30.0;
 
     // Create the pivot vector
     int_vec_type ipiv("ipiv",3);
@@ -238,7 +244,8 @@ namespace {
     LO info;
 
     lapack_type lapackOBJ;
-    lapackOBJ.GETRF(3,3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),&info);
+    lapackOBJ.GETRF (3, 3, reinterpret_cast<ST*> (true_A.ptr_on_device ()),
+                     3, true_piv.ptr_on_device (), &info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute our factorization
@@ -246,24 +253,26 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the two solutions
-    Teuchos::ArrayView<ST> ptr1(A.ptr_on_device(),9);
-    Teuchos::ArrayView<ST> ptr2(true_A.ptr_on_device(),9);
+    Teuchos::ArrayView<ST> ptr1 (reinterpret_cast<ST*> (A.ptr_on_device ()), 9);
+    Teuchos::ArrayView<ST> ptr2 (reinterpret_cast<ST*> (true_A.ptr_on_device ()), 9);
     TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
     TEST_COMPARE_ARRAYS( ipiv, true_piv );
 
     // Create a RHS
     scalar_vec_type rhs("rhs",3);
-    rhs(0) = 100;
-    rhs(1) = 200;
-    rhs(2) = 300;
+    rhs(0) = 100.0;
+    rhs(1) = 200.0;
+    rhs(2) = 300.0;
 
     scalar_vec_type true_rhs("truerhs",3,1);
     for(int i=0; i<3; i++)
       true_rhs(i) = rhs(i);
 
     // Compute the true solution
-    lapackOBJ.GETRS('n',3,1,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),
-        true_rhs.ptr_on_device(),3,&info);
+    lapackOBJ.GETRS ('n', 3, 1, reinterpret_cast<ST*> (true_A.ptr_on_device ()),
+                     3, true_piv.ptr_on_device (),
+                     reinterpret_cast<ST*> (true_rhs.ptr_on_device ()), 3,
+                     &info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute our solution
@@ -271,8 +280,8 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the solutions
-    Teuchos::ArrayView<ST> ptr3(rhs.ptr_on_device(),3);
-    Teuchos::ArrayView<ST> ptr4(true_rhs.ptr_on_device(),3);
+    Teuchos::ArrayView<ST> ptr3 (reinterpret_cast<ST*> (rhs.ptr_on_device ()), 3);
+    Teuchos::ArrayView<ST> ptr4 (reinterpret_cast<ST*> (true_rhs.ptr_on_device ()), 3);
     TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, 1e-10 );
 
     // Compute the inverse
@@ -281,7 +290,9 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compute the true inverse
-    lapackOBJ.GETRI(3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),work.ptr_on_device(),3,&info);
+    lapackOBJ.GETRI (3, reinterpret_cast<ST*> (true_A.ptr_on_device ()), 3,
+                     true_piv.ptr_on_device (),
+                     reinterpret_cast<ST*> (work.ptr_on_device ()), 3, &info);
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the inverses
