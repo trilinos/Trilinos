@@ -44,14 +44,14 @@
 #ifndef PDE_PDEOBJECTIVE_HPP
 #define PDE_PDEOBJECTIVE_HPP
 
-#include "ROL_Objective_SimOpt.hpp"
+#include "ROL_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_CompositeObjective_SimOpt.hpp"
 #include "ROL_StdObjective.hpp"
 #include "qoi.hpp"
 #include "assembler.hpp"
 
 template <class Real>
-class PDE_Objective : public virtual ROL::Objective_SimOpt<Real> {
+class PDE_Objective : public virtual ROL::ParametrizedObjective_SimOpt<Real> {
 private:
   const std::vector<Teuchos::RCP<QoI<Real> > > qoi_vec_;
   const Teuchos::RCP<ROL::StdObjective<Real> > std_obj_;
@@ -60,7 +60,7 @@ private:
   std::vector<Teuchos::RCP<ROL::Objective_SimOpt<Real> > > obj_vec_;
   Teuchos::RCP<ROL::Objective_SimOpt<Real> > obj_;
 
-  class IntegralObjective : public ROL::Objective_SimOpt<Real> {
+  class IntegralObjective : public ROL::ParametrizedObjective_SimOpt<Real> {
     private:
       const Teuchos::RCP<QoI<Real> > qoi_;
       const Teuchos::RCP<Assembler<Real> > assembler_;
@@ -68,6 +68,11 @@ private:
       IntegralObjective(const Teuchos::RCP<QoI<Real> > &qoi,
                         const Teuchos::RCP<Assembler<Real> > &assembler)
         : qoi_(qoi), assembler_(assembler) {}
+
+      void setParameter(const std::vector<Real> &param) {
+        qoi_->setParameter(param);
+        ROL::ParametrizedObjective_SimOpt<Real>::setParameter(param);
+      }
 
       Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
         Teuchos::RCP<const Tpetra::MultiVector<> > up =

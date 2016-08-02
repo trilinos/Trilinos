@@ -117,6 +117,19 @@ public:
                             const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                             const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) = 0;
 
+private:
+  std::vector<Real> param_;
+
+protected:
+  std::vector<Real> getParameter(void) const {
+    return param_;
+  }
+
+public:
+  void setParameter(const std::vector<Real> &param) {
+    param_.assign(param.begin(),param.end());
+  }
+
 }; // PDE
 
 #endif

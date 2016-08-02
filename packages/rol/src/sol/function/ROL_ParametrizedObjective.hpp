@@ -47,25 +47,15 @@
 
 #include "ROL_Types.hpp"
 #include "ROL_Objective.hpp"
+#include "ROL_Parametrize.hpp"
 #include <iostream>
 
 namespace ROL {
 
 template<class Real>
-class ParametrizedObjective : public virtual Objective<Real> {
-private:
-  std::vector<Real> param_;
-
-protected:
-  const std::vector<Real> getParameter(void) const {
-    return this->param_;
-  }
-
+class ParametrizedObjective : public virtual Objective<Real>, public Parametrize<Real> {
 public:
   virtual ~ParametrizedObjective(void) {}
-  virtual void setParameter(const std::vector<Real> &param) {
-    this->param_ = param;
-  }
 };
 
 }

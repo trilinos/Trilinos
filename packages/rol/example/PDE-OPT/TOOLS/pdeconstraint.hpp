@@ -48,13 +48,13 @@
 #ifndef ROL_PDEOPT_PDECONSTRAINT_H
 #define ROL_PDEOPT_PDECONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "pde.hpp"
 #include "assembler.hpp"
 
 template<class Real>
-class PDE_Constraint : public ROL::EqualityConstraint_SimOpt<Real> {
+class PDE_Constraint : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<PDE<Real> > pde_;
   Teuchos::RCP<Assembler<Real> > assembler_;
@@ -72,6 +72,11 @@ public:
       computeH11_(true), computeH12_(true), computeH21_(true), computeH22_(true) {
     assembler_ = Teuchos::rcp(new Assembler<Real>(pde_->getFields(),meshMgr,comm,parlist,outStream));
     assembler_->setCellNodes(*pde_);
+  }
+
+  void setParameter(const std::vector<Real> &param) {
+    pde_->setParameter(param);
+    ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
   }
 
   Teuchos::RCP<Assembler<Real> > getAssembler(void) const {

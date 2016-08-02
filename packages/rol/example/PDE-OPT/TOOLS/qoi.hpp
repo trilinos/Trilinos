@@ -119,6 +119,19 @@ public:
     throw Exception::NotImplemented(">>> Hessian_22 not implemented.");
   }
 
+private:
+  std::vector<Real> param_;
+
+protected:
+  std::vector<Real> getParameter(void) const {
+    return param_;
+  }
+
+public:
+  void setParameter(const std::vector<Real> &param) {
+    param_.assign(param.begin(),param.end());
+  }
+
 }; // QOI
 
 #endif

@@ -45,6 +45,7 @@
 #ifndef ROL_REDUCED_PARAMETRIZEDOBJECTIVE_SIMOPT_H
 #define ROL_REDUCED_PARAMETRIZEDOBJECTIVE_SIMOPT_H
 
+#include "ROL_ParametrizedObjective.hpp"
 #include "ROL_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
 #include "ROL_Vector_SimOpt.hpp"

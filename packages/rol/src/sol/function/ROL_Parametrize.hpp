@@ -41,21 +41,48 @@
 // ************************************************************************
 // @HEADER
 
+/** @ingroup stochastic_group
+    \class ROL::Parametrize
+    \brief Provides the mix-in interface for making objects parametrized.
 
-#ifndef ROL_PARAMETRIZEDEQUALITYCONSTRAINT_H
-#define ROL_PARAMETRIZEDEQUALITYCONSTRAINT_H
+    ROL::Parametrize is used to make ROL::Objective's and
+    ROL::EqualityConstraint's parametrized.  ROL::Parametrize contains a single
+    parameter (std::vector) and has methods for setting and getting the
+    parameter.  By using a mix-in (multiple inheritence) to define class such as
+    ROL::ParametrizedObjective_SimOpt and
+    ROL::ParametrizedEqualityConstraint_SimOpt we avoid diamond interitance.
+*/
 
-#include "ROL_EqualityConstraint.hpp"
-#include "ROL_Parametrize.hpp"
+#ifndef ROL_PARAMETRIZE_HPP
+#define ROL_PARAMETRIZE_HPP
 
 namespace ROL {
 
-template <class Real>
-class ParametrizedEqualityConstraint : public virtual EqualityConstraint<Real>, public Parametrized<Real> {
-public:
-  virtual ~ParametrizedEqualityConstraint(void) {}
-}; // class ParametrizedEqualityConstraint
+template<class Real>
+class Parametrize {
+private:
+  std::vector<Real> param_;
 
-} // namespace ROL
+protected:
+  /** \brief Return the parameter.
+  */
+  const std::vector<Real> getParameter(void) const {
+    return param_;
+  }
+
+public:
+  virtual ~Parametrize(void) {}
+  /** \brief Set the parameter.
+
+      @param[in] param is a user-provided parameter
+
+      The internal storage copies the input.
+  */
+  virtual void setParameter(const std::vector<Real> &param) {
+    param_.assign(param.begin(),param.end());
+  }
+};
+
+}
 
 #endif
