@@ -142,6 +142,10 @@ namespace Belos {
       return *problem_;
     }
 
+    const PseudoBlockStochasticCGIter<ScalarType,MV,OP>& getIteration() const {
+      return *block_cg_iter;
+    }
+
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -284,6 +288,7 @@ namespace Belos {
     // Stashed copy of the stochastic vector
     Teuchos::RCP<MV> Y_;
 
+    Teuchos::RCP<PseudoBlockStochasticCGIter<ScalarType,MV,OP> > block_cg_iter;
   };
 
 

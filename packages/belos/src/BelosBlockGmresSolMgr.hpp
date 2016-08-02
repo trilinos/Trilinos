@@ -179,6 +179,10 @@ public:
     return *problem_;
   }
 
+  const GmresIteration<ScalarType,MV,OP>& getIteration() const {
+    return *block_gmres_iter;
+  }
+
   /*! \brief Get a parameter list containing the valid parameters for this object.
    */
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -292,6 +296,7 @@ private:
 
   // Linear problem.
   Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+  Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > block_gmres_iter;
 
   // Output manager.
   Teuchos::RCP<OutputManager<ScalarType> > printer_;
@@ -1001,8 +1006,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
-
-  Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > block_gmres_iter;
 
   if (isFlexible_)
     block_gmres_iter = Teuchos::rcp( new BlockFGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );

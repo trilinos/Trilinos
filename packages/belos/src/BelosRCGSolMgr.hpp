@@ -233,6 +233,10 @@ namespace Belos {
       return *problem_;
     }
 
+    const RCGIter<ScalarType,MV,OP>& getIteration() const {
+      return *rcg_iter;
+    }
+
     /*! \brief Get a parameter list containing the valid parameters for this object. */
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
@@ -461,6 +465,8 @@ namespace Belos {
 
     // Internal state variables.
     bool params_Set_;
+
+    Teuchos::RCP<RCGIter<ScalarType,MV,OP> > rcg_iter;
   };
 
 
@@ -1182,7 +1188,6 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // RCG solver
 
-  Teuchos::RCP<RCGIter<ScalarType,MV,OP> > rcg_iter;
   rcg_iter = Teuchos::rcp( new RCGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
 
   // Enter solve() iterations

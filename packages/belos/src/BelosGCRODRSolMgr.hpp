@@ -284,6 +284,10 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
       return *problem_;
     }
 
+    const GCRODRIter<ScalarType,MV,OP>& getIteration() const {
+      return *gcrodr_iter;
+    }
+
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -517,6 +521,8 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 
     // Have we generated or regenerated a recycle space yet this solve?
     bool builtRecycleSpace_;
+
+    Teuchos::RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter;
   };
 
 
@@ -1394,7 +1400,6 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // GCRODR solver
 
-  RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter;
   gcrodr_iter = rcp( new GCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
   // Number of iterations required to generate initial recycle space (if needed)
   int prime_iterations = 0;

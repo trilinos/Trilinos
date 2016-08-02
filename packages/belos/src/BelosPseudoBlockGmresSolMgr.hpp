@@ -269,6 +269,10 @@ namespace Belos {
       return *problem_;
     }
 
+    const PseudoBlockGmresIter<ScalarType,MV,OP>& getIteration() const {
+      return *block_gmres_iter;
+    }
+
     //! A list of valid default parameters for this solver.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
@@ -525,6 +529,8 @@ namespace Belos {
     // Internal state variables.
     bool isSet_, isSTSet_, expResTest_;
     bool loaDetected_;
+
+    Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP> > block_gmres_iter;
   };
 
 
@@ -1329,7 +1335,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
 
-  Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
+  block_gmres_iter
     = Teuchos::rcp( new PseudoBlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
 
   // Enter solve() iterations

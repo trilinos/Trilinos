@@ -197,6 +197,10 @@ public:
     return *problem_;
   }
 
+  const BlockGmresIter<ScalarType,MV,OP> >& getIteration() const {
+    return *block_gmres_iter;
+  }
+
   //! Get a parameter list containing the valid parameters for this object.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
@@ -298,7 +302,7 @@ private:
   //  "AugKryl" indicates  it is specialized for building a recycle space from the augmented Krylov subspace
 
   // Functions which control the building of a recycle space
-  void buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter);
+  void buildRecycleSpaceKryl(int& keff, block_gmres_iter);
   void buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > gcrodr_iter);
 
   // Recycling with Harmonic Ritz Vectors
@@ -1051,6 +1055,8 @@ private:
 
      // Inform the solver manager that the current parameters were set.
      isSet_ = true;
+
+     Teuchos:: RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter;
    }
 
   // initializeStateStorage.

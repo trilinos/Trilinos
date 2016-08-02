@@ -247,6 +247,10 @@ namespace Belos {
       return *problem_;
     }
 
+    const PCPGIter<ScalarType,MV,OP>& getIteration() const {
+      return *pcpg_iter;
+    }
+
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -408,6 +412,8 @@ namespace Belos {
 
     // Internal state variables.
     bool isSet_;
+
+    Teuchos::RCP<PCPGIter<ScalarType,MV,OP> > pcpg_iter;
   };
 
 
@@ -819,7 +825,6 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // PCPG solver
 
-  Teuchos::RCP<PCPGIter<ScalarType,MV,OP> > pcpg_iter;
   pcpg_iter = Teuchos::rcp( new PCPGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
   // Number of iterations required to generate initial recycle space (if needed)
 

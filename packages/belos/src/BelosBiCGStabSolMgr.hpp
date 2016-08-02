@@ -150,6 +150,10 @@ namespace Belos {
       return *problem_;
     }
 
+    const BiCGStabIter<ScalarType,MV,OP>& getIteration() const {
+      return *block_cg_iter;
+    }
+
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -298,6 +302,8 @@ namespace Belos {
 
     // Internal state variables.
     bool isSet_;
+
+    Teuchos::RCP<BiCGStabIter<ScalarType,MV,OP> > block_cg_iter;
   };
 
 
@@ -697,7 +703,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
   //////////////////////////////////////////////////////////////////////////////////////
   // Pseudo-Block BiCGStab solver
 
-  Teuchos::RCP<BiCGStabIter<ScalarType,MV,OP> > block_cg_iter
+  block_cg_iter
     = Teuchos::rcp( new BiCGStabIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
 
   // Enter solve() iterations

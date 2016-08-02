@@ -171,7 +171,7 @@ namespace Belos {
      *			<iframe src="belos_PseudoBlockCG.xml" width=100% scrolling="no" frameborder="0">
      *			</iframe>
      *			<hr />
-     *			\endhtmlonly   
+     *			\endhtmlonly
      */
     PseudoBlockCGSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                          const Teuchos::RCP<Teuchos::ParameterList> &pl );
@@ -185,6 +185,10 @@ namespace Belos {
 
     const LinearProblem<ScalarType,MV,OP>& getProblem() const {
       return *problem_;
+    }
+
+    const PseudoBlockCGIter<ScalarType,MV,OP>& getIteration() const {
+      return *block_cg_iter;
     }
 
     /*! \brief Get a parameter list containing the valid parameters for this object.
@@ -354,6 +358,8 @@ namespace Belos {
 
     // Internal state variables.
     bool isSet_;
+
+    Teuchos::RCP<PseudoBlockCGIter<ScalarType,MV,OP> > block_cg_iter;
   };
 
 
@@ -816,7 +822,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
   //////////////////////////////////////////////////////////////////////////////////////
   // Pseudo-Block CG solver
 
-  Teuchos::RCP<PseudoBlockCGIter<ScalarType,MV,OP> > block_cg_iter
+  block_cg_iter
     = Teuchos::rcp( new PseudoBlockCGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
 
   // Enter solve() iterations

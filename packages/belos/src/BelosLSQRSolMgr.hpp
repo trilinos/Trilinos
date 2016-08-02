@@ -321,6 +321,10 @@ public:
     return *problem_;
   }
 
+  const LSQRIter<ScalarType,MV,OP>& getIteration() const {
+    return *lsqr_iter;
+  }
+
   /*! \brief Get a parameter list containing the valid parameters for this object.
    */
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -495,6 +499,8 @@ private:
   // Internal state variables.
   bool isSet_;
   bool loaDetected_;
+
+  Teuchos::RCP<LSQRIter<ScalarType,MV,OP> > lsqr_iter;
 };
 
 template<class ScalarType, class MV, class OP>
@@ -933,7 +939,7 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
   plist.set ("Lambda", lambda_);
 
   typedef LSQRIter<ScalarType,MV,OP> iter_type;
-  RCP<iter_type> lsqr_iter =
+  lsqr_iter =
     rcp (new iter_type (problem_, printer_, outputTest_, plist));
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor slvtimer (*timerSolve_);

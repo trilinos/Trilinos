@@ -201,6 +201,10 @@ public:
     return *problem_;
   }
 
+  const BlockGmresIter<ScalarType,MV,OP>& getIteration() const {
+    return *gmres_iter;
+  }
+
   /*! \brief Get a parameter list containing the valid parameters for this object.
    */
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -364,6 +368,8 @@ private:
 
   //! Cached default (valid) parameters.
   mutable Teuchos::RCP<const Teuchos::ParameterList> validPL_;
+
+  Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > gmres_iter;
 };
 
 
@@ -980,7 +986,6 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
     Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, maxItrTst, convTst ) );
 
   // Create Gmres iteration object to perform one cycle of Gmres.
-  Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > gmres_iter;
   gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(newProblem,printer_,polyTest,ortho_,polyList) );
 
   // Create the first block in the current Krylov basis (residual).
