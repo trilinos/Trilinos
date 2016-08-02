@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Build ROL algorithm
-    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-8);
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-7);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     Teuchos::RCP<ROL::Algorithm<RealT> > algo;
@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
     optProb.checkObjectiveHessVec(d,true,*outStream);
     // Run ROL algorithm
     parlist->sublist("Status Test").set("Iteration Limit",1000);
-    parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-8);
+    parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-7);
     algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Bundle",*parlist,false));
     start = clock();
     algo->run(optProb,true,*outStream);
@@ -287,6 +287,18 @@ int main(int argc, char* argv[]) {
     *outStream << "  ---------------------------------------------\n\n";
     // Comparison
     errorFlag += ((TOTerror1 < 90.*TOTerror2) && (TOTerror2 < 90.*TOTerror3)) ? 1 : 0;
+
+    // Output controls
+    std::ofstream control;
+    control.open("example04_control.txt");
+    for (int n = 0; n < nx+2; n++) {
+      control << std::scientific << std::setprecision(15)
+              << std::setw(25) << static_cast<RealT>(n)/static_cast<RealT>(nx+1)
+              << std::setw(25) << (*z_rcp)[n]
+              << std::endl;
+    }
+    control.close();
+
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
