@@ -11,43 +11,47 @@ template<typename T>
 class WrapperField
 {
 public:
-    WrapperField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(f)
+    WrapperField() : field(nullptr)
+    {
+    }
+
+    WrapperField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(&f)
     {
     }
 
     T& get(const WrapperMesh& ngpMesh, stk::mesh::Entity entity, int component) const
     {
-        T *data = static_cast<T *>(stk::mesh::field_data(field, entity));
+        T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
         return data[component];
     }
 
     const T& const_get(const WrapperMesh& ngpMesh, stk::mesh::Entity entity, int component) const
     {
-        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity));
+        const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
         return data[component];
     }
 
     T& get(stk::mesh::FastMeshIndex entity, int component) const
     {
-        T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket_id, entity.bucket_ord));
+        T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
         return data[component];
     }
 
     const T& const_get(stk::mesh::FastMeshIndex entity, int component) const
     {
-        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket_id, entity.bucket_ord));
+        const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
         return data[component];
     }
 
     T& get(WrapperMesh::MeshIndex entity, int component) const
     {
-        T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket->bucket_id(), entity.bucketOrd));
+        T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
         return data[component];
     }
 
     const T& const_get(WrapperMesh::MeshIndex entity, int component) const
     {
-        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket->bucket_id(), entity.bucketOrd));
+        const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
         return data[component];
     }
 
@@ -56,7 +60,7 @@ public:
     }
 
 private:
-    const stk::mesh::FieldBase& field;
+    const stk::mesh::FieldBase * field;
 };
 
 
@@ -64,6 +68,10 @@ private:
 template<typename T>
 class StaticField {
 public:
+    StaticField()
+    {
+    }
+
     StaticField(stk::mesh::EntityRank rank, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
     : deviceData()
     {
