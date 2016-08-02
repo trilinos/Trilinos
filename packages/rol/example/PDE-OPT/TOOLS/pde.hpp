@@ -70,42 +70,42 @@ public:
   virtual ~PDE() {}
 
   virtual void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                        Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                        Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff) = 0;
+                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) = 0;
 
   virtual void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff) = 0;
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) = 0;
 
   virtual void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff) = 0;
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) = 0;
 
   virtual void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
     throw Exception::NotImplemented(">>> Hessian_11 not implemented.");
   }
 
   virtual void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
     throw Exception::NotImplemented(">>> Hessian_12 not implemented.");
   }
 
   virtual void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
     throw Exception::NotImplemented(">>> Hessian_21 not implemented.");
   }
 
   virtual void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                          Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
     throw Exception::NotImplemented(">>> Hessian_22 not implemented.");
   }
 

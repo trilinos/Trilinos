@@ -97,8 +97,8 @@ public:
   }
 
   void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff) {
+                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
     int c = u_coeff->dimension(0);
     int p = cellCub_->getNumPoints();
     int f = basisPtr_->getCardinality();
@@ -139,8 +139,8 @@ public:
   }
 
   void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff) {
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
     int c = u_coeff->dimension(0);
     int f = basisPtr_->getCardinality();
     jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
@@ -149,8 +149,8 @@ public:
   }
 
   void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff) {
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
     int c = u_coeff->dimension(0);
     int f = basisPtr_->getCardinality();
     jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
@@ -158,30 +158,30 @@ public:
   }
 
   void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
     throw Exception::Zero(">>> Zero Hessian.");
   }
 
   void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
     throw Exception::Zero(">>> Zero Hessian.");
   }
 
   void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
     throw Exception::Zero(">>> Zero Hessian.");
   }
 
   void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
     throw Exception::Zero(">>> Zero Hessian.");
   }
 
@@ -197,6 +197,10 @@ public:
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
     fe_vol_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
+  }
+
+  const Teuchos::RCP<FE<Real> > getFE(void) const {
+    return fe_vol_;
   }
 
 }; // PDE_Poisson
