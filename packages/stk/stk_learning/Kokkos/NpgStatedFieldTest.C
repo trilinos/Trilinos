@@ -14,12 +14,12 @@
 namespace ngp
 {
 
-const unsigned MAX_NUM_STATES = 6;
+const unsigned MAX_NUM_FIELD_STATES = 6;
 
 class NgpStatedField
 {
 public:
-    NgpStatedField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &stkField) :
+    NgpStatedField(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &stkField) :
             numStates(stkField.number_of_states())
     {
         for(unsigned i = 0; i < numStates; i++)
@@ -36,15 +36,30 @@ public:
     {
         return fields[fs];
     }
+    void increment_state()
+    {
+        ngp::StkNgpField oldLast = fields[numStates-1];
+        for(unsigned i=numStates-1; i>0; i--)
+            fields[i] = fields[i-1];
+        fields[0] = oldLast;
+    }
 private:
     unsigned numStates;
-    ngp::StkNgpField fields[MAX_NUM_STATES];
+    ngp::StkNgpField fields[MAX_NUM_FIELD_STATES];
 };
 
 }
 
-namespace {
+void assign_value_to_field(stk::mesh::BulkData &bulk, ngp::StkNgpField ngpField, double value)
+{
+    ngp::StkNgpMesh ngpMesh(bulk);
+    ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(), KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
+    {
+        ngpField.get(entity, 0) = value;
+    });
+}
 
+namespace {
 
 class StatedFields : public stk::unit_test_util::MeshFixture
 {
@@ -57,18 +72,6 @@ protected:
         stk::mesh::put_field(*stkField, get_meta().universal_part(), &init);
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", get_bulk());
 
-//        stk::mesh::EntityVector elems;
-//        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
-//        for(unsigned stateCount = 0; stateCount < numStates; stateCount++)
-//        {
-//            stk::mesh::FieldBase * fieldOfState = stkField->field_state(static_cast<stk::mesh::FieldState>(stateCount));
-//            for(stk::mesh::Entity elem : elems)
-//            {
-//                double * value = static_cast<double*>(stk::mesh::field_data(*fieldOfState, elem));
-//                *value = stateCount;
-//            }
-//        }
-
         return ngp::NgpStatedField(get_bulk(), *stkField);
     }
     void test_n_states(unsigned numStates)
@@ -76,35 +79,10 @@ protected:
         ngp::NgpStatedField ngpField = create_field_with_num_states(numStates);
         EXPECT_EQ(numStates, ngpField.get_num_states());
     }
-    void test_field_has_value(ngp::StkNgpField ngpField, unsigned stateCount, double expectedValue)
-    {
-        stk::mesh::EntityVector elems;
-        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
-
-        stk::mesh::FieldBase * fieldOfState = stkField->field_state(static_cast<stk::mesh::FieldState>(stateCount));
-        ngpField.copy_device_to_host(get_bulk(), *fieldOfState);
-
-        for(stk::mesh::Entity elem : elems)
-        {
-            double * value = static_cast<double*>(stk::mesh::field_data(*fieldOfState, elem));
-            EXPECT_EQ(expectedValue, *value);
-        }
-    }
     void verify_initial_value_set_per_state(ngp::NgpStatedField &ngpStatedField)
     {
         for(unsigned stateCount = 0; stateCount < stkField->number_of_states(); stateCount++)
-        {
-            ngp::StkNgpField ngpField = ngpStatedField.get_field_of_state(static_cast<stk::mesh::FieldState>(stateCount));
-            test_field_has_value(ngpField, stateCount, -1.0);
-        }
-    }
-    void assign_value_to_field(ngp::StkNgpField ngpField, double value)
-    {
-        ngp::StkNgpMesh ngpMesh(get_bulk());
-        ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
-        {
-            ngpField.get(entity, 0) = value;
-        });
+            test_field_has_value(ngpStatedField, stateCount, -1.0);
     }
     void verify_can_assign_values_per_state(ngp::NgpStatedField &ngpStatedField)
     {
@@ -112,8 +90,23 @@ protected:
         {
             ngp::StkNgpField ngpField = ngpStatedField.get_field_of_state(static_cast<stk::mesh::FieldState>(stateCount));
             double fieldValue = stateCount;
-            assign_value_to_field(ngpField, fieldValue);
-            test_field_has_value(ngpField, stateCount, fieldValue);
+            assign_value_to_field(get_bulk(), ngpField, fieldValue);
+            test_field_has_value(ngpStatedField, stateCount, fieldValue);
+        }
+    }
+    void test_field_has_value(ngp::NgpStatedField ngpStatedField, unsigned stateCount, double expectedValue)
+    {
+        stk::mesh::EntityVector elems;
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
+
+        ngp::StkNgpField ngpField = ngpStatedField.get_field_of_state(static_cast<stk::mesh::FieldState>(stateCount));
+        stk::mesh::FieldBase * fieldOfState = stkField->field_state(static_cast<stk::mesh::FieldState>(stateCount));
+        ngpField.copy_device_to_host(get_bulk(), *fieldOfState);
+
+        for(stk::mesh::Entity elem : elems)
+        {
+            double * value = static_cast<double*>(stk::mesh::field_data(*fieldOfState, elem));
+            EXPECT_EQ(expectedValue, *value);
         }
     }
     stk::mesh::Field<double> * stkField;
@@ -136,5 +129,19 @@ TEST_F(StatedFields, creatingFromStatedStkField_ngpStatedFieldHasSameValues)
     ngp::NgpStatedField ngpStatedField = create_field_with_num_states(3);
     verify_initial_value_set_per_state(ngpStatedField);
     verify_can_assign_values_per_state(ngpStatedField);
+}
+TEST_F(StatedFields, incrementingState_fieldsShiftDown)
+{
+    ngp::NgpStatedField ngpStatedField = create_field_with_num_states(3);
+    verify_can_assign_values_per_state(ngpStatedField);
+
+    get_bulk().update_field_data_states();
+    ngpStatedField.increment_state();
+
+    test_field_has_value(ngpStatedField, 0, stkField->number_of_states()-1);
+    for(unsigned stateCount = 1; stateCount < stkField->number_of_states(); stateCount++)
+    {
+        test_field_has_value(ngpStatedField, stateCount, stateCount-1);
+    }
 }
 } //namespace
