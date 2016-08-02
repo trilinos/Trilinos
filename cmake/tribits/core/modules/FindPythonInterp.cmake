@@ -94,7 +94,7 @@ IF (PYTHON_EXECUTABLE OR PythonInterp_MUST_BE_FOUND)
   ENDIF()
   IF (PythonInterp_FIND_VERSION)
     EXECUTE_PROCESS(COMMAND
-      ${PYTHON_EXECUTABLE} -c "import sys; print sys.version.split()[0]"
+      ${PYTHON_EXECUTABLE} -c "import sys; print(sys.version.split()[0])"
       OUTPUT_VARIABLE PythonInterp_VERSION
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )

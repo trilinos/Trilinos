@@ -2,7 +2,6 @@ import sys
 import os
 import stat
 import subprocess
-import commands
 
 #
 # A) Set up basic paths and import modules
@@ -96,18 +95,18 @@ def generateDocutilsOuputFiles(options):
   outputFileBaseName = os.path.basename(outputFileBase)
   
   if options.generateHtml:
-    print "Generating "+outputFileBaseName+".html ..."
+    print("Generating " + outputFileBaseName + ".html ...")
     outputHtmlFile = outputFileBase+".html"
     generateFile(outputHtmlFile,
       options.generateHtml+" "+rstFile+" "+outputHtmlFile)
   
   if options.generateLatex:
-    print "Generating "+outputFileBaseName+".tex ..."
+    print("Generating " + outputFileBaseName + ".tex ...")
     outputLatexFile = outputFileBase+".tex"
     runSysCmnd(options.generateLatex+" "+options.generateLatexOptions+ \
        " "+rstFile+" "+outputLatexFile)
     if options.generatePDF:
-      print "Generating "+outputFileBaseName+".pdf ..."
+      print("Generating " + outputFileBaseName + ".pdf ...")
       outputPdfFile = outputFileBase+".pdf"
       outputPdfFileLog = outputLatexFile+".log"
       generateFile(outputPdfFile,
@@ -122,7 +121,7 @@ def generateDocutilsOuputFiles(options):
   
   if options.cleanTempFiles:
 
-    print "Cleaning intermediate files ..."
+    print("Cleaning intermediate files ...")
     
     filesToClean.extend(
       [
@@ -140,4 +139,4 @@ def generateDocutilsOuputFiles(options):
 
   else:
 
-    print "Keeping temp files ..."
+    print("Keeping temp files ...")

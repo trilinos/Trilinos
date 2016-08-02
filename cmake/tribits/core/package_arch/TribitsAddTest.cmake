@@ -64,6 +64,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     [XHOST <host0> <host1> ...]
 #     [HOSTTYPE <hosttype0> <hosttype1> ...]
 #     [XHOSTTYPE <hosttype0> <hosttype1> ...]
+#     [EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...]
 #     [STANDARD_PASS_OUTPUT
 #       | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
 #     [FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
@@ -279,6 +280,11 @@ INCLUDE(TribitsAddTestHelpers)
 #     This check is performed after the check for the host system names in the
 #     ``HOSTTYPE`` list if it should exist.  Therefore, this exclusion list
 #     overrides the ``HOSTTYPE`` inclusion list.
+#
+#   ``EXCLUDE_IF_NOT_TRUE <varname0> <varname1> ...``
+#
+#     If specified, gives the names of CMake variables that must evaluate to
+#     true, or the test will not be added.
 #
 #   ``STANDARD_PASS_OUTPUT``
 #
@@ -657,7 +663,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
      #prefix
      PARSE
      #lists
-     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TESTS_NAMES_OUT"
+     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TESTS_NAMES_OUT"
      #options
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;RUN_SERIAL"
      ${ARGN}
