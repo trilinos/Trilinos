@@ -521,8 +521,7 @@ public:
   void computeIntegral(const Teuchos::RCP<Intrepid::FieldContainer<Real> > & integral,
                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & f1,
                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & f2) const {
-    int nc = integral->dimension(0);
-    Intrepid::FieldContainer<Real> f2Weighted(nc);
+    Intrepid::FieldContainer<Real> f2Weighted(*f2);
     Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(f2Weighted,              // multiply with weighted measure
                                                                *cellWeightedMeasure_,
                                                                *f2);

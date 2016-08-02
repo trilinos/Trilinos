@@ -41,82 +41,84 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  pde.hpp
-    \brief Provides the interface for local (cell-based) PDE residual computations.
+/*! \file  qoi.hpp
+    \brief Provides the interface for local (cell-based) quantities of interest.
 */
 
-#ifndef PDEOPT_PDE_HPP
-#define PDEOPT_PDE_HPP
+#ifndef ROL_PDEOPT_QOI_HPP
+#define ROL_PDEOPT_QOI_HPP
 
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_Basis.hpp"
-#include "Teuchos_RCP.hpp"
-
-namespace Exception {
-
-  class NotImplemented : public Teuchos::ExceptionBase {
-    public:
-      NotImplemented(const std::string & what_arg) : Teuchos::ExceptionBase(what_arg) {}
-  }; // NotImplemented
-
-  class Zero : public Teuchos::ExceptionBase {
-    public:
-      Zero(const std::string & what_arg) : Teuchos::ExceptionBase(what_arg) {}
-  }; // Zero
-
-} // Exception
+#include "pde.hpp"
 
 template <class Real>
-class PDE {
+class QoI {
 public:
-  virtual ~PDE() {}
+  virtual ~QoI() {}
 
-  virtual void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) = 0;
+  virtual void value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
+                     const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                     const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) = 0;
 
-  virtual void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
+  virtual void gradient_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) = 0;
 
-  virtual void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
+  virtual void gradient_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) = 0;
+
+  virtual void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+    throw Exception::NotImplemented(">>> HessVec_11 not implemented.");
+  }
+
+  virtual void HessVec_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+    throw Exception::NotImplemented(">>> HessVec_12 not implemented.");
+  }
+
+  virtual void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+    throw Exception::NotImplemented(">>> HessVec_21 not implemented.");
+  }
+
+  virtual void HessVec_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+    throw Exception::NotImplemented(">>> HessVec_22 not implemented.");
+  }
 
   virtual void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
     throw Exception::NotImplemented(">>> Hessian_11 not implemented.");
   }
 
   virtual void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
     throw Exception::NotImplemented(">>> Hessian_12 not implemented.");
   }
 
   virtual void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
     throw Exception::NotImplemented(">>> Hessian_21 not implemented.");
   }
 
   virtual void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
+                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
     throw Exception::NotImplemented(">>> Hessian_22 not implemented.");
   }
 
-  virtual std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() = 0;
-
-  virtual void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &cellNodes,
-                            const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
-                            const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) = 0;
-
-}; // PDE
+}; // QOI
 
 #endif

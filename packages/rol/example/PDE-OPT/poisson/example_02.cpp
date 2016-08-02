@@ -56,10 +56,14 @@
 #include <iostream>
 #include <algorithm>
 
+#include "ROL_TpetraMultiVector.hpp"
+#include "ROL_Algorithm.hpp"
+
 #include "../TOOLS/meshmanager.hpp"
-#include "../TOOLS/pdefem.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
+#include "../TOOLS/pdeobjective.hpp"
 #include "pde_poisson.hpp"
+#include "obj_poisson.hpp"
 
 typedef double RealT;
 
@@ -93,36 +97,42 @@ int main(int argc, char *argv[]) {
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr
       = Teuchos::rcp(new MeshManager_Rectangle<RealT>(*parlist));
-    Teuchos::RCP<PDE<RealT> > pde
+    // Initialize PDE describe Poisson's equation
+    Teuchos::RCP<PDE_Poisson<RealT> > pde
       = Teuchos::rcp(new PDE_Poisson<RealT>(*parlist));
-    Teuchos::RCP<PDE_FEM<RealT> > fem
-      = Teuchos::rcp(new PDE_FEM<RealT>(pde,meshMgr,comm,*parlist,*outStream));
-    fem->printMeshData(*outStream);
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
-      = Teuchos::rcp(new PDE_Constraint<RealT>(fem));
+    Teuchos::RCP<PDE_Constraint<RealT> > con
+      = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
+    // Initialize quadratic objective function
+    std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
+    qoi_vec[0] = Teuchos::rcp(new QoI_L2Tracking_Poisson<RealT>(pde->getFE()));
+    qoi_vec[1] = Teuchos::rcp(new QoI_L2Penalty_Poisson<RealT>(pde->getFE()));
+    Teuchos::RCP<StdObjective_Poisson<RealT> > std_obj
+      = Teuchos::rcp(new StdObjective_Poisson<RealT>(*parlist));
+    Teuchos::RCP<PDE_Objective<RealT> > obj
+      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,con->getAssembler()));
 
     // Create state vector and set to zeroes
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = fem->createStateVector();
-    u_rcp->putScalar(0.0);
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = con->getAssembler()->createStateVector();
+    u_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > up
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
     // Create control vector and set to ones
-    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = fem->createControlVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = con->getAssembler()->createControlVector();
     z_rcp->putScalar(1.0);
     Teuchos::RCP<ROL::Vector<RealT> > zp
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
     // Create residual vector and set to zeros
-    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = fem->createResidualVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = con->getAssembler()->createResidualVector();
     r_rcp->putScalar(0.0);
     Teuchos::RCP<ROL::Vector<RealT> > rp
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(r_rcp));
     // Create state direction vector and set to random
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = fem->createStateVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = con->getAssembler()->createStateVector();
     du_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dup
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
     // Create control direction vector and set to random
-    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = fem->createControlVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = con->getAssembler()->createControlVector();
     dz_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dzp
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
@@ -131,21 +141,24 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     // Run derivative checks
+    obj->checkGradient(x,d,true,*outStream);
+    obj->checkHessVec(x,d,true,*outStream);
     con->checkApplyJacobian(x,d,*up,true,*outStream);
     con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
     con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
     con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
     con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
 
-    fem->assembleResidual(*u_rcp,*z_rcp);
-    fem->assembleJacobian1(*u_rcp,*z_rcp);
-    r_rcp->scale(-1.0,*(fem->getResidual()));
-    fem->solve(u_rcp,r_rcp);
-    fem->outputTpetraVector(u_rcp,"solution.txt");
+    ROL::Algorithm<RealT> algo("Composite Step",*parlist,false);
+    algo.run(x,*rp,*obj,*con,true,*outStream);
+
+    RealT tol(1.e-8);
+    con->solve(*rp,*up,*zp,tol);
+    con->getAssembler()->outputTpetraVector(u_rcp,"solution.txt");
 
     Teuchos::Array<RealT> res(1,0);
-    fem->assembleResidual(*u_rcp,*z_rcp);
-    fem->getResidual()->norm2(res.view(0,1));
+    con->value(*rp,*up,*zp,tol);
+    r_rcp->norm2(res.view(0,1));
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
   }

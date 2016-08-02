@@ -50,20 +50,33 @@
 
 #include "ROL_EqualityConstraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
-#include "pdefem.hpp"
+#include "pde.hpp"
+#include "assembler.hpp"
 
 template<class Real>
 class PDE_Constraint : public ROL::EqualityConstraint_SimOpt<Real> {
 private:
-  const Teuchos::RCP<PDE_FEM<Real> > fem_;
+  const Teuchos::RCP<PDE<Real> > pde_;
+  Teuchos::RCP<Assembler<Real> > assembler_;
 
   bool computeJ1_, computeJ2_;
   bool computeH11_, computeH12_, computeH21_, computeH22_;
 
 public:
-  PDE_Constraint(const Teuchos::RCP<PDE_FEM<Real> > &fem)
-    : fem_(fem), computeJ1_(true), computeJ2_(true),
-      computeH11_(true), computeH12_(true), computeH21_(true), computeH22_(true) {}
+  PDE_Constraint(const Teuchos::RCP<PDE<Real> > &pde,
+                 const Teuchos::RCP<MeshManager<Real> > &meshMgr,
+                 const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+                 Teuchos::ParameterList &parlist,
+                 std::ostream &outStream = std::cout)
+    : pde_(pde), computeJ1_(true), computeJ2_(true),
+      computeH11_(true), computeH12_(true), computeH21_(true), computeH22_(true) {
+    assembler_ = Teuchos::rcp(new Assembler<Real>(pde_->getFields(),meshMgr,comm,parlist,outStream));
+    assembler_->setCellNodes(*pde_);
+  }
+
+  Teuchos::RCP<Assembler<Real> > getAssembler(void) const {
+    return assembler_;
+  }
 
   using ROL::EqualityConstraint_SimOpt<Real>::update_1;
   void update_1(const ROL::Vector<Real> &u, bool flag = true, int iter = -1) {
@@ -101,8 +114,8 @@ public:
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
     Real one(1);
-    fem_->assembleResidual(*up,*zp);
-    cp->scale(one,*(fem_->getResidual()));
+    assembler_->assemblePDEResidual(*up,*zp,*pde_);
+    cp->scale(one,*(assembler_->getPDEResidual()));
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
@@ -117,10 +130,10 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleJacobian1(*up,*zp);
+      assembler_->assemblePDEJacobian1(*up,*zp,*pde_);
       computeJ1_ = false;
     }
-    fem_->getJacobian1(false)->apply(*vp,*jvp);
+    assembler_->getPDEJacobian1(false)->apply(*vp,*jvp);
   }
 
 
@@ -136,10 +149,10 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleJacobian2(*up,*zp);
+      assembler_->assemblePDEJacobian2(*up,*zp,*pde_);
       computeJ2_ = false;
     }
-    fem_->getJacobian2(false)->apply(*vp,*jvp);
+    assembler_->getPDEJacobian2(false)->apply(*vp,*jvp);
   }
 
 
@@ -155,10 +168,10 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleJacobian1(*up,*zp);
+      assembler_->assemblePDEJacobian1(*up,*zp,*pde_);
       computeJ1_ = false;
     }
-    fem_->getJacobian1(true)->apply(*vp,*ajvp);
+    assembler_->getPDEJacobian1(true)->apply(*vp,*ajvp);
   }
 
 
@@ -174,10 +187,10 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleJacobian2(*up,*zp);
+      assembler_->assemblePDEJacobian2(*up,*zp,*pde_);
       computeJ2_ = false;
     }
-    fem_->getJacobian2(true)->apply(*vp,*ajvp);
+    assembler_->getPDEJacobian2(true)->apply(*vp,*ajvp);
   }
 
 
@@ -196,10 +209,10 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zp =
           (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-        fem_->assembleHessian11(*up,*zp,*wp);
+        assembler_->assemblePDEHessian11(*up,*zp,*wp,*pde_);
         computeH11_ = false;
       }
-      fem_->getHessian11()->apply(*vp,*ahwvp);
+      assembler_->getPDEHessian11()->apply(*vp,*ahwvp);
     }
     catch (Exception::Zero &zero) {
       ahwv.zero();
@@ -222,10 +235,10 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zp =
           (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-        fem_->assembleHessian12(*up,*zp,*wp);
+        assembler_->assemblePDEHessian12(*up,*zp,*wp,*pde_);
         computeH12_ = false;
       }
-      fem_->getHessian12()->apply(*vp,*ahwvp);
+      assembler_->getPDEHessian12()->apply(*vp,*ahwvp);
     }
     catch (Exception::Zero &zero) {
       ahwv.zero();
@@ -248,10 +261,10 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zp =
           (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-        fem_->assembleHessian21(*up,*zp,*wp);
+        assembler_->assemblePDEHessian21(*up,*zp,*wp,*pde_);
         computeH21_ = false;
       }
-      fem_->getHessian21()->apply(*vp,*ahwvp);
+      assembler_->getPDEHessian21()->apply(*vp,*ahwvp);
     }
     catch (Exception::Zero &zero) {
       ahwv.zero();
@@ -274,10 +287,10 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zp =
           (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-        fem_->assembleHessian22(*up,*zp,*wp);
+        assembler_->assemblePDEHessian22(*up,*zp,*wp,*pde_);
         computeH22_ = false;
       }
-      fem_->getHessian22()->apply(*vp,*ahwvp);
+      assembler_->getPDEHessian22()->apply(*vp,*ahwvp);
     }
     catch (Exception::Zero &zero) {
       ahwv.zero();
@@ -297,10 +310,10 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleJacobian1(*up,*zp);
+      assembler_->assemblePDEJacobian1(*up,*zp,*pde_);
       computeJ1_ = false;
     }
-    fem_->solve(ijvp,vp,false);
+    assembler_->linearPDEsolve(ijvp,vp,false);
   }
 
 
@@ -316,10 +329,10 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
 
-      fem_->assembleJacobian1(*up,*zp);
+      assembler_->assemblePDEJacobian1(*up,*zp,*pde_);
       computeJ1_ = false;
     }
-    fem_->solve(iajvp,vp,true);
+    assembler_->linearPDEsolve(iajvp,vp,true);
   }
 
 };
