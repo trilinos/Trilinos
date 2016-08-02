@@ -84,6 +84,7 @@ void CurlSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupDat
 template <typename EvalT,typename Traits>
 void CurlSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
+  using panzer::index_t;
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < solution.dimension(1); ++point) {
 

@@ -77,6 +77,7 @@ void Solution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd
 template <typename EvalT,typename Traits>
 void Solution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
+  using panzer::index_t;
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < solution.dimension(1); ++point) {
       const double& x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
