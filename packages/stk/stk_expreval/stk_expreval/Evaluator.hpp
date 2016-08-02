@@ -153,8 +153,9 @@ public:
 
   inline Eval &setValue(const std::string &name, double* value, int definedLength) {
     VariableMap::iterator it = m_variableMap.find(name);
-    if (it != m_variableMap.end())
+    if (it != m_variableMap.end()) {
       (*it).second->bind(*value, definedLength);
+    }
     return *this;
   }
 
@@ -188,20 +189,19 @@ public:
   /**
    * @brief Member function <b>bindVariable</b> binds the variable to the address of
    * the specified value.  This address must remain in scope during the lifetime of the
-   * variable are until rebound to a new address.
+   * variable or until the variable is rebound to a new address.
    *
-   * @param name		a <b>std::string</b> const reference to the variable's
-   *				name.
+   * @param name		a <b>std::string</b> const reference to the variable's name.
    *
    * @param value_ref		a <b>double</b> reference to be used for this variable.
    *
-   * @return			an <b>Eval</b> reference to this expression
-   *				evaluator.
+   * @return			an <b>Eval</b> reference to this expression evaluator.
    */
   inline Eval &bindVariable(const std::string &name, double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
     VariableMap::iterator it = m_variableMap.find(name);
-    if (it != m_variableMap.end())
+    if (it != m_variableMap.end()) {
       (*it).second->bind(value_ref, definedLength);
+    }
     return *this;
   }
 
@@ -239,7 +239,6 @@ public:
   /**
    * @brief Member function <b>syntax</b> performs a syntax check on the current
    * expression.  If successful, the syntax status is set to true.
-   *
    */
   void syntax();
 
@@ -247,8 +246,7 @@ public:
    * @brief Member function <b>parse</b> parses the expression.  If successful, the
    * parse status is set to true.
    *
-   * @param expr		a <b>std::string</b> const reference to the
-   *				expression to parse.
+   * @param expr		a <b>std::string</b> const reference to the expression to parse.
    *
    */
   inline void parse(const std::string &expr) {
