@@ -320,6 +320,38 @@ public:
                            Epetra_Vector & Rhs, 
                            const bool  rhsAndsolProvided,
 			   const bool ComputePrec = true);
+// ================================================ ====== ==== ==== == =
+/*! Constructor for scalar PDE problems based on applying AMG to the distance
+ *  Laplacian operator when constructing grid transfers. The main unique
+ *  feature is that there may be some dofs that correspond to the same node
+ *  location. These shared dofs fall into two categories. If these dofs are
+ *  strongly connected to each other (as determined by tol), they are
+ *  explicitly elminated from the Laplacian (merged into a supernode). Once
+ *  a P is obtained, this P is then expanded to account for shared nodes
+ *  by simply duplicating the supernodes row of P for each of the individual
+ *  vertices that contribute to the supernode. If share dofs are weakly
+ *  connected (or not connected at all), nothing special is done (other than
+ *  the ususal ignoring of weak connections). One last trick is employed, 
+ *  connections between supernodes and non-supernodes (i.e., regular nodes)
+ *  are always assumed to be weak. Shared nodes are often used to capture
+ *  interfaces or other features. By breaking these connections, the AMG
+ *  can better maintain these features throughout the hierarchy. Finally, the
+ *  constructor also allows for *  the removal of column nonzeros associated
+ *  with Dirichlet points. To use this option the rhs and initial guess must be
+ *  provided. Modification of the matrix, rhs, and initial guess must be 
+ *  allowable to use this option.
+ */
+
+  MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
+    const Teuchos::ParameterList & List,
+    const double distTol, // two points are at the same location when
+                          // || (x_1,y_1,z_1) -  (x_2,y_2,z_2)||_2 < distTol
+    const double tol,     // ignore values when
+                          //       A(i,j)^2 < A(i,i)*A(j,j)*tol^2
+    Epetra_Vector & Lhs,
+    Epetra_Vector & Rhs,
+    const bool  rhsAndsolProvided,
+    const bool ComputePrec = true);
 #endif
 #ifdef HAVE_ML_AZTECOO
   //! MultiLevelPreconditioner constructor for Maxwell's equations.
@@ -1280,6 +1312,24 @@ extern int MLcoarseStatus(const MLVec<bool>& rowEmpty,
 
 
 extern int MLShove(ML_Operator *Mat, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals, int invec_leng, int (*commfunc  )(double *vec, void *data), struct wrappedCommStruct& framework, int nGhost);
+
+
+extern int ZeroDist(MLVec<double>& xxx, MLVec<double>& yyy, MLVec<double>& zzz,
+             MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals,
+             MLVec<double>& diagonal, double tol, MLVec<int>& rowZeros, MLVec<int>& colZeros,
+             double disttol);
+
+extern int MergeShared(MLVec<int>& cols, MLVec<int>& rowZeros, MLVec<int>& colZeros, 
+                       MLVec<int>& groupHead, MLVec<int>& groupNext);
+
+extern int BuildNonSharedMap(MLVec<int>& newMap, MLVec<int>& groupHead, MLVec<int>& groupNext);
+
+extern int buildCompressedA(MLVec<int>& inputRowPtr, MLVec<int>& inputCols,
+                     MLVec<double>& inputVals, MLVec<double>& diagonal,
+                     MLVec<int>& groupHead, MLVec<int>& groupNext, 
+                     MLVec<int>& outputRowptr, MLVec<int>& outputCols,
+                     MLVec<int>& map, int newN, double tol);
+
 
 #endif /* NewStuff */
 #endif /* defined HAVE_ML_EPETRA and HAVE_ML_TEUCHOS */

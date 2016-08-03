@@ -488,7 +488,7 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
  *  the removal of column nonzeros associated with Dirichlet points. To use this option
  *  the rhs and initial guess must be provided.
  */
-#ifdef out
+#ifdef outputter
 extern int *update, *update_index, *external, *extern_index;
 #endif
 ML_Epetra::MultiLevelPreconditioner::
@@ -666,7 +666,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
 // LapMat->FillComplete();      // toggle
 // LapMat->OptimizeStorage();   // toggle
 
-#ifdef out
+#ifdef outputter
 // this stuff is just for forcing ML do do the same thing on one and many procs
 // the code is hidden behind an ifdef in ML_agg_MIS.c. You can use run in parallel
 // turning on ML_AGGR_OUTAGGR. This will output a bunch of files (one per proc per
@@ -877,6 +877,372 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
   CreateLabel();
 
 
+
+}
+#endif
+#ifdef NewStuff
+// ================================================ ====== ==== ==== == =
+/*! Constructor for scalar PDE problems based on applying AMG to the distance
+ *  Laplacian operator when constructing grid transfers. The main unique
+ *  feature is that there may be some dofs that correspond to the same node
+ *  location. These shared dofs fall into two categories. If these dofs are
+ *  strongly connected to each other (as determined by tol), they are
+ *  explicitly elminated from the Laplacian (merged into a supernode). Once
+ *  a P is obtained, this P is then expanded to account for shared nodes
+ *  by simply duplicating the supernodes row of P for each of the individual
+ *  vertices that contribute to the supernode. If share dofs are weakly
+ *  connected (or not connected at all), nothing special is done (other than
+ *  the ususal ignoring of weak connections). One last trick is employed, 
+ *  connections between supernodes and non-supernodes (i.e., regular nodes)
+ *  are always assumed to be weak. Shared nodes are often used to capture
+ *  interfaces or other features. By breaking these connections, the AMG
+ *  can better maintain these features throughout the hierarchy. Finally, the
+ *  constructor also allows for *  the removal of column nonzeros associated
+ *  with Dirichlet points. To use this option the rhs and initial guess must be
+ *  provided. Modification of the matrix, rhs, and initial guess must be 
+ *  allowable to use this option.
+ */
+ML_Epetra::MultiLevelPreconditioner::
+MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
+    const Teuchos::ParameterList & List,
+    const double distTol, // two points are at the same location when
+                          // || (x_1,y_1,z_1) -  (x_2,y_2,z_2)||_2 < distTol
+    const double tol,     // ignore values when
+                          //       A(i,j)^2 < A(i,i)*A(j,j)*tol^2
+    Epetra_Vector & Lhs,
+    Epetra_Vector & Rhs,
+    const bool  rhsAndsolProvided,
+    const bool ComputePrec) :
+
+  RowMatrixAllocated_(0),
+  AllocatedRowMatrix_(false)
+{
+
+
+  Epetra_CrsMatrix *Acrs =
+              dynamic_cast<Epetra_CrsMatrix *>(&RowMatrix);
+
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(Acrs == NULL,
+             ErrorMsg_ << "matrix must be crs to use this constructor\n"); 
+
+  int nDofs = Acrs->NumMyRows();
+  int *dofGlobals;
+
+  Acrs->RowMap().MyGlobalElementsPtr(dofGlobals);
+
+  List_ = List;
+
+  double *XXX = NULL, *YYY = NULL, *ZZZ = NULL;
+
+  XXX = List_.get("x-coordinates",(double *) 0);
+  YYY = List_.get("y-coordinates",(double *) 0);
+  ZZZ = List_.get("z-coordinates",(double *) 0);
+
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(XXX == NULL,
+             ErrorMsg_ << "Must supply coordinates to use shaerd dof constructor\n"); 
+
+  struct wrappedCommStruct epetraFramework;
+
+  epetraFramework.whichOne = epetraType;
+  epetraFramework.data     = (void *) Acrs;
+  epetraFramework.nProcs   = RowMatrix.Comm().NumProc();
+  epetraFramework.myPid    = RowMatrix.Comm().MyPID();
+  int nGhost = MLnMyGhost(epetraFramework);
+
+  // allocate vectors
+
+  MLVec<bool>   dirOrNot(nDofs + nGhost);
+  MLVec<double> theDiag(nDofs + nGhost);
+  MLVec<int>    map(nDofs);
+  MLVec<int>    amalgRowPtr, amalgCols;
+  MLVec<int>    amalgRowMap;
+  MLVec<int>    amalgColMap;
+
+  // Make MLVec versions of Crs arrays by wrapping them.
+
+  double *vtemp;  int *ctemp,*rtemp;
+  Acrs->ExtractCrsDataPointers(rtemp, ctemp, vtemp );
+
+  MLVec<int>    rowPtr(rtemp,rtemp + nDofs + 1);
+  MLVec<int>    cols(ctemp,ctemp   + rtemp[nDofs]);
+  MLVec<double> vals(vtemp,vtemp   + rtemp[nDofs]);
+
+  // grab diagonal and detect Dirichlets
+  MLextractDiag(rowPtr,   cols, vals, theDiag, epetraFramework);
+  MLfindDirichlets(rowPtr,cols, vals, theDiag, 1.e-5, dirOrNot, epetraFramework);
+
+  // if the rhs and solution are provided, remove column entries 
+  // associated with Dirichlet rows. Here, we overwrite the original 
+  // matrix arrays to reflect removal.
+
+  if (rhsAndsolProvided) {
+
+     double *ptrRHS, *ptrLHS;
+
+     Lhs.ExtractView(&ptrLHS);
+     Rhs.ExtractView(&ptrRHS);
+
+     MLVec<double> myvecRHS(ptrRHS, ptrRHS + nDofs );
+     MLVec<double> myvecLHS(ptrLHS, ptrLHS + nDofs );
+
+     MLrmDirichletCols(rowPtr, cols, vals, theDiag, true,
+                     myvecLHS, myvecRHS, dirOrNot, epetraFramework);
+   }
+
+    MLVec<int>    rowZeros(nDofs+nGhost);
+    MLVec<int>    colZeros(nDofs+nGhost);
+
+    int *rowmapIds, *colmapIds;
+    Acrs->RowMap().MyGlobalElementsPtr(rowmapIds);
+    Acrs->ColMap().MyGlobalElementsPtr(colmapIds);
+    MLVec<int>    myLocalNodeIds(nDofs+nGhost);
+
+    for (int i = 0; i < nDofs; i++) myLocalNodeIds[i] = i;
+
+    int nLocalNodes, nLocalPlusGhostNodes;
+
+    MLassignGhostLocalNodeIds( myLocalNodeIds, nDofs, nDofs+nGhost,
+        epetraFramework, nLocalNodes, nLocalPlusGhostNodes);
+
+    int iiii = Acrs->ColMap().NumMyElements();
+   
+    MLVec<double> xx(iiii);   if (YYY == NULL) iiii = 0;
+    MLVec<double> yy(iiii);   if (ZZZ == NULL) iiii = 0;
+    MLVec<double> zz(iiii); 
+
+    for (int i = 0; i < nDofs; i++) xx[i] = XXX[i];
+    nodalComm(xx, myLocalNodeIds, epetraFramework);
+
+    if (YYY != NULL) {
+      for (int i = 0; i < nDofs; i++) yy[i] = YYY[i];
+      nodalComm(yy, myLocalNodeIds, epetraFramework);
+    }
+    if (ZZZ != NULL) {
+      for (int i = 0; i < nDofs; i++) zz[i] = ZZZ[i];
+      nodalComm(zz, myLocalNodeIds, epetraFramework);
+    }
+    
+    MLVec<int> newGlobals(iiii);
+
+    ZeroDist(xx,yy,zz,rowPtr,cols,vals,theDiag,tol,rowZeros,colZeros,distTol);
+
+    MLVec<int> groupHead(nDofs+nGhost);
+    MLVec<int> groupNext(nDofs+nGhost);
+
+    MergeShared(cols, rowZeros, colZeros, groupHead, groupNext);
+    for (int i = 0; i < nDofs; i++) newGlobals[i] = rowmapIds[i];
+    // shared dofs will have some global ids
+    for (int i = 0; i < nDofs; i++) {
+       if (groupHead[i] > -1) newGlobals[i] = newGlobals[groupHead[i]];
+    }
+    nodalComm(newGlobals, myLocalNodeIds, epetraFramework);
+
+    MLVec<int> newMap(nDofs);
+    int        nNonShared;
+
+    nNonShared = BuildNonSharedMap(newMap, groupHead, groupNext);
+    
+    // fill the ghost part of newMap
+    newMap.resize(nDofs+nGhost);
+    nodalComm(groupHead, myLocalNodeIds, epetraFramework);
+
+    int Ncols = nNonShared;
+    for (int i = nDofs; i < newMap.size(); i++) {
+       if  (groupHead[i] == -1) {
+          newMap[i] = Ncols;
+          Ncols++;
+       }
+       else if (groupHead[i] >= 0) {// first time group encountered
+          newMap[i] = Ncols;
+          for (int j = i+1; j < newMap.size(); j++) {
+             if ( newGlobals[j] == newGlobals[i]) {
+                newMap[j] = Ncols;
+                groupHead[j] = -2;
+             }
+          }
+          Ncols++;
+       }
+    }
+
+    MLVec<int> newRowPtr(nNonShared+1);
+    MLVec<int> newCols(cols.size());
+
+    buildCompressedA(rowPtr, cols, vals, theDiag, groupHead, groupNext, 
+                     newRowPtr, newCols, newMap, nNonShared, tol);
+
+    MLVec<double> newVals(newCols.size());
+
+    MLVec<double> xxCompressed(Ncols);
+    MLVec<double> yyCompressed(Ncols);
+    MLVec<double> zzCompressed(Ncols);
+    MLVec<int>    newGlobsCompressed(Ncols);
+
+    for (int i = 0; i < newMap.size(); i++)  {
+       xxCompressed[newMap[i]] = xx[i];
+       yyCompressed[newMap[i]] = yy[i];
+       zzCompressed[newMap[i]] = zz[i];
+       newGlobsCompressed[newMap[i]] = newGlobals[i];
+    }
+
+    MLbuildLaplacian(newRowPtr, newCols, newVals, xxCompressed, yyCompressed, zzCompressed);
+
+   MLsortCols(newRowPtr, newCols, newVals);
+
+
+   dirOrNot.resize(0);      // free space
+
+   Epetra_Map* epetNewRowMap=new Epetra_Map(-1,nNonShared,newGlobsCompressed.getptr(),0,RowMatrix.Comm());
+   Epetra_Map* epetNewColMap=new Epetra_Map(-1,Ncols,newGlobsCompressed.getptr(),0,RowMatrix.Comm());
+
+   // Need to take CRS vectors and create an epetra matrix
+
+   Epetra_CrsMatrix* LapMat = new Epetra_CrsMatrix(Copy,*epetNewRowMap,*epetNewColMap,0);
+   for (int i = 0 ; i < nNonShared; ++i) {
+     LapMat->InsertMyValues(i,newRowPtr[i+1]-newRowPtr[i],
+                     &(newVals[newRowPtr[i]]), &(newCols[newRowPtr[i]]));
+   }
+   newRowPtr.resize(0); newCols.resize(0); newVals.resize(0); // free space
+
+   LapMat->FillComplete(*epetNewRowMap,*epetNewRowMap);
+
+#ifdef outputter
+   LapMat->ColMap().MyGlobalElementsPtr(update);
+update_index = (int *) ML_allocate(sizeof(int)*(nNonShared));
+extern_index = (int *) ML_allocate(sizeof(int)*(nNonShared));
+for (int i = 0; i < nNonShared; i++) update_index[i] = i;
+for (int i = 0; i < nGhost; i++) extern_index[i] = i+nNonShared;
+external = &(update[nNonShared]);
+#endif
+
+  RowMatrix_ = LapMat;
+  AllocatedRowMatrix_ = false;  
+                                
+  ML_CHK_ERRV(Initialize());
+
+  DontSetSmoothers_ = true;   // don't make smoothers based on Laplacian
+                              // smoothers on the real matrix will be done below
+  // construct hierarchy
+  if (ComputePrec == true)
+    ML_CHK_ERRV(ComputePreconditioner());
+
+  DontSetSmoothers_ = false;
+
+  ML *altml;
+  altml = ml_;
+
+Comm_ = &(RowMatrix.Comm());
+DomainMap_ = &(RowMatrix.OperatorDomainMap());
+RangeMap_ = &(RowMatrix.OperatorRangeMap());
+
+  
+  int levelIndex, levelIncr = -1;
+
+  levelIndex = ml_->ML_finest_level;
+  if (levelIndex == 0) levelIncr = 1;
+
+  // shove actual discretization matrix into ML
+    
+  int numMyRows = Acrs->NumMyRows();
+  int N_ghost   = Acrs->NumMyCols() - numMyRows;
+
+  ML_Operator_Clean(&(altml->Amat[levelIndex]));
+  ML_Operator_Init(&(altml->Amat[levelIndex]), altml->comm);
+  delete LapMat;
+  delete epetNewColMap;
+  delete epetNewRowMap;  
+  ML_Init_Amatrix(altml,levelIndex,numMyRows, numMyRows, (void *) Acrs);
+  altml->Amat[levelIndex].type = ML_TYPE_CRS_MATRIX;
+  ML_Set_Amatrix_Getrow(altml, levelIndex, ML_Epetra_CrsMatrix_getrow,
+                        ML_Epetra_CrsMatrix_comm_wrapper,
+                        numMyRows+N_ghost);
+  ML_Set_Amatrix_Matvec(altml, levelIndex, ML_Epetra_CrsMatrix_matvec);
+
+  /* uncompress nonshared prolongator to reflect shared dofs */
+
+  struct ML_CSR_MSRdata* ptr= (struct ML_CSR_MSRdata *) ml_->Pmat[levelIndex+levelIncr].data;
+  double               *Pvals  = ptr->values;
+  int                  *Pcols  = ptr->columns;
+  int                  *Prowptr= ptr->rowptr;
+
+  // count the number of nonzeros in uncompressed P
+    
+  int nnz = 0;
+  for (int i = 0; i < nDofs; i++) {
+     int j = newMap[i];
+     nnz += ( Prowptr[j+1] - Prowptr[j]);
+  }
+
+  // allocated new CSR arrays and fill with uncompressed data
+  
+  MLVec<int> newPRowPtr(nDofs+1);
+  MLVec<int>     newPCols(nnz);
+  MLVec<double>  newPVals(nnz);
+
+  nnz = 0;
+  newPRowPtr[0] = 0;
+  for (int i = 0; i < nDofs; i++) {
+    for (int j= Prowptr[newMap[i]]; j < Prowptr[newMap[i]+1]; j++){
+      newPCols[nnz] = Pcols[j];
+      newPVals[nnz] = Pvals[j];
+      nnz++;
+    }
+    newPRowPtr[i+1] = nnz;
+  }
+
+  // stick new CSR arrays into the hierarchy 
+ 
+  struct ML_CSR_MSRdata* Newptr = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  if (Newptr == NULL) pr_error("no space for NewPtr\n");
+
+  Newptr->rowptr  = newPRowPtr.getptr();     // getptr() + relinquishData
+  Newptr->columns = newPCols.getptr();       // effectively pulls data  
+  Newptr->values  = newPVals.getptr();       // out of a MLVec and empties 
+  newPRowPtr.relinquishData();               // MLVec's contents
+  newPCols.relinquishData();                
+  newPVals.relinquishData();
+
+
+  // old communication widget should still be good as uncompressed matrix has
+  // the same ghost information. So, we'll take it out of the hierarchy, then
+  // set it to null within the hierarchy so that ML_Operator_Clean() does not
+  // free it. Then later will manuall assign the save point to the new 
+  // uncompressed matrix within the hierarchy
+  
+  int insize  = ml_->Pmat[levelIndex+levelIncr].invec_leng;
+  ML_CommInfoOP *newPrecComm = altml->Pmat[levelIndex+levelIncr].getrow->pre_comm;
+  altml->Pmat[levelIndex+levelIncr].getrow->pre_comm = NULL;
+  ML_Operator_Clean(&(altml->Pmat[levelIndex+levelIncr]));
+  ML_Operator_Init(&(altml->Pmat[levelIndex+levelIncr]), altml->comm); 
+  ML_Operator_Set_ApplyFuncData(&(altml->Pmat[levelIndex+levelIncr]), insize,
+                                nDofs, Newptr, nDofs, NULL,0);
+  ML_Operator_Set_Getrow(&(altml->Pmat[levelIndex+levelIncr]),nDofs,CSR_getrow);
+  ML_Operator_Set_ApplyFunc(&(altml->Pmat[levelIndex+levelIncr]), CSR_matvec);
+  altml->Pmat[levelIndex+levelIncr].data_destroy     = ML_CSR_MSRdata_Destroy;
+  altml->Pmat[levelIndex+levelIncr].N_nonzeros       = nnz;
+  altml->Pmat[levelIndex+levelIncr].getrow->pre_comm = newPrecComm;
+
+  ML_Operator_Set_1Levels(&(altml->Pmat[levelIndex+levelIncr]),
+                          &(altml->SingleLevel[levelIndex+levelIncr]),
+                          &(altml->SingleLevel[levelIndex]));
+
+  // take the transpose and push in Rmat
+   
+  ML_Operator_Clean(&(altml->Rmat[levelIndex]));
+  ML_Operator_Init(&(altml->Rmat[levelIndex]), altml->comm);
+  ML_Gen_Restrictor_TransP(altml, levelIndex, levelIndex+levelIncr, NULL);
+
+  // re-do all RAPs with the real A (as opposesd to Laplacian) 
+  for (int ii = 0; ii < ml_->ML_num_actual_levels - 1 ; ii++) {
+
+    ML_Operator_Clean(&(altml->Amat[levelIndex+levelIncr]));
+    ML_Operator_Init(&(altml->Amat[levelIndex+levelIncr]), altml->comm);
+    ML_Gen_AmatrixRAP(altml, levelIndex, levelIndex+levelIncr);
+
+    levelIndex = levelIndex + levelIncr;
+  }
+
+  SetSmoothers();
+  CreateLabel();
 
 }
 #endif
@@ -4088,6 +4454,7 @@ int MLShove(ML_Operator *Mat, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double
     // as Mat may be used within commfunc.
 
     ML_CommInfoOP *newPrecComm = NULL;
+if (commfunc != NULL)
     ML_CommInfoOP_Generate( &newPrecComm, commfunc, (void *) &framework, 
                               Mat->comm, invec_leng, nGhost);
     ML_Operator_Clean(Mat);
@@ -4919,6 +5286,267 @@ int MLsortCols(const MLVec<int>& ARowPtr, MLVec<int>& ACols, MLVec<double>& AVal
       ML_az_sort(&(ACols[j]), ARowPtr[i+1]-j, NULL, &(AVals[j]));
    }
    return(0);
+}
+
+/****************************************************************************/
+/* Given arrays denoting pairwise vertices that are shared, make a set of 
+ * linked lists that groups all shared vertices together. For example, 
+ * consider
+ *     rowZeros[0] = i; colZeros[0] = j;  // indicates i and j are shared
+ *     rowZeros[1] = j; colZeros[1] = k;  // indicates j and k are shared
+ *     rowZeros[2] = k; colZeros[2] = m;  // indicates k and m are shared
+ *
+ * Create a linked list indicated that i,j,k, and m are all shared. More 
+ * generally, we might have several linked lists indicating different 
+ * sets of shared vertices. On output groupHead[] and groupNext[] encode
+ * all of the linked lists. groupHead[] and groupNext[] are described in
+ * the comments to buildCompressedA().
+ */
+/****************************************************************************/
+int MergeShared(MLVec<int>& cols, MLVec<int>& rowZeros, MLVec<int>& colZeros, 
+                MLVec<int>& groupHead, MLVec<int>& groupNext)
+{
+   int vertOne, vertTwo, vertOneHead;
+   int secondGuy, currentListTwo;
+   int prior;
+
+   for (int i = 0; i < groupHead.size(); i++) groupHead[i] = -1; 
+   for (int i = 0; i < groupNext.size(); i++) groupNext[i] = -1; 
+
+
+   for (int i = 0; i < rowZeros.size(); i++) { 
+      vertOne = rowZeros[i];
+      vertTwo = colZeros[i];
+
+      if (groupHead[vertOne] == -1) {
+         if (groupHead[vertTwo] != -1) {
+           // group already exists, so add vertOne to the list
+           // of vertices already shared with vertTwo
+            groupHead[vertOne] = groupHead[vertTwo];
+            groupNext[vertOne] = groupNext[groupHead[vertTwo]];
+            groupNext[groupHead[vertTwo]] = vertOne;
+         }
+         else { // new group found
+            groupHead[vertOne] = vertOne;
+            groupHead[vertTwo] = vertOne;
+            groupNext[vertOne] = vertTwo;
+         }
+      }
+      else {
+         if (groupHead[vertTwo] == -1) {
+            // group already exists, so we need to add vertTwo to the list
+            // of vertices already shared with vertOne
+            groupHead[vertTwo] = groupHead[vertOne];
+            groupNext[vertTwo] = groupNext[groupHead[vertOne]];
+            groupNext[groupHead[vertOne]] = vertTwo;
+         }
+         else {
+            // both vertOne and vertTwo belong to a shared group.
+            // if these are the same shared group, then there is nothing
+            // else to do. If they are different groups, we must merge
+            // the two lists together into a single group.
+            
+            if (groupHead[vertOne] != groupHead[vertTwo]) {
+               // insert all of vertTwo's list just after the head of
+               // vertOne's list
+              
+               vertOneHead = groupHead[vertOne];
+               secondGuy   = groupNext[vertOneHead];
+               currentListTwo = groupHead[vertTwo];
+               groupNext[vertOneHead] = currentListTwo;
+
+               while (currentListTwo != -1) {
+                  groupHead[currentListTwo] = vertOneHead;
+                  prior          = currentListTwo;
+                  currentListTwo = groupNext[currentListTwo];
+               }
+               groupNext[prior] = secondGuy;
+            } // if groupHead(vertOne) ~= groupHead(vertTwo)
+         }
+      }
+   }
+   return 0;
+}
+/****************************************************************************/
+/* Look at the graph described by (rowPtr,cols,vals) and calculate the 
+ * distance between any two adjacent vertices. If any of these distances
+ * are less than a tol, then record these two vertices in 
+ * rowZeros and colZeros.
+ *
+ * Note: adjacent vertices that have small values are ignored. Specifically,
+ * dropped entries correspond to 
+ *           a(i,j) <= a(i,i)*a(j,j)*tol^2 
+ */
+/****************************************************************************/
+ 
+int ZeroDist(MLVec<double>& xxx, MLVec<double>& yyy, MLVec<double>& zzz,
+             MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals,
+             MLVec<double>& diagonal, double tol, MLVec<int>& rowZeros,  MLVec<int>& colZeros,
+             double disttol)
+{
+   double tol2 = tol*tol, disttol2 = disttol*disttol, normsq, dtemp;
+   int    vertTwo;
+   int count = 0;
+
+   for (int vertOne = 0; vertOne < rowPtr.size()-1; vertOne++) {
+     for (int j = rowPtr[vertOne]; j < rowPtr[vertOne+1]; j++) {
+       vertTwo = cols[j];
+       if ((vertOne != vertTwo) && (vals[j]*vals[j] > diagonal[vertOne]*diagonal[vertTwo]*tol2)) {
+         dtemp = xxx[vertOne] - xxx[vertTwo];
+         normsq = dtemp*dtemp;
+         if (yyy.empty() == false) { dtemp = yyy[vertOne] - yyy[vertTwo]; normsq += (dtemp*dtemp);}
+         if (zzz.empty() == false) { dtemp = zzz[vertOne] - zzz[vertTwo]; normsq += (dtemp*dtemp);}
+
+         if ( normsq <= disttol2) {
+            if (count >= rowZeros.size()) {
+               int itemp = (int) ceil(count*1.4);
+               rowZeros.resize(itemp);
+               colZeros.resize(itemp);
+            }
+            rowZeros[count  ] = vertOne; colZeros[count++] = vertTwo;
+         }
+       }
+     }
+   }
+   rowZeros.resize(count);
+   colZeros.resize(count);
+        
+   return 0;
+}
+
+/****************************************************************************/
+/* Given a list of shared dofs (encoded within groupHead and groupNext), 
+ * compute an array that maps original rows to a compressed set of rows
+ * where all shared dofs correspond to the same row in the compressed set. 
+ * The list of shared dofs is given by a strange linked list that is described
+ * in the comments for buildCompressedA().
+ */
+/****************************************************************************/
+int BuildNonSharedMap(MLVec<int>& newMap, MLVec<int>& groupHead, MLVec<int>& groupNext) {
+
+    for (int i = 0; i < newMap.size(); i++) newMap[i] = 0;
+
+    int Ncols = 0, current;
+
+    for (int i = 0; i < newMap.size(); i++) {
+       if  (groupHead[i] == -1) {
+          newMap[i] = Ncols;
+          Ncols++;
+       }
+       else {
+          if  (groupHead[i] >= 0) {  // first time a new group is encountered
+             current = groupHead[i];
+             while (current != -1) {
+                newMap[current] = Ncols;
+                groupHead[current] = -2 - groupHead[current]; // encode as visited
+                current = groupNext[current];
+             }
+             Ncols++;
+          }
+       }
+    }
+    // restore groupHead
+    
+    for (int i = 0; i < groupHead.size(); i++) {
+       if (groupHead[i] < -1) groupHead[i] = -2 - groupHead[i];
+    }
+    return Ncols;
+}
+
+/****************************************************************************/
+/*
+Given a set of shared dofs, build a compressed graph of the matrix. This
+compressed version is equivalent to taking any rows or columns that are 
+shared and merging them together into a single row or a single column 
+within a compressed matrix. However, small entries in the original matrix
+are dropped when building the compressed graph. Specifically, dropped entries
+correspond to 
+             a(i,j) <= a(i,i)*a(j,j)*tol^2 
+
+The list of shared dofs is given by a strange linked list. In particular,
+if groupHead[i] == -1, then i is not a shared dof. If groupHead[i] > -1,
+then i is shared. All the other dofs that are shared with i are given
+by the linked list whose head is groupHead[i]. For example, we might have
+the following when four nodes are shared (i,j,k,m):
+
+    ______________      ______________     ______________     ______________
+   | groupHead[i] |    | groupHead[j] |   | groupHead[k] |   | groupHead[m] |
+   | groupNext[i]-|--->| groupNext[j]-|-->| groupNext[k]-|-->| groupNext[m] |
+    --------------      --------------     --------------      --------------   
+where
+    groupHead[i] =    groupHead[j] =    groupHead[k] = groupHead[m]
+    groupNext[i] = j; groupNext[j] = k; groupNext[k] = m; 
+    groupNext[m] = -1; 
+
+Additionally, it is assumed that map[] has already been computed such that
+map[ii] gives the row/col number in the compressed matrix corresponding to ii.
+Thus, in the above example  map[i]=map[j]=map[k]=map[m] as i,j,k,m all map
+to the same row. Such a map can be computed by invoking int BuildNonSharedMap()
+given groupHead[] and groupNext[].  Finally, newN is also given on input and 
+it corresponds to the total number of rows in the compressed matrix.
+*/
+/****************************************************************************/
+int buildCompressedA(MLVec<int>& inputRowPtr, MLVec<int>& inputCols,
+                     MLVec<double>& inputVals, MLVec<double>& diagonal,
+                     MLVec<int>& groupHead, MLVec<int>& groupNext, 
+                     MLVec<int>& outputRowPtr, MLVec<int>& outputCols,
+                     MLVec<int>& map, int newN, double tol)
+{
+   MLVec<int>   result(newN);
+   MLVec<bool>  filled(newN);
+
+   int    count = 0, nFilled, current = 0, newRow = -1, newCol;
+   double tol2  = tol*tol;
+   int oldRow = 0;
+
+
+   for (int i=0; i < filled.size() ; i++) filled[i] = false;
+   
+   outputRowPtr[0] = 0;
+   for (int i=0; i < inputRowPtr.size()-1 ; i++) {
+      nFilled = 0;
+      current = i; 
+      if (groupHead[i] > -1) current = groupHead[i];
+      if (groupHead[i] < -1) current = -1; 
+
+      while (current != -1) {
+         newRow = map[current];
+         for (int j=inputRowPtr[current]; j < inputRowPtr[current+1]; j++) {
+            newCol = map[inputCols[j]];
+            // remove connections between shared dofs and nonshared dofs
+
+           if  ( ((groupHead[current]==-1)&&(groupHead[inputCols[j]] == -1)) ||
+                 ((groupHead[current]!=-1)&&(groupHead[inputCols[j]] != -1))) {
+
+              if (inputVals[j]*inputVals[j] > diagonal[current]*diagonal[inputCols[j]]*tol2) {
+                 if (filled[newCol] == false) {
+                    filled[newCol] = true;
+                    result[nFilled] = newCol;
+                    nFilled++;
+                    if (newRow < oldRow) printf("bad\n");
+                    for (int k = oldRow; k < newRow; k++) {outputRowPtr[k+1] = count; oldRow = newRow;}
+                    outputCols[count] = newCol;
+                    count++;
+                 } // if filled(newCol) == 0,
+              }  
+           }
+         } // for (int j=inputRowPtr[current]; ...
+
+         if (groupHead[current] > -1) groupHead[current]= -2 - groupHead[current]; // visited
+         current = groupNext[current];
+      } // while (current != -1) 
+      for (int k=0; k < nFilled; k++)  filled[result[k]] = 0; 
+      nFilled = 0;
+   }
+   outputRowPtr[outputRowPtr.size()-1] = count;
+
+   outputCols.resize(count);
+   // restore groupHead
+    
+   for (int i = 0; i < groupHead.size(); i++) {
+      if (groupHead[i] < -1) groupHead[i] = -2 - groupHead[i];
+   }
+   return 0;
 }
 #endif
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS */
