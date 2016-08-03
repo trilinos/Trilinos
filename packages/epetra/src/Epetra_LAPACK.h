@@ -277,18 +277,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
 
   //! Epetra_LAPACK wrapper to compute the generalized singular value decomposition (GSVD) of an M-by-N real matrix A and P-by-N real matrix B
   void GGSVD(const char JOBU, const char JOBV, const char JOBQ, const int M, const int N, const int P, int * K, int * L,  double* A,  const int LDA,  double* B,  const int LDB,
-                          double* ALPHA,  double* BETA,  double* U,  const int LDU, double* V, const int LDV, double* Q, const int LDQ,
+                          double* ALPHA,  double* BETA,  double* U,  const int LDU, double* V, const int LDV, double* Q, const int LDQ, double* WORK,
                         #ifdef HAVE_LAPACK_GSSVD3
                           const int LWORK,
                         #endif
-                          double* WORK, int* IWORK, int* INFO) const;
+                          int* IWORK, int* INFO) const;
   //! Epetra_LAPACK wrapper to compute the generalized singular value decomposition (GSVD) of an M-by-N real matrix A and P-by-N real matrix B
   void GGSVD(const char JOBU, const char JOBV, const char JOBQ, const int M, const int N, const int P, int * K, int * L,  float* A,  const int LDA,  float* B,  const int LDB,
-                          float* ALPHA,  float* BETA,  float* U,  const int LDU, float* V, const int LDV, float* Q, const int LDQ,
+                          float* ALPHA,  float* BETA,  float* U,  const int LDU, float* V, const int LDV, float* Q, const int LDQ, float* WORK,
                         #ifdef HAVE_LAPACK_GSSVD3
                           const int LWORK,
                         #endif
-                          float* WORK, int* IWORK, int* INFO) const;
+                          int* IWORK, int* INFO) const;
    //@}
 
    //! @name Eigenvalue/Eigenvector routines
