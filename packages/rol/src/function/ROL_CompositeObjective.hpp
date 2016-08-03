@@ -133,7 +133,7 @@ public:
       obj_vec_[i]->update(x,flag,iter);
     }
     isValueComputed_ = false;
-    isGradientComputed_ = (flag ? false : true);
+    isGradientComputed_ = (flag ? false : isGradientComputed_);
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {

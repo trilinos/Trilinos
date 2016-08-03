@@ -622,8 +622,12 @@ public:
         }
       }
       matH11_->fillComplete();
-    } catch (Exception::Zero &zero) {
-      throw Exception::Zero(">>> Zero Hessian.");
+    }
+    catch (Exception::Zero &ez) {
+      throw Exception::Zero(">>> (Assembler::assemblePDEHessian11): Hessian is zero.");
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian11): Hessian not implemented.");
     }
   }
 
@@ -657,8 +661,12 @@ public:
         }
       }
       matH12_->fillComplete();
-    } catch (Exception::Zero &zero) {
-      throw Exception::Zero(">>> Zero Hessian.");
+    }
+    catch (Exception::Zero &ez) {
+      throw Exception::Zero(">>> (Assembler::assemblePDEHessian12): Hessian is zero.");
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian12): Hessian not implemented.");
     }
   }
 
@@ -692,8 +700,12 @@ public:
         }
       }
       matH21_->fillComplete();
-    } catch (Exception::Zero &zero) {
-      throw Exception::Zero(">>> Zero Hessian.");
+    }
+    catch (Exception::Zero &ez) {
+      throw Exception::Zero(">>> (Assembler::assemblePDEHessian21): Hessian is zero.");
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian21): Hessian not implemented.");
     }
   }
 
@@ -708,7 +720,7 @@ public:
       getCoeffFromControlVector(z_coeff,z);
       getCoeffFromStateVector(l_coeff,l);
       // Compute PDE Hessian
-      pde.Hessian_11(hess,u_coeff,z_coeff,l_coeff);
+      pde.Hessian_22(hess,u_coeff,z_coeff,l_coeff);
       // Zero Hessian
       const Real zero(0);
       matH22_->resumeFill();
@@ -727,8 +739,12 @@ public:
         }
       }
       matH22_->fillComplete();
-    } catch (Exception::Zero &zero) {
-      throw Exception::Zero(">>> Zero Hessian.");
+    }
+    catch (Exception::Zero &ez) {
+      throw Exception::Zero(">>> (Assembler::assemblePDEHessian22): Hessian is zero.");
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian22): Hessian not implemented.");
     }
   }
 
@@ -833,8 +849,12 @@ public:
       // Change to local map
       Tpetra::Export<> exporter(vecH11_overlap_->getMap(), vecH11_->getMap()); // redistribution
       vecH11_->doExport(*vecH11_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
-    } catch(Exception::Zero &e) {
-      throw Exception::Zero(">>> (Assembler::AssembleQoIHessVec11): HessVec is zero.");
+    }
+    catch (Exception::Zero &ez) {
+      throw Exception::Zero(">>> (Assembler::assembleQoIHessVec11): Hessian is zero.");
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec11): Hessian not implemented.");
     }
   }
 
@@ -866,8 +886,12 @@ public:
       // Change to local map
       Tpetra::Export<> exporter(vecH12_overlap_->getMap(), vecH12_->getMap()); // redistribution
       vecH12_->doExport(*vecH12_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
-    } catch(Exception::Zero &e) {
-      throw Exception::Zero(">>> (Assembler::AssembleQoIHessVec12): HessVec is zero.");
+    }
+    catch (Exception::Zero &ez) {
+      throw Exception::Zero(">>> (Assembler::assembleQoIHessVec12): Hessian is zero.");
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec12): Hessian not implemented.");
     }
   }
 
@@ -899,8 +923,12 @@ public:
       // Change to local map
       Tpetra::Export<> exporter(vecH21_overlap_->getMap(), vecH21_->getMap()); // redistribution
       vecH21_->doExport(*vecH21_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
-    } catch (Exception::Zero &e) {
-      throw Exception::Zero(">>> (Assembler::AssembleQoIHessVec21): HessVec is zero.");
+    }
+    catch (Exception::Zero &ez) {
+      throw Exception::Zero(">>> (Assembler::assembleQoIHessVec21): Hessian is zero.");
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec21): Hessian not implemented.");
     }
   }
 
@@ -932,8 +960,12 @@ public:
       // Change to local map
       Tpetra::Export<> exporter(vecH22_overlap_->getMap(), vecH22_->getMap()); // redistribution
       vecH22_->doExport(*vecH22_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
-    } catch (Exception::Zero &e) {
-      throw Exception::Zero(">>> (Assembler::AssembleQoIHessVec22): HessVec is zero.");
+    }
+    catch (Exception::Zero &ez) {
+      throw Exception::Zero(">>> (Assembler::assembleQoIHessVec22): Hessian is zero.");
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec22): Hessian not implemented.");
     }
   }
 

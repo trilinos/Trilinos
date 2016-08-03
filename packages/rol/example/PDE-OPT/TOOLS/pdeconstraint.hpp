@@ -79,34 +79,28 @@ public:
     ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
   }
 
-  Teuchos::RCP<Assembler<Real> > getAssembler(void) const {
+  const Teuchos::RCP<Assembler<Real> > getAssembler(void) const {
     return assembler_;
   }
 
   using ROL::EqualityConstraint_SimOpt<Real>::update_1;
   void update_1(const ROL::Vector<Real> &u, bool flag = true, int iter = -1) {
-    if (flag && iter > -1) {
-      computeJ1_ = true;
-    }
+    computeJ1_ = (flag ? true : computeJ1_);
   }
 
   using ROL::EqualityConstraint_SimOpt<Real>::update_2;
   void update_2(const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
-    if (flag && iter > -1) {
-      computeJ2_ = true;
-    }
+    computeJ2_ = (flag ? true : computeJ2_);
   }
 
   using ROL::EqualityConstraint_SimOpt<Real>::update;
   void update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
     update_1(u,flag,iter);
     update_2(z,flag,iter);
-    if (flag && iter > -1) {
-      computeH11_ = true;
-      computeH12_ = true;
-      computeH21_ = true;
-      computeH22_ = true;
-    }
+    computeH11_ = (flag ? true : computeH11_);
+    computeH12_ = (flag ? true : computeH12_);
+    computeH21_ = (flag ? true : computeH21_);
+    computeH22_ = (flag ? true : computeH22_);
   }
 
   using ROL::EqualityConstraint_SimOpt<Real>::value;
@@ -202,10 +196,6 @@ public:
   void applyAdjointHessian_11(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
       if (computeH11_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > wp =
           (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
@@ -217,10 +207,22 @@ public:
         assembler_->assemblePDEHessian11(*up,*zp,*wp,*pde_);
         computeH11_ = false;
       }
-      assembler_->getPDEHessian11()->apply(*vp,*ahwvp);
     }
-    catch (Exception::Zero &zero) {
+    catch (Exception::Zero &ez) {
+      computeH11_ = true;
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_11): Hessian not implemented.");
+    }
+    if ( computeH11_ ) {
       ahwv.zero();
+    }
+    else {
+      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
+        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+      assembler_->getPDEHessian11()->apply(*vp,*ahwvp);
     }
   }
 
@@ -228,11 +230,7 @@ public:
   void applyAdjointHessian_12(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      if (computeH12_) {
+      if ( computeH12_ ) {
         Teuchos::RCP<const Tpetra::MultiVector<> > wp =
           (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
         Teuchos::RCP<const Tpetra::MultiVector<> > up =
@@ -243,10 +241,22 @@ public:
         assembler_->assemblePDEHessian12(*up,*zp,*wp,*pde_);
         computeH12_ = false;
       }
-      assembler_->getPDEHessian12()->apply(*vp,*ahwvp);
     }
-    catch (Exception::Zero &zero) {
+    catch (Exception::Zero &ez) {
+      computeH12_ = true;
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_12): Hessian not implemented.");
+    }
+    if ( computeH12_ ) {
       ahwv.zero();
+    }
+    else {
+      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
+        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+      assembler_->getPDEHessian12()->apply(*vp,*ahwvp);
     }
   }
 
@@ -254,10 +264,6 @@ public:
   void applyAdjointHessian_21(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
       if (computeH21_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > wp =
           (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
@@ -269,10 +275,22 @@ public:
         assembler_->assemblePDEHessian21(*up,*zp,*wp,*pde_);
         computeH21_ = false;
       }
-      assembler_->getPDEHessian21()->apply(*vp,*ahwvp);
     }
-    catch (Exception::Zero &zero) {
+    catch (Exception::Zero &ez) {
+      computeH21_ = true;
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_21): Hessian not implemented.");
+    }
+    if ( computeH21_ ) {
       ahwv.zero();
+    }
+    else {
+      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
+        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+      assembler_->getPDEHessian21()->apply(*vp,*ahwvp);
     }
   }
 
@@ -280,10 +298,6 @@ public:
   void applyAdjointHessian_22(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
       if (computeH22_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > wp =
           (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
@@ -295,10 +309,22 @@ public:
         assembler_->assemblePDEHessian22(*up,*zp,*wp,*pde_);
         computeH22_ = false;
       }
-      assembler_->getPDEHessian22()->apply(*vp,*ahwvp);
     }
-    catch (Exception::Zero &zero) {
+    catch (Exception::Zero &ez) {
+      computeH22_ = true;
+    }
+    catch (Exception::NotImplemented &eni) {
+      throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_22): Hessian not implemented.");
+    }
+    if ( computeH22_ ) {
       ahwv.zero();
+    }
+    else {
+      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
+        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+      assembler_->getPDEHessian22()->apply(*vp,*ahwvp);
     }
   }
 

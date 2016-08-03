@@ -1,5 +1,6 @@
 ADD_SUBDIRECTORY(TEST)
 ADD_SUBDIRECTORY(poisson)
+ADD_SUBDIRECTORY(poisson-boltzmann)
 ADD_SUBDIRECTORY(stefan-boltzmann)
 ADD_SUBDIRECTORY(elasticity)
 ADD_SUBDIRECTORY(elasticitySIMP_topologyOptimization)
