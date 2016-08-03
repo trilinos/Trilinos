@@ -494,7 +494,7 @@ eig_sym(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair< Tensor<T, N, ES>, Tensor<T, N, ES>>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES>>
 eig_spd(Tensor<T, N, ES> const & A);
 
 ///

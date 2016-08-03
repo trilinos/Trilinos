@@ -263,7 +263,7 @@ in_normal_side(
 //
 template<typename T, typename I, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair< Vector<T, N, ES>, Vector<T, N, ES>>
+std::pair<Vector<T, N, ES>, Vector<T, N, ES>>
 bounding_box(I start, I end)
 {
   I
@@ -298,7 +298,7 @@ bounding_box(I start, I end)
 
 template<typename T, typename I,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair< Vector<T, DYNAMIC,ES>, Vector<T, DYNAMIC,ES>>
+std::pair<Vector<T, DYNAMIC,ES>, Vector<T, DYNAMIC,ES>>
 bounding_box(I start, I end)
 {
   return bounding_box<T, I, DYNAMIC,ES>(start, end);
@@ -450,12 +450,12 @@ in_hexahedron(
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-typename std::vector< Vector<T, N, ES>>::size_type
-closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES>> const & n)
+typename std::vector<Vector<T, N, ES>>::size_type
+closest_point(Vector<T, N, ES> const & p, std::vector<Vector<T, N, ES>> const & n)
 {
   assert(n.size() > 0);
 
-  typename std::vector< Vector<T, N, ES>>::size_type
+  typename std::vector<Vector<T, N, ES>>::size_type
   index = 0;
 
   Vector<T, N, ES> const
@@ -464,7 +464,7 @@ closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES>> const &
   T
   min = norm_square(v0);
 
-  for (typename std::vector< Vector<T, N, ES>>::size_type i = 1;
+  for (typename std::vector<Vector<T, N, ES>>::size_type i = 1;
       i < n.size();
       ++i) {
 
@@ -496,14 +496,7 @@ median(Iterator begin, Iterator end)
 {
   // Firewall
   if (begin == end) {
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR (median) : Median undefined for empty set.");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Median undefined for empty set." << std::endl;
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Median undefined for empty set.");
   }
 
   Index const
@@ -720,15 +713,7 @@ interpolate_element(
       break;
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-      Kokkos::abort("ERROR (Tensor::fill(): Unknown element type.");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Unknown element type in interpolation.";
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Unknown element type in interpolation.");
       break;
 
   }
@@ -744,7 +729,7 @@ interpolate_element(
 //
 template<typename T, Index N,  typename ES>
 std::vector< std::vector<T>>
-distance_matrix(std::vector< Vector<T, N, ES>> const & points)
+distance_matrix(std::vector<Vector<T, N, ES>> const & points)
 {
   Index const
   number_points = points.size();

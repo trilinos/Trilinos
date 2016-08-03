@@ -171,12 +171,12 @@ in_normal_side(
 ///
 template<typename T, typename I, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-std::pair< Vector<T, N, ES>, Vector<T, N, ES>>
+std::pair<Vector<T, N, ES>, Vector<T, N, ES>>
 bounding_box(I start, I end);
 
 template<typename T, typename I,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-std::pair< Vector<T, DYNAMIC, ES>, Vector<T, DYNAMIC, ES>>
+std::pair<Vector<T, DYNAMIC, ES>, Vector<T, DYNAMIC, ES>>
 bounding_box(I start, I end);
 
 ///
@@ -249,8 +249,8 @@ in_hexahedron(
 /// \return index to closest point
 ///
 template<typename T, Index N,  typename ES>
-typename std::vector< Vector<T, N, ES>>::size_type
-closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES>> const & n);
+typename std::vector<Vector<T, N, ES>>::size_type
+closest_point(Vector<T, N, ES> const & p, std::vector<Vector<T, N, ES>> const & n);
 
 /// Median of a sequence defined by random
 /// access iterators. Undefined for empty set.
@@ -347,7 +347,7 @@ Vector<T, N, ES>
 interpolate_element(
     ELEMENT::Type element_type,
     Vector<T, M, ES> & xi,
-    std::vector< Vector<T, N, ES>> const & v);
+    std::vector<Vector<T, N, ES>> const & v);
 
 ///
 /// Given a vector of points, determine
@@ -357,7 +357,7 @@ interpolate_element(
 ///
 template<typename T, Index N,  typename ES>
 std::vector< std::vector<T>>
-distance_matrix(std::vector< Vector<T, N, ES>> const & points);
+distance_matrix(std::vector<Vector<T, N, ES>> const & points);
 
 ///
 /// Given a distance matrix, determine the minimum

@@ -708,11 +708,7 @@ Tensor<T, N>::fill(T const * data_ptr, ComponentOrder const component_order)
       break;
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Unknown component order.";
-      std::cerr << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Unknown component order.");
       break;
 
     }
@@ -1976,11 +1972,7 @@ skew(Vector<T, N> const & u)
     break;
 
   default:
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Skew from vector undefined for R^" << N;
-    std::cerr << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Skew from vector defined for 3D only");
     break;
 
   }

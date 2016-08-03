@@ -704,15 +704,7 @@ Tensor<T, N, ES>::fill(T const * data_ptr, ComponentOrder const component_order)
       break;
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR (Tensor::fill(): Unknown component order.");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Unknown component order.";
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Unknown component order.");
       break;
 
     }
@@ -1988,16 +1980,8 @@ skew(Vector<T, N, ES> const & u)
     break;
 
   default:
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR(Tensor::skew): Skew from vector undefined for R");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Skew from vector undefined for R^" << N;
-    std::cerr << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Skew from vector defined for 3D only");
     break;
-#endif
   }
 
   return A;

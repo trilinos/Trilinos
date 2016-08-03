@@ -138,6 +138,30 @@ machine_epsilon()
 }
 
 //
+// Number of digits for integer types.
+//
+template<typename T>
+Index
+num_digits()
+{
+  return 0;
+}
+
+template<>
+Index
+num_digits<Index>()
+{
+  return INDEX_SIZE;
+}
+
+template<>
+Index
+num_digits<LongIndex>()
+{
+  return LONG_INDEX_SIZE;
+}
+
+//
 // The circle constant
 //
 template<typename T>
@@ -194,6 +218,40 @@ random_normal()
 }
 
 //
+// Fill in all levels of AD with specified constant.
+//
+template<typename T>
+void
+fill_AD(
+    typename enable_if<is_same<T, typename ScalarType<T>::type>::value, T>::type & x,
+    typename ScalarType<T>::type const c)
+{
+  x = c;
+  return;
+}
+
+template<typename T>
+void
+fill_AD(
+    typename enable_if<!is_same<T, typename ScalarType<T>::type>::value, T>::type & x,
+    typename ScalarType<T>::type const c)
+{
+  auto const
+  order = x.size();
+
+  // No AD info. Nothing to do.
+  if (order == 0) return;
+
+  using S = typename Sacado::ValueType<T>::type;
+
+  for (auto i = 0; i < order; ++i) {
+    fill_AD<S>(x.fastAccessDx(i), c);
+  }
+
+  return;
+}
+
+//
 // Compute a non-negative integer power by binary manipulation.
 //
 template<typename T>
@@ -229,7 +287,7 @@ integer_power(T const & X, Index const exponent)
   rightmost_bit = 1;
 
   Index const
-  number_digits = std::numeric_limits<Index>::digits;
+  number_digits = num_digits<Index>();
 
   Index const
   leftmost_bit = rightmost_bit << (number_digits - 1);

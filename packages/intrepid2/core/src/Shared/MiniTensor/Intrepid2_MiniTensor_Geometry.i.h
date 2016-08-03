@@ -116,19 +116,7 @@ find_type(Index const dimension, Index const number_nodes)
   }
 
   if (type == ELEMENT::UNKNOWN) {
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR: find_type; Unknown element type");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Unknown element type." << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "Spatial dimension: ";
-    std::cerr << dimension << std::endl;
-    std::cerr << "Vertices per element: ";
-    std::cerr << number_nodes << std::endl;
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Unknown element type.");
   }
 
   return type;
@@ -143,8 +131,8 @@ SphericalParametrization<T, N, ES>::SphericalParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
 #if defined(KOKKOS_HAVE_CUDA)
-  minimum_=0;
-  maximum_=NPP_MAX_32U;
+  minimum_ = DBL_MAX;
+  maximum_ = DBL_MIN;
 #else
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();
@@ -218,8 +206,8 @@ StereographicParametrization<T, N, ES>::StereographicParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
 #if defined(KOKKOS_HAVE_CUDA)
-  minimum_=0;
-  maximum_=NPP_MAX_32U;
+  minimum_ = DBL_MAX;
+  maximum_ = DBL_MIN;
 #else
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();
@@ -298,8 +286,8 @@ ProjectiveParametrization<T, N, ES>::ProjectiveParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
 #if defined(KOKKOS_HAVE_CUDA)
-  minimum_=0;
-  maximum_=NPP_MAX_32U;
+  minimum_ = DBL_MAX;
+  maximum_ = DBL_MIN;
 #else
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();
@@ -385,8 +373,8 @@ TangentParametrization<T, N, ES>::TangentParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
 #if defined(KOKKOS_HAVE_CUDA)
-  minimum_=0;
-  maximum_=NPP_MAX_32U;
+  minimum_ = DBL_MAX;
+  maximum_ = DBL_MIN;
 #else
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();
@@ -471,8 +459,8 @@ CartesianParametrization<T, N, ES>::CartesianParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
 #if defined(KOKKOS_HAVE_CUDA)
-  minimum_=0;
-  maximum_=NPP_MAX_32U;
+  minimum_ = DBL_MAX;
+  maximum_ = DBL_MIN;
 #else
   minimum_ = std::numeric_limits<T>::max();
   maximum_ = std::numeric_limits<T>::min();

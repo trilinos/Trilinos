@@ -653,15 +653,7 @@ cross(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
     break;
 
   default:
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR: Vector::cross - Cross product undefined for R^");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Cross product undefined for R^" << dimension;
-    std::cerr << std::endl;
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Cross product defined for 3D only.");
     break;
 
   }

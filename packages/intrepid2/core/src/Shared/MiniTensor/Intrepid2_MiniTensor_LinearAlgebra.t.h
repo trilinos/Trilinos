@@ -77,23 +77,12 @@ inverse_full_pivot(Tensor<T, N, ES> const & A)
   Index const
   dimension = A.get_dimension();
 
-#if defined(KOKKOS_HAVE_CUDA)
-Index const maximum_dimension = NPP_MAX_32U ;
-  if (dimension> maximum_dimension)
-   Kokkos::abort("ERROR (IntrepidMiniTensor:inverse): Requested dimension exceeds maximum allowed for inverse");
-#else
   Index const
-  maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
+  maximum_dimension = num_digits<Index>();
 
   if (dimension > maximum_dimension) {
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Requested dimension (" << dimension;
-    std::cerr << ") exceeds maximum allowed for inverse: " << maximum_dimension;
-    std::cerr << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Max dim (%d) exceeded: %d.", dimension, maximum_dimension);
   }
-#endif
 
   switch (dimension) {
 
@@ -153,6 +142,9 @@ Index const maximum_dimension = NPP_MAX_32U ;
       }
 
     }
+
+    assert(pivot_row < dimension);
+    assert(pivot_col < dimension);
 
     // Gauss-Jordan elimination
     T const
@@ -369,15 +361,7 @@ polynomial_coefficient(Index const order, Index const index)
   switch (order) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR(polynomial_coefficient): Wrong order in Pade' polynomial coefficient ");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Wrong order in Pade' polynomial coefficient: ";
-      std::cerr << order << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Wrong order in Pade' polynomial coefficient: ");
       break;
 
     case 3:
@@ -492,13 +476,8 @@ binary_powering(Tensor<T, N, ES> const & A, Index const exponent)
   Index const
   rightmost_bit = 1;
 
-#if defined(KOKKOS_HAVE_CUDA)
   Index const
-  number_digits =  NPP_MAX_32U;
-#else
-  Index const
-  number_digits = std::numeric_limits<Index>::digits;
-#endif
+  number_digits = num_digits<Index>();
 
   Index const
   leftmost_bit = rightmost_bit << (number_digits - 1);
@@ -957,15 +936,7 @@ log_rotation_pi(Tensor<T, N, ES> const & R)
         normal = cross(u, w);
 
         if (norm(normal) < machine_epsilon<T>()) {
-#if defined(KOKKOS_HAVE_CUDA)
-          Kokkos::abort("Cannot determine rotation vector of rotation.");
-#else
-          std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-          std::cerr << std::endl;
-          std::cerr << "Cannot determine rotation vector of rotation.";
-          std::cerr << std::endl;
-          exit(1);
-#endif
+          MT_ERROR_EXIT("Cannot determine rotation vector of rotation.");
         }
 
       }

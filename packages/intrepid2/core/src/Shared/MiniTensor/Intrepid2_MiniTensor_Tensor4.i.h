@@ -130,15 +130,7 @@ second_to_fourth_dimension(Index const dimension_2nd)
   switch (dimension_2nd) {
 
   default:
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR (Tensor 4 (second_to_fourth_dimension): Invalid dimension for 2nd-order tensor.");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Invalid dimension for 2nd-order tensor.";
-    std::cerr << std::endl;
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Invalid dimension for 2nd-order tensor.");
     break;
 
   case 1:

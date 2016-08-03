@@ -370,6 +370,8 @@ KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::fill(ComponentValue const value)
 {
+  using S = typename Sacado::ScalarType<T>::type;
+
   Index const
   number_components = get_number_components();
 
@@ -377,37 +379,49 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 
   case ZEROS:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = Teuchos::ScalarTraits<T>::zero();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = Teuchos::ScalarTraits<T>::zero();
     }
     break;
 
   case ONES:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = Teuchos::ScalarTraits<T>::one();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = Teuchos::ScalarTraits<T>::one();
     }
     break;
 
   case SEQUENCE:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = static_cast<T>(i);
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = static_cast<T>(i);
     }
     break;
 
   case RANDOM_UNIFORM:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = random_uniform<T>();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = random_uniform<T>();
     }
     break;
 
   case RANDOM_NORMAL:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = random_normal<T>();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = random_normal<T>();
     }
     break;
 
   case NANS:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = not_a_number<T>();
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, not_a_number<S>());
+      entry = not_a_number<T>();
     }
     break;
 
@@ -427,11 +441,15 @@ KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::fill(T const & s)
 {
+  using S = typename Sacado::ScalarType<T>::type;
+
   Index const
   number_components = get_number_components();
 
   for (Index i = 0; i < number_components; ++i) {
-    (*this)[i] = s;
+    auto & entry = (*this)[i];
+    fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+    entry = s;
   }
 
   return;
@@ -457,15 +475,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1)
   switch (rank) {
 
   default:
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -510,15 +520,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
   switch (rank) {
 
   default:
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -571,15 +573,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
   switch (rank) {
 
   default:
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -647,15 +641,7 @@ TensorBase<T, ST>::fill(
   switch (rank) {
 
   default:
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -737,15 +723,7 @@ TensorBase<T, ST>::fill(
   switch (rank) {
 
   default:
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:
@@ -843,15 +821,7 @@ TensorBase<T, ST>::fill(
   switch (rank) {
 
   default:
-#if defined(KOKKOS_HAVE_CUDA)
-    Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
-#else
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << '\n';
-    std::cerr << "Invalid rank.";
-    std::cerr << '\n';
-    exit(1);
-#endif
+    MT_ERROR_EXIT("Invalid rank.");
     break;
 
   case 1:

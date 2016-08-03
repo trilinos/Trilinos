@@ -809,9 +809,7 @@ stepFactory(StepType step_type)
   switch (step_type) {
 
   default:
-    std::cerr << __PRETTY_FUNCTION__ << '\n';
-    std::cerr << "ERROR: Unknown step method type\n";
-    exit(1);
+    MT_ERROR_EXIT("ERROR: Unknown step method type.");
     break;
 
   case StepType::NEWTON:

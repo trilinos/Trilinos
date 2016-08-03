@@ -110,6 +110,24 @@ typename Sacado::ScalarType<T>::type
 machine_epsilon();
 
 ///
+/// Number of digits for integer types.
+///
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+Index
+num_digits();
+
+template<>
+KOKKOS_INLINE_FUNCTION
+Index
+num_digits<Index>();
+
+template<>
+KOKKOS_INLINE_FUNCTION
+Index
+num_digits<LongIndex>();
+
+///
 /// The circle constant
 ///
 template<typename T>
@@ -141,6 +159,27 @@ template<typename T>
 KOKKOS_INLINE_FUNCTION
 typename Sacado::ScalarType<T>::type
 random_normal();
+
+///
+/// Fill all levels of AD to specified constant.
+///
+using Kokkos::Impl::enable_if;
+using Kokkos::Impl::is_same;
+using Sacado::ScalarType;
+
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+void
+fill_AD(
+    typename enable_if<is_same<T, typename ScalarType<T>::type>::value, T>::type & x,
+    typename ScalarType<T>::type const c);
+
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+void
+fill_AD(
+    typename enable_if<!is_same<T, typename ScalarType<T>::type>::value, T>::type & x,
+    typename ScalarType<T>::type const c);
 
 ///
 /// Compute a non-negative integer power by binary manipulation.

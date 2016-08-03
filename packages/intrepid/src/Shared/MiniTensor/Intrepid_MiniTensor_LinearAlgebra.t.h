@@ -76,15 +76,10 @@ inverse_full_pivot(Tensor<T, N> const & A)
   dimension = A.get_dimension();
 
   Index const
-  maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
+  maximum_dimension = num_digits<Index>();
 
   if (dimension > maximum_dimension) {
-    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
-    std::cerr << "Requested dimension (" << dimension;
-    std::cerr << ") exceeds maximum allowed for inverse: " << maximum_dimension;
-    std::cerr << std::endl;
-    exit(1);
+    MT_ERROR_EXIT("Max dim (%d) exceeded: %d.", dimension, maximum_dimension);
   }
 
   switch (dimension) {
@@ -146,6 +141,9 @@ inverse_full_pivot(Tensor<T, N> const & A)
       }
 
     }
+
+    assert(pivot_row < dimension);
+    assert(pivot_col < dimension);
 
     // Gauss-Jordan elimination
     T const
@@ -356,11 +354,7 @@ polynomial_coefficient(Index const order, Index const index)
   switch (order) {
 
     default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Wrong order in Pade' polynomial coefficient: ";
-      std::cerr << order << std::endl;
-      exit(1);
+      MT_ERROR_EXIT("Wrong order in Pade' polynomial coefficient: ");
       break;
 
     case 3:
@@ -474,7 +468,7 @@ binary_powering(Tensor<T, N> const & A, Index const exponent)
   rightmost_bit = 1;
 
   Index const
-  number_digits = std::numeric_limits<Index>::digits;
+  number_digits = num_digits<Index>();
 
   Index const
   leftmost_bit = rightmost_bit << (number_digits - 1);
@@ -920,11 +914,7 @@ log_rotation_pi(Tensor<T, N> const & R)
         normal = cross(u, w);
 
         if (norm(normal) < machine_epsilon<T>()) {
-          std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-          std::cerr << std::endl;
-          std::cerr << "Cannot determine rotation vector of rotation.";
-          std::cerr << std::endl;
-          exit(1);
+          MT_ERROR_EXIT("Cannot determine rotation vector of rotation.");
         }
 
       }

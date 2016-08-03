@@ -68,15 +68,7 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA) 
-      Kokkos::abort("ERROR(push_forward_covariant): Supports only 2D and 3D. Found dimension:");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -126,15 +118,7 @@ pull_back_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-      Kokkos::abort("ERROR (pull_back_covariant): Supports only 2D and 3D. Found dimension" );
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -174,15 +158,7 @@ push_forward_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & 
   switch (dimension) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR (push_forward_contravariant) : Supports only 2D and 3D. Found dimension:");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -227,15 +203,7 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR (push_back_contravariant) : Supports only 2D and 3D. Found dimension:");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -290,15 +258,7 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
   switch (dimension) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR (push_forward_contravariant) : Supports only 2D and 3D. Found dimension:");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -378,15 +338,7 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
   switch (dimension) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR (push_back_contravariant) : Supports only 2D and 3D. Found dimension:");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -435,15 +387,7 @@ piola(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR (piola) : Supports only 2D and 3D. Found dimension:");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -498,15 +442,7 @@ piola_inverse(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR (piola_inverse) : Supports only 2D and 3D. Found dimension:");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -547,15 +483,7 @@ piola(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & sigma)
   switch (dimension) {
 
     default:
-#if defined(KOKKOS_HAVE_CUDA)
-     Kokkos::abort("ERROR (piola) : Supports only 2D and 3D. Found dimension:");
-#else
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Supports only 2D and 3D. Found dimension: " << N;
-      std::cerr << std::endl;
-      exit(1);
-#endif
+      MT_ERROR_EXIT("Supports only 2D and 3D.");
       break;
 
     case 3:
@@ -711,11 +639,12 @@ check_strong_ellipticity(Tensor4<T, N, ES> const & A)
 
 #if defined(KOKKOS_HAVE_CUDA)
   T
-  prev_eigenvalue =  NPP_MAX_32U;
+  prev_eigenvalue = DBL_MAX;
 #else
+  using S = typename Sacado::ScalarType<T>::type;
+
   T
-  prev_eigenvalue =
-      std::numeric_limits<typename Sacado::ScalarType<T>::type>::max();
+  prev_eigenvalue = std::numeric_limits<S>::max();
 #endif
 
   T
