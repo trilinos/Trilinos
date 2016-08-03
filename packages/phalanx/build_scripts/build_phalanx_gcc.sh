@@ -2,7 +2,7 @@
 rm -rf CMakeCache.txt CMakeFiles
 cmake \
 -D CMAKE_INSTALL_PREFIX="/home/rppawlo/JUNK" \
--D Trilinos_ENABLE_DEBUG=OFF \
+-D Trilinos_ENABLE_DEBUG=ON \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
 -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_KokkosCore:BOOL=ON \
@@ -21,17 +21,17 @@ cmake \
 -D Phalanx_EXPLICIT_TEMPLATE_INSTANTIATION=ON \
 -D Phalanx_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD:BOOL=OFF \
 -D Phalanx_ENABLE_KOKKOS_DYN_RANK_VIEW:BOOL=ON \
+-D Phalanx_ENABLE_KOKKOS_AMT:BOOL=OFF \
 -D HAVE_INTREPID_KOKKOSCORE:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=ON \
--D MPI_BASE_DIR:PATH="/home/rppawlo/install/gnu4.8.2/mpich" \
--D TPL_ENABLE_HWLOC:BOOL=ON \
--D HWLOC_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/hwloc/include" \
--D HWLOC_LIBRARY_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/hwloc/lib" \
--D TPL_BLAS_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.2/blas/libblas.a" \
--D TPL_LAPACK_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.2/lapack/liblapack.a" \
--D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicxx" \
--D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicc" \
--D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpifort" \
+-D MPI_BASE_DIR:PATH="$ROGER_MPICH_BASE_PATH" \
+-D TPL_ENABLE_BLAS:BOOL=ON \
+-D TPL_BLAS_LIBRARIES:PATH="$ROGER_BLAS_LIBRARY" \
+-D TPL_ENABLE_LAPACK:BOOL=ON \
+-D TPL_LAPACK_LIBRARIES:PATH="$ROGER_LAPACK_LIBRARY" \
+-D CMAKE_CXX_COMPILER:FILEPATH="mpicxx" \
+-D CMAKE_C_COMPILER:FILEPATH="mpicc" \
+-D CMAKE_Fortran_COMPILER:FILEPATH="mpifort" \
 -D CMAKE_CXX_FLAGS:STRING="-g -Wall" \
 -D CMAKE_C_FLAGS:STRING="" \
 -D CMAKE_Fortran_FLAGS:STRING="" \
@@ -46,6 +46,7 @@ cmake \
 -D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH="" \
 -D Trilinos_ENABLE_OpenMP:BOOL=ON \
 -D Kokkos_ENABLE_OpenMP:BOOL=ON \
+-D Kokkos_ENABLE_Cuda:BOOL=OFF \
 -D Trilinos_TPL_SYSTEM_INCLUDE_DIRS:BOOL=ON \
 ../Trilinos
 

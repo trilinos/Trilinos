@@ -52,9 +52,9 @@ MyCell::MyCell()
 
   // just some garbage values for unit testing
   for (PHX::Device::size_type i=0; i < m_phi.dimension(0); ++i) {
-    for (PHX::Device::size_type j=0; j < m_phi.dimension(0); ++j) {
+    for (PHX::Device::size_type j=0; j < m_phi.dimension(1); ++j) {
       m_phi(i,j) = 0.25;
-      for (PHX::Device::size_type k=0; k < m_phi.dimension(0); ++k) {
+      for (PHX::Device::size_type k=0; k < m_phi.dimension(2); ++k) {
 	m_grad_phi(i,j,k) = 0.25;
       }
     }
