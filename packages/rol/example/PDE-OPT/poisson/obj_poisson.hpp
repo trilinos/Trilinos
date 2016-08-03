@@ -58,7 +58,7 @@ private:
 
   Teuchos::RCP<Intrepid::FieldContainer<Real> > target_;
 
-  Real targetFunc(const std::vector<Real> x) const {
+  Real targetFunc(const std::vector<Real> & x) const {
     int size = x.size();
     Real val(0);
     for (int i = 0; i < size; ++i) {

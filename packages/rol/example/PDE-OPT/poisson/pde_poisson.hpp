@@ -119,18 +119,20 @@ public:
 
     // Apply Dirichlet conditions
     int numSideSets = bdryCellLocIds_.size();
+    std::vector<std::vector<int> > fidx = fe_vol_->getBoundaryDofs();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
         int numLocalSideIds = bdryCellLocIds_[i].size();
         for (int j = 0; j < numLocalSideIds; ++j) {
           int numCellsSide = bdryCellLocIds_[i][j].size();
-          std::vector<int> fidx = fe_vol_->getBoundaryDofs(j);
-          int numBdryDofs = fidx.size();
+          int numBdryDofs = fidx[j].size();
           for (int k = 0; k < numCellsSide; ++k) {
             int cidx = bdryCellLocIds_[i][j][k];
             for (int l = 0; l < numBdryDofs; ++l) {
-              Real x(0), y(0);
-              (*res)(cidx,fidx[l]) = (*u_coeff)(cidx,fidx[l]) - DirichletFunc(x,y);
+              //Real x(0), y(0);
+              //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+              //(*res)(cidx,fidx[l]) = (*u_coeff)(cidx,fidx[l]) - DirichletFunc(x,y);
+              //(*res)(cidx,fidx[j][l]) = (*u_coeff)(cidx,fidx[j][l]) - (*ud_coeff)[i][j](k,fidx[j][l]);
             }
           }
         }

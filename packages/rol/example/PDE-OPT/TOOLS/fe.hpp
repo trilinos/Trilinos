@@ -62,7 +62,8 @@ class FE {
 private:
 
   const Teuchos::RCP<Intrepid::FieldContainer<Real> > cellNodes_;                            // coordinates of the cell nodes
-  const Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;        // Intrepid basis
+  //const Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;        // Intrepid basis
+  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;        // Intrepid basis
   const Teuchos::RCP<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > cubature_;  // Intrepid cubature (quadrature, integration) rule
   const int sideId_;                                                                         // local side id for boundary integration
 
@@ -74,6 +75,8 @@ private:
 
   Teuchos::RCP<shards::CellTopology> cellTopo_;   // base (parent) cell topology
   Teuchos::RCP<shards::CellTopology> sideTopo_;   // side (subcell) topology; assumed uniform
+
+  std::vector<std::vector<int> > sideDofs_;       // local dofs on cell sides; 1st index: side number; 2nd index: dof number
 
   // Containers for local finite element data.
   Teuchos::RCP<Intrepid::FieldContainer<Real> > cubPoints_;             // points of the cubature rule on the reference cell
@@ -232,6 +235,12 @@ public:
                                                   *cellNodes_,
                                                   *cellTopo_);
 
+    // Compute local degrees of freedom on reference cell sides.
+    int numSides = cellTopo_->getSideCount();
+    for (int i=0; i<numSides; ++i) {
+      sideDofs_.push_back(computeBoundaryDofs(i));
+    }
+
     /*** END: Fill multidimensional arrays. ***/
 
   }
@@ -386,6 +395,12 @@ public:
                                                   *cellNodes_,
                                                   *cellTopo_);
 
+    // Compute local degrees of freedom on reference cell sides.
+    int numSides = cellTopo_->getSideCount();
+    for (int i=0; i<numSides; ++i) {
+      sideDofs_.push_back(computeBoundaryDofs(i));
+    }
+
     /*** END: Fill multidimensional arrays. ***/
 
   }
@@ -531,11 +546,118 @@ public:
                                                   Intrepid::COMP_CPP);
   }
 
-  /** \brief Returns the degrees of freedom corresponding to the localSideId.
-             NEEDS TO BE IMPLEMENTED!
+  /** \brief Computes the degrees of freedom on a side.
   */
-  std::vector<int> getBoundaryDofs(const int localSideId) const {
-    return std::vector<int>(0);
+  std::vector<int> computeBoundaryDofs(const int & locSideId) const {
+
+    std::vector<int> bdrydofs;
+    std::vector<int> nodeids, edgeids, faceids;
+
+    if (cellTopo_->getDimension() == 2) {
+      edgeids.push_back(locSideId);
+      int numVertices = 2;
+      for (int i=0; i<numVertices; ++i) {
+        nodeids.push_back(cellTopo_->getNodeMap(1, locSideId, i));
+      }
+      //for (unsigned i=0; i<nodeids.size(); ++i) {
+      //  std::cout << "\nnodeid = " << nodeids[i];
+      //}
+      //for (unsigned i=0; i<edgeids.size(); ++i) {
+      //  std::cout << "\nedgeid = " << edgeids[i];
+      //}
+    }
+    else if (cellTopo_->getDimension() == 3) {
+      faceids.push_back(locSideId);
+      CellTopologyData_Subcell face = cellTopo_->getCellTopologyData()->subcell[2][locSideId];
+      shards::CellTopology face_topo(face.topology);
+      int numVertices = face_topo.getVertexCount();
+      for (int i=0; i<numVertices; ++i) {
+        nodeids.push_back(cellTopo_->getNodeMap(2, locSideId, i));
+      }
+      int numEdges = face_topo.getEdgeCount();
+      for (int i=0; i<numEdges; ++i) {
+        edgeids.push_back(mapCellFaceEdge(cellTopo_->getCellTopologyData(), locSideId, i));
+      }
+      //for (unsigned i=0; i<nodeids.size(); ++i) {
+      //  std::cout << "\nnodeid = " << nodeids[i];
+      //}
+      //for (unsigned i=0; i<edgeids.size(); ++i) {
+      //  std::cout << "\nedgeid = " << edgeids[i];
+      //}
+      //for (unsigned i=0; i<faceids.size(); ++i) {
+      //  std::cout << "\nfaceid = " << faceids[i];
+      //}
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, ">>> ERROR (PDEOPT::FE::getBoundaryDofs): "
+                                                               "Only dimensions 2 and 3 are supported.");
+    }
+
+    std::vector<std::vector<std::vector<int> > > tagToId = basis_->getDofOrdinalData();
+    std::vector<std::vector<std::vector<int> > > tagToIdCompact;
+    int scdim = tagToId.size();
+    tagToIdCompact.resize(scdim);
+    for (int i=0; i<scdim; ++i) {
+      int scid = tagToId[i].size();
+      for (int j=0; j<scid; ++j) {
+        int doford = tagToId[i][j].size();
+        std::vector<int> ids;
+        for (int k=0; k<doford; ++k) {
+          //std::cout << "\n  i=" << i << "  j=" << j << "  k=" << k << "  id=" << tagToId[i][j][k];
+          if (tagToId[i][j][k] != -1) {
+            ids.push_back(tagToId[i][j][k]);
+          }
+        }
+        tagToIdCompact[i].push_back(ids);
+        //int dofordcompact = tagToIdCompact[i][j].size();
+        //for (int k=0; k<dofordcompact; ++k) {
+        //  std::cout << "\n  i=" << i << "  j=" << j << "  k=" << k << "  id=" << tagToIdCompact[i][j][k];
+        //}
+      }
+    }
+
+    int numNodeIds = nodeids.size();
+    if (tagToIdCompact.size() > 0) {
+      for (int i=0; i<numNodeIds; ++i) {
+        int numdofs = tagToIdCompact[0][nodeids[i]].size();
+        for (int j=0; j<numdofs; ++j) {
+          bdrydofs.push_back(tagToIdCompact[0][nodeids[i]][j]);
+        }
+      }
+    }
+
+    int numEdgeIds = edgeids.size();
+    if (tagToIdCompact.size() > 1) {
+      for (int i=0; i<numEdgeIds; ++i) {
+        int numdofs = tagToIdCompact[1][edgeids[i]].size();
+        for (int j=0; j<numdofs; ++j) {
+          bdrydofs.push_back(tagToIdCompact[1][edgeids[i]][j]);
+        }
+      }
+    }
+
+    int numFaceIds = faceids.size();
+    if (tagToIdCompact.size() > 2) {
+      for (int i=0; i<numFaceIds; ++i) {
+        int numdofs = tagToIdCompact[2][faceids[i]].size();
+        for (int j=0; j<numdofs; ++j) {
+          bdrydofs.push_back(tagToIdCompact[2][faceids[i]][j]);
+        }
+      }
+    }
+
+    //for (unsigned i=0; i<bdrydofs.size(); ++i) {
+    //  std::cout << "\ndofid = " << bdrydofs[i];
+    //}
+
+    return bdrydofs;
+
+  }
+
+  /** \brief Returns the degrees of freedom on reference cell sides.
+  */
+  const std::vector<std::vector<int> > & getBoundaryDofs() const {
+    return sideDofs_;
   }
 
 }; // FE
