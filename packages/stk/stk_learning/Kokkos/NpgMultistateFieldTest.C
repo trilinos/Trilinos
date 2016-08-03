@@ -1,5 +1,4 @@
 #include <ngp/Ngp.hpp>
-#include <ngp/NgpStatedField.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -11,6 +10,8 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_util/stk_config.h>
 
+#include "../ngp/NgpMultistateField.hpp"
+
 
 void assign_value_to_field(stk::mesh::BulkData &bulk, ngp::Field<double> ngpField, double value)
 {
@@ -20,7 +21,7 @@ void assign_value_to_field(stk::mesh::BulkData &bulk, ngp::Field<double> ngpFiel
         ngpField.get(entity, 0) = value;
     });
 }
-void assign_value_to_statedfield(stk::mesh::BulkData &bulk, ngp::NgpStatedField<double> ngpStatedField, unsigned state, double value)
+void assign_value_to_statedfield(stk::mesh::BulkData &bulk, ngp::MultistateField<double> ngpStatedField, unsigned state, double value)
 {
     ngp::Mesh ngpMesh(bulk);
     ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(), KOKKOS_LAMBDA(ngp::Mesh::MeshIndex entity)
@@ -34,7 +35,7 @@ namespace {
 class StatedFields : public stk::unit_test_util::MeshFixture
 {
 protected:
-    ngp::NgpStatedField<double> create_field_with_num_states(unsigned numStates)
+    ngp::MultistateField<double> create_field_with_num_states(unsigned numStates)
     {
         setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
         stkField = &get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField", numStates);
@@ -42,19 +43,19 @@ protected:
         stk::mesh::put_field(*stkField, get_meta().universal_part(), &init);
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", get_bulk());
 
-        return ngp::NgpStatedField<double>(get_bulk(), *stkField);
+        return ngp::MultistateField<double>(get_bulk(), *stkField);
     }
     void test_n_states(unsigned numStates)
     {
-        ngp::NgpStatedField<double> ngpField = create_field_with_num_states(numStates);
+        ngp::MultistateField<double> ngpField = create_field_with_num_states(numStates);
         EXPECT_EQ(numStates, ngpField.get_num_states());
     }
-    void verify_initial_value_set_per_state(ngp::NgpStatedField<double> &ngpStatedField)
+    void verify_initial_value_set_per_state(ngp::MultistateField<double> &ngpStatedField)
     {
         for(unsigned stateCount = 0; stateCount < stkField->number_of_states(); stateCount++)
             test_field_has_value(ngpStatedField, stateCount, -1.0);
     }
-    void verify_can_assign_values_per_state(ngp::NgpStatedField<double> &ngpStatedField)
+    void verify_can_assign_values_per_state(ngp::MultistateField<double> &ngpStatedField)
     {
         for(unsigned stateCount = 0; stateCount < stkField->number_of_states(); stateCount++)
         {
@@ -64,7 +65,7 @@ protected:
             test_field_has_value(ngpStatedField, stateCount, fieldValue);
         }
     }
-    void test_field_has_value(ngp::NgpStatedField<double> ngpStatedField, unsigned stateCount, double expectedValue)
+    void test_field_has_value(ngp::MultistateField<double> ngpStatedField, unsigned stateCount, double expectedValue)
     {
         stk::mesh::EntityVector elems;
         stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
@@ -96,13 +97,13 @@ TEST_F(StatedFields, creatingFromSixStateStkField_hasSixStates)
 }
 TEST_F(StatedFields, creatingFromStatedStkField_ngpStatedFieldHasSameValues)
 {
-    ngp::NgpStatedField<double> ngpStatedField = create_field_with_num_states(3);
+    ngp::MultistateField<double> ngpStatedField = create_field_with_num_states(3);
     verify_initial_value_set_per_state(ngpStatedField);
     verify_can_assign_values_per_state(ngpStatedField);
 }
 TEST_F(StatedFields, incrementingState_fieldsShiftDown)
 {
-    ngp::NgpStatedField<double> ngpStatedField = create_field_with_num_states(3);
+    ngp::MultistateField<double> ngpStatedField = create_field_with_num_states(3);
     verify_can_assign_values_per_state(ngpStatedField);
 
     get_bulk().update_field_data_states();
@@ -116,7 +117,7 @@ TEST_F(StatedFields, incrementingState_fieldsShiftDown)
 }
 TEST_F(StatedFields, gettingFieldData_direct)
 {
-    ngp::NgpStatedField<double> ngpStatedField = create_field_with_num_states(3);
+    ngp::MultistateField<double> ngpStatedField = create_field_with_num_states(3);
     verify_initial_value_set_per_state(ngpStatedField);
     for(unsigned stateCount = 0; stateCount < stkField->number_of_states(); stateCount++)
     {

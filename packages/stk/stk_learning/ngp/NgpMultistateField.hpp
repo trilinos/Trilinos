@@ -19,10 +19,10 @@ namespace ngp
 const unsigned MAX_NUM_FIELD_STATES = 6;
 
 template<typename T>
-class NgpStatedField
+class MultistateField
 {
 public:
-    NgpStatedField(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &stkField) :
+    MultistateField(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &stkField) :
             numStates(stkField.number_of_states())
     {
         for(unsigned i = 0; i < numStates; i++)
