@@ -74,6 +74,13 @@ public:
     assembler_->setCellNodes(*pde_);
   }
 
+  PDE_Constraint(const Teuchos::RCP<PDE<Real> > &pde,
+                 const Teuchos::RCP<Assembler<Real> > &assembler)
+    : pde_(pde), assembler_(assembler), computeJ1_(true), computeJ2_(true),
+      computeH11_(true), computeH12_(true), computeH21_(true), computeH22_(true) {
+    assembler_->setCellNodes(*pde_);
+  }
+
   void setParameter(const std::vector<Real> &param) {
     pde_->setParameter(param);
     ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);

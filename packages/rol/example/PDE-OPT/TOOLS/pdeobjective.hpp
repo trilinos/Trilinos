@@ -119,8 +119,12 @@ private:
             (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
           assembler_->assembleQoIHessVec11(*vp,*up,*zp,*qoi_);
           hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec11()));
-        } catch (Exception::Zero &e) {
+        }
+        catch (Exception::Zero &ez) {
           hv.zero();
+        }
+        catch (Exception::NotImplemented &eni) {
+          throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_11): Hessian not implemented.");
         }
       }
     
@@ -137,8 +141,12 @@ private:
             (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
           assembler_->assembleQoIHessVec12(*vp,*up,*zp,*qoi_);
           hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec12()));
-        } catch (Exception::Zero &e) {
+        }
+        catch (Exception::Zero &ez) {
           hv.zero();
+        }
+        catch (Exception::NotImplemented &eni) {
+          throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_12): Hessian not implemented.");
         }
       }
     
@@ -155,8 +163,12 @@ private:
             (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
           assembler_->assembleQoIHessVec21(*vp,*up,*zp,*qoi_);
           hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec21()));
-        } catch (Exception::Zero &e) {
+        }
+        catch (Exception::Zero &ez) {
           hv.zero();
+        }
+        catch (Exception::NotImplemented &eni) {
+          throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_21): Hessian not implemented.");
         }
       }
     
@@ -173,8 +185,12 @@ private:
             (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
           assembler_->assembleQoIHessVec22(*vp,*up,*zp,*qoi_);
           hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec22()));
-        } catch (Exception::Zero &e) {
+        }
+        catch (Exception::Zero &ez) {
           hv.zero();
+        }
+        catch (Exception::NotImplemented &eni) {
+          throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_22): Hessian not implemented.");
         }
       }
   };
