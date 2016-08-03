@@ -59,6 +59,11 @@
 #include <fei_MatrixTraits_Epetra.hpp>
 #include <fei_Matrix_Impl.hpp>
 #include <fei_LinearSystem.hpp>
+
+#ifdef HAVE_FEI_ML
+#include <ml_LevelWrap.h>
+#endif
+
 //---------------------------------------------------------------------------
 Solver_AztecOO::Solver_AztecOO()
   : tolerance_(1.e-6), maxIters_(500), useTranspose_(false), paramlist_(NULL),
@@ -333,7 +338,10 @@ int Solver_AztecOO::setup_ml_operator(AztecOO& azoo, Epetra_CrsMatrix* A)
   if (ml_prec_ != NULL) {
     delete ml_prec_; ml_prec_ = NULL;
   }
+
   const bool variableDof = paramlist_->get("ML variable DOF",false);
+  const bool levelWrap = paramlist_->get("ML LevelWrap",false);
+  assert(!variableDof || !levelWrap);
   if (variableDof)
   {
     bool * dofPresent = paramlist_->get("DOF present",(bool*)0);
@@ -345,6 +353,21 @@ int Solver_AztecOO::setup_ml_operator(AztecOO& azoo, Epetra_CrsMatrix* A)
     ml_prec_ = new ML_Epetra::MultiLevelPreconditioner(*A, *paramlist_,
                                        nOwnedEntities,maxDofPerEntity, dofPresent,
                                        *dummy, *dummy, false,true);
+  }
+  else if (levelWrap)
+  {
+    // Set the LevelWrap default parameters
+    ML_Epetra::SetDefaultsLevelWrap(*paramlist_, false);
+    Teuchos::ParameterList &crsparams = paramlist_->sublist("levelwrap: coarse list");
+    // Set the smoother parameters to the provided arrays
+    Teuchos::ParameterList &ifparams = crsparams.sublist("smoother: ifpack list");
+    int N_indices = paramlist_->get("LevelWrap number of local smoothing indices",(int)0);
+    int * smth_indices = paramlist_->get("LevelWrap local smoothing indices",(int*)0);
+    ifparams.set("relaxation: number of local smoothing indices",N_indices);
+    ifparams.set("relaxation: local smoothing indices",smth_indices);
+
+    Epetra_CrsMatrix * volAvgMtx = paramlist_->get("LevelWrap volume average matrix",(Epetra_CrsMatrix*)0);
+    ml_prec_ = new ML_Epetra::LevelWrap(Teuchos::rcp(A, false), Teuchos::rcp(volAvgMtx, false), *paramlist_);
   }
   else
   {
