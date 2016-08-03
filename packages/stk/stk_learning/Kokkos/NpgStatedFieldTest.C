@@ -12,7 +12,7 @@
 #include <stk_util/stk_config.h>
 
 
-void assign_value_to_field(stk::mesh::BulkData &bulk, ngp::StkNgpField ngpField, double value)
+void assign_value_to_field(stk::mesh::BulkData &bulk, ngp::StkNgpField<double> ngpField, double value)
 {
     ngp::StkNgpMesh ngpMesh(bulk);
     ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(), KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
@@ -58,7 +58,7 @@ protected:
     {
         for(unsigned stateCount = 0; stateCount < stkField->number_of_states(); stateCount++)
         {
-            ngp::StkNgpField ngpField = ngpStatedField.get_field_of_state(static_cast<stk::mesh::FieldState>(stateCount));
+            ngp::StkNgpField<double> ngpField = ngpStatedField.get_field_of_state(static_cast<stk::mesh::FieldState>(stateCount));
             double fieldValue = stateCount;
             assign_value_to_field(get_bulk(), ngpField, fieldValue);
             test_field_has_value(ngpStatedField, stateCount, fieldValue);
@@ -69,7 +69,7 @@ protected:
         stk::mesh::EntityVector elems;
         stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
 
-        ngp::StkNgpField ngpField = ngpStatedField.get_field_of_state(static_cast<stk::mesh::FieldState>(stateCount));
+        ngp::StkNgpField<double> ngpField = ngpStatedField.get_field_of_state(static_cast<stk::mesh::FieldState>(stateCount));
         stk::mesh::FieldBase * fieldOfState = stkField->field_state(static_cast<stk::mesh::FieldState>(stateCount));
         ngpField.copy_device_to_host(get_bulk(), *fieldOfState);
 

@@ -13,7 +13,7 @@
 
 void set_field_on_device(stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank, stk::mesh::Part &quadPart, stk::mesh::Field<double> &quadField)
 {
-    ngp::StkNgpField ngpQuadField(bulk, quadField);
+    ngp::StkNgpField<double> ngpQuadField(bulk, quadField);
     ngp::StkNgpMesh ngpMesh(bulk);
     ngp::for_each_entity_run(ngpMesh, rank, quadPart, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
     {
@@ -79,7 +79,7 @@ TEST_F(NgpHowTo, loopOverFaces)
 }
 
 unsigned count_num_elems(ngp::StkNgpMesh ngpMesh,
-                         ngp::StkNgpField ngpField,
+                         ngp::StkNgpField<double> ngpField,
                          stk::mesh::EntityRank rank,
                          stk::mesh::Part &part)
 {
@@ -99,7 +99,7 @@ void set_num_elems_in_field_on_device(stk::mesh::BulkData &bulk,
                          stk::mesh::Part &part,
                          stk::mesh::Field<double> &field)
 {
-    ngp::StkNgpField ngpField(bulk, field);
+    ngp::StkNgpField<double> ngpField(bulk, field);
     ngp::StkNgpMesh ngpMesh(bulk);
     unsigned numElems = count_num_elems(ngpMesh, ngpField, rank, part);
     ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
