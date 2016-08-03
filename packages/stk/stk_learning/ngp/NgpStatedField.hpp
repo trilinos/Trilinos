@@ -28,7 +28,7 @@ public:
         for(unsigned i = 0; i < numStates; i++)
         {
             stk::mesh::FieldBase * fieldOfState = stkField.field_state(static_cast<stk::mesh::FieldState>(i));
-            fields[i] = ngp::StkNgpField<T>(bulk, *fieldOfState);
+            fields[i] = ngp::Field<T>(bulk, *fieldOfState);
         }
     }
     STK_FUNCTION
@@ -37,14 +37,14 @@ public:
         return numStates;
     }
     STK_FUNCTION
-    ngp::StkNgpField<T> get_field_of_state(stk::mesh::FieldState state)
+    ngp::Field<T> get_field_of_state(stk::mesh::FieldState state)
     {
         return fields[state];
     }
     STK_FUNCTION
     void increment_state()
     {
-        ngp::StkNgpField<T> oldLast = fields[numStates-1];
+        ngp::Field<T> oldLast = fields[numStates-1];
         for(unsigned i=numStates-1; i>0; i--)
             fields[i] = fields[i-1];
         fields[0] = oldLast;
@@ -76,7 +76,7 @@ public:
 
 private:
     unsigned numStates;
-    ngp::StkNgpField<T> fields[MAX_NUM_FIELD_STATES];
+    ngp::Field<T> fields[MAX_NUM_FIELD_STATES];
 };
 
 }

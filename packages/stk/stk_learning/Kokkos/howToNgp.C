@@ -13,9 +13,9 @@
 
 void set_field_on_device(stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank, stk::mesh::Part &quadPart, stk::mesh::Field<double> &quadField)
 {
-    ngp::StkNgpField<double> ngpQuadField(bulk, quadField);
-    ngp::StkNgpMesh ngpMesh(bulk);
-    ngp::for_each_entity_run(ngpMesh, rank, quadPart, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
+    ngp::Field<double> ngpQuadField(bulk, quadField);
+    ngp::Mesh ngpMesh(bulk);
+    ngp::for_each_entity_run(ngpMesh, rank, quadPart, KOKKOS_LAMBDA(ngp::Mesh::MeshIndex entity)
     {
         ngpQuadField.get(entity, 0) = 13.0;
     });
@@ -78,13 +78,13 @@ TEST_F(NgpHowTo, loopOverFaces)
             EXPECT_EQ(13.0, *stk::mesh::field_data(field, node));
 }
 
-unsigned count_num_elems(ngp::StkNgpMesh ngpMesh,
-                         ngp::StkNgpField<double> ngpField,
+unsigned count_num_elems(ngp::Mesh ngpMesh,
+                         ngp::Field<double> ngpField,
                          stk::mesh::EntityRank rank,
                          stk::mesh::Part &part)
 {
     Kokkos::View<unsigned*> numElems("numElems", 1);
-    ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
+    ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::Mesh::MeshIndex entity)
     {
         unsigned fieldValue = static_cast<unsigned>(ngpField.get(entity, 0));
         Kokkos::atomic_add(&numElems(0), fieldValue);
@@ -99,10 +99,10 @@ void set_num_elems_in_field_on_device(stk::mesh::BulkData &bulk,
                          stk::mesh::Part &part,
                          stk::mesh::Field<double> &field)
 {
-    ngp::StkNgpField<double> ngpField(bulk, field);
-    ngp::StkNgpMesh ngpMesh(bulk);
+    ngp::Field<double> ngpField(bulk, field);
+    ngp::Mesh ngpMesh(bulk);
     unsigned numElems = count_num_elems(ngpMesh, ngpField, rank, part);
-    ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::StkNgpMesh::MeshIndex entity)
+    ngp::for_each_entity_run(ngpMesh, rank, part, KOKKOS_LAMBDA(ngp::Mesh::MeshIndex entity)
     {
         ngpField.get(entity, 0) = numElems;
     });

@@ -8,24 +8,24 @@
 namespace ngp {
 
 template<typename T>
-class WrapperField
+class StkFieldAdapter
 {
 public:
-    WrapperField() : field(nullptr)
+    StkFieldAdapter() : field(nullptr)
     {
     }
 
-    WrapperField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(&f)
+    StkFieldAdapter(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(&f)
     {
     }
 
-    T& get(const WrapperMesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    T& get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
     {
         T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
         return data[component];
     }
 
-    const T& const_get(const WrapperMesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    const T& const_get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
     {
         const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
         return data[component];
@@ -43,13 +43,13 @@ public:
         return data[component];
     }
 
-    T& get(WrapperMesh::MeshIndex entity, int component) const
+    T& get(StkMeshAdapter::MeshIndex entity, int component) const
     {
         T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
         return data[component];
     }
 
-    const T& const_get(WrapperMesh::MeshIndex entity, int component) const
+    const T& const_get(StkMeshAdapter::MeshIndex entity, int component) const
     {
         const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
         return data[component];

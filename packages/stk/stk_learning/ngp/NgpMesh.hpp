@@ -68,7 +68,7 @@ inline stk::Vector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
 }
 
 
-class WrapperMesh
+class StkMeshAdapter
 {
 public:
     typedef ngp::HostExecSpace MeshExecSpace;
@@ -77,7 +77,7 @@ public:
     typedef stk::mesh::Bucket BucketType;
     typedef Entities<const stk::mesh::Entity *> ConnectedNodes;
 
-    WrapperMesh(const stk::mesh::BulkData& b) : bulk(b)
+    StkMeshAdapter(const stk::mesh::BulkData& b) : bulk(b)
     {
     }
 

@@ -12,12 +12,12 @@
 namespace ngp {
 
 #ifdef KOKKOS_HAVE_CUDA
-using StkNgpMesh = StaticMesh;
-template <typename T> using StkNgpField = ngp::StaticField<T>;
+using Mesh = StaticMesh;
+template <typename T> using Field = ngp::StaticField<T>;
 #else
-using StkNgpMesh = ngp::WrapperMesh;
-template <typename T> using StkNgpField = ngp::WrapperField<T>;
-//template <typename T> using StkNgpField = ngp::StaticField<T>;
+using Mesh = ngp::StkMeshAdapter;
+template <typename T> using Field = ngp::StkFieldAdapter<T>;
+//template <typename T> using Field = ngp::StaticField<T>;
 #endif
 
 }
