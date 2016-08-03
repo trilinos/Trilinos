@@ -1,0 +1,17 @@
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(main_SOURCES
+  main.cpp
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  step01
+  SOURCES ${main_SOURCES}
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(step01_files
+  SOURCE_FILES
+    input.xml
+    EXEDEPS step01
+   )

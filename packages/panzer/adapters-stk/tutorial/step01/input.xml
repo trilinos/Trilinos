@@ -1,0 +1,53 @@
+<ParameterList>
+
+  <ParameterList name="Mesh">
+    <Parameter name="X Blocks" type="int" value="1" />
+    <Parameter name="Y Blocks" type="int" value="1" />
+    <Parameter name="X Elements" type="int" value="20" />
+    <Parameter name="Y Elements" type="int" value="20" />
+    <Parameter name="X0" type="double" value="0.0" />
+    <Parameter name="Y0" type="double" value="0.0" />
+    <Parameter name="Xf" type="double" value="1.0" />
+    <Parameter name="Yf" type="double" value="1.0" />
+  </ParameterList>
+
+  <ParameterList name="Block ID to Physics ID Mapping">
+      <Parameter name="eblock-0_0" type="string" value="domain"/>
+  </ParameterList>
+
+  <ParameterList name="Physics Blocks">
+
+      <ParameterList name="domain">
+
+          <ParameterList>
+              <Parameter name="Type"              type="string" value="Projection"/> 
+              <Parameter name="Basis Type"        type="string" value="HGrad"/> 
+              <Parameter name="Basis Order"       type="int"    value="1"/> 
+              <Parameter name="Integration Order" type="int"    value="2"/> 
+              <Parameter name="Model ID"          type="string" value="fluid model"/> 
+              <Parameter name="Prefix"            type="string" value=""/>
+          </ParameterList>
+
+      </ParameterList>
+
+  </ParameterList>
+
+  <ParameterList name="Closure Models">
+ 
+      <ParameterList name="fluid model">
+
+          <ParameterList name="U_SOURCE">
+              <Parameter name="Value" type="double" value="3.14"/>
+          </ParameterList>
+
+      </ParameterList>
+
+  </ParameterList>
+
+  <ParameterList name="Linear Solver">
+    <Parameter name="Linear Solver Type" type="string" value="Amesos"/> <!-- use a direct solver (KLU) -->
+    <Parameter name="Preconditioner Type" type="string" value="None"/>
+  </ParameterList>
+
+
+</ParameterList>
