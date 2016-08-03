@@ -11,13 +11,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    bl_gmres_diag_set_res
-    SOURCES test_bl_gmres_diag_set_res.cpp createEpetraProblem.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bl_gmres_hb
     SOURCES test_bl_gmres_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
