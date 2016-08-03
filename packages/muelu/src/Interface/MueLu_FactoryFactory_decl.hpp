@@ -78,6 +78,7 @@
 #include "MueLu_BraessSarazinSmoother.hpp"
 #endif
 #include "MueLu_BrickAggregationFactory.hpp"
+#include "MueLu_CloneRepartitionInterface.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_CoarseningVisualizationFactory.hpp"
@@ -198,6 +199,7 @@ namespace MueLu {
       if (factoryName == "BlockedRAPFactory")               return BuildRAPFactory<BlockedRAPFactory>    (paramList, factoryMapIn, factoryManagersIn);
 #endif
       if (factoryName == "BrickAggregationFactory")         return Build2<BrickAggregationFactory>       (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "CloneRepartitionInterface")       return Build2<CloneRepartitionInterface>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseMapFactory")                return Build2<CoarseMapFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseningVisualizationFactory")  return Build2<CoarseningVisualizationFactory>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory")             return Build2<CoalesceDropFactory>           (paramList, factoryMapIn, factoryManagersIn);

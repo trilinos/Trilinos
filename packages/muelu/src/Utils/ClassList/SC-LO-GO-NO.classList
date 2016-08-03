@@ -11,6 +11,7 @@ BlockedRAPFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 BrickAggregationFactory
 BraessSarazinSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 CGSolver
+CloneRepartitionInterface
 CoalesceDropFactory
 CoalesceDropFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoarseMapFactory

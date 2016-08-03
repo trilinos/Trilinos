@@ -199,7 +199,6 @@ namespace MueLu {
       }
 
       if (!rebAii.is_null()) {
-        std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 1" << std::endl;
         // fix striding information for rebalanced diagonal block rebAii
         // Note: we do not care about the off-diagonal blocks. We just make sure, that the
         // diagonal blocks have the corresponding striding information from the map extractors
@@ -217,12 +216,10 @@ namespace MueLu {
               rebAii->getRangeMap()->getComm(),
               orig_stridedRgMap->getStridedBlockId(),
               orig_stridedRgMap->getOffset());
-          std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 2" << std::endl;
         }
         Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),domainMapExtractor->getThyraMode()));
         Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
         if(orig_stridedDoMap != Teuchos::null) {
-          std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 3" << std::endl;
           std::vector<size_t> stridingData = orig_stridedDoMap->getStridingData();
           Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebAii->getDomainMap()->getNodeElementList();
           stridedDoMap = StridedMapFactory::Build(
@@ -234,7 +231,6 @@ namespace MueLu {
               rebAii->getDomainMap()->getComm(),
               orig_stridedDoMap->getStridedBlockId(),
               orig_stridedDoMap->getOffset());
-          std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 4" << std::endl;
         }
 
         TEUCHOS_TEST_FOR_EXCEPTION(stridedRgMap == Teuchos::null,Exceptions::RuntimeError, "MueLu::RebalanceBlockAcFactory::Build: failed to generate striding information. error.");
@@ -246,7 +242,6 @@ namespace MueLu {
       } // end if rebAii == Teuchos::null
 
       subBlockRebA[curBlockId*bA->Cols() + curBlockId] = rebAii;
-      std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 5" << std::endl;
 
       // rebalance off-diagonal matrix blocks in same row
       for(size_t j=0; j<bA->Cols(); j++) {
@@ -254,7 +249,6 @@ namespace MueLu {
 
         // extract matrix block
         Teuchos::RCP<Matrix> Aij = subBlockRebA[curBlockId*bA->Cols() + j];
-        std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 6 " << curBlockId << std::endl;
         Teuchos::RCP<Matrix> rebAij;
         if(rebalanceImporter!=Teuchos::null) {
           std::stringstream ss3; ss3 << "Rebalancing matrix block A(" << curBlockId << "," << j << ")";
@@ -285,7 +279,6 @@ namespace MueLu {
           std::stringstream ss2; ss2 << "A(" << curBlockId << "," << j << ") not rebalanced:";
           GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
         }
-        std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 7 " << curBlockId << std::endl;
         subBlockRebA[curBlockId*bA->Cols() + j] = rebAij;
       } // end loop over all columns
 
@@ -295,7 +288,6 @@ namespace MueLu {
 
         // extract matrix block
         Teuchos::RCP<Matrix> Aij = subBlockRebA[i*bA->Cols() + curBlockId];
-        std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 8 " << curBlockId << std::endl;
         Teuchos::RCP<Matrix> rebAij;
         if(rebalanceImporter!=Teuchos::null) {
           std::stringstream ss; ss << "Rebalancing matrix block (" << i << "," << curBlockId << ")";
@@ -326,7 +318,6 @@ namespace MueLu {
           std::stringstream ss2; ss2 << "A(" << i << "," << curBlockId << ") not rebalanced:";
           GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);*/
         }
-        std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 9" << curBlockId << std::endl;
         subBlockRebA[i*bA->Cols() + curBlockId] = rebAij;
       } // end loop over all rows
 
@@ -351,7 +342,6 @@ namespace MueLu {
     } // end loop over all block rows
 
     // now, subBlockRebA contains all rebalanced matrix blocks
-    std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 10" << std::endl;
 
     // extract map index base from maps of blocked A
     GO rangeIndexBase  = 0;
@@ -384,7 +374,6 @@ namespace MueLu {
               rangeIndexBase,
               subBlockRebA[0]->getRangeMap()->getComm()); //bA->getRangeMap()->getComm());
     }
-    std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 11" << std::endl;
     Teuchos::ArrayView<GO> fullDomainMapGIDs(fullDomainMapVector.size() ? &fullDomainMapVector[0] : 0,fullDomainMapVector.size());
 
     Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainMapExtractor->getFullMap());
@@ -412,7 +401,6 @@ namespace MueLu {
               domainIndexBase,
               subBlockRebA[0]->getDomainMap()->getComm()); //bA->getDomainMap()->getComm());
     }
-    std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 12" << std::endl;
     // build map extractors
     Teuchos::RCP<const MapExtractorClass> rebRangeMapExtractor  = MapExtractorFactoryClass::Build(fullRangeMap, subBlockARangeMaps, bThyraRangeGIDs);
     Teuchos::RCP<const MapExtractorClass> rebDomainMapExtractor = MapExtractorFactoryClass::Build(fullDomainMap, subBlockADomainMaps, bThyraDomainGIDs);
@@ -427,7 +415,6 @@ namespace MueLu {
     reb_bA->fillComplete();
     //reb_bA->describe(*out,Teuchos::VERB_EXTREME);
     coarseLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(reb_bA), this);
-    std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 13" << std::endl;
     // rebalance additional data:
     // be aware, that we just call the rebalance factories without switching to local
     // factory managers, i.e. the rebalance factories have to be defined with the appropriate
@@ -441,7 +428,6 @@ namespace MueLu {
         (*it2)->CallBuild(coarseLevel);
       }
     }
-    std::cout << "proc " << bA->getRangeMap()->getComm()->getRank() << " TEST 14" << std::endl;
   } //Build()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
