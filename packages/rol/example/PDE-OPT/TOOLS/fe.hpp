@@ -101,6 +101,7 @@ private:
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradgradMats_;          // cell stiffness matrices
   Teuchos::RCP<Intrepid::FieldContainer<Real> > valvalMats_;            // cell mass matrices
   Teuchos::RCP<Intrepid::FieldContainer<Real> > cubPointsPhysical_;     // cubature points on the physical cells
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPoints_;             // degree of freedom points on the reference cell
 
 public:
 
@@ -149,6 +150,7 @@ public:
     gradgradMats_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
     valvalMats_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
     cubPointsPhysical_    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_, d_));
+    dofPoints_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(f_, d_));
 
     /*** START: Fill multidimensional arrays. ***/
 
@@ -240,6 +242,11 @@ public:
     for (int i=0; i<numSides; ++i) {
       sideDofs_.push_back(computeBoundaryDofs(i));
     }
+
+    // Get coordinates of DOFs in reference cell.
+    Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
+      Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
+    coord_iface->getDofCoords(*dofPoints_);
 
     /*** END: Fill multidimensional arrays. ***/
 
@@ -400,6 +407,11 @@ public:
     for (int i=0; i<numSides; ++i) {
       sideDofs_.push_back(computeBoundaryDofs(i));
     }
+
+    // Get coordinates of DOFs in reference cell.
+    Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
+      Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
+    coord_iface->getDofCoords(*dofPoints_);
 
     /*** END: Fill multidimensional arrays. ***/
 
@@ -658,6 +670,17 @@ public:
   */
   const std::vector<std::vector<int> > & getBoundaryDofs() const {
     return sideDofs_;
+  }
+
+  /** \brief Computes coordinates of degrees of freedom on cells.
+  */
+  void computeDofCoords(const Teuchos::RCP<Intrepid::FieldContainer<Real> > & dofCoords,
+                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & cellNodes) const {
+    // Map reference DOF locations to physical space.
+    Intrepid::CellTools<Real>::mapToPhysicalFrame(*dofCoords,
+                                                  *dofPoints_,
+                                                  *cellNodes,
+                                                  *cellTopo_);
   }
 
 }; // FE

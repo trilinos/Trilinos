@@ -73,8 +73,13 @@ private:
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   // Finite element definition
   Teuchos::RCP<FE<Real> > fe_vol_;
+  // Local degrees of freedom on boundary, for each side of the reference cell (first index).
+  std::vector<std::vector<int> > fidx_;
+  // Coordinates of degrees freedom on boundary cells.
+  // Indexing:  [sideset number][local side id](cell number, value at dof)
+  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellDofValues_;
 
-  Real DirichletFunc(const Real x, const Real y) const {
+  Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId) const {
     return 0;
   }
 
@@ -103,36 +108,33 @@ public:
     int p = cellCub_->getNumPoints();
     int f = basisPtr_->getCardinality();
     int d = cellCub_->getDimension();
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    //Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
+    //  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-    fe_vol_->evaluateValue(valU_eval, u_coeff);
+    //fe_vol_->evaluateValue(valU_eval, u_coeff);
     fe_vol_->evaluateGradient(gradU_eval, u_coeff);
     fe_vol_->evaluateValue(valZ_eval, z_coeff);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res, *gradU_eval, *(fe_vol_->gradNdetJ()), Intrepid::COMP_CPP, false);
-    Intrepid::FunctionSpaceTools::integrate<Real>(*res, *valU_eval, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
+    //Intrepid::FunctionSpaceTools::integrate<Real>(*res, *valU_eval, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res, *valZ_eval, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
 
     // Apply Dirichlet conditions
     int numSideSets = bdryCellLocIds_.size();
-    std::vector<std::vector<int> > fidx = fe_vol_->getBoundaryDofs();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
         int numLocalSideIds = bdryCellLocIds_[i].size();
         for (int j = 0; j < numLocalSideIds; ++j) {
           int numCellsSide = bdryCellLocIds_[i][j].size();
-          int numBdryDofs = fidx[j].size();
+          int numBdryDofs = fidx_[j].size();
           for (int k = 0; k < numCellsSide; ++k) {
             int cidx = bdryCellLocIds_[i][j][k];
             for (int l = 0; l < numBdryDofs; ++l) {
-              //Real x(0), y(0);
               //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-              //(*res)(cidx,fidx[l]) = (*u_coeff)(cidx,fidx[l]) - DirichletFunc(x,y);
-              //(*res)(cidx,fidx[j][l]) = (*u_coeff)(cidx,fidx[j][l]) - (*ud_coeff)[i][j](k,fidx[j][l]);
+              (*res)(cidx,fidx_[j][l]) = (*u_coeff)(cidx,fidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fidx_[j][l]);
             }
           }
         }
@@ -147,7 +149,28 @@ public:
     int f = basisPtr_->getCardinality();
     jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
     Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *(fe_vol_->gradN()), *(fe_vol_->gradNdetJ()), Intrepid::COMP_CPP, false);
-    Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *(fe_vol_->N()), *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
+    //Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *(fe_vol_->N()), *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
+    // Apply Dirichlet conditions
+    int numSideSets = bdryCellLocIds_.size();
+    if (numSideSets > 0) {
+      for (int i = 0; i < numSideSets; ++i) {
+        int numLocalSideIds = bdryCellLocIds_[i].size();
+        for (int j = 0; j < numLocalSideIds; ++j) {
+          int numCellsSide = bdryCellLocIds_[i][j].size();
+          int numBdryDofs = fidx_[j].size();
+          for (int k = 0; k < numCellsSide; ++k) {
+            int cidx = bdryCellLocIds_[i][j][k];
+            for (int l = 0; l < numBdryDofs; ++l) {
+              //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+              for (int m = 0; m < f; ++m) {
+                (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+              }
+              (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
+            }
+          }
+        }
+      }
+    }
   }
 
   void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
@@ -157,6 +180,26 @@ public:
     int f = basisPtr_->getCardinality();
     jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
     Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *(fe_vol_->N()), *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, false);
+    // Apply Dirichlet conditions
+    int numSideSets = bdryCellLocIds_.size();
+    if (numSideSets > 0) {
+      for (int i = 0; i < numSideSets; ++i) {
+        int numLocalSideIds = bdryCellLocIds_[i].size();
+        for (int j = 0; j < numLocalSideIds; ++j) {
+          int numCellsSide = bdryCellLocIds_[i][j].size();
+          int numBdryDofs = fidx_[j].size();
+          for (int k = 0; k < numCellsSide; ++k) {
+            int cidx = bdryCellLocIds_[i][j][k];
+            for (int l = 0; l < numBdryDofs; ++l) {
+              //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+              for (int m = 0; m < f; ++m) {
+                (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -199,6 +242,35 @@ public:
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
     fe_vol_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
+    // Set local boundary DOFs.
+    fidx_ = fe_vol_->getBoundaryDofs();
+    // Compute Dirichlet values at DOFs.
+    int d = basisPtr_->getBaseCellTopology().getDimension();
+    int numSidesets = bdryCellLocIds_.size();
+    bdryCellDofValues_.resize(numSidesets);
+    for (int i=0; i<numSidesets; ++i) {
+      int numLocSides = bdryCellLocIds_[i].size();
+      bdryCellDofValues_[i].resize(numLocSides);
+      for (int j=0; j<numLocSides; ++j) {
+        int c = bdryCellLocIds_[i][j].size();
+        int f = basisPtr_->getCardinality();
+        bdryCellDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > coords =
+          Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
+        if (c > 0) {
+          fe_vol_->computeDofCoords(coords, bdryCellNodes_[i][j]);
+        }
+        for (int k=0; k<c; ++k) {
+          for (int l=0; l<f; ++l) {
+            std::vector<Real> dofpoint(d);
+            for (int m=0; m<d; ++m) {
+              dofpoint[m] = (*coords)(k, l, m);
+            }
+            (*bdryCellDofValues_[i][j])(k, l) = DirichletFunc(dofpoint, i, j);
+          }
+        }
+      }
+    }
   }
 
   const Teuchos::RCP<FE<Real> > getFE(void) const {
