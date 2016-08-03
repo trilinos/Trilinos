@@ -123,7 +123,20 @@ namespace ML_Epetra
     //@}
 
 
+    //@{ \name Attribute reset functions
+    //! Sets A0
+    void SetA0(Teuchos::RCP<Epetra_CrsMatrix> A0, bool reset_smoother) {
+      A0_=A0;
+      if(reset_smoother) GenerateSmoother();
+    }
+
+    //@}
+
   private:
+    //@{ \name Internal functions
+    //! Generates Smoother
+    int GenerateSmoother();
+    //@}
 
     //@{ \name Internal data
     //!  A0 matrix

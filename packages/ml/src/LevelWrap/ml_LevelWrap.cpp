@@ -101,22 +101,9 @@ ML_Epetra::LevelWrap::~LevelWrap(){
 }
 
 
-// Computes the preconditioner
-int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
-#ifdef ML_TIMING
-  double t_time,t_diff;
-  StartTimer(&t_time);
-#endif
-  int output_level=List_.get("ML output",0);
-  if(output_level>0) verbose_=true;
-
-  // Sanity check
-  if(!A0_->DomainMap().SameAs(P0_->RangeMap())) return -1;
-  if(!use_pt_ && !A0_->RangeMap().SameAs(R0_->DomainMap())) return -2;
-
-  //********************
-  // Setup smoother
-  //********************
+// Generates the smoother
+int ML_Epetra::LevelWrap::GenerateSmoother() {
+ 
   string PreOrPostSmoother = List_.get("smoother: pre or post","both");
   if(PreOrPostSmoother == "post") pre_or_post = ML_POSTSMOOTHER;
   else if(PreOrPostSmoother == "pre")  pre_or_post = ML_PRESMOOTHER;
@@ -148,8 +135,28 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
                        1, 1.0 , ml_subproblem_->Amat[0].num_PDEs);
   }
   else Smoother_=rcp(ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*A0_),0,List_,"LevelWrap Smoother (level 0): ",verbose_));
+  return 0;
+}
 
 
+// Computes the preconditioner
+int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
+#ifdef ML_TIMING
+  double t_time,t_diff;
+  StartTimer(&t_time);
+#endif
+  int output_level=List_.get("ML output",0);
+  if(output_level>0) verbose_=true;
+
+  // Sanity check
+  if(!A0_->DomainMap().SameAs(P0_->RangeMap())) return -1;
+  if(!use_pt_ && !A0_->RangeMap().SameAs(R0_->DomainMap())) return -2;
+
+  //********************
+  // Setup smoother
+  //********************
+  int rv = GenerateSmoother();
+  if(rv) return rv;
 
   //********************
   // Setup A1
