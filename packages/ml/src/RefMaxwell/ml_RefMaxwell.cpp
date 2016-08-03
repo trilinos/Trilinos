@@ -211,7 +211,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   /* Build the TMT Matrix */
   if(!HasOnlyDirichletNodes){
     printf("CMS: Building TMT Matrix\n");
-    ML_Epetra_PtAP(*SM_Matrix_,*D0_Matrix_,TMT_Matrix_,verbose_);
+    // Need to use keep zero rows here, due to how D0 has been nuked
+    Epetra_PtAP(*SM_Matrix_,*D0_Matrix_,TMT_Matrix_,true,verbose_);
     Remove_Zeroed_Rows(*TMT_Matrix_,1e-10);
   }/*end if */
 

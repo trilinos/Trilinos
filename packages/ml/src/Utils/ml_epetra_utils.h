@@ -255,7 +255,7 @@ namespace ML_Epetra{
   int ML_Epetra_RAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, const Epetra_CrsMatrix & R, Epetra_CrsMatrix *&Result,bool verbose);
 
   //! Does an P^TAP for Epetra_CrsMatrices using EpetraExt's kernels.
-  int Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool verbose=false);
+  int Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool keep_zero_rows=false, bool verbose=false);
 
   //! Finds the Dirichlet rows in a square matrix that got the one-and-zeros
   //treatment
