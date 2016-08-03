@@ -231,7 +231,7 @@ TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X) :
   set_number_components(number_components);
 
   for (Index i = 0; i < number_components; ++i) {
-    (*this)[i] =  X[i];
+    (*this)[i] = X[i];
   }
 
   return;
@@ -263,6 +263,7 @@ TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 
 //
 // Simple destructor
+//
 template<typename T, typename ST>
 KOKKOS_INLINE_FUNCTION
 TensorBase<T, ST>::~TensorBase()
