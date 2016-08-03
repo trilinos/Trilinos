@@ -225,6 +225,11 @@ void create_faces( BulkData & mesh )
     stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), stk::mesh::PartVector(), false);
 }
 
+void create_faces( BulkData & mesh, const Selector & element_selector )
+{
+    stk::mesh::create_all_sides(mesh, element_selector, stk::mesh::PartVector(), false);
+}
+
 void create_faces( BulkData & mesh, const Selector & element_selector, Part *part_to_insert_new_faces)
 {
     stk::mesh::PartVector parts = {part_to_insert_new_faces};
