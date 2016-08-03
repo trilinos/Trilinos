@@ -276,9 +276,9 @@ int main(int narg, char** arg)
   // getCBlkPtr: *CBlkPtr from Scotch_graphOrder
   // getRangeTab: RangeTab from Scotch_graphOrder
   // getTreeTab: TreeTab from Scotch_graphOrder
-  z2TestGO    NumBlocks = 0;
-  z2TestGO    *RangeTab;
-  z2TestGO    *TreeTab;
+  z2TestLO    NumBlocks = 0;
+  z2TestLO    *RangeTab;
+  z2TestLO    *TreeTab;
   if (soln->haveSeparators()) {
     NumBlocks = soln->getNumSeparatorBlocks(); // BDD
     RangeTab = soln->getSeparatorRangeView(); // BDD
@@ -318,7 +318,7 @@ int main(int narg, char** arg)
     
   // Validate NumBlocks
   cout << "Checking num blocks" << endl;
-  testReturn = !((NumBlocks > 0) && (NumBlocks<z2TestGO(checkLength)));
+  testReturn = !((NumBlocks > 0) && (NumBlocks<z2TestLO(checkLength)));
   if (testReturn) goto End;
 
   // Validate RangeTab.
@@ -327,7 +327,7 @@ int main(int narg, char** arg)
   testReturn = RangeTab[0];
   if (testReturn) goto End;
 
-  for (z2TestGO i = 0; i < NumBlocks; i++){
+  for (z2TestLO i = 0; i < NumBlocks; i++){
     testReturn = !(RangeTab[i] < RangeTab[i+1]);
     if (testReturn) goto End;
   }
