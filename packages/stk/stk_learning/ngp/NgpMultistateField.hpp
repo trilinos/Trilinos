@@ -31,13 +31,14 @@ public:
             fields[i] = ngp::Field<T>(bulk, *fieldOfState);
         }
     }
+    virtual ~MultistateField() {}
     STK_FUNCTION
-    unsigned get_num_states()
+    unsigned get_num_states() const
     {
         return numStates;
     }
     STK_FUNCTION
-    ngp::Field<T> get_field_of_state(stk::mesh::FieldState state)
+    ngp::Field<T> get_field_of_state(stk::mesh::FieldState state) const
     {
         return fields[state];
     }
@@ -50,33 +51,48 @@ public:
         fields[0] = oldLast;
     }
 
-    template <typename Mesh> STK_FUNCTION
-    T& get(stk::mesh::FieldState state, const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
     {
-        return fields[state].get(ngpMesh, entity, component);
-    }
-
-    template <typename Mesh> STK_FUNCTION
-    const T& const_get(stk::mesh::FieldState state, const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
-    {
-        return fields[state].const_get(ngpMesh, entity, component);
-    }
-
-    template <typename MeshIndex> STK_FUNCTION
-    T& get(stk::mesh::FieldState state, MeshIndex entity, int component) const
-    {
-        return fields[state].get(entity, component);
-    }
-
-    template <typename MeshIndex> STK_FUNCTION
-    const T& const_get(stk::mesh::FieldState state, MeshIndex entity, int component) const
-    {
-        return fields[state].const_get(entity, component);
+        for(unsigned i=0; i<numStates; i++)
+            fields[i].copy_device_to_host(bulk, *field.field_state(static_cast<stk::mesh::FieldState>(i)));
     }
 
 private:
     unsigned numStates;
     ngp::Field<T> fields[MAX_NUM_FIELD_STATES];
+};
+
+template<typename T>
+class ConvenientMultistateField : public MultistateField<T>
+{
+public:
+    ConvenientMultistateField(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &stkField) :
+            MultistateField<T>(bulk, stkField)
+    {}
+
+    STK_FUNCTION
+    T& get(stk::mesh::FieldState state, const ngp::Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        return MultistateField<T>::get_field_of_state(state).get(ngpMesh, entity, component);
+    }
+
+    STK_FUNCTION
+    const T& const_get(stk::mesh::FieldState state, const ngp::Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        return MultistateField<T>::get_field_of_state(state).const_get(ngpMesh, entity, component);
+    }
+
+    STK_FUNCTION
+    T& get(stk::mesh::FieldState state, ngp::Mesh::MeshIndex entity, int component) const
+    {
+        return MultistateField<T>::get_field_of_state(state).get(entity, component);
+    }
+
+    STK_FUNCTION
+    const T& const_get(stk::mesh::FieldState state, ngp::Mesh::MeshIndex entity, int component) const
+    {
+        return MultistateField<T>::get_field_of_state(state).const_get(entity, component);
+    }
 };
 
 }

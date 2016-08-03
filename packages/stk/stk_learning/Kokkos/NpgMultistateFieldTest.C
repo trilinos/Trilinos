@@ -21,7 +21,7 @@ void assign_value_to_field(stk::mesh::BulkData &bulk, ngp::Field<double> ngpFiel
         ngpField.get(entity, 0) = value;
     });
 }
-void assign_value_to_statedfield(stk::mesh::BulkData &bulk, ngp::MultistateField<double> ngpStatedField, unsigned state, double value)
+void assign_value_to_statedfield(stk::mesh::BulkData &bulk, ngp::ConvenientMultistateField<double> ngpStatedField, unsigned state, double value)
 {
     ngp::Mesh ngpMesh(bulk);
     ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(), KOKKOS_LAMBDA(ngp::Mesh::MeshIndex entity)
@@ -35,15 +35,18 @@ namespace {
 class StatedFields : public stk::unit_test_util::MeshFixture
 {
 protected:
-    ngp::MultistateField<double> create_field_with_num_states(unsigned numStates)
+    ngp::ConvenientMultistateField<double> create_field_with_num_states(unsigned numStates)
+    {
+        make_mesh_with_field(numStates);
+        return ngp::ConvenientMultistateField<double>(get_bulk(), *stkField);
+    }
+    void make_mesh_with_field(unsigned numStates)
     {
         setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
         stkField = &get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField", numStates);
         double init = -1.0;
         stk::mesh::put_field(*stkField, get_meta().universal_part(), &init);
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", get_bulk());
-
-        return ngp::MultistateField<double>(get_bulk(), *stkField);
     }
     void test_n_states(unsigned numStates)
     {
@@ -117,7 +120,7 @@ TEST_F(StatedFields, incrementingState_fieldsShiftDown)
 }
 TEST_F(StatedFields, gettingFieldData_direct)
 {
-    ngp::MultistateField<double> ngpStatedField = create_field_with_num_states(3);
+    ngp::ConvenientMultistateField<double> ngpStatedField = create_field_with_num_states(3);
     verify_initial_value_set_per_state(ngpStatedField);
     for(unsigned stateCount = 0; stateCount < stkField->number_of_states(); stateCount++)
     {
