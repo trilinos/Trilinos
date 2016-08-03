@@ -167,7 +167,6 @@ void set_states_in_field_on_device(ngp::Mesh &ngpMesh,
 }
 
 TEST_F(NgpHowTo, useMultistateFields)
-
 {
     stk::mesh::Field<int> &stkField = create_field_with_num_states(get_meta(), 2);
     setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
@@ -196,7 +195,6 @@ void set_states_in_convenient_field_on_device(ngp::Mesh &ngpMesh,
 }
 
 TEST_F(NgpHowTo, useConvenientMultistateFields)
-
 {
     stk::mesh::Field<int> &stkField = create_field_with_num_states(get_meta(), 2);
     setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
