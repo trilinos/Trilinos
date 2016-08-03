@@ -47,6 +47,7 @@
 #include "ROL_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_CompositeObjective_SimOpt.hpp"
 #include "ROL_StdObjective.hpp"
+#include "integralobjective.hpp"
 #include "qoi.hpp"
 #include "assembler.hpp"
 
@@ -60,141 +61,6 @@ private:
   std::vector<Teuchos::RCP<ROL::Objective_SimOpt<Real> > > obj_vec_;
   Teuchos::RCP<ROL::Objective_SimOpt<Real> > obj_;
 
-  class IntegralObjective : public ROL::ParametrizedObjective_SimOpt<Real> {
-    private:
-      const Teuchos::RCP<QoI<Real> > qoi_;
-      const Teuchos::RCP<Assembler<Real> > assembler_;
-    public:
-      IntegralObjective(const Teuchos::RCP<QoI<Real> > &qoi,
-                        const Teuchos::RCP<Assembler<Real> > &assembler)
-        : qoi_(qoi), assembler_(assembler) {}
-
-      void setParameter(const std::vector<Real> &param) {
-        qoi_->setParameter(param);
-        ROL::ParametrizedObjective_SimOpt<Real>::setParameter(param);
-      }
-
-      Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-        Teuchos::RCP<const Tpetra::MultiVector<> > up =
-          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-        Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-        return assembler_->assembleQoIValue(*up,*zp,*qoi_);
-      }
-
-      void gradient_1(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z, Real &tol ) {
-        Teuchos::RCP<Tpetra::MultiVector<> > gp =
-          (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-        Teuchos::RCP<const Tpetra::MultiVector<> > up =
-          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-        Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-        assembler_->assembleQoIGradient1(*up,*zp,*qoi_);
-        gp->scale(static_cast<Real>(1),*(assembler_->getQoIGradient1()));
-      }
-
-      void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
-                      const ROL::Vector<Real> &z, Real &tol ) {
-        Teuchos::RCP<Tpetra::MultiVector<> > gp =
-          (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-        Teuchos::RCP<const Tpetra::MultiVector<> > up =
-          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-        Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-          (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-        assembler_->assembleQoIGradient2(*up,*zp,*qoi_);
-        gp->scale(static_cast<Real>(1),*(assembler_->getQoIGradient2()));
-      }
-
-      void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
-                 const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
-        try {
-          Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-            (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > up =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-          assembler_->assembleQoIHessVec11(*vp,*up,*zp,*qoi_);
-          hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec11()));
-        }
-        catch (Exception::Zero &ez) {
-          hv.zero();
-        }
-        catch (Exception::NotImplemented &eni) {
-          throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_11): Hessian not implemented.");
-        }
-      }
-    
-      void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
-                       const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-        try {
-          Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-            (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > up =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-          assembler_->assembleQoIHessVec12(*vp,*up,*zp,*qoi_);
-          hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec12()));
-        }
-        catch (Exception::Zero &ez) {
-          hv.zero();
-        }
-        catch (Exception::NotImplemented &eni) {
-          throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_12): Hessian not implemented.");
-        }
-      }
-    
-      void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
-                       const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-        try {
-          Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-            (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > up =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-          assembler_->assembleQoIHessVec21(*vp,*up,*zp,*qoi_);
-          hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec21()));
-        }
-        catch (Exception::Zero &ez) {
-          hv.zero();
-        }
-        catch (Exception::NotImplemented &eni) {
-          throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_21): Hessian not implemented.");
-        }
-      }
-    
-      void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
-                 const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
-        try {
-          Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-            (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > up =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-          Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-            (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-          assembler_->assembleQoIHessVec22(*vp,*up,*zp,*qoi_);
-          hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec22()));
-        }
-        catch (Exception::Zero &ez) {
-          hv.zero();
-        }
-        catch (Exception::NotImplemented &eni) {
-          throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_22): Hessian not implemented.");
-        }
-      }
-  };
-
 public:
   PDE_Objective(const std::vector<Teuchos::RCP<QoI<Real> > > &qoi_vec,
                 const Teuchos::RCP<ROL::StdObjective<Real> > &std_obj,
@@ -203,7 +69,7 @@ public:
     int size = qoi_vec_.size();
     obj_vec_.clear(); obj_vec_.resize(size,Teuchos::null);
     for (int i = 0; i < size; ++i) {
-      obj_vec_[i] = Teuchos::rcp(new IntegralObjective(qoi_vec[i],assembler));
+      obj_vec_[i] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec[i],assembler));
     }
     obj_ = Teuchos::rcp(new ROL::CompositeObjective_SimOpt<Real>(obj_vec_,std_obj_));
   }
