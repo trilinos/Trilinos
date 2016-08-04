@@ -76,7 +76,11 @@
 
 SystemInterface interface;
 
+#if 0
 #define DIFF_OUT(buf) std::cout << trmclr::green << buf << '\n' << trmclr::normal
+#else
+#define DIFF_OUT(buf) std::cout << buf << '\n' 
+#endif
 
 struct TimeInterp
 {

@@ -42,7 +42,11 @@
 
 #define DEFAULT_MAX_NUMBER_OF_NAMES 1000
 
+#if 0
 #define ERROR(x) std::cerr << trmclr::red << "exodiff: ERROR: " << x << trmclr::normal
+#else
+#define ERROR(x) std::cerr << "exodiff: ERROR: " << x 
+#endif
 
 class SystemInterface
 {
