@@ -30,6 +30,10 @@
 #include <sys/stat.h>
 #include <libgen.h>
 
+#ifdef SIERRA_DLOPEN_ENABLED
+#include <dlfcn.h>
+#endif
+
 #include <assert.h>
 
 #if defined(__APPLE__)
@@ -257,6 +261,40 @@ namespace Iovs {
               IOSS_ERROR(errmsg);
               return;
           }
+          //it is necessary to do this call because the dlopen() in
+          //registerDL does not have the RTLD_GLOBAL flag and it is necessary
+          //for glew in paraview 5
+          //
+#ifdef SIERRA_DLOPEN_ENABLED
+          void *dl = dlopen(plugin_library_path.c_str(),
+                  RTLD_NOW | RTLD_GLOBAL);
+          if (!dl){
+            throw std::runtime_error(dlerror());
+          }
+#endif
+      } else {
+          //library already exists, presumably because it was loaded
+          //from the .ini file
+          //we must make the extra dlopen call to make it have
+          //RTLD_GLOBAL, but we don't know the name.  To reenable this
+          //capability we must store the full path to the dynamic library
+          //and use it here
+          //void *dl = dlopen("~/libParaViewCatalystSierraAdaptor.so",
+          //        RTLD_NOW | RTLD_GLOBAL);
+          //if (!dl){
+          //  std::ostringstream errmsg;
+          //  errmsg << "registered-in-file paraview catalyst plugin\n"
+          //         << "missing with expected name:\n"
+          //         << "~/libParaViewCatalystSierraAdaptor.so\n";
+          //  IOSS_ERROR(errmsg);
+          //  throw std::runtime_error(dlerror());
+          //}
+          std::ostringstream errmsg;
+          errmsg << "currently cannot load sierra catalyst plugin\n"
+                 << "via Load User Plugin File command\n"
+                 << "instead, set CATALYST_PLUGIN environment variable\n";
+          IOSS_ERROR(errmsg);
+          throw std::runtime_error(dlerror());
       }
 
       if(DatabaseIO::paraview_script_filename.empty()) {
