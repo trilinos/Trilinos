@@ -51,10 +51,13 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 
-#include "Panzer_Constant.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
+
+#include "Panzer_Constant.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
+
+#include "Step01_LinearFunction.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -128,6 +131,21 @@ buildClosureModels(const std::string& model_id,
         evaluators->push_back(e);
       }
       found = true;
+    }
+    else if (plist.isType<std::string>("Type")) {
+      std::string evaluator_type = plist.get<std::string>("Type");
+
+      // a linear fucntion across the domain
+      if(evaluator_type == "Linear Function" ) {
+        double acoeff = plist.get<double>("ACoeff"); 
+        double bcoeff = plist.get<double>("BCoeff"); 
+
+        RCP<PHX::Evaluator<panzer::Traits> > e =
+            rcp(new user_app::LinearFunction<EvalT,panzer::Traits>(key,acoeff,bcoeff,*ir));
+        evaluators->push_back(e);
+
+        found = true;
+      }
     }
 
     // fail if you can't find one of the models

@@ -40,6 +40,12 @@
               <Parameter name="Value" type="double" value="3.14"/>
           </ParameterList>
 
+          <ParameterList name="NOT_U_SOURCE">
+              <Parameter name="Type" type="string" value="Linear Function"/>
+              <Parameter name="ACoeff" type="double" value="1.0"/>
+              <Parameter name="BCoeff" type="double" value="-3.14"/>
+          </ParameterList>
+
       </ParameterList>
 
   </ParameterList>

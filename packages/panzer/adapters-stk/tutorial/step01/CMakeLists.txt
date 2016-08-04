@@ -3,6 +3,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(main_SOURCES
   main.cpp
+  Step01_LinearFunction.cpp
   )
 
 TRIBITS_ADD_EXECUTABLE(
