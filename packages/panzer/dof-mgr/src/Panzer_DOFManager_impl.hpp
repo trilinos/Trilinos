@@ -351,8 +351,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
                                  "the nodes when orientations are needed!");
   }
 
-  RCP<const Teuchos::Comm<int> > comm = communicator_;
-
   /* STEPS.
    * 1.  Build all block's FA_FP's and place into respective data structures.
    */
@@ -528,7 +526,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     // One of the map constructors automatically does a prefix sum underneath
     // so we abuse it here to compute a bunch of unique IDs for each processor to define
     gid_map = rcp (new Map (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (),
-                            static_cast<size_t> (localsum), static_cast<GO> (0), comm));
+                            static_cast<size_t> (localsum), static_cast<GO> (0), getComm()));
   }
 
   // LINE 11 and 12: In the GUN paper, these steps are eliminated because
@@ -1057,7 +1055,7 @@ buildOverlapMapFromElements(const ElementBlockAccess & access) const
 
   /* 3.  Construct an overlap map from this structure.
    */
-  return Tpetra::createNonContigMap<LO,GO>(overlapVector,communicator_);
+  return Tpetra::createNonContigMap<LO,GO>(overlapVector,getComm());
 }
 
 template <typename LO,typename GO>
