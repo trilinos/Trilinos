@@ -324,14 +324,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 template <typename LO, typename GO>
 void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
 {
-  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-  out.setOutputToRootOnly(-1);
-  out.setShowProcRank(true);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
-                      "DOFManager::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
-                      "after buildGlobalUnknowns has been called");
-  //Some stuff for the Map.
+  // some typedefs
   typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
 
@@ -340,6 +333,14 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   //the GIDs are of type GO.
   typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
+
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+  out.setOutputToRootOnly(-1);
+  out.setShowProcRank(true);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
+                      "DOFManager::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
+                      "after buildGlobalUnknowns has been called");
 
   // this is a safety check to make sure that nodes are included
   // in the geometric field pattern when orientations are required
@@ -356,94 +357,16 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
    */
   ga_fp_ = geomPattern;
 
-  //We will iterate through all of the blocks, building a FieldAggPattern for
-  //each of them.
-
-  for (size_t b = 0; b < blockOrder_.size(); ++b) {
-    std::vector<std::pair< int, RCP<const panzer::FieldPattern> > > faConstruct;
-    //The ID is going to be the AID, and then everything will work.
-    //The ID should not be the AID, it should be the ID it has in the ordering.
-
-    for (size_t i = 0; i < fieldAIDOrder_.size(); ++i) {
-      int looking = fieldAIDOrder_[i];
-
-      //Check if in b's fp list
-      std::vector<int>::const_iterator reu = std::find(blockToAssociatedFP_[b].begin(), blockToAssociatedFP_[b].end(), looking);
-      if(!(reu==blockToAssociatedFP_[b].end())){
-        faConstruct.push_back(std::make_pair(i, fieldPatterns_[fieldAIDOrder_[i]]));
-      }
-
-    }
-
-    if(faConstruct.size()>0) {
-      fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
-
-      // how many global IDs are in this element block?
-      int gidsInBlock = fa_fps_[fa_fps_.size()-1]->numberIds();
-      elementBlockGIDCount_.push_back(gidsInBlock);
-    }
-    else {
-      fa_fps_.push_back(Teuchos::null);
-      elementBlockGIDCount_.push_back(0);
-    }
-  }
-
   // given a set of elements over each element block build an overlap
   // map that will provide the required element entities for the
   // set of elements requested.
   ElementBlockAccess ownedAccess(true,connMngr_);
 
-  /* Steps 2. and 3.
-   */
-  RCP<const Map> overlapmap       = buildOverlapMapFromElements(ownedAccess);
+  // INPUT: To the algorithm in the GUN paper
+  RCP<MultiVector> overlap_mv = buildTaggedMultiVector(ownedAccess);
 
- /* 4.  Create an overlapped multivector from the overlap map.
-   */
-
-  // LINE 22: In the GUN paper...the overlap_mv is reused for the tagged multivector.
-  //          This is a bit of a practical abuse of the algorithm presented in the paper.
-    
-  Teuchos::RCP<MultiVector> overlap_mv;
-  {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::allocate_tagged_multivector");
-
-    overlap_mv = Tpetra::createMultiVector<GO>(overlapmap,(size_t)numFields_);
-  }
-
- /* 5.  Iterate through all local elements again, checking with the FP
-   *     information. Mark up the overlap map accordingly.
-   */
-
-
-  {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::fill_tagged_multivector");
-
-    ArrayRCP<ArrayRCP<GO> > edittwoview = overlap_mv->get2dViewNonConst();
-    for (size_t b = 0; b < blockOrder_.size(); ++b) {
-      // there has to be a field pattern assocaited with the block
-      if(fa_fps_[b]==Teuchos::null)
-        continue;
-  
-      const std::vector<LO> & numFields= fa_fps_[b]->numFieldsPerId();
-      const std::vector<LO> & fieldIds= fa_fps_[b]->fieldIds();
-      const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
-      for (size_t l = 0; l < myElements.size(); ++l) {
-        LO connSize = connMngr_->getConnectivitySize(myElements[l]);
-        const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
-        int offset=0;
-        for (int c = 0; c < connSize; ++c) {
-          size_t lid = overlapmap->getLocalElement(elmtConn[c]);
-          for (int n = 0; n < numFields[c]; ++n) {
-            int whichField = fieldIds[offset];
-            //Row will be lid. column will be whichField.
-            //Shove onto local ordering
-            edittwoview[whichField][lid]=1;
-            offset++;
-          }
-        }
-      }
-    }
-  }
+  // LINE 2: In the GUN paper
+  RCP<const Map> overlapmap   = overlap_mv->getMap();
 
  /* 6.  Create a OneToOne map from the overlap map.
    */
@@ -690,7 +613,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
       owned_and_ghosted_.push_back(owned_[i]);
     }
 
-    // this cute trick (blah) of constructing a accessor vector is to eliminate a copy
+    // this cute trick of constructing a accessor vector is to eliminate a copy
     // of the block of code computing shared/owned DOFs
     std::vector<ElementBlockAccess> blockAccessVec;
     blockAccessVec.push_back(ElementBlockAccess(true,connMngr_));
@@ -737,6 +660,96 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     this->buildLocalIdsFromOwnedAndSharedElements();
   else
     this->buildLocalIds();
+}
+
+template <typename LO, typename GO>
+Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >
+DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
+{
+  // some typedefs
+  typedef panzer::TpetraNodeType Node;
+  typedef Tpetra::Map<LO, GO, Node> Map;
+  typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
+
+  //We will iterate through all of the blocks, building a FieldAggPattern for
+  //each of them.
+
+  for (size_t b = 0; b < blockOrder_.size(); ++b) {
+    std::vector<std::pair< int, RCP<const panzer::FieldPattern> > > faConstruct;
+    //The ID is going to be the AID, and then everything will work.
+    //The ID should not be the AID, it should be the ID it has in the ordering.
+
+    for (size_t i = 0; i < fieldAIDOrder_.size(); ++i) {
+      int looking = fieldAIDOrder_[i];
+
+      //Check if in b's fp list
+      std::vector<int>::const_iterator reu = std::find(blockToAssociatedFP_[b].begin(), blockToAssociatedFP_[b].end(), looking);
+      if(!(reu==blockToAssociatedFP_[b].end())){
+        faConstruct.push_back(std::make_pair(i, fieldPatterns_[fieldAIDOrder_[i]]));
+      }
+
+    }
+
+    if(faConstruct.size()>0) {
+      fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
+
+      // how many global IDs are in this element block?
+      int gidsInBlock = fa_fps_[fa_fps_.size()-1]->numberIds();
+      elementBlockGIDCount_.push_back(gidsInBlock);
+    }
+    else {
+      fa_fps_.push_back(Teuchos::null);
+      elementBlockGIDCount_.push_back(0);
+    }
+  }
+
+  RCP<const Map> overlapmap       = buildOverlapMapFromElements(ownedAccess);
+
+  // LINE 22: In the GUN paper...the overlap_mv is reused for the tagged multivector.
+  //          This is a bit of a practical abuse of the algorithm presented in the paper.
+    
+  Teuchos::RCP<MultiVector> overlap_mv;
+  {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::allocate_tagged_multivector");
+
+    overlap_mv = Tpetra::createMultiVector<GO>(overlapmap,(size_t)numFields_);
+  }
+
+  /* 5.  Iterate through all local elements again, checking with the FP
+   *     information. Mark up the overlap map accordingly.
+   */
+
+  {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::fill_tagged_multivector");
+
+    ArrayRCP<ArrayRCP<GO> > edittwoview = overlap_mv->get2dViewNonConst();
+    for (size_t b = 0; b < blockOrder_.size(); ++b) {
+      // there has to be a field pattern assocaited with the block
+      if(fa_fps_[b]==Teuchos::null)
+        continue;
+  
+      const std::vector<LO> & numFields= fa_fps_[b]->numFieldsPerId();
+      const std::vector<LO> & fieldIds= fa_fps_[b]->fieldIds();
+      const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+      for (size_t l = 0; l < myElements.size(); ++l) {
+        LO connSize = connMngr_->getConnectivitySize(myElements[l]);
+        const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
+        int offset=0;
+        for (int c = 0; c < connSize; ++c) {
+          size_t lid = overlapmap->getLocalElement(elmtConn[c]);
+          for (int n = 0; n < numFields[c]; ++n) {
+            int whichField = fieldIds[offset];
+            //Row will be lid. column will be whichField.
+            //Shove onto local ordering
+            edittwoview[whichField][lid]=1;
+            offset++;
+          }
+        }
+      }
+    }
+  }
+ 
+  return overlap_mv;
 }
 
 template <typename LO, typename GO>

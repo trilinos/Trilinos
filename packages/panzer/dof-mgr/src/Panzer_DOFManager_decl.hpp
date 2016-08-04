@@ -311,6 +311,12 @@ protected:
   Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
   buildOverlapMapFromElements(const ElementBlockAccess & access) const; 
 
+  /** Build a tagged multivector (as defined in GUN paper) to use in global unknown numbering algorithm.
+    * Note that this is non-const. It does modify the <code>elementBlockGIDCount</code> member variable.
+    */
+  Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >
+  buildTaggedMultiVector(const ElementBlockAccess & access);
+
   void fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
                                 std::vector<std::vector< GO > > & elementGIDs,
                                 const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
