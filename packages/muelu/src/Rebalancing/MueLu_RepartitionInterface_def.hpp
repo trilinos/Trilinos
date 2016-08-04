@@ -79,7 +79,7 @@ namespace MueLu {
         stridedblocksize = blockdim;
       }
       oldView = A->SwitchToView(oldView);
-      GetOStream(Statistics0, -1) << "RepartitionInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
+      //GetOStream(Statistics0, -1) << "RepartitionInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
     } else GetOStream(Statistics0, -1) << "RepartitionInterface::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
 
     // vector which stores final (unamalgamated) repartitioning
