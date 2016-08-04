@@ -121,8 +121,8 @@ namespace MueLu {
         stridedblocksize = blockdim;
       }
       oldView = A->SwitchToView(oldView);
-      GetOStream(Statistics0, -1) << "IsorropiaInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
-    } else GetOStream(Statistics0, -1) << "IsorropiaInterface::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+      //GetOStream(Statistics0) << "IsorropiaInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
+    } else GetOStream(Statistics0) << "IsorropiaInterface::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
 
     // 2) get row map for amalgamated matrix (graph of A)
     //    with same distribution over all procs as row map of A
