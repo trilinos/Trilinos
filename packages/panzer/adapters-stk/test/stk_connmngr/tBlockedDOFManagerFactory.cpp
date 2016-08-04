@@ -51,7 +51,6 @@
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;

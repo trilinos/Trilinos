@@ -47,8 +47,6 @@
 
 #include "Kokkos_DynRankView.hpp"
 
-#include "Panzer_DOFManagerFEI.hpp"
-
 #include <stk_mesh/base/FieldBase.hpp>
 
 namespace panzer_stk {
