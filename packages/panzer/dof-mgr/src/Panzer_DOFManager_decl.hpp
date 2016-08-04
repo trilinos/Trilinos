@@ -317,6 +317,14 @@ protected:
   Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >
   buildTaggedMultiVector(const ElementBlockAccess & access);
 
+  /** Build global unknowns using the algorithm in the Global Unknowns Numbering paper (GUN). This  
+    * returns a non-overlapped multi-vector with the unique global IDs as owned by this processor. The input
+    * tagged overlapped multi-vector (<code>overlap_mv</code>) is overwritten with the global IDs. Note
+    * fields on geometric entities that are not assigned a global ID are given an entry of -1.
+    */
+  Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >
+  buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
+
   void fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
                                 std::vector<std::vector< GO > > & elementGIDs,
                                 const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,

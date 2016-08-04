@@ -328,7 +328,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
 
-  typedef Tpetra::Export<LO,GO,Node> Export;
   typedef Tpetra::Import<LO,GO,Node> Import;
 
   //the GIDs are of type GO.
@@ -365,135 +364,11 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   // INPUT: To the algorithm in the GUN paper
   RCP<MultiVector> overlap_mv = buildTaggedMultiVector(ownedAccess);
 
-  // LINE 2: In the GUN paper
-  RCP<const Map> overlapmap   = overlap_mv->getMap();
+  // call the GUN paper algorithm
+  RCP<MultiVector> non_overlap_mv = buildGlobalUnknowns_GUN(*overlap_mv);
 
- /* 6.  Create a OneToOne map from the overlap map.
-   */
-
-  // LINE 4: In the GUN paper
-
-  RCP<const Map> non_overlap_map;
-  if(!useTieBreak_) {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::createOneToOne line_4");
-
-    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap);
-  }
-  else {
-    // use a hash tie break to get better load balancing from create one to one
-    // Aug. 4, 2016...this is a bad idea and doesn't work
-    HashTieBreak<LO,GO> tie_break;
-    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap,tie_break);
-  }
-
- /* 7.  Create a non-overlapped multivector from OneToOne map.
-   */
-
-  // LINE 5: In the GUN paper
-
-  Teuchos::RCP<MultiVector> non_overlap_mv;
-  {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::alloc_unique_mv line_5");
-
-    non_overlap_mv = Tpetra::createMultiVector<GO>(non_overlap_map,(size_t)numFields_);
-  }
-
- /* 8.  Create an export between the two maps.
-   */
-
-  // LINE 6: In the GUN paper
-  RCP<Export> e;
-  RCP<Import> imp;
-  {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::export line_6");
-
-    e = rcp(new Export(overlapmap,non_overlap_map));
-
-    // Note:  ETP 04/26/16  Temporarily create an importer for all of the
-    // doImport() calls below.  This works around mysterious failures when
-    // using the exporter for Cuda builds.
-    imp = rcp(new Import(non_overlap_map,overlapmap));
-
-    /* 9.  Export data using ABSMAX.
-      */
-    non_overlap_mv->doExport(*overlap_mv,*e,Tpetra::ABSMAX);
-  }
-
-
- /* 10. Compute the local sum using Kokkos.
-   */
-
-  // LINES 7-9: In the GUN paper
-
-  GO localsum=0;
-  {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::local_count line_7-9");
-
-    typedef typename Tpetra::MultiVector<GO,Node> MV;
-    typedef typename MV::dual_view_type::t_dev KV;
-    typedef typename MV::dual_view_type::t_dev::memory_space DMS;
-    KV values = non_overlap_mv->template getLocalView<DMS>();
-    auto mv_size = values.dimension_0();
-    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,KV>(values),localsum);
-  }
-
- /* 11. Create a map using local sums to generate final GIDs.
-   */
-
-  // LINE 10: In the GUN paper
-
-  RCP<const Map> gid_map;
-  {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::prefix_sum line_10");
-
-    // One of the map constructors automatically does a prefix sum underneath
-    // so we abuse it here to compute a bunch of unique IDs for each processor to define
-    gid_map = rcp (new Map (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (),
-                            static_cast<size_t> (localsum), static_cast<GO> (0), getComm()));
-  }
-
-  // LINE 11 and 12: In the GUN paper, these steps are eliminated because
-  // the non_overlap_mv is reused
-
- /* 12. Iterate through the non-overlapping MV and assign GIDs to
-   *     the necessary points. (Assign a -1 elsewhere.)
-   */
-
-  // LINES 13-21: In the GUN paper
-
-  { 
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::gid_assignment line_13-21");
-
-    ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
-    int which_id=0;
-    ArrayRCP<ArrayRCP<GO> > editnonoverlap = non_overlap_mv->get2dViewNonConst();
-    for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
-      for(int j=0; j<numFields_; ++j){
-        if(editnonoverlap[j][i]!=0){
-          editnonoverlap[j][i]=owned_ids[which_id];
-          which_id++;
-        }
-        else{
-          editnonoverlap[j][i]=-1;
-        }
-
-      }
-    }
-  }
-
-  // LINE 22: In the GUN paper. Were performed above, and the overlaped_mv is
-  //          abused to handle input tagging.
-
- /* 13. Import data back to the overlap MV using REPLACE.
-   */
-
-  // LINE 23: In the GUN paper
-
-  {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::final_import line_23");
-
-    overlap_mv->doImport(*non_overlap_mv,*imp,Tpetra::REPLACE);
-  }
+  RCP<const Map> overlap_map   = overlap_mv->getMap();
+  RCP<const Map> non_overlap_map = non_overlap_mv->getMap();
 
  /* 14. Cross reference local element connectivity and overlap map to
    *     create final GID vectors.
@@ -501,25 +376,25 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   // this bit of code takes the uniquely assigned GIDs and spreads them
   // out for processing by local element ID
-  fillGIDsFromOverlappedMV(ownedAccess,elementGIDs_,*overlapmap,*overlap_mv);
+  fillGIDsFromOverlappedMV(ownedAccess,elementGIDs_,*overlap_map,*overlap_mv);
 
   // if neighbor unknowns are required, then make sure they are included
   // in the elementGIDs_
   if (buildGhosted_) { // enabling this turns on GID construction for
                        // neighbor processors
     ElementBlockAccess naborAccess(false,connMngr_);
-    RCP<const Map> overlapmap_nabor = buildOverlapMapFromElements(naborAccess);
+    RCP<const Map> overlap_map_nabor = buildOverlapMapFromElements(naborAccess);
 
-    // Export e(overlapmap_nabor,non_overlap_map);
-    Import imp_nabor(non_overlap_map,overlapmap_nabor);
+    // Export e(overlap_map_nabor,non_overlap_map);
+    Import imp_nabor(non_overlap_map,overlap_map_nabor);
 
     Teuchos::RCP<MultiVector> overlap_mv_nabor
-        = Tpetra::createMultiVector<GO>(overlapmap_nabor,(size_t)numFields_);
+        = Tpetra::createMultiVector<GO>(overlap_map_nabor,(size_t)numFields_);
 
     // get all neighbor information
     overlap_mv_nabor->doImport(*non_overlap_mv,imp_nabor,Tpetra::REPLACE);
 
-    fillGIDsFromOverlappedMV(naborAccess,elementGIDs_,*overlapmap_nabor,*overlap_mv_nabor);
+    fillGIDsFromOverlappedMV(naborAccess,elementGIDs_,*overlap_map_nabor,*overlap_mv_nabor);
   }
 
   //////////////////////////////////////////////////////////////////
@@ -660,6 +535,155 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     this->buildLocalIdsFromOwnedAndSharedElements();
   else
     this->buildLocalIds();
+}
+
+template <typename LO, typename GO>
+Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >
+DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const
+{
+  // some typedefs
+  typedef panzer::TpetraNodeType Node;
+  typedef Tpetra::Map<LO, GO, Node> Map;
+
+  typedef Tpetra::Export<LO,GO,Node> Export;
+  typedef Tpetra::Import<LO,GO,Node> Import;
+
+  //the GIDs are of type GO.
+  typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
+
+  PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN");
+
+  // LINE 2: In the GUN paper
+  RCP<const Map> overlap_map   = overlap_mv.getMap();
+
+ /* 6.  Create a OneToOne map from the overlap map.
+   */
+
+  // LINE 4: In the GUN paper
+
+  RCP<const Map> non_overlap_map;
+  if(!useTieBreak_) {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::createOneToOne line_4");
+
+    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlap_map);
+  }
+  else {
+    // use a hash tie break to get better load balancing from create one to one
+    // Aug. 4, 2016...this is a bad idea and doesn't work
+    HashTieBreak<LO,GO> tie_break;
+    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlap_map,tie_break);
+  }
+
+ /* 7.  Create a non-overlapped multivector from OneToOne map.
+   */
+
+  // LINE 5: In the GUN paper
+
+  Teuchos::RCP<MultiVector> non_overlap_mv;
+  {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::alloc_unique_mv line_5");
+
+    non_overlap_mv = Tpetra::createMultiVector<GO>(non_overlap_map,(size_t)numFields_);
+  }
+
+ /* 8.  Create an export between the two maps.
+   */
+
+  // LINE 6: In the GUN paper
+  RCP<Export> e;
+  RCP<Import> imp;
+  {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::export line_6");
+
+    e = rcp(new Export(overlap_map,non_overlap_map));
+
+    // Note:  ETP 04/26/16  Temporarily create an importer for all of the
+    // doImport() calls below.  This works around mysterious failures when
+    // using the exporter for Cuda builds.
+    imp = rcp(new Import(non_overlap_map,overlap_map));
+
+    /* 9.  Export data using ABSMAX.
+      */
+    non_overlap_mv->doExport(overlap_mv,*e,Tpetra::ABSMAX);
+  }
+
+
+ /* 10. Compute the local sum using Kokkos.
+   */
+
+  // LINES 7-9: In the GUN paper
+
+  GO localsum=0;
+  {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::local_count line_7-9");
+
+    typedef typename Tpetra::MultiVector<GO,Node> MV;
+    typedef typename MV::dual_view_type::t_dev KV;
+    typedef typename MV::dual_view_type::t_dev::memory_space DMS;
+    KV values = non_overlap_mv->template getLocalView<DMS>();
+    auto mv_size = values.dimension_0();
+    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,KV>(values),localsum);
+  }
+
+ /* 11. Create a map using local sums to generate final GIDs.
+   */
+
+  // LINE 10: In the GUN paper
+
+  RCP<const Map> gid_map;
+  {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::prefix_sum line_10");
+
+    // One of the map constructors automatically does a prefix sum underneath
+    // so we abuse it here to compute a bunch of unique IDs for each processor to define
+    gid_map = rcp (new Map (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (),
+                            static_cast<size_t> (localsum), static_cast<GO> (0), getComm()));
+  }
+
+  // LINE 11 and 12: In the GUN paper, these steps are eliminated because
+  // the non_overlap_mv is reused
+
+ /* 12. Iterate through the non-overlapping MV and assign GIDs to
+   *     the necessary points. (Assign a -1 elsewhere.)
+   */
+
+  // LINES 13-21: In the GUN paper
+
+  { 
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::gid_assignment line_13-21");
+
+    ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
+    int which_id=0;
+    ArrayRCP<ArrayRCP<GO> > editnonoverlap = non_overlap_mv->get2dViewNonConst();
+    for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
+      for(int j=0; j<numFields_; ++j){
+        if(editnonoverlap[j][i]!=0){
+          editnonoverlap[j][i]=owned_ids[which_id];
+          which_id++;
+        }
+        else{
+          editnonoverlap[j][i]=-1;
+        }
+
+      }
+    }
+  }
+
+  // LINE 22: In the GUN paper. Were performed above, and the overlaped_mv is
+  //          abused to handle input tagging.
+
+ /* 13. Import data back to the overlap MV using REPLACE.
+   */
+
+  // LINE 23: In the GUN paper
+
+  {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::final_import line_23");
+
+    overlap_mv.doImport(*non_overlap_mv,*imp,Tpetra::REPLACE);
+  }
+
+  return non_overlap_mv;
 }
 
 template <typename LO, typename GO>
