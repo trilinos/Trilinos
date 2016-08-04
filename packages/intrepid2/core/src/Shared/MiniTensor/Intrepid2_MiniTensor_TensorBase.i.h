@@ -341,25 +341,9 @@ KOKKOS_INLINE_FUNCTION
 void
 TensorBase<T, ST>::set_number_components(Index const number_components)
 {
-  Index const
-  prev_number_components = get_number_components();
-
-  if (number_components == prev_number_components) return;
-
-  if (number_components < prev_number_components) {
-    for (Index i{number_components}; i < prev_number_components; ++i) {
-      (*this)[i] = not_a_number<T>();
-    }
-  }
-
+  fill(NANS);
   components_.resize(number_components);
-
-  if (number_components > prev_number_components) {
-    for (Index i{prev_number_components}; i < number_components; ++i) {
-      (*this)[i] = not_a_number<T>();
-    }
-  }
-
+  fill(NANS);
   return;
 }
 
