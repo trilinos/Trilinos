@@ -56,7 +56,7 @@ class MiniTensorVector : public Vector<T> {
 
 private:
 
-  Intrepid2::Vector<T, N> &
+  Intrepid2::Vector<T, N>
   vector_;
 
 public:
@@ -67,7 +67,7 @@ public:
   }
 
   void
-  set(Vector<T> & x)
+  set(Vector<T> const & x)
   {
     assert(dimension() == x.dimension());
 
@@ -81,7 +81,7 @@ public:
   }
 
   void
-  plus(Vector<T> & x)
+  plus(Vector<T> const & x)
   {
     assert(dimension() == x.dimension());
 
@@ -157,11 +157,11 @@ public:
     auto const
     dim = vector_.get_dimension();
 
-    auto
-    p_mt_vector = Teuchos::rcp(new Intrepid2::Vector<T, N>(dim));
+    auto &&
+    mt_vector = Intrepid2::Vector<T, N>(dim);
 
     Teuchos::RCP<MiniTensorVector>
-    e = Teuchos::rcp(new MiniTensorVector(*p_mt_vector));
+    e = Teuchos::rcp(new MiniTensorVector(mt_vector));
 
     return e;
   }

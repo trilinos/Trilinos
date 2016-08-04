@@ -42,6 +42,7 @@
 #if !defined(Intrepid_MiniTensor_Utilities_i_h)
 #define Intrepid_MiniTensor_Utilities_i_h
 
+#include <cfloat>
 #include <cmath>
 #include <limits>
 
