@@ -42,7 +42,7 @@
 
 #include "PanzerDofMgr_config.hpp"
 
-#include "Panzer_DOFManager_decl.hpp"
+#include "Panzer_DOFManager.hpp"
 #include "Panzer_DOFManager_impl.hpp"
 
 template class panzer::DOFManager<int,int>;

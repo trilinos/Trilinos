@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_DOFManager_decl_hpp__
-#define __Panzer_DOFManager_decl_hpp__
+#ifndef __Panzer_DOFManager_hpp__
+#define __Panzer_DOFManager_hpp__
 #include <map>
 
 #include "mpi.h"
