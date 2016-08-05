@@ -56,6 +56,26 @@
     \class ROL::AugmentedLagrangian
     \brief Provides the interface to evaluate the augmented Lagrangian.
 
+    This class implements the augmented Lagrangian functional for use with
+    ROL::AugmentedLagrangianStep.  Given a function
+    \f$f:\mathcal{X}\to\mathbb{R}\f$ and an equality constraint
+    \f$c:\mathcal{X}\to\mathcal{C}\f$, the augmented Lagrangian functional is
+    \f[
+       L_A(x,\lambda,\mu) = f(x) +
+           \langle \lambda, c(x)\rangle_{\mathcal{C}^*,\mathcal{C}} +
+           \frac{\mu}{2} \langle \mathfrak{R}c(x),c(x)\rangle_{\mathcal{C}^*,\mathcal{C}}
+    \f]
+    where \f$\lambda\in\mathcal{C}^*\f$ denotes the Lagrange multiplier estimate,
+    \f$\mu > 0\f$ is the penalty parameter and
+    \f$\mathfrak{R}\in\mathcal{L}(\mathcal{C},\mathcal{C}^*)\f$ is the Riesz operator
+    on the constraint space.
+
+    This implementation permits the scaling of \f$L_A\f$ by \f$\mu^{-1}\f$ and also
+    permits the Hessian approximation
+    \f[
+        \nabla^2_x L_A(x,\lambda,\mu)v \approx \nabla^2 f(x) v + \mu c'(x)^*\mathfrak{R} c'(x)v.
+    \f]
+
     ---
 */
 
@@ -89,6 +109,17 @@ private:
   bool isGradientComputed_;
 
 public:
+  /** \brief Constructor.
+
+      This creates a valid AugmentedLagrangian object.
+      @param[in]          obj              is an objective function.
+      @param[in]          con              is an equality constraint.
+      @param[in]          mulitplier       is a Lagrange multiplier vector.
+      @param[in]          penaltyParameter is the penalty parameter.
+      @param[in]          optVec           is an optimization space vector.
+      @param[in]          conVec           is a constraint space vector.
+      @param[in]          parlist          is a parameter list.
+  */
   AugmentedLagrangian(const Teuchos::RCP<Objective<Real> > &obj,
                       const Teuchos::RCP<EqualityConstraint<Real> > &con,
                       const Vector<Real> &multiplier,
@@ -108,6 +139,16 @@ public:
 
     pen_ = Teuchos::rcp(new QuadraticPenalty<Real>(con,multiplier,penaltyParameter,optVec,conVec,scaleLagrangian_,HessianApprox));
   }
+
+  /** \brief Null constructor.
+
+      This constructor is only used for inheritance and does not create a
+      valid AugmentedLagrangian object.  Do not use.
+  */
+  AugmentedLagrangian()
+   : obj_(Teuchos::null), pen_(Teuchos::null), dualOptVector_(Teuchos::null),
+     fval_(0), gradient_(Teuchos::null), nfval_(0), ngval_(0),
+     scaleLagrangian_(false), isValueComputed_(false), isGradientComputed_(false) {}
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     obj_->update(x,flag,iter);
@@ -169,17 +210,6 @@ public:
       isValueComputed_ = true;
     }
     return fval_;
-  }
-
-  // Return objective function gradient
-  virtual void getObjectiveGradient(Vector<Real> &g, const Vector<Real> &x) {
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
-    // Compute objective function gradient
-    if ( !isGradientComputed_ ) {
-      obj_->gradient(*gradient_,x,tol); ngval_++;
-      isGradientComputed_ = true;
-    }
-    g.set(*gradient_);
   }
 
   // Return constraint value

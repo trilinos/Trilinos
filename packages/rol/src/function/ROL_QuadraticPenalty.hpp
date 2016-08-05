@@ -55,6 +55,25 @@
     \class ROL::QuadraticPenalty
     \brief Provides the interface to evaluate the quadratic constraint penalty.
 
+    This class implements the quadratic constraint penalty functional.
+    Given an equality constraint \f$c:\mathcal{X}\to\mathcal{C}\f$, the
+    quadratic penalty functional is
+    \f[
+       Q(x,\lambda,\mu) =
+           \langle \lambda, c(x)\rangle_{\mathcal{C}^*,\mathcal{C}} +
+           \frac{\mu}{2} \langle \mathfrak{R}c(x),c(x)\rangle_{\mathcal{C}^*,\mathcal{C}}
+    \f]
+    where \f$\lambda\in\mathcal{C}^*\f$ denotes a multiplier,
+    \f$\mu > 0\f$ is the penalty parameter and
+    \f$\mathfrak{R}\in\mathcal{L}(\mathcal{C},\mathcal{C}^*)\f$ is the Riesz operator
+    on the constraint space.
+
+    This implementation permits the scaling of \f$Q\f$ by \f$\mu^{-1}\f$ and also
+    permits the Hessian approximation
+    \f[
+        \nabla^2_x Q(x,\lambda,\mu)v \approx \mu c'(x)^*\mathfrak{R} c'(x)v.
+    \f]
+
     ---
 */
 
