@@ -73,6 +73,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->PutOnSingleProc_repartition = -1;
    (*ml_ptr)->LargestMinMaxRatio_repartition = -1.;
    (*ml_ptr)->use_repartitioning = 0;
+   (*ml_ptr)->sortColumnsAfterRAP = 0;
    (*ml_ptr)->repartitionStartLevel = -1;
    (*ml_ptr)->RAP_storage_type=ML_MSR_MATRIX;
 
@@ -2795,6 +2796,7 @@ int ML_Gen_AmatrixRAP(ML *ml, int parent_level, int child_level)
    ML_Operator *Amat, *Rmat, *Pmat;
    int i, output_level;
    int storage_type = ml->RAP_storage_type;
+   int tempStatus;
 
 #ifdef ML_TIMING
    double t0;
@@ -2885,6 +2887,9 @@ fflush(stdout);
    }
 
 /*ML_Operator_Print(&(ml->Pmat[child_level]),"Pn");*/
+
+   tempStatus = ml->Amat[child_level].sortColumnsAfterRAP;
+   ml->Amat[child_level].sortColumnsAfterRAP = ml->sortColumnsAfterRAP;
 #ifdef  MB_MODIF_QR
 {
    ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]),
@@ -2908,6 +2913,7 @@ fflush(stdout);
    ml->Amat[child_level].build_time = GetClock() - t0;
    ml->timing->total_build_time   += ml->Amat[child_level].build_time;
 #endif
+   ml->Amat[child_level].sortColumnsAfterRAP = tempStatus;
    return(1);
 }
 

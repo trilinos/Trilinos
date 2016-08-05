@@ -2162,6 +2162,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   ML_CHK_ERR(SetupCoordinates());
 
+  if (List_.get("RAP: sort columns",0))                                     //
+    ml_->sortColumnsAfterRAP = 1;
   // ========================================================================//
   //               Setting Repartitioning                                    //
   // ========================================================================//

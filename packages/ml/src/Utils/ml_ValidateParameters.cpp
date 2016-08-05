@@ -361,6 +361,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   }
   SetValidSmooParams(&(PL->sublist("coarse: list")),smoothers);
 
+  setIntParameter("RAP: sort columns",0,"matrix columns sorted after RAP",PL,intParam);
+
   /* Load-balancing Options (Section 6.4.6) */
   setIntParameter("repartition: enable",0,"Enable repartitioning",PL,intParam);
   setStringToIntegralParameter<int>("repartition: partitioner","Zoltan","Repartitioning method",tuple<std::string>("Zoltan","ParMETIS"),PL);

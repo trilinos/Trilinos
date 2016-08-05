@@ -104,6 +104,11 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
                                    /*  1: vertical      */
                                    /*  2: horizontal    */
    mat->coarsencoord = 'z';
+   mat->sortColumnsAfterRAP = 0; /* only set to 1 inside      */
+                                /* ML_Gen_AmatrixRAP() if    */
+                                /* user has specified        */
+                                /* set("RAP: sort columns",0)*/
+ 
 
 
    ML_Aux_Data_Create(&(mat->aux_data));
@@ -366,6 +371,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->spectral_radius_scheme = original->spectral_radius_scheme;
    mat->spectral_radius_max_iters = original->spectral_radius_max_iters;
    mat->NumZDir             = original->NumZDir;
+   mat->sortColumnsAfterRAP = original->sortColumnsAfterRAP;
    mat->Zorientation        = original->Zorientation;
                                    /* -1: not specified */
                                    /*  1: vertical      */

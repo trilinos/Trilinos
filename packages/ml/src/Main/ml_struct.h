@@ -90,6 +90,7 @@ struct ML_Struct {
    int            MinPerProc_repartition;
    int            PutOnSingleProc_repartition;
    double         LargestMinMaxRatio_repartition;
+   int            sortColumnsAfterRAP; 
    int            use_repartitioning; /* turn repartitioning [off]/on */
    int            repartitionStartLevel; /* used to suppress repartitioning until a certain level*/
    ML_Partitioner partitioner; /*which partitioner to use: zoltan,parmetis,jostle */

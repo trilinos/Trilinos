@@ -35,6 +35,9 @@ void ML_rap(ML_Operator *Rmat, ML_Operator *Amat,
 #  ifdef ML_TIMING
    double tpre,tmult,tpost,ttotal;
 #  endif
+int *bindx; double *vals;
+struct ML_CSR_MSRdata *msr_data;
+
 
    /* Check that N_input_vector is reasonable */
 
@@ -173,8 +176,18 @@ fflush(stdout);
 
    RAPcomm->num_PDEs = Amat->num_PDEs;
    RAPcomm->num_rigid = Amat->num_rigid;
-   if (matrix_type == ML_MSR_MATRIX)
+   if (matrix_type == ML_MSR_MATRIX) {
      ML_back_to_local(RAPcomm, Result, max_per_proc);
+     if (Result->sortColumnsAfterRAP == 1) {
+        msr_data     = (struct ML_CSR_MSRdata *) Result->data;
+        bindx = msr_data->columns;
+        vals = msr_data->values;
+        for (i = 0; i < Result->getrow->Nrows; i++) {
+           ML_az_sort( &(bindx[bindx[i]]), bindx[i+1]-bindx[i], NULL,
+               &(vals[bindx[i]]));
+        }
+     }
+   }
    else if (matrix_type == ML_CSR_MATRIX)
      ML_back_to_csrlocal(RAPcomm, Result, max_per_proc);
    else if (matrix_type == ML_EpetraCRS_MATRIX)
