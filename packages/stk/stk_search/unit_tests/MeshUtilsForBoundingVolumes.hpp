@@ -180,26 +180,26 @@ inline void putCoordinatesInFile(const int exoid, const std::vector<GtkBox>& box
 {
     const int num_nodes_per_element = 8;
     const int spatialDim = 3;
-    double *x = new double[num_nodes_per_element*boxes.size()];
-    double *y = new double[num_nodes_per_element*boxes.size()];
-    double *z = new double[num_nodes_per_element*boxes.size()];
 
-    for (size_t i=0;i<boxes.size();i++)
+    std::vector<double> x(num_nodes_per_element*boxes.size());
+    std::vector<double> y(num_nodes_per_element*boxes.size());
+    std::vector<double> z(num_nodes_per_element*boxes.size());
+
+    for (size_t i=0; i<boxes.size(); i++)
     {
-        double xmin=0, ymin=0, zmin=0;
-        xmin = boxes[i].get_x_min();
-        ymin = boxes[i].get_y_min();
-        zmin = boxes[i].get_z_min();
+        double xmin = boxes[i].get_x_min();
+        double ymin = boxes[i].get_y_min();
+        double zmin = boxes[i].get_z_min();
 
-        double xmax=0, ymax=0, zmax=0;
-        xmax = boxes[i].get_x_max();
-        ymax = boxes[i].get_y_max();
-        zmax = boxes[i].get_z_max();
+        double xmax = boxes[i].get_x_max();
+        double ymax = boxes[i].get_y_max();
+        double zmax = boxes[i].get_z_max();
 
         double hexCoordinates[24];
         setHexCoordinates(xmin, ymin, zmin, xmax, ymax, zmax, &hexCoordinates[0]);
+
         unsigned offset = i*num_nodes_per_element;
-        for (int j=0;j<num_nodes_per_element;j++)
+        for (int j=0; j<num_nodes_per_element; j++)
         {
             x[offset+j] = hexCoordinates[spatialDim*j+0];
             y[offset+j] = hexCoordinates[spatialDim*j+1];
@@ -207,11 +207,8 @@ inline void putCoordinatesInFile(const int exoid, const std::vector<GtkBox>& box
         }
     }
 
-    ex_put_coord(exoid, x, y, z);
+    ex_put_coord(exoid, x.data(), y.data(), z.data());
 
-    delete [] z;
-    delete [] y;
-    delete [] x;
 }
 
 inline void fillNumElementsPerBlock(const int num_elements, std::vector<int> &numElementsPerBlock)
