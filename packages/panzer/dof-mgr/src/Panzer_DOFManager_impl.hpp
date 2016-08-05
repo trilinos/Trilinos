@@ -43,9 +43,6 @@
 #ifndef PANZER_DOF_MANAGER2_IMPL_HPP
 #define PANZER_DOF_MANAGER2_IMPL_HPP
 
-#define PANZER_DOFMGR_FUNC_TIME_MONITOR(a) \
-    PANZER_FUNC_TIME_MONITOR(a)
-
 #include <map>
 
 #include "mpi.h"
@@ -72,6 +69,13 @@
 #include "Tpetra_MultiVector.hpp"
 
 #include <unordered_set> // a hash table
+
+#define PANZER_DOFMGR_FUNC_TIME_MONITOR(a) \
+    PANZER_FUNC_TIME_MONITOR(a)
+
+#ifdef PHX_KOKKOS_DEVICE_TYPE_CUDA 
+#define PANZER_DOFMGR_REQUIRE_CUDA
+#endif
 
 /*
 #define HAVE_ZOLTAN2
@@ -602,21 +606,23 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
    */
 
   // LINE 6: In the GUN paper
-  RCP<Export> e;
+  RCP<Export> exp;
   RCP<Import> imp;
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_06 export");
 
-    e = rcp(new Export(overlap_map,non_overlap_map));
+    exp = rcp(new Export(overlap_map,non_overlap_map));
 
+#ifdef PANZER_DOFMGR_REQUIRE_CUDA
     // Note:  ETP 04/26/16  Temporarily create an importer for all of the
     // doImport() calls below.  This works around mysterious failures when
     // using the exporter for Cuda builds.
     imp = rcp(new Import(non_overlap_map,overlap_map));
+#endif
 
     /* 9.  Export data using ABSMAX.
       */
-    non_overlap_mv->doExport(overlap_mv,*e,Tpetra::ABSMAX);
+    non_overlap_mv->doExport(overlap_mv,*exp,Tpetra::ABSMAX);
   }
 
 
@@ -692,7 +698,12 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_23 final_import");
 
+#ifdef PANZER_DOFMGR_REQUIRE_CUDA
     overlap_mv.doImport(*non_overlap_mv,*imp,Tpetra::REPLACE);
+#else
+    // use exporter to save on communication setup costs
+    overlap_mv.doImport(*non_overlap_mv,*exp,Tpetra::REPLACE);
+#endif
   }
 
   return non_overlap_mv;
