@@ -95,7 +95,7 @@ void communicate_any( ParallelMachine p_comm ,
   }
 
   std::vector<MPI_Status>  status(  num_recv );
-  if (MPI_SUCCESS != MPI_Waitall( num_recv , &request[0] , &status[0] )) {
+  if (MPI_SUCCESS != MPI_Waitall( num_recv , request.data() , status.data() )) {
     std::cerr<<"stk::communicate_any ERROR in MPI_Waitall."<<std::endl;
   }
 
@@ -224,7 +224,7 @@ void CommSparse::allocate_data(std::vector<CommBuffer>& bufs, std::vector<unsign
   // Allocate space for buffers
 
   data.reserve(n_size);
-  unsigned char * p_data = &data[0];
+  unsigned char * p_data = data.data();
 
   for ( unsigned i = 0 ; i < bufs.size() ; ++i ) {
     CommBuffer & b = bufs[i] ;
@@ -330,7 +330,7 @@ void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
 
   std::vector<unsigned> buf;
   buf.reserve(p_size*2);
-  int* recvcounts = reinterpret_cast<int*>(&buf[0]);
+  int* recvcounts = reinterpret_cast<int*>(buf.data());
   unsigned * tmp = &buf[p_size];
   send_procs.clear();
   send_procs.reserve(16);
@@ -395,8 +395,8 @@ void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
   // Wait for all receives
 
   {
-    MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
-    MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
+    MPI_Request * const p_request = request.data();
+    MPI_Status  * const p_status  = status.data();
     result = MPI_Waitall( num_recv , p_request , p_status );
   }
   if ( MPI_SUCCESS != result ) {
@@ -506,8 +506,8 @@ void comm_recv_msg_sizes(ParallelMachine comm ,
   // Wait for all receives
 
   {
-    MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
-    MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
+    MPI_Request * const p_request = request.data();
+    MPI_Status  * const p_status  = status.data();
     result = MPI_Waitall( num_recv , p_request , p_status );
   }
   if ( MPI_SUCCESS != result ) {
