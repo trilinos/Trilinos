@@ -206,16 +206,20 @@ void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh,
                                         stk::mesh::Field<double>& nodalVolumeField,
                                         int numRepeat)
 {
+    double start = stk::wall_time();
     const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
     ngp::Field<double> ngpCoords(mesh, coords);
     ngp::Field<double> ngpNodalVolume(mesh, nodalVolumeField);
     ngp::Mesh ngpMesh(mesh);
+    double middle = stk::wall_time();
 
     for(int n=0; n<numRepeat; ++n)
         calculate_nodal_volume(ngpMesh, selector, ngpCoords, ngpNodalVolume);
 
     ngpNodalVolume.copy_device_to_host(mesh, nodalVolumeField);
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
+    double end = stk::wall_time();
+    std::cerr << "Init: " << middle - start << ", Calc: " << end - middle << std::endl;
 }
 
 
@@ -504,8 +508,8 @@ protected:
     stk::mesh::Field<double> *nodalVolumeField;
     stk::mesh::Field<int> *numElemsPerNodeField;
 };
-TEST_F(NodalVolumeCalculator, primerTest) {
-    test_nodal_volume_stkmesh(stk::mesh::BulkData::NO_AUTO_AURA);
+TEST_F(NodalVolumeCalculator, nodalVolumeForEachEntityLoop_primerTest) {
+    test_nodal_volume_entity_loop(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 TEST_F(NodalVolumeCalculator, stkMeshNodalVolume) {
     test_nodal_volume_stkmesh(stk::mesh::BulkData::NO_AUTO_AURA);
