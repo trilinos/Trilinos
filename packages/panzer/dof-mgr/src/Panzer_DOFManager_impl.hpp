@@ -333,6 +333,8 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   //the GIDs are of type GO.
   typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
 
+  PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns");
+
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setOutputToRootOnly(-1);
   out.setShowProcRank(true);
@@ -422,6 +424,8 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   // build owned vector
   {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::build_owned_vector");
+
     typedef std::unordered_set<GO> HashTable;
     HashTable isOwned, remainingOwned;
     //owned_ is made up of owned_ids.
@@ -477,6 +481,8 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   // build owned and ghosted array: The old simple way led to slow
   // Jacobian assembly, the new way speeds up Jacobian assembly
   {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::build_owned_and_ghosted_array");
+
     // loop over all elements. do greedy ordering of local values over elements for
     // building owned_and_ghosted, hopefully this gives a better layout
     // for element ordered assembly
@@ -527,14 +533,20 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   buildConnectivityRun_ = true;
 
   // build orientations if required
-  if(requireOrientations_)
+  if(requireOrientations_) {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::build_orientation");
     buildUnknownsOrientation();
+  }
 
   // allocate the local IDs
-  if (buildGhosted_)
+  if (buildGhosted_) {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::build_local_ids_from_owned_and_shared");
     this->buildLocalIdsFromOwnedAndSharedElements();
-  else
+  }
+  else {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::build_local_ids");
     this->buildLocalIds();
+  }
 }
 
 template <typename LO, typename GO>
@@ -563,7 +575,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
 
   RCP<const Map> non_overlap_map;
   if(!useTieBreak_) {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::createOneToOne line_4");
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_04 createOneToOne");
 
     non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlap_map);
   }
@@ -581,7 +593,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
 
   Teuchos::RCP<MultiVector> non_overlap_mv;
   {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::alloc_unique_mv line_5");
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_05 alloc_unique_mv");
 
     non_overlap_mv = Tpetra::createMultiVector<GO>(non_overlap_map,(size_t)numFields_);
   }
@@ -593,7 +605,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
   RCP<Export> e;
   RCP<Import> imp;
   {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::export line_6");
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_06 export");
 
     e = rcp(new Export(overlap_map,non_overlap_map));
 
@@ -615,7 +627,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
 
   GO localsum=0;
   {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::local_count line_7-9");
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_07-09 local_count");
 
     typedef typename Tpetra::MultiVector<GO,Node> MV;
     typedef typename MV::dual_view_type::t_dev KV;
@@ -632,7 +644,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
 
   RCP<const Map> gid_map;
   {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::prefix_sum line_10");
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_10 prefix_sum");
 
     // One of the map constructors automatically does a prefix sum underneath
     // so we abuse it here to compute a bunch of unique IDs for each processor to define
@@ -650,7 +662,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
   // LINES 13-21: In the GUN paper
 
   { 
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::gid_assignment line_13-21");
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_13-21 gid_assignment");
 
     ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
     int which_id=0;
@@ -678,7 +690,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
   // LINE 23: In the GUN paper
 
   {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::final_import line_23");
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_23 final_import");
 
     overlap_mv.doImport(*non_overlap_mv,*imp,Tpetra::REPLACE);
   }
@@ -694,6 +706,8 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
   typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
   typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
+
+  PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildTaggedMultiVector");
 
   //We will iterate through all of the blocks, building a FieldAggPattern for
   //each of them.
@@ -734,7 +748,7 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
     
   Teuchos::RCP<MultiVector> overlap_mv;
   {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::allocate_tagged_multivector");
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildTaggedMultiVector::allocate_tagged_multivector");
 
     overlap_mv = Tpetra::createMultiVector<GO>(overlapmap,(size_t)numFields_);
   }
@@ -744,7 +758,7 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
    */
 
   {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::fill_tagged_multivector");
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildTaggedMultiVector::fill_tagged_multivector");
 
     ArrayRCP<ArrayRCP<GO> > edittwoview = overlap_mv->get2dViewNonConst();
     for (size_t b = 0; b < blockOrder_.size(); ++b) {

@@ -93,7 +93,7 @@ int main(int argc,char * argv[])
     dofManager->addField("eblock-0_1_0","UZ",pattern_U);
   
     {
-      PANZER_FUNC_TIME_MONITOR("panzer::ScalingTest::buildGlobalUnknowns)");
+      PANZER_FUNC_TIME_MONITOR("panzer::ScalingTest::buildGlobalUnknowns");
   
       dofManager->buildGlobalUnknowns();
     }
