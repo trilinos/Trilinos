@@ -120,13 +120,218 @@ public:
     lfs_ = basisPtr -> getCardinality();
   }
   
-  
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields()
-  {
-    return basisPtrs_;
+  void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
+                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+    // Initialize residual 
+    res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, lfs_));
+    // Evaluate gradient of state at cubature points
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_, spaceDim_));
+    fe_vol_->evaluateGradient(gradU_eval, u_coeff);
+    // Evaluate state at cubature points
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
+    fe_vol_->evaluateValue(valU_eval, u_coeff);
+    // Evaluate control at cubature points
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
+    fe_vol_->evaluateValue(valZ_eval, z_coeff);
+    // Compute conductivity KAPPA(U)
+    Teuchos::RCP< Intrepid::FieldContainer<Real > > K_cub
+      = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
+    evaluate_K(K_cub,*valU_eval);
+    // Compute KAPPA(U) * GRAD(U)
+    Intrepid::FieldContainer<Real> K_gradU(numCells_vol_, numCubPerCell_, spaceDim_);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real >(K_gradU,
+                                                                *K_cub,
+                                                                *gradU_eval);
+    // Compute stiffness term of residual KAPPA(U) * GRAD(U).GRAD(N)
+    Intrepid::FunctionSpaceTools::integrate<Real >(*res,
+                                                   K_gradU,
+                                                   *(fe_vol_->gradNdetJ()),
+                                                   Intrepid::COMP_CPP, false);
+    // Add control term to residual
+    Intrepid::RealSpaceTools<Real >::scale(*valZ_eval, static_cast<Real>(-1));
+    Intrepid::FunctionSpaceTools::integrate<Real >(*res,
+                                                   *valZ_eval,
+                                                   *(fe_vol_->NdetJ()),
+                                                   Intrepid::COMP_CPP, true);
+    // Add boundary conditions to residual
+    add_BC_terms_to_residual(res, u_coeff);
   }
   
-	
+  void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+    // Initialize Jacobian
+    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, lfs_, lfs_));
+    // Evaluate gradient of state at cubature points
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_, spaceDim_));
+    fe_vol_->evaluateGradient(gradU_eval, u_coeff);
+    // Evaluate state at cubature points
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
+    fe_vol_->evaluateValue(valU_eval, u_coeff);
+    // Compute conductivity KAPPA(U)
+    Teuchos::RCP< Intrepid::FieldContainer<Real > > K_cub
+      = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
+    evaluate_K( K_cub, *valU_eval);
+    // Compute derivative of conductivity KAPPA'(U)
+    Teuchos::RCP< Intrepid::FieldContainer<Real > > gradK_cub
+      = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
+    evaluate_gradK( gradK_cub, *valU_eval );
+    // Compute KAPPA'(U) * N
+    Intrepid::FieldContainer<Real> gradK_N(numCells_vol_, lfs_, numCubPerCell_);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(gradK_N,
+                                                                *gradK_cub,
+                                                                (*fe_vol_->N()));
+    // Compute GRAD(U).GRAD(N)
+    Intrepid::FieldContainer<Real> gradU_gradN(numCells_vol_, lfs_, numCubPerCell_);
+    Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(gradU_gradN,
+                                                             *gradU_eval,
+                                                             (*fe_vol_->gradNdetJ()));
+    // Add KAPPA'(U) * N * GRAD(U).GRAD(N) to Jacobian
+    Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
+                                                  gradU_gradN,
+                                                  gradK_N,
+                                                  Intrepid::COMP_CPP, false);
+    // Compute KAPPA(U) * GRAD(N)
+    Intrepid::FieldContainer<Real > K_gradN(numCells_vol_, lfs_, numCubPerCell_, spaceDim_);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(K_gradN,
+                                                                *K_cub,
+                                                                *(fe_vol_->gradN()));
+    // Add KAPPA(U) * GRAD(N).GRAD(N) to Jacobian
+    Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
+                                                  K_gradN,
+                                                  *(fe_vol_->gradNdetJ()),
+                                                  Intrepid::COMP_CPP, true);
+    // Add conditions to Jacobian
+    for (int i=1; i<n_bc_segments_; ++i) {
+      int bc_type = boundary_type_[i];
+      if(bc_type==2) { // Robin conditions
+        for (int j=0; j<n_bc_sub_segments_[i]; ++j) {
+          int numCells = numCells_bc_[i][j];
+          if (numCells) {
+            Teuchos::RCP<Intrepid::FieldContainer<Real > > bc_u_coeff
+              = get_boundary_u_coeff(*u_coeff, i, j);
+            Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bc
+              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, numCubPerSide_));
+            fe_bc_[fe_bc_idx_[i]][j]->evaluateValue(valU_eval_bc, bc_u_coeff);
+        
+            int numcell = valU_eval_bc->dimension(0);
+            Teuchos::RCP< Intrepid::FieldContainer<Real > > valU_4pow3
+              = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numcell, numCubPerSide_));
+            evaluate_grad_pow4_U(valU_4pow3, *valU_eval_bc);
+        
+            Teuchos::RCP< Intrepid::FieldContainer<Real> > valU_4pow3_N
+              = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells, lfs_, numCubPerSide_));
+            Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*valU_4pow3_N,
+                                                                        *valU_4pow3,
+                                                                        *(fe_bc_[fe_bc_idx_[i]][j]->N()));
+            Teuchos::RCP<Intrepid::FieldContainer<Real> > robinJac
+              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells,lfs_,lfs_));
+            Intrepid::FunctionSpaceTools::integrate<Real>(*robinJac,
+                                                          *valU_4pow3_N,
+                                                          *(fe_bc_[fe_bc_idx_[i]][j]->NdetJ()),
+                                                          Intrepid::COMP_CPP, true);
+            // Add Robin Jacobian to volume Jacobian
+            for (int k = 0; k < numCells; ++k) {
+              int cidx = bc_cell_local_id_[i][j][k];
+              for (int l = 0; l < lfs_; ++l) { 
+                for (int m = 0; m < lfs_; ++m) {
+                  (*jac)(cidx,l,m) += (*robinJac)(k,l,m);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    // Apply Dirichlet conditions
+    for (int j=0; j<n_bc_sub_segments_[0]; ++j) {
+      int numCells = numCells_bc_[0][j];
+      if (numCells) {
+        std::vector<int> fidx = local_dofs_on_sides_[sideIds_[0][j]];
+        int numBdryDofs = fidx.size();
+        for (int k = 0; k < numCells; ++k) {
+          int cidx = bc_cell_local_id_[0][j][k];
+          for (int l = 0; l < numBdryDofs; ++l) {
+            // Modify the local jacobian matrix
+            for(int n=0; n<lfs_; ++n) {
+              (*jac)(cidx, fidx[l], n) = static_cast<Real>(0);
+            }
+            (*jac)(cidx, fidx[l], fidx[l]) = static_cast<Real>(1);
+          }
+        }
+      }
+    }
+  }
+  
+  void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+    // Initialize Jacobian
+    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, lfs_, lfs_));
+    // Added control operator to Jacobian
+    Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
+                                                  *(fe_vol_->N()),
+                                                  *(fe_vol_->NdetJ()),
+                                                  Intrepid::COMP_CPP, false);
+    Intrepid::RealSpaceTools<Real>::scale(*jac,static_cast<Real>(-1));
+    // Remove Dirichlet boundary conditions
+    for (int j=0; j<n_bc_sub_segments_[0]; ++j) {
+      // Apply Dirichlet conditions
+      int numCells = numCells_bc_[0][j];
+      if (numCells) {
+        std::vector<int> fidx = local_dofs_on_sides_[sideIds_[0][j]];
+        int numBdryDofs = fidx.size();
+        for (int k = 0; k < numCells; ++k) {
+          int cidx = bc_cell_local_id_[0][j][k];
+          for (int l = 0; l < numBdryDofs; ++l) {
+            // Modify the local jacobian matrix
+            for(int n=0; n<lfs_; ++n) {
+              (*jac)(cidx, fidx[l], n) = static_cast<Real>(0);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+    throw Exception::NotImplemented(">>> Hessian_11 not implemented.");
+  }
+
+  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+    throw Exception::NotImplemented(">>> Hessian_12 not implemented.");
+  }
+
+  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+    throw Exception::NotImplemented(">>> Hessian_21 not implemented.");
+  }
+
+  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
+                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
+    throw Exception::NotImplemented(">>> Hessian_22 not implemented.");
+  }
+ 
+  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields(void) {
+    return basisPtrs_;
+  }
+
   void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &cellNodes,
                     const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes, 
                     const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds ) {
@@ -137,10 +342,14 @@ public:
     construct_FE_objects(cellNodes, bdryCellNodes);
   }
 
+  const Teuchos::RCP<FE<Real> > getFE_VOL(void) const {
+    return fe_vol_;
+  }
+
+private:
 
 // user assign boundary types to each boundary segments
-   void assign_boundary_type( const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCells)
-  {
+   void assign_boundary_type(const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCells) {
     n_bc_segments_ = bdryCells.size();
     boundary_type_.resize(n_bc_segments_);
     sideIds_.resize(n_bc_segments_);
@@ -159,22 +368,18 @@ public:
     boundary_type_[2] = 1; // Neumann
     fe_bc_idx_.resize(n_bc_segments_);
     int k=0;
-    for(int i=0; i<n_bc_segments_;i++)
-      {
-	fe_bc_idx_[i] = -1; // 
-	if(boundary_type_[i] > 0)
-	  {
-	    fe_bc_idx_[i] = k;
-	    k++;
-	  }
+    for(int i=0; i<n_bc_segments_; ++i) {
+      fe_bc_idx_[i] = -1; // 
+      if(boundary_type_[i] > 0) {
+        fe_bc_idx_[i] = k;
+        k++;
       }
+    }
     n_bc_segments_w_fe_ = k;
   }
-  
 
-
-   void construct_FE_objects ( const Teuchos::RCP<Intrepid::FieldContainer<Real> > & volume_cellNodes, const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCells)
-  {
+   void construct_FE_objects(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &volume_cellNodes,
+                             const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCells) {
     //vol_cellTopo_ = Teuchos::rcp(new shards::CellTopology(basisPtrs_[0]->getBaseCellTopology()));
     shards::CellTopology vol_cellTopo_ = basisPtrs_[0]->getBaseCellTopology();
     spaceDim_ = vol_cellTopo_.getDimension();
@@ -210,45 +415,43 @@ public:
     side_cub_points_physical_.resize(n_bc_segments_w_fe_);
     std::cout << "PDE:construct_FE_objects: n_bc_segments_"<<n_bc_segments_<<" n_bc_seg_w_fe_ "<<n_bc_segments_w_fe_<<" " << std::endl;
     int k = 0;
-    for(int i=0; i<n_bc_segments_; i++)
-      {
-	int bcType = boundary_type_[i];
-	n_bc_sub_segments_[i] = bdryCells[i].size();
-	std::cout << "n_bc_sub_segments_[" << i << "] = " << n_bc_sub_segments_[i] << std::endl;
-	numCells_bc_[i].resize(n_bc_sub_segments_[i]);
-	if(bcType > 0)
-	  {
-	    fe_bc_[k].resize(n_bc_sub_segments_[i]);
-	    side_cub_points_physical_[k].resize(n_bc_sub_segments_[i]);
-	  }
-	
-	//actually, fe objects need not be built for dbc
-	for (int j=0; j<n_bc_sub_segments_[i]; j++) {
-          if (bdryCells[i][j] != Teuchos::null) {
-            const int sideId = sideIds_[i][j];
-            numCells_bc_[i][j] = bdryCells[i][j]->dimension(0);
-            if (bcType > 0) {
-              std::cout << "bcType = " << bcType << std::endl;
-              fe_bc_[k][j] = Teuchos::rcp(new FE<Real > (bdryCells[i][j], basisPtrs_[0], bc_Cub, sideId));
-              std::cout << "PDE:construct_FE_objects: fe_bc[" << k << "][" << j << "_ success" << std::endl;
-              side_cub_points_physical_[k][j] = fe_bc_[k][j]->cubPts();
-	    }
-          }
-          else {
-            numCells_bc_[i][j] = 0;
+    for(int i=0; i<n_bc_segments_; ++i) {
+      int bcType = boundary_type_[i];
+      n_bc_sub_segments_[i] = bdryCells[i].size();
+      std::cout << "n_bc_sub_segments_[" << i << "] = " << n_bc_sub_segments_[i] << std::endl;
+      numCells_bc_[i].resize(n_bc_sub_segments_[i]);
+      if(bcType > 0) {
+        fe_bc_[k].resize(n_bc_sub_segments_[i]);
+        side_cub_points_physical_[k].resize(n_bc_sub_segments_[i]);
+      }
+      
+      //actually, fe objects need not be built for dbc
+      for (int j=0; j<n_bc_sub_segments_[i]; ++j) {
+        if (bdryCells[i][j] != Teuchos::null) {
+          const int sideId = sideIds_[i][j];
+          numCells_bc_[i][j] = bdryCells[i][j]->dimension(0);
+          if (bcType > 0) {
+            std::cout << "bcType = " << bcType << std::endl;
+            fe_bc_[k][j] = Teuchos::rcp(new FE<Real > (bdryCells[i][j], basisPtrs_[0], bc_Cub, sideId));
+            std::cout << "PDE:construct_FE_objects: fe_bc[" << k << "][" << j << "_ success" << std::endl;
+            side_cub_points_physical_[k][j] = fe_bc_[k][j]->cubPts();
           }
         }
-        if (bcType > 0) {
-          k++;
+        else {
+          numCells_bc_[i][j] = 0;
         }
-      } 
+      }
+      if (bcType > 0) {
+        k++;
+      }
+    } 
   }
   
   void get_local_dofs_for_bc_sides(void) {
     local_dofs_on_sides_ = fe_vol_->getBoundaryDofs();
   }
 
-  std::vector<Real > get_local_dof_coord(int local_cell_idx, int local_dof_idx) {
+  std::vector<Real > get_local_dof_coord(const int local_cell_idx, const int local_dof_idx) const {
     std::vector<Real > coords(2);
     coords[0] = (*dof_points_physical_)(local_cell_idx, local_dof_idx, 0);
     coords[1] = (*dof_points_physical_)(local_cell_idx, local_dof_idx, 1);
@@ -264,15 +467,16 @@ public:
   }  
   
   // specify neumann boundary condition by boundary object idx in the objects vector
-  void evaluate_g (Teuchos::RCP<Intrepid::FieldContainer<Real> > &g_cub_points, int bc_seg_i, int bc_sub_seg_j) {
+  void evaluate_g(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &g_cub_points,
+                  int bc_seg_i, int bc_sub_seg_j) const {
     int bc_type = boundary_type_[bc_seg_i];
     int numcell = numCells_bc_[bc_seg_i][bc_sub_seg_j];
     g_cub_points->initialize(0.0);
     
     // if neumann condition, return g
     if(bc_type == 1) {
-      for (int k=0; k<numcell; k++) {
-        for (int l=0; l<numCubPerSide_; l++) {
+      for (int k=0; k<numcell; ++k) {
+        for (int l=0; l<numCubPerSide_; ++l) {
           std::vector<Real > x(2);
           x[0] = (*(side_cub_points_physical_[fe_bc_idx_[bc_seg_i]][bc_sub_seg_j]))(k, l, 0);
           x[1] = (*(side_cub_points_physical_[fe_bc_idx_[bc_seg_i]][bc_sub_seg_j]))(k, l, 1);
@@ -284,7 +488,8 @@ public:
   }
   
   // compute U^4 given U on the boundary cubature points
-  void evaluate_pow4_U(Teuchos::RCP<Intrepid::FieldContainer<Real> > &U4_cub_points, Intrepid::FieldContainer<Real> &U_at_rbc) {
+  void evaluate_pow4_U(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &U4_cub_points,
+                       const Intrepid::FieldContainer<Real> &U_at_rbc) const {
     int c = U_at_rbc.dimension(0);
     int p = U_at_rbc.dimension(1);
     for (int i=0; i < c; ++i) {
@@ -294,140 +499,89 @@ public:
     }
   }
   
-	
   // compute grad U^4 given U on the boundary cubature points
-  void evaluate_grad_pow4_U(Teuchos::RCP< Intrepid::FieldContainer<Real > > &grad_U4_cub, Intrepid::FieldContainer<Real> &U_at_rbc)
-  { 
+  void evaluate_grad_pow4_U(const Teuchos::RCP< Intrepid::FieldContainer<Real > > &grad_U4_cub,
+                            const Intrepid::FieldContainer<Real> &U_at_rbc) const { 
     int c = U_at_rbc.dimension(0);
     int p = U_at_rbc.dimension(1);
-    for (int i=0; i < c; i++) {
-      for (int j=0; j < p; j++) {
-	(*grad_U4_cub)(i, j) = 4 * alpha_ * std::pow( U_at_rbc(i, j), 3);
+    for (int i=0; i < c; ++i) {
+      for (int j=0; j < p; ++j) {
+        (*grad_U4_cub)(i, j) = static_cast<Real>(4) * alpha_ * std::pow( U_at_rbc(i, j), 3);
       }
     }
   }
-  
-  
+ 
   // K at cubature points, input T has to be on the cubacture
   // T^2 + 1
-  void evaluate_K (Teuchos::RCP< Intrepid::FieldContainer<Real > > &K_cub, Intrepid::FieldContainer<Real > &U)
-  {    
-    for (int i=0; i < numCells_vol_; i++) {
-      for (int j=0; j < numCubPerCell_; j++) {
-	(*K_cub)(i, j) = U(i, j) * U(i, j) + 1;
+  void evaluate_K(const Teuchos::RCP< Intrepid::FieldContainer<Real > > &K_cub,
+                  const Intrepid::FieldContainer<Real > &U) const {    
+    for (int i=0; i < numCells_vol_; ++i) {
+      for (int j=0; j < numCubPerCell_; ++j) {
+        (*K_cub)(i, j) = U(i, j) * U(i, j) + static_cast<Real>(1);
       }
     }
   } 
   
   // grad K at cubature points
   // 2 * T
-  void evaluate_gradK (Teuchos::RCP<Intrepid::FieldContainer<Real> > &gradK_cub, Intrepid::FieldContainer<Real> &U)
-  {
-    for (int i=0; i < numCells_vol_; i++) {
-      for (int j=0; j < numCubPerCell_; j++) {
-	(*gradK_cub)(i, j) = 2 * U(i, j);
+  void evaluate_gradK (const Teuchos::RCP<Intrepid::FieldContainer<Real> > &gradK_cub,
+                       const Intrepid::FieldContainer<Real> &U) const {
+    for (int i=0; i < numCells_vol_; ++i) {
+      for (int j=0; j < numCubPerCell_; ++j) {
+        (*gradK_cub)(i, j) = static_cast<Real>(2) * U(i, j);
       }
     }
   } 
-
-
-// not sure correct 
-  void multiply_gradK_N_gradU (Teuchos::RCP< Intrepid::FieldContainer<Real> > &gradK_N_gradU, Intrepid::FieldContainer<Real> &gradK_cub, Intrepid::FieldContainer<Real> &N_cub, Intrepid::FieldContainer<Real> &gradU_cub)
-  {
-    for (int i=0; i < numCells_vol_; i++) {
-      for (int j=0; j < lfs_; j++) {
-	for (int k=0; k<numCubPerCell_; k++) {
-	  for (int l=0; l<spaceDim_; l++) {
-	    (*gradK_N_gradU)(i, j, k, l) = gradK_cub(i, k) * N_cub(i, j, k) * gradU_cub(i, k, l);
-	  }
-	}
-      }
-    }
-  }
   
 /////////////////////////////////
 
-
-  void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
-	
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_, spaceDim_));
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
-
-    fe_vol_->evaluateGradient(gradU_eval, u_coeff);
-    fe_vol_->evaluateValue(valU_eval, u_coeff);
-    fe_vol_->evaluateValue(valZ_eval, z_coeff);
-    Teuchos::RCP< Intrepid::FieldContainer<Real > > K_cub = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
-    evaluate_K(K_cub,*valU_eval);
-    
-    //Intrepid::FieldContainer<Real > K_gradNdetJ = multiply_K_gradNdetJ (K_cub_points, 
-    //								      *(fe_vol_->gradNdetJ()));
-    res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, lfs_));
-    Teuchos::RCP<Intrepid::FieldContainer<Real > > K_gradU = Teuchos::rcp( new Intrepid::FieldContainer<Real >(numCells_vol_, numCubPerCell_, spaceDim_));
-    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real >(*K_gradU, *K_cub, *gradU_eval);	
-    Intrepid::FunctionSpaceTools::integrate<Real >(*res, *K_gradU, *(fe_vol_->gradNdetJ()), Intrepid::COMP_CPP, false);
-
-    Intrepid::RealSpaceTools<Real >::scale(*valZ_eval, -1.0);
-    Intrepid::FunctionSpaceTools::integrate<Real >(*res, *valZ_eval, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
-	
-    add_BC_terms_to_residual(res, u_coeff);
-  }
-
-
-  Teuchos::RCP<Intrepid::FieldContainer<Real > > get_boundary_u_coeff(const Intrepid::FieldContainer<Real> & cell_u_coeff, int bc_seg_i, int bc_sub_seg_j)
-  {
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > get_boundary_u_coeff(
+        const Intrepid::FieldContainer<Real> & cell_u_coeff,
+        int bc_seg_i, int bc_sub_seg_j) const {
     std::vector<int> bc_cell_local_id = bc_cell_local_id_[bc_seg_i][bc_sub_seg_j];
     int numcell = numCells_bc_[bc_seg_i][bc_sub_seg_j];
     
     Teuchos::RCP<Intrepid::FieldContainer<Real > > boundary_u_coeff = 
       Teuchos::rcp(new Intrepid::FieldContainer<Real > (numcell, lfs_));
-    for (int i=0; i<numcell; i++) {
-      for (int j=0; j<lfs_; j++){
-	(*boundary_u_coeff)(i, j) = cell_u_coeff(bc_cell_local_id[i], j);
+    for (int i=0; i<numcell; ++i) {
+      for (int j=0; j<lfs_; ++j){
+        (*boundary_u_coeff)(i, j) = cell_u_coeff(bc_cell_local_id[i], j);
       }
     }
     return boundary_u_coeff;
   }
-  
-	
-  void add_BC_terms_to_residual(Teuchos::RCP<Intrepid::FieldContainer<Real > > & res,
-                          const Teuchos::RCP< const Intrepid::FieldContainer<Real > > & u_coeff) {
+
+  void add_BC_terms_to_residual(const Teuchos::RCP<Intrepid::FieldContainer<Real > > & res,
+                                const Teuchos::RCP< const Intrepid::FieldContainer<Real > > & u_coeff) const {
     for (int i=1; i<n_bc_segments_; ++i) {
-      int bc_type = boundary_type_[i];	
-      if(bc_type==1) {
-        // Neumann
-	for (int j=0; j<n_bc_sub_segments_[i]; ++j) {
-            int numCells = numCells_bc_[i][j];
-            if (numCells) { 
-              Teuchos::RCP< Intrepid::FieldContainer<Real > > g_nbc
-                = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells, numCubPerSide_));
-              evaluate_g(g_nbc, i, j);
-              Teuchos::RCP<Intrepid::FieldContainer<Real> > neumannRes
-                = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells,lfs_));
-              Intrepid::FunctionSpaceTools::integrate<Real>(*neumannRes,
-                                                            *g_nbc,
-                                                            *(fe_bc_[fe_bc_idx_[i]][j]->NdetJ()),
-                                                            Intrepid::COMP_CPP, true);
-              // Add Robin residual to volume residual
-              for (int k = 0; k < numCells; ++k) {
-                int cidx = bc_cell_local_id_[i][j][k];
-                for (int l = 0; l < lfs_; ++l) { 
-                  (*res)(cidx,l) += (*neumannRes)(k,l);
-                }
+      int bc_type = boundary_type_[i];
+      if(bc_type==1) { // Neumann boundary
+        for (int j=0; j<n_bc_sub_segments_[i]; ++j) {
+          int numCells = numCells_bc_[i][j];
+          if (numCells) { 
+            Teuchos::RCP< Intrepid::FieldContainer<Real > > g_nbc
+              = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells, numCubPerSide_));
+            evaluate_g(g_nbc, i, j);
+            Teuchos::RCP<Intrepid::FieldContainer<Real> > neumannRes
+              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells,lfs_));
+            Intrepid::FunctionSpaceTools::integrate<Real>(*neumannRes,
+                                                          *g_nbc,
+                                                          *(fe_bc_[fe_bc_idx_[i]][j]->NdetJ()),
+                                                          Intrepid::COMP_CPP, true);
+            // Add Robin residual to volume residual
+            for (int k = 0; k < numCells; ++k) {
+              int cidx = bc_cell_local_id_[i][j][k];
+              for (int l = 0; l < lfs_; ++l) { 
+                (*res)(cidx,l) += (*neumannRes)(k,l);
               }
             }
           }
-	}
-	else if(bc_type==2) {
-          // Robin
-          for (int j=0; j<n_bc_sub_segments_[i]; ++j) {
-            int numCells = numCells_bc_[i][j];
-            if (numCells) {
+        }
+      }
+      else if(bc_type==2) { // Robin boudary
+        for (int j=0; j<n_bc_sub_segments_[i]; ++j) {
+          int numCells = numCells_bc_[i][j];
+          if (numCells) {
             Teuchos::RCP<Intrepid::FieldContainer<Real > > bc_u_coeff
               = get_boundary_u_coeff(*u_coeff, i, j);
             Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bc
@@ -469,159 +623,6 @@ public:
         }
       }
     }
-  }
-  
-  void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
-    
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_, spaceDim_));
-    fe_vol_->evaluateGradient(gradU_eval, u_coeff);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
-    fe_vol_->evaluateValue(valU_eval, u_coeff);
-    
-    Teuchos::RCP< Intrepid::FieldContainer<Real > > K_cub
-      = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
-    evaluate_K( K_cub, *valU_eval);
-    Teuchos::RCP< Intrepid::FieldContainer<Real > > gradK_cub
-      = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
-    evaluate_gradK( gradK_cub, *valU_eval );
-    
-    Teuchos::RCP< Intrepid::FieldContainer<Real > > gradK_N_gradU
-      = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells_vol_, lfs_, numCubPerCell_, spaceDim_));
-    multiply_gradK_N_gradU(gradK_N_gradU, *gradK_cub, *(fe_vol_->N()), *(gradU_eval));
-    
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, lfs_, lfs_));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *gradK_N_gradU, *(fe_vol_->gradNdetJ()), Intrepid::COMP_CPP, false);
-    
-    //Intrepid::FieldContainer<Real > K_gradNdetJ = multiply_K_gradNdetJ(K_cub, *(fe_vol_->gradN()));
-    Teuchos::RCP< Intrepid::FieldContainer<Real > > K_gradN
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, lfs_, numCubPerCell_, spaceDim_));
-    
-    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*K_gradN, *K_cub, *(fe_vol_->gradN()));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *K_gradN, *(fe_vol_->gradNdetJ()), Intrepid::COMP_CPP, true);
-    
-    for (int i=1; i<n_bc_segments_; ++i) {
-      int bc_type = boundary_type_[i];
-      if(bc_type==2) {
-        //robin
-        for (int j=0; j<n_bc_sub_segments_[i]; ++j) {
-          int numCells = numCells_bc_[i][j];
-          if (numCells) {
-      	    Teuchos::RCP<Intrepid::FieldContainer<Real > > bc_u_coeff
-              = get_boundary_u_coeff(*u_coeff, i, j);
-            Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bc
-              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_bc_[i][j], numCubPerSide_));
-            fe_bc_[fe_bc_idx_[i]][j]->evaluateValue(valU_eval_bc, bc_u_coeff);
-      	
-            int numcell = valU_eval_bc->dimension(0);
-            Teuchos::RCP< Intrepid::FieldContainer<Real > > valU_4pow3
-              = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numcell, numCubPerSide_));
-            evaluate_grad_pow4_U(valU_4pow3, *valU_eval_bc);
-      	
-            Teuchos::RCP< Intrepid::FieldContainer<Real> > valU_4pow3_N
-              = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells_bc_[i][j], lfs_, numCubPerSide_));
-            Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*valU_4pow3_N, *valU_4pow3, *(fe_bc_[fe_bc_idx_[i]][j]->N()));
-            Teuchos::RCP<Intrepid::FieldContainer<Real> > robinJac
-              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells,lfs_,lfs_));
-            Intrepid::FunctionSpaceTools::integrate<Real>(*robinJac,
-                                                          *valU_4pow3_N,
-                                                          *(fe_bc_[fe_bc_idx_[i]][j]->NdetJ()),
-                                                          Intrepid::COMP_CPP, true);
-            // Add Robin Jacobian to volume Jacobian
-            for (int k = 0; k < numCells; ++k) {
-              int cidx = bc_cell_local_id_[i][j][k];
-              for (int l = 0; l < lfs_; ++l) { 
-                for (int m = 0; m < lfs_; ++m) {
-                  (*jac)(cidx,l,m) += (*robinJac)(k,l,m);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    // Apply Dirichlet conditions
-    for (int j=0; j<n_bc_sub_segments_[0]; ++j) {
-      int numCells = numCells_bc_[0][j];
-      if (numCells) {
-        std::vector<int> fidx = local_dofs_on_sides_[sideIds_[0][j]];
-        int numBdryDofs = fidx.size();
-        for (int k = 0; k < numCells; ++k) {
-          int cidx = bc_cell_local_id_[0][j][k];
-          for (int l = 0; l < numBdryDofs; ++l) {
-            // Modify the local jacobian matrix
-            for(int n=0; n<lfs_; ++n) {
-              (*jac)(cidx, fidx[l], n) = 0.0;
-            }
-            (*jac)(cidx, fidx[l], fidx[l]) = 1.0;
-          }
-        }
-      }
-    }
-  }
-  
-  void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
-    Teuchos::RCP< Intrepid::FieldContainer<Real > > negative_N
-      = Teuchos::rcp( new Intrepid::FieldContainer<Real >(numCells_vol_, lfs_, numCubPerCell_));
-    Intrepid::RealSpaceTools<Real >::scale(*negative_N, *(fe_vol_->N()), -1.0);
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, lfs_, lfs_));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *negative_N, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, false);
-    for (int j=0; j<n_bc_sub_segments_[0]; ++j) {
-      // Apply Dirichlet conditions
-      int numCells = numCells_bc_[0][j];
-      if (numCells) {
-        std::vector<int> fidx = local_dofs_on_sides_[sideIds_[0][j]];
-        int numBdryDofs = fidx.size();
-        for (int k = 0; k < numCells; ++k) {
-          int cidx = bc_cell_local_id_[0][j][k];
-          for (int l = 0; l < numBdryDofs; ++l) {
-            // Modify the local jacobian matrix
-            for(int n=0; n<lfs_; ++n) {
-              (*jac)(cidx, fidx[l], n) = 0.0;
-            }
-          }
-        }
-      }
-    }
-  }
-
-
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::NotImplemented(">>> Hessian_11 not implemented.");
-  }
-
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::NotImplemented(">>> Hessian_12 not implemented.");
-  }
-
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::NotImplemented(">>> Hessian_21 not implemented.");
-  }
-
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & u_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & z_coeff,
-                  Teuchos::RCP<Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::NotImplemented(">>> Hessian_22 not implemented.");
-  }
-  
-
-  const Teuchos::RCP<FE<Real> > getFE_VOL(void) const {
-    return fe_vol_;
   }
 
 }; // PDE_stefan_boltzmann

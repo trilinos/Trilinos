@@ -138,7 +138,8 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
     // Create control direction vector and set to random
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = con->getAssembler()->createControlVector();
-    dz_rcp->randomize();
+    dz_rcp->putScalar(0.0);
+    //dz_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dzp
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
     // Create ROL SimOpt vectors
