@@ -111,6 +111,14 @@ public:
     throw Exception::NotImplemented(">>> Hessian_22 not implemented.");
   }
 
+  virtual void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > &riesz) {
+    throw Exception::NotImplemented(">>> RieszMap_1 not implemented.");
+  }
+
+  virtual void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > &riesz) {
+    throw Exception::NotImplemented(">>> RieszMap_2 not implemented.");
+  }
+
   virtual std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() = 0;
 
   virtual void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &cellNodes,

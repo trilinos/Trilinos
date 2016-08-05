@@ -92,6 +92,7 @@ private:
   bool verbose_;
   bool isJ1Transposed_, isJ2Transposed_;
   bool isSolverConstructed_, isSolverTransConstructed_;
+  bool isSolverR1Constructed_, isSolverR2Constructed_;
 
   // Set in SetCommunicator
   Teuchos::RCP<const Teuchos::Comm<int> > comm_;
@@ -116,6 +117,8 @@ private:
   Teuchos::RCP<const Tpetra::Map<> > myUniqueResidualMap_;
   Teuchos::RCP<Tpetra::CrsGraph<> >  matJ1Graph_;
   Teuchos::RCP<Tpetra::CrsGraph<> >  matJ2Graph_;
+  Teuchos::RCP<Tpetra::CrsGraph<> >  matR1Graph_;
+  Teuchos::RCP<Tpetra::CrsGraph<> >  matR2Graph_;
   Teuchos::RCP<Tpetra::CrsGraph<> >  matH11Graph_;
   Teuchos::RCP<Tpetra::CrsGraph<> >  matH12Graph_;
   Teuchos::RCP<Tpetra::CrsGraph<> >  matH21Graph_;
@@ -137,6 +140,8 @@ private:
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matH12_;
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matH21_;
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matH22_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >    matR1_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >    matR2_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecR_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecR_overlap_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecG1_;
@@ -155,6 +160,10 @@ private:
   // Linear solvers for Jacobian and adjoint Jacobian
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_;
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_trans_;
+
+  // Linear solvers for Riesz maps
+  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverR1_;
+  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverR2_;
 
 private:
 
@@ -292,6 +301,8 @@ private:
     }
     matJ1Graph_->fillComplete();
     matJ2Graph_ = matJ1Graph_;
+    matR1Graph_ = matJ1Graph_;
+    matR2Graph_ = matJ1Graph_;
     matH11Graph_ = matJ1Graph_;
     matH12Graph_ = matJ1Graph_;
     matH21Graph_ = matJ2Graph_;
@@ -325,6 +336,9 @@ private:
     matH12_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH12Graph_));
     matH21_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH21Graph_));
     matH22_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH22Graph_));
+    // Initialize Riesz matrices
+    matR1_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matR1Graph_));
+    matR2_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matR2Graph_));
 
     if (verbose_ && myRank_==0) {
       outStream << "Initialized parallel structures." << std::endl;
@@ -458,6 +472,36 @@ private:
     }
   }
 
+  void constructSolverR1(void) {
+    // Construct solver using Amesos2 factory.
+//    #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+//    #endif
+    try {
+      solverR1_
+        = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matR1_);
+    }
+    catch (std::invalid_argument e) {
+      std::cout << e.what() << std::endl;
+    }
+    solverR1_->numericFactorization();
+  }
+
+  void constructSolverR2(void) {
+    // Construct solver using Amesos2 factory.
+//    #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
+//    #endif
+    try {
+      solverR2_
+        = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matR2_);
+    }
+    catch (std::invalid_argument e) {
+      std::cout << e.what() << std::endl;
+    }
+    solverR2_->numericFactorization();
+  }
+
 public:
   // destructor
   virtual ~Assembler() {}
@@ -500,6 +544,9 @@ public:
     pde.setCellNodes(volCellNodes_, bdryCellNodes_, bdryCellLocIds_);
   }
 
+  /***************************************************************************/
+  /* PDE assembly routines                                                   */
+  /***************************************************************************/
   void assemblePDEResidual(const Tpetra::MultiVector<> &u,
                            const Tpetra::MultiVector<> &z,
                            PDE<Real> &pde) {
@@ -748,6 +795,146 @@ public:
     }
   }
 
+  Teuchos::RCP<Tpetra::MultiVector<> > getPDEResidual(void) const {
+    return vecR_;
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEJacobian1(const bool transpose = false) {
+    if ( transpose ) {
+      if (!isJ1Transposed_) {
+        // Create matrix transposes.
+        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
+        matJ1_trans_ = transposerJ1.createTranspose();
+        isJ1Transposed_ = true;
+      }
+      return matJ1_trans_;
+    }
+    else {
+      return matJ1_;
+    }
+  }
+
+  void applyPDEJacobian1(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
+                         const bool transpose = false) {
+    if ( transpose ) {
+      if (!isJ1Transposed_) {
+        // Create matrix transposes.
+        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
+        matJ1_trans_ = transposerJ1.createTranspose();
+        isJ1Transposed_ = true;
+      }
+      matJ1_trans_->apply(*v,*Jv);
+    }
+    else {
+      matJ1_->apply(*v,*Jv);
+    }
+  }
+
+  void applyInverseJacobian1(const Teuchos::RCP<Tpetra::MultiVector<> > &u,
+                             const Teuchos::RCP<const Tpetra::MultiVector<> > &r,
+                             const bool transpose = false) {
+    if ( transpose ) {
+      if (!isJ1Transposed_) {
+        // Create matrix transposes.
+        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
+        matJ1_trans_ = transposerJ1.createTranspose();
+        isJ1Transposed_ = true;
+      }
+      if (!isSolverTransConstructed_) {
+        constructSolver(true);
+        isSolverTransConstructed_ = true;
+      }
+      solver_trans_->setX(u);
+      solver_trans_->setB(r);
+      solver_trans_->solve();
+    }
+    else {
+      if (!isSolverConstructed_) {
+        constructSolver(false);
+        isSolverConstructed_ = true;
+      }
+      solver_->setX(u);
+      solver_->setB(r);
+      solver_->solve();
+    }
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEJacobian2(const bool transpose = false) {
+    if ( transpose ) {
+      if (!isJ2Transposed_) {
+        // Create matrix transposes.
+        Tpetra::RowMatrixTransposer<> transposerJ2(matJ2_);
+        matJ2_trans_ = transposerJ2.createTranspose();
+        isJ2Transposed_ = true;
+      }
+      return matJ2_trans_;
+    }
+    else {
+      return matJ2_;
+    }
+  }
+
+  void applyPDEJacobian2(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
+                         const bool transpose = false) {
+    if ( transpose ) {
+      if (!isJ2Transposed_) {
+        // Create matrix transposes.
+        Tpetra::RowMatrixTransposer<> transposerJ2(matJ2_);
+        matJ2_trans_ = transposerJ2.createTranspose();
+        isJ2Transposed_ = true;
+      }
+      matJ2_trans_->apply(*v,*Jv);
+    }
+    else {
+      matJ2_->apply(*v,*Jv);
+    }
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian11(void) const {
+    return matH11_;
+  }
+
+  void applyPDEHessian11(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    matH11_->apply(*v,*Hv);
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian12(void) const {
+    return matH12_;
+  }
+
+  void applyPDEHessian12(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    matH12_->apply(*v,*Hv);
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian21(void) const {
+    return matH21_;
+  }
+
+  void applyPDEHessian21(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    matH21_->apply(*v,*Hv);
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian22(void) const {
+    return matH22_;
+  }
+
+  void applyPDEHessian22(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    matH22_->apply(*v,*Hv);
+  }
+  /***************************************************************************/
+  /* End of PDE assembly routines.                                           */
+  /***************************************************************************/
+
+
+  /***************************************************************************/
+  /* QoI assembly routines                                                   */
+  /***************************************************************************/
   Real assembleQoIValue(const Tpetra::MultiVector<> &u,
                         const Tpetra::MultiVector<> &z,
                         QoI<Real> &qoi) {
@@ -969,85 +1156,6 @@ public:
     }
   }
 
-  void linearPDEsolve(Teuchos::RCP<Tpetra::MultiVector<> > &u,
-                      const Teuchos::RCP<const Tpetra::MultiVector<> > &r,
-                      const bool transpose = false) {
-    if ( transpose ) {
-      if (!isJ1Transposed_) {
-        // Create matrix transposes.
-        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
-        matJ1_trans_ = transposerJ1.createTranspose();
-        isJ1Transposed_ = true;
-      }
-      if (!isSolverTransConstructed_) {
-        constructSolver(true);
-        isSolverTransConstructed_ = true;
-      }
-      solver_trans_->setX(u);
-      solver_trans_->setB(r);
-      solver_trans_->solve();
-    }
-    else {
-      if (!isSolverConstructed_) {
-        constructSolver(false);
-        isSolverConstructed_ = true;
-      }
-      solver_->setX(u);
-      solver_->setB(r);
-      solver_->solve();
-    }
-  }
-
-  Teuchos::RCP<Tpetra::MultiVector<> > getPDEResidual(void) const {
-    return vecR_;
-  }
-
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEJacobian1(const bool transpose = false) {
-    if ( transpose ) {
-      if (!isJ1Transposed_) {
-        // Create matrix transposes.
-        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
-        matJ1_trans_ = transposerJ1.createTranspose();
-        isJ1Transposed_ = true;
-      }
-      return matJ1_trans_;
-    }
-    else {
-      return matJ1_;
-    }
-  }
-
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEJacobian2(const bool transpose = false) {
-    if ( transpose ) {
-      if (!isJ2Transposed_) {
-        // Create matrix transposes.
-        Tpetra::RowMatrixTransposer<> transposerJ2(matJ2_);
-        matJ2_trans_ = transposerJ2.createTranspose();
-        isJ2Transposed_ = true;
-      }
-      return matJ2_trans_;
-    }
-    else {
-      return matJ2_;
-    }
-  }
-
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian11(void) const {
-    return matH11_;
-  }
-
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian12(void) const {
-    return matH12_;
-  }
-
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian21(void) const {
-    return matH21_;
-  }
-
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian22(void) const {
-    return matH22_;
-  }
-
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIGradient1(void) const {
     return vecG1_;
   }
@@ -1071,7 +1179,117 @@ public:
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIHessVec22(void) const {
     return vecH22_;
   }
+  /***************************************************************************/
+  /* End QoI assembly routines                                               */
+  /***************************************************************************/
 
+
+  /***************************************************************************/
+  /* Assemble and apply Riesz operator corresponding to simulation variables */
+  /***************************************************************************/
+  void assemblePDERieszMap1(PDE<Real> &pde) {
+    const Real zero(0);
+    matR1_->resumeFill();
+    matR1_->setAllToScalar(zero);
+    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    int numLocalDofs = cellDofs.dimension(1);
+    int numLocalMatEntries = numLocalDofs * numLocalDofs;
+    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+    // Initialize riesz
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > riesz;
+    // Compute PDE Jacobian
+    pde.RieszMap_1(riesz);
+    Teuchos::ArrayRCP<const Real> rieszArrayRCP = riesz->getData();
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs; ++j) {
+        matR1_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                    cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                    rieszArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+      }
+    }
+    matR1_->fillComplete();
+    isSolverR1Constructed_ = false;
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDERieszMap1(void) const {
+    return matR1_;
+  }
+
+  void applyPDERieszMap1(const Teuchos::RCP<Tpetra::MultiVector<> > &Rv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    matR1_->apply(*v,*Rv);
+  }
+
+  void applyPDEInverseRieszMap1(const Teuchos::RCP<Tpetra::MultiVector<> > &Rv,
+                                const Teuchos::RCP<const Tpetra::MultiVector<> > &v) {
+    if (!isSolverR1Constructed_) {
+      constructSolverR1();
+      isSolverR1Constructed_ = true;
+    }
+    solverR1_->setX(Rv);
+    solverR1_->setB(v);
+    solverR1_->solve();
+  }
+  /***************************************************************************/
+  /* End of functions for Riesz operator of simulation variables.            */
+  /***************************************************************************/
+
+
+  /***************************************************************************/
+  /* Assemble and apply Riesz operator corresponding to optimization         */
+  /* variables                                                               */
+  /***************************************************************************/
+  void assemblePDERieszMap2(PDE<Real> &pde) {
+    const Real zero(0);
+    matR2_->resumeFill();
+    matR2_->setAllToScalar(zero);
+    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    int numLocalDofs = cellDofs.dimension(1);
+    int numLocalMatEntries = numLocalDofs * numLocalDofs;
+    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+    // Initialize riesz
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > riesz;
+    // Compute PDE Jacobian
+    pde.RieszMap_2(riesz);
+    Teuchos::ArrayRCP<const Real> rieszArrayRCP = riesz->getData();
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs; ++j) {
+        matR2_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                    cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                    rieszArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+      }
+    }
+    matR2_->fillComplete();
+    isSolverR2Constructed_ = false;
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDERieszMap2(void) const {
+    return matR2_;
+  }
+
+  void applyPDERieszMap2(const Teuchos::RCP<Tpetra::MultiVector<> > &Rv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    matR2_->apply(*v,*Rv);
+  }
+
+  void applyPDEInverseRieszMap2(const Teuchos::RCP<Tpetra::MultiVector<> > &Rv,
+                                const Teuchos::RCP<const Tpetra::MultiVector<> > &v) {
+    if (!isSolverR2Constructed_) {
+      constructSolverR2();
+      isSolverR2Constructed_ = true;
+    }
+    solverR2_->setX(Rv);
+    solverR2_->setB(v);
+    solverR2_->solve();
+  }
+  /***************************************************************************/
+  /* End of functions for Riesz operator of optimization variables.          */
+  /***************************************************************************/
+
+
+  /***************************************************************************/
+  /* Output routines.                                                        */
+  /***************************************************************************/
   void printMeshData(std::ostream &outStream) const {
     Teuchos::RCP<Intrepid::FieldContainer<Real> > nodesPtr = meshMgr_->getNodes();
     Teuchos::RCP<Intrepid::FieldContainer<int> >  cellToNodeMapPtr = meshMgr_->getCellToNodeMap();
@@ -1143,7 +1361,14 @@ public:
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > vecWriter;
     vecWriter.writeDenseFile(filename, vec);
   }
+  /***************************************************************************/
+  /* End of output routines.                                                 */
+  /***************************************************************************/
 
+
+  /***************************************************************************/
+  /* Vector generation routines.                                             */
+  /***************************************************************************/
   const Teuchos::RCP<const Tpetra::Map<> > getStateMap(void) const {
     return myUniqueStateMap_;
   }
@@ -1167,6 +1392,9 @@ public:
   Teuchos::RCP<Tpetra::MultiVector<> > createResidualVector(void) const {
     return Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueResidualMap_, 1, true));
   }
+  /***************************************************************************/
+  /* End of vector generation routines.                                      */
+  /***************************************************************************/
 
 }; // class Assembler
 

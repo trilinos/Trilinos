@@ -230,6 +230,15 @@ public:
     throw Exception::Zero(">>> Zero Hessian.");
   }
 
+  void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+    riesz = fe_vol_->stiffMat();
+    Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+  }
+
+  void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+    riesz = fe_vol_->massMat();
+  }
+
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
     return basisPtrs_;
   }
