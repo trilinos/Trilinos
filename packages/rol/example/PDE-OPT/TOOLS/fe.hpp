@@ -267,6 +267,7 @@ public:
     p_  = cubature_->getNumPoints();
     d_  = cellTopo_->getDimension();
     sd_ = d_ - 1;
+    std::cout << "FE: c = " << c_ << ", f = " << f_ << ", p = " << p_ << ", d = " << d_ << std::endl;
 
     // Get side subcell topology.
     sideTopo_ = Teuchos::rcp(new shards::CellTopology(cellTopo_->getCellTopologyData(sd_, sideId_)));
@@ -300,6 +301,7 @@ public:
     gradgradMats_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
     valvalMats_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
     cubPointsPhysical_    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_, d_));
+    dofPoints_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(f_, d_));
 
     /*** START: Fill multidimensional arrays. ***/
 
@@ -307,8 +309,8 @@ public:
     cubature_->getCubature(*cubPointsSubcell_, *cubWeights_);
 
     // Compute reference basis value and gradient.
-    Intrepid::CellTools<Real>::mapToReferenceSubcell(cubPoints_,
-                                                     cubPointsSubcell_,
+    Intrepid::CellTools<Real>::mapToReferenceSubcell(*cubPoints_,
+                                                     *cubPointsSubcell_,
                                                      sd_,
                                                      sideId_,
                                                      *cellTopo_);
@@ -359,24 +361,24 @@ public:
     for (int c=0; c<c_; ++c) {
       for (int f=0; f<f_; ++f) {
         for (int p=0; p<p_; ++p) {
-          gradPhysicalX_(c,f,p) = gradPhysical_(c,f,p,0);
+          (*gradPhysicalX_)(c,f,p) = (*gradPhysical_)(c,f,p,0);
           if (d_ > 1) {
-          gradPhysicalY_(c,f,p) = gradPhysical_(c,f,p,1);
+	    (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
           }
           if (d_ > 2) {
-          gradPhysicalZ_(c,f,p) = gradPhysical_(c,f,p,2);
+	    (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
           }
         }
       }
     }
 
     // Build divergence in physical space.
-    Intrepid::RealSpaceTools<Real>::add(divPhysical_, gradPhysicalX_);
+    Intrepid::RealSpaceTools<Real>::add(*divPhysical_, *gradPhysicalX_);
     if (d_ > 1) {
-    Intrepid::RealSpaceTools<Real>::add(divPhysical_, gradPhysicalY_);
+    Intrepid::RealSpaceTools<Real>::add(*divPhysical_, *gradPhysicalY_);
     }
     if (d_ > 2) {
-    Intrepid::RealSpaceTools<Real>::add(divPhysical_, gradPhysicalZ_);
+    Intrepid::RealSpaceTools<Real>::add(*divPhysical_, *gradPhysicalZ_);
     }
 
     // Multiply with weighted measure to get weighted divegence in physical space.

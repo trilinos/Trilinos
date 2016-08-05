@@ -113,7 +113,8 @@ public:
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_11): Hessian not implemented.");
+      ROL::Objective_SimOpt<Real>::hessVec_11(hv,v,u,z,tol);
+      //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_11): Hessian not implemented.");
     }
   }
 
@@ -135,7 +136,8 @@ public:
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_12): Hessian not implemented.");
+      ROL::Objective_SimOpt<Real>::hessVec_12(hv,v,u,z,tol);
+      //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_12): Hessian not implemented.");
     }
   }
 
@@ -157,7 +159,8 @@ public:
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_21): Hessian not implemented.");
+      ROL::Objective_SimOpt<Real>::hessVec_21(hv,v,u,z,tol);
+      //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_21): Hessian not implemented.");
     }
   }
 
@@ -179,7 +182,8 @@ public:
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_22): Hessian not implemented.");
+      ROL::Objective_SimOpt<Real>::hessVec_22(hv,v,u,z,tol);
+      //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_22): Hessian not implemented.");
     }
   }
 };

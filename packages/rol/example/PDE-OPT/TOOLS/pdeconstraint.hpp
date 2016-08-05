@@ -139,7 +139,7 @@ public:
       assembler_->assemblePDEJacobian1(*up,*zp,*pde_);
       computeJ1_ = false;
     }
-    assembler_->getPDEJacobian1(false)->apply(*vp,*jvp);
+    assembler_->applyPDEJacobian1(jvp,vp,false);
   }
 
 
@@ -158,7 +158,7 @@ public:
       assembler_->assemblePDEJacobian2(*up,*zp,*pde_);
       computeJ2_ = false;
     }
-    assembler_->getPDEJacobian2(false)->apply(*vp,*jvp);
+    assembler_->applyPDEJacobian2(jvp,vp,false);
   }
 
 
@@ -177,7 +177,7 @@ public:
       assembler_->assemblePDEJacobian1(*up,*zp,*pde_);
       computeJ1_ = false;
     }
-    assembler_->getPDEJacobian1(true)->apply(*vp,*ajvp);
+    assembler_->applyPDEJacobian1(ajvp,vp,true);
   }
 
 
@@ -196,7 +196,7 @@ public:
       assembler_->assemblePDEJacobian2(*up,*zp,*pde_);
       computeJ2_ = false;
     }
-    assembler_->getPDEJacobian2(true)->apply(*vp,*ajvp);
+    assembler_->applyPDEJacobian2(ajvp,vp,true);
   }
 
 
@@ -219,7 +219,8 @@ public:
       computeH11_ = true;
     }
     catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_11): Hessian not implemented.");
+      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_11(ahwv,w,v,u,z,tol);
+      //throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_11): Hessian not implemented.");
     }
     if ( computeH11_ ) {
       ahwv.zero();
@@ -229,7 +230,7 @@ public:
         (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > vp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      assembler_->getPDEHessian11()->apply(*vp,*ahwvp);
+      assembler_->applyPDEHessian11(ahwvp,vp);
     }
   }
 
@@ -253,7 +254,8 @@ public:
       computeH12_ = true;
     }
     catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_12): Hessian not implemented.");
+      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_12(ahwv,w,v,u,z,tol);
+      //throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_12): Hessian not implemented.");
     }
     if ( computeH12_ ) {
       ahwv.zero();
@@ -263,7 +265,7 @@ public:
         (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > vp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      assembler_->getPDEHessian12()->apply(*vp,*ahwvp);
+      assembler_->applyPDEHessian12(ahwvp,vp);
     }
   }
 
@@ -287,7 +289,8 @@ public:
       computeH21_ = true;
     }
     catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_21): Hessian not implemented.");
+      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_21(ahwv,w,v,u,z,tol);
+      //throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_21): Hessian not implemented.");
     }
     if ( computeH21_ ) {
       ahwv.zero();
@@ -297,7 +300,7 @@ public:
         (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > vp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      assembler_->getPDEHessian21()->apply(*vp,*ahwvp);
+      assembler_->applyPDEHessian21(ahwvp,vp);
     }
   }
 
@@ -321,7 +324,8 @@ public:
       computeH22_ = true;
     }
     catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_22): Hessian not implemented.");
+      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_22(ahwv,w,v,u,z,tol);
+      //throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_22): Hessian not implemented.");
     }
     if ( computeH22_ ) {
       ahwv.zero();
@@ -331,7 +335,7 @@ public:
         (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > vp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      assembler_->getPDEHessian22()->apply(*vp,*ahwvp);
+      assembler_->applyPDEHessian22(ahwvp,vp);
     }
   }
 
@@ -351,7 +355,7 @@ public:
       assembler_->assemblePDEJacobian1(*up,*zp,*pde_);
       computeJ1_ = false;
     }
-    assembler_->linearPDEsolve(ijvp,vp,false);
+    assembler_->applyInverseJacobian1(ijvp,vp,false);
   }
 
 
@@ -370,7 +374,7 @@ public:
       assembler_->assemblePDEJacobian1(*up,*zp,*pde_);
       computeJ1_ = false;
     }
-    assembler_->linearPDEsolve(iajvp,vp,true);
+    assembler_->applyInverseJacobian1(iajvp,vp,true);
   }
 
 };
