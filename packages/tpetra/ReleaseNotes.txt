@@ -2,8 +2,16 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Development version (12.7)
---------------------------
+Trilinos 12.8
+-------------
+
+* Stop creating Node instances explicitly
+
+Please don't create Node instances explicitly.  Tpetra::Map creates
+one for you, if you really need one.  Creating Node instances
+explicitly causes issues with Kokkos initialization.  Node will go
+away eventually, in favor of Kokkos execution spaces and memory
+spaces.
 
 * Got rid of KokkosClassic::DefaultArithmetic
 
