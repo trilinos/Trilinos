@@ -34,7 +34,7 @@
 #ifndef STK_UTIL_DIAG_StringUtil_h
 #define STK_UTIL_DIAG_StringUtil_h
 
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t
 #include <algorithm>                    // for transform
 #include <cctype>                       // for tolower, isspace, toupper
 #include <functional>                   // for binary_function
@@ -655,8 +655,8 @@ struct less_nocase<const char *> : public std::binary_function<const char *, con
    */
   bool operator()(const char *lhs , const char *rhs) const {
     bool result = false;
-    if (NULL == lhs )
-      result = NULL != rhs;
+    if (nullptr == lhs )
+      result = nullptr != rhs;
     else {
       for (; *lhs && *rhs && std::tolower(*lhs) == std::tolower(*rhs); ++lhs, ++rhs)
 	;
@@ -785,7 +785,7 @@ struct equal_nocase<const char *> : public std::binary_function<const char *, co
    */
   bool operator()(const char *lhs , const char *rhs) const {
     bool result = lhs == rhs ;
-    if ( ! result && NULL != lhs && NULL != rhs ) {
+    if ( ! result && nullptr != lhs && nullptr != rhs ) {
       for (; *lhs && *rhs && std::tolower(*lhs) == std::tolower(*rhs) ; ++lhs, ++rhs);
       result = 0 == *lhs && 0 == *rhs ;
     }

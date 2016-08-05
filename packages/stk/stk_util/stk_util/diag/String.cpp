@@ -35,11 +35,9 @@
 
 #include <stk_util/diag/String.hpp>
 #include <cctype>                       // for isspace
-#include <cstddef>                      // for size_t, NULL
+#include <cstddef>                      // for size_t
 #include <iostream>                     // for operator<<
 #include <stdexcept>                    // for runtime_error, logic_error
-
-
 
 //----------------------------------------------------------------------
 
@@ -156,8 +154,8 @@ char * StringData::mem( const char * cs , size_t n )
     }
   }
 
-  char * dst = NULL ;
-  char * del_ptr = NULL ;
+  char * dst = nullptr ;
+  char * del_ptr = nullptr ;
   size_t del_size = 0 ;
 
   if ( is_allocated && ( new_alloc || ! to_allocated ) ) {
@@ -215,9 +213,8 @@ char * StringData::mem( const char * cs , size_t n )
     *d = 0 ;
   }
 
-  if ( del_ptr != NULL ) {
+  if ( del_ptr != nullptr ) {
     try {
-//      std::cout << "String deallocated at " << (void *)del_ptr << " for " << del_size << std::endl;
       a.deallocate( del_ptr , del_size );
     }
     catch (...) {
@@ -229,7 +226,7 @@ char * StringData::mem( const char * cs , size_t n )
 }
 
 StringData::~StringData()
-{ mem(NULL, 0); }
+{ mem(nullptr, 0); }
 
 StringData::StringData()
 { small[ max_len ] = small[ off_len ] = small[ 0 ] = 0 ; }

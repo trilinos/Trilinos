@@ -119,7 +119,7 @@ case_strstr(
     cp++;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 

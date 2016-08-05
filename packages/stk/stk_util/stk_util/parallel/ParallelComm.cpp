@@ -72,7 +72,7 @@ bool all_to_all_dense( ParallelMachine p_comm ,
 
     std::vector<int> tmp( p_size * 4 );
 
-    int * const send_counts = (tmp.empty() ? NULL : & tmp[0]) ;
+    int * const send_counts = (tmp.empty() ? nullptr : tmp.data() ) ;
     int * const send_displs = send_counts + p_size ;
     int * const recv_counts = send_displs + p_size ;
     int * const recv_displs = recv_counts + p_size ;
@@ -188,8 +188,8 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
         msg << method << " LOCAL ERROR: " << result << " == MPI_Rsend , " ;
       }
       else {
-        MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
-        MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
+        MPI_Request * const p_request = (request.empty() ? nullptr : request.data()) ;
+        MPI_Status  * const p_status  = (status.empty() ? nullptr : status.data()) ;
 
         result = MPI_Waitall( num_recv , p_request , p_status );
       }
@@ -366,7 +366,7 @@ void CommAll::rank_error( const char * method , int p ) const
 //----------------------------------------------------------------------
 
 CommBuffer::CommBuffer()
-  : m_beg(NULL), m_ptr(NULL), m_end(NULL)
+  : m_beg(nullptr), m_ptr(nullptr), m_end(nullptr)
 { }
 
 CommBuffer::~CommBuffer()
@@ -374,7 +374,7 @@ CommBuffer::~CommBuffer()
 
 void CommBuffer::deallocate( const unsigned number , CommBuffer * buffers )
 {
-  if ( NULL != buffers ) {
+  if ( nullptr != buffers ) {
     for ( unsigned i = 0 ; i < number ; ++i ) {
       ( buffers + i )->~CommBuffer();
     }
@@ -388,7 +388,7 @@ CommBuffer * CommBuffer::allocate(
   const size_t n_base = align_quad( number * sizeof(CommBuffer) );
   size_t n_size = n_base ;
 
-  if ( NULL != size ) {
+  if ( nullptr != size ) {
     for ( unsigned i = 0 ; i < number ; ++i ) {
       n_size += align_quad( size[i] );
     }
@@ -399,16 +399,16 @@ CommBuffer * CommBuffer::allocate(
   void * const p_malloc = malloc( n_size );
 
   CommBuffer * const b_base =
-    p_malloc != NULL ? reinterpret_cast<CommBuffer*>(p_malloc)
-                     : reinterpret_cast<CommBuffer*>( NULL );
+    p_malloc != nullptr ? reinterpret_cast<CommBuffer*>(p_malloc)
+                        : reinterpret_cast<CommBuffer*>( NULL );
 
-  if ( p_malloc != NULL ) {
+  if ( p_malloc != nullptr ) {
 
     for ( unsigned i = 0 ; i < number ; ++i ) {
       new( b_base + i ) CommBuffer();
     }
 
-    if ( NULL != size ) {
+    if ( nullptr != size ) {
 
       ucharp ptr = reinterpret_cast<ucharp>( p_malloc );
 
@@ -443,8 +443,8 @@ CommAll::~CommAll()
   m_comm = parallel_machine_null();
   m_size = 0 ;
   m_rank = 0 ;
-  m_send = NULL ;
-  m_recv = NULL ;
+  m_send = nullptr ;
+  m_recv = nullptr ;
 }
 
 CommAll::CommAll(bool propagate_local_error_flags)
@@ -453,8 +453,8 @@ CommAll::CommAll(bool propagate_local_error_flags)
     m_size( 0 ), m_rank( 0 ),
     m_bound( 0 ),
     m_max( 0 ),
-    m_send(NULL),
-    m_recv(NULL)
+    m_send(nullptr),
+    m_recv(nullptr)
 {}
 
 CommAll::CommAll( ParallelMachine comm, bool propagate_local_error_flags)
@@ -464,12 +464,12 @@ CommAll::CommAll( ParallelMachine comm, bool propagate_local_error_flags)
     m_rank( parallel_machine_rank( comm ) ),
     m_bound( 0 ),
     m_max( 0 ),
-    m_send(NULL),
-    m_recv(NULL)
+    m_send(nullptr),
+    m_recv(nullptr)
 {
-  m_send = CommBuffer::allocate( m_size , NULL );
+  m_send = CommBuffer::allocate( m_size , nullptr );
 
-  if ( NULL == m_send ) {
+  if ( nullptr == m_send ) {
     std::string msg("stk::CommAll::CommAll FAILED malloc");
     throw std::runtime_error(msg);
   }
@@ -486,8 +486,8 @@ bool CommAll::allocate_buffers( const unsigned num_msg_bounds ,
     tmp[i] = m_send[i].size();
   }
 
-  const unsigned * const send_size = (tmp.empty() ? NULL : & tmp[0]) ;
-  const unsigned * const recv_size = symmetric ? (tmp.empty() ? NULL : & tmp[0]) : NULL ;
+  const unsigned * const send_size = (tmp.empty() ? nullptr : & tmp[0]) ;
+  const unsigned * const recv_size = symmetric ? (tmp.empty() ? nullptr : & tmp[0]) : nullptr ;
 
   return allocate_buffers( m_comm, num_msg_bounds,
                            send_size, recv_size, local_flag );
@@ -513,7 +513,7 @@ void CommAll::reset_buffers()
 
 void CommAll::swap_send_recv()
 {
-  if ( m_recv == NULL ) {
+  if ( m_recv == nullptr ) {
     // ERROR
     std::string
       msg("stk::CommAll::swap_send_recv(){ NULL recv buffers }" );
@@ -555,13 +555,13 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
   // Buffer allocation
 
   {
-    const bool send_none = NULL == send_size ;
+    const bool send_none = nullptr == send_size ;
 
     std::vector<unsigned> tmp_send ;
 
     if ( send_none ) { tmp_send.resize( m_size , uzero ); }
 
-    const unsigned * const send = send_none ? (tmp_send.empty() ? NULL : & tmp_send[0]) : send_size ;
+    const unsigned * const send = send_none ? (tmp_send.empty() ? nullptr : & tmp_send[0]) : send_size ;
 
     m_send = CommBuffer::allocate( m_size , send );
 
@@ -569,18 +569,18 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 
       std::vector<unsigned> tmp_recv ;
 
-      const bool recv_tbd = NULL == recv_size ;
+      const bool recv_tbd = nullptr == recv_size ;
 
       if ( recv_tbd ) { // Had better be globally consistent.
 
         tmp_recv.resize( m_size , uzero );
 
-        unsigned * const r = (tmp_recv.empty() ? NULL : & tmp_recv[0]) ;
+        unsigned * const r = (tmp_recv.empty() ? nullptr : & tmp_recv[0]) ;
 
         comm_sizes( m_comm , m_bound , m_max , send , r );
       }
 
-      const unsigned * const recv = recv_tbd  ? (tmp_recv.empty() ? NULL : & tmp_recv[0]) : recv_size ;
+      const unsigned * const recv = recv_tbd  ? (tmp_recv.empty() ? nullptr : & tmp_recv[0]) : recv_size ;
 
       m_recv = CommBuffer::allocate( m_size , recv );
     }
@@ -591,7 +591,7 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 
   if (m_propagate_local_error_flags) {
 
-      bool error_alloc = m_send == NULL || m_recv == NULL ;
+      bool error_alloc = m_send == nullptr || m_recv == nullptr ;
 
       //--------------------------------
       // Propagation of error flag, input flag, and quick/cheap/approximate
@@ -774,9 +774,9 @@ CommBroadcast::~CommBroadcast()
   try {
     if ( m_buffer.m_beg ) { free( static_cast<void*>( m_buffer.m_beg ) ); }
   } catch(...) {}
-  m_buffer.m_beg = NULL ;
-  m_buffer.m_ptr = NULL ;
-  m_buffer.m_end = NULL ;
+  m_buffer.m_beg = nullptr ;
+  m_buffer.m_ptr = nullptr ;
+  m_buffer.m_end = nullptr ;
 }
 
 CommBuffer & CommBroadcast::recv_buffer()
@@ -827,9 +827,9 @@ CommGather::~CommGather()
   try {
     free( static_cast<void*>( m_send.m_beg ) );
 
-    if ( NULL != m_recv_count ) { free( static_cast<void*>( m_recv_count ) ); }
+    if ( nullptr != m_recv_count ) { free( static_cast<void*>( m_recv_count ) ); }
 
-    if ( NULL != m_recv ) { CommBuffer::deallocate( m_size , m_recv ); }
+    if ( nullptr != m_recv ) { CommBuffer::deallocate( m_size , m_recv ); }
   } catch(...){}
 }
 
@@ -837,7 +837,7 @@ void CommGather::reset()
 {
   m_send.reset();
 
-  if ( NULL != m_recv ) {
+  if ( nullptr != m_recv ) {
     for ( int i = 0 ; i < m_size ; ++i ) { m_recv[i].reset(); }
   }
 }
@@ -859,9 +859,9 @@ CommGather::CommGather( ParallelMachine comm ,
     m_rank( parallel_machine_rank( comm ) ),
     m_root_rank( root_rank ),
     m_send(),
-    m_recv(NULL),
-    m_recv_count(NULL),
-    m_recv_displ(NULL)
+    m_recv(nullptr),
+    m_recv_count(nullptr),
+    m_recv_displ(nullptr)
 {
   m_send.m_beg = static_cast<CommBuffer::ucharp>( malloc( send_size ) );
   m_send.m_ptr = m_send.m_beg ;
@@ -906,7 +906,7 @@ void CommGather::communicate()
     const int send_count = m_send.capacity();
 
     void * const send_buf = m_send.buffer();
-    void * const recv_buf = m_rank == m_root_rank ? m_recv->buffer() : NULL ;
+    void * const recv_buf = m_rank == m_root_rank ? m_recv->buffer() : nullptr ;
 
     MPI_Gatherv( send_buf , send_count , MPI_BYTE ,
                  recv_buf , m_recv_count , m_recv_displ , MPI_BYTE ,
@@ -943,8 +943,8 @@ bool comm_dense_sizes( ParallelMachine comm ,
   }
 
   {
-    unsigned * const ps = (send_buf.empty() ? NULL : & send_buf[0]) ;
-    unsigned * const pr = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
+    unsigned * const ps = (send_buf.empty() ? nullptr : & send_buf[0]) ;
+    unsigned * const pr = (recv_buf.empty() ? nullptr : & recv_buf[0]) ;
 
     const int result =
        MPI_Alltoall( ps , 2 , MPI_UNSIGNED , pr , 2 , MPI_UNSIGNED , comm );
@@ -1042,8 +1042,8 @@ bool comm_sizes( ParallelMachine comm ,
     std::vector<size_t> send_buf( p_size + 2 );
     std::vector<size_t> recv_buf( p_size + 2 );
 
-    size_t * const p_send = (send_buf.empty() ? NULL : & send_buf[0]) ;
-    size_t * const p_recv = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
+    size_t * const p_send = (send_buf.empty() ? nullptr : & send_buf[0]) ;
+    size_t * const p_recv = (recv_buf.empty() ? nullptr : & recv_buf[0]) ;
 
     for ( int i = 0 ; i < p_size ; ++i ) {
       recv_size[i] = 0 ; // Zero output
@@ -1145,8 +1145,8 @@ bool comm_sizes( ParallelMachine comm ,
     // Wait for all receives
 
     {
-      MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
-      MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
+      MPI_Request * const p_request = (request.empty() ? nullptr : & request[0]) ;
+      MPI_Status  * const p_status  = (status.empty() ? nullptr : & status[0]) ;
       result = MPI_Waitall( num_recv , p_request , p_status );
     }
     if ( MPI_SUCCESS != result ) {

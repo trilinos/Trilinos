@@ -37,9 +37,9 @@ namespace stk {
 namespace util {
 
 Pool::Pool(unsigned int sz)
- : chunks(NULL),
+ : chunks(nullptr),
    esize(sz<sizeof(Link) ? sizeof(Link) : sz),
-   head(NULL)
+   head(nullptr)
 {
 }
 
@@ -68,7 +68,7 @@ Pool::grow()
   for(char* p=start; p<last; p+=esize) {
     reinterpret_cast<Link*>(p)->next = reinterpret_cast<Link*>(p+esize);
   }
-  reinterpret_cast<Link*>(last)->next = NULL;
+  reinterpret_cast<Link*>(last)->next = nullptr;
   head = reinterpret_cast<Link*>(start);
 }
 

@@ -500,7 +500,7 @@ void CommBuffer::reset()
 
 inline
 void CommBuffer::reset_to_null()
-{ m_beg = NULL; m_ptr = NULL; m_end = NULL; }
+{ m_beg = nullptr; m_ptr = nullptr; m_end = nullptr; }
 
 inline
 size_t CommBuffer::capacity() const
@@ -512,7 +512,7 @@ size_t CommBuffer::size() const
 
 inline
 void CommBuffer::set_size(size_t newsize_bytes)
-{ m_beg = NULL;  m_ptr = NULL; m_ptr += newsize_bytes ; m_end = NULL; }
+{ m_beg = nullptr;  m_ptr = nullptr; m_ptr += newsize_bytes ; m_end = nullptr; }
 
 inline
 ptrdiff_t CommBuffer::remaining() const

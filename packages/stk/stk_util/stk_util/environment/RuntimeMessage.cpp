@@ -385,7 +385,7 @@ report_deferred_messages(
 
   {
     const char * const send_ptr = send_string.data();
-    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
+    char * const recv_ptr = recv_size ? & buffer[0] : nullptr ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
     result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,

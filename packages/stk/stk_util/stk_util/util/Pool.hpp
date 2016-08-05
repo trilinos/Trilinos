@@ -78,7 +78,7 @@ class Pool {
 
 inline void* Pool::alloc()
 {
-  if (head == NULL) {
+  if (head == nullptr) {
     grow();
   }
   Link* p = head; //return first element

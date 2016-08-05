@@ -39,7 +39,7 @@
 #include <limits.h>                     // for PATH_MAX
 #include <stddef.h>                     // for size_t
 #include <unistd.h>                     // for getcwd, sleep
-#include <cstdlib>                      // for exit, EXIT_FAILURE, NULL
+#include <cstdlib>                      // for exit, EXIT_FAILURE
 #include <cstring>                      // for strlen, strcpy
 #include <iomanip>                      // for operator<<, setw
 #include <iostream>                     // for cerr, cout
@@ -209,7 +209,7 @@ const std::string
 working_directory() {
   char cwd[PATH_MAX];
   std::string directory = get_param("directory");
-  if (directory[0] != '/' && getcwd(cwd, PATH_MAX) != NULL) {
+  if (directory[0] != '/' && getcwd(cwd, PATH_MAX) != nullptr) {
     directory = cwd;
     directory += '/';
   }

@@ -145,7 +145,7 @@ inline std::string getStackTrace()
 {
 #if defined(__GNUC__) && !defined(__ICC)
     void *trace[16];
-    char **mangledFunctionNames = (char **) NULL;
+    char **mangledFunctionNames = (char **) nullptr;
     int trace_size = 0;
 
     trace_size = backtrace(trace, 16);
