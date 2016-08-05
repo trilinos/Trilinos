@@ -266,9 +266,8 @@ namespace Iovs {
           //for glew in paraview 5
           //
 #ifdef SIERRA_DLOPEN_ENABLED
-          void *dl = dlopen(plugin_library_path.c_str(),
-                  RTLD_NOW | RTLD_GLOBAL);
-          if (!dl){
+          void *dl = dlopen(plugin_library_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+          if (!dl) {
             throw std::runtime_error(dlerror());
           }
 #endif
@@ -294,7 +293,9 @@ namespace Iovs {
                  << "via Load User Plugin File command\n"
                  << "instead, set CATALYST_PLUGIN environment variable\n";
           IOSS_ERROR(errmsg);
+#if SIERRA_DLOPEN_ENABLED
           throw std::runtime_error(dlerror());
+#endif
       }
 
       if(DatabaseIO::paraview_script_filename.empty()) {
