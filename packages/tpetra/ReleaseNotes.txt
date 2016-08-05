@@ -5,13 +5,49 @@ Release Notes for Trilinos Package Tpetra
 Trilinos 12.8
 -------------
 
-* Stop creating Node instances explicitly
+* Stop creating Node instances explicitly!
 
-Please don't create Node instances explicitly.  Tpetra::Map creates
-one for you, if you really need one.  Creating Node instances
-explicitly causes issues with Kokkos initialization.  Node will go
-away eventually, in favor of Kokkos execution spaces and memory
-spaces.
+Hi users!  Please don't create Node instances explicitly any more.
+Tpetra::Map creates one for you, if you really need one.  You really
+don't need Node instances: Map's constructors and nonmember
+"constructors" don't need them any more, nor do Tpetra's Matrix Market
+readers.
+
+Creating Node instances explicitly causes issues with Kokkos
+initialization.  Node will go away eventually, in favor of Kokkos
+execution spaces and memory spaces.
+
+* Lots of bug fixes, especially for CUDA
+
+* Computing offsets in CrsGraph and CrsMatrix is now thread parallel
+
+CrsGraph's and CrsMatrix's fillComplete method computes row offsets,
+if they have not yet been computed.  This is now thread parallel.  It
+uses Kokkos::parallel_scan.
+
+* More BlockCrsMatrix kernels are thread parallel
+
+* Interface changes to KokkosSparse::CrsMatrix (the "local" matrix)
+
+The replaceValues and sumIntoValues methods now take "is_sorted" and
+"force_atomic" arguments.  These methods now use binary search
+(falling back to linear search for short rows) for the sorted case.
+
+Row views in KokkosSparse::CrsMatrix are no longer templated.  They
+now use the ordinal type, rather than the offset type, for indexing.
+This suffices as long as there are not enough duplicate entries in a
+row to exceed ordinal_type.  This has the beneficial side effect of
+reducing the number of local sparse matrix-vector multiply kernel
+instantiations.
+
+* Got rid of LittleBlock and LittleVector (for Block* classes)
+
+Instead, use the little_block_type, const_little_block_type,
+little_vec_type, and const_little_vec_type typedefs in BlockCrsMatrix
+and other related classes.  Underlying data layout has NOT changed
+(yet), but constructors HAVE changed.  This is technically a
+non-backwards-compatible interface change, but all these classes are
+in an Experimental namespace anyway.
 
 * Got rid of KokkosClassic::DefaultArithmetic
 
