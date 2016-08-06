@@ -255,6 +255,8 @@ Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
       }
     }
     TScalarMag ts = t_ + c(s)*dt;
+
+    // need to check here the status of the solver (the linear solve)
     eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]));
     Thyra::Vt_S(k_vector_[s].ptr(),dt); // k_s = k_s*dt
   }
@@ -265,42 +267,43 @@ Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
     }
   }
 
+   // cheat and say that the solver converged ( although no solver is needed for explicit method )
+   rkNewtonConvergenceStatus_ = 0; 
+   stepControl_->setCorrection(*this, solution_vector_, Teuchos::null , rkNewtonConvergenceStatus_);
+   bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);
 
    if (erkButcherTableau_->isEmbeddedMethod() ){ 
-       rkNewtonConvergenceStatus_ = 0; // cheat and say that the solver converged ( although no solver is needed for explicit method )
-       stepControl_->setCorrection(*this, solution_vector_, Teuchos::null , rkNewtonConvergenceStatus_);
-       bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);
+       
        Teuchos::SerialDenseVector<int,Scalar> bhat = erkButcherTableau_->bhat();
 
-       //std::cout << "(SIDAFA2 -- got here!!!)- LETValue_ = " <<  LETvalue_ << std::endl;
         // Sum for Embedded solution:
         for (int s=0 ; s < stages ; ++s) {
           if (bhat(s) != ST::zero()) {
-            Thyra::Vp_StV(solution_hat_vector_.ptr(), bhat(s), *k_vector_[s]); // solution_hat_vector += bhat_{s+1}*k_{s+1}
+             
+              // solution_hat_vector += bhat_{s+1}*k_{s+1}
+            Thyra::Vp_StV(solution_hat_vector_.ptr(), bhat(s), *k_vector_[s]); 
           }
         }
 
         // ee_ = (solution_vector__ - solution_hat_vector_)
         Thyra::V_VmV(ee_.ptr(), *solution_vector_, *solution_hat_vector_);
-        rkNewtonConvergenceStatus_ = 0;
+        
         stepControl_->setCorrection(*this, solution_vector_, ee_ , rkNewtonConvergenceStatus_);
-
-       //std::cout << "(SIDAFA4 -- got here!!!)" << std::endl;
-        stepPass = stepControl_->acceptStep(*this, &LETvalue_);
-
-       //std::cout << "stepPass = " << stepPass << std::endl;
-
-        if (!stepPass) { // stepPass = false
-           stepLETStatus_ = STEP_LET_STATUS_FAILED;
-           rkNewtonConvergenceStatus_ = -1; // just making sure here
-        } else { // stepPass = true
-           stepLETStatus_ = STEP_LET_STATUS_PASSED;
-           rkNewtonConvergenceStatus_ = 0; // just making sure here
-        }
+   } 
+   else {
+       
+        stepControl_->setCorrection(*this, solution_vector_, Teuchos::null, rkNewtonConvergenceStatus_);
    }
 
+    stepPass = stepControl_->acceptStep(*this, &LETvalue_);
 
-   //std::cout << "rkNewtonConvergenceStatus_ = " << rkNewtonConvergenceStatus_ << std::endl;
+    if (!stepPass) { // stepPass = false
+       stepLETStatus_ = STEP_LET_STATUS_FAILED;
+       rkNewtonConvergenceStatus_ = -1; // just making sure here
+    } else { // stepPass = true
+       stepLETStatus_ = STEP_LET_STATUS_PASSED;
+       rkNewtonConvergenceStatus_ = 0; // just making sure here
+    }
 
    if (rkNewtonConvergenceStatus_ == 0) {
 
@@ -308,14 +311,13 @@ Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
      timeRange_ = timeRange(t,t+current_dt);
      numSteps_++;
 
-       //std::cout << "(SIDAFA5 -- got here!!!)" << std::endl;
      // completeStep only if the none of the stage solution's failed to converged
      stepControl_->completeStep(*this);
 
      dt_to_return = current_dt;
 
      } else {
-        std::cout << "(SIDAFA-RejectingStep )" << std::endl;
+        
         rkNewtonConvergenceStatus_ = -1;
         status = stepControl_-> rejectStep(*this); // reject the stage value
         (void) status; // avoid "set but not used" build warning
