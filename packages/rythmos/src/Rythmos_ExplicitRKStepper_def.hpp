@@ -291,7 +291,6 @@ Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
         stepControl_->setCorrection(*this, solution_vector_, ee_ , rkNewtonConvergenceStatus_);
    } 
    else {
-       
         stepControl_->setCorrection(*this, solution_vector_, Teuchos::null, rkNewtonConvergenceStatus_);
    }
 
