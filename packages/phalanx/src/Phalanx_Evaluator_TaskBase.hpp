@@ -13,14 +13,14 @@ namespace PHX_example {
   struct TaskWrap {
     
     typedef void value_type;
-    typedef Kokkos::Experimental::TaskPolicy<Space> policy_type;
+    typedef Kokkos::TaskPolicy<Space> policy_type;
     
     const int work_size;
     const Functor functor;
 
     TaskWrap(const int ws,const Functor& f) : work_size(ws),functor(f) {}
     
-    void apply(const typename policy_type::member_type & member)
+    void operator() (typename policy_type::member_type & member)
     {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member,work_size),functor);
     }
@@ -30,13 +30,19 @@ namespace PHX_example {
   template<typename Traits,typename Derived>
   struct TaskBase : public PHX::EvaluatorWithBaseImpl<Traits> {
 
-    virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
-	       const std::size_t& num_adjacencies,
+    virtual Kokkos::Future<void,PHX::Device::execution_space>
+    createTask(Kokkos::TaskPolicy<PHX::Device::execution_space>& policy,
 	       const int& work_size,
+               const std::vector<Kokkos::Future<void,PHX::Device::execution_space>>& dependent_futures,
 	       typename Traits::EvalData ) override
     {
-      return policy.task_create_team(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),num_adjacencies);
+      if (dependent_futures.size() == 0)
+        return policy.host_spawn(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam);
+      else if (dependent_futures.size() == 1)
+        return policy.host_spawn(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,dependent_futures[0]);
+
+      auto aggregate_future = policy.when_all(dependent_futures.size(),dependent_futures.data());
+      return policy.host_spawn(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,aggregate_future);
     }
 
     //! Returns the size of the task functor in bytes

@@ -270,11 +270,11 @@ PHX::EvaluatorWithBaseImpl<Traits>::dependentFields() const
 //**********************************************************************
 #ifdef PHX_ENABLE_KOKKOS_AMT
 template<typename Traits>
-Kokkos::Experimental::Future<void,PHX::Device::execution_space>
+Kokkos::Future<void,PHX::Device::execution_space>
 PHX::EvaluatorWithBaseImpl<Traits>::
-createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& ,
-	   const std::size_t& ,
+createTask(Kokkos::TaskPolicy<PHX::Device::execution_space>& ,
 	   const int& ,
+           const std::vector<Kokkos::Future<void,PHX::Device::execution_space>>& dependent_futures,
 	   typename Traits::EvalData )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,

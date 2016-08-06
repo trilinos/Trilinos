@@ -61,10 +61,7 @@
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-// amt only works with pthread and qthreads
 #include "Kokkos_TaskPolicy.hpp"
-#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
-#include "Kokkos_Threads.hpp"
 #endif
 
 //=======================================================================
@@ -444,50 +441,49 @@ evaluateFields(typename Traits::EvalData d)
 #ifdef PHX_ENABLE_KOKKOS_AMT
 template<typename Traits>
 void PHX::DagManager<Traits>::
-evaluateFieldsTaskParallel(const int& threads_per_task,
-			   const int& work_size,
+evaluateFieldsTaskParallel(const int& work_size,
 			   typename Traits::EvalData d)
 {
   using execution_space = PHX::Device::execution_space;
-  using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
+  using memory_space = PHX::Device::memory_space;
+  using policy_type = Kokkos::TaskPolicy<execution_space>;
 
-  const unsigned task_max_count = static_cast<unsigned>(topoSortEvalIndex.size());
-  unsigned task_max_size = 0;
-  unsigned task_max_dependencies = 0;
+  // Requested the ability to query policy for required sizes of calls
+  // to spawn and wait_all. For now hard code to something
+  // reasonable!?!
+  const unsigned required_memory = 1000000; 
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
-    const auto& node = nodes_[topoSortEvalIndex[n]];
-    const auto& adjacencies = node.adjacencies();
-    task_max_dependencies = ::std::max(task_max_dependencies,static_cast<unsigned>(adjacencies.size()));
-    task_max_size = ::std::max(task_max_size,node.get()->taskSize());
+    // const auto& node = nodes_[topoSortEvalIndex[n]];
+    // const auto& adjacencies = node.adjacencies();
   }
-  //std::cout << "task_max_deps=" << task_max_dependencies << ", task_max_size=" << task_max_size << std::endl;
 
-  policy_type policy(task_max_count,
-		     task_max_size,
-		     task_max_dependencies,
-		     threads_per_task);
+  policy_type policy(memory_space(),required_memory);
 
   // Issue in reusing vector. The assign doesn't like the change of policy.
   //node_futures_.resize(nodes_.size());
-  std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_(nodes_.size());
+  std::vector<Kokkos::Future<void,PHX::Device::execution_space>> node_futures_(nodes_.size());
 
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
     
     auto& node = nodes_[topoSortEvalIndex[n]];
     const auto& adjacencies = node.adjacencies();
-    auto future = node.getNonConst()->createTask(policy,adjacencies.size(),work_size,d);
-    node_futures_[topoSortEvalIndex[n]] = future;
 
     // Since this is registered in the order of the topological sort,
     // we know all dependent futures of a node are already
     // constructed.
-    for (const auto& a : adjacencies)
-      policy.add_dependence(future,node_futures_[a]);
+    std::vector<Kokkos::Future<void,execution_space>> dependent_futures(adjacencies.size());
+    auto adj_iterator = adjacencies.cbegin();
+    for (std::size_t i=0; i < adjacencies.size(); ++i,++adj_iterator)
+      dependent_futures[i] = node_futures_[*adj_iterator];
 
-    policy.spawn(future);
+    auto future = node.getNonConst()->createTask(policy,work_size,dependent_futures,d);
+    TEUCHOS_TEST_FOR_EXCEPTION(future.is_null(), std::logic_error,
+                               "Error in PHX::DagManager<Traits>::evaluateFieldsTaskParallel():\n"
+                               << "The policy is out of memory. Increase the memory pool size!\n");
+    node_futures_[topoSortEvalIndex[n]] = future;
   }
 
-  Kokkos::Experimental::wait(policy);
+  Kokkos::wait(policy);
 }
 #endif
 

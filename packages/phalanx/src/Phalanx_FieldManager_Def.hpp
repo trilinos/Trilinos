@@ -223,11 +223,10 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-evaluateFieldsTaskParallel(const int& threads_per_task,
-			   const int& work_size,
+evaluateFieldsTaskParallel(const int& work_size,
 			   typename Traits::EvalData d)
 {
-  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsTaskParallel(threads_per_task,work_size,d);
+  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsTaskParallel(work_size,d);
 }
 #endif
 

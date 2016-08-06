@@ -81,10 +81,10 @@ public:
   void operator () (const int i) const;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-  Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
-	       const std::size_t& num_adjacencies,
+  Kokkos::Future<void,PHX::Device::execution_space>
+    createTask(Kokkos::TaskPolicy<PHX::Device::execution_space>& policy,
 	       const int& work_size,
+               const std::vector<Kokkos::Future<void,PHX::Device::execution_space>>& dependent_futures,
 	       typename Traits::EvalData d) override;
 #endif
   

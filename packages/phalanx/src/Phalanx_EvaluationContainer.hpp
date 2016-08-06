@@ -90,12 +90,10 @@ namespace PHX {
 #ifdef PHX_ENABLE_KOKKOS_AMT
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
 
-      @param threads_per_task The number of threads used for data parallelism within a single task.
       @param work_size The number of work units to parallelize over.
       @param d User defined data.
      */
-    void evaluateFieldsTaskParallel(const int& threads_per_task,
-				    const int& work_size,
+    void evaluateFieldsTaskParallel(const int& work_size,
 				    typename Traits::EvalData d);
 #endif
 

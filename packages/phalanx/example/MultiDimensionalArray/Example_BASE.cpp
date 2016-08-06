@@ -276,23 +276,13 @@ int main(int argc, char *argv[])
 
       RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time Residual");
 
-#ifdef PHX_ENABLE_KOKKOS_AMT
-      std::cout << "tps(0)=" << Kokkos::Threads::thread_pool_size(0) << std::endl;
-      std::cout << "tps(1)=" << Kokkos::Threads::thread_pool_size(1) << std::endl;
-      std::cout << "tps(2)=" << Kokkos::Threads::thread_pool_size(2) << std::endl;
-      const int threads_per_task = 1;
-      // const int threads_per_task = Kokkos::Threads::thread_pool_size(1);
-      // const int threads_per_task = Kokkos::Threads::thread_pool_size(2);
-      std::cout << "threads_per_task = " << threads_per_task << std::endl;
-#endif
-
       fm.preEvaluate<MyTraits::Residual>(NULL);
       {
 	TimeMonitor t(*eval_time);
 
 	for (std::size_t i = 0; i < worksets.size(); ++i) {
 #ifdef PHX_ENABLE_KOKKOS_AMT
-	  fm.evaluateFieldsTaskParallel<MyTraits::Residual>(threads_per_task,worksets[i].num_cells,worksets[i]);
+	  fm.evaluateFieldsTaskParallel<MyTraits::Residual>(worksets[i].num_cells,worksets[i]);
 #else
 	  fm.evaluateFields<MyTraits::Residual>(worksets[i]);
 #endif	  
@@ -355,7 +345,7 @@ int main(int argc, char *argv[])
 
         for (std::size_t i = 0; i < worksets.size(); ++i) {
 #ifdef PHX_ENABLE_KOKKOS_AMT
-	  fm.evaluateFieldsTaskParallel<MyTraits::Jacobian>(threads_per_task,worksets[i].num_cells,worksets[i]);
+	  fm.evaluateFieldsTaskParallel<MyTraits::Jacobian>(worksets[i].num_cells,worksets[i]);
 #else
           fm.evaluateFields<MyTraits::Jacobian>(worksets[i]);
 #endif

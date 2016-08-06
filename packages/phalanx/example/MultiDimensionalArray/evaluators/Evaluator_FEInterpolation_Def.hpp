@@ -115,17 +115,18 @@ evaluateFields(typename Traits::EvalData cell_data)
 //**********************************************************************
 #ifdef  PHX_ENABLE_KOKKOS_AMT
 template<typename EvalT, typename Traits>
-Kokkos::Experimental::Future<void,PHX::Device::execution_space>
+Kokkos::Future<void,PHX::Device::execution_space>
 FEInterpolation<EvalT, Traits>::
-createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
-	   const std::size_t& num_adjacencies,
+createTask(Kokkos::TaskPolicy<PHX::Device::execution_space>& policy,
 	   const int& work_size,
+           const std::vector<Kokkos::Future<void,PHX::Device::execution_space>>& dependent_futures,
 	   typename Traits::EvalData workset)
 {
   std::vector<MyCell>::iterator cell_it = workset.begin;
   phi = cell_it->getBasisFunctions();
   grad_phi = cell_it->getBasisFunctionGradients();
-  return policy.task_create_team(PHX_example::TaskWrap<PHX::Device::execution_space,FEInterpolation<EvalT, Traits>>(work_size,*this),num_adjacencies);
+  auto dep_future = policy.when_all(dependent_futures.size(),dependent_futures.data());
+  return policy.host_spawn(PHX_example::TaskWrap<PHX::Device::execution_space,FEInterpolation<EvalT, Traits>>(work_size,*this),Kokkos::TaskTeam,dep_future);
 }
 #endif
 
