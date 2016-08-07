@@ -1038,50 +1038,40 @@ void RILUK<MatrixType>::compute ()
 # ifdef IFPACK2_HTS_EXPERIMENTAL
     //TODO Reuse symbolic information.
     if (use_hts_) {
-
       Teuchos::Time basker_getL("basker_getL");
       Teuchos::Time hts_buildL ("hts_buildL");
       Teuchos::Time basker_getU("basker_getU");
       Teuchos::Time hts_buildU ("hts_buildU");
 
-
       hts_mgr_ = Teuchos::rcp(new HTSManager());
       local_ordinal_type* p, * q;
       local_ordinal_type nnz;
 
-
-
       myBasker->GetPerm(&p, &q);
-
       {
-
         HTSData d;
         myBasker->GetL(d.n, nnz, &d.ir, &d.jc, &d.v);
         d.sort();
         typename HTST::CrsMatrix* T = HTST::make_CrsMatrix(d.n, d.ir, d.jc, d.v, true);
         hts_mgr_->Limpl = HTST::preprocess(T, 1, hts_nthreads_, true, p, 0);
+        HTST::delete_CrsMatrix(T);
         delete[] p;
-
       }
-
       {
         HTSData d;
         myBasker->GetU(d.n, nnz, &d.ir, &d.jc, &d.v);
         d.sort();
-
         typename HTST::CrsMatrix* T = HTST::make_CrsMatrix(d.n, d.ir, d.jc, d.v, true);
         hts_mgr_->Uimpl = HTST::preprocess(T, 1, hts_nthreads_, true, 0, q);
-
-
+        HTST::delete_CrsMatrix(T);
+        delete[] q;
       }
-
-
     }
 # endif
 
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
-       0==1, std::runtime_error,
+       false, std::runtime_error,
        "Ifpack2::RILUK::compute: experimental not enabled");
 #endif
   }//end -- if experimental
