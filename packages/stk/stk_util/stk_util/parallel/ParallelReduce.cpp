@@ -63,7 +63,7 @@ void all_write_string( ParallelMachine arg_comm ,
 
   std::vector<int> recv_count( p_size , i_zero );
 
-  int * const recv_count_ptr = & recv_count[0] ;
+  int * const recv_count_ptr = recv_count.data() ;
 
   result = MPI_Gather( & send_count , 1 , MPI_INT ,
                        recv_count_ptr , 1 , MPI_INT ,
@@ -89,8 +89,8 @@ void all_write_string( ParallelMachine arg_comm ,
 
   {
     const char * const send_ptr = arg_msg.c_str();
-    char * const recv_ptr = recv_size ? & buffer[0] : nullptr ;
-    int * const recv_displ_ptr = & recv_displ[0] ;
+    char * const recv_ptr = recv_size ? buffer.data() : nullptr ;
+    int * const recv_displ_ptr = recv_displ.data() ;
 
     result = MPI_Gatherv( const_cast<char*>(send_ptr), send_count, MPI_CHAR ,
                           recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,

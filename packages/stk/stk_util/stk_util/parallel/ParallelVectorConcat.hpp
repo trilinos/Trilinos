@@ -88,7 +88,7 @@ namespace stk {
     //
     std::vector<int> messageSizes(p_size);
     int mpiResult = MPI_SUCCESS ;  
-    mpiResult = MPI_Allgather(&localSize, 1, MPI_INT, &messageSizes[0], 1, MPI_INT, comm);
+    mpiResult = MPI_Allgather(&localSize, 1, MPI_INT, messageSizes.data(), 1, MPI_INT, comm);
     if(mpiResult != MPI_SUCCESS) {
       // Unknown failure, pass error code up the chain
       return mpiResult;
@@ -109,9 +109,9 @@ namespace stk {
     //  Note, localVec should not be modified by the MPI call, but MPI does not guarntee the const in the 
     //  interface argument.
     //
-    T* ptrNonConst = const_cast<T*>(&localVec[0]);
+    T* ptrNonConst = const_cast<T*>(localVec.data());
 
-    mpiResult = MPI_Allgatherv(ptrNonConst, localSize, MPI_CHAR, &globalVec[0], &messageSizes[0], &offsets[0], MPI_CHAR, comm);
+    mpiResult = MPI_Allgatherv(ptrNonConst, localSize, MPI_CHAR, globalVec.data(), messageSizes.data(), offsets.data(), MPI_CHAR, comm);
     return mpiResult;
   }
 

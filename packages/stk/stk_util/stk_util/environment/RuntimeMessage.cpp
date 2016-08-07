@@ -361,7 +361,7 @@ report_deferred_messages(
   std::string send_string(mout.stream.str());
   int send_count = send_string.size();
   std::vector<int> recv_count(p_size, 0);
-  int * const recv_count_ptr = &recv_count[0] ;
+  int * const recv_count_ptr = recv_count.data() ;
 
   int result = MPI_Gather(&send_count, 1, MPI_INT,
                           recv_count_ptr, 1, MPI_INT,
@@ -385,8 +385,8 @@ report_deferred_messages(
 
   {
     const char * const send_ptr = send_string.data();
-    char * const recv_ptr = recv_size ? & buffer[0] : nullptr ;
-    int * const recv_displ_ptr = & recv_displ[0] ;
+    char * const recv_ptr = recv_size ? buffer.data() : nullptr ;
+    int * const recv_displ_ptr = recv_displ.data() ;
 
     result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                          recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
@@ -469,7 +469,7 @@ aggregate_messages(
 
   std::vector<int> recv_count(p_size, 0);
 
-  int * const recv_count_ptr = & recv_count[0] ;
+  int * const recv_count_ptr = recv_count.data() ;
 
   result = MPI_Gather(& send_count, 1, MPI_INT,
                       recv_count_ptr, 1, MPI_INT,
@@ -494,8 +494,8 @@ aggregate_messages(
 
   {
     const char * const send_ptr = message.c_str();
-    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
-    int * const recv_displ_ptr = & recv_displ[0] ;
+    char * const recv_ptr = recv_size ? buffer.data() : NULL ;
+    int * const recv_displ_ptr = recv_displ.data() ;
 
     result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                          recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,

@@ -356,20 +356,20 @@ ReduceSet::ReduceSet()
   add(new ReduceCheck);
 }
 
-
 ReduceSet::~ReduceSet()
 {
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    delete (*it);
+  for (auto& it : m_reduceVector) {
+    delete it;
+  }
 }
-
 
 size_t
 ReduceSet::size() const {
   void *buffer_end = 0;
 
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    (*it)->size(buffer_end);
+  for (auto& it : m_reduceVector) {
+    it->size(buffer_end);
+  }
 
   ReduceCheck *reduce_check = static_cast<ReduceCheck *>(m_reduceVector.front());
   reduce_check->setSize(reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0));
@@ -381,16 +381,18 @@ void
 ReduceSet::copyin(void * const buffer_in) const {
   void *inbuf = buffer_in;
 
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    (*it)->copyin(inbuf);
+  for (const auto& it : m_reduceVector) {
+    it->copyin(inbuf);
+  }
 }
 
 void
 ReduceSet::copyout(void * const buffer_out) const {
   void *outbuf = buffer_out;
 
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    (*it)->copyout(outbuf);
+  for (const auto& it : m_reduceVector) {
+    it->copyout(outbuf);
+  }
 }
 
 void
@@ -398,8 +400,9 @@ ReduceSet::op(void * const buffer_in, void * const buffer_out) const {
   void *inbuf = buffer_in;
   void *outbuf = buffer_out;
 
-  for (ReduceVector::const_iterator it = m_reduceVector.begin(); it != m_reduceVector.end(); ++it)
-    (*it)->op(inbuf, outbuf);
+  for (const auto& it : m_reduceVector) {
+    it->op(inbuf, outbuf);
+  }
 }
 
 void ReduceSet::void_op(void * inv, void * outv, int *, MPI_Datatype *) {
