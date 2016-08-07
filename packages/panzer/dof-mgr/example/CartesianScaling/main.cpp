@@ -65,7 +65,7 @@ int main(int argc,char * argv[])
   RCP<const panzer::FieldPattern> pattern_E = buildFieldPattern<Intrepid2::Basis_HCURL_HEX_I1_FEM<double,FieldContainer> >();
 
   // repeatedly construct DOFManager timing the buildGlobalUnknowns
-  for(int repeats=0;repeats<10;repeats++) {
+  for(int repeats=0;repeats<100;repeats++) {
   
     // build the topology
     RCP<CCM> connManager = rcp(new CCM);
@@ -92,6 +92,9 @@ int main(int argc,char * argv[])
     dofManager->addField("eblock-0_1_0","UY",pattern_U);
     dofManager->addField("eblock-0_1_0","UZ",pattern_U);
   
+    // try to get them all synced up
+    comm.barrier();
+
     {
       PANZER_FUNC_TIME_MONITOR("panzer::ScalingTest::buildGlobalUnknowns");
   
