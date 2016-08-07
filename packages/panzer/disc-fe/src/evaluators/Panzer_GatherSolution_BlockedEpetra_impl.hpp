@@ -59,8 +59,6 @@
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 
-#include "Epetra_Map.h"
-
 // **********************************************************************
 // Specialization: Residual
 // **********************************************************************
