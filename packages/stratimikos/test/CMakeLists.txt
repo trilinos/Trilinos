@@ -156,3 +156,21 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 
 
 ENDIF()
+
+# Stratimikos now has optional test dependencies on Ifpack2 (and thus
+# indirectly, Tpetra) and ThyraTpetraAdapters.
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack2)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Tpetra)
+ASSERT_DEFINED(Tpetra_INST_DOUBLE)
+ASSERT_DEFINED(Tpetra_INST_INT_INT)
+
+IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
+ TRIBITS_ADD_EXECUTABLE(
+   issue_535
+   SOURCES
+     test_issue_535.cpp
+   COMM serial mpi
+   )
+ENDIF ()
