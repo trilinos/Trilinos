@@ -105,11 +105,6 @@
 
 namespace MueLu {
 
-#ifdef HAVE_MUELU_EPETRA
-  //using Xpetra::EpetraCrsMatrix;   // TODO: mv in Xpetra_UseShortNamesScalar
-  //using Xpetra::EpetraMultiVector;
-#endif
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonal(const Matrix& A) {
     // FIXME Kokkos
@@ -270,7 +265,7 @@ namespace MueLu {
   {
 #ifdef HAVE_MUELU_TPETRA
     try {
-      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpOp = Op2NonConstTpetraCrs(Op);
+      Tpetra::CrsMatrix<SC,LO,GO,NO>& tpOp = Op2NonConstTpetraCrs(Op);
 
       const RCP<const Tpetra::Map<LO,GO,NO> > rowMap    = tpOp.getRowMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp.getDomainMap();
@@ -344,16 +339,27 @@ namespace MueLu {
 #endif
   } //MyOldScaleMatrix_Tpetra()
 
-  template <class SC, class LO, class GO, class NO>
-  Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Xpetra::Matrix<SC,LO,GO,NO>& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
-    typedef Kokkos::ArithTraits<SC> ATS;
+  template<class MatrixType, class BNodesType>
+  class DetectDirichletFunctor {
+  private:
+    typedef typename MatrixType::ordinal_type LO;
+    typedef typename MatrixType::value_type   SC;
+    typedef Kokkos::ArithTraits<SC>           ATS;
 
-    auto localMatrix = A.getLocalMatrix();
-    LO   numRows     = A.getNodeNumRows();
+    MatrixType localMatrix;
+    BNodesType boundaryNodes;
+    SC         tol;
 
-    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
-    Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", numRows, KOKKOS_LAMBDA(const LO row) {
-      auto rowView = localMatrix.row (row);
+  public:
+    DetectDirichletFunctor(MatrixType localMatrix_, BNodesType boundaryNodes_, SC tol_) :
+      localMatrix(localMatrix_),
+      boundaryNodes(boundaryNodes_),
+      tol(tol_)
+    { }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const LO row) const {
+      auto rowView = localMatrix.row(row);
       auto length  = rowView.length;
 
       boundaryNodes(row) = true;
@@ -362,18 +368,33 @@ namespace MueLu {
           boundaryNodes(row) = false;
           break;
         }
-    });
+    }
+  };
+
+  template <class SC, class LO, class GO, class NO>
+  Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Xpetra::Matrix<SC,LO,GO,NO>& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
+    auto localMatrix = A.getLocalMatrix();
+    LO   numRows     = A.getNodeNumRows();
+
+    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
+
+    DetectDirichletFunctor<decltype(localMatrix), decltype(boundaryNodes)> functor(localMatrix, boundaryNodes, tol);
+    Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", numRows, functor);
 
     return boundaryNodes;
   }
 
-  template <class SC, class LO, class GO, class NO>
-  Kokkos::View<const bool*, typename NO::device_type> Utilities_kokkos<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
-    return MueLu::DetectDirichletRows<SC,LO,GO,NO>(A, tol);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Kokkos::View<const bool*, typename Node::device_type>
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& tol) {
+    return MueLu::DetectDirichletRows<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, tol);
   }
 
   template <class Node>
-  Kokkos::View<const bool*, typename Node::device_type> Utilities_kokkos<double,int,int,Node>::DetectDirichletRows(const Xpetra::Matrix<double,int,int,Node>& A, const typename Teuchos::ScalarTraits<double>::magnitudeType& tol) {
+  Kokkos::View<const bool*, typename Node::device_type>
+  Utilities_kokkos<double,int,int,Node>::
+  DetectDirichletRows(const Xpetra::Matrix<double,int,int,Node>& A, const typename Teuchos::ScalarTraits<double>::magnitudeType& tol) {
     return MueLu::DetectDirichletRows<double,int,int,Node>(A, tol);
   }
 

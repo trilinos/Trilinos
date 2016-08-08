@@ -99,11 +99,34 @@ namespace MueLu {
       //    for "Nullspace" is a NullspaceFactory
       // 2) The factory for "Nullspace" (or nspName) must be a TentativePFactory or any other TwoLevelFactoryBase derived object
       //    which generates the variable "Nullspace" as output
-      TEUCHOS_TEST_FOR_EXCEPTION(GetFactory(nspName)==Teuchos::null, Exceptions::RuntimeError, "MueLu::NullspaceFactory::DeclareInput(): You must declare an existing factory which produces the variable \"Nullspace\" in the NullspaceFactory (e.g. a TentativePFactory).");
+      TEUCHOS_TEST_FOR_EXCEPTION(GetFactory(nspName).is_null(), Exceptions::RuntimeError,
+        "MueLu::NullspaceFactory::DeclareInput(): You must declare an existing factory which "
+        "produces the variable \"Nullspace\" in the NullspaceFactory (e.g. a TentativePFactory).");
       currentLevel.DeclareInput("Nullspace", GetFactory(nspName).get(), this); /* ! "Nullspace" and nspName mismatch possible here */
     }
   }
 
+  template<class NullspaceType, class LO>
+  class NullspaceFunctor {
+  private:
+    NullspaceType                               nullspace;
+    LO                                          numPDEs;
+    typedef typename NullspaceType::value_type  SC;
+    typedef Kokkos::ArithTraits<SC>             ATS;
+
+  public:
+    NullspaceFunctor(NullspaceType nullspace_, LO numPDEs_) :
+      nullspace(nullspace_),
+      numPDEs(numPDEs_)
+    { }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const LO j) const {
+      SC one = ATS::one();
+      for  (LO i = 0; i < numPDEs; i++)
+        nullspace(j*numPDEs + i, i) = one;
+    }
+  };
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Nullspace factory", currentLevel);
@@ -119,7 +142,10 @@ namespace MueLu {
         // When a fine nullspace have already been defined by user using Set("Nullspace", ...) or
         // Set("Nullspace1", ...), we use it.
         nullspace = currentLevel.Get< RCP<MultiVector> >(nspName, NoFactory::get());
-        GetOStream(Runtime1) << "Use user-given nullspace " << nspName << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
+        GetOStream(Runtime1) << "Use user-given nullspace " << nspName << ":"
+            << " nullspace dimension=" << nullspace->getNumVectors()
+            << " nullspace length="    << nullspace->getGlobalLength() << std::endl;
+
       } else {
         // "Nullspace" (nspName) is not available
         auto A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -128,7 +154,8 @@ namespace MueLu {
         LO numPDEs = 1;
         if (A->IsView("stridedMaps") == true) {
           Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-          TEUCHOS_TEST_FOR_EXCEPTION(rcp_dynamic_cast<const StridedMap>(A->getRowMap()).is_null(), Exceptions::BadCast, "MueLu::CoalesceFactory::Build: cast to strided row map failed.");
+          TEUCHOS_TEST_FOR_EXCEPTION(rcp_dynamic_cast<const StridedMap>(A->getRowMap()).is_null(), Exceptions::BadCast,
+                                     "MueLu::CoalesceFactory::Build: cast to strided row map failed.");
           numPDEs = rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
           oldView = A->SwitchToView(oldView);
         }
@@ -141,11 +168,8 @@ namespace MueLu {
         int numBlocks = nullspace->getLocalLength() / numPDEs;
 
         SC one = Teuchos::ScalarTraits<SC>::one();
-        for (int i = 0; i < numPDEs; i++) {
-          Kokkos::parallel_for("MueLu:NullspaceF:Build:for", numBlocks, KOKKOS_LAMBDA(const int j) {
-            nullspaceView(j*numPDEs + i, i) = one;
-          });
-        }
+        NullspaceFunctor<decltype(nullspaceView), LO> nullspaceFunctor(nullspaceView, numPDEs);
+        Kokkos::parallel_for("MueLu:NullspaceF:Build:for", numBlocks, nullspaceFunctor);
       }
 
     } else {

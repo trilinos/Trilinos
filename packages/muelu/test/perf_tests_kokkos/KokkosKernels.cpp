@@ -64,6 +64,155 @@ private:
   size_type             maxNumRowEntries_;
 };
 
+template<class MatrixType, class BNodesType>
+class DetectDirichletFunctor {
+private:
+  typedef typename MatrixType::ordinal_type LO;
+  typedef typename MatrixType::value_type   SC;
+  typedef Kokkos::ArithTraits<SC>           ATS;
+
+  MatrixType localMatrix;
+  BNodesType boundaryNodes;
+  SC         tol;
+
+public:
+  DetectDirichletFunctor(MatrixType localMatrix_, BNodesType boundaryNodes_, SC tol_) :
+    localMatrix(localMatrix_),
+    boundaryNodes(boundaryNodes_),
+    tol(tol_)
+  { }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const LO row) const {
+    auto rowView = localMatrix.row(row);
+    auto length  = rowView.length;
+
+    boundaryNodes(row) = true;
+    for (decltype(length) colID = 0; colID < length; colID++)
+      if ((rowView.colidx(colID) != row) && (ATS::magnitude(rowView.value(colID)) > tol)) {
+        boundaryNodes(row) = false;
+        break;
+      }
+  }
+};
+
+template<class LO, class RowType>
+class ScanFunctor {
+public:
+  ScanFunctor(RowType rows_) : rows(rows_) { }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const LO i, LO& upd, const bool& final) const {
+    upd += rows(i);
+    if (final)
+      rows(i) = upd;
+  }
+
+private:
+  RowType rows;
+};
+
+template<class MatrixType, class GhostedDiagType, class RowType>
+class Stage1ScalarFunctor {
+private:
+  typedef typename MatrixType::ordinal_type LO;
+  typedef typename MatrixType::value_type   SC;
+  typedef Kokkos::ArithTraits<SC>           ATS;
+  typedef typename ATS::magnitudeType       magnitudeType;
+
+public:
+  Stage1ScalarFunctor(MatrixType kokkosMatrix_, double threshold_, GhostedDiagType ghostedDiag_, RowType rows_) :
+    kokkosMatrix(kokkosMatrix_),
+    threshold(threshold_),
+    ghostedDiag(ghostedDiag_),
+    rows(rows_)
+  { }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const LO row, LO& nnz) const {
+    auto rowView = kokkosMatrix.row (row);
+    auto length  = rowView.length;
+
+    LO rownnz = 0;
+    for (decltype(length) colID = 0; colID < length; colID++) {
+      LO col = rowView.colidx(colID);
+
+      // Avoid square root by using squared values
+      magnitudeType aiiajj = threshold*threshold * ATS::magnitude(ghostedDiag(row, 0))*ATS::magnitude(ghostedDiag(col, 0));   // eps^2*|a_ii|*|a_jj|
+      magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
+
+      if (aij2 > aiiajj || row == col)
+        rownnz++;
+    }
+    rows(row+1) = rownnz;
+    nnz += rownnz;
+  }
+
+private:
+  MatrixType        kokkosMatrix;
+  double            threshold;
+  GhostedDiagType   ghostedDiag;
+  RowType           rows;
+};
+
+template<class MatrixType, class GhostedDiagType, class RowType, class ColType, class BndNodesType>
+class Stage2ScalarFunctor {
+private:
+  typedef typename MatrixType::ordinal_type LO;
+  typedef typename MatrixType::value_type   SC;
+  typedef Kokkos::ArithTraits<SC>           ATS;
+  typedef typename ATS::magnitudeType       magnitudeType;
+
+public:
+  Stage2ScalarFunctor(MatrixType kokkosMatrix_, GhostedDiagType ghostedDiag_, RowType rows_, ColType cols_, BndNodesType bndNodes_, double threshold_) :
+    kokkosMatrix(kokkosMatrix_),
+    ghostedDiag(ghostedDiag_),
+    rows(rows_),
+    cols(cols_),
+    bndNodes(bndNodes_),
+    threshold(threshold_)
+  { }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const LO row, LO& dropped) const {
+    auto rowView = kokkosMatrix.row (row);
+    auto length = rowView.length;
+
+    LO rownnz = 0;
+    for (decltype(length) colID = 0; colID < length; colID++) {
+      LO col = rowView.colidx(colID);
+
+      // Avoid square root by using squared values
+      magnitudeType aiiajj = threshold*threshold * ATS::magnitude(ghostedDiag(row, 0))*ATS::magnitude(ghostedDiag(col, 0));   // eps^2*|a_ii|*|a_jj|
+      magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
+
+      if (aij2 > aiiajj || row == col) {
+        cols(rows(row) + rownnz) = col;
+        rownnz++;
+      } else {
+        dropped++;
+      }
+      if (rownnz == 1) {
+        // If the only element remaining after filtering is diagonal, mark node as boundary
+        // FIXME: this should really be replaced by the following
+        //    if (indices.size() == 1 && indices[0] == row)
+        //        boundaryNodes[row] = true;
+        // We do not do it this way now because there is no framework for distinguishing isolated
+        // and boundary nodes in the aggregation algorithms
+        bndNodes(row) = true;
+      }
+    }
+  }
+
+private:
+  MatrixType        kokkosMatrix;
+  GhostedDiagType   ghostedDiag;
+  RowType           rows;
+  ColType           cols;
+  BndNodesType      bndNodes;
+  double            threshold;
+};
+
 template<class scalar_type, class local_ordinal_type, class device_type>
 Kokkos::CrsMatrix<scalar_type, local_ordinal_type, device_type>
 kernel_construct(local_ordinal_type numRows) {
@@ -117,18 +266,9 @@ void kernel_coalesce_drop_device(Kokkos::CrsMatrix<scalar_type, local_ordinal_ty
 
   // Stage 0: detect Dirichlet rows
   boundary_nodes_type boundaryNodes("boundaryNodes", numRows);
-  Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", RangePolicy(0, numRows),
-    KOKKOS_LAMBDA(const local_ordinal_type row) {
-      auto rowView = A.row (row);
-      auto length  = rowView.length;
 
-      boundaryNodes(row) = true;
-      for (decltype(length) colID = 0; colID < length; colID++)
-        if ((rowView.colidx(colID) != row) && (ATS::magnitude(rowView.value(colID)) > 1e-13)) {
-          boundaryNodes(row) = false;
-          break;
-        }
-    });
+  DetectDirichletFunctor<decltype(A), decltype(boundaryNodes)> functor(A, boundaryNodes, 0.0);
+  Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", RangePolicy(0, numRows), functor);
 
   // Stage 1: calculate the number of remaining entries per row
   typedef Kokkos::StaticCrsGraph<local_ordinal_type, Kokkos::LayoutLeft, device_type> local_graph_type;
@@ -139,68 +279,24 @@ void kernel_coalesce_drop_device(Kokkos::CrsMatrix<scalar_type, local_ordinal_ty
   typename row_map_type::non_const_type rows("row_map", numRows+1);       // rows(0) = 0 automatically
 
   local_ordinal_type realnnz = 0;
-  Kokkos::parallel_reduce("kernel_cd:stage1_reduce", RangePolicy(0, numRows),
-    KOKKOS_LAMBDA(const local_ordinal_type row, local_ordinal_type& nnz) {
-      auto rowView = A.row (row);
-      auto length  = rowView.length;
 
-      local_ordinal_type rownnz = 0;
-      for (decltype(length) colID = 0; colID < length; colID++) {
-        local_ordinal_type col = rowView.colidx(colID);
-
-        // Avoid square root by using squared values
-        magnitude_type aiiajj = eps*eps * ATS::magnitude(diag(row))*ATS::magnitude(diag(col));                  // eps^2*|a_ii|*|a_jj|
-        magnitude_type aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));    // |a_ij|^2
-
-        if (aij2 > aiiajj || row == col)
-          rownnz++;
-      }
-      rows(row+1) = rownnz;
-      nnz += rownnz;
-    }, realnnz);
+  Stage1ScalarFunctor<decltype(A), decltype(diag), decltype(rows)> stage1Functor(A, eps, diag, rows);
+  Kokkos::parallel_reduce("kernel_cd:stage1_reduce", RangePolicy(0, numRows), stage1Functor, realnnz);
 
   // parallel_scan (exclusive)
-  Kokkos::parallel_scan("kernel_cd:stage1_scan", RangePolicy(0, numRows+1),
-    KOKKOS_LAMBDA(const local_ordinal_type i, local_ordinal_type& upd, const bool& final_result) {
-      upd += rows(i);
-      if (final_result)
-        rows(i) = upd;
-    });
+  ScanFunctor<local_ordinal_type,decltype(rows)> scanFunctor(rows);
+  Kokkos::parallel_scan("kernel_cd:stage1_scan", RangePolicy(0, numRows+1), scanFunctor);
 
   // Stage 2: fill in the column indices
   typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
   typename entries_type::non_const_type        cols    ("entries",       realnnz);
+
   local_ordinal_type numDropped = 0;
-  Kokkos::parallel_reduce("kernel_cd:stage2_reduce", RangePolicy(0, numRows),
-    KOKKOS_LAMBDA(const local_ordinal_type row, local_ordinal_type& dropped) {
-      auto rowView = A.row (row);
-      auto length = rowView.length;
 
-      local_ordinal_type rownnz = 0;
-      for (decltype(length) colID = 0; colID < length; colID++) {
-        local_ordinal_type col = rowView.colidx(colID);
+  Stage2ScalarFunctor<decltype(A), decltype(diag), decltype(rows), decltype(cols), decltype(bndNodes)>
+      stage2Functor(A, diag, rows, cols, bndNodes, eps);
+  Kokkos::parallel_reduce("kernel_cd:stage2_reduce", numRows, stage2Functor, numDropped);
 
-        // Avoid square root by using squared values
-        magnitude_type aiiajj = eps*eps * ATS::magnitude(diag(row))*ATS::magnitude(diag(col));                  // eps^2*|a_ii|*|a_jj|
-        magnitude_type aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));    // |a_ij|^2
-
-        if (aij2 > aiiajj || row == col) {
-          cols(rows(row) + rownnz) = col;
-          rownnz++;
-        } else {
-          dropped++;
-        }
-        if (rownnz == 1) {
-          // If the only element remaining after filtering is diagonal, mark node as boundary
-          // FIXME: this should really be replaced by the following
-          //    if (indices.size() == 1 && indices[0] == row)
-          //        boundaryNodes[row] = true;
-          // We do not do it this way now because there is no framework for distinguishing isolated
-          // and boundary nodes in the aggregation algorithms
-          bndNodes(row) = true;
-        }
-      }
-    }, numDropped);
   boundaryNodes = bndNodes;
 
   local_graph_type kokkosGraph(cols, rows);
@@ -371,7 +467,7 @@ int main(int argc, char* argv[]) {
 
   } else if (node == "cuda") {
 #ifdef KOKKOS_HAVE_CUDA
-    return main_<double,int,Kokkos::CUDA>(argc, argv);
+    return main_<double,int,Kokkos::Cuda>(argc, argv);
 #else
     throw std::runtime_error("CUDA node type is disabled");
 #endif
