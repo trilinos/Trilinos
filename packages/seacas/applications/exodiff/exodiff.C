@@ -872,12 +872,11 @@ namespace {
             int final2 = file2.Num_Times();
             if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(final2))) {
               diff_flag = true;
-              std::cout << trmclr::green << "\tFinal database times differ by "
-                        << FileDiff(file1.Time(time_step1), file2.Time(final2),
-                                    interface.final_time_tol.type)
-                        << " which is not within specified " << interface.final_time_tol.typestr()
-                        << " tolerance of " << interface.final_time_tol.value << " (FAILED)\n"
-                        << trmclr::normal;
+	      DIFF_OUT("\tFinal database times differ by "
+		       << FileDiff(file1.Time(time_step1), file2.Time(final2),
+				   interface.final_time_tol.type)
+		       << " which is not within specified " << interface.final_time_tol.typestr()
+		       << " tolerance of " << interface.final_time_tol.value << " (FAILED)");
             }
           }
         }
@@ -902,9 +901,7 @@ namespace {
            interface.glob_var_names.empty() && interface.node_var_names.empty() &&
            interface.elmt_var_names.empty() && interface.elmt_att_names.empty() &&
            interface.ns_var_names.empty() && interface.ss_var_names.empty())) {
-        std::cout << trmclr::green
-                  << "\nWARNING: No comparisons were performed during this execution.\n"
-                  << trmclr::normal;
+        DIFF_OUT("\nWARNING: No comparisons were performed during this execution.");
         diff_flag = true;
       }
     }

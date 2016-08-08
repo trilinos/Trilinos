@@ -47,7 +47,7 @@ namespace {
 
   template <typename INT>
   size_t Find(double x0, double y0, double z0, double *x, double *y, double *z, INT *id, size_t N,
-              int dim, size_t block_id, bool ignore_dups);
+              int dim, bool ignore_dups);
 
   template <typename INT>
   void Compute_Node_Map(INT *&node_map, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2);
@@ -197,7 +197,7 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
         mid_z /= (double)num_nodes_per_elmt;
 
       // Locate midpoint in sorted array.
-      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, num_elmts, dim, file1.Block_Id(b),
+      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, num_elmts, dim,
                       interface.ignore_dups);
 
       if (sort_idx < 0) {
@@ -514,7 +514,7 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
         mid_z /= (double)num_nodes_per_elmt;
 
       // Locate midpoint in sorted array.
-      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, num_elmts2, dim, file1.Block_Id(b),
+      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, num_elmts2, dim,
                       interface.ignore_dups);
       if (sort_idx < 0) {
         unmatched++;
@@ -930,7 +930,7 @@ namespace {
 
   template <typename INT>
   size_t Find(double x0, double y0, double z0, double *x, double *y, double *z, INT *id, size_t N,
-              int dim, size_t block_id, bool ignore_dups)
+              int dim, bool ignore_dups)
   {
     SMART_ASSERT(x != nullptr);
     SMART_ASSERT(N > 0);
@@ -982,9 +982,9 @@ namespace {
 
             ERROR("Two elements in file 2 have the "
                   << "same midpoint (within tolerance).\n"
-                  << "\tLocal element  " << id[i] + 1 << " in block " << block_id << " at (" << x1
+                  << "\tLocal element  " << id[i] + 1 << " at (" << x1
                   << ", " << y1 << ", " << z1 << ") and\n"
-                  << "\tLocal element " << id[index] + 1 << " in block " << block_id << " at ("
+                  << "\tLocal element " << id[index] + 1 << " at ("
                   << x2 << ", " << y2 << ", " << z2 << ")\n"
                   << "\tNo unique element mapping possible.\n"
                   << '\n');
