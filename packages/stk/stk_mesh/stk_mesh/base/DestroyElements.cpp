@@ -23,6 +23,18 @@ bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity 
     return false;
 }
 
+void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk, stk::mesh::Entity connectedEntity, stk::mesh::EntityRank conRank)
+{
+    for(stk::mesh::EntityRank rank = stk::topology::ELEM_RANK; rank > conRank; --rank)
+    {
+        unsigned numUpward = bulk.num_connectivity(connectedEntity, rank);
+        const stk::mesh::Entity *upwardEntity = bulk.begin(connectedEntity, rank);
+        for(unsigned j=0; j<numUpward; j++)
+            if(bulk.bucket(upwardEntity[j]).in_aura())
+                bulk.destroy_entity(upwardEntity[j]);
+    }
+}
+
 void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy)
 {
     stk::mesh::Selector orphansToDelete(bulk.mesh_meta_data().universal_part());
@@ -32,7 +44,7 @@ void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elemen
 void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete)
 {
     bulk.modification_begin();
-    stk::mesh::EntityVector downwardConnectivity;
+    std::vector<stk::mesh::EntityVector> downwardConnectivity(bulk.mesh_meta_data().entity_rank_count());
 
     for(stk::mesh::Entity element : elementsToDestroy) {
         if(!bulk.is_valid(element))
@@ -45,20 +57,27 @@ void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elemen
             unsigned numConnected = bulk.num_connectivity(element, conRank);
             const stk::mesh::Entity* connectedEntities = bulk.begin(element, conRank);
             for(unsigned i = 0; i < numConnected; i++)
-                downwardConnectivity.push_back(connectedEntities[i]);
+                downwardConnectivity[conRank].push_back(connectedEntities[i]);
         }
 
         bulk.destroy_entity(element);
     }
 
-    stk::util::sort_and_unique(downwardConnectivity, stk::mesh::EntityLess(bulk));
-
-    int numConnections = downwardConnectivity.size();
-    for(int i = numConnections-1; i >= 0; --i)
+    for(stk::mesh::EntityRank conRank : {stk::topology::FACE_RANK, stk::topology::EDGE_RANK, stk::topology::NODE_RANK})
     {
-        stk::mesh::Entity connectedEntity =  downwardConnectivity[i];
-        if(!has_upward_connectivity(bulk, connectedEntity) && orphansToDelete(bulk.bucket(connectedEntity)))
-            bulk.destroy_entity(connectedEntity);
+        stk::util::sort_and_unique(downwardConnectivity[conRank], stk::mesh::EntityLess(bulk));
+
+        int numConnections = downwardConnectivity[conRank].size();
+        for(int i = numConnections-1; i >= 0; --i)
+        {
+            stk::mesh::Entity connectedEntity =  downwardConnectivity[conRank][i];
+            if(orphansToDelete(bulk.bucket(connectedEntity)))
+            {
+                destroy_upward_connected_aura_entities(bulk, connectedEntity, conRank);
+                if(!has_upward_connectivity(bulk, connectedEntity))
+                    bulk.destroy_entity(connectedEntity);
+            }
+        }
     }
     bulk.modification_end();
 }

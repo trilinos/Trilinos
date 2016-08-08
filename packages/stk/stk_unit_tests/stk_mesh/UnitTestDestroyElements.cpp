@@ -10,33 +10,39 @@
 namespace
 {
 
-void expect_valid(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &entities)
+void expect_valid(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &entities, int line)
 {
     for(stk::mesh::Entity entity : entities) {
-        EXPECT_TRUE(bulk.is_valid(entity));
+        EXPECT_TRUE(bulk.is_valid(entity)) << "from line " << line;
     }
 }
 
-void expect_invalid(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &entities)
+void expect_invalid(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &entities, int line)
 {
     for(stk::mesh::Entity entity : entities) {
-        EXPECT_FALSE(bulk.is_valid(entity));
+        EXPECT_FALSE(bulk.is_valid(entity)) << "from line " << line;
     }
 }
 
-void expect_not_shared(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &entities)
+void expect_not_shared(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &entities, int line)
 {
     for(stk::mesh::Entity entity : entities) {
-        EXPECT_TRUE(bulk.is_valid(entity));
-        EXPECT_FALSE(bulk.bucket(entity).shared());
+        EXPECT_TRUE(bulk.is_valid(entity)) << "from line " << line;
+        EXPECT_FALSE(bulk.bucket(entity).shared()) << "from line " << line;
+        std::vector<int> procs;
+        bulk.comm_shared_procs(bulk.entity_key(entity), procs);
+        EXPECT_TRUE(procs.empty()) << "from line " << line;
     }
 }
 
-void expect_shared(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &entities)
+void expect_shared(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &entities, int line)
 {
     for(stk::mesh::Entity entity : entities) {
-        EXPECT_TRUE(bulk.is_valid(entity));
-        EXPECT_TRUE(bulk.bucket(entity).shared());
+        EXPECT_TRUE(bulk.is_valid(entity)) << "from line " << line;
+        EXPECT_TRUE(bulk.bucket(entity).shared()) << "from line " << line;
+        std::vector<int> procs;
+        bulk.comm_shared_procs(bulk.entity_key(entity), procs);
+        EXPECT_TRUE(!procs.empty()) << "from line " << line;
     }
 }
 
@@ -70,28 +76,65 @@ protected:
     {
         initialize_my_mesh(auraOption);
 
-        stk::mesh::EntityVector orphanedNodes{
-                    get_bulk().get_entity(stk::topology::NODE_RANK,  9),
-                    get_bulk().get_entity(stk::topology::NODE_RANK, 10),
-                    get_bulk().get_entity(stk::topology::NODE_RANK, 11),
-                    get_bulk().get_entity(stk::topology::NODE_RANK, 12)
-        };
+        stk::mesh::Selector ownedNotShared = get_meta().locally_owned_part() & !get_meta().globally_shared_part();
+        stk::mesh::EntityVector orphanedNodes;
+        if (get_bulk().parallel_size() == 2 && get_bulk().parallel_rank() == procWithDelete)
+            stk::mesh::get_selected_entities(ownedNotShared, get_bulk().buckets(stk::topology::NODE_RANK), orphanedNodes);
 
-        stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2)};
+        stk::mesh::EntityVector sharedNodes;
+        stk::mesh::get_selected_entities(get_meta().globally_shared_part(), get_bulk().buckets(stk::topology::NODE_RANK), sharedNodes);
 
-        expect_valid(get_bulk(), orphanedNodes);
-        expect_valid(get_bulk(), elementToDestroy);
+        if (get_bulk().parallel_size() ==2)
+            expect_shared(get_bulk(), sharedNodes, __LINE__);
 
+        stk::mesh::EntityVector elementToDestroy;
+        if (get_bulk().parallel_size() == 2 && get_bulk().parallel_rank() == procWithDelete)
+            stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elementToDestroy);
+
+        if (get_bulk().parallel_size() == 2 && get_bulk().parallel_rank() == procWithDelete)
+        {
+            expect_valid(get_bulk(), orphanedNodes, __LINE__);
+            expect_valid(get_bulk(), elementToDestroy, __LINE__);
+        }
+        
         stk::mesh::destroy_elements(get_bulk(), elementToDestroy);
 
-        expect_invalid(get_bulk(), orphanedNodes);
-        expect_invalid(get_bulk(), elementToDestroy);
+        if (get_bulk().parallel_size() == 2 && get_bulk().parallel_rank() == procWithDelete)
+        {
+            expect_invalid(get_bulk(), orphanedNodes, __LINE__);
+            expect_invalid(get_bulk(), elementToDestroy, __LINE__);
+            expect_invalid(get_bulk(), sharedNodes, __LINE__);
+        }
+        if (get_bulk().parallel_size() == 2 && get_bulk().parallel_rank() != procWithDelete)
+            expect_not_shared(get_bulk(), sharedNodes, __LINE__);
     }
+    int procWithDelete = -1;
 };
 
 TEST_F(HexMesh, DeleteOneElement)
 {
+    procWithDelete = 0;
     run_test_on_num_procs(1, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+TEST_F(HexMesh, DeleteOnProcZeroWithSharedNodes_withAura)
+{
+    procWithDelete = 0;
+    run_test_on_num_procs(2, stk::mesh::BulkData::AUTO_AURA);
+}
+TEST_F(HexMesh, DeleteOnProcZeroWithSharedNodes_NoAura)
+{
+    procWithDelete = 0;
+    run_test_on_num_procs(2, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+TEST_F(HexMesh, DeleteOnProcOneWithSharedNodes_withAura)
+{
+    procWithDelete = 1;
+    run_test_on_num_procs(2, stk::mesh::BulkData::AUTO_AURA);
+}
+TEST_F(HexMesh, DeleteOnProcOneWithSharedNodes_NoAura)
+{
+    procWithDelete = 1;
+    run_test_on_num_procs(2, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 class TetMesh : public stk::unit_test_util::MeshFixture
@@ -137,13 +180,13 @@ TEST_F(TetMesh, DeleteOneElement)
         for(stk::mesh::Entity face : facesOfDestroyedElement)
             EXPECT_TRUE(get_bulk().is_valid(face));
 
-        expect_valid(get_bulk(), orphanedNodes);
-        expect_valid(get_bulk(), elementToDestroy);
+        expect_valid(get_bulk(), orphanedNodes, __LINE__);
+        expect_valid(get_bulk(), elementToDestroy, __LINE__);
 
         stk::mesh::destroy_elements(get_bulk(), elementToDestroy);
 
-        expect_invalid(get_bulk(), orphanedNodes);
-        expect_invalid(get_bulk(), elementToDestroy);
+        expect_invalid(get_bulk(), orphanedNodes, __LINE__);
+        expect_invalid(get_bulk(), elementToDestroy, __LINE__);
 
         unsigned numValid = 0;
         for(stk::mesh::Entity face : facesOfDestroyedElement)
@@ -176,8 +219,8 @@ TEST_F(TetMesh, DeleteElementOnProcBoundaryWithOwnedFace)
             for(stk::mesh::Entity face : facesOfDestroyedElement)
                 EXPECT_TRUE(get_bulk().is_valid(face));
 
-            expect_valid(get_bulk(), orphanedNodes);
-            expect_valid(get_bulk(), elementToDestroy);
+            expect_valid(get_bulk(), orphanedNodes, __LINE__);
+            expect_valid(get_bulk(), elementToDestroy, __LINE__);
         }
         else if(get_parallel_rank() == 1)
         {
@@ -186,8 +229,8 @@ TEST_F(TetMesh, DeleteElementOnProcBoundaryWithOwnedFace)
         }
         stk::mesh::destroy_elements(get_bulk(), elementToDestroy);
 
-        expect_invalid(get_bulk(), orphanedNodes);
-        expect_invalid(get_bulk(), elementToDestroy);
+        expect_invalid(get_bulk(), orphanedNodes, __LINE__);
+        expect_invalid(get_bulk(), elementToDestroy, __LINE__);
 
         if(get_parallel_rank() == 0)
         {
@@ -197,7 +240,7 @@ TEST_F(TetMesh, DeleteElementOnProcBoundaryWithOwnedFace)
         else if(get_parallel_rank() == 1)
         {
             stk::mesh::EntityVector faces = get_faces_for_entity(get_bulk(), get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2));
-            expect_not_shared(get_bulk(), faces);
+            expect_not_shared(get_bulk(), faces, __LINE__);
         }
     }
 }
@@ -229,11 +272,11 @@ TEST_F(TetMesh, DeleteGhostedElement)
         get_bulk().modification_end();
 
         stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 1)};
-        expect_valid(get_bulk(), elementToDestroy);
+        expect_valid(get_bulk(), elementToDestroy, __LINE__);
 
         if(get_parallel_rank() == 0)
         {
-            expect_valid(get_bulk(), orphanedNodes);
+            expect_valid(get_bulk(), orphanedNodes, __LINE__);
         }
         else if(get_parallel_rank() == 1)
         {
@@ -242,16 +285,16 @@ TEST_F(TetMesh, DeleteGhostedElement)
         }
         stk::mesh::destroy_elements(get_bulk(), elementToDestroy);
 
-        expect_invalid(get_bulk(), orphanedNodes);
-        expect_invalid(get_bulk(), elementToDestroy);
+        expect_invalid(get_bulk(), orphanedNodes, __LINE__);
+        expect_invalid(get_bulk(), elementToDestroy, __LINE__);
 
         if(get_parallel_rank() == 0)
         {
-            expect_invalid(get_bulk(), sharedNodes);
+            expect_invalid(get_bulk(), sharedNodes, __LINE__);
         }
         else if(get_parallel_rank() == 1)
         {
-            expect_not_shared(get_bulk(), sharedNodes);
+            expect_not_shared(get_bulk(), sharedNodes, __LINE__);
         }
     }
 }
@@ -284,13 +327,13 @@ protected:
 
         stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2)};
 
-        expect_valid(get_bulk(), orphanedNodes);
-        expect_valid(get_bulk(), elementToDestroy);
+        expect_valid(get_bulk(), orphanedNodes, __LINE__);
+        expect_valid(get_bulk(), elementToDestroy, __LINE__);
 
         stk::mesh::destroy_elements(get_bulk(), elementToDestroy);
 
-        expect_invalid(get_bulk(), orphanedNodes);
-        expect_invalid(get_bulk(), elementToDestroy);
+        expect_invalid(get_bulk(), orphanedNodes, __LINE__);
+        expect_invalid(get_bulk(), elementToDestroy, __LINE__);
     }
 };
 
@@ -333,26 +376,26 @@ protected:
 
         stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2)};
 
-        expect_shared(get_bulk(), sharedNodes);
+        expect_shared(get_bulk(), sharedNodes, __LINE__);
 
         if(get_parallel_rank() == 1)
         {
-            expect_valid(get_bulk(), orphanedNodes);
-            expect_valid(get_bulk(), elementToDestroy);
+            expect_valid(get_bulk(), orphanedNodes, __LINE__);
+            expect_valid(get_bulk(), elementToDestroy, __LINE__);
         }
 
         stk::mesh::destroy_elements(get_bulk(), elementToDestroy);
 
-        expect_invalid(get_bulk(), orphanedNodes);
-        expect_invalid(get_bulk(), elementToDestroy);
+        expect_invalid(get_bulk(), orphanedNodes, __LINE__);
+        expect_invalid(get_bulk(), elementToDestroy, __LINE__);
 
         if(get_parallel_rank() == 1)
         {
-            expect_invalid(get_bulk(), sharedNodes);
+            expect_invalid(get_bulk(), sharedNodes, __LINE__);
         }
         else if(get_parallel_rank() == 0)
         {
-            expect_not_shared(get_bulk(), sharedNodes);
+            expect_not_shared(get_bulk(), sharedNodes, __LINE__);
         }
     }
 };
