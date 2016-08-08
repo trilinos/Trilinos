@@ -386,30 +386,28 @@ namespace Iopx {
     int         app_opt_val = ex_opts(EX_VERBOSE);
     std::string filename    = get_filename();
 
-#if defined(OMPI_MAJOR_VERSION)
-#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
     // See bug description in thread at
     // https://www.open-mpi.org/community/lists/users/2015/01/26167.php and
     // https://prod.sandia.gov/sierra-trac/ticket/14679
     // Kluge is to set cwd to pathname, open file, then set cwd back to original.
+    //
+    // Since several different mpi implementations are based on the
+    // mpich code which introduced this bug, it has been difficult to
+    // create an ifdef'd version of the fix which is only applied to the
+    // buggy mpiio code.  Therefore, we always do chdir call.  Maybe in several
+    // years, we can remove this code and everything will work...
     Ioss::FileInfo file(filename);
     std::string    path = file.pathname();
     filename            = file.tailname();
 
     char *current_cwd = getcwd(0, 0);
     chdir(path.c_str());
-#endif
-#endif
 
     exodusFilePtr = ex_open_par(filename.c_str(), EX_READ | par_mode | mode, &cpu_word_size,
                                 &io_word_size, &version, util().communicator(), info);
 
-#if defined(OMPI_MAJOR_VERSION)
-#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
     chdir(current_cwd);
     std::free(current_cwd);
-#endif
-#endif
 
     bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
@@ -493,16 +491,12 @@ namespace Iopx {
     int         app_opt_val = ex_opts(EX_VERBOSE);
     std::string filename    = get_filename();
 
-#if defined(OMPI_MAJOR_VERSION)
-#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
     Ioss::FileInfo file(filename);
     std::string    path = file.pathname();
     filename            = file.tailname();
 
     char *current_cwd = getcwd(0, 0);
     chdir(path.c_str());
-#endif
-#endif
 
     if (fileExists) {
       exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
@@ -520,12 +514,8 @@ namespace Iopx {
                                     &dbRealWordSize, util().communicator(), info);
     }
 
-#if defined(OMPI_MAJOR_VERSION)
-#if OMPI_MAJOR_VERSION == 1 && OMPI_MINOR_VERSION <= 8
     chdir(current_cwd);
     std::free(current_cwd);
-#endif
-#endif
 
     bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
