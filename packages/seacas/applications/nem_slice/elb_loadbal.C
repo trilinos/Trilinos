@@ -217,9 +217,11 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       graph->adj[cnt]++;
   }
 
-  if ((problem->type == ELEMENTAL) &&
+  if (((problem->type == NODAL) &&
+       (lb->type == INERTIAL)) ||
+      ((problem->type == ELEMENTAL) &&
       (lb->type == INERTIAL || lb->type == ZPINCH || lb->type == BRICK || lb->type == ZOLTAN_RCB ||
-       lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC)) {
+       lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC))) {
     if (problem->read_coords != ELB_TRUE) {
       Gen_Error(0, "FATAL: internal logic error. Reading coordinates, but read_coords not set");
       return 0;
