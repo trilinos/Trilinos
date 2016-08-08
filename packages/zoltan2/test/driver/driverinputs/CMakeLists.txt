@@ -11,7 +11,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         rcbTest.xml
         multiJaggedTest.xml
         GeomGenWeight.txt
-	chacoGraphMetricsTest.xml
+        chacoGraphMetricsTest.xml
         chacoSimple3dTest.xml
         chacoSimpleTest.xml
         chacoVwgtTest.xml    
@@ -24,7 +24,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         Rectilinear2D.pmgen
         Spherical.pmgen
         Poisson.pmgen
-	pamgenGraphMetricsTest.xml
+        pamgenGraphMetricsTest.xml
         pamgenRectilinearTest2D.xml 
         pamgenRectilinearTest3D.xml 
         pamgenSphericalTest.xml 
