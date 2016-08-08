@@ -121,6 +121,8 @@ namespace MueLu {
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
+    // TODO: TAW need an option to force repartitioning (given a valid "Partition" vector)
+
     // ======================================================================================================
     // Determine whether partitioning is needed
     // ======================================================================================================
@@ -218,6 +220,12 @@ namespace MueLu {
     // ======================================================================================================
     // FIXME Quick way to figure out how many partitions there should be (same algorithm as ML)
     // FIXME Should take into account nnz? Perhaps only when user is using min #nnz per row threshold.
+
+    // The number of partitions is calculated by the RepartitionFactory and stored in "number of partitions" variable on
+    // the current level. If this variable is already set (e.g., by another instance of RepartitionFactory) then this number
+    // is used. The "number of partitions" variable serves as basic communication between the RepartitionFactory (which
+    // requests a certain number of partitions) and the *Interface classes which call the underlying partitioning algorithms
+    // and produce the "Partition" array with the requested number of partitions.
     GO numPartitions;
     if (currentLevel.IsAvailable("number of partitions")) {
       numPartitions = currentLevel.Get<GO>("number of partitions");
