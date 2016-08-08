@@ -194,6 +194,7 @@ namespace {
       graph->nadj = 0;
       for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
         graph->start[ncnt] = graph->nadj;
+	assert(graph->nadj == graph->adj.size());
         for (size_t ecnt = 0; ecnt < graph->sur_elem[ncnt].size(); ecnt++) {
           size_t elem   = graph->sur_elem[ncnt][ecnt];
           int    nnodes = get_elem_info(NNODES, mesh->elem_type[elem]);
@@ -204,6 +205,7 @@ namespace {
                 in_list(entry, graph->adj.size() - graph->start[ncnt],
                         &graph->adj[graph->start[ncnt]]) < 0) {
               graph->adj.push_back(entry);
+	      graph->nadj++;
             }
           }
         } /* End "for(ecnt=0; ecnt < graph->nsur_elem[ncnt]; ecnt++)" */
@@ -259,6 +261,7 @@ namespace {
 
         if (etype != SPHERE || (etype == SPHERE && problem->no_sph == 1)) {
           graph->start[cnt] = graph->nadj;
+	  assert(graph->nadj == graph->adj.size());
 
           /*
            * now have to decide how to determine adjacency
