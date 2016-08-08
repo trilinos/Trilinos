@@ -121,7 +121,7 @@ namespace Intrepid2 {
         const shards::CellTopology line( shards::getCellTopologyData< shards::Line<2> >() );      
         const ordinal_type order[2] = { 4, 3 }, offset[2] = { 0, 1 }, val[2] = { 5, 2}; 
         for (auto i=0;i<2;++i) {
-          const auto lsize = pts::getLatticeSize<ValueType,DeviceSpaceType>( line, order[i], offset[i] ); 
+          const auto lsize = pts::getLatticeSize( line, order[i], offset[i] ); 
           if (lsize != val[i]) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -146,8 +146,8 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
       try {
         ordinal_type nthrow = 0, ncatch = 0;
-        INTREPID2_TEST_ERROR_EXPECTED((pts::getLatticeSize<ValueType,DeviceSpaceType>(shards::getCellTopologyData<shards::Quadrilateral<4> >(), 3, 0)));
-        INTREPID2_TEST_ERROR_EXPECTED((pts::getLatticeSize<ValueType,DeviceSpaceType>(shards::getCellTopologyData<shards::Hexahedron<8> >(), 3, 0 )));
+        INTREPID2_TEST_ERROR_EXPECTED((pts::getLatticeSize(shards::getCellTopologyData<shards::Quadrilateral<4> >(), 3, 0)));
+        INTREPID2_TEST_ERROR_EXPECTED((pts::getLatticeSize(shards::getCellTopologyData<shards::Hexahedron<8> >(), 3, 0 )));
 
         if (nthrow != ncatch) {
           errorFlag++;
