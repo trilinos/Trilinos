@@ -466,7 +466,7 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
     if workingDir:
       print("  Running in working directory: " + workingDir + " ...\n")
     if extraEnv:
-      print("  Appending environment:" + extraEnv + "\n")
+      print("  Appending environment:" + sorted_dict_str(extraEnv) + "\n")
     if outFile:
       print("  Writing console output to file " + outFile + " ...")
   if msg and verbose:
