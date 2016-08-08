@@ -173,9 +173,9 @@ namespace Ioss {
 
   template <typename INT>
   Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm)
-      : m_comm(comm), m_globalElementCount(0), elementCount(0), elementOffset(0),
-        importPreLocalElemIndex(0), m_globalNodeCount(0), nodeCount(0), nodeOffset(0),
-        importPreLocalNodeIndex(0)
+      : m_comm(comm), m_spatialDimension(3), m_globalElementCount(0), elementCount(0),
+        elementOffset(0), importPreLocalElemIndex(0), m_globalNodeCount(0), nodeCount(0),
+        nodeOffset(0), importPreLocalNodeIndex(0)
   {
     MPI_Comm_rank(m_comm, &m_processor);
     MPI_Comm_size(m_comm, &m_processorCount);
@@ -806,10 +806,16 @@ namespace Ioss {
 
     num_local = 1;
 
-    // TODO: Check return value for error.
-    zz.LB_Partition(changes, num_global, num_local, num_import, import_global_ids, import_local_ids,
-                    import_procs, import_to_part, num_export, export_global_ids, export_local_ids,
-                    export_procs, export_to_part);
+    int rc = zz.LB_Partition(changes, num_global, num_local, num_import, import_global_ids,
+                             import_local_ids, import_procs, import_to_part, num_export,
+                             export_global_ids, export_local_ids, export_procs, export_to_part);
+
+    if (rc != ZOLTAN_OK) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Problem during call to Zoltan LB_Partition.\n";
+      std::cerr << errmsg.str();
+      exit(EXIT_FAILURE);
+    }
 
 #if DEBUG_OUTPUT
     std::cerr << "Processor " << m_processor << ":\t" << elementCount - num_export << " local, "
@@ -828,6 +834,13 @@ namespace Ioss {
     importElementCount.resize(m_processorCount + 1);
 
     if (num_global == 1) {
+      if (num_export > 0 && export_procs == nullptr) {
+        std::ostringstream errmsg;
+        errmsg << "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n";
+        std::cerr << errmsg.str();
+        exit(EXIT_FAILURE);
+      }
+
       std::vector<std::pair<int, int>> export_map;
       export_map.reserve(num_export);
       for (int i = 0; i < num_export; i++) {
@@ -849,6 +862,12 @@ namespace Ioss {
       }
     }
     else {
+      if (num_export > 0 && export_procs == nullptr) {
+        std::ostringstream errmsg;
+        errmsg << "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n";
+        std::cerr << errmsg.str();
+        exit(EXIT_FAILURE);
+      }
       std::vector<std::pair<int, int64_t>> export_map;
       export_map.reserve(num_export);
       int64_t *export_glob = (int64_t *)export_global_ids;
