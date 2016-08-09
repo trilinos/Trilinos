@@ -58,7 +58,8 @@ namespace Intrepid2 {
   // -----------------------------------------------------------------------------------------  
   // Front interface
   // -----------------------------------------------------------------------------------------
-
+  
+  inline
   ordinal_type
   PointTools::
   getLatticeSize( const shards::CellTopology cellType,
