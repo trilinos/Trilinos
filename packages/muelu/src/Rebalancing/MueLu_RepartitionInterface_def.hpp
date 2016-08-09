@@ -43,13 +43,22 @@ namespace MueLu {
 
     RCP<Matrix>      A                                  = Get< RCP<Matrix> >     (level, "A");
     RCP<Xpetra::Vector<GO, LO, GO, NO> > amalgPartition = Get< RCP<Xpetra::Vector<GO, LO, GO, NO> > >(level, "AmalgamatedPartition");
-    //RCP<AmalgamationInfo> amalgInfo                     = Get< RCP<AmalgamationInfo> >(level, "UnAmalgamationInfo");
 
+    RCP<const Map> rowMap        = A->getRowMap();
+
+    // Short cut: if we only need one partition, then create a dummy partition vector
+    GO numParts = level.Get<GO>("number of partitions");
+    if (numParts == 1) {
+      // Single processor, decomposition is trivial: all zeros
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
+      Set(level, "Partition", decomposition);
+      return;
+    }
+
+    // standard case: use matrix info and amalgamated rebalancing info to create "Partition" vector
     RCP<const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
 
     ArrayRCP<GO> amalgPartitionData = amalgPartition->getDataNonConst(0);
-
-    RCP<const Map> rowMap        = A->getRowMap();
     RCP<const Map> nodeMap       = amalgPartition->getMap();
 
     // extract amalgamation information from matrix A
