@@ -45,6 +45,12 @@ IF(Kokkos_ENABLE_Serial)
     SOURCES Tacho_ExampleDenseGemmByBlocks_Serial.cpp
     COMM serial mpi
   )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseHerkByBlocks_Serial
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseHerkByBlocks_Serial.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_OpenMP)
@@ -61,6 +67,12 @@ IF(Kokkos_ENABLE_OpenMP)
     Tacho_ExampleDenseGemmByBlocks_OpenMP
     NOEXEPREFIX
     SOURCES Tacho_ExampleDenseGemmByBlocks_OpenMP.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseHerkByBlocks_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseHerkByBlocks_OpenMP.cpp
     COMM serial mpi
   )
 ENDIF()

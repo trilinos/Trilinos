@@ -20,7 +20,7 @@ namespace Tacho {
   Herk<Uplo::Upper,Trans::ConjTranspose,
        AlgoHerk::SparseSparseUnblocked,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
            const ScalarType beta,

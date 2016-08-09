@@ -25,7 +25,7 @@ namespace Tacho {
              typename ExecViewTypeC>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       const ScalarType alpha,
                       ExecViewTypeA &A,
                       const ScalarType beta,
@@ -72,14 +72,7 @@ namespace Tacho {
       const char* Label() const { return "Herk"; }
 
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-        r_val = Herk::invoke(_policy, _policy.member_single(),
-                             _alpha, _A, _beta, _C);
-        _C.setFuture(typename ExecViewTypeC::future_type());
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
         const int ierr = Herk::invoke(_policy, member,
                                       _alpha, _A, _beta, _C);
         

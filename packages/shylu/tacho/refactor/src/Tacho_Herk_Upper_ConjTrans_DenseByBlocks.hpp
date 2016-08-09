@@ -20,7 +20,7 @@ namespace Tacho {
              typename DenseTaskViewTypeC>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       const ScalarType alpha,
                       DenseTaskViewTypeA &A,
                       const ScalarType beta,
@@ -28,7 +28,6 @@ namespace Tacho {
 #ifdef TACHO_EXECUTE_TASKS_SERIAL
 #else      
       typedef typename DenseTaskViewTypeA::value_type::future_type future_type;
-      TaskFactory factory;
 #endif
 
       if (member.team_rank() == 0) {
@@ -46,21 +45,19 @@ namespace Tacho {
                   CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Herk)>
                   ::invoke(policy, member, alpha, aa, beta_select, cc);
 #else
-                future_type f = factory.create<future_type>
-                  (policy,
-                   Herk<Uplo::Upper,Trans::ConjTranspose,
-                   CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Herk)>
-                   ::createTaskFunctor(policy, alpha, aa, beta_select, cc), 2);
-                
-                // dependence
-                factory.depend(policy, f, aa.Future());
-                factory.depend(policy, f, cc.Future());
+                const auto task_type     = Kokkos::TaskSingle;
+                const auto task_priority = Kokkos::TaskHighPriority;
 
-                // place task signature on y
+                const future_type dep[] = { aa.Future(), cc.Future() };
+                const future_type f =
+                  policy.task_spawn(Herk<Uplo::Upper,Trans::ConjTranspose,
+                                    CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Herk)>
+                                    ::createTaskFunctor(policy, alpha, aa, beta_select, cc), 
+                                    policy.when_all(2,dep),
+                                    task_type, task_priority);
+                TACHO_TEST_FOR_ABORT(f.is_null(),
+                                     ">> Tacho::DenseHerkByBlocks(Upper,ConjTrans) returns a null future (out of memory)");
                 cc.setFuture(f);
-
-                // spawn a task
-                factory.spawn(policy, f);
 #endif
               } else {
                 auto &bb = A.Value(p, k2);
@@ -69,22 +66,19 @@ namespace Tacho {
                   CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Gemm)>
                   ::invoke(policy, member, alpha, aa, bb, beta_select, cc);
 #else
-                future_type f = factory.create<future_type>
-                  (policy,
-                   Gemm<Trans::ConjTranspose,Trans::NoTranspose,
-                   CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Gemm)>
-                   ::createTaskFunctor(policy, alpha, aa, bb, beta_select, cc), 3);
-                
-                // dependence
-                factory.depend(policy, f, aa.Future());
-                factory.depend(policy, f, bb.Future());
-                factory.depend(policy, f, cc.Future());
+                const auto task_type     = Kokkos::TaskSingle;
+                const auto task_priority = Kokkos::TaskRegularPriority;
 
-                // place task signature on y
+                const future_type dep[] = { aa.Future(), bb.Future(), cc.Future() };
+                const future_type f =
+                  policy.task_spawn(Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                                    CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Gemm)>
+                                    ::createTaskFunctor(policy, alpha, aa, bb, beta_select, cc), 
+                                    policy.when_all(3,dep),
+                                    task_type, task_priority);
+                TACHO_TEST_FOR_ABORT(f.is_null(),
+                                     ">> Tacho::DenseHerkByBlocks(Upper,ConjTrans) returns a null future (out of memory)");
                 cc.setFuture(f);
-                
-                // spawn a task
-                factory.spawn(policy, f);
 #endif
               }
             }
@@ -131,13 +125,7 @@ namespace Tacho {
       const char* Label() const { return "Herk"; }
 
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-        r_val = Herk::invoke(_policy, _policy.member_single(),
-                             _alpha, _A, _beta, _C);
-        _C.setFuture(typename ExecViewTypeC::future_type());
-      }
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
         const int ierr = Herk::invoke(_policy, member,
                                       _alpha, _A, _beta, _C);
 

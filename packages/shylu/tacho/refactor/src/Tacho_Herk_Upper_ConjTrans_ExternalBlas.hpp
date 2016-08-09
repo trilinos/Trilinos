@@ -27,7 +27,7 @@ namespace Tacho {
   Herk<Uplo::Upper,Trans::ConjTranspose,
        AlgoHerk::ExternalBlas,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            const ScalarType alpha,
            DenseExecViewTypeA &A,
            const ScalarType beta,

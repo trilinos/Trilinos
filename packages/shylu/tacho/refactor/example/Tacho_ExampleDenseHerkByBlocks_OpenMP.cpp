@@ -1,8 +1,5 @@
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_Threads.hpp>
-#include <Threads/Kokkos_Threads_TaskPolicy.hpp>
-
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "ShyLUTacho_config.h"
 
@@ -10,7 +7,7 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Kokkos::Threads exec_space;
+typedef Kokkos::OpenMP exec_space;
 
 #include "Tacho_ExampleDenseHerkByBlocks.hpp"
 
