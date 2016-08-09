@@ -24,7 +24,7 @@ namespace Tacho {
   Gemm<Trans::NoTranspose,Trans::NoTranspose,
        AlgoGemm::SparseDenseSuperNodes,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
            DenseExecViewTypeB &B,

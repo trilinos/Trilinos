@@ -59,8 +59,8 @@ namespace Tacho {
                 CtrlDetail(ControlType,AlgoGemm::DenseByBlocks,ArgVariant,Gemm)>
                 ::invoke(policy, member, alpha, aa, bb, beta_select, cc);
 #else
-              const auto task_type = Kokkos::TaskSingle;
-              const auto task_priority = ( k1 == k2 ? Kokkos::TaskHighPriority : Kokkos::TaskRegularPriority );
+              const auto task_type     = Kokkos::TaskSingle;
+              const auto task_priority = Kokkos::TaskRegularPriority;
 
               const future_type dep[] = { aa.Future(), bb.Future(), cc.Future() };
               const future_type f = 
@@ -73,7 +73,6 @@ namespace Tacho {
                                    ">> Tacho::DenseGemmByBlocks(NoTrans,NoTrans) returns a null future (out of memory)");
               cc.setFuture(f);
 #endif
-
             }
           }
         }

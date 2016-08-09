@@ -29,7 +29,7 @@ namespace Tacho {
              typename ExecViewTypeC>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       const ScalarType alpha,
                       ExecViewTypeA &A,
                       ExecViewTypeB &B,
