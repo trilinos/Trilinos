@@ -125,6 +125,8 @@ C   --   * - return statement if command error; message is printed
            ISPEC = DEFAULT
          ELSE IF (MATSTR (WORD, 'RAINBOW', 3)) THEN
            ISPEC = RAINBW
+         ELSE IF (MATSTR (WORD, 'VIRIDIS', 3)) THEN
+           ISPEC = VIRDIS
          ELSE IF (MATSTR (WORD, 'GRAY', 2) .or.
      *            MATSTR (WORD, 'GREY', 2)) THEN
            ISPEC = GRAY

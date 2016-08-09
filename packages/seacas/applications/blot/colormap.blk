@@ -43,7 +43,8 @@ C color maps
       PARAMETER (ZEBRA    = 6)
       PARAMETER (COOL     = 7)
       PARAMETER (METAL    = 8)
-      
+      PARAMETER (VIRDIS   = 9)
+
       PARAMETER (IRED     = 1)
       PARAMETER (IGREEN   = 2)
       PARAMETER (IBLUE    = 3)

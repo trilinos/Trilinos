@@ -1,7 +1,41 @@
-      subroutine rainbow(h, s, v, r, g, b) 
-      real h, s, v
-      real r, g, b
-      
+C  The author of this software is Eric Grosse.  
+C  Permission to use, copy, modify, and distribute this software for any
+C  purpose without fee is hereby granted, provided that this entire notice
+C  is included in all copies of any software which is or includes a copy
+C  or modification of this software and in all copies of the supporting
+C  documentation for such software.
+
+C  Copyright(C) 2009 Sandia Corporation. Under the terms of Contract
+C  DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+C  certain rights in this software.
+C          
+C  Redistribution and use in source and binary forms, with or without
+C  modification, are permitted provided that the following conditions are
+C  met:
+C  
+C      * Redistributions of source code must retain the above copyright
+C        notice, this list of conditions and the following disclaimer.
+C  
+C      * Redistributions in binary form must reproduce the above
+C        copyright notice, this list of conditions and the following
+C        disclaimer in the documentation and/or other materials provided
+C        with the distribution.
+C      * Neither the name of Sandia Corporation nor the names of its
+C        contributors may be used to endorse or promote products derived
+C        from this software without specific prior written permission.
+C  
+C  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+C  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+C  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+C  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+C  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+C  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+C  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+C  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+C  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+C  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+C  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 C This routine computes colors suitable for use in color level plots.
 C Typically s=v=1 and h varies from 0 (red) to 1 (blue) in
 C equally spaced steps.  (h=.5 gives green; 1<h<1.5 gives magenta.)
@@ -9,46 +43,10 @@ C To convert for frame buffer, use   R = floor(255.999*pow(*r,1/gamma))  etc.
 C To get tables calibrated for other devices or to report complaints,
 C contact ehg@research.att.com.
 
-C  The author of this software is Eric Grosse.  Copyright(C) 2009 Sandia Corporation. Under the terms of Contract
-C  The author of this software is Eric Grosse.  DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C  The author of this software is Eric Grosse.  certain rights in this software.
-C  The author of this software is Eric Grosse.          
-C  The author of this software is Eric Grosse.  Redistribution and use in source and binary forms, with or without
-C  The author of this software is Eric Grosse.  modification, are permitted provided that the following conditions are
-C  The author of this software is Eric Grosse.  met:
-C  The author of this software is Eric Grosse.  
-C  The author of this software is Eric Grosse.      * Redistributions of source code must retain the above copyright
-C  The author of this software is Eric Grosse.        notice, this list of conditions and the following disclaimer.
-C  The author of this software is Eric Grosse.  
-C  The author of this software is Eric Grosse.      * Redistributions in binary form must reproduce the above
-C  The author of this software is Eric Grosse.        copyright notice, this list of conditions and the following
-C  The author of this software is Eric Grosse.        disclaimer in the documentation and/or other materials provided
-C  The author of this software is Eric Grosse.        with the distribution.
-C  The author of this software is Eric Grosse.      * Neither the name of Sandia Corporation nor the names of its
-C  The author of this software is Eric Grosse.        contributors may be used to endorse or promote products derived
-C  The author of this software is Eric Grosse.        from this software without specific prior written permission.
-C  The author of this software is Eric Grosse.  
-C  The author of this software is Eric Grosse.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C  The author of this software is Eric Grosse.  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C  The author of this software is Eric Grosse.  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C  The author of this software is Eric Grosse.  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C  The author of this software is Eric Grosse.  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C  The author of this software is Eric Grosse.  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C  The author of this software is Eric Grosse.  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C  The author of this software is Eric Grosse.  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C  The author of this software is Eric Grosse.  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C  The author of this software is Eric Grosse.  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C  The author of this software is Eric Grosse.  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C  Permission to use, copy, modify, and distribute this software for any
-C  purpose without fee is hereby granted, provided that this entire notice
-C  is included in all copies of any software which is or includes a copy
-C  or modification of this software and in all copies of the supporting
-C  documentation for such software.
-C  THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
-C  WARRANTY.  IN PARTICULAR, NEITHER THE AUTHORS NOR AT&T MAKE ANY
-C  REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
-C  OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
-
+      subroutine rainbow(h, s, v, r, g, b) 
+      real h, s, v
+      real r, g, b
+      
       INTEGER i
       REAL huettab(0:60)
       DATA huettab /0.0000, 0.0062, 0.0130, 0.0202, 0.0280, 

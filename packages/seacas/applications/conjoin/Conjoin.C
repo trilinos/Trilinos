@@ -2398,23 +2398,23 @@ namespace {
 
     std::string var_name     = "";
     int         out_position = -1;
-    int         inp_position = -1;
     for (auto &variable_name : variable_names) {
       if (variable_name.second > 0) {
         if (var_name != variable_name.first) {
           var_name = variable_name.first;
           // Find which exodus variable matches this name
-          inp_position = -1;
           out_position = -1;
           for (size_t j = 0; j < exo_names.size(); j++) {
             if (case_compare(exo_names[j], var_name) == 0) {
-              inp_position = j;
               out_position = vars.index_[j] - 1;
               break;
             }
           }
-          SMART_ASSERT(inp_position >= 0)(inp_position);
-          SMART_ASSERT(out_position >= 0)(out_position);
+          if (out_position < 0) {
+            std::cerr << "ERROR: Variable '" << variable_name.first
+                      << "' does not exist on any block in this database.\n";
+            exit(EXIT_FAILURE);
+          }
 
           // Set all truth table entries for this variable to negative
           // of current value and then iterate over specified blocks and
