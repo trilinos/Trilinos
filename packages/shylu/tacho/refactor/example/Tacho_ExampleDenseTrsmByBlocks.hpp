@@ -36,8 +36,7 @@ namespace Tacho {
                                const ordinal_type k,
                                const ordinal_type mb,
                                const int max_concurrency,
-                               const int max_task_dependence,
-                               const int team_size,
+                               const int memory_pool_grain_size,
                                const int mkl_nthreads,
                                const bool check,
                                const bool verbose) {
@@ -47,8 +46,9 @@ namespace Tacho {
     const bool detail = false;
     std::cout << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, detail);
     std::cout << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, detail);
+    std::cout << std::endl;
 
-    typedef Kokkos::Experimental::TaskPolicy<DeviceSpaceType> PolicyType;
+    typedef Kokkos::TaskPolicy<DeviceSpaceType> PolicyType;
 
     typedef DenseMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> DenseMatrixBaseHostType;
     typedef DenseMatrixView<DenseMatrixBaseHostType> DenseMatrixViewHostType;
@@ -72,10 +72,12 @@ namespace Tacho {
               << " , k = "<< k << " , mb = " << mb << std::endl;
 
     const size_t max_task_size = (3*sizeof(DenseTaskViewDeviceType)+sizeof(PolicyType)+128); 
-    PolicyType policy(max_concurrency,
-                      max_task_size,
-                      max_task_dependence,
-                      team_size);
+
+    PolicyType policy( typename PolicyType::memory_space(),
+                       max_task_size*max_concurrency,
+                       memory_pool_grain_size );
+
+    typename Kokkos::TaskPolicy<Kokkos::Serial>::member_type serial_member;
 
     std::ostringstream os;
     os.precision(3);
@@ -118,7 +120,7 @@ namespace Tacho {
         timer.reset();
         DenseMatrixViewHostType A_host(AA_host), C_host(CB_host);
         Trsm<ArgSide,ArgUplo,ArgTrans,AlgoTrsm::ExternalBlas,Variant::One>::invoke
-          (policy, policy.member_single(),
+          (policy, serial_member,
            Diag::NonUnit, 1.0, A_host, C_host);
         t = timer.seconds();
         os << ":: Serial Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
@@ -141,12 +143,14 @@ namespace Tacho {
 
         DenseHierTaskViewDeviceType TA_device(HA_device), TC_device(HC_device);
         timer.reset();
-        auto future = policy.proc_create_team
+
+        auto future = policy.host_spawn
           (Trsm<ArgSide,ArgUplo,ArgTrans,AlgoTrsm::DenseByBlocks,ArgVariant>
-           ::createTaskFunctor(policy, Diag::NonUnit, 1.0, TA_device, TC_device),
-           0);
-        policy.spawn(future);
-        Kokkos::Experimental::wait(policy);
+           ::createTaskFunctor(policy, Diag::NonUnit, 1.0, TA_device, TC_device));
+        TACHO_TEST_FOR_EXCEPTION(future.is_null(), std::runtime_error,
+                                 ">> host_spawn returns a null future");
+        Kokkos::wait(policy);
+
         t = timer.seconds();       
         os << ":: Parallel Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
       } 

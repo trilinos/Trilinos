@@ -9,14 +9,14 @@ typedef int    size_type;
 
 typedef Kokkos::OpenMP exec_space;
 
-#include "Tacho_ExampleDenseHerkByBlocks.hpp"
+#include "Tacho_ExampleDenseTrsmByBlocks.hpp"
 
 using namespace Tacho;
 
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of dense Herk on Kokkos::Threads execution space.\n");
+  clp.setDocString("This example program measure the performance of dense Trsm on Kokkos::Threads execution space.\n");
 
   int nthreads = 0;
   clp.setOption("nthreads", &nthreads, "Number of threads");
@@ -69,9 +69,9 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
     
-    std::cout << std::endl << "DenseHerkByBlocks:: Upper, ConjTranspose, Variant::One (external)" << std::endl;
-    r_val = exampleDenseHerkByBlocks
-      <Uplo::Upper,Trans::ConjTranspose,Variant::One,exec_space>
+    std::cout << std::cout << "DenseTrsmByBlocks:: Left, Upper, ConjTranspose, Variant::One (external)" << std::endl;
+    r_val = exampleDenseTrsmByBlocks
+      <Side::Left,Uplo::Upper,Trans::ConjTranspose,Variant::One,exec_space>
       (mmin, mmax, minc, k, mb,
        max_concurrency, memory_pool_grain_size, mkl_nthreads,
        check,

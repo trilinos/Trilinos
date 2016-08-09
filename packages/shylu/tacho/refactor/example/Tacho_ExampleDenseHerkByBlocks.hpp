@@ -45,6 +45,7 @@ namespace Tacho {
     const bool detail = false;
     std::cout << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, detail);
     std::cout << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, detail);
+    std::cout << std::endl;
 
     typedef Kokkos::TaskPolicy<DeviceSpaceType> PolicyType;
 

@@ -18,15 +18,6 @@ int main (int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("This example program measure the performance of dense Herk on Kokkos::Threads execution space.\n");
 
-  int nthreads = 0;
-  clp.setOption("nthreads", &nthreads, "Number of threads");
-
-  int numa = 0;
-  clp.setOption("numa", &numa, "Number of numa node");
-
-  int core_per_numa = 0;
-  clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
-
   int max_concurrency = 250000;
   clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
 
@@ -67,9 +58,9 @@ int main (int argc, char *argv[]) {
 
   int r_val = 0;
   {
-    exec_space::initialize(nthreads, numa, core_per_numa);
+    exec_space::initialize();
     
-    std::cout << "DenseHerkByBlocks:: Upper, ConjTranspose, Variant::One (external)" << std::endl;
+    std::cout << std::endl << "DenseHerkByBlocks:: Upper, ConjTranspose, Variant::One (external)" << std::endl;
     r_val = exampleDenseHerkByBlocks
       <Uplo::Upper,Trans::ConjTranspose,Variant::One,exec_space>
       (mmin, mmax, minc, k, mb,

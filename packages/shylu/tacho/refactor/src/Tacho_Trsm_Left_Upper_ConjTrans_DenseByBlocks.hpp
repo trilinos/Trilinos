@@ -20,7 +20,7 @@ namespace Tacho {
              typename DenseTaskViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       const int diagA,
                       const ScalarType alpha,
                       DenseTaskViewTypeA &A,
@@ -29,7 +29,6 @@ namespace Tacho {
 #ifdef TACHO_EXECUTE_TASKS_SERIAL
 #else
       typedef typename DenseTaskViewTypeA::value_type::future_type future_type;
-      TaskFactory factory;
 #endif
       
       if (member.team_rank() == 0) {
@@ -73,21 +72,19 @@ namespace Tacho {
               CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
               ::invoke(policy, member, diagA, alpha_select, aa, bb);
 #else
-            future_type f = factory.create<future_type>
-              (policy,
-               Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-               CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
-               ::createTaskFunctor(policy, diagA, alpha_select, aa, bb), 2);
+            const auto task_type     = Kokkos::TaskSingle;
+            const auto task_priority = Kokkos::TaskHighPriority;
 
-            // trsm dependence
-            factory.depend(policy, f, aa.Future());
-            factory.depend(policy, f, bb.Future());
-
-            // place task signature on b
+            const future_type dep[] = { aa.Future(), bb.Future() };
+            const future_type f = 
+              policy.task_spawn(Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                                CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
+                                ::createTaskFunctor(policy, diagA, alpha_select, aa, bb), 
+                                policy.when_all(2,dep),
+                                task_type, task_priority);
+            TACHO_TEST_FOR_ABORT(f.is_null(),
+                                 ">> Tacho::DenseTrsmByBlocks(Left,Upper,ConjTrans) returns a null future (out of memory)");
             bb.setFuture(f);
-
-            // spawn a task
-            factory.spawn(policy, f);
 #endif
           }
 
@@ -151,13 +148,7 @@ namespace Tacho {
       const char* Label() const { return "Trsm"; }
 
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-        r_val = Trsm::invoke(_policy, _policy.member_single(),
-                             _diagA, _alpha, _A, _B);
-        _B.setFuture(typename ExecViewTypeB::future_type());
-      }
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
         const int ierr = Trsm::invoke(_policy, member,
                                       _diagA, _alpha, _A, _B);
 
