@@ -647,7 +647,7 @@ ExtractSubmatrices ()
         //container type was not specified through templates, so get from param list
         containerName = List_.get<std::string>("relaxation: container");
       }
-      Containers_[i] = Teuchos::rcp_static_cast<ContainerType, Container<MatrixType> >(Details::createContainer(containerName, A_, localRows()));
+      Containers_[i] = Teuchos::rcp_static_cast<ContainerType, Container<MatrixType> >(Details::createContainer<row_matrix_type> (containerName, A_, localRows()));
       Containers_[i]->setParameters (List_);
       Containers_[i]->initialize ();
       Containers_[i]->compute ();

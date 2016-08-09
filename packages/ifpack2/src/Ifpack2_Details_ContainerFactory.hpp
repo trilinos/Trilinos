@@ -49,19 +49,16 @@
 #include "Ifpack2_SparseContainer.hpp"
 #include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
-#include "Tpetra_RowMatrix.hpp"
-#include "Teuchos_RCP.hpp"
+#ifdef HAVE_IFPACK2_AMESOS2
+#  include "Ifpack2_Details_Amesos2Wrapper.hpp"
+#endif
+#include "Tpetra_RowMatrix_decl.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
 #include <string>
 
-#ifdef HAVE_IFPACK2_AMESOS2
-#include "Ifpack2_Details_Amesos2Wrapper.hpp"
-#endif
 
-namespace Ifpack2
-{
-namespace Details 
-{
+namespace Ifpack2 {
+namespace Details {
 
 //Based on the ETIs at the bottom of BlockRelaxation_def, these are all the supported container types:
 //pass one of these as the container name
@@ -72,28 +69,50 @@ namespace Details
 //TriDi
 //Banded
 
-
 template <typename MatrixType>
-Teuchos::RCP<Container<MatrixType> > createContainer(const std::string& containerName, const Teuchos::RCP<const MatrixType>& A, const Teuchos::ArrayView<const typename MatrixType::local_ordinal_type>& localRows)
+Teuchos::RCP< ::Ifpack2::Container< ::Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                        typename MatrixType::local_ordinal_type,
+                                                        typename MatrixType::global_ordinal_type,
+                                                        typename MatrixType::node_type> > >
+createContainer (const std::string& containerName,
+                 const Teuchos::RCP<const MatrixType>& A,
+                 const Teuchos::ArrayView<const typename MatrixType::local_ordinal_type>& localRows)
 {
   using Teuchos::rcp;
-  if(containerName == "TriDi")
-    return rcp(new TriDiContainer<MatrixType, typename MatrixType::scalar_type>(A, localRows));
-  else if(containerName == "Dense")
-    return rcp(new DenseContainer<MatrixType, typename MatrixType::scalar_type>(A, localRows));
-  else if(containerName == "SparseILUT")
-    return rcp(new SparseContainer<MatrixType, ILUT<MatrixType> >(A, localRows));
+  typedef Tpetra::RowMatrix<typename MatrixType::scalar_type,
+    typename MatrixType::local_ordinal_type,
+    typename MatrixType::global_ordinal_type,
+    typename MatrixType::node_type> row_matrix_type;
+  // Use std::decay to remove const-ness and references.
+  static_assert (std::is_same<typename std::decay<MatrixType>::type, row_matrix_type>::value,
+                 "MatrixType must be a Tpetra::RowMatrix specialization.");
+
+  if (containerName == "TriDi") {
+    return rcp (new TriDiContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows));
+  }
+  else if (containerName == "Dense") {
+    return rcp (new DenseContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows));
+  }
+  else if (containerName == "SparseILUT") {
+    return rcp (new SparseContainer<MatrixType, ILUT<MatrixType> > (A, localRows));
+  }
 #ifdef HAVE_IFPACK2_AMESOS2
-  else if(containerName == "SparseAmesos")
-    return rcp(new SparseContainer<MatrixType,
-      Amesos2Wrapper<MatrixType> >(A, localRows));
+  else if (containerName == "SparseAmesos2" || containerName == "SparseAmesos") {
+    return rcp (new SparseContainer<MatrixType, Amesos2Wrapper<MatrixType> > (A, localRows));
+  }
 #endif
-  else if(containerName == "Banded")
-    return rcp(new BandedContainer<MatrixType, typename MatrixType::scalar_type>(A, localRows));
-  throw std::invalid_argument(containerName + " is invalid container type (valid: TriDi, Dense, SparseILUT, SparseAmesos, Banded)");
+  else if (containerName == "Banded") {
+    return rcp (new BandedContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows));
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::invalid_argument, "Ifpack2::Details::createContainer: Input "
+     "argument containerName=\"" << containerName << "\" is invalid.  Valid "
+     "values include: \"TriDi\", \"Dense\", \"SparseILUT\", \"SparseAmesos2\", "
+     "and \"Banded\".");
 }
 
-}
-}
+} // namespace Details
+} // namespace Ifpack2
 
-#endif
+#endif // IFPACK2_DETAILS_CONTAINERFACTORY_H
