@@ -68,31 +68,47 @@ public:
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
     Teuchos::RCP<const Tpetra::MultiVector<> > zp =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    return assembler_->assembleQoIValue(*up,*zp,*qoi_);
+    return assembler_->assembleQoIValue(qoi_,up,zp);
   }
 
   void gradient_1(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
                   const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<Tpetra::MultiVector<> > gp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    assembler_->assembleQoIGradient1(*up,*zp,*qoi_);
-    gp->scale(static_cast<Real>(1),*(assembler_->getQoIGradient1()));
+    try {
+      Teuchos::RCP<Tpetra::MultiVector<> > gp =
+        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      assembler_->assembleQoIGradient1(qoi_,up,zp);
+      gp->scale(static_cast<Real>(1),*(assembler_->getQoIGradient1()));
+    }
+    catch ( Exception::Zero & ez ) {
+      g.zero();
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      ROL::ParametrizedObjective_SimOpt<Real>::gradient_1(g,u,z,tol);
+    }
   }
 
   void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
                   const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<Tpetra::MultiVector<> > gp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    assembler_->assembleQoIGradient2(*up,*zp,*qoi_);
-    gp->scale(static_cast<Real>(1),*(assembler_->getQoIGradient2()));
+    try {
+      Teuchos::RCP<Tpetra::MultiVector<> > gp =
+        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      assembler_->assembleQoIGradient2(qoi_,up,zp);
+      gp->scale(static_cast<Real>(1),*(assembler_->getQoIGradient2()));
+    }
+    catch ( Exception::Zero & ez ) {
+      g.zero();
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      ROL::ParametrizedObjective_SimOpt<Real>::gradient_2(g,u,z,tol);
+    }
   }
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
@@ -106,14 +122,14 @@ public:
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec11(*vp,*up,*zp,*qoi_);
+      assembler_->assembleQoIHessVec11(qoi_,vp,up,zp);
       hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec11()));
     }
     catch (Exception::Zero &ez) {
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
-      ROL::Objective_SimOpt<Real>::hessVec_11(hv,v,u,z,tol);
+      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_11(hv,v,u,z,tol);
       //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_11): Hessian not implemented.");
     }
   }
@@ -129,14 +145,14 @@ public:
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec12(*vp,*up,*zp,*qoi_);
+      assembler_->assembleQoIHessVec12(qoi_,vp,up,zp);
       hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec12()));
     }
     catch (Exception::Zero &ez) {
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
-      ROL::Objective_SimOpt<Real>::hessVec_12(hv,v,u,z,tol);
+      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_12(hv,v,u,z,tol);
       //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_12): Hessian not implemented.");
     }
   }
@@ -152,14 +168,14 @@ public:
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec21(*vp,*up,*zp,*qoi_);
+      assembler_->assembleQoIHessVec21(qoi_,vp,up,zp);
       hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec21()));
     }
     catch (Exception::Zero &ez) {
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
-      ROL::Objective_SimOpt<Real>::hessVec_21(hv,v,u,z,tol);
+      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_21(hv,v,u,z,tol);
       //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_21): Hessian not implemented.");
     }
   }
@@ -175,14 +191,14 @@ public:
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec22(*vp,*up,*zp,*qoi_);
+      assembler_->assembleQoIHessVec22(qoi_,vp,up,zp);
       hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec22()));
     }
     catch (Exception::Zero &ez) {
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
-      ROL::Objective_SimOpt<Real>::hessVec_22(hv,v,u,z,tol);
+      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_22(hv,v,u,z,tol);
       //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_22): Hessian not implemented.");
     }
   }

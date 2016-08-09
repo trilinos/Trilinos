@@ -74,7 +74,7 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
                         const Teuchos::RCP<Assembler<Real> > &assembler)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), assembler_(assembler),
         isDualInitialized_(false) {
-      assembler_->assemblePDERieszMap1(*pde);
+      assembler_->assemblePDERieszMap1(pde);
     }
 
     PDE_PrimalSimVector(const Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
@@ -147,7 +147,7 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
                       const Teuchos::RCP<Assembler<Real> > &assembler)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), assembler_(assembler),
         isDualInitialized_(false) {
-      assembler_->assemblePDERieszMap1(*pde);
+      assembler_->assemblePDERieszMap1(pde);
     }
 
     PDE_DualSimVector(const Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
@@ -232,7 +232,7 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
                         const Teuchos::RCP<Assembler<Real> > &assembler)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), assembler_(assembler),
         isDualInitialized_(false) {
-      assembler_->assemblePDERieszMap2(*pde);
+      assembler_->assemblePDERieszMap2(pde);
     }
 
     PDE_PrimalOptVector(const Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
@@ -305,7 +305,7 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
                       const Teuchos::RCP<Assembler<Real> > &assembler)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), assembler_(assembler),
         isDualInitialized_(false) {
-      assembler_->assemblePDERieszMap2(*pde);
+      assembler_->assemblePDERieszMap2(pde);
     }
 
     PDE_DualOptVector(const Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
@@ -361,5 +361,210 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
     }
 
 }; // class DualScaledTpetraMultiVector
+
+template<class Real> 
+class PDE_OptVector : public ROL::Vector<Real> {
+private:
+  Teuchos::RCP<ROL::TpetraMultiVector<Real> > vec1_;
+  Teuchos::RCP<ROL::StdVector<Real> > vec2_;
+  mutable Teuchos::RCP<ROL::Vector<Real> > dual_vec1_;
+  mutable Teuchos::RCP<ROL::Vector<Real> > dual_vec2_;
+  mutable Teuchos::RCP<PDE_OptVector<Real> > dual_vec_;
+
+public:
+  PDE_OptVector(const Teuchos::RCP<ROL::TpetraMultiVector<Real> > &vec1,
+                const Teuchos::RCP<ROL::StdVector<Real> > &vec2 ) 
+    : vec1_(vec1), vec2_(vec2) {
+    dual_vec1_ = (vec1_->dual()).clone();
+    dual_vec2_ = (vec2_->dual()).clone();
+  }
+
+  PDE_OptVector(const Teuchos::RCP<ROL::TpetraMultiVector<Real> > &vec)
+    : vec1_(vec), vec2_(Teuchos::null), dual_vec2_(Teuchos::null) {
+    dual_vec1_ = (vec1_->dual()).clone();
+  }
+
+  PDE_OptVector(const Teuchos::RCP<ROL::StdVector<Real> > &vec)
+    : vec1_(Teuchos::null), vec2_(vec), dual_vec1_(Teuchos::null) {
+    dual_vec2_ = (vec2_->dual()).clone();
+  }
+
+  void plus( const ROL::Vector<Real> &x ) {
+    const PDE_OptVector<Real> &xs = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x);
+    if ( vec1_ != Teuchos::null ) {
+      vec1_->plus(*(xs.getField()));
+    }
+    if ( vec2_ != Teuchos::null ) {
+      vec2_->plus(*(xs.getParameter()));
+    }
+  }
+
+  void scale( const Real alpha ) {
+    if ( vec1_ != Teuchos::null ) {
+      vec1_->scale(alpha);
+    }
+    if ( vec2_ != Teuchos::null ) {
+      vec2_->scale(alpha);
+    }
+  }
+
+  void axpy( const Real alpha, const ROL::Vector<Real> &x ) {
+    const PDE_OptVector<Real> &xs = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x);
+    if ( vec1_ != Teuchos::null ) {
+      vec1_->axpy(alpha,*(xs.getField()));
+    }
+    if ( vec2_ != Teuchos::null ) {
+      vec2_->axpy(alpha,*(xs.getParameter()));
+    }
+  }
+
+  Real dot( const ROL::Vector<Real> &x ) const {
+    const PDE_OptVector<Real> &xs = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x);
+    Real val(0);
+    if ( vec1_ != Teuchos::null ) {
+      val += vec1_->dot(*(xs.getField()));
+    }
+    if ( vec2_ != Teuchos::null ) {
+      val += vec2_->dot(*(xs.getParameter()));
+    }
+    return val;
+  }
+
+  Real norm() const {
+    Real val(0);
+    if ( vec1_ != Teuchos::null ) {
+      Real norm1 = vec1_->norm();
+      val += norm1*norm1;
+    }
+    if ( vec2_ != Teuchos::null ) {
+      Real norm2 = vec2_->norm();
+      val += norm2*norm2;
+    }
+    return std::sqrt(val);
+  } 
+
+  Teuchos::RCP<ROL::Vector<Real> > clone() const {
+    if ( vec1_ != Teuchos::null && vec2_ != Teuchos::null ) {
+      return Teuchos::rcp( new PDE_OptVector(vec1_->clone(),vec2_->clone()) );
+    }
+    if ( vec1_ != Teuchos::null && vec2_ == Teuchos::null ) {
+      return Teuchos::rcp( new PDE_OptVector(vec1_->clone(),Teuchos::null) );
+    }
+    if ( vec1_ == Teuchos::null && vec2_ != Teuchos::null ) {
+      return Teuchos::rcp( new PDE_OptVector(Teuchos::null,vec2_->clone()) );
+    }
+    return Teuchos::null;
+  }
+
+  const ROL::Vector<Real> & dual(void) const {
+    if ( vec1_ != Teuchos::null ) {
+      dual_vec1_->set(vec1_->dual());
+    }
+    if ( vec2_ != Teuchos::null ) {
+      dual_vec2_->set(vec2_->dual());
+    }
+    dual_vec_ = Teuchos::rcp( new PDE_OptVector<Real>(dual_vec1_,dual_vec2_) ); 
+    return *dual_vec_;
+  }
+
+  Teuchos::RCP<ROL::Vector<Real> > basis( const int i )  const {
+    if ( vec1_ != Teuchos::null && vec2_ != Teuchos::null ) {
+      int n1 = vec1_->dimension();
+      if ( i < n1 ) {
+        Teuchos::RCP<ROL::Vector<Real> > e1 = vec1_->basis(i);
+        Teuchos::RCP<ROL::Vector<Real> > e2 = vec2_->clone(); e2->zero();
+        Teuchos::RCP<ROL::Vector<Real> > e  = Teuchos::rcp(new PDE_OptVector(e1,e2));
+        return e;
+      }
+      else {
+        Teuchos::RCP<ROL::Vector<Real> > e1 = vec1_->clone(); e1->zero();
+        Teuchos::RCP<ROL::Vector<Real> > e2 = vec2_->basis(i-n1);
+        Teuchos::RCP<ROL::Vector<Real> > e  = Teuchos::rcp(new PDE_OptVector<Real>(e1,e2));
+        return e;
+      }
+    }
+    if ( vec1_ != Teuchos::null && vec2_ == Teuchos::null ) {
+      int n1 = vec1_->dimension();
+      if ( i < n1 ) {
+        Teuchos::RCP<ROL::Vector<Real> > e1 = vec1_->basis(i);
+        Teuchos::RCP<ROL::Vector<Real> > e  = Teuchos::rcp(new PDE_OptVector(e1,Teuchos::null));
+        return e;
+      }
+    }
+    if ( vec1_ == Teuchos::null && vec2_ != Teuchos::null ) {
+      int n2 = vec2_->dimension();
+      if ( i < n2 ) {
+        Teuchos::RCP<ROL::Vector<Real> > e2 = vec2_->basis(i);
+        Teuchos::RCP<ROL::Vector<Real> > e  = Teuchos::rcp(new PDE_OptVector(Teuchos::null,e2));
+        return e;
+      }
+    }
+  }
+
+  void applyUnary( const ROL::Elementwise::UnaryFunction<Real> &f ) {
+    if ( vec1_ != Teuchos::null ) {
+      vec1_->applyUnary(f);
+    }
+    if ( vec2_ != Teuchos::null ) {
+      vec2_->applyUnary(f);
+    }
+  }
+
+  void applyBinary( const ROL::Elementwise::BinaryFunction<Real> &f, const ROL::Vector<Real> &x ) {
+    const PDE_OptVector<Real> &xs = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x);
+    if ( vec1_ != Teuchos::null ) {
+      vec1_->applyBinary(f,*xs.getField());
+    }
+    if ( vec2_ != Teuchos::null ) {
+      vec2_->applyBinary(f,*xs.getParameter());
+    }
+  }
+
+  Real reduce( const ROL::Elementwise::ReductionOp<Real> &r ) const {
+    Real result = r.initialValue();
+    if ( vec1_ != Teuchos::null ) {
+      r.reduce(vec1_->reduce(r),result);
+    }
+    if ( vec2_ != Teuchos::null ) {
+      r.reduce(vec2_->reduce(r),result);
+    }
+    return result;
+  }
+
+  int dimension() const {
+    int dim(0);
+    if ( vec1_ != Teuchos::null ) {
+      dim += vec1_->dimension();
+    }
+    if ( vec2_ != Teuchos::null ) {
+      dim += vec2_->dimension();
+    }
+    return dim;
+  }
+
+  Teuchos::RCP<const ROL::Vector<Real> > getField() const { 
+    return vec1_;
+  }
+
+  Teuchos::RCP<const ROL::Vector<Real> > getParameter() const { 
+    return vec2_; 
+  }
+
+  Teuchos::RCP<ROL::Vector<Real> > getField() { 
+    return vec1_;
+  }
+
+  Teuchos::RCP<ROL::Vector<Real> > getParameter() { 
+    return vec2_; 
+  }
+
+  void set_1(const ROL::Vector<Real>& vec) { 
+    vec1_->set(vec);
+  }
+  
+  void set_2(const ROL::Vector<Real>& vec) { 
+    vec2_->set(vec); 
+  }
+};
 
 #endif
