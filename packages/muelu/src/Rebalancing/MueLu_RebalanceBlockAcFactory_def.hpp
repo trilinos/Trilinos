@@ -178,7 +178,8 @@ namespace MueLu {
         RCP<Matrix> rebAij = Teuchos::null;
         // General rebalancing
         if( importers[i] != Teuchos::null &&
-            importers[j] != Teuchos::null ) {
+            importers[j] != Teuchos::null &&
+            Aij != Teuchos::null) {
           RCP<const Map> targetRangeMap  = importers[i]->getTargetMap();
           RCP<const Map> targetDomainMap = importers[j]->getTargetMap();
 
@@ -204,28 +205,10 @@ namespace MueLu {
           // rebalance rows of matrix block. Don't change the domain map (-> Teuchos::null)
           // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
           rebAij = MatrixFactory::Build(cAij, *(importers[i]), targetDomainMap, targetRangeMap, XpetraList);
-
           restrictedComm = rebAij->getRowMap()->getComm();
-
-          // verification
-          /*std::cout << "Block [" << i << "," << j << "] nnz = " << cAij->getGlobalNumEntries() << " nnz = " << rebAij->getGlobalNumEntries() << " local nnz = " << cAij->getNodeNumEntries() << " local nnz = " << rebAij->getNodeNumEntries() << std::endl;
-
-          RCP<Vector> utest  = VectorFactory::Build(Aij->getDomainMap());
-          RCP<Vector> utest2 = VectorFactory::Build(Aij->getRowMap());
-          utest->putScalar(1.0);
-          Aij->apply(*utest, *utest2);
-
-
-          RCP<Vector> test   = VectorFactory::Build(rebAij->getDomainMap());
-          RCP<Vector> test2  = VectorFactory::Build(rebAij->getRowMap());
-          test->putScalar(1.0);
-          rebAij->apply (*test, *test2);
-          std::cout << "Block [" << i << "," << j << "] test2 = " << test2->norm1() << " utest2 = " << utest2->norm1() << std::endl;*/
-
-
         }  // rebalance matrix block A(i,i)
         else {
-          rebAij = Aij;
+          rebAij = Aij; // no rebalancing or empty block!
         }
 
         // store new block in output
@@ -238,7 +221,6 @@ namespace MueLu {
           std::stringstream ss2; ss2 << "A(" << i << "," << j << ") rebalanced:";
           GetOStream(Statistics0) << PerfUtils::PrintMatrixInfo(*rebAij, ss2.str(), params);
         }
-
       } // loop over columns j
 
 
@@ -247,6 +229,7 @@ namespace MueLu {
       // diagonal blocks have the corresponding striding information from the map extractors
       // Note: the diagonal block never should be zero.
       // TODO check this
+      // TODO what if a diagonal block is Teuchos::null?
       if ( subBlockRebA[i*bA->Cols() + i].is_null() == false ) {
         RCP<Matrix> rebAii = subBlockRebA[i*bA->Cols() + i];
         Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeMapExtractor->getMap(i,rangeMapExtractor->getThyraMode()));
