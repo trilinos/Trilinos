@@ -257,10 +257,11 @@ struct BacktrackingLineSearch
 };
 
 ///
-/// Trust region subproblem. Exact algorithm, Nocedal 2nd Ed 4.3
+/// Trust region subproblem with a given objective function.
+/// Exact algorithm, Nocedal 2nd Ed 4.3
 ///
 template<typename T, Index N>
-struct TrustRegionExact
+struct TrustRegionExactValue
 {
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
@@ -270,9 +271,51 @@ struct TrustRegionExact
 
   T
   region_size{1.0};
+};
+
+///
+/// Trust region subproblem with a given gradient/residual.
+/// Exact algorithm, Nocedal 2nd Ed 4.3
+///
+template<typename T, Index N>
+struct TrustRegionExactGradient
+{
+  Vector<T, N>
+  step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
+
+  Index
+  max_num_iter{4};
 
   T
-  initial_lambda{0.0};
+  region_size{1.0};
+};
+
+///
+/// Trust region subproblem with a given objective function.
+/// Dog leg algorithm.
+///
+template<typename T, Index N>
+struct TrustRegionDogLegValue
+{
+  Vector<T, N>
+  step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
+
+  T
+  region_size{1.0};
+};
+
+///
+/// Trust region subproblem with a given gradient/residual.
+/// Dog leg algorithm.
+///
+template<typename T, Index N>
+struct TrustRegionDogLegGradient
+{
+  Vector<T, N>
+  step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
+
+  T
+  region_size{1.0};
 };
 
 ///
