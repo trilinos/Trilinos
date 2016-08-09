@@ -92,7 +92,7 @@ public:
         return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
     }
 
-    stk::Vector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector)
+    stk::Vector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector) const
     {
         return ngp::get_bucket_ids(bulk, rank, selector);
     }
@@ -235,7 +235,7 @@ public:
         return hostMeshIndices(entity.local_offset());
     }
 
-    stk::Vector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector)
+    stk::Vector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector) const
     {
         return ngp::get_bucket_ids(get_bulk_on_host(), rank, selector);
     }
@@ -314,7 +314,7 @@ private:
         deviceMeshIndices = tmp_device_mesh_indices;
     }
 
-    const stk::mesh::BulkData &get_bulk_on_host()
+    const stk::mesh::BulkData &get_bulk_on_host() const
     {
         return bulk;
     }
