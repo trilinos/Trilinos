@@ -114,7 +114,7 @@ namespace panzer
     using std::endl;
     if (0 == comm.getRank())
     {
-      s << "Memory usage across all processors:"        << endl
+      s << "Estimated memory usage across all processors:" << endl
         << "        Current       Peak        "         << endl
         << "        ------------  ------------"         << endl << "  Min:  ";
       pretty(s, mem.currMin); pretty(s, mem.peakMin); s << endl << "  Max:  ";
