@@ -38,15 +38,31 @@ ENDIF()
 # Dense Linear Algebra
 # ====================
 
-IF(Kokkos_ENABLE_OpenMP)
-IF(TPL_ENABLE_MKL)
+IF(Kokkos_ENABLE_Serial)
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseGemmMKL_OpenMP
+    Tacho_ExampleDenseGemmByBlocks_Serial
     NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseGemmMKL_OpenMP.cpp
+    SOURCES Tacho_ExampleDenseGemmByBlocks_Serial.cpp
     COMM serial mpi
   )
 ENDIF()
+
+IF(Kokkos_ENABLE_OpenMP)
+  IF(TPL_ENABLE_MKL)
+    TRIBITS_ADD_EXECUTABLE(
+      Tacho_ExampleDenseGemmMKL_OpenMP
+      NOEXEPREFIX
+      SOURCES Tacho_ExampleDenseGemmMKL_OpenMP.cpp
+      COMM serial mpi
+    )
+  ENDIF()
+
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseGemmByBlocks_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseGemmByBlocks_OpenMP.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
@@ -134,14 +150,14 @@ ENDIF()
 # Numeric Factorization
 # =====================
 
-IF(Kokkos_ENABLE_Serial)
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCholSuperNodesByBlocks_Serial
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleCholSuperNodesByBlocks_Serial.cpp
-    COMM serial mpi
-  )
-ENDIF()
+# IF(Kokkos_ENABLE_Serial)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleCholSuperNodesByBlocks_Serial
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleCholSuperNodesByBlocks_Serial.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
@@ -198,14 +214,14 @@ IF(Kokkos_ENABLE_Pthread)
 ENDIF()
 
 
-IF(Kokkos_ENABLE_Serial)
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolver_Serial
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleSolver_Serial.cpp
-    COMM serial mpi
-  )
-ENDIF()
+# IF(Kokkos_ENABLE_Serial)
+#   TRIBITS_ADD_EXECUTABLE(
+#     Tacho_ExampleSolver_Serial
+#     NOEXEPREFIX
+#     SOURCES Tacho_ExampleSolver_Serial.cpp
+#     COMM serial mpi
+#   )
+# ENDIF()
 
 
 

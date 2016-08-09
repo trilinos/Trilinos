@@ -81,14 +81,7 @@ namespace Tacho {
       const char* Label() const { return "Gemm"; }
 
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-        r_val = Gemm::invoke(_policy, _policy.member_single(),
-                             _alpha, _A, _B, _beta, _C);
-        _C.setFuture(typename ExecViewTypeC::future_type());
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
         const int ierr = Gemm::invoke(_policy, member,
                                       _alpha, _A, _B, _beta, _C);
         
@@ -98,7 +91,7 @@ namespace Tacho {
           r_val = ierr; 
         }
       }
-
+      
     };
 
     template<typename PolicyType,
