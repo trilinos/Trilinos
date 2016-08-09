@@ -252,7 +252,7 @@ namespace {
     LO nEle = 63;
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-    TEST_EQUALITY(map->getGlobalNumElements(), nEle);
+    TEST_EQUALITY(Teuchos::as<LO>(map->getGlobalNumElements()), nEle);
 
     LO NumMyElements = map->getNodeNumElements();
     GO NumGlobalElements = map->getGlobalNumElements();
@@ -342,7 +342,7 @@ namespace {
     LO nEle = 63;
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-    TEST_EQUALITY(map->getGlobalNumElements(), nEle);
+    TEST_EQUALITY(Teuchos::as<LO>(map->getGlobalNumElements()), nEle);
 
     LO NumMyElements = map->getNodeNumElements();
     GO NumGlobalElements = map->getGlobalNumElements();
