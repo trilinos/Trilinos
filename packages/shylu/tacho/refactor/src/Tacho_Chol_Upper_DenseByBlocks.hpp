@@ -50,7 +50,7 @@ namespace Tacho {
               CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Chol)>
               ::invoke(policy, member, aa);
 #else
-            const auto task_type     = Kokkos::TaskSingle;
+            const auto task_type     = Kokkos::TaskTeam;
             const auto task_priority = Kokkos::TaskHighPriority;
 
             const future_type f =
@@ -78,7 +78,7 @@ namespace Tacho {
                 CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
                 ::invoke(policy, member, Diag::NonUnit, 1.0, aa, bb);
 #else
-              const auto task_type     = Kokkos::TaskSingle;
+              const auto task_type     = Kokkos::TaskTeam;
               const auto task_priority = Kokkos::TaskRegularPriority;
 
               const future_type dep[] = { aa.Future(), bb.Future() };
@@ -107,7 +107,7 @@ namespace Tacho {
                   CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Herk)>
                   ::invoke(policy, member, -1.0, aa, 1.0, cc);
 #else
-                const auto task_type     = Kokkos::TaskSingle;
+                const auto task_type     = Kokkos::TaskTeam;
                 const auto task_priority = Kokkos::TaskHighPriority;
                 
                 const future_type dep[] = { aa.Future(), cc.Future() };
@@ -132,7 +132,7 @@ namespace Tacho {
                   CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Gemm)>
                   ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
 #else
-                const auto task_type     = Kokkos::TaskSingle;
+                const auto task_type     = Kokkos::TaskTeam;
                 const auto task_priority = Kokkos::TaskHighPriority;
                 
                 const future_type dep[] = { aa.Future(), bb.Future(), cc.Future() };

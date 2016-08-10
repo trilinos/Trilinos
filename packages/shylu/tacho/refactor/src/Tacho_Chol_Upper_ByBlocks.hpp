@@ -74,7 +74,7 @@ namespace Tacho {
               case Variant::One:   // SuperNodes-ByBlocks
               case Variant::Two:   // Sparse-ByBlocks
                 { 
-                  const auto task_type     = Kokkos::TaskSingle;
+                  const auto task_type     = Kokkos::TaskTeam;
                   const auto task_priority = Kokkos::TaskHighPriority;
                   
                   // construct a task
@@ -120,7 +120,7 @@ namespace Tacho {
                   case Variant::One:    // Sparse-ByBlocks
                   case Variant::Two:    // SuperNodes-ByBlocks
                     {
-                      const auto task_type     = Kokkos::TaskSingle;
+                      const auto task_type     = Kokkos::TaskTeam;
                       const auto task_priority = Kokkos::TaskRegularPriority;
                       
                       const future_type dep[] = { aa.Future(), bb.Future() };
@@ -185,7 +185,7 @@ namespace Tacho {
                             case Variant::One:
                             case Variant::Two:
                               {
-                                const auto task_type     = Kokkos::TaskSingle;
+                                const auto task_type     = Kokkos::TaskTeam;
                                 const auto task_priority = Kokkos::TaskHighPriority;
                                 
                                 const future_type dep[] = { aa.Future(), cc.Future() };
@@ -227,7 +227,7 @@ namespace Tacho {
                             case Variant::One:
                             case Variant::Two: 
                               {
-                                const auto task_type     = Kokkos::TaskSingle;
+                                const auto task_type     = Kokkos::TaskTeam;
                                 const auto task_priority = Kokkos::TaskRegularPriority;
 
                                 const future_type dep[] = { aa.Future(), bb.Future(), cc.Future() };

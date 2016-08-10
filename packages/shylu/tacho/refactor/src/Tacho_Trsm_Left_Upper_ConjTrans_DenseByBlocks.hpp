@@ -72,7 +72,7 @@ namespace Tacho {
               CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
               ::invoke(policy, member, diagA, alpha_select, aa, bb);
 #else
-            const auto task_type     = Kokkos::TaskSingle;
+            const auto task_type     = Kokkos::TaskTeam;
             const auto task_priority = Kokkos::TaskHighPriority;
 
             const future_type dep[] = { aa.Future(), bb.Future() };

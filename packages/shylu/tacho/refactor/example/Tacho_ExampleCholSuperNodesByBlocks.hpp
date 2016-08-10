@@ -40,6 +40,10 @@
 #include "ittnotify.h"
 #endif
 
+#ifdef HAVE_SHYLUTACHO_MKL
+#include "mkl_service.h"
+#endif
+
 namespace Tacho {
 
   template<typename DeviceSpaceType>
@@ -368,6 +372,10 @@ namespace Tacho {
 
     /// Phase 4 : Perform numeric factorization 
     /// ------------------------------------------------------------------------------------
+
+#ifdef HAVE_SHYLUTACHO_MKL
+    mkl_set_num_threads(mkl_nthreads);
+#endif
 
     ///
     /// Allocate blocks 

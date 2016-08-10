@@ -6,6 +6,9 @@
 #ifdef HAVE_SHYLUTACHO_VTUNE
 #include "ittnotify.h"
 #endif
+#ifdef HAVE_SHYLUTACHO_MKL
+#include "mkl_service.h"
+#endif
 
 namespace Tacho {
 
@@ -176,6 +179,10 @@ namespace Tacho {
     ///
     /// Solver interface
     ///
+#ifdef HAVE_SHYLUTACHO_MKL
+    mkl_set_num_threads(mkl_nthreads);
+#endif
+
     TACHO_SOLVER_RUN(tacho.reorder(treecut, prunecut), t_reorder);
     TACHO_SOLVER_RUN(tacho.analyze(), t_analyze);
 
