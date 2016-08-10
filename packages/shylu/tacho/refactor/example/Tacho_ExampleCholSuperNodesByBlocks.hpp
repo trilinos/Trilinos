@@ -258,8 +258,6 @@ namespace Tacho {
                        max_task_size*max_concurrency,
                        memory_pool_grain_size );
 
-    typename Kokkos::TaskPolicy<Kokkos::Serial>::member_type serial_member;
-
     const double t_policy = timer.seconds();
 
     /// Phase 3 : Perform symbolic factorization 
@@ -494,149 +492,149 @@ namespace Tacho {
     }
     const double t_chol = timer.seconds();    
 
-    // /// Phase 4 : Solve problem
-    // /// ------------------------------------------------------------------------------------
+    /// Phase 4 : Solve problem
+    /// ------------------------------------------------------------------------------------
     
-    // ///
-    // /// Solution check
-    // ///
-    // ///    input  - AA_reordered, BB, XX
-    // ///    output - RR
-    // ///
-    // double t_solve = 0;
-    // double error = 0, norm = 1;
-    // if (nrhs) {
-    //   const auto m = AA_reordered.NumRows();
-    //   DenseMatrixBaseHostType BB("BB", m, nrhs), XX("XX"), RR("RR");
-    //   XX.createConfTo(BB);
-    //   RR.createConfTo(BB);
+    ///
+    /// Solution check
+    ///
+    ///    input  - AA_reordered, BB, XX
+    ///    output - RR
+    ///
+    double t_solve = 0;
+    double error = 0, norm = 1;
+    if (nrhs) {
+      const auto m = AA_reordered.NumRows();
+      DenseMatrixBaseHostType BB("BB", m, nrhs), XX("XX"), RR("RR");
+      XX.createConfTo(BB);
+      RR.createConfTo(BB);
       
-    //   srand(time(NULL));
-    //   for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-    //     for (ordinal_type i=0;i<m;++i)
-    //       XX.Value(i, rhs) = ((value_type)rand()/(RAND_MAX));
+      srand(time(NULL));
+      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
+        for (ordinal_type i=0;i<m;++i)
+          XX.Value(i, rhs) = ((value_type)rand()/(RAND_MAX));
         
-    //     // matvec
-    //     HostSpaceType::execution_space::fence();
-    //     Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
-    //                          [&](const ordinal_type i) {
-    //                            const auto nnz  = AA_reordered.NumNonZerosInRow(i);
-    //                            const auto cols = AA_reordered.ColsInRow(i);
-    //                            const auto vals = AA_reordered.ValuesInRow(i);
+        // matvec
+        HostSpaceType::execution_space::fence();
+        Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
+                             [&](const ordinal_type i) {
+                               const auto nnz  = AA_reordered.NumNonZerosInRow(i);
+                               const auto cols = AA_reordered.ColsInRow(i);
+                               const auto vals = AA_reordered.ValuesInRow(i);
                                
-    //                            value_type tmp = 0;
-    //                            for (ordinal_type j=0;j<nnz;++j)
-    //                              tmp += vals(j)*XX.Value(cols(j), rhs);
-    //                            BB.Value(i, rhs) = tmp;
-    //                          } );
-    //     HostSpaceType::execution_space::fence();
-    //   }
-    //   if (verbose) {
-    //     XX.showMe(std::cout) << std::endl;
-    //     BB.showMe(std::cout) << std::endl;
-    //   }
-    //   DenseMatrixTools::copy(RR, XX); // keep solution on RR
-    //   DenseMatrixTools::copy(XX, BB); // copy BB into XX
+                               value_type tmp = 0;
+                               for (ordinal_type j=0;j<nnz;++j)
+                                 tmp += vals(j)*XX.Value(cols(j), rhs);
+                               BB.Value(i, rhs) = tmp;
+                             } );
+        HostSpaceType::execution_space::fence();
+      }
+      if (verbose) {
+        XX.showMe(std::cout) << std::endl;
+        BB.showMe(std::cout) << std::endl;
+      }
+      DenseMatrixTools::copy(RR, XX); // keep solution on RR
+      DenseMatrixTools::copy(XX, BB); // copy BB into XX
 
-    //   DenseHierBaseHostType HX("HX");
+      DenseHierBaseHostType HX("HX");
 
-    //   DenseMatrixTools::createHierMatrix(HX, XX,
-    //                                      S.NumBlocks(),
-    //                                      S.RangeVector(),
-    //                                      nb);
+      DenseMatrixTools::createHierMatrix(HX, XX,
+                                         S.NumBlocks(),
+                                         S.RangeVector(),
+                                         nb);
 
-    //   CrsTaskHierViewHostType TA_factor(HA_factor);
-    //   DenseTaskHierViewHostType TX(HX);
+      CrsTaskHierViewHostType TA_factor(HA_factor);
+      DenseTaskHierViewHostType TX(HX);
 
-    //   timer.reset();
-    //   {
-    //     auto future_forward_solve
-    //       = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,
-    //                                 AlgoTriSolve::ByBlocks,Variant::Two>
-    //                                 ::createTaskFunctor(policy,
-    //                                                     Diag::NonUnit, TA_factor, TX),
-    //                                 0);
-    //     policy.spawn(future_forward_solve);
+      timer.reset();
+      {
+        auto future_forward_solve
+          = policy.host_spawn(TriSolve<Uplo::Upper,Trans::ConjTranspose,
+                              AlgoTriSolve::ByBlocks,Variant::Two>
+                              ::createTaskFunctor(policy,
+                                                  Diag::NonUnit, TA_factor, TX));
+        TACHO_TEST_FOR_EXCEPTION(future_forward_solve.is_null(), std::runtime_error,
+                                 ">> host_spawn returns a null future");
 
-    //     auto future_backward_solve
-    //       = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,
-    //                                 AlgoTriSolve::ByBlocks,Variant::Two>
-    //                                 ::createTaskFunctor(policy,
-    //                                                     Diag::NonUnit, TA_factor, TX),
-    //                                 1);
 
-    //     policy.add_dependence(future_backward_solve, future_forward_solve);
-    //     policy.spawn(future_backward_solve);
+        auto future_backward_solve
+          = policy.host_spawn(TriSolve<Uplo::Upper,Trans::NoTranspose,
+                              AlgoTriSolve::ByBlocks,Variant::Two>
+                              ::createTaskFunctor(policy,
+                                                  Diag::NonUnit, TA_factor, TX),
+                              future_forward_solve);
+        TACHO_TEST_FOR_EXCEPTION(future_backward_solve.is_null(), std::runtime_error,
+                                 ">> host_spawn returns a null future");
 
-    //     Kokkos::wait(policy);
+        Kokkos::wait(policy);
 
-    //     TACHO_TEST_FOR_ABORT(future_forward_solve.get(),  "Fail to perform TriSolveSuperNodesByBlocks (forward)");
-    //     TACHO_TEST_FOR_ABORT(future_backward_solve.get(), "Fail to perform TriSolveSuperNodesByBlocks (backward)");
-    //   }
-    //   t_solve = timer.seconds();
+        TACHO_TEST_FOR_EXCEPTION(future_forward_solve.get(),  std::logic_error, "Fail to perform TriSolveSuperNodesByBlocks (forward)");
+        TACHO_TEST_FOR_EXCEPTION(future_backward_solve.get(), std::logic_error, "Fail to perform TriSolveSuperNodesByBlocks (backward)");
+      }
+      t_solve = timer.seconds();
 
-    //   if (verbose) {
-    //     XX.showMe(std::cout) << std::endl;
-    //     BB.showMe(std::cout) << std::endl;
-    //   }
+      if (verbose) {
+        XX.showMe(std::cout) << std::endl;
+        BB.showMe(std::cout) << std::endl;
+      }
       
-    //   for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-    //     for (ordinal_type i=0;i<m;++i) {
-    //       {
-    //         const auto val = Util::abs(XX.Value(i, rhs) - RR.Value(i, rhs));
-    //         error += val*val;
-    //       }
-    //       {
-    //         const auto val = Util::abs(RR.Value(i, rhs));
-    //         norm  += val*val;
-    //       }
-    //     }
-    //   }
-    //   error = std::sqrt(error);
-    //   norm  = std::sqrt(norm);
+      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
+        for (ordinal_type i=0;i<m;++i) {
+          {
+            const auto val = Util::abs(XX.Value(i, rhs) - RR.Value(i, rhs));
+            error += val*val;
+          }
+          {
+            const auto val = Util::abs(RR.Value(i, rhs));
+            norm  += val*val;
+          }
+        }
+      }
+      error = std::sqrt(error);
+      norm  = std::sqrt(norm);
 
-    //   std::cout << std::scientific;
-    //   std::cout << "CholSuperNodesByBlocks:: error = " << error
-    //             << ", norm = " << norm
-    //             << ", rel error = " << (error/norm)
-    //             << std::endl;
-    //   std::cout.unsetf(std::ios::scientific);
-    // }
+      std::cout << std::scientific;
+      std::cout << "CholSuperNodesByBlocks:: error = " << error
+                << ", norm = " << norm
+                << ", rel error = " << (error/norm)
+                << std::endl;
+      std::cout.unsetf(std::ios::scientific);
+    }
 
-    // ///
-    // /// Print out
-    // ///
-    // {
-    //   const auto prec = std::cout.precision();
-    //   std::cout.precision(4);
+    ///
+    /// Print out
+    ///
+    {
+      const auto prec = std::cout.precision();
+      std::cout.precision(4);
 
-    //   std::cout << std::scientific;
-    //   std::cout << "CholSuperNodesByBlocks:: Given    matrix = " << AA.NumRows() << " x " << AA.NumCols() << ", nnz = " << AA.NumNonZeros() << std::endl;
-    //   std::cout << "CholSuperNodesByBlocks:: Hier     matrix = " << HA_factor.NumRows() << " x " << HA_factor.NumCols() << ", nnz = " << HA_factor.NumNonZeros() << std::endl;
+      std::cout << std::scientific;
+      std::cout << "CholSuperNodesByBlocks:: Given    matrix = " << AA.NumRows() << " x " << AA.NumCols() << ", nnz = " << AA.NumNonZeros() << std::endl;
+      std::cout << "CholSuperNodesByBlocks:: Hier     matrix = " << HA_factor.NumRows() << " x " << HA_factor.NumCols() << ", nnz = " << HA_factor.NumNonZeros() << std::endl;
 
-    //   std::cout << "CholSuperNodesByBlocks:: "
-    //             << "read = " << t_read << " [sec], "
-    //             << "graph generation = " << (t_graph/2.0) << " [sec] "
-    //             << "scotch reordering = " << t_scotch << " [sec] "
-    //             << "camd reordering = " << t_camd << " [sec] "
-    //             << std::endl
-    //             << "CholSuperNodesByBlocks:: "
-    //             << "symbolic factorization = " << t_symbolic << " [sec] "
-    //             << std::endl
-    //             << "CholSuperNodesByBlocks:: "
-    //             << "policy creation = " << t_policy << " [sec] "
-    //             << "block specification = " << t_blocks << " [sec] "
-    //             << std::endl
-    //             << "CholSuperNodesByBlocks:: "
-    //             << "Chol = " << t_chol << " [sec] ";
-    //   if (nrhs)
-    //     std::cout << "Solve = " << t_solve << " [sec] ";
+      std::cout << "CholSuperNodesByBlocks:: "
+                << "read = " << t_read << " [sec], "
+                << "graph generation = " << (t_graph/2.0) << " [sec] "
+                << "scotch reordering = " << t_scotch << " [sec] "
+                << "camd reordering = " << t_camd << " [sec] "
+                << std::endl
+                << "CholSuperNodesByBlocks:: "
+                << "symbolic factorization = " << t_symbolic << " [sec] "
+                << std::endl
+                << "CholSuperNodesByBlocks:: "
+                << "policy creation = " << t_policy << " [sec] "
+                << "block specification = " << t_blocks << " [sec] "
+                << std::endl
+                << "CholSuperNodesByBlocks:: "
+                << "Chol = " << t_chol << " [sec] ";
+      if (nrhs)
+        std::cout << "Solve = " << t_solve << " [sec] ";
 
-    //   std::cout << std::endl;
-
-    //      std::cout.unsetf(std::ios::scientific);
-    //  std::cout.precision(prec);
-    //}
+      std::cout << std::endl;
+      
+      std::cout.unsetf(std::ios::scientific);
+      std::cout.precision(prec);
+    }
 
     return r_val;
   }
