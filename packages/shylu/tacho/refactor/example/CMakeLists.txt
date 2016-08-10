@@ -155,6 +155,24 @@ ENDIF()
 # Graph Tools and Symbolic Factorization
 # ======================================
 
+IF(Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDirectSymbolicFactorization_Serial
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDirectSymbolicFactorization_Serial.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+IF(Kokkos_ENABLE_OpenMP)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDirectSymbolicFactorization_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDirectSymbolicFactorization_OpenMP.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleGraphTools_Pthreads
