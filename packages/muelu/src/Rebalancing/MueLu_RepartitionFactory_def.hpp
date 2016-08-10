@@ -79,16 +79,17 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    SET_VALID_ENTRY("repartition: start level");
-    SET_VALID_ENTRY("repartition: min rows per proc");
-    SET_VALID_ENTRY("repartition: max imbalance");
+    //SET_VALID_ENTRY("repartition: start level");
+    //SET_VALID_ENTRY("repartition: min rows per proc");
+    //SET_VALID_ENTRY("repartition: max imbalance");
     SET_VALID_ENTRY("repartition: print partition distribution");
     SET_VALID_ENTRY("repartition: remap parts");
     SET_VALID_ENTRY("repartition: remap num values");
 #undef  SET_VALID_ENTRY
 
-    validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("Partition", Teuchos::null, "Factory of the partition");
+    validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
+    validParamList->set< RCP<const FactoryBase> >("Partition",            Teuchos::null, "Factory of the partition");
 
     return validParamList;
   }
@@ -96,6 +97,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "number of partitions");
     Input(currentLevel, "Partition");
   }
 
@@ -113,34 +115,13 @@ namespace MueLu {
     const Teuchos::ParameterList & pL = GetParameterList();
     // Access parameters here to make sure that we set the parameter entry flag to "used" even in case of short-circuit evaluation.
     // TODO (JG): I don't really know if we want to do this.
-    const int    startLevel          = pL.get<int>   ("repartition: start level");
-    const LO     minRowsPerProcessor = pL.get<LO>    ("repartition: min rows per proc");
-    const double nonzeroImbalance    = pL.get<double>("repartition: max imbalance");
     const bool   remapPartitions     = pL.get<bool>  ("repartition: remap parts");
 
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-
-    // TODO: TAW need an option to force repartitioning (given a valid "Partition" vector)
-
-    // ======================================================================================================
-    // Determine whether partitioning is needed
-    // ======================================================================================================
-    // NOTE: most tests include some global communication, which is why we currently only do tests until we make
-    // a decision on whether to repartition. However, there is value in knowing how "close" we are to having to
-    // rebalance an operator. So, it would probably be beneficial to do and report *all* tests.
-
-    // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
-    if (currentLevel.GetLevelID() < startLevel) {
-      GetOStream(Statistics1) << "Repartitioning?  NO:" <<
-          "\n  current level = " << Teuchos::toString(currentLevel.GetLevelID()) <<
-          ", first level where repartitioning can happen is " + Teuchos::toString(startLevel) << std::endl;
-
-      Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
-      return;
-    }
-
-    RCP<const Map> rowMap = A->getRowMap();
+    RCP<const Map>            rowMap = A->getRowMap();
+    GO                     indexBase = rowMap->getIndexBase();
+    Xpetra::UnderlyingLib  lib       = rowMap->lib();
 
     // NOTE: Teuchos::MPIComm::duplicate() calls MPI_Bcast inside, so this is
     // a synchronization point. However, as we do MueLu_sumAll afterwards anyway, it
@@ -148,66 +129,6 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
     RCP<const Teuchos::Comm<int> > comm     = origComm->duplicate();
 
-    // Test 2: check whether A is actually distributed, i.e. more than one processor owns part of A
-    // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)
-    // TODO: further improvements could be achieved when we use subcommunicator for the active set. Then we only need to check its size
-    {
-      int numActiveProcesses = 0;
-      MueLu_sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
-
-      if (numActiveProcesses == 1) {
-        GetOStream(Statistics1) << "Repartitioning?  NO:" <<
-            "\n  # processes with rows = " << Teuchos::toString(numActiveProcesses) << std::endl;
-
-        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
-        return;
-      }
-    }
-
-    bool test3 = false, test4 = false;
-    std::string msg3, msg4;
-
-    // Test3: check whether number of rows on any processor satisfies the minimum number of rows requirement
-    // NOTE: Test2 ensures that repartitionning is not done when there is only one processor (it may or may not satisfy Test3)
-    if (minRowsPerProcessor > 0) {
-      LO numMyRows = Teuchos::as<LO>(A->getNodeNumRows()), minNumRows, LOMAX = Teuchos::OrdinalTraits<LO>::max();
-      LO haveFewRows = (numMyRows < minRowsPerProcessor ? 1 : 0), numWithFewRows = 0;
-      MueLu_sumAll(comm, haveFewRows, numWithFewRows);
-      MueLu_minAll(comm, (numMyRows > 0 ? numMyRows : LOMAX), minNumRows);
-
-      // TODO: we could change it to repartition only if the number of processors with numRows < minNumRows is larger than some
-      // percentage of the total number. This way, we won't repartition if 2 out of 1000 processors don't have enough elements.
-      // I'm thinking maybe 20% threshold. To implement, simply add " && numWithFewRows < .2*numProcs" to the if statement.
-      if (numWithFewRows > 0)
-        test3 = true;
-
-      msg3 = "\n  min # rows per proc = " + Teuchos::toString(minNumRows) + ", min allowable = " + Teuchos::toString(minRowsPerProcessor);
-    }
-
-    // Test4: check whether the balance in the number of nonzeros per processor is greater than threshold
-    if (!test3) {
-      GO minNnz, maxNnz, numMyNnz = Teuchos::as<GO>(A->getNodeNumEntries());
-      MueLu_maxAll(comm, numMyNnz,                           maxNnz);
-      MueLu_minAll(comm, (numMyNnz > 0 ? numMyNnz : maxNnz), minNnz); // min nnz over all active processors
-      double imbalance = Teuchos::as<double>(maxNnz)/minNnz;
-
-      if (imbalance > nonzeroImbalance)
-        test4 = true;
-
-      msg4 = "\n  nonzero imbalance = " + Teuchos::toString(imbalance) + ", max allowable = " + Teuchos::toString(nonzeroImbalance);
-    }
-
-    if (!test3 && !test4) {
-      GetOStream(Statistics1) << "Repartitioning?  NO:" << msg3 + msg4 << std::endl;
-
-      Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
-      return;
-    }
-
-    GetOStream(Statistics1) << "Repartitioning? YES:" << msg3 + msg4 << std::endl;
-
-    GO                     indexBase = rowMap->getIndexBase();
-    Xpetra::UnderlyingLib  lib       = rowMap->lib();
     int myRank   = comm->getRank();
     int numProcs = comm->getSize();
 
@@ -215,51 +136,25 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
 
-    // ======================================================================================================
-    // Calculate number of partitions
-    // ======================================================================================================
-    // FIXME Quick way to figure out how many partitions there should be (same algorithm as ML)
-    // FIXME Should take into account nnz? Perhaps only when user is using min #nnz per row threshold.
-
-    // The number of partitions is calculated by the RepartitionFactory and stored in "number of partitions" variable on
-    // the current level. If this variable is already set (e.g., by another instance of RepartitionFactory) then this number
-    // is used. The "number of partitions" variable serves as basic communication between the RepartitionFactory (which
-    // requests a certain number of partitions) and the *Interface classes which call the underlying partitioning algorithms
-    // and produce the "Partition" array with the requested number of partitions.
-    GO numPartitions;
-    if (currentLevel.IsAvailable("number of partitions")) {
-      numPartitions = currentLevel.Get<GO>("number of partitions");
-      GetOStream(Warnings0) << "Using user-provided \"number of partitions\", the performance is unknown" << std::endl;
-
-    } else {
-      if (Teuchos::as<GO>(A->getGlobalNumRows()) < minRowsPerProcessor) {
-        // System is too small, migrate it to a single processor
-        numPartitions = 1;
-
-      } else {
-        // Make sure that each processor has approximately minRowsPerProcessor
-        numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
-      }
-      numPartitions = std::min(numPartitions, Teuchos::as<GO>(numProcs));
-
-      currentLevel.Set("number of partitions", numPartitions, NoFactory::get());
-    }
-    GetOStream(Statistics1) << "Number of partitions to use = " << numPartitions << std::endl;
+    /////
+    int numPartitions = Get<int>(currentLevel, "number of partitions");
 
     // ======================================================================================================
     // Construct decomposition vector
     // ======================================================================================================
-    RCP<GOVector> decomposition;
+    RCP<GOVector> decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
+
+    // check special cases
     if (numPartitions == 1) {
       // Trivial case: decomposition is the trivial one, all zeros. We skip the call to Zoltan_Interface
       // (this is mostly done to avoid extra output messages, as even if we didn't skip there is a shortcut
       // in Zoltan[12]Interface).
       // TODO: We can probably skip more work in this case (like building all extra data structures)
       GetOStream(Warnings0) << "Only one partition: Skip call to the repartitioner." << std::endl;
-      decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
-
-    } else {
-      decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
+      //decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
+      // todo verify that we have only zeros in the vector (e.g. test norm?)
+    } else if (numPartitions == -1) {
+      // todo test whether decomposition is Teuchos::null!
 
       if (decomposition.is_null()) {
         GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;

@@ -110,6 +110,7 @@
 #endif
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_ReorderBlockAFactory.hpp"
@@ -266,6 +267,13 @@ namespace MueLu {
         return Build2<RepartitionFactory>(paramList, factoryMapIn, factoryManagersIn);
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a RepartitionFactory object: HAVE_MPI == false.");
+#endif // HAVE_MPI
+      }
+      if (factoryName == "RepartitionHeuristicFactory") {
+#ifdef HAVE_MPI
+        return Build2<RepartitionHeuristicFactory>(paramList, factoryMapIn, factoryManagersIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a RepartitionHeuristicFactory object: HAVE_MPI == false.");
 #endif // HAVE_MPI
       }
       // Blocked factories

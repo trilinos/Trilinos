@@ -203,6 +203,9 @@ typedef MueLu::ReorderBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Reor
 #ifdef MUELU_REPARTITIONFACTORY_SHORT
 typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionFactory;
 #endif
+#ifdef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
+typedef MueLu::RepartitionHeuristicFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionHeuristicFactory;
+#endif
 #ifdef MUELU_RIGIDBODYMODEFACTORY_SHORT
 typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RigidBodyModeFactory;
 #endif

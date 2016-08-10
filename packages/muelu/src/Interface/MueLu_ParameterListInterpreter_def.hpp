@@ -1057,6 +1057,17 @@ namespace MueLu {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
+
+      // RepartitionHeuristic
+      RCP<RepartitionHeuristicFactory> repartheurFactory = rcp(new RepartitionHeuristicFactory());
+      ParameterList repartheurParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartheurParams);
+      repartheurFactory->SetParameterList(repartheurParams);
+      repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
+      manager.SetFactory("number of partitions", repartheurFactory);
+
       // Partitioner
       RCP<Factory> partitioner;
       if (partName == "zoltan") {
@@ -1078,21 +1089,19 @@ namespace MueLu {
 #endif
       }
       partitioner->SetFactory("A",           manager.GetFactory("A"));
+      partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
       partitioner->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
       manager.SetFactory("Partition", partitioner);
 
       // Repartitioner
       RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
       ParameterList repartParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: keep proc 0",                  bool, repartParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: print partition distribution", bool, repartParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts",                  bool, repartParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values",              int, repartParams);
       repartFactory->SetParameterList(repartParams);
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
+      repartFactory->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
       manager.SetFactory("Importer", repartFactory);
       if (reuseType != "none" && reuseType != "S" && levelID)

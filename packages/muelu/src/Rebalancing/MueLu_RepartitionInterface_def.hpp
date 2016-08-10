@@ -25,6 +25,7 @@ namespace MueLu {
  RCP<const ParameterList> RepartitionInterface<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< RCP<const FactoryBase> >("AmalgamatedPartition", Teuchos::null, "(advanced) Factory generating the AmalgamatedPartition (e.g. an IsorropiaInterface)");
 
     return validParamList;
@@ -34,6 +35,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionInterface<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "number of partitions");
     Input(currentLevel, "AmalgamatedPartition");
   } //DeclareInput()
 
@@ -43,12 +45,12 @@ namespace MueLu {
 
     RCP<Matrix>      A                                  = Get< RCP<Matrix> >     (level, "A");
     RCP<Xpetra::Vector<GO, LO, GO, NO> > amalgPartition = Get< RCP<Xpetra::Vector<GO, LO, GO, NO> > >(level, "AmalgamatedPartition");
+    int numParts                                        = Get<int>(level, "number of partitions");
 
     RCP<const Map> rowMap        = A->getRowMap();
 
     // Short cut: if we only need one partition, then create a dummy partition vector
-    GO numParts = level.Get<GO>("number of partitions");
-    if (numParts == 1) {
+    if (numParts == 1 || numParts == -1) {
       // Single processor, decomposition is trivial: all zeros
       RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
       Set(level, "Partition", decomposition);
