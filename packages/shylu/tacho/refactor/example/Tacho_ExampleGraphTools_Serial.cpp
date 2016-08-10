@@ -1,25 +1,19 @@
 #include <Kokkos_Core.hpp>
-
 #include "Teuchos_CommandLineProcessor.hpp"
-
 #include "ShyLUTacho_config.h"
 
 typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Kokkos::Threads exec_space;
+typedef Kokkos::Serial exec_space;
 
 #if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) || defined(HAVE_SHYLUTACHO_AMESOS)))
-#include "Tacho_ExampleCholSuperNodesByBlocks.hpp"
+#include "Tacho_ExampleGraphTools.hpp"
 using namespace Tacho;
 #endif
 
 int main (int argc, char *argv[]) {
-
-#ifdef HAVE_SHYLUTACHO_VTUNE
-  __itt_pause();
-#endif
 
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("Tacho::DenseMatrixBase examples on Pthreads execution space.\n");
@@ -33,9 +27,6 @@ int main (int argc, char *argv[]) {
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
-  bool verbose_blocks = false;
-  clp.setOption("enable-verbose-blocks", "disable-verbose-blocks", &verbose_blocks, "Flag for verbose printing blocks");
-
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
@@ -47,24 +38,6 @@ int main (int argc, char *argv[]) {
 
   int prunecut = 0;
   clp.setOption("prunecut", &prunecut, "Level to prune tree from bottom");
-
-  int max_concurrency = 1000000;
-  clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
-
-  int memory_pool_grain_size = 16;
-  clp.setOption("memory-pool-grain-size", &memory_pool_grain_size, "Memorypool chunk size (12 - 16)");
-
-  int mkl_nthreads = 1;
-  clp.setOption("mkl-nthreads", &mkl_nthreads, "MKL threads for nested parallelism");
-
-  int nrhs = 0;
-  clp.setOption("nrhs", &nrhs, "# of right hand side");
-
-  int mb = 0;
-  clp.setOption("mb", &mb, "Dense nested blocks size");
-
-  int nb = 1;
-  clp.setOption("nb", &nb, "Column block size of right hand side");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -80,13 +53,8 @@ int main (int argc, char *argv[]) {
 
 #if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
         || defined(HAVE_SHYLUTACHO_AMESOS)))
-    r_val = exampleCholSuperNodesByBlocks<exec_space>
-      (file_input, 
-       treecut, prunecut, 
-       max_concurrency, memory_pool_grain_size, mkl_nthreads,
-       nrhs, mb, nb,
-       verbose_blocks,
-       verbose);
+    r_val = exampleGraphTools<exec_space>
+      (file_input, treecut, prunecut, verbose);
 #else
     r_val = -1;
     std::cout << "Scotch or Cholmod is NOT configured in Trilinos" << std::endl;

@@ -21,7 +21,7 @@ namespace Tacho {
              typename CrsTaskViewTypeA>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       CrsTaskViewTypeA &A,
                       unsigned int &part) {
 
@@ -29,7 +29,6 @@ namespace Tacho {
 #ifdef TACHO_EXECUTE_TASKS_SERIAL
 #else
       typedef typename CrsTaskViewTypeA::future_type future_type;
-      TaskFactory factory;
 #endif
 
       if (member.team_rank() == 0) {
@@ -75,19 +74,19 @@ namespace Tacho {
               case Variant::One:   // SuperNodes-ByBlocks
               case Variant::Two:   // Sparse-ByBlocks
                 { 
+                  const auto task_type     = Kokkos::TaskSingle;
+                  const auto task_priority = Kokkos::TaskHighPriority;
+                  
                   // construct a task
-                  const auto f = factory.create<future_type>
-                    (policy,
-                     Chol<Uplo::Upper,
-                     CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
-                     ::createTaskFunctor(policy, aa), 1);
-                  
-                  // manage dependence
-                  factory.depend(policy, f, aa.Future());
+                  const auto f = 
+                    policy.task_spawn(Chol<Uplo::Upper,
+                                      CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
+                                      ::createTaskFunctor(policy, aa), 
+                                      aa.Future(),
+                                      task_type, task_priority);
+                  TACHO_TEST_FOR_ABORT(f.is_null(),
+                                       ">> Tacho::CholByBlocks(Upper) returns a null future (out of memory)");
                   aa.setFuture(f);
-                  
-                  // spawn a task
-                  factory.spawn(policy, f);
                   break;
                 }
               }
@@ -121,21 +120,19 @@ namespace Tacho {
                   case Variant::One:    // Sparse-ByBlocks
                   case Variant::Two:    // SuperNodes-ByBlocks
                     {
-                      const auto f = factory.create<future_type>
-                        (policy, 
-                         Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-                         CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
-                         ::createTaskFunctor(policy, Diag::NonUnit, 1.0, aa, bb), 2);
+                      const auto task_type     = Kokkos::TaskSingle;
+                      const auto task_priority = Kokkos::TaskRegularPriority;
                       
-                      // trsm dependence
-                      factory.depend(policy, f, aa.Future());
-                      factory.depend(policy, f, bb.Future());
-                      
-                      // place task signature on b
+                      const future_type dep[] = { aa.Future(), bb.Future() };
+                      const auto f = 
+                        policy.task_spawn(Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                                          CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
+                                          ::createTaskFunctor(policy, Diag::NonUnit, 1.0, aa, bb),
+                                          policy.when_all(2,dep),
+                                          task_type, task_priority);
+                      TACHO_TEST_FOR_ABORT(f.is_null(),
+                                           ">> Tacho::DenseGemmByBlocks(NoTrans,NoTrans) returns a null future (out of memory)");
                       bb.setFuture(f);
-                      
-                      // spawn a task
-                      factory.spawn(policy, f);              
                       break;
                     }
                   }
@@ -188,21 +185,19 @@ namespace Tacho {
                             case Variant::One:
                             case Variant::Two:
                               {
-                                const auto f = factory.create<future_type>
-                                  (policy, 
-                                   Herk<Uplo::Upper,Trans::ConjTranspose,
-                                   CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
-                                   ::createTaskFunctor(policy, -1.0, aa, 1.0, cc), 2);
+                                const auto task_type     = Kokkos::TaskSingle;
+                                const auto task_priority = Kokkos::TaskHighPriority;
                                 
-                                // dependence
-                                factory.depend(policy, f, aa.Future());              
-                                factory.depend(policy, f, cc.Future());
-                                
-                                // place task signature on y
+                                const future_type dep[] = { aa.Future(), cc.Future() };
+                                const auto f = 
+                                  policy.task_spawn(Herk<Uplo::Upper,Trans::ConjTranspose,
+                                                    CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
+                                                    ::createTaskFunctor(policy, -1.0, aa, 1.0, cc), 
+                                                    policy.when_all(2,dep),
+                                                    task_type, task_priority);
+                                TACHO_TEST_FOR_ABORT(f.is_null(),
+                                                     ">> Tacho::DenseGemmByBlocks(NoTrans,NoTrans) returns a null future (out of memory)");
                                 cc.setFuture(f);
-                                
-                                // spawn a task
-                                factory.spawn(policy, f);
                                 break;
                               }
                             }
@@ -232,22 +227,19 @@ namespace Tacho {
                             case Variant::One:
                             case Variant::Two: 
                               {
-                                const auto f = factory.create<future_type>
-                                  (policy, 
-                                   Gemm<Trans::ConjTranspose,Trans::NoTranspose,
-                                   CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
-                                   ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
-                                
-                                // dependence
-                                factory.depend(policy, f, aa.Future());
-                                factory.depend(policy, f, bb.Future());
-                                factory.depend(policy, f, cc.Future());
-                                
-                                // place task signature on y
+                                const auto task_type     = Kokkos::TaskSingle;
+                                const auto task_priority = Kokkos::TaskRegularPriority;
+
+                                const future_type dep[] = { aa.Future(), bb.Future(), cc.Future() };
+                                const auto f = 
+                                  policy.task_spawn(Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                                                    CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
+                                                    ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 
+                                                    policy.when_all(3,dep),
+                                                    task_type, task_priority);
+                                TACHO_TEST_FOR_ABORT(f.is_null(),
+                                                     ">> Tacho::DenseGemmByBlocks(NoTrans,NoTrans) returns a null future (out of memory)");                                
                                 cc.setFuture(f);
-                                
-                                // spawn a task
-                                factory.spawn(policy, f);
                                 break;
                               }
                             }
@@ -308,30 +300,18 @@ namespace Tacho {
       const char* Label() const { return "Chol::ByBlocks"; }
       
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-          _policy.clear_dependence(this);
-
-        r_val = Chol::invoke(_policy, _policy.member_single(), 
-                             _A, _part);
-        if (_part < _A.NumRows()) {
-          _policy.respawn_needing_memory(this); 
-        } else {
-          _A.setFuture(typename ExecViewTypeA::future_type());
-        }
-      }
-      
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
 
         // return for only team leader
         if (member.team_rank() == 0) {
-          _policy.clear_dependence(this);
+          //_policy.clear_dependence(this);
 
           const int ierr = Chol::invoke(_policy, member,
                                         _A, _part);
 
           if (_part < _A.NumRows()) {
-            _policy.respawn_needing_memory(this); 
+            _policy.respawn(this, Kokkos::TaskLowPriority);
+            //_policy.respawn_needing_memory(this); 
           } else {
             _A.setFuture(typename ExecViewTypeA::future_type());
           }

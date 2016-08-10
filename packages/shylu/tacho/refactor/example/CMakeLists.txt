@@ -157,6 +157,12 @@ ENDIF()
 
 IF(Kokkos_ENABLE_Serial)
   TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleGraphTools_Serial
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleGraphTools_Serial.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDirectSymbolicFactorization_Serial
     NOEXEPREFIX
     SOURCES Tacho_ExampleDirectSymbolicFactorization_Serial.cpp
@@ -165,6 +171,12 @@ IF(Kokkos_ENABLE_Serial)
 ENDIF()
 
 IF(Kokkos_ENABLE_OpenMP)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleGraphTools_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleGraphTools_OpenMP.cpp
+    COMM serial mpi
+  )
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleDirectSymbolicFactorization_OpenMP
     NOEXEPREFIX
@@ -204,14 +216,23 @@ ENDIF()
 # Numeric Factorization
 # =====================
 
-# IF(Kokkos_ENABLE_Serial)
-#   TRIBITS_ADD_EXECUTABLE(
-#     Tacho_ExampleCholSuperNodesByBlocks_Serial
-#     NOEXEPREFIX
-#     SOURCES Tacho_ExampleCholSuperNodesByBlocks_Serial.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
+IF(Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholSuperNodesByBlocks_Serial
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholSuperNodesByBlocks_Serial.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+IF(Kokkos_ENABLE_OpenMP)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholSuperNodesByBlocks_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholSuperNodesByBlocks_OpenMP.cpp
+    COMM serial mpi
+  )
+ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
