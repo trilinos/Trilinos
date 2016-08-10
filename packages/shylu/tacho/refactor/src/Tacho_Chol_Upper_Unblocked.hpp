@@ -18,7 +18,7 @@ namespace Tacho {
   Chol<Uplo::Upper,
        AlgoChol::Unblocked,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            CrsExecViewTypeA &A) {
 
     typedef typename CrsExecViewTypeA::value_type    value_type;

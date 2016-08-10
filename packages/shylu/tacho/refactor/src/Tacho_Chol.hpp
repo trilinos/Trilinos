@@ -23,7 +23,7 @@ namespace Tacho {
              typename ExecViewTypeA>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       ExecViewTypeA &A) {
       fprintf(stderr, ">> Template Args - Uplo %d, Algo %d, Variant %d\n", 
               ArgUplo, ArgAlgo, ArgVariant);           
@@ -57,14 +57,7 @@ namespace Tacho {
       const char* Label() const { return "Chol"; }
 
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-        r_val = Chol::invoke(_policy, _policy.member_single(),
-                             _A);
-        _A.setFuture(typename ExecViewTypeA::future_type());
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
         const int ierr = Chol::invoke(_policy, member,
                                       _A);
         

@@ -7,7 +7,7 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Kokkos::Threads exec_space;
+typedef Kokkos::OpenMP exec_space;
 
 #include "Tacho_ExampleDenseCholByBlocks.hpp"
 

@@ -21,7 +21,7 @@ namespace Tacho {
   Chol<Uplo::Upper,
        AlgoChol::SuperNodesByBlocks,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            CrsExecViewTypeA &A) {
 
     int r_val = 0;

@@ -24,7 +24,7 @@ namespace Tacho {
   Chol<Uplo::Upper,
        AlgoChol::ExternalLapack,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            DenseExecViewTypeA &A) {
     // static_assert( Kokkos::Impl::is_same<
     //                typename DenseMatrixTypeA::space_type,
