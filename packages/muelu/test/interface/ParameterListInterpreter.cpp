@@ -303,6 +303,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         for (size_t q = 0; q < classes.size(); q++)
           run_sed("'s/" + classes[q] + "<.*>/" + classes[q] + "<ignored> >/'", baseFile);
 
+        // Strip ParamterList pointers
+        run_sed("'s/Teuchos::RCP<Teuchos::ParameterList const>{.*}/Teuchos::RCP<Teuchos::ParameterList const>{<ignored>} >/'", baseFile);
+
 #ifdef __APPLE__
         // Some Macs print outs ptrs as 0x0 instead of 0, fix that
         run_sed("'/RCP/ s/=0x0/=0/g'", baseFile);

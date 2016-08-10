@@ -48,10 +48,19 @@
 
     </ParameterList>
 
+    <ParameterList name="myRepartitionHeuristicFact">
+      <Parameter name="factory"                                     type="string"   value="RepartitionHeuristicFactory"/>
+      <Parameter name="A"                                           type="string"   value="myRAPFact"/>
+      <Parameter name="repartition: min rows per proc"              type="int"      value="2000"/>
+      <Parameter name="repartition: max imbalance"                  type="double"   value="1.327"/>
+      <Parameter name="repartition: start level"                    type="int"      value="1"/>
+    </ParameterList>
+
     <ParameterList name="myZoltanInterface">
       <Parameter name="factory"                                     type="string"   value="Zoltan2Interface"/>
 
       <Parameter name="A"                                           type="string"   value="myRAPFact"/>
+      <Parameter name="number of partitions"                        type="string"   value="myRepartitionHeuristicFact"/>
       <Parameter name="Coordinates"                                 type="string"   value="myTransferCoordinatesFact"/>
 
       <ParameterList name="ParameterList">
@@ -62,10 +71,8 @@
     <ParameterList name="myRepartitionFact">
       <Parameter name="factory"                                     type="string"   value="RepartitionFactory"/>
       <Parameter name="A"                                           type="string"   value="myRAPFact"/>
+      <Parameter name="number of partitions"                        type="string"   value="myRepartitionHeuristicFact"/>
       <Parameter name="Partition"                                   type="string"   value="myZoltanInterface"/>
-      <Parameter name="repartition: min rows per proc"              type="int"      value="2000"/>
-      <Parameter name="repartition: max imbalance"                  type="double"   value="1.327"/>
-      <Parameter name="repartition: start level"                    type="int"      value="1"/>
       <Parameter name="repartition: remap parts"                    type="bool"     value="true"/>
     </ParameterList>
 
