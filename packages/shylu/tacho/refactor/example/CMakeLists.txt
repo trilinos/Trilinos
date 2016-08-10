@@ -279,6 +279,24 @@ ENDIF()
 # Solver Interface
 # ================
 
+IF(Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleSolver_Serial
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleSolver_Serial.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+IF(Kokkos_ENABLE_OpenMP)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleSolver_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleSolver_OpenMP.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleSolver_Pthreads
@@ -287,18 +305,6 @@ IF(Kokkos_ENABLE_Pthread)
     COMM serial mpi
   )
 ENDIF()
-
-
-# IF(Kokkos_ENABLE_Serial)
-#   TRIBITS_ADD_EXECUTABLE(
-#     Tacho_ExampleSolver_Serial
-#     NOEXEPREFIX
-#     SOURCES Tacho_ExampleSolver_Serial.cpp
-#     COMM serial mpi
-#   )
-# ENDIF()
-
-
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
         SOURCE_FILES test.mtx
