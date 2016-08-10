@@ -59,6 +59,7 @@
 #include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RepartitionInterface.hpp"
@@ -226,6 +227,12 @@ namespace MueLuTests {
 #endif
     levelTwo->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
+    // define repartition heuristics
+    RCP<RepartitionHeuristicFactory> RepHeuFact = Teuchos::rcp(new RepartitionHeuristicFactory);
+    RepHeuFact->SetFactory("A", MueLu::NoFactory::getRCP()); // 2x2 blocked operator
+    RepHeuFact->SetParameter("repartition: start level",Teuchos::ParameterEntry(0));
+    RepHeuFact->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(200));
+
     // define sub block factories for blocked operator "A"
     RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory());
     A11Fact->SetFactory("A",MueLu::NoFactory::getRCP());
@@ -246,10 +253,12 @@ namespace MueLuTests {
     if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
       RCP<IsorropiaInterface> Iso11Interface = Teuchos::rcp(new IsorropiaInterface());
       Iso11Interface->SetFactory("A", A11Fact);
+      Iso11Interface->SetFactory("number of partitions", RepHeuFact);
       Iso11Interface->SetFactory("UnAmalgamationInfo", Amalg11Fact);
 
       Rep11Interface = Teuchos::rcp(new RepartitionInterface());
       Rep11Interface->SetFactory("A", A11Fact);
+      Rep11Interface->SetFactory("number of partitions", RepHeuFact);
       Rep11Interface->SetFactory("AmalgamatedPartition", Iso11Interface);
     } else {
       // we are in Tpetra mode (even though Isorropia would be available)
@@ -279,9 +288,8 @@ namespace MueLuTests {
 
     RCP<RepartitionFactory> Rep11Factory = Teuchos::rcp(new RepartitionFactory);
     Rep11Factory->SetFactory("A", A11Fact);
+    Rep11Factory->SetFactory("number of partitions", RepHeuFact);
     Rep11Factory->SetFactory("Partition",Rep11Interface);
-    Rep11Factory->SetParameter("repartition: start level",Teuchos::ParameterEntry(0));
-    Rep11Factory->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(100));
 
     RCP<CloneRepartitionInterface> Rep22Interface = Teuchos::rcp(new CloneRepartitionInterface());
     Rep22Interface->SetFactory("A", A22Fact);
@@ -289,9 +297,8 @@ namespace MueLuTests {
 
     RCP<RepartitionFactory> Rep22Factory = Teuchos::rcp(new RepartitionFactory);
     Rep22Factory->SetFactory("A", A22Fact);
+    Rep22Factory->SetFactory("number of partitions", RepHeuFact);
     Rep22Factory->SetFactory("Partition",Rep22Interface);
-    Rep22Factory->SetParameter("repartition: start level",Teuchos::ParameterEntry(0));
-    Rep22Factory->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(100));
 
     // set up factory manager
     RCP<FactoryManager> FC1 = rcp(new FactoryManager());
