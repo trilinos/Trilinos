@@ -154,13 +154,9 @@ namespace MueLu {
       //decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
       // todo verify that we have only zeros in the vector (e.g. test norm?)
     } else if (numPartitions == -1) {
-      // todo test whether decomposition is Teuchos::null!
-
-      if (decomposition.is_null()) {
-        GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
-        Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
-        return;
-      }
+      GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
+      Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
+      return;
     }
 
     // ======================================================================================================
