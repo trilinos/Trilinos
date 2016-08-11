@@ -33,7 +33,7 @@
 #define EJ_Version_h
 
 static char const *qainfo[] = {
-    "ejoin", "2016/06/30", "1.4.1",
+    "ejoin", "2016/08/10", "1.4.2",
 };
 
 #endif

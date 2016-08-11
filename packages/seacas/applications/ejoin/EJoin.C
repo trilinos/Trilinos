@@ -863,7 +863,7 @@ namespace {
             if (gpos >= 0)
               connectivity[i] = gpos + 1;
           }
-          oeb->put_field_data("connectivity", connectivity);
+          oeb->put_field_data("connectivity_raw", connectivity);
           transfer_field_data(ieb, oeb, Ioss::Field::ATTRIBUTE);
         }
       }
