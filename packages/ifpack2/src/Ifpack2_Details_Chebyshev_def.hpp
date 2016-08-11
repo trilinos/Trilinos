@@ -88,21 +88,23 @@ struct V_ReciprocalThresholdSelfFunctor
   typedef typename KAT::mag_type mag_type;
 
   XV X_;
-  const value_type m_min_val;
-  const mag_type m_min_val_mag;
+  const value_type minVal_;
+  const mag_type minValMag_;
 
   V_ReciprocalThresholdSelfFunctor (const XV& X,
                                     const value_type& min_val) :
     X_ (X),
-    m_min_val (min_val),
-    m_min_val_mag (KAT::abs (min_val))
+    minVal_ (min_val),
+    minValMag_ (KAT::abs (min_val))
   {}
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i) const
   {
-    if (KAT::abs (X_(i)) < m_min_val_mag) {
-      X_[i] = m_min_val;
+    const mag_type X_i_abs = KAT::abs (X_[i]);
+
+    if (X_i_abs < minValMag_) {
+      X_[i] = minVal_;
     }
     else {
       X_[i] = KAT::one () / X_[i];
@@ -180,6 +182,42 @@ reciprocal_threshold (Tpetra::Vector<S,L,G,N>& V, const S& minVal)
 {
   GlobalReciprocalThreshold<Tpetra::Vector<S,L,G,N> >::compute (V, minVal);
 }
+
+namespace { // (anonymous)
+
+// Functor for making sure the real parts of all entries of a vector
+// are nonnegative.  We use this in computeInitialGuessForPowerMethod
+// below.
+template<class OneDViewType,
+         class LocalOrdinal = typename OneDViewType::size_type>
+class PositivizeVector {
+  static_assert (Kokkos::Impl::is_view<OneDViewType>::value,
+                 "OneDViewType must be a 1-D Kokkos::View.");
+  static_assert (static_cast<int> (OneDViewType::rank) == 1,
+                 "This functor only works with a 1-D View.");
+  static_assert (std::is_integral<LocalOrdinal>::value,
+                 "The second template parameter, LocalOrdinal, "
+                 "must be an integer type.");
+public:
+  PositivizeVector (const OneDViewType& x) : x_ (x) {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const LocalOrdinal& i) const
+  {
+    typedef typename OneDViewType::non_const_value_type IST;
+    typedef Kokkos::Details::ArithTraits<IST> STS;
+    typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+
+    if (STS::real (x_(i)) < STM::zero ()) {
+      x_(i) = -x_(i);
+    }
+  }
+
+private:
+  OneDViewType x_;
+};
+
+} // namespace (anonymous)
 
 template<class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::checkInputMatrix () const
@@ -1317,6 +1355,7 @@ powerMethodWithInitGuess (const op_type& A,
   using std::endl;
   if (debug_) {
     *out_ << " powerMethodWithInitGuess:" << endl;
+    //x.describe (*out_, Teuchos::VERB_EXTREME);
   }
 
   const ST zero = static_cast<ST> (0.0);
@@ -1378,6 +1417,32 @@ powerMethodWithInitGuess (const op_type& A,
 }
 
 template<class ScalarType, class MV>
+void
+Chebyshev<ScalarType, MV>::
+computeInitialGuessForPowerMethod (V& x) const
+{
+  typedef typename MV::device_type::execution_space dev_execution_space;
+  typedef typename MV::device_type::memory_space dev_memory_space;
+  typedef typename MV::local_ordinal_type LO;
+  typedef typename MV::impl_scalar_type IST;
+  typedef Kokkos::Details::ArithTraits<IST> STS;
+  typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+
+  x.randomize ();
+
+  // Fix for #64.  The above fills x with pseudorandom numbers between
+  // -1 and 1.  Constrain those numbers to be between 0 and 1.
+  x.template modify<dev_memory_space> ();
+  auto x_lcl = x.template getLocalView<dev_memory_space> ();
+  auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
+
+  const LO lclNumRows = static_cast<LO> (x.getLocalLength ());
+  Kokkos::RangePolicy<dev_execution_space, LO> range (0, lclNumRows);
+  PositivizeVector<decltype (x_lcl_1d), LO> functor (x_lcl_1d);
+  Kokkos::parallel_for (range, functor);
+}
+
+template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
 powerMethod (const op_type& A, const V& D_inv, const int numIters)
@@ -1389,7 +1454,7 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
 
   const ST zero = static_cast<ST> (0.0);
   V x (A.getDomainMap ());
-  x.randomize ();
+  computeInitialGuessForPowerMethod (x);
 
   ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
 

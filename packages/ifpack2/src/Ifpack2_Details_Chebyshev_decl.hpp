@@ -634,6 +634,14 @@ private:
                    const ST eigRatio,
                    const V& D_inv);
 
+  /// \brief Fill x with random initial guess for power method
+  ///
+  /// \param x [out] Initial guess vector; a domain Map vector of the
+  ///   matrix.
+  ///
+  /// This is an implementation detail of powerMethod() below.
+  void computeInitialGuessForPowerMethod (V& x) const;
+
   /// \brief Use the power method to estimate the maximum eigenvalue
   ///   of A*D_inv, given an initial guess vector x.
   ///
