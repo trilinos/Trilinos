@@ -486,6 +486,14 @@ private:
   //! Whether apply() will compute and return the max residual norm.
   bool computeMaxResNorm_;
 
+  /// \brief Output stream for debug output ONLY.
+  ///
+  /// This is ONLY valid if debug_ is true.
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+  //! Whether to print copious debug output.
+  bool debug_;
+
   //@}
   //! \name Computational helper methods
   //@{
@@ -638,7 +646,7 @@ private:
   ///   A.  This method may use this Vector as scratch space.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
-  static ST
+  ST
   powerMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, V& x);
 
   /// \brief Use the power method to estimate the maximum eigenvalue
@@ -650,7 +658,7 @@ private:
   ///   method.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
-  static ST
+  ST
   powerMethod (const op_type& A, const V& D_inv, const int numIters);
 
   //! The maximum infinity norm of all the columns of X.

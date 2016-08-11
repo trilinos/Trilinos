@@ -52,15 +52,11 @@
 /// It defines a new implementation of Chebyshev iteration.
 
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
-#include <Kokkos_ArithTraits.hpp>
+#include "Kokkos_ArithTraits.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_oblackholestream.hpp"
 #include <cmath>
-
-// Uncommit the #define line below if you want Chebyshev to do extra
-// debug checking and generate a lot of debugging output to stderr (on
-// all processes in the communicator).  Even if you uncomment this
-// line, the debugging code will only be enabled if the CMake option
-// Teuchos_ENABLE_DEBUG was set to ON when configuring Trilinos.
-//#define IFPACK_DETAILS_CHEBYSHEV_DEBUG 1
+#include <iostream>
 
 namespace Ifpack2 {
 namespace Details {
@@ -195,10 +191,9 @@ void Chebyshev<ScalarType, MV>::checkInputMatrix () const
     "A has " << A_->getGlobalNumRows () << " rows and "
     << A_->getGlobalNumCols () << " columns.");
 
-  // In a debug build, test that the domain and range Maps of the
-  // matrix are the same.
-#ifdef HAVE_TEUCHOS_DEBUG
-  if (! A_.is_null ()) {
+  // In debug mode, test that the domain and range Maps of the matrix
+  // are the same.
+  if (debug_ && ! A_.is_null ()) {
     Teuchos::RCP<const map_type> domainMap = A_->getDomainMap ();
     Teuchos::RCP<const map_type> rangeMap = A_->getRangeMap ();
 
@@ -209,10 +204,8 @@ void Chebyshev<ScalarType, MV>::checkInputMatrix () const
       ! domainMap->isSameAs (*rangeMap), std::invalid_argument,
       "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be "
       "the same (in the sense of isSameAs())." << std::endl << "We only check "
-      "for this if Trilinos was built with the CMake configuration option "
-      "Teuchos_ENABLE_DEBUG set to ON.");
+      "for this in debug mode.");
   }
-#endif // HAVE_TEUCHOS_DEBUG
 }
 
 
@@ -253,7 +246,8 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
-  computeMaxResNorm_ (false)
+  computeMaxResNorm_ (false),
+  debug_ (false)
 {
   checkConstructorInput ();
 }
@@ -278,7 +272,8 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
-  computeMaxResNorm_ (false)
+  computeMaxResNorm_ (false),
+  debug_ (false)
 {
   checkConstructorInput ();
   setParameters (params);
@@ -320,6 +315,7 @@ setParameters (Teuchos::ParameterList& plist)
   const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
   const bool defaultComputeMaxResNorm = false;
+  const bool defaultDebug = false;
 
   // We'll set the instance data transactionally, after all reads
   // from the ParameterList.  That way, if any of the ParameterList
@@ -337,11 +333,25 @@ setParameters (Teuchos::ParameterList& plist)
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
+  bool debug = defaultDebug;
 
   // Fetch the parameters from the ParameterList.  Defer all
   // externally visible side effects until we have finished all
   // ParameterList interaction.  This makes the method satisfy the
   // strong exception guarantee.
+
+  if (plist.isParameter ("debug")) {
+    try { // a bool
+      debug = plist.get<bool> ("debug");
+    }
+    catch (Teuchos::Exceptions::InvalidParameterType&) {}
+
+    try { // an int instead of a bool
+      int debugInt = plist.get<bool> ("debug");
+      debug = debugInt != 0;
+    }
+    catch (Teuchos::Exceptions::InvalidParameterType&) {}
+  }
 
   // Get the user-supplied inverse diagonal.
   //
@@ -614,6 +624,32 @@ setParameters (Teuchos::ParameterList& plist)
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
   computeMaxResNorm_ = computeMaxResNorm;
+  debug_ = debug;
+
+  if (debug_) {
+    // Only print if myRank == 0.
+    int myRank = -1;
+    if (A_.is_null () || A_->getComm ().is_null ()) {
+      // We don't have a communicator (yet), so we assume that
+      // everybody can print.  Revise this expectation in setMatrix().
+      myRank = 0;
+    }
+    else {
+      myRank = A_->getComm ()->getRank ();
+    }
+
+    if (myRank == 0) {
+      out_ = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
+    }
+    else {
+      Teuchos::RCP<Teuchos::oblackholestream> blackHole (new Teuchos::oblackholestream ());
+      out_ = Teuchos::getFancyOStream (blackHole); // print nothing on other processes
+    }
+  }
+  else { // NOT debug
+    // free the "old" output stream, if there was one
+    out_ = Teuchos::null;
+  }
 }
 
 
@@ -640,6 +676,34 @@ Chebyshev<ScalarType, MV>::setMatrix (const Teuchos::RCP<const row_matrix_type>&
       reset ();
     }
     A_ = A;
+
+    // The communicator may have changed, or we may not have had a
+    // communicator before.  Thus, we may have to reset the debug
+    // output stream.
+    if (debug_) {
+      // Only print if myRank == 0.
+      int myRank = -1;
+      if (A.is_null () || A->getComm ().is_null ()) {
+        // We don't have a communicator (yet), so we assume that
+        // everybody can print.  Revise this expectation in setMatrix().
+        myRank = 0;
+      }
+      else {
+        myRank = A->getComm ()->getRank ();
+      }
+
+      if (myRank == 0) {
+        out_ = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
+      }
+      else {
+        Teuchos::RCP<Teuchos::oblackholestream> blackHole (new Teuchos::oblackholestream ());
+        out_ = Teuchos::getFancyOStream (blackHole); // print nothing on other processes
+      }
+    }
+    else { // NOT debug
+      // free the "old" output stream, if there was one
+      out_ = Teuchos::null;
+    }
   }
 }
 
@@ -818,33 +882,38 @@ template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::MT
 Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (), std::runtime_error, "Ifpack2::Chebyshev::apply: The input "
-    "matrix A is null.  Please call setMatrix() with a nonnull input matrix, "
-    "and then call compute(), before calling this method.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (lambdaMaxForApply_), std::runtime_error,
-    "Ifpack2::Chebyshev::apply: There is no estimate for the max eigenvalue."
-    << std::endl << computeBeforeApplyReminder);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (lambdaMinForApply_), std::runtime_error,
-    "Ifpack2::Chebyshev::apply: There is no estimate for the min eigenvalue."
-    << std::endl << computeBeforeApplyReminder);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    STS::isnaninf (eigRatioForApply_), std::runtime_error,
-    "Ifpack2::Chebyshev::apply: There is no estimate for the ratio of the max "
-    "eigenvalue to the min eigenvalue."
-    << std::endl << computeBeforeApplyReminder);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    D_.is_null (), std::runtime_error,
-    "Ifpack2::Chebyshev::apply: "
-    "The vector of inverse diagonal entries of the matrix has not yet been "
-    "computed." << std::endl << computeBeforeApplyReminder);
+  const char prefix[] = "Ifpack2::Chebyshev::apply: ";
+
+  if (debug_) {
+    *out_ << "apply: " << std::endl;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, prefix << "The input matrix A is null. "
+     " Please call setMatrix() with a nonnull input matrix, and then call "
+     "compute(), before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (STS::isnaninf (lambdaMaxForApply_), std::runtime_error,
+     prefix << "There is no estimate for the max eigenvalue."
+     << std::endl << computeBeforeApplyReminder);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (STS::isnaninf (lambdaMinForApply_), std::runtime_error,
+     prefix << "There is no estimate for the min eigenvalue."
+     << std::endl << computeBeforeApplyReminder);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (STS::isnaninf (eigRatioForApply_), std::runtime_error,
+     prefix <<"There is no estimate for the ratio of the max "
+     "eigenvalue to the min eigenvalue."
+     << std::endl << computeBeforeApplyReminder);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (D_.is_null (), std::runtime_error, prefix << "The vector of inverse "
+     "diagonal entries of the matrix has not yet been computed."
+     << std::endl << computeBeforeApplyReminder);
 
   if (textbookAlgorithm_) {
     textbookApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_,
                        lambdaMinForApply_, eigRatioForApply_, *D_);
-  } else {
+  }
+  else {
     ifpackApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_,
                      lambdaMinForApply_, eigRatioForApply_, *D_);
   }
@@ -855,7 +924,8 @@ Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
     Teuchos::Array<MT> norms (B.getNumVectors ());
     R.norm2 (norms ());
     return *std::max_element (norms.begin (), norms.end ());
-  } else {
+  }
+  else {
     return Teuchos::ScalarTraits<MT>::zero ();
   }
 }
@@ -1074,20 +1144,19 @@ ifpackApplyImpl (const op_type& A,
                  const ST eigRatio,
                  const V& D_inv)
 {
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  using std::cerr;
   using std::endl;
-  cerr << "\\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
-  cerr << "\\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+  const bool debug = debug_;
+
+  if (debug) {
+    *out_ << " \\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
+    *out_ << " \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+  }
 
   if (numIters <= 0) {
     return;
   }
-  const ST one = Teuchos::as<ST> (1);
-  const ST two = Teuchos::as<ST> (2);
+  const ST one = static_cast<ST> (1.0);
+  const ST two = static_cast<ST> (2.0);
 
   // Quick solve when the matrix A is the identity.
   if (lambdaMin == one && lambdaMax == lambdaMin) {
@@ -1102,15 +1171,13 @@ ifpackApplyImpl (const op_type& A,
   const ST theta = (beta + alpha) / two;
   const ST s1 = theta * delta;
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  cerr << "alpha = " << alpha << endl
-       << "beta = " << beta << endl
-       << "delta = " << delta << endl
-       << "theta = " << theta << endl
-       << "s1 = " << s1 << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+  if (debug) {
+    *out_ << " alpha = " << alpha << endl
+          << " beta = " << beta << endl
+          << " delta = " << delta << endl
+          << " theta = " << theta << endl
+          << " s1 = " << s1 << endl;
+  }
 
   // Fetch cached temporary vectors.
   Teuchos::RCP<MV> V_ptr, W_ptr;
@@ -1123,95 +1190,76 @@ ifpackApplyImpl (const op_type& A,
   MV& V1 = *V_ptr;
   MV& W = *W_ptr;
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  cerr << "Iteration " << 1 << ":" << endl
-       << "- \\|D\\|_{\\infty} = " << D_->normInf () << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+  if (debug) {
+    *out_ << " Iteration " << 1 << ":" << endl
+          << " - \\|D\\|_{\\infty} = " << D_->normInf () << endl;
+  }
 
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     computeResidual (V1, B, A, X); // V1 = B - A*X
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
+    }
 
     solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+    }
 
     X.update (one, W, one); // X = X + W
-  } else {
-    solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
-
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
-
-    Tpetra::deep_copy(X, W); // X = 0 + W
   }
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-  cerr << "- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+  else {
+    solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
+    if (debug) {
+      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+    }
+    Tpetra::deep_copy (X, W); // X = 0 + W
+  }
+  if (debug) {
+    *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+  }
 
   // The rest of the iterations.
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "Iteration " << deg+1 << ":" << endl;
-    cerr << "- \\|D\\|_{\\infty} = " << D_->normInf () << endl;
-    cerr << "- \\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
-    cerr << "- \\|A\\|_{\\text{frob}} = " << A_->getFrobeniusNorm () << endl;
-    cerr << "- rhok = " << rhok << endl;
-    V1.putScalar (STS::zero ());
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " Iteration " << deg+1 << ":" << endl
+            << " - \\|D\\|_{\\infty} = " << D_->normInf () << endl
+            << " - \\|B\\|_{\\infty} = " << maxNormInf (B) << endl
+            << " - \\|A\\|_{\\text{frob}} = " << A_->getFrobeniusNorm () << endl
+            << " - rhok = " << rhok << endl;
+      V1.putScalar (STS::zero ()); // ???????
+    }
 
     computeResidual (V1, B, A, X); // V1 = B - A*X
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
+    }
 
     rhokp1 = one / (two * s1 - rhok);
     dtemp1 = rhokp1 * rhok;
     dtemp2 = two * rhokp1 * delta;
     rhok = rhokp1;
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- dtemp1 = " << dtemp1 << endl
-         << "- dtemp2 = " << dtemp2 << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - dtemp1 = " << dtemp1 << endl
+            << " - dtemp2 = " << dtemp2 << endl;
+    }
 
     W.scale (dtemp1);
     W.elementWiseMultiply (dtemp2, D_inv, V1, one);
     X.update (one, W, one);
 
-#ifdef HAVE_TEUCHOS_DEBUG
-#ifdef IFPACK_DETAILS_CHEBYSHEV_DEBUG
-    cerr << "- \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
-    cerr << "- \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
-#endif // IFPACK_DETAILS_CHEBYSHEV_DEBUG
-#endif // HAVE_TEUCHOS_DEBUG
+    if (debug) {
+      *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
+      *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
+    }
   }
 }
 
@@ -1223,41 +1271,66 @@ powerMethodWithInitGuess (const op_type& A,
                           const int numIters,
                           V& x)
 {
-  const ST zero = Teuchos::as<ST> (0);
-  const ST one = Teuchos::as<ST> (1);
+  using std::endl;
+  if (debug_) {
+    *out_ << " powerMethodWithInitGuess:" << endl;
+  }
+
+  const ST zero = static_cast<ST> (0.0);
+  const ST one = static_cast<ST> (1.0);
   ST lambdaMax = zero;
   ST RQ_top, RQ_bottom, norm;
 
   V y (A.getRangeMap ());
   norm = x.norm2 ();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    norm == zero, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (norm == zero, std::runtime_error,
     "Ifpack2::Chebyshev::powerMethodWithInitGuess: "
     "The initial guess has zero norm.  This could be either because Tpetra::"
     "Vector::randomize() filled the vector with zeros (if that was used to "
     "compute the initial guess), or because the norm2 method has a bug.  The "
     "first is not impossible, but unlikely.");
 
-  //std::cerr.precision(15);
-  //std::cerr << "Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << std::endl;
+  if (debug_) {
+    *out_ << "  Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << endl;
+  }
+
   x.scale (one / norm);
-  //std::cerr << "norm1(x.scale(one/norm)): " << x.norm1 () << std::endl;
+
+  if (debug_) {
+    *out_ << "  norm1(x.scale(one/norm)): " << x.norm1 () << endl;
+  }
+
   for (int iter = 0; iter < numIters; ++iter) {
+    if (debug_) {
+      *out_ << "  Iteration " << iter << endl;
+    }
     A.apply (x, y);
-    //std::cerr << "norm1(y) before: " << y.norm1 ();
+    if (debug_) {
+      *out_ << "   norm1(y) before: " << y.norm1 ();
+    }
     solve (y, D_inv, y);
-    //std::cerr << ", norm1(y) after: " << y.norm1 () << std::endl;
+    if (debug_) {
+      *out_ << ", norm1(y) after: " << y.norm1 () << endl;
+    }
     RQ_top = y.dot (x);
     RQ_bottom = x.dot (x);
-    //std::cerr << "RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << std::endl;
+    if (debug_) {
+      *out_ << "   RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << endl;
+    }
     lambdaMax = RQ_top / RQ_bottom;
     norm = y.norm2 ();
     if (norm == zero) { // Return something reasonable.
+      if (debug_) {
+        *out_ << "   norm is zero; returning zero" << endl;
+      }
       return zero;
     }
     x.update (one / norm, y, zero);
   }
-  //std::cerr << "lambdaMax: " << lambdaMax << std::endl;
+  if (debug_) {
+    *out_ << "  lambdaMax: " << lambdaMax << endl;
+  }
   return lambdaMax;
 }
 
@@ -1266,11 +1339,17 @@ typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
 powerMethod (const op_type& A, const V& D_inv, const int numIters)
 {
-  const ST zero = Teuchos::as<ST> (0);
+  using std::endl;
+  if (debug_) {
+    *out_ << "powerMethod:" << endl;
+  }
+
+  const ST zero = static_cast<ST> (0.0);
   V x (A.getDomainMap ());
   x.randomize ();
 
   ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
+
   // mfh 07 Jan 2015: Taking the real part here is only a concession
   // to the compiler, so that this class can build with ScalarType =
   // std::complex<T>.  Our Chebyshev implementation only works with
@@ -1279,7 +1358,11 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
   // specialization for ScalarType = std::complex<T> with a stub
   // implementation (that builds, but whose constructor throws).
   if (STS::real (lambdaMax) < STS::real (zero)) {
-    // Max eigenvalue estimate is negative.  Perhaps we got unlucky
+    if (debug_) {
+      *out_ << "real(lambdaMax) = " << STS::real (lambdaMax) << " < 0; try "
+        "again with a different random initial guess" << endl;
+    }
+    // Max eigenvalue estimate was negative.  Perhaps we got unlucky
     // with the random initial guess.  Try again with a different (but
     // still random) initial guess.  Only try again once, so that the
     // run time is bounded.
