@@ -61,6 +61,8 @@
 
 #include "MueLu_Utilities.hpp"
 
+#include "MueLu_RAPFactory.hpp"
+#include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -104,6 +106,16 @@ namespace MueLu {
     const double nonzeroImbalance    = pL.get<double>("repartition: max imbalance");
     //const bool   remapPartitions     = pL.get<bool>  ("repartition: remap parts");
 
+    RCP<const FactoryBase> Afact = GetFactory("A");
+    if(Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
+        Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null)
+      GetOStream(Warnings) <<
+        "MueLu::RepartitionHeuristicFactory::Build: The generation factory for A must " \
+        "be a RAPFactory or a SubBlockAFactory providing the non-rebalanced matrix information! " \
+        "It specifically must not be of type Rebalance(Blocked)AcFactory or similar. " \
+        "Please check the input. Make also sure that \"number of partitions\" is provided to" \
+        "the Interface class and the RepartitionFactory instance." << std::endl;
+
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -146,7 +158,6 @@ namespace MueLu {
             "\n  # processes with rows = " << Teuchos::toString(numActiveProcesses) << std::endl;
 
         Set(currentLevel, "number of partitions", 1);
-
         return;
       }
     }
