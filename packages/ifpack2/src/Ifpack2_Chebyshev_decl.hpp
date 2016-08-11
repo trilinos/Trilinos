@@ -222,6 +222,9 @@ public:
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
+  //! The Kokkos::Device specialization used by the input MatrixType.
+  typedef typename MatrixType::node_type::device_type device_type;
+
   //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
@@ -232,20 +235,23 @@ public:
   ///
   /// MatrixType must be a Tpetra::RowMatrix specialization.  This
   /// typedef will always be a Tpetra::RowMatrix specialization.
-  typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> row_matrix_type;
+  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> row_matrix_type;
 
-  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
-                "Ifpack2::Chebyshev: Please use MatrixType = Tpetra::RowMatrix.");
+  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
+                 "Ifpack2::Chebyshev: MatrixType must be a Tpetra::RowMatrix "
+                 "specialization.  Don't use Tpetra::CrsMatrix here.");
 
   //! The Tpetra::Map specialization matching MatrixType.
-  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   /// \brief The Tpetra::Vector specialization matching MatrixType.
   ///
   /// If you wish to supply setParameters() a precomputed vector of
   /// diagonal entries of the matrix, use a pointer to an object of
   /// this type.
-  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> vector_type;
 
   //@}
   // \name Constructors and destructors

@@ -1350,79 +1350,134 @@ describe (Teuchos::FancyOStream& out,
 
   const Teuchos::EVerbosityLevel vl =
     (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
-  if (vl > Teuchos::VERB_NONE) {
-    if (vl == Teuchos::VERB_LOW) {
-      out << description () << endl;
-    } else { // vl > Teuchos::VERB_LOW
-      // YAML requires quoting the key in this case, to distinguish
-      // key's colons from the colon that separates key from value.
-      out << "\"Ifpack2::Details::Chebyshev\":" << endl;
-      Teuchos::OSTab tab1 (Teuchos::rcpFromRef (out));
-      out << "Template parameters:" << endl;
-      {
-        Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
-        out << "ScalarType: \"" << TypeNameTraits<ScalarType>::name () << "\"" << endl
-            << "MV: \"" << TypeNameTraits<MV>::name () << "\"" << endl;
-      }
-      // "Computed parameters" literally means "parameters whose
-      // values were computed by compute()."
-      out << endl << "Computed parameters:" << endl;
-      {
-        Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
-        // Users might want to see the values in the computed inverse
-        // diagonal, so we print them out at the highest verbosity.
-        out << "D_: ";
-        if (D_.is_null ()) {
-          out << "unset" << endl;
-        } else if (vl <= Teuchos::VERB_HIGH) {
-          out << "set" << endl;
-        } else { // D_ not null and vl > Teuchos::VERB_HIGH
-          out << endl;
-          {
-            Teuchos::OSTab tab3 (Teuchos::rcpFromRef (out));
-            D_->describe (out, vl);
-          }
-          out << endl;
-        }
-        // V_ and W_ are scratch space; their values are irrelevant.
-        // All that matters is whether or not they have been set.
-        out << "V_: " << (V_.is_null () ? "unset" : "set") << endl
-            << "W_: " << (W_.is_null () ? "unset" : "set") << endl
-            << "computedLambdaMax_: " << computedLambdaMax_ << endl
-            << "computedLambdaMin_: " << computedLambdaMin_ << endl
-            << "lambdaMaxForApply_: " << lambdaMaxForApply_ << endl
-            << "lambdaMinForApply_: " << lambdaMinForApply_ << endl
-            << "eigRatioForApply_: " << eigRatioForApply_ << endl;
-      }
-      out << "User parameters:" << endl;
-      {
-        Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
-        out << "userInvDiag_: ";
-        if (userInvDiag_.is_null ()) {
-          out << "unset" << endl;
-        } else if (vl <= Teuchos::VERB_HIGH) {
-          out << "set" << endl;
-        } else { // userInvDiag_ not null and vl > Teuchos::VERB_HIGH
-          out << endl;
-          {
-            Teuchos::OSTab tab3 (Teuchos::rcpFromRef (out));
-            userInvDiag_->describe (out, vl);
-          }
-          out << endl;
-        }
-        out << "userLambdaMax_: " << userLambdaMax_ << endl
-            << "userLambdaMin_: " << userLambdaMin_ << endl
-            << "userEigRatio_: " << userEigRatio_ << endl
-            << "numIters_: " << numIters_ << endl
-            << "eigMaxIters_: " << eigMaxIters_ << endl
-            << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
-            << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
-            << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
-            << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
-      }
-      out << endl;
+  if (vl == Teuchos::VERB_NONE) {
+    return; // print NOTHING
+  }
+
+  // By convention, describe() starts with a tab.
+  //
+  // This does affect all processes on which it's valid to print to
+  // 'out'.  However, it does not actually print spaces to 'out'
+  // unless operator<< gets called, so it's safe to use on all
+  // processes.
+  Teuchos::OSTab tab0 (out);
+
+  // We only print on Process 0 of the matrix's communicator.  If
+  // the matrix isn't set, we don't have a communicator, so we have
+  // to assume that every process can print.
+  int myRank = -1;
+  if (A_.is_null () || A_->getComm ().is_null ()) {
+    myRank = 0;
+  }
+  else {
+    myRank = A_->getComm ()->getRank ();
+  }
+  if (myRank == 0) {
+    // YAML requires quoting the key in this case, to distinguish
+    // key's colons from the colon that separates key from value.
+    out << "\"Ifpack2::Details::Chebyshev\":" << endl;
+  }
+  Teuchos::OSTab tab1 (out);
+
+  if (vl == Teuchos::VERB_LOW) {
+    if (myRank == 0) {
+      out << "degree: " << numIters_ << endl
+          << "lambdaMax: " << lambdaMaxForApply_ << endl
+          << "alpha: " << eigRatioForApply_ << endl
+          << "lambdaMin: " << lambdaMinForApply_ << endl
+          << "boost factor: " << boostFactor_ << endl;
+    }
+    return;
+  }
+
+  // vl > Teuchos::VERB_LOW
+
+  if (myRank == 0) {
+    out << "Template parameters:" << endl;
+    {
+      Teuchos::OSTab tab2 (out);
+      out << "ScalarType: " << TypeNameTraits<ScalarType>::name () << endl
+          << "MV: " << TypeNameTraits<MV>::name () << endl;
+    }
+
+    // "Computed parameters" literally means "parameters whose
+    // values were computed by compute()."
+    if (myRank == 0) {
+      out << "Computed parameters:" << endl;
     }
   }
+
+  // Print computed parameters
+  {
+    Teuchos::OSTab tab2 (out);
+    // Users might want to see the values in the computed inverse
+    // diagonal, so we print them out at the highest verbosity.
+    if (myRank == 0) {
+      out << "D_: ";
+    }
+    if (D_.is_null ()) {
+      if (myRank == 0) {
+        out << "unset" << endl;
+      }
+    }
+    else if (vl <= Teuchos::VERB_HIGH) {
+      if (myRank == 0) {
+        out << "set" << endl;
+      }
+    }
+    else { // D_ not null and vl > Teuchos::VERB_HIGH
+      if (myRank == 0) {
+        out << endl;
+      }
+      // By convention, describe() first indents, then prints.
+      // We can rely on other describe() implementations to do that.
+      D_->describe (out, vl);
+    }
+    if (myRank == 0) {
+      // V_ and W_ are scratch space; their values are irrelevant.
+      // All that matters is whether or not they have been set.
+      out << "V_: " << (V_.is_null () ? "unset" : "set") << endl
+          << "W_: " << (W_.is_null () ? "unset" : "set") << endl
+          << "computedLambdaMax_: " << computedLambdaMax_ << endl
+          << "computedLambdaMin_: " << computedLambdaMin_ << endl
+          << "lambdaMaxForApply_: " << lambdaMaxForApply_ << endl
+          << "lambdaMinForApply_: " << lambdaMinForApply_ << endl
+          << "eigRatioForApply_: " << eigRatioForApply_ << endl;
+    }
+  } // print computed parameters
+
+  if (myRank == 0) {
+    out << "User parameters:" << endl;
+  }
+
+  // Print user parameters
+  {
+    Teuchos::OSTab tab2 (out);
+    out << "userInvDiag_: ";
+    if (userInvDiag_.is_null ()) {
+      out << "unset" << endl;
+    }
+    else if (vl <= Teuchos::VERB_HIGH) {
+      out << "set" << endl;
+    }
+    else { // userInvDiag_ not null and vl > Teuchos::VERB_HIGH
+      if (myRank == 0) {
+        out << endl;
+      }
+      userInvDiag_->describe (out, vl);
+    }
+    if (myRank == 0) {
+      out << "userLambdaMax_: " << userLambdaMax_ << endl
+          << "userLambdaMin_: " << userLambdaMin_ << endl
+          << "userEigRatio_: " << userEigRatio_ << endl
+          << "numIters_: " << numIters_ << endl
+          << "eigMaxIters_: " << eigMaxIters_ << endl
+          << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
+          << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
+          << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
+          << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
+    }
+  } // print user parameters
 }
 
 } // namespace Details
