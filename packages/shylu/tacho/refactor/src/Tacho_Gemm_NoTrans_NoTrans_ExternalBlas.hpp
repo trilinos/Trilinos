@@ -53,20 +53,16 @@ namespace Tacho {
     typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
     typedef typename DenseExecViewTypeA::value_type   value_type;
 
-#ifndef HAVE_SHYLUTACHO_TEUCHOS    
-    TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("Teuchos") );            
-#endif
-
-    if (member.team_size() == 1) {
-      // Multithreaded MKL handle its own threads
 #ifdef HAVE_SHYLUTACHO_TEUCHOS    
-      Teuchos::BLAS<ordinal_type,value_type> blas;
-      
-      const ordinal_type m = C.NumRows();
-      const ordinal_type n = C.NumCols();
-      const ordinal_type k = B.NumRows();
-      
-      if (m > 0 && n > 0 && k > 0)
+    Teuchos::BLAS<ordinal_type,value_type> blas;
+
+    const ordinal_type m = C.NumRows();
+    const ordinal_type n = C.NumCols();
+    const ordinal_type k = B.NumRows();
+
+    if (m > 0 && n > 0 && k > 0) {    
+      if (member.team_size() == 1) {
+        // Multithreaded MKL handle its own threads      
         blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
                   m, n, k,
                   value_type(alpha),
@@ -74,17 +70,8 @@ namespace Tacho {
                   B.ValuePtr(), B.BaseObject().ColStride(),
                   value_type(beta),
                   C.ValuePtr(), C.BaseObject().ColStride());
-#endif
-    } else {
-      // Sequential MKL is invoked in the team interface
-#ifdef HAVE_SHYLUTACHO_TEUCHOS    
-      Teuchos::BLAS<ordinal_type,value_type> blas;
-      
-      const ordinal_type m = C.NumRows();
-      const ordinal_type n = C.NumCols();
-      const ordinal_type k = B.NumRows();
-      
-      if (m > 0 && n > 0 && k > 0) {
+      } else {
+        // Sequential MKL is invoked in the team interface
         const ordinal_type b = 32;
         const ordinal_type
           pend  = k/b + (k%b > 0),
@@ -133,8 +120,10 @@ namespace Tacho {
           member.team_barrier();
         }
       }
-#endif
     } 
+#else
+    TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("Teuchos") );            
+#endif
 
     return 0;
   }
