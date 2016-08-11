@@ -1445,8 +1445,10 @@ namespace {
             strcmp(dname,".") != 0 &&
             strcmp(bname,"sierra") != 0) 
         {
-        char* bname = basename(bname);
-        char* dname = dirname(dname);
+        //char* bname = basename(bname);
+        //char* dname = dirname(dname);
+        bname = basename(dname);
+        dname = dirname(dname);
         }
         
       if(strcmp(bname,"sierra") == 0)
