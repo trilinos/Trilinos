@@ -197,15 +197,6 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
       throw "NOX Error";
     }
 
-    // Apply preconditioner if enabled
-    if (precond) {
-      if (recomputeJacobian)
-        solnPtr->computeJacobian();
-      solnPtr->applyRightPreconditioning(false, lsParams, solnPtr->getF(), *oldPrecF);
-    }
-    else
-      *oldPrecF = solnPtr->getF();
-
     // Test the initial guess
     status = testPtr->checkStatus(*this, checkType);
     if ((status == NOX::StatusTest::Converged) &&
@@ -225,6 +216,15 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
       printUpdate();
       return status;
     }
+
+    // Apply preconditioner if enabled
+    if (precond) {
+      if (recomputeJacobian)
+        solnPtr->computeJacobian();
+      solnPtr->applyRightPreconditioning(false, lsParams, solnPtr->getF(), *oldPrecF);
+    }
+    else
+      *oldPrecF = solnPtr->getF();
 
     // Copy initial guess to old soln
     *oldSolnPtr = *solnPtr;
@@ -257,15 +257,6 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
       return status;
     }
 
-    // Apply preconditioner if enabled
-    if (precond) {
-      if (recomputeJacobian)
-        solnPtr->computeJacobian();
-      solnPtr->applyRightPreconditioning(false, lsParams, solnPtr->getF(), *precF);
-    }
-    else
-      *precF = solnPtr->getF();
-
     // Evaluate the current status.
     status = testPtr->checkStatus(*this, checkType);
 
@@ -283,6 +274,15 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     printUpdate();
     return status;
   }
+
+  // Apply preconditioner if enabled
+  if (precond) {
+    if (recomputeJacobian)
+      solnPtr->computeJacobian();
+    solnPtr->applyRightPreconditioning(false, lsParams, solnPtr->getF(), *precF);
+  }
+  else
+    *precF = solnPtr->getF();
 
   // Manage the matrices of past iterates and QR factors
   if (storeParam > 0) {
@@ -391,15 +391,6 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     printUpdate();
     return status;
   }
-
-  // Apply preconditioner if enabled
-  if (precond) {
-    if (recomputeJacobian)
-      solnPtr->computeJacobian();
-    solnPtr->applyRightPreconditioning(false, lsParams, solnPtr->getF(), *precF);
-  }
-  else
-    *precF = solnPtr->getF();
 
   // Update iteration count
   nIter++;
