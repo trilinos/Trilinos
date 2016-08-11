@@ -22,6 +22,7 @@ template<typename T>
 class MultistateField
 {
 public:
+    MultistateField() {}
     MultistateField(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &stkField) :
             numStates(stkField.number_of_states())
     {
