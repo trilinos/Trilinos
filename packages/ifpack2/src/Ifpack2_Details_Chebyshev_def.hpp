@@ -1000,6 +1000,49 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
   }
   RCP<V> D_rangeMap = makeRangeMapVector (D_rowMap);
 
+  if (debug_) {
+    // In debug mode, make sure that all diagonal entries are
+    // positive, on all processes.  Note that *out_ only prints on
+    // Process 0 of the matrix's communicator.
+    D_rangeMap->template sync<Kokkos::HostSpace> ();
+    auto D_lcl = D_rangeMap->template getLocalView<Kokkos::HostSpace> ();
+    auto D_lcl_1d = Kokkos::subview (D_lcl, Kokkos::ALL (), 0);
+
+    typedef typename MV::impl_scalar_type IST;
+    typedef typename MV::local_ordinal_type LO;
+    typedef Kokkos::Details::ArithTraits<IST> STS;
+    typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+
+    const LO lclNumRows = static_cast<LO> (D_rangeMap->getLocalLength ());
+    bool foundNonpositiveValue = false;
+    for (LO i = 0; i < lclNumRows; ++i) {
+      if (STS::real (D_lcl_1d(i)) <= STM::zero ()) {
+        foundNonpositiveValue = true;
+        break;
+      }
+    }
+
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
+    const int lclSuccess = foundNonpositiveValue ? 0 : 1;
+    int gblSuccess = lclSuccess; // to be overwritten
+    if (! D_rangeMap->getMap ().is_null () && D_rangeMap->getMap ()->getComm ().is_null ()) {
+      const Teuchos::Comm<int>& comm = * (D_rangeMap->getMap ()->getComm ());
+      reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    }
+    if (gblSuccess == 1) {
+      *out_ << "makeInverseDiagonal: The matrix's diagonal entries all have "
+        "positive real part (this is good for Chebyshev)." << std::endl;
+    }
+    else {
+      *out_ << "makeInverseDiagonal: The matrix's diagonal has at least one "
+        "entry with nonpositive real part, on at least one process in the "
+        "matrix's communicator.  This is bad for Chebyshev." << std::endl;
+    }
+  }
+
   // Invert the diagonal entries, replacing entries less (in
   // magnitude) than the user-specified value with that value.
   reciprocal_threshold (*D_rangeMap, minDiagVal_);
