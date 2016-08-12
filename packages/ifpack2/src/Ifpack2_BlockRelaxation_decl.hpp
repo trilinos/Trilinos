@@ -60,10 +60,8 @@ namespace Ifpack2 {
 /// \brief Block relaxation preconditioners (or smoothers) for
 ///   Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
 /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
-/// \tparam ContainerType A specialization or subclass of Container; a
-///   type that knows how to solve linear systems with diagonal blocks
-///   of MatrixType.  Those blocks may be either sparse or dense; the
-///   subclass of Container controls the representation.
+/// \tparam ContainerType DO NOT SPECIFY THIS EXPLICITLY.
+///   This exists only for backwards compatibility.
 ///
 /// This class implements the construction and application of block
 /// relaxation preconditioners and smoothers, for sparse matrices
@@ -71,10 +69,13 @@ namespace Ifpack2 {
 /// implements Tpetra::Operator, and its apply() method applies the
 /// block relaxation.
 ///
-/// BlockRelaxation implements block variants of the following relaxations:
-/// - (Damped) Jacobi;
-/// - (Damped) Gauss-Seidel, i.e., SOR
-/// - (Damped) symmetric Gauss-Seidel, i.e., symmetric SOR
+/// BlockRelaxation implements block variants of the following
+/// relaxations:
+/// <ul>
+/// <li> Damped Jacobi </li>
+/// <li> Damped Gauss-Seidel, i.e., SOR </li>
+/// <li> Damped symmetric Gauss-Seidel, i.e., symmetric SOR </li>
+/// </ul>
 ///
 /// For a list of supported parameters, please refer to the
 /// documentation of setParameters().
@@ -110,8 +111,15 @@ public:
   //! Tpetra::RowMatrix specialization corresponding to \c MatrixType.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
 
-  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
-                "Ifpack2::BlockRelaxation: Please use MatrixType = Tpetra::RowMatrix.");
+  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
+                 "Ifpack2::BlockRelaxation: Please use MatrixType = Tpetra::RowMatrix.");
+#if 0
+  static_assert (std::is_same<ContainerType, Container<row_matrix_type> >::value,
+                 "Ifpack2::BlockRelaxation: Do NOT specify the (second) "
+                 "ContainerType template parameter explicitly.  The default "
+                 "value is fine.  Please instead specify the container type to "
+                 "use by setting the \"relaxation: container\" parameter.");
+#endif // 0
 
   //@}
   // \name Constructors and Destructors
@@ -379,7 +387,7 @@ private:
   int OverlapLevel_;
 
   //! Contains the (block) diagonal elements of \c Matrix.
-  mutable std::vector<Teuchos::RCP<ContainerType> > Containers_;
+  mutable std::vector<Teuchos::RCP<Container<row_matrix_type> > > Containers_;
 
   // FIXME (mfh 06 Oct 2014) This doesn't comply with the naming
   // convention for instance members of a class.  Furthermore, the
@@ -401,6 +409,9 @@ private:
 
   //! Number of local blocks
   local_ordinal_type NumLocalBlocks_;
+
+  //! How to solve each block; the "container type"
+  std::string containerType_;
 
   //! Which type of point relaxation approach to use
   Details::RelaxationType PrecType_;
