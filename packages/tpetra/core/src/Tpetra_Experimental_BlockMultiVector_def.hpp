@@ -888,8 +888,6 @@ blockJacobiUpdate (const Scalar& alpha,
   typedef typename device_type::memory_space memory_space;
   typedef impl_scalar_type IST;
 
-  const IST zero = Kokkos::Details::ArithTraits<IST>::zero ();
-  const IST one = Kokkos::Details::ArithTraits<IST>::one ();
   const IST alphaImpl = static_cast<IST> (alpha);
   const IST betaImpl = static_cast<IST> (beta);
   const LO numVecs = mv_.getNumVectors ();
