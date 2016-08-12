@@ -1424,9 +1424,6 @@ computeInitialGuessForPowerMethod (V& x) const
   typedef typename MV::device_type::execution_space dev_execution_space;
   typedef typename MV::device_type::memory_space dev_memory_space;
   typedef typename MV::local_ordinal_type LO;
-  typedef typename MV::impl_scalar_type IST;
-  typedef Kokkos::Details::ArithTraits<IST> STS;
-  typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
 
   x.randomize ();
 
