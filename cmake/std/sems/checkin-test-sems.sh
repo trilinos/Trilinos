@@ -110,7 +110,7 @@ else
 defaults = [
   \"-j4\",
   \"--ctest-timeout=180\",
-  \"--disable-packages=PyTrilinos,Pliris,Claps,TriKota\",
+  \"--disable-packages=PyTrilinos,Claps,TriKota\",
   \"--skip-case-no-email\",
   ]
   " > $_LOCAL_CHECKIN_TEST_DEFAULTS
