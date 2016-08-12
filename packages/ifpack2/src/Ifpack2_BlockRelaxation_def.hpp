@@ -1365,64 +1365,24 @@ BlockRelaxation<MatrixType,ContainerType>::getMatDiag () const
 }//namespace Ifpack2
 
 
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
-// For ETI
-#include "Ifpack2_DenseContainer_decl.hpp"
-#include "Ifpack2_SparseContainer_decl.hpp"
-#include "Ifpack2_TriDiContainer_decl.hpp"
-#include "Ifpack2_BandedContainer_decl.hpp"
-#include "Ifpack2_ILUT_decl.hpp"
-#ifdef HAVE_IFPACK2_AMESOS2
-#include "Ifpack2_Details_Amesos2Wrapper.hpp"
-#endif
-
-// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// Macro that does explicit template instantiation (ETI) for
+// Ifpack2::BlockRelaxation.  S, LO, GO, N correspond to the four
+// template parameters of Ifpack2::Preconditioner and
+// Tpetra::RowMatrix.
+//
+// We only instantiate for MatrixType = Tpetra::RowMatrix.  There's no
+// need to instantiate for Tpetra::CrsMatrix too.  All Ifpack2
 // preconditioners can and should do dynamic casts if they need a type
-// more specific than RowMatrix.
+// more specific than RowMatrix.  This keeps build time short and
+// library and executable sizes small.
 
-#ifdef HAVE_IFPACK2_AMESOS2
-#define IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N) \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::SparseContainer<       \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      Ifpack2::Details::Amesos2Wrapper<Tpetra::RowMatrix<S,LO,GO,N> > > >;
-#else
-#define IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N) /* */
-#endif
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
   template \
   class Ifpack2::BlockRelaxation<      \
     Tpetra::RowMatrix<S, LO, GO, N>,   \
-    Ifpack2::Container<Tpetra::RowMatrix<S, LO, GO, N> > >; \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::SparseContainer<       \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      Ifpack2::ILUT< ::Tpetra::RowMatrix<S,LO,GO,N> > > >; \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::DenseContainer<        \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      S > >; \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::TriDiContainer<        \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      S > >; \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::BandedContainer<        \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      S > >; \
-  IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N)
+    Ifpack2::Container<Tpetra::RowMatrix<S, LO, GO, N> > >;
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 

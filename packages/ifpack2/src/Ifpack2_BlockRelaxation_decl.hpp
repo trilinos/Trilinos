@@ -113,13 +113,11 @@ public:
 
   static_assert (std::is_same<MatrixType, row_matrix_type>::value,
                  "Ifpack2::BlockRelaxation: Please use MatrixType = Tpetra::RowMatrix.");
-#if 0
   static_assert (std::is_same<ContainerType, Container<row_matrix_type> >::value,
                  "Ifpack2::BlockRelaxation: Do NOT specify the (second) "
                  "ContainerType template parameter explicitly.  The default "
                  "value is fine.  Please instead specify the container type to "
                  "use by setting the \"relaxation: container\" parameter.");
-#endif // 0
 
   //@}
   // \name Constructors and Destructors
