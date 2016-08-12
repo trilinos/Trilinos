@@ -46,12 +46,18 @@
 /// \file Ifpack2_Container.hpp
 /// \brief Ifpack2::Container class declaration
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Tpetra_RowMatrix.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Describable.hpp>
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Tpetra_RowMatrix.hpp"
+#include "Teuchos_Describable.hpp"
 #include <iostream>
 #include <type_traits>
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  // Forward declaration to avoid include.
+  class ParameterList;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Ifpack2 {
 
@@ -267,6 +273,28 @@ operator<< (std::ostream& os, const Ifpack2::Container<MatrixType>& obj)
   return obj.print (os);
 }
 
-}
+} // namespace Ifpack2
+
+namespace Teuchos {
+
+/// \brief Partial specialization of TypeNameTraits for Ifpack2::Container.
+///
+/// \tparam MatrixType The template parameter of Ifpack2::Container.
+///   Must be a Tpetra::RowMatrix specialization.
+template<class MatrixType>
+class TEUCHOSCORE_LIB_DLL_EXPORT TypeNameTraits< ::Ifpack2::Container<MatrixType> >
+{
+ public:
+  static std::string name () {
+    return std::string ("Ifpack2::Container<") +
+      TypeNameTraits<MatrixType>::name () + " >";
+  }
+
+  static std::string concreteName (const ::Ifpack2::Container<MatrixType>&) {
+    return name ();
+  }
+};
+
+} // namespace Teuchos
 
 #endif // IFPACK2_CONTAINER_HPP
