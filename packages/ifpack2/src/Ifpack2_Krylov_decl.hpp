@@ -41,7 +41,7 @@
 */
 
 /// \file Ifpack2_Krylov_decl.hpp
-/// \brief Declaration of Ifpack2::Krylov class.
+/// \brief Declaration of Ifpack2::DeprecatedAndMayDisappearAtAnyTime::Krylov class.
 /// \author Paul Tsuji
 ///
 /// \warning This file and its contents are DEPRECATED.
@@ -63,6 +63,7 @@ namespace Teuchos {
 }
 
 namespace Ifpack2 {
+namespace DeprecatedAndMayDisappearAtAnyTime {
 
   /// \struct BelosScalarType
   /// \brief Traits class for determining the scalar type to use for Belos
@@ -80,17 +81,22 @@ namespace Ifpack2 {
   };
 
   /// \class Krylov
-  /// \brief Wrapper for iterative linear solvers (e.g., CG or GMRES).
+  /// \brief Wrapper for iterative linear solvers.  DO NOT USE THIS
+  ///   CLASS.  IT IS DEPRECATED AND MAY GO AWAY AT ANY TIME.
   /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
   ///
-  /// \warning This class has been DEPRECATED.  DO NOT USE THIS CLASS.
-  ///   IT MAY GO AWAY AT ANY TIME.
+  /// \warning This class has been DEPRECATED.  IT HAS BEEN DEPRECATED
+  ///   SINCE APRIL 2015 SO PLEASE DON'T USE IT.  IT MAY GO AWAY AT
+  ///   ANY TIME.  IT WON'T EVEN BUILD BY DEFAULT.
   ///
   /// Krylov computes a few iterations of CG or GMRES with zero
   /// initial guess as a smoother for a given Tpetra::RowMatrix.
   ///
   /// For a list of all run-time parameters that this class accepts,
   /// see the documentation of setParameters().
+  ///
+  /// This class should never have existed in the first place.
+  /// Please don't use it.
   template<class MatrixType>
   class IFPACK2_DEPRECATED Krylov :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -351,6 +357,7 @@ namespace Ifpack2 {
     Teuchos::RCP<prec_type> ifpack2_prec_;
   };
 
+} // namespace DeprecatedAndMayDisappearAtAnyTime
 } // namespace Ifpack2
 
 #endif // IFPACK2_KRYLOV_DECL_HPP
