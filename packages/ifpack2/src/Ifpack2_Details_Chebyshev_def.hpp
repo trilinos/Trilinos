@@ -252,17 +252,23 @@ void
 Chebyshev<ScalarType, MV>::
 checkConstructorInput () const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(STS::isComplex, std::logic_error,
-    "Ifpack2::Chebyshev: This class' implementation of Chebyshev iteration "
-    "only works for real-valued, symmetric positive definite matrices.  "
-    "However, you instantiated this class for ScalarType = "
-    << Teuchos::TypeNameTraits<ScalarType>::name () << ", which is a complex-"
-    "valued type.  While this may be algorithmically correct if all of the "
-    "complex numbers in the matrix have zero imaginary part, we forbid using "
-    "complex ScalarType altogether in order to remind you of the limitations "
-    "of our implementation (and of the algorithm itself).");
-
-  checkInputMatrix ();
+  // mfh 12 Aug 2016: The if statement avoids an "unreachable
+  // statement" warning for the checkInputMatrix() call, when
+  // STS::isComplex is false.
+  if (STS::isComplex) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::logic_error, "Ifpack2::Chebyshev: This class' implementation "
+       "of Chebyshev iteration only works for real-valued, symmetric positive "
+       "definite matrices.  However, you instantiated this class for ScalarType"
+       " = " << Teuchos::TypeNameTraits<ScalarType>::name () << ", which is a "
+       "complex-valued type.  While this may be algorithmically correct if all "
+       "of the complex numbers in the matrix have zero imaginary part, we "
+       "forbid using complex ScalarType altogether in order to remind you of "
+       "the limitations of our implementation (and of the algorithm itself).");
+  }
+  else {
+    checkInputMatrix ();
+  }
 }
 
 template<class ScalarType, class MV>
