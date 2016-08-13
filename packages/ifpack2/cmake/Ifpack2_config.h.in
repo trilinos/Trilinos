@@ -26,6 +26,9 @@
 /* Define if experimental Ifpack2 code is enabled. */
 #cmakedefine HAVE_IFPACK2_EXPERIMENTAL
 
+/* Define if deprecated Ifpack2 code is enabled. */
+#cmakedefine HAVE_IFPACK2_DEPRECATED_CODE
+
 /* Define if experimental Ifpack2 code that uses TpetraKernels is enabled. */
 #cmakedefine HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
 

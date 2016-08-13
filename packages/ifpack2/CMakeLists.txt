@@ -87,6 +87,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable building and installation of experimental Ifpack2 features."
   NO )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE
+  HAVE_IFPACK2_DEPRECATED_CODE
+  "Enable building and installation of long deprecated Ifpack2 code.  This is OFF by default.  DO NOT ENABLE THIS UNLESS YOU INSIST ON BUILDING DEPRECATED CODE.  You may see lots of deprecated warnings if you enable this.  That's your problem; you wanted to use the code."
+  NO )
+
 IF(TpetraKernels_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Experimental)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental

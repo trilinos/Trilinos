@@ -208,7 +208,6 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Hiptmair
     IdentitySolver
     ILUT
-    Krylov
     LinePartitioner
     LocalFilter
     LocalSparseTriangularSolver
@@ -232,6 +231,9 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
       Details::Amesos2Wrapper
       )
+  ENDIF()
+  IF(Ifpack2_ENABLE_DEPRECATED_CODE)
+    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES Krylov)
   ENDIF()
 
   # Set the list of Ifpack2 classes templated on <LO, GO, Node> for

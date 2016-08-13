@@ -50,6 +50,9 @@
 #ifndef IFPACK2_KRYLOV_DECL_HPP
 #define IFPACK2_KRYLOV_DECL_HPP
 
+#include "Ifpack2_ConfigDefs.hpp"
+#ifdef HAVE_IFPACK2_DEPRECATED_CODE
+
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 
@@ -89,14 +92,11 @@ namespace DeprecatedAndMayDisappearAtAnyTime {
   ///   SINCE APRIL 2015 SO PLEASE DON'T USE IT.  IT MAY GO AWAY AT
   ///   ANY TIME.  IT WON'T EVEN BUILD BY DEFAULT.
   ///
-  /// Krylov computes a few iterations of CG or GMRES with zero
-  /// initial guess as a smoother for a given Tpetra::RowMatrix.
-  ///
-  /// For a list of all run-time parameters that this class accepts,
-  /// see the documentation of setParameters().
-  ///
-  /// This class should never have existed in the first place.
-  /// Please don't use it.
+  /// Please do not use this class.  If you insist on enabling this
+  /// long deprecated class, you must first set the CMake option
+  /// Ifpack2_ENABLE_DEPRECATED_CODE:BOOL=ON, then rerun CMake, then
+  /// rebuild and reinstall Trilinos.  Otherwise, this class does not
+  /// exist and cannot be used.
   template<class MatrixType>
   class IFPACK2_DEPRECATED Krylov :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -360,4 +360,5 @@ namespace DeprecatedAndMayDisappearAtAnyTime {
 } // namespace DeprecatedAndMayDisappearAtAnyTime
 } // namespace Ifpack2
 
+#endif // HAVE_IFPACK2_DEPRECATED_CODE
 #endif // IFPACK2_KRYLOV_DECL_HPP

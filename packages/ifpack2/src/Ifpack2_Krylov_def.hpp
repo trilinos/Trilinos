@@ -43,6 +43,8 @@
 #ifndef IFPACK2_KRYLOV_DEF_HPP
 #define IFPACK2_KRYLOV_DEF_HPP
 
+#ifdef HAVE_IFPACK2_DEPRECATED_CODE
+
 #include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_ILUT.hpp"
@@ -571,4 +573,5 @@ describe (Teuchos::FancyOStream &out,
 #define IFPACK2_KRYLOV_INSTANT(S,LO,GO,N) \
   template class Ifpack2::DeprecatedAndMayDisappearAtAnyTime::Krylov< Tpetra::RowMatrix<S, LO, GO, N> >;
 
+#endif // HAVE_IFPACK2_DEPRECATED_CODE
 #endif /* IFPACK2_KRYLOV_DEF_HPP */
