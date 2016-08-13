@@ -298,7 +298,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params
   computedLambdaMax_ (STS::nan ()),
   computedLambdaMin_ (STS::nan ()),
   lambdaMaxForApply_ (STS::nan ()),
-  boostFactor_(Teuchos::as<ST> (1.1)),
+  boostFactor_ (static_cast<MT> (1.1)),
   lambdaMinForApply_ (STS::nan ()),
   eigRatioForApply_ (STS::nan ()),
   userLambdaMax_ (STS::nan ()),
@@ -345,7 +345,7 @@ setParameters (Teuchos::ParameterList& plist)
   // ML an Epetra matrix, it will use Ifpack for Chebyshev, in which
   // case it would defer to Ifpack's default settings.)
   const ST defaultEigRatio = Teuchos::as<ST> (30);
-  const double defaultBoostFactor = Teuchos::as<double>(1.1);
+  const MT defaultBoostFactor = static_cast<MT> (1.1);
   const ST defaultMinDiagVal = STS::eps ();
   const int defaultNumIters = 1;
   const int defaultEigMaxIters = 10;
@@ -363,7 +363,7 @@ setParameters (Teuchos::ParameterList& plist)
   ST lambdaMax = defaultLambdaMax;
   ST lambdaMin = defaultLambdaMin;
   ST eigRatio = defaultEigRatio;
-  double boostFactor = defaultBoostFactor;
+  MT boostFactor = defaultBoostFactor;
   ST minDiagVal = defaultMinDiagVal;
   int numIters = defaultNumIters;
   int eigMaxIters = defaultEigMaxIters;
@@ -556,12 +556,41 @@ setParameters (Teuchos::ParameterList& plist)
     "parameter (also called \"smoother: Chebyshev alpha\") must be >= 1, "
     "but you supplied the value " << eigRatio << ".");
 
-  boostFactor = plist.get("chebyshev: boost factor", defaultBoostFactor);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    boostFactor < Teuchos::as<double>(1.0),
-    std::invalid_argument,
-    "Ifpack2::Chebyshev::setParameters: \"chebyshev: boost factor\""
-    "parameter must be >= 1, but you supplied the value " << boostFactor << ".");
+  // See Github Issue #234.  This parameter may be either MT
+  // (preferred) or double.  We check both.
+  {
+    const char paramName[] = "chebyshev: boost factor";
+
+    if (plist.isParameter (paramName)) {
+      if (plist.isType<MT> (paramName)) { // MT preferred
+        boostFactor = plist.get<MT> (paramName);
+      }
+      else if (! std::is_same<double, MT>::value &&
+               plist.isType<double> (paramName)) {
+        const double dblBF = plist.get<double> (paramName);
+        boostFactor = static_cast<MT> (dblBF);
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::invalid_argument,
+           "Ifpack2::Chebyshev::setParameters: \"chebyshev: boost factor\""
+           "parameter must have type magnitude_type (MT) or double.");
+      }
+    }
+    else { // parameter not in the list
+      // mfh 12 Aug 2016: To preserve current behavior (that fills in
+      // any parameters not in the input ParameterList with their
+      // default values), we call set() here.  I don't actually like
+      // this behavior; I prefer the Belos model, where the input
+      // ParameterList is a delta from current behavior.  However, I
+      // don't want to break things.
+      plist.set (paramName, defaultBoostFactor);
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (boostFactor < Teuchos::ScalarTraits<MT>::one (), std::invalid_argument,
+       "Ifpack2::Chebyshev::setParameters: \"" << paramName << "\" parameter "
+       "must be >= 1, but you supplied the value " << boostFactor << ".");
+  }
 
   // Same name in Ifpack2 and Ifpack.
   minDiagVal = plist.get ("chebyshev: min diagonal value", minDiagVal);
@@ -654,7 +683,7 @@ setParameters (Teuchos::ParameterList& plist)
   userLambdaMax_ = lambdaMax;
   userLambdaMin_ = lambdaMin;
   userEigRatio_ = eigRatio;
-  boostFactor_ = Teuchos::as<ST>(boostFactor);
+  boostFactor_ = static_cast<MT> (boostFactor);
   minDiagVal_ = minDiagVal;
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
