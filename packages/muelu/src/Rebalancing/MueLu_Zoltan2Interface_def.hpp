@@ -126,12 +126,19 @@ namespace MueLu {
 #endif
 
     int numParts = Get<int>(level, "number of partitions");
-    if (numParts == 1 || numParts == -1) {
+    if (numParts == 1) {
       // Single processor, decomposition is trivial: all zeros
       RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
       Set(level, "Partition", decomposition);
       return;
+    } else if (numParts == -1) {
+      // No repartitioning
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Teuchos::null; //Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
+      //decomposition->putScalar(Teuchos::as<Scalar>(rowMap->getComm()->getRank()));
+      Set(level, "Partition", decomposition);
+      return;
     }
+
 
     const ParameterList& pL = GetParameterList();
 

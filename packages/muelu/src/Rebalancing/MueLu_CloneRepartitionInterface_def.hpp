@@ -60,6 +60,7 @@ namespace MueLu {
  Teuchos::RCP<const ParameterList> CloneRepartitionInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     Teuchos::RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< Teuchos::RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
+    validParamList->set< Teuchos::RCP<const FactoryBase> >("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< Teuchos::RCP<const FactoryBase> >("Partition", Teuchos::null, "Factory generating the Partition array (e.g. ZoltanInterface)");
 
     return validParamList;
@@ -79,7 +80,6 @@ namespace MueLu {
     // extract blocked operator A from current level
     Teuchos::RCP<Matrix> A = Get< Teuchos::RCP<Matrix> >     (currentLevel, "A");
     Teuchos::RCP<const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
-    //const int myRank = comm->getRank();
 
     // number of Partitions only used for a shortcut.
     GO numPartitions = 0;
@@ -93,15 +93,6 @@ namespace MueLu {
     // Construct decomposition vector
     // ======================================================================================================
     RCP<GOVector> decomposition = Teuchos::null;
-    if (numPartitions == 1) {
-      // Trivial case: decomposition is the trivial one, all zeros. We skip the call to Zoltan_Interface
-      // (this is mostly done to avoid extra output messages, as even if we didn't skip there is a shortcut
-      // in Zoltan[12]Interface).
-      GetOStream(Warnings0) << "Only one partition: Skip call to the repartitioner." << std::endl;
-      decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
-      Set(currentLevel, "Partition", decomposition);
-      return;
-    }
 
     // extract decomposition vector
     decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
@@ -113,37 +104,31 @@ namespace MueLu {
       return;
     }
 
-
-
-    /*std::vector<int> amActive  = std::vector<int>(comm->getSize(),0);
-    std::vector<int> areActive = std::vector<int>(comm->getSize(),0);
-    if() amActive[myRank] = 1;
-    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX,comm->getSize(),&amActive[0],&areActive[0]);*/
-
-
-
-    // plausibility check!
-
-    size_t inLocalLength  = decomposition->getLocalLength();
-    size_t outLocalLength = A->getRowMap()->getNodeNumElements();
-    Scalar ratioLocal = Teuchos::as<Scalar>(inLocalLength) / Teuchos::as<Scalar>(outLocalLength);
-    Xpetra::global_size_t inGlobalLength  = decomposition->getGlobalLength();
-    Xpetra::global_size_t outGlobalLength = A->getRowMap()->getGlobalNumElements();
-    Scalar ratioGlobal = Teuchos::as<Scalar>(inGlobalLength) / Teuchos::as<Scalar>(outGlobalLength);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(ratioLocal != ratioGlobal, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: ratio of input and output vector lengths is not consistent with global information.");
-    TEUCHOS_TEST_FOR_EXCEPTION(inLocalLength % outLocalLength != 0, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: ratio of input and output vector lengths is not consistent with global information.");
-    TEUCHOS_TEST_FOR_EXCEPTION(inGlobalLength % outGlobalLength != 0, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: ratio of input and output vector lengths is not consistent with global information.");
-
     // create new decomposition vector
     Teuchos::RCP<GOVector> ret = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), false);
     ArrayRCP<GO> retDecompEntries = ret->getDataNonConst(0);
 
-    // fill decomposition vector
-    LO ratio = Teuchos::as<LO>(inLocalLength / outLocalLength);
-    for(LO i = 0; i<Teuchos::as<LO>(ret->getMap()->getNodeNumElements()); i++) {
-      retDecompEntries[i] = Teuchos::as<GO>(decompEntries[i*ratio]);
-    }
+    // block size of output vector
+    LocalOrdinal blkSize = A->GetFixedBlockSize();
+
+    // plausibility check!
+    size_t inLocalLength  = decomposition->getLocalLength();
+    size_t outLocalLength = A->getRowMap()->getNodeNumElements();
+
+    size_t numLocalNodes = outLocalLength / blkSize;
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(outLocalLength  % blkSize) != 0, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: inconsistent number of local DOFs (" << outLocalLength << ") and degrees of freedoms ("<<blkSize<<")");
+
+    if (numLocalNodes > 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(inLocalLength  % numLocalNodes) != 0, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: inconsistent number of local DOFs (" << inLocalLength << ") and number of local nodes (" << numLocalNodes << ")");
+      LocalOrdinal inBlkSize = Teuchos::as<LocalOrdinal>(inLocalLength / numLocalNodes);
+      //TEUCHOS_TEST_FOR_EXCEPTION(blkSize != inBlkSize, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: input block size = " << inBlkSize << " outpub block size = " << blkSize << ". They should be the same.");
+
+      for(LO i = 0; i<Teuchos::as<LO>(numLocalNodes); i++) {
+        for(LO j = 0; j < blkSize; j++) {
+          retDecompEntries[i*blkSize + j] = Teuchos::as<GO>(decompEntries[i*inBlkSize]);
+        }
+      }
+    } // end if numLocalNodes > 0
     Set(currentLevel, "Partition", ret);
   } //Build()
 
