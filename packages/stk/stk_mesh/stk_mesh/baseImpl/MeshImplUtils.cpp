@@ -215,7 +215,7 @@ void delete_entities_and_upward_relations(stk::mesh::BulkData &bulkData, const s
         const stk::mesh::Entity entity = entities[i];
 
         if(!bulkData.is_valid(entity)) {
-          return;
+          continue;
         }
 
         stk::mesh::EntityRank entity_rank = bulkData.entity_rank(entity);
