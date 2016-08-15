@@ -378,7 +378,7 @@ namespace Xpetra {
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
                const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,int,EpetraNode>", "TpetraMap<int,int,EpetraNode>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor with a user-defined contiguous distribution.
@@ -387,7 +387,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,int,EpetraNode>", "TpetraMap<int,int,EpetraNode>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
@@ -396,7 +396,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,int,EpetraNode>", "TpetraMap<int,int,EpetraNode>", "int");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -506,7 +506,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraMap constructor to wrap a Tpetra::Map object
-    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) { }
+    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
 
     //! Get the library used by this object (Tpetra or Epetra?)
     UnderlyingLib lib() const { return UseTpetra; }
@@ -549,7 +551,7 @@ namespace Xpetra {
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
                const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,long long,EpetraNode>", "TpetraMap<int,long long,EpetraNode>", "long long");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor with a user-defined contiguous distribution.
@@ -558,7 +560,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,long long,EpetraNode>", "TpetraMap<int,long long,EpetraNode>", "long long");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
@@ -567,7 +569,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                const Teuchos::RCP< Node > &node = defaultArgNode()) {
-      XPETRA_TPETRA_ETI_EXCEPTION("TpetraMap<int,long long,EpetraNode>", "TpetraMap<int,long long,EpetraNode>", "long long");
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
     //! Destructor.
@@ -677,7 +679,9 @@ namespace Xpetra {
     //@{
 
     //! TpetraMap constructor to wrap a Tpetra::Map object
-    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) { }
+    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
 
     //! Get the library used by this object (Tpetra or Epetra?)
     UnderlyingLib lib() const { return UseTpetra; }
