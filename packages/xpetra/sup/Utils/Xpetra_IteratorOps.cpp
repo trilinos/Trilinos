@@ -119,9 +119,9 @@ namespace Xpetra {
     }
 
     if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
-      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-      params->set("Optimize Storage", doOptimizeStorage);
-      C.fillComplete(B.getDomainMap(), B.getRangeMap(), params);
+      RCP<Teuchos::ParameterList> ppp = rcp(new Teuchos::ParameterList());
+      ppp->set("Optimize Storage", doOptimizeStorage);
+      C.fillComplete(B.getDomainMap(), B.getRangeMap(), ppp);
     }
 
     // transfer striding information
@@ -202,9 +202,9 @@ namespace Xpetra {
     }
 
     if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
-      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-      params->set("Optimize Storage", doOptimizeStorage);
-      C.fillComplete(B.getDomainMap(), B.getRangeMap(), params);
+      RCP<Teuchos::ParameterList> ppp = rcp(new Teuchos::ParameterList());
+      ppp->set("Optimize Storage", doOptimizeStorage);
+      C.fillComplete(B.getDomainMap(), B.getRangeMap(), ppp);
     }
 
     // transfer striding information
