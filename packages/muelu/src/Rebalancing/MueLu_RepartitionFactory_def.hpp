@@ -79,9 +79,6 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    //SET_VALID_ENTRY("repartition: start level");
-    //SET_VALID_ENTRY("repartition: min rows per proc");
-    //SET_VALID_ENTRY("repartition: max imbalance");
     SET_VALID_ENTRY("repartition: print partition distribution");
     SET_VALID_ENTRY("repartition: remap parts");
     SET_VALID_ENTRY("repartition: remap num values");
@@ -151,9 +148,8 @@ namespace MueLu {
       // in Zoltan[12]Interface).
       // TODO: We can probably skip more work in this case (like building all extra data structures)
       GetOStream(Warnings0) << "Only one partition: Skip call to the repartitioner." << std::endl;
-      //decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(A->getRowMap(), true);
-      // todo verify that we have only zeros in the vector (e.g. test norm?)
     } else if (numPartitions == -1) {
+      // No repartitioning necessary: decomposition should be Teuchos::null
       GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;

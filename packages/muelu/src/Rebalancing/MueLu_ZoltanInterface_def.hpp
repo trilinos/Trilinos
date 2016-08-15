@@ -99,8 +99,7 @@ namespace MueLu {
       return;
     } else if (numParts == -1) {
       // No repartitioning
-      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Teuchos::null; //Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
-      //decomposition->putScalar(Teuchos::as<Scalar>(rowMap->getComm()->getRank()));
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Teuchos::null;
       Set(level, "Partition", decomposition);
       return;
     }

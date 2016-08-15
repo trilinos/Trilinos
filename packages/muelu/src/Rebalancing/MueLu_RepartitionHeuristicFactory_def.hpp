@@ -62,6 +62,7 @@
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_BlockedRAPFactory.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
@@ -79,9 +80,6 @@ namespace MueLu {
     SET_VALID_ENTRY("repartition: start level");
     SET_VALID_ENTRY("repartition: min rows per proc");
     SET_VALID_ENTRY("repartition: max imbalance");
-    //SET_VALID_ENTRY("repartition: print partition distribution");
-    //SET_VALID_ENTRY("repartition: remap parts");
-    //SET_VALID_ENTRY("repartition: remap num values");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
@@ -104,11 +102,11 @@ namespace MueLu {
     const int    startLevel          = pL.get<int>   ("repartition: start level");
     const LO     minRowsPerProcessor = pL.get<LO>    ("repartition: min rows per proc");
     const double nonzeroImbalance    = pL.get<double>("repartition: max imbalance");
-    //const bool   remapPartitions     = pL.get<bool>  ("repartition: remap parts");
 
     RCP<const FactoryBase> Afact = GetFactory("A");
     if(Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
-        Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null)
+       Teuchos::rcp_dynamic_cast<const BlockedRAPFactory>(Afact) == Teuchos::null &&
+       Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null)
       GetOStream(Warnings) <<
         "MueLu::RepartitionHeuristicFactory::Build: The generation factory for A must " \
         "be a RAPFactory or a SubBlockAFactory providing the non-rebalanced matrix information! " \
@@ -205,17 +203,6 @@ namespace MueLu {
 
     GetOStream(Statistics1) << "Repartitioning? YES:" << msg3 + msg4 << std::endl;
 
-    int numProcs = comm->getSize();
-
-    /*GO                     indexBase = rowMap->getIndexBase();
-    Xpetra::UnderlyingLib  lib       = rowMap->lib();
-    int myRank   = comm->getRank();
-
-
-    RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();*/
-
     // ======================================================================================================
     // Calculate number of partitions
     // ======================================================================================================
@@ -227,7 +214,6 @@ namespace MueLu {
     // is used. The "number of partitions" variable serves as basic communication between the RepartitionFactory (which
     // requests a certain number of partitions) and the *Interface classes which call the underlying partitioning algorithms
     // and produce the "Partition" array with the requested number of partitions.
-
     int numPartitions;
     if (Teuchos::as<GO>(A->getGlobalNumRows()) < minRowsPerProcessor) {
       // System is too small, migrate it to a single processor
@@ -237,7 +223,7 @@ namespace MueLu {
       // Make sure that each processor has approximately minRowsPerProcessor
       numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
     }
-    numPartitions = std::min(numPartitions, numProcs);
+    numPartitions = std::min(numPartitions, comm->getSize());
 
     Set(currentLevel, "number of partitions", numPartitions);
 

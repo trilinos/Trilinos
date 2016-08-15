@@ -59,15 +59,15 @@ namespace MueLu {
     ----------|--------------|------------
     | Partition | RepartitionInterface   | GOVector based on the Row map of A (DOF-based) containing the process id the DOF should be living in after rebalancing/repartitioning
 
-    The "Partition" vector is used as input for the RepartitionFactory class which basically decides whether re-partitioning/rebalancing is necessary.
+    The "Partition" vector is used as input for the RepartitionFactory class.
     If Re-partitioning/rebalancing is necessary it uses the "Partition" variable to create the corresponding Xpetra::Import object which then is used
     by the RebalanceFactory classes (e.g., RebalanceAcFactory, RebalanceTransferFactory,...) to rebalance the coarse level operators.
 
-    The RepartitionFactory calculates how many partitions are to be built when performing rebalancing.
-    It stores the result in the "number of partitions" variable on the current level (type = GO). If it is "number of partitions=1" we skip
-    the underlying Zoltan call and just create an dummy "Partition" vector containing zeros only.
-    The "number of partitions" variable has no real meaning if > 1. In that case the content of the "Partition" variable defines the rebalancing of the matrix rows/columns
-    on the different process ids.
+    The RepartitionHeuristicFactory calculates how many partitions are to be built when performing rebalancing.
+    It stores the result in the "number of partitions" variable on the current level (type = GO).
+    If it is "number of partitions=1" we skip the underlying Zoltan call and just create an dummy "Partition" vector containing zeros only.
+    If no repartitioning is necessary (i.e., just keep the current partitioning) we return "Partition = Teuchos::null".
+    If "number of partitions" > 1, the algorithm tries to find the requested number of partitions.
   */
 
   //FIXME: this class should not be templated
