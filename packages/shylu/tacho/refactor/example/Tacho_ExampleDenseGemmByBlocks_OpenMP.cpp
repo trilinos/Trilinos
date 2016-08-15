@@ -80,21 +80,21 @@ int main (int argc, char *argv[]) {
        check,
        verbose);
 
-    // std::cout << std::endl << "DenseGemmByBlocks:: NoTranspose, NoTranspose, Variant::Two (internal)" << std::endl;
-    // r_val = exampleDenseGemmByBlocks
-    //   <Trans::NoTranspose,Trans::NoTranspose,Variant::Two,exec_space>
-    //   (mmin, mmax, minc, k, mb,
-    //    max_concurrency, memory_pool_grain_size, mkl_nthreads,
-    //    check,
-    //    verbose);
-
-    std::cout << std::endl << "DenseGemmByBlocks:: ConjTranspose, NoTranspose, Variant::One (external)" << std::endl;
+    std::cout << std::endl << "DenseGemmByBlocks:: NoTranspose, NoTranspose, Variant::Two (internal)" << std::endl;
     r_val = exampleDenseGemmByBlocks
-      <Trans::ConjTranspose,Trans::NoTranspose,Variant::One,exec_space>
+      <Trans::NoTranspose,Trans::NoTranspose,Variant::Two,exec_space>
       (mmin, mmax, minc, k, mb,
        max_concurrency, memory_pool_grain_size, mkl_nthreads,
        check,
        verbose);
+
+    // std::cout << std::endl << "DenseGemmByBlocks:: ConjTranspose, NoTranspose, Variant::One (external)" << std::endl;
+    // r_val = exampleDenseGemmByBlocks
+    //   <Trans::ConjTranspose,Trans::NoTranspose,Variant::One,exec_space>
+    //   (mmin, mmax, minc, k, mb,
+    //    max_concurrency, memory_pool_grain_size, mkl_nthreads,
+    //    check,
+    //    verbose);
 
     // std::cout << std::endl << "DenseGemmByBlocks:: ConjTranspose, NoTranspose, Variant::One (internal)" << std::endl;
     // r_val = exampleDenseGemmByBlocks
