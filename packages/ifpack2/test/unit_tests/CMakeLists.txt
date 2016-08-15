@@ -139,4 +139,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# This test only needs to run on 1 process, since it just tests
+# whether Chebyshev accepts a certain parameter of a certain type.
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue234
+  SOURCES 
+    Ifpack2_UnitTest234.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
 
