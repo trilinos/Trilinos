@@ -324,7 +324,7 @@ private:
     const stk::mesh::BulkData &bulk;
     BucketView buckets[stk::topology::NUM_RANKS];
     Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror hostMeshIndices;
-    Kokkos::View<const stk::mesh::FastMeshIndex*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > deviceMeshIndices;
+    Kokkos::View<const stk::mesh::FastMeshIndex*, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> > deviceMeshIndices;
     //    Kokkos::View<const stk::mesh::FastMeshIndex*> device_mesh_indices;
 };
 
