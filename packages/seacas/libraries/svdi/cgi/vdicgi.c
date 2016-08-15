@@ -486,7 +486,7 @@ void vbinq(void)
 
   /*  INQUIRE DEVICE IDENTIFICATION */
   maxchr = 3;
-  cqid_(&maxchr, &vstat, &dclass, &devid);
+  cqid_(&maxchr, &vstat, &dclass, devid);
   if (vstat == CVAL) {
     dev_cap[22] = get_devid_num(devid);
   }

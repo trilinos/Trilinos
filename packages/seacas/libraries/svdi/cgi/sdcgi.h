@@ -26,7 +26,7 @@ void cdqerr_(f_integer *nreq, f_integer *vstat, f_integer *nrem, f_integer *nret
 void cerhct_(f_integer *n, f_integer *erclas, f_integer *hflag);
 void ccixp_(f_integer *cip);
 void cesc1_(f_integer *funcid, f_integer *ldr, char *data, f_integer *drec_size);
-void cqid_(f_integer *maxchr, f_integer *vstat, f_integer *dclass, char *devid[4]);
+void cqid_(f_integer *maxchr, f_integer *vstat, f_integer *dclass, char *devid);
 void cqd_(f_integer *vstat, f_integer *hscopy, f_integer *disp, f_integer *bcolor, f_integer *dynbc,
           f_integer *dynvdm, f_integer *dx1, f_integer *dy1, f_integer *dx2, f_integer *dy2,
           f_real *width, f_real *height, f_integer *pixloc);
@@ -79,7 +79,7 @@ void cqfl_(f_integer *vstat, f_integer *npdefb, f_integer *nsetb, f_integer *max
            f_integer *dynmod, f_integer *ninsty, f_integer *instyl, f_integer *npdefp,
            f_integer *nsetp, f_integer *maxpi, f_integer *pdiv, f_integer *maxpx, f_integer *maxpy,
            f_integer *ptrans);
-void cqc_(f_integer *vstat, f_integer *nsimul, f_integer *navail, f_integer *nint[3],
+void cqc_(f_integer *vstat, f_integer *nsimul, f_integer *navail, f_integer *nint,
           f_integer *cmode, f_integer *dynmod, f_integer *overit, f_integer *monoc);
 void cqlna_(f_integer *vstat, f_integer *lnbi, f_integer *lntyp, f_integer *lwmode,
             f_integer *lnwid, f_integer *csmode, f_integer *lnclr, f_integer *lcmode);
