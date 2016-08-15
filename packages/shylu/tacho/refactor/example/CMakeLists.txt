@@ -128,6 +128,15 @@ IF(Kokkos_ENABLE_Pthread)
   )
 ENDIF()
 
+IF(Kokkos_ENABLE_Cuda)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseGemmByBlocks_Cuda
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseGemmByBlocks_Cuda.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 # Crs Matrix Objects
 # ==================
 

@@ -21,6 +21,7 @@ namespace Tacho {
     const bool detail = false;
     std::cout << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, detail);
     std::cout << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, detail);
+    std::cout << std::endl;
   
     typedef DenseMatrixBase<value_type,ordinal_type,size_type,HostSpaceType>   DenseMatrixBaseHostType;
     typedef DenseMatrixBase<value_type,ordinal_type,size_type,DeviceSpaceType> DenseMatrixBaseDeviceType;
