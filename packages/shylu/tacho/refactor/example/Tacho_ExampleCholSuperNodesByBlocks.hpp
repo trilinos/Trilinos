@@ -573,7 +573,7 @@ namespace Tacho {
     ///    output - RR
     ///
     double t_solve = 0;
-    double error = 0, norm = 1;
+    double error = 0, norm = 0;
     if (nrhs) {
       const auto m = AA_reordered.NumRows();
       DenseMatrixBaseHostType BB("BB", m, nrhs), XX("XX"), RR("RR");

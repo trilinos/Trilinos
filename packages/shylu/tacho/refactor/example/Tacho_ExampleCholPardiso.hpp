@@ -7,8 +7,9 @@
 #include "Tacho_Util.hpp"
 
 #include "Tacho_CrsMatrixBase.hpp"
-#include "Tacho_DenseMatrixBase.hpp"
 #include "Tacho_CrsMatrixTools.hpp"
+#include "Tacho_DenseMatrixBase.hpp"
+#include "Tacho_DenseMatrixTools.hpp"
 #include "Tacho_MatrixMarket.hpp"
 #include "Tacho_CrsData.hpp"
 
@@ -104,9 +105,36 @@ namespace Tacho {
     }
     std::cout << "PardisoChol:: import input file::time = " << t << std::endl;
     
-    DenseMatrixBaseHostType BB("BB",  AA.NumRows(), nrhs);
-    DenseMatrixBaseHostType XX("XX",  AA.NumRows(), nrhs);
+    DenseMatrixBaseHostType BB("BB",  AA.NumRows(), nrhs), XX, RR;
+    XX.createConfTo(BB);
+    RR.createConfTo(XX);
+
     DenseMatrixBaseHostType PP("PP",  AA.NumRows(), 1);
+
+    {
+      const auto m = AA.NumRows();
+      srand(time(NULL));
+      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
+        for (ordinal_type i=0;i<m;++i) 
+          XX.Value(i, rhs) = ((value_type)rand()/(RAND_MAX));
+        
+        // matvec
+        HostSpaceType::execution_space::fence();
+        Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
+                             [&](const ordinal_type i) {
+                               const auto nnz  = AA.NumNonZerosInRow(i);
+                               const auto cols = AA.ColsInRow(i);
+                               const auto vals = AA.ValuesInRow(i);
+
+                               value_type tmp = 0;
+                               for (ordinal_type j=0;j<nnz;++j)
+                                 tmp += vals(j)*XX.Value(cols(j), rhs);
+                               BB.Value(i, rhs) = tmp;
+                             } );
+        HostSpaceType::execution_space::fence();
+      }
+      DenseMatrixTools::copy(RR, XX); // keep solution on RR
+    }
 
     pardiso.setProblem(AA.NumRows(),
                        (double*)AA.Values().data(),
@@ -166,6 +194,24 @@ namespace Tacho {
       std::cout << "PardisoChol:: solve matrix::time = " << t << std::endl;
     }
     
+    {
+      double error = 0, norm = 0;
+      const auto m = AA.NumRows();
+      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
+        for (ordinal_type i=0;i<m;++i) {
+          {
+            const auto val = Util::abs(XX.Value(i, rhs) - RR.Value(i, rhs));
+            error += val*val;
+          }
+          {
+            const auto val = Util::abs(RR.Value(i, rhs));
+            norm  += val*val;
+          }
+        }
+      }
+      std::cout << "PardisoChol:: error = " << error << " , norm = " << norm << std::endl;
+    }
+
     std::cout << "PardisoChol:: release all" << std::endl;
     {
       timer.reset();
