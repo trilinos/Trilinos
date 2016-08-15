@@ -3,7 +3,7 @@ Level 0
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother -> 
+ smoother ->
   relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
   relaxation: damping factor = 1
@@ -15,7 +15,7 @@ Level 0
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- 
+
 Level 1
  Prolongator minimization (MueLu::EminPFactory)
   Build (MueLu::TentativePFactory)
@@ -23,12 +23,12 @@ Level 1
     Build (MueLu::CoalesceDropFactory)
      Build (MueLu::AmalgamationFactory)
      [empty list]
-     
+
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
-    
+
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -41,23 +41,23 @@ Level 1
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
    emin: pattern order = 1   [default]
-   
+
   [empty list]
-  
+
  emin: num iterations = 1
  emin: num reuse iterations = 1   [default]
  emin: iterative method = gmres
@@ -65,20 +65,20 @@ Level 1
  Keep P0 = 0   [default]
  Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother -> 
+ smoother ->
   relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
   relaxation: damping factor = 1
@@ -90,7 +90,7 @@ Level 1
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- 
+
 Level 2
  Prolongator minimization (MueLu::EminPFactory)
   Build (MueLu::TentativePFactory)
@@ -98,12 +98,12 @@ Level 2
     Build (MueLu::CoalesceDropFactory)
      Build (MueLu::AmalgamationFactory)
      [empty list]
-     
+
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
-    
+
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -116,23 +116,23 @@ Level 2
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
    emin: pattern order = 1   [default]
-   
+
   [empty list]
-  
+
  emin: num iterations = 1
  emin: num reuse iterations = 1   [default]
  emin: iterative method = gmres
@@ -140,22 +140,22 @@ Level 2
  Keep P0 = 0   [default]
  Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
- Setup Smoother (MueLu::Amesos2Smoother{type = Basker})
+
+ Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- presmoother -> 
+ presmoother ->
   [empty list]
- 
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -173,6 +173,6 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) pre  : Basker solver interface
+Smoother (level 2) pre  : SuperLU solver interface, direct solve
 Smoother (level 2) post : no smoother
 
