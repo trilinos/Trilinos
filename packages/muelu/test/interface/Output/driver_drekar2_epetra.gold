@@ -69,9 +69,15 @@ Level 1
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
 
-  repartition: start level = 1
-  repartition: min rows per proc = 2000
-  repartition: max imbalance = 1.327
+   Build (MueLu::RepartitionHeuristicFactory)
+   repartition: start level = 1
+   repartition: min rows per proc = 2000
+   repartition: max imbalance = 1.327
+
+   Build (MueLu::Zoltan2Interface)
+   rowWeight = 0   [default]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1d84ac8,node=0x1f0c3c0,strong_count=2,weak_count=0}   [unused]
+
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]
@@ -164,9 +170,15 @@ Level 2
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
 
-  repartition: start level = 1
-  repartition: min rows per proc = 2000
-  repartition: max imbalance = 1.327
+   Build (MueLu::RepartitionHeuristicFactory)
+   repartition: start level = 1
+   repartition: min rows per proc = 2000
+   repartition: max imbalance = 1.327
+
+   Build (MueLu::Zoltan2Interface)
+   rowWeight = 0   [default]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1d84ac8,node=0x1f0c3c0,strong_count=2,weak_count=0}   [unused]
+
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]
@@ -259,9 +271,15 @@ Level 3
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
 
-  repartition: start level = 1
-  repartition: min rows per proc = 2000
-  repartition: max imbalance = 1.327
+   Build (MueLu::RepartitionHeuristicFactory)
+   repartition: start level = 1
+   repartition: min rows per proc = 2000
+   repartition: max imbalance = 1.327
+
+   Build (MueLu::Zoltan2Interface)
+   rowWeight = 0   [default]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1d84ac8,node=0x1f0c3c0,strong_count=2,weak_count=0}   [unused]
+
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
   repartition: remap num values = 4   [default]

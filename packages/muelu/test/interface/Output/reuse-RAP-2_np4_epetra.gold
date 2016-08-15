@@ -64,9 +64,15 @@ Level 1
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
 
-  repartition: start level = 2   [default]
-  repartition: min rows per proc = 800   [default]
-  repartition: max imbalance = 1.2   [default]
+   Build (MueLu::RepartitionHeuristicFactory)
+   repartition: start level = 2   [default]
+   repartition: min rows per proc = 800   [default]
+   repartition: max imbalance = 1.2   [default]
+
+   Build (MueLu::Zoltan2Interface)
+   rowWeight = 0   [default]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2320e40,node=0x2320a00,strong_count=2,weak_count=0}   [unused]
+
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
@@ -146,9 +152,15 @@ Level 2
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
 
-  repartition: start level = 2   [default]
-  repartition: min rows per proc = 800   [default]
-  repartition: max imbalance = 1.2   [default]
+   Build (MueLu::RepartitionHeuristicFactory)
+   repartition: start level = 2   [default]
+   repartition: min rows per proc = 800   [default]
+   repartition: max imbalance = 1.2   [default]
+
+   Build (MueLu::Zoltan2Interface)
+   rowWeight = 0   [default]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x21bf920,node=0x21bf4e0,strong_count=2,weak_count=0}   [unused]
+
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
