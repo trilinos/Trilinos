@@ -1152,7 +1152,7 @@ namespace {
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
-    typedef typename local_matrix_type::size_type size_type;
+    //typedef typename local_matrix_type::size_type size_type;
     typedef typename local_matrix_type::value_type value_type;
     typedef typename local_matrix_type::ordinal_type ordinal_type;
 
