@@ -859,17 +859,19 @@ TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
     stk::mesh::BulkData mesh(meta, pm);
 
     stk::mesh::Part * triPart = &meta.declare_part_with_topology("tri_part", stk::topology::TRI_3);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3);
     meta.commit();
 
     mesh.modification_begin();
 
     std::array<int, 3> node_ids = {{1,2,3}};
     stk::mesh::PartVector empty;
-    stk::mesh::Entity tri3 = mesh.declare_entity(stk::topology::FACE_RANK, 1u, *triPart);
+    stk::mesh::Entity shell3 = mesh.declare_entity(stk::topology::ELEM_RANK, 1u, *shellPart);
     for(unsigned i = 0; i<node_ids.size(); ++i) {
         stk::mesh::Entity node = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i], empty);
-        mesh.declare_relation(tri3, node, i);
+        mesh.declare_relation(shell3, node, i);
     }
+    mesh.declare_element_side(shell3, 0u, {triPart} );
 
     mesh.modification_end();
 

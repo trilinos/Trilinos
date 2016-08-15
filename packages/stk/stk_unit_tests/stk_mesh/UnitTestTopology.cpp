@@ -586,8 +586,6 @@ void test_side_creation(unsigned *gold_side_ids,unsigned local_side_id)
 
 void test_side_creation_with_permutation(unsigned *gold_side_ids,unsigned local_side_id, stk::mesh::Permutation perm)
 {
-    unsigned global_side_id = 1;
-
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
     std::string name = "generated:1x1x1";
     stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
@@ -608,12 +606,7 @@ void test_side_creation_with_permutation(unsigned *gold_side_ids,unsigned local_
     }
 
     mesh.modification_begin();
-    stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, global_side_id, parts);
-    for(unsigned i = 0; i < nodes.size(); ++i) {
-        unsigned ordinal = nodes.size() - i - 1;
-        mesh.declare_relation(side, nodes[i], ordinal);
-    }
-    mesh.declare_relation(elem, side, local_side_id, perm);
+    stk::mesh::Entity side = mesh.declare_element_side(elem, local_side_id, parts);
     mesh.modification_end();
 
     check_permutation_given(mesh, elem, local_side_id, perm, side);
@@ -624,8 +617,8 @@ void test_side_creation_with_permutation(unsigned *gold_side_ids,unsigned local_
 
     for(unsigned i = 0; i < num_nodes; ++i)
     {
-        unsigned ordinal = nodes.size() - i - 1;
-        EXPECT_EQ(gold_side_ids[ordinal], mesh.identifier(side_nodes[i]));
+        //unsigned ordinal = nodes.size() - i - 1;
+        EXPECT_EQ(gold_side_ids[i], mesh.identifier(side_nodes[i]));
     }
 }
 
@@ -661,7 +654,7 @@ TEST(stkTopologyFunctions, check_permutation_without_FEM_Helper)
                                         {1,3,4,2},
                                         {5,6,8,7}
                                       };
-        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(5);
+        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
         unsigned local_side_id = 0;
         test_side_creation_with_permutation(gold_side_ids[local_side_id],local_side_id, perm);
     }
@@ -671,11 +664,9 @@ TEST(stkTopologyFunctions, check_permutations_for_Hex_1x1x1)
 {
     if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
     {
-        unsigned global_side_id = 1;
         unsigned gold_side_ids[4] = {5,6,8,7};
         unsigned local_side_id = 5; // nodes 2,4,8,5 are nodes of face 'local_side_id' of a 1x1x1 hex element (generated)
 
-        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
         unsigned gold_permutations[8][4] = {
                 {5,6,8,7},
                 {7,5,6,8},
@@ -707,12 +698,7 @@ TEST(stkTopologyFunctions, check_permutations_for_Hex_1x1x1)
         }
 
         mesh.modification_begin();
-        stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, global_side_id, parts);
-        for(unsigned i = 0; i < nodes.size(); ++i) {
-            //unsigned ordinal = nodes.size() - i - 1;
-            mesh.declare_relation(side, nodes[i], i);
-        }
-        mesh.declare_relation(elem, side, local_side_id, perm);
+        stk::mesh::Entity side = mesh.declare_element_side(elem, local_side_id, parts);
         mesh.modification_end();
 
         stk::mesh::EntityVector mapped_face_nodes(gold_num_nodes);
@@ -755,12 +741,8 @@ TEST(stkTopologyFunctions, permutation_consistency_check_3d)
 {
     if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
     {
-        unsigned global_side_id = 1;
         unsigned gold_side_ids[4] = {2,4,8,6};
         unsigned local_side_id = 1; // nodes 2,4,8,5 are nodes of face 'local_side_id' of a 1x1x1 hex element (generated)
-
-        unsigned perm_value = 0;
-        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(perm_value);
 
         stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
         std::string name = "generated:1x1x1";
@@ -782,12 +764,7 @@ TEST(stkTopologyFunctions, permutation_consistency_check_3d)
         }
 
         mesh.modification_begin();
-        stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, global_side_id, parts);
-        for(unsigned i = 0; i < nodes.size(); ++i) {
-            //unsigned ordinal = nodes.size() - i - 1;
-            mesh.declare_relation(side, nodes[i], i);
-        }
-        mesh.declare_relation(elem, side, local_side_id, perm);
+        stk::mesh::Entity side = mesh.declare_element_side(elem, local_side_id, parts);
         mesh.modification_end();
 
         bool rel_bad = false;
@@ -808,7 +785,6 @@ TEST(stkTopologyFunctions, check_permutation_consistency_parallel)
 {
     if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
     {
-        unsigned global_side_id = 1;
         unsigned gold_side_ids[4] = {5,6,8,7};
 
         stk::mesh::MetaData meta(3);
@@ -819,22 +795,17 @@ TEST(stkTopologyFunctions, check_permutation_consistency_parallel)
 
         unsigned elem_id = 0;
         unsigned local_side_id = 0;
-        unsigned perm_value = 0;
 
         if (mesh.parallel_rank()==0)
         {
             local_side_id=5;
             elem_id = 1;
-            perm_value = 0;
         }
         else
         {
             local_side_id=4;
             elem_id = 2;
-            perm_value = 4;
         }
-
-        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(perm_value);
 
         stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, elem_id);
         EXPECT_TRUE(mesh.bucket(elem).owned());
@@ -848,19 +819,8 @@ TEST(stkTopologyFunctions, check_permutation_consistency_parallel)
             nodes[i] = node;
         }
 
-        unsigned face_ords[2][4] = {
-                {0, 1, 2, 3},
-                {3, 2, 1, 0}
-        };
-
         mesh.modification_begin();
-        stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, global_side_id, parts);
-        for(unsigned i = 0; i < nodes.size(); ++i)
-        {
-            mesh.declare_relation(side, nodes[i], face_ords[mesh.parallel_rank()][i]);
-        }
-        mesh.declare_relation(elem, side, local_side_id, perm);
-
+        mesh.declare_element_side(elem, local_side_id, parts);
         mesh.modification_end();
 
         std::vector<size_t> mesh_counts;

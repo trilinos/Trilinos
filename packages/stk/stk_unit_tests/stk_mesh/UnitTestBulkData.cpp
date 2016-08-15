@@ -399,6 +399,7 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
   const PartVector no_parts ;
   Part* edge_part = &meta.declare_part_with_topology("edge_part", stk::topology::LINE_2);
   Part* tri_part  = &meta.declare_part_with_topology("tri_part", stk::topology::TRIANGLE_3);
+  Part* shell_part  = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3);
 
   meta.commit();
 
@@ -469,11 +470,12 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
       bulk.declare_relation( e_9_20 , n9 , 0 );
       bulk.declare_relation( e_9_20 , n20 , 1 );
 
-      Entity t_8_9_20 = bulk.declare_entity( stk::topology::FACE_RANK , 1 , *tri_part );
-      bulk.declare_relation( t_8_9_20 , n8 , 0 );
-      bulk.declare_relation( t_8_9_20 , n9 , 1 );
-      bulk.declare_relation( t_8_9_20 , n20 , 2 );
-      bulk.declare_relation( t_8_9_20 , e_9_20, 1 );
+      Entity tri_shell = bulk.declare_entity( stk::topology::ELEM_RANK , 1 , *shell_part );
+      bulk.declare_relation( tri_shell , n8 , 0 );
+      bulk.declare_relation( tri_shell , n9 , 1 );
+      bulk.declare_relation( tri_shell , n20 , 2 );
+      bulk.declare_relation( tri_shell , e_9_20, 1 );
+      bulk.declare_element_side( tri_shell , 0 , {tri_part} );
     }
     else if (1 == p_rank) {
 
@@ -487,11 +489,12 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
       bulk.declare_relation( e_9_20 , n9 , 0 );
       bulk.declare_relation( e_9_20 , n20 , 1 );
 
-      Entity t_18_9_20 = bulk.declare_entity( stk::topology::FACE_RANK , 11 , *tri_part );
-      bulk.declare_relation( t_18_9_20 , n18 , 0 );
-      bulk.declare_relation( t_18_9_20 , n9 , 1 );
-      bulk.declare_relation( t_18_9_20 , n20 , 2 );
-      bulk.declare_relation( t_18_9_20 , e_9_20, 1 );
+      Entity tri_shell = bulk.declare_entity( stk::topology::ELEM_RANK , 11 , *shell_part );
+      bulk.declare_relation( tri_shell , n18 , 0 );
+      bulk.declare_relation( tri_shell , n9 , 1 );
+      bulk.declare_relation( tri_shell , n20 , 2 );
+      bulk.declare_relation( tri_shell , e_9_20, 1 );
+      bulk.declare_element_side( tri_shell, 0, {tri_part} );
     }
 
     ASSERT_TRUE(bulk.modification_end());
@@ -551,11 +554,13 @@ TEST(BulkData, inducedPartsOnFacesWorks)
         MetaData meta(spatial_dimension);
         //Part& node_part = meta.declare_part("node_part", stk::topology::NODE_RANK);
         Part& face_part = meta.declare_part_with_topology("quad", stk::topology::QUAD_4);
+        Part& shell_part = meta.declare_part_with_topology("shell", stk::topology::SHELL_QUAD_4);
         Part& messyPart = meta.declare_part_with_topology("messyPart", stk::topology::QUAD_4);
         meta.commit();
 
         BulkData bulkData(meta, comm);
         bulkData.modification_begin();
+        stk::mesh::Entity face;
         if (bulkData.parallel_rank() == 0)
         {
             stk::mesh::Entity node1 = bulkData.declare_entity(stk::topology::NODE_RANK, 1);
@@ -567,12 +572,14 @@ TEST(BulkData, inducedPartsOnFacesWorks)
             stk::mesh::Entity node2 = bulkData.declare_entity(stk::topology::NODE_RANK, 2);
             stk::mesh::Entity node3 = bulkData.declare_entity(stk::topology::NODE_RANK, 3);
             stk::mesh::Entity node4 = bulkData.declare_entity(stk::topology::NODE_RANK, 4);
-            stk::mesh::Entity face = bulkData.declare_entity(stk::topology::FACE_RANK, 1, face_part);
-            bulkData.declare_relation(face, node1, 0);
-            bulkData.declare_relation(face, node2, 1);
-            bulkData.declare_relation(face, node3, 2);
-            bulkData.declare_relation(face, node4, 3);
+
+            stk::mesh::Entity shell = bulkData.declare_entity(stk::topology::ELEM_RANK, 1, shell_part);
+            bulkData.declare_relation(shell, node1, 0);
+            bulkData.declare_relation(shell, node2, 1);
+            bulkData.declare_relation(shell, node3, 2);
+            bulkData.declare_relation(shell, node4, 3);
             bulkData.add_node_sharing(node1, 0);
+            face = bulkData.declare_element_side(shell, 0, {&face_part});
         }
 
         bulkData.modification_end();
@@ -584,7 +591,6 @@ TEST(BulkData, inducedPartsOnFacesWorks)
 
         if ( bulkData.parallel_rank() == 1 )
         {
-            stk::mesh::Entity face = bulkData.get_entity(stk::topology::FACE_RANK, 1);
             stk::mesh::PartVector addParts;
             addParts.push_back(&messyPart);
             bulkData.change_entity_parts(face, addParts, stk::mesh::PartVector());
@@ -598,7 +604,6 @@ TEST(BulkData, inducedPartsOnFacesWorks)
 
         if ( bulkData.parallel_rank() == 1 )
         {
-            stk::mesh::Entity face = bulkData.get_entity(stk::topology::FACE_RANK, 1);
             stk::mesh::PartVector rmParts;
             rmParts.push_back(&messyPart);
             bulkData.change_entity_parts(face, stk::mesh::PartVector(), rmParts);
@@ -620,12 +625,14 @@ TEST(BulkData, inducedPartsOnFacesThrowsTicket12896)
     {
         const int spatial_dimension = 3;
         MetaData meta(spatial_dimension);
+        Part& shell_part = meta.declare_part_with_topology("shell", stk::topology::SHELL_QUAD_4);
         Part& face_part = meta.declare_part_with_topology("quad", stk::topology::QUAD_4);
         Part& messyPart = meta.declare_part_with_topology("messyPart", stk::topology::QUAD_4);
         meta.commit();
 
         BulkData bulkData(meta, comm);
         bulkData.modification_begin();
+        stk::mesh::Entity face;
         if (bulkData.parallel_rank() == 0)
         {
             stk::mesh::Entity node1 = bulkData.declare_entity(stk::topology::NODE_RANK, 1);
@@ -637,12 +644,14 @@ TEST(BulkData, inducedPartsOnFacesThrowsTicket12896)
             stk::mesh::Entity node2 = bulkData.declare_entity(stk::topology::NODE_RANK, 2);
             stk::mesh::Entity node3 = bulkData.declare_entity(stk::topology::NODE_RANK, 3);
             stk::mesh::Entity node4 = bulkData.declare_entity(stk::topology::NODE_RANK, 4);
-            stk::mesh::Entity face = bulkData.declare_entity(stk::topology::FACE_RANK, 1, face_part);
-            bulkData.declare_relation(face, node1, 0);
-            bulkData.declare_relation(face, node2, 1);
-            bulkData.declare_relation(face, node3, 2);
-            bulkData.declare_relation(face, node4, 3);
+
+            stk::mesh::Entity shell = bulkData.declare_entity(stk::topology::ELEM_RANK, 1, shell_part);
+            bulkData.declare_relation(shell, node1, 0);
+            bulkData.declare_relation(shell, node2, 1);
+            bulkData.declare_relation(shell, node3, 2);
+            bulkData.declare_relation(shell, node4, 3);
             bulkData.add_node_sharing(node1, 0);
+            face = bulkData.declare_element_side(shell, 0, {&face_part});
         }
 
         bulkData.modification_end();
@@ -654,7 +663,6 @@ TEST(BulkData, inducedPartsOnFacesThrowsTicket12896)
 
         if ( bulkData.parallel_rank() == 1 )
         {
-            stk::mesh::Entity face = bulkData.get_entity(stk::topology::FACE_RANK, 1);
             stk::mesh::PartVector addParts;
             addParts.push_back(&messyPart);
             bulkData.change_entity_parts(face, addParts, stk::mesh::PartVector());
@@ -662,7 +670,6 @@ TEST(BulkData, inducedPartsOnFacesThrowsTicket12896)
 
         if ( bulkData.parallel_rank() == 1 )
         {
-            stk::mesh::Entity face = bulkData.get_entity(stk::topology::FACE_RANK, 1);
             stk::mesh::PartVector rmParts;
             rmParts.push_back(&messyPart);
             bulkData.change_entity_parts(face, stk::mesh::PartVector(), rmParts);
