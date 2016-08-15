@@ -172,7 +172,7 @@ struct create_face_impl
                       PartVector add_parts;
                       add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( faceTopology)));
 
-                      face = mesh.declare_entity( stk::topology::FACE_RANK, face_id, add_parts);
+                      face = mesh.declare_solo_side(face_id, add_parts);
                       m_face_map[permuted_face_nodes] = face;
 
                       const int num_face_nodes = faceTopology.num_nodes();
