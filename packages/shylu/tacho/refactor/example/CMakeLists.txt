@@ -232,6 +232,14 @@ IF(Kokkos_ENABLE_OpenMP)
     SOURCES Tacho_ExampleCholSuperNodesByBlocks_OpenMP.cpp
     COMM serial mpi
   )
+  IF(TPL_ENABLE_MKL)
+    TRIBITS_ADD_EXECUTABLE(
+      Tacho_ExampleCholPardiso_OpenMP
+      NOEXEPREFIX
+      SOURCES Tacho_ExampleCholPardiso_OpenMP.cpp
+      COMM serial mpi
+    )
+  ENDIF()
 ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)

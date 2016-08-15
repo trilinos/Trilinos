@@ -170,8 +170,8 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     value_type* ValuePtr() const { return &_a[0]; }
 
-    //KOKKOS_INLINE_FUNCTION
-    //value_type_array ValueArray() const { return _a; }
+    KOKKOS_INLINE_FUNCTION
+    value_type_array Values() const { return _a; }
 
     /// ------------------------------------------------------------------
     

@@ -134,9 +134,11 @@ namespace Tacho {
     }
     const double t_read = timer.seconds();
 
-    if (verbose)
-      AA.showMe(std::cout) << std::endl;
-
+    if (verbose) {
+      std::ofstream out("tacho_i.mtx");
+      MatrixMarket::write(out, AA);
+      //AA.showMe(std::cout) << std::endl;
+    }
 
     /// Phase 1 : Reorder matrix
     /// ------------------------------------------------------------------------------------
@@ -175,8 +177,10 @@ namespace Tacho {
     S.pruneTree(prunecut);
     const double t_scotch = timer.seconds();
 
-    if (verbose)
-      S.showMe(std::cout) << std::endl;
+    if (verbose) {
+      std::ofstream out("tacho_scotch.txt");
+      S.showMe(out) << std::endl;
+    }
 
     CrsMatrixBaseHostType AA_scotch("AA_scotch");
     AA_scotch.createConfTo(AA);
@@ -186,9 +190,11 @@ namespace Tacho {
                          S.InvPermVector(),
                          AA);
 
-    if (verbose)
-      AA_scotch.showMe(std::cout) << std::endl;
-
+    if (verbose) {
+      std::ofstream out("tacho_s.mtx");
+      MatrixMarket::write(out, AA_scotch);
+      //AA_scotch.showMe(std::cout) << std::endl;
+    }
     ///
     /// Run CAMD
     ///
@@ -209,8 +215,10 @@ namespace Tacho {
     C.computeOrdering();
     const double t_camd = timer.seconds();
 
-    if (verbose)
-      C.showMe(std::cout) << std::endl;
+    if (verbose) {
+      std::ofstream out("tacho_camd.txt");      
+      C.showMe(out) << std::endl;
+    }
 
     CrsMatrixBaseHostType AA_camd("AA_camd");
     AA_camd.createConfTo(AA_scotch);
@@ -220,8 +228,11 @@ namespace Tacho {
                          C.InvPermVector(),
                          AA_scotch);
 
-    if (verbose)
-      AA_camd.showMe(std::cout) << std::endl;
+    if (verbose) {
+      std::ofstream out("tacho_c.mtx");
+      MatrixMarket::write(out, AA_camd);
+      //AA_camd.showMe(std::cout) << std::endl;
+    }
 
     ///
     /// Assign reordered matrix
@@ -230,6 +241,10 @@ namespace Tacho {
     ///     output - AA_reordered
     ///
     CrsMatrixBaseHostType AA_reordered = AA_camd;
+    {
+      std::ofstream out("tacho_r.mtx");
+      MatrixMarket::write(out, AA_reordered);
+    }
 
     ///
     /// Clean tempoerary matrices
@@ -366,6 +381,12 @@ namespace Tacho {
                                }
                              } );
       }
+      // if one wants to see block structure for given matrix
+      // if (verbose || verbose_blocks) {
+      //   std::ofstream out("tacho_r.blk");              
+      //   for (auto k=0;k<HA_reordered.NumNonZeros();++k) 
+      //     HA_reordered.Value(k).showMe(out) << std::endl;
+      // }
     }
     const double t_symbolic = timer.seconds();
 
@@ -436,10 +457,12 @@ namespace Tacho {
     }
     const double t_blocks = timer.seconds();
 
-    if (verbose || verbose_blocks)
+    if (verbose || verbose_blocks) {
+      std::ofstream out("tacho_f.blk");              
       for (auto k=0;k<HA_factor.NumNonZeros();++k) 
-        HA_factor.Value(k).showMe(std::cout) << std::endl;
-      
+        HA_factor.Value(k).showMe(out) << std::endl;
+    }
+
     {
       const size_type nblocks = HA_factor.NumNonZeros();
       size_type nnz_blocks = 0, size_blocks = 0, max_blk_size = 0, max_blk_nrows = 0, max_blk_ncols = 0;
@@ -500,6 +523,46 @@ namespace Tacho {
     }
     const double t_chol = timer.seconds();    
 
+    {
+      std::ofstream out("tacho_f.mtx");
+      out.precision(16);
+      out << "%%MatrixMarket matrix coordinate "
+          << "real "
+          << "general "
+          << std::endl;
+      size_type nnz = 0;
+      const size_type nnz_blk = HA_factor.NumNonZeros();
+      const value_type eps = 1.0e-11;
+      for (ordinal_type k=0;k<nnz_blk;++k) {
+        const auto blk = HA_factor.Value(k);
+        const auto flat = blk.Flat();
+        const ordinal_type 
+          offm = blk.OffsetRows()+1,
+          offn = blk.OffsetCols()+1,
+          m = blk.NumRows(),
+          n = blk.NumCols();
+
+        if (offm == offn) {
+          // print upper part only
+          for (ordinal_type j=0;j<m;++j)
+            for (ordinal_type i=0;i<(j+1);++i)
+              if (std::abs(flat.Value(i,j)) > eps) {
+                out << (offm+i) << " " << (offn+j) << " " << flat.Value(i,j) << std::endl;
+                ++nnz;
+              }
+        } else {
+          // print entire matrix
+          for (ordinal_type j=0;j<n;++j)
+            for (ordinal_type i=0;i<m;++i)
+              if (std::abs(flat.Value(i,j)) > eps) {
+                out << (offm+i) << " " << (offn+j) << " " << flat.Value(i,j) << std::endl;          
+                ++nnz;
+              }
+        }
+      }
+      out << "## " << AA_reordered.NumRows() << " " << AA_reordered.NumCols() << " " << nnz << std::endl; 
+    }
+
     /// Phase 4 : Solve problem
     /// ------------------------------------------------------------------------------------
     
@@ -538,8 +601,9 @@ namespace Tacho {
         HostSpaceType::execution_space::fence();
       }
       if (verbose) {
-        XX.showMe(std::cout) << std::endl;
-        BB.showMe(std::cout) << std::endl;
+        std::ofstream out("tacho_x_and_b_before.txt");
+        XX.showMe(out) << std::endl;
+        BB.showMe(out) << std::endl;
       }
       DenseMatrixTools::copy(RR, XX); // keep solution on RR
       DenseMatrixTools::copy(XX, BB); // copy BB into XX
@@ -582,8 +646,9 @@ namespace Tacho {
       t_solve = timer.seconds();
 
       if (verbose) {
-        XX.showMe(std::cout) << std::endl;
-        BB.showMe(std::cout) << std::endl;
+        std::ofstream out("tacho_x_and_b_after.txt");
+        XX.showMe(out) << std::endl;
+        BB.showMe(out) << std::endl;
       }
       
       for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
