@@ -98,7 +98,7 @@ install install-user-include
 
 explicit install-user-lib ;
 install install-user-lib
-  : 
+  : stk_learning_ngp
   : <location>$(install-root)/stk/stk_learning/lib
   ;
 
@@ -214,7 +214,9 @@ exe stk_learning_mesh_builder_utest
 
 lib stk_learning_ngp
   :
-    [ glob $(stk_learning-root)/ngp/*.cpp ]
+    [ ifdevbuild 
+      [ glob $(stk_learning-root)/ngp/*.cpp ]
+    ]
     /tpl/trilinos-kokkoscore//kokkoscore
     /sierra/stk_util//stk_util_environment
     /sierra/stk_unit_test_utils//stk_unit_test_utils
