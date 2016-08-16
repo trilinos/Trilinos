@@ -45,24 +45,24 @@ IF(Kokkos_ENABLE_Serial)
     SOURCES Tacho_ExampleDenseGemmByBlocks_Serial.cpp
     COMM serial mpi
   )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseHerkByBlocks_Serial
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseHerkByBlocks_Serial.cpp
-  #   COMM serial mpi
-  # )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseTrsmByBlocks_Serial
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseTrsmByBlocks_Serial.cpp
-  #   COMM serial mpi
-  # )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseCholByBlocks_Serial
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseCholByBlocks_Serial.cpp
-  #   COMM serial mpi
-  # )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseHerkByBlocks_Serial
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseHerkByBlocks_Serial.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseTrsmByBlocks_Serial
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseTrsmByBlocks_Serial.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseCholByBlocks_Serial
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseCholByBlocks_Serial.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_OpenMP)
@@ -81,24 +81,24 @@ IF(Kokkos_ENABLE_OpenMP)
     SOURCES Tacho_ExampleDenseGemmByBlocks_OpenMP.cpp
     COMM serial mpi
   )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseHerkByBlocks_OpenMP
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseHerkByBlocks_OpenMP.cpp
-  #   COMM serial mpi
-  # )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseTrsmByBlocks_OpenMP
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseTrsmByBlocks_OpenMP.cpp
-  #   COMM serial mpi
-  # )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseCholByBlocks_OpenMP
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseCholByBlocks_OpenMP.cpp
-  #   COMM serial mpi
-  # )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseHerkByBlocks_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseHerkByBlocks_OpenMP.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseTrsmByBlocks_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseTrsmByBlocks_OpenMP.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseCholByBlocks_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseCholByBlocks_OpenMP.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
@@ -108,24 +108,24 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES Tacho_ExampleDenseGemmByBlocks_Pthreads.cpp
     COMM serial mpi
   )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseHerkByBlocks_Pthreads
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseHerkByBlocks_Pthreads.cpp
-  #   COMM serial mpi
-  # )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseTrsmByBlocks_Pthreads
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseTrsmByBlocks_Pthreads.cpp
-  #   COMM serial mpi
-  # )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseCholByBlocks_Pthreads
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseCholByBlocks_Pthreads.cpp
-  #   COMM serial mpi
-  # )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseHerkByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseHerkByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseTrsmByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseTrsmByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDenseCholByBlocks_Pthreads
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDenseCholByBlocks_Pthreads.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_Cuda)
