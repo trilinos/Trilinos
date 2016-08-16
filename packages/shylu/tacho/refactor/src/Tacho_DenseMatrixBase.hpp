@@ -58,7 +58,6 @@ namespace Tacho {
                               const ordinal_type rs,
                               const ordinal_type cs) {
       // compute necessary storage and adjust strides
-      const size_type value_type_size = sizeof(value_type);
       size_type size = 0;
       if (m == 0 || n == 0) { // empty
         _rs = 1;

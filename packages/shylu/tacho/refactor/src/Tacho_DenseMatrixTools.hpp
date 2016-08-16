@@ -226,7 +226,7 @@ namespace Tacho {
     template<typename DenseMatrixHierType,
              typename DenseMatrixFlatType,
              typename OrdinalType>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static void
     getHierMatrix(DenseMatrixHierType &hier,
                   const DenseMatrixFlatType &flat,
