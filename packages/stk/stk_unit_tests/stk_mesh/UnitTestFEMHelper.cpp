@@ -131,16 +131,13 @@ TEST(FEMHelper, check_permutation_consistency_using_FEMHelper_parallel)
 
     stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
 
-    unsigned elem_id = 0;
+    mesh.initialize_face_adjacent_element_graph();
 
+    unsigned elem_id = 0;
     if (mesh.parallel_rank()==0)
-    {
       elem_id = 1;
-    }
     else
-    {
       elem_id = 2;
-    }
 
     stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, elem_id);
     EXPECT_TRUE(mesh.bucket(elem).owned());
@@ -153,8 +150,7 @@ TEST(FEMHelper, check_permutation_consistency_using_FEMHelper_parallel)
 
     stk::mesh::Part &part = mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4);
     mesh.modification_begin();
-    stk::mesh::Entity side
-      = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(mesh, elem, side_nodes, global_side_id, stk::topology::FACE_RANK, part);
+    stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(mesh, elem, side_nodes, global_side_id, part);
     EXPECT_NO_THROW(mesh.modification_end());
 
     std::vector<size_t> mesh_counts;

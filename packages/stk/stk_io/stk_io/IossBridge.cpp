@@ -82,6 +82,21 @@ namespace stk {
     bool is_field_on_part(const stk::mesh::FieldBase *field,
                           const stk::mesh::EntityRank part_type,
                           const stk::mesh::Part &part);
+
+    stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal)
+    {
+        stk::mesh::Entity const elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+        if(bulk.is_valid(elem))
+        {
+            unsigned numSides = bulk.num_sides(elem);
+            const stk::mesh::Entity* elemSides = bulk.begin(elem, bulk.mesh_meta_data().side_rank());
+            const stk::mesh::ConnectivityOrdinal* sideOrds = bulk.begin_ordinals(elem, bulk.mesh_meta_data().side_rank());
+            for(unsigned i = 0; i < numSides; i++)
+                if(sideOrds[i] == (sideOrdinal-1))
+                    return elemSides[i];
+        }
+        return stk::mesh::Entity();
+    }
   }
 }
 
@@ -949,6 +964,8 @@ namespace stk {
       }
     }
 
+
+
     template <typename INT>
     void get_entity_list(Ioss::GroupingEntity *io_entity,
                          stk::mesh::EntityRank part_type,
@@ -959,10 +976,8 @@ namespace stk {
 	std::vector<INT> elem_side ;
 	io_entity->get_field_data("element_side", elem_side);
 	size_t side_count = elem_side.size() / 2;
-	for(size_t is=0; is<side_count; ++is) {
-	  stk::mesh::EntityId side_id = get_side_entity_id(elem_side[is*2], elem_side[is*2+1]);
-	  entities.push_back(bulk.get_entity( part_type, side_id));
-	}
+	for(size_t is=0; is<side_count; ++is)
+	  entities.push_back(get_side_entity_for_elem_side_pair(bulk, elem_side[is*2], elem_side[is*2+1]));
       }
       else {
 	std::vector<INT> ids ;

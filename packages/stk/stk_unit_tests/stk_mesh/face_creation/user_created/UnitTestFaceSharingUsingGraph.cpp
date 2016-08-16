@@ -59,10 +59,10 @@ protected:
         stk::mesh::Entity userCreatedFace = get_bulk().get_entity(get_meta().side_rank(), 1);
         ASSERT_EQ(4u, get_bulk().num_nodes(userCreatedFace));
         const stk::mesh::Entity *nodes = get_bulk().begin_nodes(userCreatedFace);
-        EXPECT_EQ(8u, get_bulk().identifier(nodes[0]));
-        EXPECT_EQ(7u, get_bulk().identifier(nodes[1]));
-        EXPECT_EQ(5u, get_bulk().identifier(nodes[2]));
-        EXPECT_EQ(6u, get_bulk().identifier(nodes[3]));
+        EXPECT_EQ(5u, get_bulk().identifier(nodes[0]));
+        EXPECT_EQ(6u, get_bulk().identifier(nodes[1]));
+        EXPECT_EQ(8u, get_bulk().identifier(nodes[2]));
+        EXPECT_EQ(7u, get_bulk().identifier(nodes[3]));
     }
 };
 

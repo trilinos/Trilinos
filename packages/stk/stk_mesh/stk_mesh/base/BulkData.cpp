@@ -832,19 +832,20 @@ Entity BulkData::declare_solo_side( EntityId ent_id, const PartVector & parts )
 Entity BulkData::declare_element_side(Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
 {
     stk::mesh::Entity sideEntity = stk::mesh::impl::get_side_for_element(*this, elem, side_ordinal);
-    if(this->is_valid(sideEntity))
+    if(is_valid(sideEntity))
     {
-        this->change_entity_parts(sideEntity, add_parts, {});
+        change_entity_parts(sideEntity, add_parts, {});
     }
     else
     {
-        stk::mesh::EntityId global_side_id = impl::side_id_formula(*this, elem, side_ordinal);
-        sideEntity = this->declare_element_side(global_side_id, elem, side_ordinal, add_parts);
-        if (this->has_face_adjacent_element_graph()) {
-            stk::mesh::ElemElemGraph &graph = this->get_face_adjacent_element_graph();
-            stk::mesh::SideConnector sideConnector = graph.get_side_connector();
-            sideConnector.connect_side_to_all_elements(sideEntity, elem, side_ordinal);
+        stk::mesh::EntityId globalSideId = impl::side_id_formula(identifier(elem), side_ordinal);
+        if(has_face_adjacent_element_graph())
+        {
+            stk::mesh::ElemElemGraph &graph = get_face_adjacent_element_graph();
+            stk::mesh::SideIdChooser sideIdChooser = graph.get_side_id_chooser();
+            globalSideId = sideIdChooser.get_chosen_side_id(elem, side_ordinal);
         }
+        sideEntity = declare_element_side(globalSideId, elem, side_ordinal, add_parts);
     }
     return sideEntity;
 }
@@ -890,7 +891,26 @@ Entity BulkData::declare_element_side(
     {
         PartVector empty_parts;
         side = this->internal_declare_entity(side_top.rank(), global_side_id, empty_parts);
-        impl::connect_element_to_entity(*this, elem, side, local_side_id, parts, side_top);
+
+        if (this->has_face_adjacent_element_graph())
+        {
+            stk::mesh::PartVector initialParts;
+            initialParts.reserve(parts.size() + 1);
+            initialParts = parts;
+            initialParts.push_back(&mesh_meta_data().get_topology_root_part(side_top));
+            change_entity_parts(side, initialParts);
+
+            stk::mesh::ElemElemGraph &graph = this->get_face_adjacent_element_graph();
+            stk::mesh::SideNodeConnector sideNodeConnector = graph.get_side_node_connector();
+            sideNodeConnector.connect_side_to_nodes(side, elem, local_side_id);
+
+            stk::mesh::SideConnector sideConnector = graph.get_side_connector();
+            sideConnector.connect_side_to_all_elements(side, elem, local_side_id);
+        }
+        else
+        {
+            impl::connect_element_to_entity(*this, elem, side, local_side_id, parts, side_top);
+        }
     }
     return side;
 }
@@ -1214,7 +1234,8 @@ void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded,
 
     std::vector<uint64_t> ids_in_use = this->internal_get_ids_in_use(rank);
 
-    if (has_face_adjacent_element_graph() && rank == mesh_meta_data().side_rank()) {
+    if (has_face_adjacent_element_graph() && rank == mesh_meta_data().side_rank())
+    {
         get_graph_reserved_side_ids(*this, ids_in_use);
         get_all_potential_elem_side_ids_by_formula(*this, ids_in_use);
         stk::util::sort_and_unique(ids_in_use);
@@ -3788,12 +3809,7 @@ void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& s
             for(size_t i=0;i<localNodesOrderedByNeighbor.size();++i)
                 localNodesOrderedByNeighbor[i] = get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
 
-            std::pair<bool,unsigned> result = stk::mesh::side_equivalent(*this, element, sideOrdinal, localNodesOrderedByNeighbor.data());
-            ThrowRequireWithSierraHelpMsg(result.first);
-            stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(result.second);
-
-            side = stk::mesh::impl::connect_side_to_element(*this, element, sideSharingData.chosenSideId,
-                                                            static_cast<stk::mesh::ConnectivityOrdinal>(sideOrdinal), perm, addParts);
+            side = declare_element_side(sideSharingData.chosenSideId, element, sideOrdinal, addParts);
         }
         else
         {
@@ -3801,7 +3817,8 @@ void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& s
             {
                 stk::mesh::EntityKey newKey(sideRank, sideSharingData.chosenSideId);
                 stk::mesh::EntityKey existingKey = entity_key(side);
-                internal_change_entity_key(existingKey, newKey, side);
+                if(newKey != existingKey)
+                    internal_change_entity_key(existingKey, newKey, side);
 
                 std::vector<stk::mesh::EntityKey> nodeKeys(sideSharingData.sideNodes.size());
                 for(size_t i=0;i<sideSharingData.sideNodes.size();++i)
@@ -3846,12 +3863,14 @@ void BulkData::use_nodes_to_resolve_sharing(stk::mesh::EntityRank rank, std::vec
 
 void BulkData::fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new)
 {
-    if (this->has_face_adjacent_element_graph() && rank == mesh_meta_data().side_rank()) {
+    if (this->has_face_adjacent_element_graph() && rank == mesh_meta_data().side_rank())
+    {
         use_elem_elem_graph_to_determine_shared_entities(shared_new);
         const bool onlyConsiderSoloSides = true;
         use_nodes_to_resolve_sharing(rank, shared_new, onlyConsiderSoloSides);
     }
-    else {
+    else
+    {
         use_nodes_to_resolve_sharing(rank, shared_new);
     }
 }

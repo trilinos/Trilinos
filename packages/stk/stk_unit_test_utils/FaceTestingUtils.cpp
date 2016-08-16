@@ -35,6 +35,7 @@
 #include "ioUtils.hpp"
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -55,7 +56,7 @@ unsigned read_file_create_faces_count_sides(std::string filename)
     stk::mesh::MetaData meta;
     stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
     stk::unit_test_util::fill_mesh_using_stk_io(filename, mesh);
-    stk::mesh::create_faces(mesh);
+    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return count_sides_in_mesh(mesh);
 }
 
@@ -92,7 +93,7 @@ unsigned read_file_create_faces_fully_connected_stk(std::string filename)
     stk::mesh::MetaData meta;
     stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
     stk::unit_test_util::fill_mesh_using_stk_io(filename, mesh);
-    stk::mesh::create_faces(mesh);
+    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return fully_connected_elements_to_faces(mesh);
 }
 
@@ -132,7 +133,7 @@ unsigned read_file_create_faces_shared_faces_different_elements_stk(std::string 
     stk::mesh::MetaData meta;
     stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
     stk::unit_test_util::fill_mesh_using_stk_io(filename, mesh);
-    stk::mesh::create_faces(mesh);
+    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return count_shared_faces_between_different_elements(mesh);
 }
 
@@ -161,7 +162,9 @@ unsigned count_shared_faces_between_same_element(const stk::mesh::BulkData& mesh
       [&shared_face_count](const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex)
       {
         stk::mesh::Entity face = stk::mesh::impl::get_entity(meshIndex);
-        if (is_face_shared_between_same_element(mesh,face)) ++shared_face_count;
+
+        if (is_face_shared_between_same_element(mesh,face))
+            ++shared_face_count;
       }
     );
     return shared_face_count;
@@ -172,7 +175,7 @@ unsigned read_file_create_faces_shared_faces_same_elements_stk(std::string filen
     stk::mesh::MetaData meta;
     stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
     stk::unit_test_util::fill_mesh_using_stk_io(filename, mesh);
-    stk::mesh::create_faces(mesh);
+    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return count_shared_faces_between_same_element(mesh);
 }
 
@@ -241,7 +244,7 @@ bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filenam
     stk::mesh::MetaData meta;
     stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
     stk::unit_test_util::fill_mesh_using_stk_io(filename, mesh);
-    stk::mesh::create_faces(mesh);
+    stk::mesh::create_all_sides(mesh, meta.universal_part(), {}, false);
     return check_face_elem_connectivity(mesh, counts);
 
 }
@@ -260,40 +263,53 @@ namespace stk
 namespace unit_test_util
 {
 
-stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
-        stk::mesh::EntityId global_sub_topology_id, stk::mesh::EntityRank to_rank, stk::mesh::Part &part)
+stk::mesh::Entity declare_element_side_with_nodes(stk::mesh::BulkData &mesh,
+                                                  stk::mesh::Entity elem,
+                                                  const stk::mesh::EntityVector &nodes,
+                                                  stk::mesh::EntityId globalId,
+                                                  stk::mesh::Part &part)
 {
-    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, to_rank, sub_topology_nodes);
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, mesh.mesh_meta_data().side_rank(), nodes);
+    return mesh.declare_element_side(globalId, elem, ordinalAndPermutation.first, {&part});
+}
 
-    if ((ordinalAndPermutation.first  == stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL) ||
-        (ordinalAndPermutation.second == stk::mesh::Permutation::INVALID_PERMUTATION))
+stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
+        stk::mesh::EntityId global_sub_topology_id, stk::mesh::Part &part)
+{
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
+            get_ordinal_and_permutation(mesh, elem, stk::topology::EDGE_RANK, sub_topology_nodes);
+
+    if((ordinalAndPermutation.first == stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL) || (ordinalAndPermutation.second
+            == stk::mesh::Permutation::INVALID_PERMUTATION))
     {
         stk::mesh::Entity invalid;
         invalid = stk::mesh::Entity::InvalidEntity;
         return invalid;
     }
 
-    stk::mesh::Entity side = mesh.get_entity(to_rank, global_sub_topology_id);
-    if (!mesh.is_valid(side))
+    stk::mesh::Entity side = mesh.get_entity(stk::topology::EDGE_RANK, global_sub_topology_id);
+    if(!mesh.is_valid(side))
     {
-        side = mesh.declare_entity(to_rank, global_sub_topology_id, part);
-        for (unsigned i=0;i<sub_topology_nodes.size();++i)
+        side = mesh.declare_entity(stk::topology::EDGE_RANK, global_sub_topology_id, part);
+        for(unsigned i = 0; i < sub_topology_nodes.size(); ++i)
         {
             mesh.declare_relation(side, sub_topology_nodes[i], i);
         }
     }
-    else {
+    else
+    {
         const stk::mesh::Entity* sideNodes = mesh.begin_nodes(side);
         unsigned numNodes = mesh.num_nodes(side);
-        ThrowRequireMsg(sub_topology_nodes.size() == numNodes, "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different number of nodes");
-        for(unsigned i=0; i<numNodes; ++i) {
-            ThrowRequireMsg(sub_topology_nodes[i] == sideNodes[i], "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different node connectivity");
+        ThrowRequireMsg(sub_topology_nodes.size() == numNodes,
+                        "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different number of nodes");
+        for(unsigned i = 0; i < numNodes; ++i)
+        {
+            ThrowRequireMsg(sub_topology_nodes[i] == sideNodes[i],
+                            "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different node connectivity");
         }
     }
 
     mesh.declare_relation(elem, side, ordinalAndPermutation.first, ordinalAndPermutation.second);
     return side;
 }
-
-}
-}
+}}

@@ -899,6 +899,16 @@ stk::mesh::SideConnector ElemElemGraph::get_side_connector()
     return stk::mesh::SideConnector(m_bulk_data, m_graph, m_coincidentGraph, m_idMapper);
 }
 
+stk::mesh::SideNodeConnector ElemElemGraph::get_side_node_connector()
+{
+    return stk::mesh::SideNodeConnector(m_bulk_data, m_graph, m_coincidentGraph, m_parallelInfoForGraphEdges, m_idMapper);
+}
+
+stk::mesh::SideIdChooser ElemElemGraph::get_side_id_chooser()
+{
+    return stk::mesh::SideIdChooser(m_bulk_data, m_idMapper, m_graph, m_coincidentGraph);
+}
+
 impl::LocalId ElemElemGraph::get_new_local_element_id_from_pool()
 {
     impl::LocalId new_local_id;

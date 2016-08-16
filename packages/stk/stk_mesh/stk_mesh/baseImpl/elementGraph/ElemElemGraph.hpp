@@ -122,6 +122,8 @@ public:
     stk::mesh::EntityId get_available_side_id();
 
     stk::mesh::SideConnector get_side_connector();
+    stk::mesh::SideNodeConnector get_side_node_connector();
+    stk::mesh::SideIdChooser get_side_id_chooser();
 
     const stk::mesh::BulkData& get_mesh() const;
 

@@ -428,8 +428,6 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
     if (stk::io::include_entity(block)) {
 
       stk::mesh::Part * const sb_part = meta.get_part(block->name());
-      stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
-
       // Get topology of the sides being defined to see if they
       // are 'faces' or 'edges'.  This is needed since for shell-type
       // elements, (and actually all elements) a sideset can specify either a face or an edge...
@@ -450,28 +448,15 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
       // mesh file.  The get_entities can give them in different order and will ignore duplicated
       // "sides" that occur in some exodus files.
 
-      std::vector<INT> elem_side ;
-      block->get_field_data("element_side", elem_side);
-      size_t side_count = elem_side.size()/2;
+      std::vector<INT> elemSidePairs;
+      block->get_field_data("element_side", elemSidePairs);
+      size_t side_count = elemSidePairs.size()/2;
 
       std::vector<stk::mesh::Entity> sides;
       sides.reserve(side_count);
 
-      for(size_t is=0; is<side_count; ++is) {
-        stk::mesh::Entity const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
-
-        // If NULL, then the element was probably assigned to an
-        // element block that appears in the database, but was
-        // subsetted out of the analysis mesh. Only process if
-        // non-null.
-        if (bulk.is_valid(elem)) {
-          stk::mesh::EntityId side_id = get_side_entity_id(elem_side[is*2], elem_side[is*2+1]);
-          stk::mesh::Entity side = bulk.get_entity(side_rank, side_id);
-          sides.push_back(side);
-        } else {
-          sides.push_back(stk::mesh::Entity());
-        }
-      }
+      for(size_t is = 0; is < side_count; ++is)
+          sides.push_back(stk::io::get_side_entity_for_elem_side_pair(bulk, elemSidePairs[is*2], elemSidePairs[is*2+1]));
 
       const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*sb_part);
       if (df_field != NULL) {

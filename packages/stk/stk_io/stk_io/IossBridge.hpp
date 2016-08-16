@@ -441,8 +441,10 @@ void get_io_field_type(const stk::mesh::FieldBase *field,
                        const stk::mesh::FieldRestriction &res,
                        std::pair<std::string, Ioss::Field::BasicType> *result);
 /**
- * \}
+ * \---}
  */
+
+stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal);
 
 }//namespace io
 }//namespace stk

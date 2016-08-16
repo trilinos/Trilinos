@@ -89,10 +89,10 @@ bool check_permutations_on_all(stk::mesh::BulkData& mesh);
 void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes);
 
 inline
-stk::mesh::EntityId side_id_formula(const stk::mesh::BulkData& bulkData, stk::mesh::Entity elem, unsigned sideOrdinal)
+stk::mesh::EntityId side_id_formula(stk::mesh::EntityId elemId, unsigned sideOrdinal)
 {
     //this is the side-id formula used by IO. the "+1" is because IO always uses one-based side ordinals
-    return 10*bulkData.identifier(elem) + sideOrdinal+1;
+    return 10*elemId + sideOrdinal + 1;
 }
 
 class GlobalIdEntitySorter : public EntitySorterBase

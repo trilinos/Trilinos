@@ -728,6 +728,8 @@ public:
   // std::ostringstream oss;
   // oss << "output." << parallel_rank();
   // std::ofstream out(oss.str(), std::ios_base::app);
+  // dump_all_mesh_info(out);
+  // out.close();
   void dump_all_mesh_info(std::ostream& out) const;
 
   // memoized version
