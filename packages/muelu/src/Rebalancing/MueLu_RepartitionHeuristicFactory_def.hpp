@@ -62,7 +62,9 @@
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_RAPFactory.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_BlockedRAPFactory.hpp"
+#endif
 #include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
@@ -105,7 +107,9 @@ namespace MueLu {
 
     RCP<const FactoryBase> Afact = GetFactory("A");
     if(Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
+#ifdef HAVE_MUELU_EXPERIMENTAL
        Teuchos::rcp_dynamic_cast<const BlockedRAPFactory>(Afact) == Teuchos::null &&
+#endif
        Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null)
       GetOStream(Warnings) <<
         "MueLu::RepartitionHeuristicFactory::Build: The generation factory for A must " \

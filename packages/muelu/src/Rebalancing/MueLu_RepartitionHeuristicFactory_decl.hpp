@@ -63,6 +63,11 @@
 #include <Xpetra_MatrixFactory_fwd.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
+#include "MueLu_BlockedRAPFactory_fwd.hpp"
+#endif
+#include "MueLu_RAPFactory_fwd.hpp"
+#include "MueLu_SubBlockAFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
