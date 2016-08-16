@@ -53,8 +53,13 @@
 # ************************************************************************
 # @HEADER
 
-  
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+# For CUSTOM_ENV_VARIABLES we changed this path
+# Need to resolve if there is proper way to use PROJECT_SOURCE_DIR
+IF( DEFINED ENV{CUSTOM_ENV_VARIABLES} )
+  INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+ELSE()
+  INCLUDE("${PROJECT_SOURCE_DIR}/cmake/ctest//TrilinosCTestDriverCore.cmake")
+ENDIF()
 
 #
 # Platform/compiler specific options for typhon using gcc
@@ -62,15 +67,15 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
-  # This allows the build directory location to be overridden for a custom test setup - the Trilinos setup will set CTEST_DASHBOARD_ROOT here
-  IF( DEFINED CTEST_BINARY_DIRECTORY )
-    MESSAGE( "CTEST_BINARY_DIRECTORY was defined so not setting CTEST_DASHBOARD_ROOT" )
-  ELSE()
+  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+
+  # For CUSTOM_ENV_VARIABLES we disabled this to set custom build folders
+  IF( NOT DEFINED ENV{CUSTOM_ENV_VARIABLES} )
     SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
   ENDIF()
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  
+
   SET( CTEST_BUILD_FLAGS "-j16 -i" )
 
   SET_DEFAULT( CTEST_PARALLEL_LEVEL "16" )
@@ -85,16 +90,17 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
 
     "-DTrilinos_ENABLE_CXX11=ON"
+    "-DTrilinos_CXX11_FLAGS:STRING=--std=c++11"
 
     "-DTPL_ENABLE_BLAS:BOOL=ON"
     "-DTPL_ENABLE_LAPACK:BOOL=ON"
-    
+
     "-DSuperLU_INCLUDE_DIRS:PATH=$ENV{SEMS_SUPERLU_ROOT}/include"
     "-DSuperLU_LIBRARY_DIRS:PATH=$ENV{SEMS_SUPERLU_ROOT}/lib"
     "-DSuperLU_LIBRARY_NAMES:STRING=superlu"
 
-    "-DParMETIS_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_PARMETIS_ROOT}/include"
-    "-DParMETIS_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_PARMETIS_ROOT}/lib"
+    "-DBoost_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_BOOST_ROOT}/include"
+    "-DBoost_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_BOOST_ROOT}/lib"
 
     "-DBoostLib_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_BOOST_ROOT}/include"
     "-DBoostLib_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_BOOST_ROOT}/lib"
@@ -105,24 +111,32 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DNetcdf_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_NETCDF_ROOT}/include"
     "-DNetcdf_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_NETCDF_ROOT}/lib"
 
-    "-DScotch_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_SCOTCH_ROOT}/include"
-    "-DScotch_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_SCOTCH_ROOT}/lib"
-
     "-DZlib_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_ZLIB_ROOT}/include"
     "-DZlib_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_ZLIB_ROOT}/lib"
-    
-    "-DParMETIS_LIBRARY_NAMES:STRING=$ENV{SEMS_PARMETIS_LIBRARY_NAMES}" 
-    "-DScotch_LIBRARY_NAMES:STRING=$ENV{SEMS_SCOTCH_LIBRARY_NAMES}"
     )
-    
+
+
+  # This special config setting is for development purposes
+  # It allows us to set Parmetis and Scotch settings
+  # and to block the CTEST_DASHBOARD_ROOT setting for a custom set up
+  IF( DEFINED ENV{CUSTOM_ENV_VARIABLES} )
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+      "-DParMETIS_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_PARMETIS_ROOT}/include"
+      "-DParMETIS_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_PARMETIS_ROOT}/lib"
+      "-DParMETIS_LIBRARY_NAMES:STRING=$ENV{SEMS_PARMETIS_LIBRARY_NAMES}"
+      "-DScotch_INCLUDE_DIRS:FILEPATH=$ENV{SEMS_SCOTCH_ROOT}/include"
+      "-DScotch_LIBRARY_DIRS:FILEPATH=$ENV{SEMS_SCOTCH_ROOT}/lib"
+      "-DScotch_LIBRARY_NAMES:STRING=$ENV{SEMS_SCOTCH_LIBRARY_NAMES}"
+    )
+  ENDIF()
+
   SET_DEFAULT(COMPILER_VERSION "$ENV{SEMS_COMPILER_NAME}-$ENV{SEMS_COMPILER_VERSION}")
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DCMAKE_C_COMPILER:FILEPATH=$ENV{SEMS_OPENMPI_ROOT}/bin/mpicc"
-        "-DCMAKE_CXX_COMPILER:FILEPATH=$ENV{SEMS_OPENMPI_ROOT}/bin/mpicxx"
         "-DTPL_ENABLE_MPI=ON"
         "-DMPI_BASE_DIR=$ENV{SEMS_OPENMPI_ROOT}"
        )
