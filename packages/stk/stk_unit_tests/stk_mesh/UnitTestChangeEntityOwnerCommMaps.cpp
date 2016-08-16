@@ -57,6 +57,7 @@
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityProc, etc
+#include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
@@ -776,21 +777,81 @@ void copySelectedEntitiesToNewMesh(const stk::unit_test_util::BulkDataTester& ol
 {
     for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
     {
-        const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
-        for(size_t i = 0; i < buckets.size(); i++)
+        // Skip over creating all faces since those will be managed by declare_element_side() later on
+        if (rank != stk::topology::FACE_RANK)
         {
-            stk::mesh::Bucket &bucket = *buckets[i];
-            for(size_t j = 0; j < bucket.size(); j++)
+            const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
+            for(size_t i = 0; i < buckets.size(); i++)
             {
-                const stk::mesh::PartVector &oldParts = bucket.supersets();
-                stk::mesh::PartVector newParts(oldParts.size(), 0);
-                for(size_t k = 0; k < oldParts.size(); k++)
+                stk::mesh::Bucket &bucket = *buckets[i];
+                for(size_t j = 0; j < bucket.size(); j++)
                 {
-                    newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
+                    const stk::mesh::PartVector &oldParts = bucket.supersets();
+                    stk::mesh::PartVector newParts(oldParts.size(), 0);
+                    for(size_t k = 0; k < oldParts.size(); k++)
+                    {
+                        newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
+                    }
+                    stk::mesh::Entity newEntity = newBulkData.declare_entity(rank, oldBulkData.identifier(bucket[j]), newParts);
+                    oldToNewEntityMap[bucket[j]] = newEntity;
                 }
-                stk::mesh::Entity newEntity = newBulkData.declare_entity(rank, oldBulkData.identifier(bucket[j]), newParts);
-                oldToNewEntityMap[bucket[j]] = newEntity;
             }
+        }
+    }
+}
+
+
+stk::mesh::ConnectivityOrdinal get_ordinal_from_side_entity(const std::vector<Entity> &sides, stk::mesh::ConnectivityOrdinal const * ordinals, stk::mesh::Entity side)
+{
+    for(unsigned i = 0; i<sides.size(); ++i)
+    {
+        if(sides[i] == side)
+            return ordinals[i];
+    }
+
+    return stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+}
+
+stk::mesh::ConnectivityOrdinal get_ordinal_for_element_side_pair(const BulkData &bulkData, stk::mesh::Entity element, stk::mesh::Entity side)
+{
+    const Entity * sides = bulkData.begin(element, bulkData.mesh_meta_data().side_rank());
+    stk::mesh::ConnectivityOrdinal const * ordinals = bulkData.begin_ordinals(element, bulkData.mesh_meta_data().side_rank());
+    std::vector<Entity> sideVector(sides, sides+bulkData.num_sides(element));
+    return get_ordinal_from_side_entity(sideVector, ordinals, side);
+}
+
+
+void copySelectedFacesToNewMesh(const stk::unit_test_util::BulkDataTester& oldBulkData,
+                                   const stk::mesh::Selector subMeshSelector,
+                                   std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
+                                   stk::mesh::MetaData &newMeta,
+                                   stk::unit_test_util::BulkDataTester &newBulkData)
+{
+    const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(stk::topology::FACE_RANK, subMeshSelector);
+    for(size_t i = 0; i < buckets.size(); i++)
+    {
+        stk::mesh::Bucket &bucket = *buckets[i];
+        for(size_t j = 0; j < bucket.size(); j++)
+        {
+            const stk::mesh::PartVector &oldParts = bucket.supersets();
+            stk::mesh::PartVector newParts;
+            for(size_t k = 0; k < oldParts.size(); k++)
+            {
+                if (!stk::mesh::is_auto_declared_part(*oldParts[k]))
+                {
+                    newParts.push_back( &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal()) );
+                }
+            }
+
+            const stk::mesh::Entity * connected_elements = oldBulkData.begin_elements(bucket[j]);
+            const Entity oldFirstElement = connected_elements[0];
+            ThrowRequire(oldBulkData.is_valid(oldFirstElement));
+
+            stk::mesh::ConnectivityOrdinal faceOrdinal = get_ordinal_for_element_side_pair(oldBulkData, oldFirstElement, bucket[i]);
+            stk::mesh::Entity newFirstElement = newBulkData.get_entity(oldBulkData.entity_key(oldFirstElement));
+
+            stk::mesh::Entity newFace = newBulkData.declare_element_side(newFirstElement, faceOrdinal, newParts);
+            oldToNewEntityMap[bucket[j]] = newFace;
         }
     }
 }
@@ -802,21 +863,28 @@ void copyRelationsToNewMesh(const stk::unit_test_util::BulkDataTester& oldBulkDa
 {
     for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
     {
-        const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
-        for(size_t i = 0; i < buckets.size(); i++)
+        // Skip over all face relations since those will be managed by declare_element_side() later on
+        if (rank != stk::topology::FACE_RANK)
         {
-            stk::mesh::Bucket &bucket = *buckets[i];
-            for(size_t j = 0; j < bucket.size(); j++)
+            const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
+            for(size_t i = 0; i < buckets.size(); i++)
             {
-                stk::mesh::Entity newFromEntity = oldToNewEntityMap.find(bucket[j])->second;
-                for(stk::mesh::EntityRank downRank = stk::topology::NODE_RANK; downRank < rank; downRank++)
+                stk::mesh::Bucket &bucket = *buckets[i];
+                for(size_t j = 0; j < bucket.size(); j++)
                 {
-                    unsigned numConnectedEntities = oldBulkData.num_connectivity(bucket[j], downRank);
-                    const stk::mesh::Entity *connectedEntities = oldBulkData.begin(bucket[j], downRank);
-                    for(unsigned connectOrder = 0; connectOrder < numConnectedEntities; connectOrder++)
+                    stk::mesh::Entity newFromEntity = oldToNewEntityMap.find(bucket[j])->second;
+                    for(stk::mesh::EntityRank downRank = stk::topology::NODE_RANK; downRank < rank; downRank++)
                     {
-                        stk::mesh::Entity newToEntity = oldToNewEntityMap.find(connectedEntities[connectOrder])->second;
-                        newBulkData.declare_relation(newFromEntity, newToEntity, connectOrder);
+                        if (downRank != stk::topology::FACE_RANK)
+                        {
+                            unsigned numConnectedEntities = oldBulkData.num_connectivity(bucket[j], downRank);
+                            const stk::mesh::Entity *connectedEntities = oldBulkData.begin(bucket[j], downRank);
+                            for(unsigned connectOrder = 0; connectOrder < numConnectedEntities; connectOrder++)
+                            {
+                                stk::mesh::Entity newToEntity = oldToNewEntityMap.find(connectedEntities[connectOrder])->second;
+                                newBulkData.declare_relation(newFromEntity, newToEntity, connectOrder);
+                            }
+                        }
                     }
                 }
             }
@@ -872,6 +940,7 @@ void createSerialSubMesh(const stk::mesh::MetaData &oldMeta,
     newBulkData.modification_begin();
     copySelectedEntitiesToNewMesh(oldBulkData, subMeshSelector, oldToNewEntityMap, newMeta, newBulkData);
     copyRelationsToNewMesh(oldBulkData, subMeshSelector, oldToNewEntityMap, newBulkData);
+    copySelectedFacesToNewMesh(oldBulkData, subMeshSelector, oldToNewEntityMap, newMeta, newBulkData);
     newBulkData.modification_end();
 
     copyFieldDataToNewMesh(oldMeta, oldBulkData, subMeshSelector, oldToNewEntityMap, newMeta);

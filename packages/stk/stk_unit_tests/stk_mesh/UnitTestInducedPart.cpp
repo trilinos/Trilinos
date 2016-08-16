@@ -41,6 +41,8 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <stk_unit_test_utils/MeshFixture.hpp>
+
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -60,211 +62,243 @@ namespace {
 //        S1, S2 in side_rank_part
 //        element_ranked_part subset of unranked_superset_part
 // modification cycle is left uncompleted
-#define SETUP_MESH2D()                            \
-  stk::ParallelMachine pm = MPI_COMM_SELF;              \
-                                                  \
-  const unsigned spatial_dim = 2;                                       \
-                                                                        \
-  MetaData meta_data(spatial_dim);                                      \
-  Part& unranked_part = meta_data.declare_part("unranked_part");        \
-  Part& element_rank_part =                                             \
-     meta_data.declare_part_with_topology("element_rank_part", stk::topology::TRI_3);        \
-  Part& element_rank_superset_part =                                    \
-    meta_data.declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK); \
-  Part& side_rank_part =                                                \
-    meta_data.declare_part_with_topology("side_rank_part", stk::topology::LINE_2); \
-  Part& unranked_superset_part = meta_data.declare_part("unranked_superset_part"); \
-  meta_data.declare_part_subset(unranked_superset_part, element_rank_part); \
-  meta_data.declare_part_subset(element_rank_superset_part, element_rank_part); \
-                                                                        \
-  meta_data.commit();                                                   \
-  BulkData mesh(meta_data, pm);                                         \
-                                                                        \
-  mesh.modification_begin();                                            \
-                                                                        \
-  stk::mesh::PartVector parts;                                          \
-  parts.push_back(&unranked_part);                                       \
-  parts.push_back(&element_rank_part);                                   \
-  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, 1 /*id*/, parts); \
-                                                                        \
-  parts.clear();                                                        \
-  parts.push_back(&side_rank_part);                                      \
-  Entity side1 = mesh.declare_entity(meta_data.side_rank(), 1 /*id*/, parts); \
-  Entity side2 = mesh.declare_entity(meta_data.side_rank(), 2 /*id*/, parts); \
-                                                                        \
-  parts.clear();                                                        \
-  Entity node  = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);      \
-  Entity node2 = mesh.declare_entity(stk::topology::NODE_RANK, 2 /*id*/, parts);      \
-  Entity node3 = mesh.declare_entity(stk::topology::NODE_RANK, 3 /*id*/, parts);      \
-                                                                        \
-  mesh.declare_relation(elem, side1,  0 /*rel id*/);                    \
-  mesh.declare_relation(elem, side2,  1 /*rel id*/);                    \
-  mesh.declare_relation(elem, node,   0 /*rel id*/);                    \
-  mesh.declare_relation(elem, node2,  1 /*rel id*/);                    \
-  mesh.declare_relation(elem, node3,  2 /*rel id*/);                    \
-  mesh.declare_relation(side1, node,  0 /*rel id*/);                    \
-  mesh.declare_relation(side1, node2,  1 /*rel id*/);                   \
-  mesh.declare_relation(side2, node,  0 /*rel id*/);                    \
-  mesh.declare_relation(side2, node3,  1 /*rel id*/);
 
-#define SETUP_MESH3D()                            \
-  stk::ParallelMachine pm = MPI_COMM_SELF;              \
-                                                  \
-  const unsigned spatial_dim = 3;                                       \
-                                                                        \
-  MetaData meta_data(spatial_dim);                                      \
-  Part& unranked_part = meta_data.declare_part("unranked_part");        \
-  Part& element_rank_part =                                             \
-     meta_data.declare_part_with_topology("element_rank_part", stk::topology::TET_4);        \
-  Part& element_rank_superset_part =                                    \
-    meta_data.declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK); \
-  Part& side_rank_part =                                                \
-    meta_data.declare_part_with_topology("side_rank_part", stk::topology::TRI_3); \
-  Part& edge_rank_part =                                                \
-    meta_data.declare_part_with_topology("edge_rank_part", stk::topology::LINE_2); \
-  Part& unranked_superset_part = meta_data.declare_part("unranked_superset_part"); \
-  meta_data.declare_part_subset(unranked_superset_part, element_rank_part); \
-  meta_data.declare_part_subset(element_rank_superset_part, element_rank_part); \
-                                                                        \
-  meta_data.commit();                                                   \
-  BulkData mesh(meta_data, pm);                                         \
-                                                                        \
-  mesh.modification_begin();                                            \
-                                                                        \
-  stk::mesh::PartVector parts;                                          \
-  parts.push_back(&unranked_part);                                       \
-  parts.push_back(&element_rank_part);                                   \
-  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, 1 /*id*/, parts); \
-                                                                        \
-  parts.clear();                                                        \
-  parts.push_back(&side_rank_part);                                      \
-  Entity side = mesh.declare_entity(stk::topology::FACE_RANK, 1 /*id*/, parts); \
-                                                                        \
-  parts.clear();                                                        \
-  parts.push_back(&edge_rank_part);                                     \
-  Entity edge = mesh.declare_entity(stk::topology::EDGE_RANK, 1 /*id*/, parts); \
-                                                                        \
-  parts.clear();                                                        \
-  Entity node  = mesh.declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);      \
-                                                                        \
-  mesh.declare_relation(elem, side,  0 /*rel id*/);                    \
-  mesh.declare_relation(elem, node,  0 /*rel id*/);                    \
-  mesh.declare_relation(side, edge,  0 /*rel id*/);                    \
-  mesh.declare_relation(side, node,  0 /*rel id*/);                   \
-  mesh.declare_relation(edge, node,  0 /*rel id*/);                   \
-
-
-TEST ( UnitTestInducedPart , verifyBasicInducedPart )
+class UnitTestInducedPart2D : public stk::unit_test_util::MeshFixture
 {
-  SETUP_MESH2D();
+protected:
+    UnitTestInducedPart2D()
+      : MeshFixture(2) {}
 
-  // Check that directly-induced parts are induced upon relation creation
-  // before modification end.
-  EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
-  EXPECT_TRUE(mesh.bucket(node).member( element_rank_part));
-  EXPECT_TRUE(mesh.bucket(node).member( element_rank_superset_part));
-  EXPECT_FALSE(mesh.bucket(node).member( unranked_superset_part));
-  EXPECT_TRUE(mesh.bucket(side1).member( element_rank_part));
-  EXPECT_TRUE(mesh.bucket(side1).member( element_rank_superset_part));
-  EXPECT_FALSE(mesh.bucket(side1).member( unranked_superset_part));
-  EXPECT_TRUE(mesh.bucket(side2).member( element_rank_part));
-  EXPECT_FALSE(mesh.bucket(side2).member( unranked_superset_part));
-  EXPECT_TRUE(mesh.bucket(side2).member( element_rank_superset_part));
+    void setup_serial_mesh()
+    {
+        unranked_part = &get_meta().declare_part("unranked_part");
+        element_rank_part = &get_meta().declare_part_with_topology("element_rank_part", stk::topology::TRI_3);
+        element_rank_superset_part = &get_meta().declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK);
+        side_rank_part = &get_meta().declare_part_with_topology("side_rank_part", stk::topology::LINE_2);
+        unranked_superset_part = &get_meta().declare_part("unranked_superset_part");
+        get_meta().declare_part_subset(*unranked_superset_part, *element_rank_part);
+        get_meta().declare_part_subset(*element_rank_superset_part, *element_rank_part);
+        get_meta().commit();
 
-  mesh.modification_end();
+        allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
 
-  // Modification-end should not have changed induced parts
-  EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
-  EXPECT_TRUE(mesh.bucket(node).member( element_rank_part));
-  EXPECT_TRUE(mesh.bucket(node).member( element_rank_superset_part));
-  EXPECT_FALSE(mesh.bucket(node).member( unranked_superset_part));
-  EXPECT_TRUE(mesh.bucket(side1).member( element_rank_part));
-  EXPECT_TRUE(mesh.bucket(side1).member( element_rank_superset_part));
-  EXPECT_FALSE(mesh.bucket(side1).member( unranked_superset_part));
-  EXPECT_TRUE(mesh.bucket(side2).member( element_rank_part));
-  EXPECT_FALSE(mesh.bucket(side2).member( unranked_superset_part));
-  EXPECT_TRUE(mesh.bucket(side2).member( element_rank_superset_part));
+        get_bulk().modification_begin();
+
+        stk::mesh::PartVector parts;
+        parts.push_back(unranked_part);
+        parts.push_back(element_rank_part);
+        elem = get_bulk().declare_entity(stk::topology::ELEMENT_RANK, 1 /*id*/, parts);
+
+        parts.clear();
+        parts.push_back(side_rank_part);
+        side1 = get_bulk().declare_entity(get_meta().side_rank(), 1 /*id*/, parts);
+        side2 = get_bulk().declare_entity(get_meta().side_rank(), 2 /*id*/, parts);
+
+        parts.clear();
+        node  = get_bulk().declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);
+        node2 = get_bulk().declare_entity(stk::topology::NODE_RANK, 2 /*id*/, parts);
+        node3 = get_bulk().declare_entity(stk::topology::NODE_RANK, 3 /*id*/, parts);
+
+        get_bulk().declare_relation(elem, side1,  0 /*rel id*/);
+        get_bulk().declare_relation(elem, side2,  1 /*rel id*/);
+        get_bulk().declare_relation(elem, node,   0 /*rel id*/);
+        get_bulk().declare_relation(elem, node2,  1 /*rel id*/);
+        get_bulk().declare_relation(elem, node3,  2 /*rel id*/);
+        get_bulk().declare_relation(side1, node,  0 /*rel id*/);
+        get_bulk().declare_relation(side1, node2,  1 /*rel id*/);
+        get_bulk().declare_relation(side2, node,  0 /*rel id*/);
+        get_bulk().declare_relation(side2, node3,  1 /*rel id*/);
+    }
+
+    stk::mesh::Part * unranked_part;
+    stk::mesh::Part * element_rank_part;
+    stk::mesh::Part * element_rank_superset_part;
+    stk::mesh::Part * side_rank_part;
+    stk::mesh::Part * unranked_superset_part;
+    Entity elem;
+    Entity side1;
+    Entity side2;
+    Entity node;
+    Entity node2;
+    Entity node3;
+
+};
+
+class UnitTestInducedPart3D : public stk::unit_test_util::MeshFixture
+{
+protected:
+    UnitTestInducedPart3D()
+      : MeshFixture(3) {}
+
+    void setup_serial_mesh()
+    {
+        unranked_part = &get_meta().declare_part("unranked_part");
+        element_rank_part = &get_meta().declare_part_with_topology("element_rank_part", stk::topology::TET_4);
+        element_rank_superset_part = &get_meta().declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK);
+        side_rank_part = &get_meta().declare_part_with_topology("side_rank_part", stk::topology::TRI_3);
+        edge_rank_part = &get_meta().declare_part_with_topology("edge_rank_part", stk::topology::LINE_2);
+        unranked_superset_part = &get_meta().declare_part("unranked_superset_part");
+        get_meta().declare_part_subset(*unranked_superset_part, *element_rank_part);
+        get_meta().declare_part_subset(*element_rank_superset_part, *element_rank_part);
+        get_meta().commit();
+
+        allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
+
+        get_bulk().modification_begin();
+
+        stk::mesh::PartVector parts;
+        parts.push_back(unranked_part);
+        parts.push_back(element_rank_part);
+        elem = get_bulk().declare_entity(stk::topology::ELEMENT_RANK, 1 /*id*/, parts);
+
+        parts.clear();
+        parts.push_back(side_rank_part);
+        side = get_bulk().declare_entity(stk::topology::FACE_RANK, 1 /*id*/, parts);
+
+        parts.clear();
+        parts.push_back(edge_rank_part);
+        edge = get_bulk().declare_entity(stk::topology::EDGE_RANK, 1 /*id*/, parts);
+
+        parts.clear();
+        node  = get_bulk().declare_entity(stk::topology::NODE_RANK, 1 /*id*/, parts);
+
+        get_bulk().declare_relation(elem, side,  0 /*rel id*/);
+        get_bulk().declare_relation(elem, node,  0 /*rel id*/);
+        get_bulk().declare_relation(side, edge,  0 /*rel id*/);
+        get_bulk().declare_relation(side, node,  0 /*rel id*/);
+        get_bulk().declare_relation(edge, node,  0 /*rel id*/);
+
+    }
+
+    stk::mesh::Part * unranked_part;
+    stk::mesh::Part * element_rank_part;
+    stk::mesh::Part * element_rank_superset_part;
+    stk::mesh::Part * side_rank_part;
+    stk::mesh::Part * edge_rank_part;
+    stk::mesh::Part * unranked_superset_part;
+    Entity elem;
+    Entity side;
+    Entity edge;
+    Entity node;
+};
+
+TEST_F( UnitTestInducedPart2D , verifyBasicInducedPart )
+{
+    if (stk::parallel_machine_size(get_comm()) == 1) {
+        setup_serial_mesh();
+
+        // Check that directly-induced parts are induced upon relation creation
+        // before modification end.
+        EXPECT_TRUE(get_bulk().bucket(node).member( *side_rank_part));
+        EXPECT_TRUE(get_bulk().bucket(node).member( *element_rank_part));
+        EXPECT_TRUE(get_bulk().bucket(node).member( *element_rank_superset_part));
+        EXPECT_FALSE(get_bulk().bucket(node).member( *unranked_superset_part));
+        EXPECT_TRUE(get_bulk().bucket(side1).member( *element_rank_part));
+        EXPECT_TRUE(get_bulk().bucket(side1).member( *element_rank_superset_part));
+        EXPECT_FALSE(get_bulk().bucket(side1).member( *unranked_superset_part));
+        EXPECT_TRUE(get_bulk().bucket(side2).member( *element_rank_part));
+        EXPECT_FALSE(get_bulk().bucket(side2).member( *unranked_superset_part));
+        EXPECT_TRUE(get_bulk().bucket(side2).member( *element_rank_superset_part));
+
+        get_bulk().modification_end();
+
+        // Modification-end should not have changed induced parts
+        EXPECT_TRUE(get_bulk().bucket(node).member( *side_rank_part));
+        EXPECT_TRUE(get_bulk().bucket(node).member( *element_rank_part));
+        EXPECT_TRUE(get_bulk().bucket(node).member( *element_rank_superset_part));
+        EXPECT_FALSE(get_bulk().bucket(node).member( *unranked_superset_part));
+        EXPECT_TRUE(get_bulk().bucket(side1).member( *element_rank_part));
+        EXPECT_TRUE(get_bulk().bucket(side1).member( *element_rank_superset_part));
+        EXPECT_FALSE(get_bulk().bucket(side1).member( *unranked_superset_part));
+        EXPECT_TRUE(get_bulk().bucket(side2).member( *element_rank_part));
+        EXPECT_FALSE(get_bulk().bucket(side2).member( *unranked_superset_part));
+        EXPECT_TRUE(get_bulk().bucket(side2).member( *element_rank_superset_part));
+    }
 }
 
-TEST ( UnitTestInducedPart, verifyInducedPartCorrectnessWhenRelationsRemoved )
+TEST_F( UnitTestInducedPart2D, verifyInducedPartCorrectnessWhenRelationsRemoved )
 {
-  SETUP_MESH2D();
+    if (stk::parallel_machine_size(get_comm()) == 1) {
+        setup_serial_mesh();
 
-  EXPECT_TRUE( mesh.bucket(side1).member( element_rank_part));
-  EXPECT_TRUE( mesh.bucket(side1).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(side1).member( unranked_superset_part));
+        EXPECT_TRUE( get_bulk().bucket(side1).member( *element_rank_part));
+        EXPECT_TRUE( get_bulk().bucket(side1).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(side1).member( *unranked_superset_part));
 
-  EXPECT_TRUE( mesh.bucket(side2).member( element_rank_part));
-  EXPECT_TRUE( mesh.bucket(side2).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(side2).member( unranked_superset_part));
+        EXPECT_TRUE( get_bulk().bucket(side2).member( *element_rank_part));
+        EXPECT_TRUE( get_bulk().bucket(side2).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(side2).member( *unranked_superset_part));
 
-  EXPECT_TRUE( mesh.bucket(node).member( element_rank_part));
-  EXPECT_TRUE( mesh.bucket(node).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(node).member( unranked_superset_part));
+        EXPECT_TRUE( get_bulk().bucket(node).member( *element_rank_part));
+        EXPECT_TRUE( get_bulk().bucket(node).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *unranked_superset_part));
 
-  // Destroy one relation from element to a side, confirm that the side that lost
-  // the relation no longer has the element part.
-  mesh.destroy_relation(elem, side1, 0 /*rel id*/);
-  EXPECT_TRUE(!mesh.bucket(side1).member( element_rank_part));
-  EXPECT_TRUE(!mesh.bucket(side1).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(side1).member( unranked_superset_part));
+        // Destroy one relation from element to a side, confirm that the side that lost
+        // the relation no longer has the element part.
+        get_bulk().destroy_relation(elem, side1, 0 /*rel id*/);
+        EXPECT_TRUE(!get_bulk().bucket(side1).member( *element_rank_part));
+        EXPECT_TRUE(!get_bulk().bucket(side1).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(side1).member( *unranked_superset_part));
 
-  mesh.destroy_relation(elem, side2, 1 /*rel id*/);
-  EXPECT_TRUE(!mesh.bucket(side2).member( element_rank_part));
-  EXPECT_TRUE(!mesh.bucket(side2).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(side2).member( unranked_superset_part));
+        get_bulk().destroy_relation(elem, side2, 1 /*rel id*/);
+        EXPECT_TRUE(!get_bulk().bucket(side2).member( *element_rank_part));
+        EXPECT_TRUE(!get_bulk().bucket(side2).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(side2).member( *unranked_superset_part));
 
-  // Destroy one of the relations from side to node. Confirm that node still has
-  // side part due to its remaining relation.
-  mesh.destroy_relation(side1, node, 0 /*rel id*/);
-  EXPECT_TRUE( mesh.bucket(node).member( side_rank_part));
-  EXPECT_TRUE( mesh.bucket(node).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(node).member( unranked_superset_part));
+        // Destroy one of the relations from side to node. Confirm that node still has
+        // side part due to its remaining relation.
+        get_bulk().destroy_relation(side1, node, 0 /*rel id*/);
+        EXPECT_TRUE( get_bulk().bucket(node).member( *side_rank_part));
+        EXPECT_TRUE( get_bulk().bucket(node).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *unranked_superset_part));
 
-  // Destroy the other relations from side to node. Confirm that node no longer
-  // has any induced parts from the side.
-  mesh.destroy_relation(side2, node, 0 /*rel id*/);
-  EXPECT_TRUE(!mesh.bucket(node).member( side_rank_part));
-  EXPECT_TRUE( mesh.bucket(node).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(node).member( unranked_superset_part));
+        // Destroy the other relations from side to node. Confirm that node no longer
+        // has any induced parts from the side.
+        get_bulk().destroy_relation(side2, node, 0 /*rel id*/);
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *side_rank_part));
+        EXPECT_TRUE( get_bulk().bucket(node).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *unranked_superset_part));
 
-  EXPECT_TRUE(!mesh.bucket(node).member( side_rank_part));
-  EXPECT_TRUE( mesh.bucket(node).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(node).member( unranked_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *side_rank_part));
+        EXPECT_TRUE( get_bulk().bucket(node).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *unranked_superset_part));
 
-  // Destroy relation from element to node.  Confirm that the node no longer has
-  // any induced parts.
-  mesh.destroy_relation(elem,node,0 /*rel id*/);
-  EXPECT_TRUE(!mesh.bucket(node).member( side_rank_part));
-  EXPECT_TRUE(!mesh.bucket(node).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(node).member( unranked_superset_part));
+        // Destroy relation from element to node.  Confirm that the node no longer has
+        // any induced parts.
+        get_bulk().destroy_relation(elem,node,0 /*rel id*/);
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *side_rank_part));
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *unranked_superset_part));
+    }
 }
 
 
-TEST( UnitTestInducedPart, verifyNotTransitive )
+TEST_F( UnitTestInducedPart3D, verifyNotTransitive )
 {
-  SETUP_MESH3D();
+    if (stk::parallel_machine_size(get_comm()) == 1) {
+        setup_serial_mesh();
 
-  EXPECT_TRUE( mesh.bucket(elem).member( element_rank_part));
-  EXPECT_TRUE( mesh.bucket(elem).member( element_rank_superset_part));
-  EXPECT_TRUE( mesh.bucket(elem).member( unranked_superset_part));
+        EXPECT_TRUE( get_bulk().bucket(elem).member( *element_rank_part));
+        EXPECT_TRUE( get_bulk().bucket(elem).member( *element_rank_superset_part));
+        EXPECT_TRUE( get_bulk().bucket(elem).member( *unranked_superset_part));
 
-  EXPECT_TRUE( mesh.bucket(side).member( side_rank_part ));
-  EXPECT_TRUE( mesh.bucket(side).member( element_rank_part));
-  EXPECT_TRUE( mesh.bucket(side).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(side).member( unranked_superset_part));
+        EXPECT_TRUE( get_bulk().bucket(side).member( *side_rank_part ));
+        EXPECT_TRUE( get_bulk().bucket(side).member( *element_rank_part));
+        EXPECT_TRUE( get_bulk().bucket(side).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(side).member( *unranked_superset_part));
 
-  EXPECT_TRUE( mesh.bucket(edge).member( edge_rank_part ));
-  EXPECT_TRUE( mesh.bucket(edge).member( side_rank_part ));
-  EXPECT_TRUE(!mesh.bucket(edge).member( element_rank_part)); // See!  part induction is not transitive!
-  EXPECT_TRUE(!mesh.bucket(edge).member( element_rank_superset_part)); // See!  part induction is not transitive!
-  EXPECT_TRUE(!mesh.bucket(edge).member( unranked_superset_part));
+        EXPECT_TRUE( get_bulk().bucket(edge).member( *edge_rank_part ));
+        EXPECT_TRUE( get_bulk().bucket(edge).member( *side_rank_part ));
+        EXPECT_TRUE(!get_bulk().bucket(edge).member( *element_rank_part)); // See!  part induction is not transitive!
+        EXPECT_TRUE(!get_bulk().bucket(edge).member( *element_rank_superset_part)); // See!  part induction is not transitive!
+        EXPECT_TRUE(!get_bulk().bucket(edge).member( *unranked_superset_part));
 
-  EXPECT_TRUE( mesh.bucket(edge).member( edge_rank_part ));
-  EXPECT_TRUE( mesh.bucket(edge).member( side_rank_part ));
-  EXPECT_TRUE( mesh.bucket(node).member( element_rank_part));
-  EXPECT_TRUE( mesh.bucket(node).member( element_rank_superset_part));
-  EXPECT_TRUE(!mesh.bucket(node).member( unranked_superset_part));
+        EXPECT_TRUE( get_bulk().bucket(edge).member( *edge_rank_part ));
+        EXPECT_TRUE( get_bulk().bucket(edge).member( *side_rank_part ));
+        EXPECT_TRUE( get_bulk().bucket(node).member( *element_rank_part));
+        EXPECT_TRUE( get_bulk().bucket(node).member( *element_rank_superset_part));
+        EXPECT_TRUE(!get_bulk().bucket(node).member( *unranked_superset_part));
+    }
 }
 
 TEST ( UnitTestInducedPart, verifyForceNoInduce )

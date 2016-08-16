@@ -25,7 +25,7 @@ void fill_mesh_with_orphaned_owned_sides(stk::mesh::BulkData& bulkData)
         for(stk::mesh::EntityId id=1;id<=4;++id)
             nodes[id-1] = bulkData.declare_entity(stk::topology::NODE_RANK, id);
 
-        stk::mesh::Entity face = bulkData.declare_entity(stk::topology::FACE_RANK, 1, bulkData.mesh_meta_data().get_topology_root_part(stk::topology::QUADRILATERAL_4));
+        stk::mesh::Entity face = bulkData.declare_solo_side(1, {&bulkData.mesh_meta_data().get_topology_root_part(stk::topology::QUADRILATERAL_4)});
         for(size_t i=0;i<nodes.size();++i)
             bulkData.declare_relation(face, nodes[i], i);
     }
@@ -87,7 +87,7 @@ protected:
         if(get_bulk().parallel_rank()==0)
         {
             stk::mesh::EntityIdVector ids{18, 19, 22, 23};
-            stk::mesh::Entity face = get_bulk().declare_entity(stk::topology::FACE_RANK, 1, get_bulk().mesh_meta_data().get_topology_root_part(stk::topology::QUADRILATERAL_4));
+            stk::mesh::Entity face = get_bulk().declare_solo_side(1, {&get_bulk().mesh_meta_data().get_topology_root_part(stk::topology::QUADRILATERAL_4)});
             for(size_t i=0;i<ids.size();++i)
             {
                 stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, ids[i]);

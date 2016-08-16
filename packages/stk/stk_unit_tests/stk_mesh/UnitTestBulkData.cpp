@@ -1925,13 +1925,7 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
 
         // Create element
         const EntityId elem_id = p_rank + 1;
-        //Entity elem = mesh.declare_entity(elem_rank, elem_id, empty_parts);
         Entity elem = mesh.declare_entity(elem_rank, elem_id, elem_part);
-
-        // Create local version of side (with different, artificial id on each processor)
-        const EntityId tmp_side_id = p_rank + 51;
-        //Entity side = mesh.declare_entity(side_rank, tmp_side_id, empty_parts);
-        Entity side = mesh.declare_entity(side_rank, tmp_side_id, side_part);
 
         // Add element relations to nodes
         unsigned elem_rel_id = 0;
@@ -1946,20 +1940,18 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
         side_nodes.push_back(mesh.get_entity(stk::topology::NODE_RANK, 4));
         mesh.add_node_sharing(side_nodes[0], (p_rank == 0 ? 1 : 0));
         mesh.add_node_sharing(side_nodes[1], (p_rank == 0 ? 1 : 0));
-        unsigned side_rel_id = 0;
-        for(EntityVector::iterator itr = side_nodes.begin(); itr != side_nodes.end(); ++itr, ++side_rel_id)
-        {
-            mesh.declare_relation(side, *itr, side_rel_id);
-        }
         stk::topology elem_top = mesh.bucket(elem).topology();
-        unsigned local_side_id = 2;
+        unsigned local_side_ordinal = 2;
         if (p_rank == 1)
         {
-            local_side_id = 0;
+            local_side_ordinal = 0;
         }
-        stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
+
+        // Create local version of side on each proc
+        Entity side = mesh.declare_element_side(elem, local_side_ordinal, {&side_part});
+
+        stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_ordinal), &side_nodes[0], local_side_ordinal);
         ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
-        mesh.declare_relation(elem, side, local_side_id, perm1);
         mesh.modification_end();
 
         // Expect that the side is not shared, but the nodes of side are shared
@@ -1976,7 +1968,7 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
 
         // Delete the local side and create new, shared side
         side = sides[0];
-        bool destroyrelationship = mesh.destroy_relation(elem, side, local_side_id);
+        bool destroyrelationship = mesh.destroy_relation(elem, side, local_side_ordinal);
         EXPECT_TRUE(destroyrelationship);
         mesh.modification_end();
         //must call this here to delete ghosts, kills relationship between side and ghost of elem on other proc, allows side to be deleted in next phase
@@ -1988,18 +1980,10 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
         else {
             EXPECT_FALSE(successfully_destroyed);
         }
-        const EntityId side_id = 1;
-        side = mesh.declare_entity(side_rank, side_id, side_part);
+        side = mesh.declare_element_side(elem, local_side_ordinal, {&side_part});
 
-        // Add side relations to nodes and element
-        side_rel_id = 0;
-        for(EntityVector::iterator itr = side_nodes.begin(); itr != side_nodes.end(); ++itr, ++side_rel_id)
-        {
-            mesh.declare_relation(side, *itr, side_rel_id);
-        }
-        stk::mesh::Permutation perm2 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
-        ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
-        mesh.declare_relation(elem, side, local_side_id, perm2);
+        stk::mesh::Permutation perm2 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_ordinal), &side_nodes[0], local_side_ordinal);
+        ASSERT_TRUE(perm2 != stk::mesh::Permutation::INVALID_PERMUTATION);
 
         mesh.modification_end();
 
