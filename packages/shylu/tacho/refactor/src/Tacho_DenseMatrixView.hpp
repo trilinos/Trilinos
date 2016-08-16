@@ -73,14 +73,14 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     value_type& Value(const ordinal_type i,
                       const ordinal_type j) { 
-      if (i >= _m || j >= _n) printf(" Bound error \n");
+      //if (i >= _m || j >= _n) printf(" Bound error \n");
       return _base.Value(_offm+i, _offn+j); 
     }
 
     KOKKOS_INLINE_FUNCTION
     value_type Value(const ordinal_type i,
                      const ordinal_type j) const { 
-      if (i >= _m || j >= _n) printf(" Bound error \n");
+      //if (i >= _m || j >= _n) printf(" Bound error \n");
       return _base.Value(_offm+i, _offn+j); 
     }
 

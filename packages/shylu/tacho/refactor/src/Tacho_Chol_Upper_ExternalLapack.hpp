@@ -26,22 +26,16 @@ namespace Tacho {
   ::invoke(PolicyType &policy,
            MemberType &member,
            DenseExecViewTypeA &A) {
-    // static_assert( Kokkos::Impl::is_same<
-    //                typename DenseMatrixTypeA::space_type,
-    //                Kokkos::Cuda
-    //                >::value,
-    //                "Cuda space is not available for calling external BLAS" );
-
-    //typedef typename DenseExecViewTypeA::space_type   space_type;
-    typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
-    typedef typename DenseExecViewTypeA::value_type   value_type;
-
     int r_val = 0;      
     if (member.team_rank() == 0) {
-#if defined( HAVE_SHYLUTACHO_TEUCHOS ) && \
-    defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-      Teuchos::LAPACK<ordinal_type,value_type> lapack;
+#if                                                     \
+  defined( HAVE_SHYLUTACHO_TEUCHOS ) &&                 \
+  defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
+      typedef typename DenseExecViewTypeA::value_type   value_type;
 
+      Teuchos::LAPACK<ordinal_type,value_type> lapack;
+      
       const ordinal_type m = A.NumRows();
       if (m > 0)
         lapack.POTRF('U',
@@ -51,10 +45,10 @@ namespace Tacho {
       
       TACHO_TEST_FOR_WARNING( r_val, "LAPACK Chol (potrf) returns non-zero error code (matrix is not spd or badly conditioned)" );
 #else
-    TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("Teuchos") );
+      TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("Teuchos") );
 #endif
     }
-
+    
     return r_val;
   }
 }

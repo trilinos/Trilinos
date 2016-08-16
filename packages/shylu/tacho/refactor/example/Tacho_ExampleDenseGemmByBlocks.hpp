@@ -77,13 +77,9 @@ namespace Tacho {
 
     typename Kokkos::TaskPolicy<Kokkos::Serial>::member_type serial_member;
 
-    std::ostringstream os;
-    os.precision(3);
     std::cout << std::scientific;
 
     for (ordinal_type m=mmin;m<=mmax;m+=minc) {
-      os.str("");
-      
       // host matrices
       DenseMatrixBaseHostType AA_host, BB_host, CC_host("CC_host", m, m), CB_host;
       {
@@ -174,7 +170,8 @@ namespace Tacho {
           }
         std::cout << ":: Check result ::norm = " << sqrt(norm) << ", error = " << sqrt(err);
       }
-      std::cout << os.str() << std::endl;
+
+      std::cout << std::endl;
     }
 
     return r_val;

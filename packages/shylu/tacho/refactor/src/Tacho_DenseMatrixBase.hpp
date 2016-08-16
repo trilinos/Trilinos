@@ -210,13 +210,8 @@ namespace Tacho {
     }
 
     /// \brief Copy constructor (shallow copy)
-    /// Question : what would happen when SpT is different ? Does Kokkos can filter it out ? UVM allows this ?
-    template<typename VT,
-             typename OT,
-             typename ST,
-             typename SpT>
     KOKKOS_INLINE_FUNCTION
-    DenseMatrixBase(const DenseMatrixBase<VT,OT,ST,SpT> &b) 
+    DenseMatrixBase(const DenseMatrixBase &b) 
       : _m(b._m),
         _n(b._n),
         _rs(b._rs),

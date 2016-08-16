@@ -35,12 +35,6 @@ namespace Tacho {
            DenseExecViewTypeC &C) {
     // static_assert( Kokkos::Impl::is_same<
     //                typename DenseMatrixTypeA::space_type,
-    //                Kokkos::Cuda
-    //                >::value,
-    //                "Cuda space is not available for calling external BLAS" );
-
-    // static_assert( Kokkos::Impl::is_same<
-    //                typename DenseMatrixTypeA::space_type,
     //                typename DenseMatrixTypeB::space_type
     //                >::value && 
     //                Kokkos::Impl::is_same<
@@ -48,14 +42,14 @@ namespace Tacho {
     //                typename DenseMatrixTypeC::space_type
     //                >::value,
     //                "Space type of input matrices does not match" );
-    
-    //typedef typename DenseExecViewTypeA::space_type   space_type;
+#if                                                     \
+  defined( HAVE_SHYLUTACHO_TEUCHOS ) &&                 \
+  defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
     typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
     typedef typename DenseExecViewTypeA::value_type   value_type;
-
-#ifdef HAVE_SHYLUTACHO_TEUCHOS    
+    
     Teuchos::BLAS<ordinal_type,value_type> blas;
-
+    
     const ordinal_type m = C.NumRows();
     const ordinal_type n = C.NumCols();
     const ordinal_type k = B.NumRows();

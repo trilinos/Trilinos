@@ -51,12 +51,6 @@ namespace Tacho {
     // for now simple implementation
     if (m == 0 || n == 0 || ((alpha == 0 || k == 0) && (beta == 1))) return 0;
 
-printf("Gemm::invoke 0x%lx 0x%lx 0x%lx\n"
-      , (unsigned long) A.ValuePtr()
-      , (unsigned long) B.ValuePtr()
-      , (unsigned long) C.ValuePtr()
-      );
-    
     if (alpha == 0) {
       if (beta == 0) {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, n),
@@ -89,26 +83,26 @@ printf("Gemm::invoke 0x%lx 0x%lx 0x%lx\n"
       
       // gemm (simple triple loop)
       
-      // for (ordinal_type l=0;l<k;++l) {      
-      //   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, n),
-      //                        [&](const ordinal_type j) {
-      //                          const value_type tmp = B.Value(l, j);
-      //                          //#pragma unroll
-      //                          for (ordinal_type i=0;i<m;++i)
-      //                            C.Value(i, j) += A.Value(i, l)*tmp;
-      //                        });
-      //   member.team_barrier();
-      // }
-      
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, k),
-                           [&](const ordinal_type l) {
-                             for (ordinal_type j=0;j<n;++j) {      
+      for (ordinal_type l=0;l<k;++l) {      
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, n),
+                             [&](const ordinal_type j) {
                                const value_type tmp = B.Value(l, j);
                                //#pragma unroll
                                for (ordinal_type i=0;i<m;++i)
                                  C.Value(i, j) += A.Value(i, l)*tmp;
-                             }
-                           });
+                             });
+        member.team_barrier();
+      }
+      
+      // Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, k),
+      //                      [&](const ordinal_type l) {
+      //                        for (ordinal_type j=0;j<n;++j) {      
+      //                          const value_type tmp = B.Value(l, j);
+      //                          //#pragma unroll
+      //                          for (ordinal_type i=0;i<m;++i)
+      //                            C.Value(i, j) += A.Value(i, l)*tmp;
+      //                        }
+      //                      });
     } 
     
     return 0;
