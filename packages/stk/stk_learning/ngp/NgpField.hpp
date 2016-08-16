@@ -55,7 +55,7 @@ public:
         return data[component];
     }
 
-    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field_in)
     {
     }
 
