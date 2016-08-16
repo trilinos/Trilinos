@@ -37,6 +37,8 @@ namespace Tacho {
       //                >::value,
       //                "Space type of input matrices does not match" );
       
+printf("\nGemm::TaskGenerator::invoke\n");
+
 #ifdef TACHO_EXECUTE_TASKS_SERIAL
 #else
       typedef typename DenseTaskViewTypeA::value_type::future_type future_type;
@@ -63,16 +65,23 @@ namespace Tacho {
               const auto task_priority = Kokkos::TaskRegularPriority;
 
               const future_type dep[] = { aa.Future(), bb.Future(), cc.Future() };
+
+              auto TaskFunctor = 
+                Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                     CtrlDetail(ControlType,AlgoGemm::DenseByBlocks,ArgVariant,Gemm)>
+                     ::createTaskFunctor(policy, alpha, aa, bb, beta_select, cc);
+
+
               const future_type f = 
-                policy.task_spawn(Gemm<Trans::NoTranspose,Trans::NoTranspose,
-                                  CtrlDetail(ControlType,AlgoGemm::DenseByBlocks,ArgVariant,Gemm)>
-                                  ::createTaskFunctor(policy, alpha, aa, bb, beta_select, cc), 
+                policy.task_spawn(TaskFunctor,
                                   policy.when_all(3,dep), 
                                   task_type, task_priority);
               TACHO_TEST_FOR_ABORT(f.is_null(), 
                                    ">> Tacho::DenseGemmByBlocks(NoTrans,NoTrans) returns a null future (out of memory)");
               cc.setFuture(f);
+
 #endif
+
             }
           }
         }
@@ -103,6 +112,8 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
+      TaskFunctor() {}
+      KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const ScalarType alpha,
                   const ExecViewTypeA &A,
@@ -122,6 +133,7 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
+
         const int ierr = Gemm::invoke(_policy, member,
                                       _alpha, _A, _B, _beta, _C);
 

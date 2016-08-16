@@ -49,7 +49,8 @@ namespace Tacho {
     typedef typename DenseExecViewTypeA::value_type   value_type;
 
     if (member.team_rank() == 0) {
-#ifdef HAVE_SHYLUTACHO_TEUCHOS
+#if defined( HAVE_SHYLUTACHO_TEUCHOS ) && \
+    defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       Teuchos::BLAS<ordinal_type,value_type> blas;
 
       const ordinal_type m = A.NumRows();

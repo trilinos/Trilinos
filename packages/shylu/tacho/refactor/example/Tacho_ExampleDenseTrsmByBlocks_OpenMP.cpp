@@ -69,7 +69,7 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
     
-    std::cout << std::cout << "DenseTrsmByBlocks:: Left, Upper, ConjTranspose, Variant::One (external)" << std::endl;
+    std::cout << "DenseTrsmByBlocks:: Left, Upper, ConjTranspose, Variant::One (external)" << std::endl;
     r_val = exampleDenseTrsmByBlocks
       <Side::Left,Uplo::Upper,Trans::ConjTranspose,Variant::One,exec_space>
       (mmin, mmax, minc, k, mb,

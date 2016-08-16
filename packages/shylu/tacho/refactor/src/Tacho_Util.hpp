@@ -36,8 +36,7 @@ namespace Tacho {
 
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                 \
   if ((ierr) != 0) {                                                    \
-    fprintf(stderr, ">> Error in file %s, line %d, error %d \n",__FILE__,__LINE__,ierr); \
-    fprintf(stderr, "   %s\n", msg);                                    \
+    printf(">> Error in file %s, line %d, error %d \n   %s\n",__FILE__,__LINE__,ierr,msg); \
     Kokkos::abort(">> Tacho abort\n");                                  \
   }
 
@@ -50,8 +49,7 @@ namespace Tacho {
 
 #define TACHO_TEST_FOR_WARNING(ierr, msg)                                 \
   if ((ierr) != 0) {                                                    \
-    fprintf(stderr, ">> Warning in file %s, line %d, error %d \n",__FILE__,__LINE__,ierr); \
-    fprintf(stderr, "   %s\n", msg);                                    \
+    printf(">> Warning in file %s, line %d, error %d \n   %s\n",__FILE__,__LINE__,ierr,msg); \
   }
 
   /// \brief Control parameter decomposition.
@@ -71,36 +69,36 @@ namespace Tacho {
 #define CtrlDetail(name,algo,variant,component)                         \
   CtrlComponent(name,algo,variant,component,0),CtrlComponent(name,algo,variant,component,1),name
 
-  template<typename T>
-  struct is_complex_type {
-    static bool value;
-  };
-
   // default value
-  template<typename T> bool is_complex_type<T>::value = false;
+  template<typename T>
+  struct is_complex_type { enum : bool { value = false }; };
 
   // specialization
-  template<> bool is_complex_type<float>::value = false;
-  template<> bool is_complex_type<double>::value = false;
-  template<> bool is_complex_type<Kokkos::complex<float> >::value = true;
-  template<> bool is_complex_type<Kokkos::complex<double> >::value = true;
-
-  template<typename T>
-  struct is_scalar_type {
-    static bool value;
-  };
+  template< typename T >
+  struct is_complex_type< Kokkos::complex<T> >
+    { enum : bool { value = true }; };
 
   // default value
-  template<typename T> bool is_scalar_type<T>::value = false;
+  template<typename T>
+  struct is_scalar_type { enum : bool { value = false }; };
 
-  template<> bool is_scalar_type<int>::value = true;
-  template<> bool is_scalar_type<unsigned int>::value = true;
-  template<> bool is_scalar_type<long>::value = true;
-  template<> bool is_scalar_type<size_t>::value = true;
-  template<> bool is_scalar_type<float>::value = true;
-  template<> bool is_scalar_type<double>::value = true;
-  template<> bool is_scalar_type<Kokkos::complex<float> >::value = true;
-  template<> bool is_scalar_type<Kokkos::complex<double> >::value = true;
+  template<>
+  struct is_scalar_type<int> { enum : bool { value = true }; };
+  template<>
+  struct is_scalar_type<unsigned int> { enum : bool { value = true }; };
+  template<>
+  struct is_scalar_type<long> { enum : bool { value = true }; };
+  template<>
+  struct is_scalar_type<unsigned long> { enum : bool { value = true }; };
+  template<>
+  struct is_scalar_type<float> { enum : bool { value = true }; };
+  template<>
+  struct is_scalar_type<double> { enum : bool { value = true }; };
+  template<>
+  struct is_scalar_type<Kokkos::complex<float> > { enum : bool { value = true }; };
+  template<>
+  struct is_scalar_type<Kokkos::complex<double> > { enum : bool { value = true }; };
+
 
   class Util {
   public:

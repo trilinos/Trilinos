@@ -63,6 +63,19 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
+      TaskFunctor() {}
+
+      KOKKOS_INLINE_FUNCTION
+      TaskFunctor( const TaskFunctor & rhs )
+        : _alpha(rhs._alpha),
+          _beta(rhs._beta),
+          _A(rhs._A),
+          _B(rhs._B),
+          _C(rhs._C),
+          _policy(rhs._policy)
+      { }
+
+      KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const ScalarType alpha,
                   const ExecViewTypeA &A,
@@ -82,6 +95,10 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
+
+printf("\nGemm::operator()\n");
+return ;
+
         const int ierr = Gemm::invoke(_policy, member,
                                       _alpha, _A, _B, _beta, _C);
         

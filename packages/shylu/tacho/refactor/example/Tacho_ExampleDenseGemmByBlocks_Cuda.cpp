@@ -70,8 +70,8 @@ int main (int argc, char *argv[]) {
 
   int r_val = 0;
   {
-    exec_space::initialize();
     host_space::initialize(nthreads, numa, core_per_numa);
+    exec_space::initialize();
     
     // std::cout << std::endl << "DenseGemmByBlocks:: NoTranspose, NoTranspose, Variant::One (external)" << std::endl;
     // r_val = exampleDenseGemmByBlocks
@@ -97,6 +97,7 @@ int main (int argc, char *argv[]) {
     //    check,
     //    verbose);
 
+#if 0
     std::cout << std::endl << "DenseGemmByBlocks:: ConjTranspose, NoTranspose, Variant::One (internal)" << std::endl;
     r_val = exampleDenseGemmByBlocks
       <Trans::ConjTranspose,Trans::NoTranspose,Variant::Two,exec_space>
@@ -104,9 +105,10 @@ int main (int argc, char *argv[]) {
        max_concurrency, memory_pool_grain_size, mkl_nthreads,
        check,
        verbose);
+#endif
     
-    exec_space::finalize();
     host_space::finalize();
+    exec_space::finalize();
   }
 
   return r_val;

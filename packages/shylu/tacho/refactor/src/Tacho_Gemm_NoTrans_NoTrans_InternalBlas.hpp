@@ -50,6 +50,12 @@ namespace Tacho {
     
     // for now simple implementation
     if (m == 0 || n == 0 || ((alpha == 0 || k == 0) && (beta == 1))) return 0;
+
+printf("Gemm::invoke 0x%lx 0x%lx 0x%lx\n"
+      , (unsigned long) A.ValuePtr()
+      , (unsigned long) B.ValuePtr()
+      , (unsigned long) C.ValuePtr()
+      );
     
     if (alpha == 0) {
       if (beta == 0) {

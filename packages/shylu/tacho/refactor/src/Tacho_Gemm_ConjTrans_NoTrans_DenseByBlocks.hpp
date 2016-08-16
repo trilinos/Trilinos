@@ -103,6 +103,8 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
+      TaskFunctor() {}
+      KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const ScalarType alpha,
                   const ExecViewTypeA &A,

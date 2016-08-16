@@ -38,7 +38,8 @@ namespace Tacho {
 
     int r_val = 0;      
     if (member.team_rank() == 0) {
-#ifdef HAVE_SHYLUTACHO_TEUCHOS
+#if defined( HAVE_SHYLUTACHO_TEUCHOS ) && \
+    defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       Teuchos::LAPACK<ordinal_type,value_type> lapack;
 
       const ordinal_type m = A.NumRows();

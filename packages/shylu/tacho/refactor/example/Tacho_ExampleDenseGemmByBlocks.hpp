@@ -79,7 +79,7 @@ namespace Tacho {
 
     std::ostringstream os;
     os.precision(3);
-    os << std::scientific;
+    std::cout << std::scientific;
 
     for (ordinal_type m=mmin;m<=mmax;m+=minc) {
       os.str("");
@@ -119,7 +119,7 @@ namespace Tacho {
       mkl_set_num_threads(mkl_nthreads);
 #endif
 
-      os << "DenseGemmByBlocks:: m = " << m << " n = " << m << " k = " << k << "  ";
+      std::cout << "DenseGemmByBlocks:: m = " << m << " n = " << m << " k = " << k << "  ";
       if (check) {
         timer.reset();
         DenseMatrixViewHostType A_host(AA_host), B_host(BB_host), C_host(CB_host);
@@ -127,7 +127,7 @@ namespace Tacho {
           (policy, serial_member,
            1.0, A_host, B_host, 1.0, C_host);
         t = timer.seconds();
-        os << ":: Serial Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
+        std::cout << ":: Serial Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
 
       }
 
@@ -138,7 +138,7 @@ namespace Tacho {
         BB_device.mirror(BB_host);
         CC_device.mirror(CC_host);
         t = timer.seconds();
-        os << ":: Mirror = " << t << " [sec]  ";
+        std::cout << ":: Mirror = " << t << " [sec]  ";
       }
 
       {
@@ -159,7 +159,7 @@ namespace Tacho {
         Kokkos::wait(policy);
 
         t = timer.seconds();       
-        os << ":: Parallel Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
+        std::cout << ":: Parallel Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
       } 
 
       CC_host.mirror(CC_device);
@@ -172,7 +172,7 @@ namespace Tacho {
             err  += diff*diff;
             norm += val*val;
           }
-        os << ":: Check result ::norm = " << sqrt(norm) << ", error = " << sqrt(err);
+        std::cout << ":: Check result ::norm = " << sqrt(norm) << ", error = " << sqrt(err);
       }
       std::cout << os.str() << std::endl;
     }
