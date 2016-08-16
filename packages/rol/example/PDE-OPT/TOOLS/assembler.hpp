@@ -559,7 +559,8 @@ public:
   /***************************************************************************/
   void assemblePDEResidual(const Teuchos::RCP<PDE<Real> > &pde,
                            const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                           const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                           const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                           const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     const Real zero(0);
     vecR_->scale(zero);
     vecR_overlap_->scale(zero);
@@ -573,7 +574,7 @@ public:
     Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
     getCoeffFromControlVector(z_coeff,z);
     // Compute PDE residual
-    pde->residual(res,u_coeff,z_coeff);
+    pde->residual(res,u_coeff,z_coeff,z_param);
     // assembly on the overlap map
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
@@ -589,7 +590,8 @@ public:
 
   void assemblePDEJacobian1(const Teuchos::RCP<PDE<Real> > &pde,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
@@ -598,7 +600,7 @@ public:
       getCoeffFromControlVector(z_coeff,z);
       // Compute PDE Jacobian
       Teuchos::RCP<Intrepid::FieldContainer<Real> > jac;
-      pde->Jacobian_1(jac,u_coeff,z_coeff);
+      pde->Jacobian_1(jac,u_coeff,z_coeff,z_param);
       // Zero PDE Jacobian
       const Real zero(0);
       matJ1_->resumeFill();
@@ -631,7 +633,8 @@ public:
 
   void assemblePDEJacobian2(const Teuchos::RCP<PDE<Real> > &pde,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
@@ -640,7 +643,7 @@ public:
       getCoeffFromControlVector(z_coeff,z);
       // Compute PDE Jacobian
       Teuchos::RCP<Intrepid::FieldContainer<Real> > jac;
-      pde->Jacobian_2(jac,u_coeff,z_coeff);
+      pde->Jacobian_2(jac,u_coeff,z_coeff,z_param);
       // Zero PDE Jacobian
       const Real zero(0);
       matJ2_->resumeFill();
@@ -675,7 +678,8 @@ public:
   void assemblePDEHessian11(const Teuchos::RCP<PDE<Real> > &pde,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &l,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > hess; 
       // Get u_coeff from u and z_coeff from z
@@ -686,7 +690,7 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff = Teuchos::null;
       getCoeffFromStateVector(l_coeff,l);
       // Compute PDE Hessian
-      pde->Hessian_11(hess,l_coeff,u_coeff,z_coeff);
+      pde->Hessian_11(hess,l_coeff,u_coeff,z_coeff,z_param);
       // Zero Hessian
       const Real zero(0);
       matH11_->resumeFill();
@@ -717,7 +721,8 @@ public:
   void assemblePDEHessian12(const Teuchos::RCP<PDE<Real> > &pde,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &l,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > hess;
       // Get u_coeff from u and z_coeff from z
@@ -728,7 +733,7 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff = Teuchos::null;
       getCoeffFromStateVector(l_coeff,l);
       // Compute PDE Hessian
-      pde->Hessian_12(hess,l_coeff,u_coeff,z_coeff);
+      pde->Hessian_12(hess,l_coeff,u_coeff,z_coeff,z_param);
       // Zero Hessian
       const Real zero(0);
       matH12_->resumeFill();
@@ -759,7 +764,8 @@ public:
   void assemblePDEHessian21(const Teuchos::RCP<PDE<Real> > &pde,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &l,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > hess;
       // Get u_coeff from u and z_coeff from z
@@ -770,7 +776,7 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff = Teuchos::null;
       getCoeffFromStateVector(l_coeff,l);
       // Compute PDE Hessian
-      pde->Hessian_21(hess,l_coeff,u_coeff,z_coeff);
+      pde->Hessian_21(hess,l_coeff,u_coeff,z_coeff,z_param);
       // Zero Hessian
       const Real zero(0);
       matH21_->resumeFill();
@@ -801,7 +807,8 @@ public:
   void assemblePDEHessian22(const Teuchos::RCP<PDE<Real> > &pde,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &l,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > hess;
       // Get u_coeff from u and z_coeff from z
@@ -812,7 +819,7 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff = Teuchos::null;
       getCoeffFromStateVector(l_coeff,l);
       // Compute PDE Hessian
-      pde->Hessian_22(hess,l_coeff,u_coeff,z_coeff);
+      pde->Hessian_22(hess,l_coeff,u_coeff,z_coeff,z_param);
       // Zero Hessian
       const Real zero(0);
       matH22_->resumeFill();
@@ -982,7 +989,8 @@ public:
   /***************************************************************************/
   Real assembleQoIValue(const Teuchos::RCP<QoI<Real> > &qoi,
                         const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                        const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                        const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                        const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Integrate obj object
     Teuchos::RCP<Intrepid::FieldContainer<Real> > locVal;
     // Get u_coeff from u and z_coeff from z
@@ -991,7 +999,7 @@ public:
     Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
     getCoeffFromControlVector(z_coeff,z);
     // Get OBJ_CELL value
-    qoi->value(locVal,u_coeff,z_coeff);
+    qoi->value(locVal,u_coeff,z_coeff,z_param);
     // Assembly
     Real val(0), myval(0);
     for (int i=0; i<numCells_; ++i) {
@@ -1003,7 +1011,8 @@ public:
 
   void assembleQoIGradient1(const Teuchos::RCP<QoI<Real> > &qoi,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
@@ -1012,7 +1021,7 @@ public:
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locGrad;
-      qoi->gradient_1(locGrad,u_coeff,z_coeff);
+      qoi->gradient_1(locGrad,u_coeff,z_coeff,z_param);
       // Assembly in to the overlap gradient
       const Real zero(0);
       vecG1_->scale(zero);
@@ -1040,7 +1049,8 @@ public:
 
   void assembleQoIGradient2(const Teuchos::RCP<QoI<Real> > &qoi,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
@@ -1049,7 +1059,7 @@ public:
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locGrad;
-      qoi->gradient_2(locGrad,u_coeff,z_coeff);
+      qoi->gradient_2(locGrad,u_coeff,z_coeff,z_param);
       // Assembly in to the overlap gradient
       const Real zero(0);
       vecG2_->scale(zero);
@@ -1078,7 +1088,8 @@ public:
   void assembleQoIHessVec11(const Teuchos::RCP<QoI<Real> > &qoi,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
@@ -1089,7 +1100,7 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
-      qoi->HessVec_11(locHess, v_coeff, u_coeff,z_coeff);
+      qoi->HessVec_11(locHess, v_coeff, u_coeff, z_coeff, z_param);
       // Assembly in to the overlap gradient
       const Real zero(0);
       vecH11_->scale(zero);
@@ -1118,7 +1129,8 @@ public:
   void assembleQoIHessVec12(const Teuchos::RCP<QoI<Real> > &qoi,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
@@ -1129,7 +1141,7 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
-      qoi->HessVec_12(locHess, v_coeff, u_coeff,z_coeff);
+      qoi->HessVec_12(locHess, v_coeff, u_coeff, z_coeff, z_param);
       // Assembly in to the overlap gradient
       const Real zero(0);
       vecH12_->scale(zero);
@@ -1158,7 +1170,8 @@ public:
   void assembleQoIHessVec21(const Teuchos::RCP<QoI<Real> > &qoi,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
@@ -1169,7 +1182,7 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
-      qoi->HessVec_21(locHess, v_coeff, u_coeff,z_coeff);
+      qoi->HessVec_21(locHess, v_coeff, u_coeff, z_coeff, z_param);
       // Assembly in to the overlap gradient
       const Real zero(0);
       vecH21_->scale(zero);
@@ -1198,7 +1211,8 @@ public:
   void assembleQoIHessVec22(const Teuchos::RCP<QoI<Real> > &qoi,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
-                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null) {
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
@@ -1209,7 +1223,7 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
-      qoi->HessVec_22(locHess, v_coeff, u_coeff,z_coeff);
+      qoi->HessVec_22(locHess, v_coeff, u_coeff, z_coeff, z_param);
       // Assembly in to the overlap gradient
       const Real zero(0);
       vecH22_->scale(zero);
