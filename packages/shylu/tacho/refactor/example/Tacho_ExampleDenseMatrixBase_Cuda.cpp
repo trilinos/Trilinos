@@ -50,15 +50,15 @@ int main (int argc, char *argv[]) {
 
   int r_val = 0;
   {
-    exec_space::initialize();
     host_space::initialize(nthreads, numa, core_per_numa);
+    exec_space::initialize();
 
     r_val = exampleDenseMatrixBase<exec_space>
       (mmin, mmax, minc, 
        verbose);
     
-    exec_space::finalize();
     host_space::finalize();
+    exec_space::finalize();
   }
   
   return r_val;
