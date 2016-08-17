@@ -79,68 +79,7 @@ bool
 LocalFilter<MatrixType>::
 mapPairIsFitted (const map_type& map1, const map_type& map2)
 {
-  using Teuchos::ArrayView;
-  typedef global_ordinal_type GO; // a handy abbreviation
-  typedef typename ArrayView<const GO>::size_type size_type;
-
-  bool fitted = true;
-  if (&map1 == &map2) {
-    fitted = true;
-  }
-  else if (map1.isContiguous () && map2.isContiguous () &&
-           map1.getMinGlobalIndex () == map2.getMinGlobalIndex () &&
-           map1.getMaxGlobalIndex () <= map2.getMaxGlobalIndex ()) {
-    // Special case where both Maps are contiguous.
-    fitted = true;
-  }
-  else {
-    ArrayView<const GO> inds_map2 = map2.getNodeElementList ();
-    const size_type numInds_map1 = static_cast<size_type> (map1.getNodeNumElements ());
-
-    if (map1.isContiguous ()) {
-      // Avoid calling getNodeElementList() on the always one-to-one
-      // Map, if it is contiguous (a common case).  When called on a
-      // contiguous Map, getNodeElementList() causes allocation of an
-      // array that sticks around, even though the array isn't needed.
-      // (The Map is contiguous, so you can compute the entries; you
-      // don't need to store them.)
-      if (numInds_map1 > inds_map2.size ()) {
-        // There are fewer indices in map1 on this process than in
-        // map2.  This case might be impossible.
-        fitted = false;
-      }
-      else {
-        // Do all the map1 indices match the initial map2 indices?
-        const GO minInd_map1 = map1.getMinGlobalIndex ();
-        for (size_type k = 0; k < numInds_map1; ++k) {
-          const GO inds_map1_k = static_cast<GO> (k) + minInd_map1;
-          if (inds_map1_k != inds_map2[k]) {
-            fitted = false;
-            break;
-          }
-        }
-      }
-    }
-    else { // map1 is not contiguous.
-      // Get index lists from both Maps, and compare their indices.
-      ArrayView<const GO> inds_map1 = map1.getNodeElementList ();
-      if (numInds_map1 > inds_map2.size ()) {
-        // There are fewer indices in map1 on this process than in
-        // map2.  This case might be impossible.
-        fitted = false;
-      }
-      else {
-        // Do all the map1 indices match those in map2?
-        for (size_type k = 0; k < numInds_map1; ++k) {
-          if (inds_map1[k] != inds_map2[k]) {
-            fitted = false;
-            break;
-          }
-        }
-      }
-    }
-  }
-  return fitted;
+  return Tpetra::Details::isLocallyFitted (map1, map2);
 }
 
 
