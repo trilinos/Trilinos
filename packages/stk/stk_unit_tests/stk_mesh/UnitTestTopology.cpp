@@ -93,6 +93,7 @@ class TopologyHelpersTestingFixture
   Part & generic_element_part;
   Part & element_tet_part;
   Part & element_wedge_part;
+  Part & element_hex_part;
   Part & generic_face_part;
   Part & another_generic_face_part;
   Part & face_tri_part;
@@ -106,7 +107,10 @@ class TopologyHelpersTestingFixture
   {
     PartVector part_intersection;
     part_intersection.push_back ( &part_membership );
-    return bulk.declare_entity(rank, nextEntityId(), part_intersection);
+    if (rank != meta.side_rank()) {
+      return bulk.declare_entity(rank, nextEntityId(), part_intersection);
+    }
+    return Entity();
   }
 
  private:
@@ -124,6 +128,7 @@ TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
   , generic_element_part( meta.declare_part("another part", element_rank ) )
   , element_tet_part( meta.declare_part_with_topology( "block_left_1", stk::topology::TET_4 ) )
   , element_wedge_part( meta.declare_part_with_topology( "block_left_2", stk::topology::WEDGE_15 ) )
+  , element_hex_part( meta.declare_part_with_topology( "block_left_3", stk::topology::HEX_8 ) )
   , generic_face_part( meta.declare_part_with_topology( "A_1", stk::topology::QUAD_4 ) )
   , another_generic_face_part( meta.declare_part("A_2", side_rank ) )
   , face_tri_part( meta.declare_part_with_topology("A_3_0", stk::topology::TRI_3))
@@ -141,25 +146,30 @@ namespace {
 TEST( testTopologyHelpers, get_cell_topology_based_on_part)
 {
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-  fix.bulk.modification_begin();
-  Entity elem1  = fix.create_entity( fix.side_rank, fix.generic_face_part );
+  if (fix.bulk.parallel_size() != 1) {
+      return;
+  }
 
-  std::vector<Entity> elem_node(4);
-  for (int i = 0; i < 4; ++i) {
+  fix.bulk.modification_begin();
+  Entity elem1  = fix.create_entity( fix.element_rank, fix.element_hex_part );
+  std::vector<Entity> elem_node(8);
+  for (int i = 0; i < 8; ++i) {
     elem_node[i] = fix.bulk.declare_entity(stk::topology::NODE_RANK, 100 + i);
     fix.bulk.declare_relation(elem1, elem_node[i], i);
   }
 
+  Entity side1 = fix.bulk.declare_element_side(elem1, 0, {&fix.generic_face_part});
+
   PartVector tmp(1);
   tmp[0] = & fix.face_quad_part;
-  fix.bulk.change_entity_parts ( elem1 , tmp );
-  ASSERT_EQ( fix.bulk.bucket(elem1).topology(), stk::topology::QUAD_4 );
-  fix.bulk.change_entity_parts ( elem1 , tmp );
-  ASSERT_EQ( fix.bulk.bucket(elem1).topology(), stk::topology::QUAD_4 );
+  fix.bulk.change_entity_parts ( side1 , tmp );
+  ASSERT_EQ( fix.bulk.bucket(side1).topology(), stk::topology::QUAD_4 );
+  fix.bulk.change_entity_parts ( side1 , tmp );
+  ASSERT_EQ( fix.bulk.bucket(side1).topology(), stk::topology::QUAD_4 );
   tmp[0] = & fix.another_generic_face_part;
-  fix.bulk.change_entity_parts ( elem1 , tmp );
-  ASSERT_EQ( fix.bulk.bucket(elem1).topology(), stk::topology::QUAD_4 );
-  ASSERT_NE( fix.bulk.bucket(elem1).topology(), stk::topology::WEDGE_15 );
+  fix.bulk.change_entity_parts ( side1 , tmp );
+  ASSERT_EQ( fix.bulk.bucket(side1).topology(), stk::topology::QUAD_4 );
+  ASSERT_NE( fix.bulk.bucket(side1).topology(), stk::topology::WEDGE_15 );
 
   fix.bulk.modification_end();
 }

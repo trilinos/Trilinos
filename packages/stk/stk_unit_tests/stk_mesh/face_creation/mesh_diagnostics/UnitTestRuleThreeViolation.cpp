@@ -82,7 +82,7 @@ protected:
                 stk::mesh::EntityId nodeId = i+1;
                 nodes[i] = get_bulk().get_entity(stk::topology::NODE_RANK, nodeId);
             }
-            stk::mesh::Entity face1 = get_bulk().declare_entity(stk::topology::FACE_RANK, 1, quad4Part);
+            stk::mesh::Entity face1 = get_bulk().declare_solo_side(1, {&quad4Part});
             stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
             for(unsigned i=0; i<quad4Topology.num_nodes(); ++i) {
                 get_bulk().declare_relation(face1, nodes[i], i, perm);
@@ -96,7 +96,7 @@ protected:
 
         stk::mesh::Part &quad4Part = get_meta().get_topology_root_part(stk::topology::QUAD_4);
 
-        stk::mesh::Entity face = get_bulk().declare_entity(get_meta().side_rank(), 1u, quad4Part);
+        stk::mesh::Entity face = get_bulk().declare_solo_side(1u, {&quad4Part});
         stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation> (0);
         for(unsigned i = 0; i<sharedNodes.size(); ++i)
             get_bulk().declare_relation(face, sharedNodes[i], i, perm);
