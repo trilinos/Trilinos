@@ -833,6 +833,7 @@ void copySelectedFacesToNewMesh(const stk::unit_test_util::BulkDataTester& oldBu
         stk::mesh::Bucket &bucket = *buckets[i];
         for(size_t j = 0; j < bucket.size(); j++)
         {
+            const stk::mesh::Entity oldSide = bucket[j];
             const stk::mesh::PartVector &oldParts = bucket.supersets();
             stk::mesh::PartVector newParts;
             for(size_t k = 0; k < oldParts.size(); k++)
@@ -843,15 +844,15 @@ void copySelectedFacesToNewMesh(const stk::unit_test_util::BulkDataTester& oldBu
                 }
             }
 
-            const stk::mesh::Entity * connected_elements = oldBulkData.begin_elements(bucket[j]);
+            const stk::mesh::Entity * connected_elements = oldBulkData.begin_elements(oldSide);
             const Entity oldFirstElement = connected_elements[0];
             ThrowRequire(oldBulkData.is_valid(oldFirstElement));
 
-            stk::mesh::ConnectivityOrdinal faceOrdinal = get_ordinal_for_element_side_pair(oldBulkData, oldFirstElement, bucket[i]);
+            stk::mesh::ConnectivityOrdinal faceOrdinal = get_ordinal_for_element_side_pair(oldBulkData, oldFirstElement, oldSide);
             stk::mesh::Entity newFirstElement = newBulkData.get_entity(oldBulkData.entity_key(oldFirstElement));
 
-            stk::mesh::Entity newFace = newBulkData.declare_element_side(newFirstElement, faceOrdinal, newParts);
-            oldToNewEntityMap[bucket[j]] = newFace;
+            stk::mesh::Entity newSide = newBulkData.declare_element_side(newFirstElement, faceOrdinal, newParts);
+            oldToNewEntityMap[oldSide] = newSide;
         }
     }
 }
