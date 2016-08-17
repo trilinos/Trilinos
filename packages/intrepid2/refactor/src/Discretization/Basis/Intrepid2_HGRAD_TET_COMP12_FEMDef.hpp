@@ -183,7 +183,7 @@ namespace Intrepid2 {
         // the same shape functions for each tet that contains it, so
         // we only need to use the first one returned.
         if (subtet != -1) {
-          inputPointViewType aux = 0.0;
+          typename inputPointViewType::value_type aux = 0.0;
           switch (subtet) {
           case 0:
             output(0) = 1. - 2. * (r + s + t);

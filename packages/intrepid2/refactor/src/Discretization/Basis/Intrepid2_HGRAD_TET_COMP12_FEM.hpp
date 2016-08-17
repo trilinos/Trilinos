@@ -102,13 +102,12 @@ namespace Intrepid2 {
     class Basis_HGRAD_TET_COMP12_FEM {
     public:
       
-      template<typename subTetViewType,
-               typename pointValueType>
+      template<typename pointValueType>
       KOKKOS_INLINE_FUNCTION
-      ordinal_type
-      getLocalSubTetID( const pointValueType x,
-                        const pointValueType y,
-                        const pointValueType z );
+      static ordinal_type
+      getLocalSubTet( const pointValueType x,
+                      const pointValueType y,
+                      const pointValueType z );
       
       template<EOperator opType>
       struct Serial {
@@ -166,8 +165,7 @@ namespace Intrepid2 {
           }
         }
       };
-      
-    }
+    };
   }
 
   template<typename ExecSpaceType = void,
