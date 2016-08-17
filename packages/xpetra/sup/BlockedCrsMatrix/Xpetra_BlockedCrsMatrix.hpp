@@ -1212,9 +1212,6 @@ namespace Xpetra {
               TEUCHOS_TEST_FOR_EXCEPTION(bMat != Teuchos::null, Xpetra::Exceptions::RuntimeError,
                                          "BlockedCrsMatrix::Merge: Merging of blocked sub-operators failed?!" );
 
-              // jump over empty blocks
-              if(mat->getNodeNumEntries() == 0) continue;
-
               // check whether we have a CrsMatrix block (no blocked operator)
               RCP<const CrsMatrixWrap> crsMat = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(mat);
               TEUCHOS_ASSERT(crsMat != Teuchos::null);
@@ -1235,6 +1232,9 @@ namespace Xpetra {
                     *tcolMap,
                     *tdomMap,
                     *xdomMap);
+
+              // jump over empty blocks
+              if(mat->getNodeNumEntries() == 0) continue;
 
               size_t maxNumEntries = mat->getNodeMaxNumRowEntries();
 
