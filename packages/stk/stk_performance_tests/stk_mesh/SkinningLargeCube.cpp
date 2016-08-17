@@ -287,6 +287,8 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
         .unpack<stk::mesh::EntityKey>(new_key);
 
       stk::mesh::Entity old_entity = mesh.get_entity(old_key);
+
+      EXPECT_EQ(stk::topology::NODE_RANK, new_key.rank());
       stk::mesh::Entity new_entity = mesh.declare_entity(new_key.rank(), new_key.id(), no_parts);
 
       nodes.push_back(old_entity);
