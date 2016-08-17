@@ -68,6 +68,8 @@
 
 #include "MueLu_Utilities.hpp"
 
+#include "MueLu_CloneRepartitionInterface.hpp"
+
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -112,7 +114,7 @@ namespace MueLu {
     const Teuchos::ParameterList & pL = GetParameterList();
     // Access parameters here to make sure that we set the parameter entry flag to "used" even in case of short-circuit evaluation.
     // TODO (JG): I don't really know if we want to do this.
-    const bool   remapPartitions     = pL.get<bool>  ("repartition: remap parts");
+    bool   remapPartitions     = pL.get<bool>  ("repartition: remap parts");
 
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -140,6 +142,14 @@ namespace MueLu {
     // Construct decomposition vector
     // ======================================================================================================
     RCP<GOVector> decomposition = Get<RCP<GOVector> >(currentLevel, "Partition");
+
+    // check which factory provides "Partition"
+    if(remapPartitions == true && Teuchos::rcp_dynamic_cast<const CloneRepartitionInterface>(GetFactory("Partition")) != Teuchos::null) {
+      // if "Partition" is provided by a CloneRepartitionInterface class we have to switch of remapPartitions
+      // as we can assume the processor Ids in Partition to be the expected ones. If we would do remapping we
+      // would get different processors for the different blocks which screws up matrix-matrix multiplication.
+      remapPartitions = false;
+    }
 
     // check special cases
     if (numPartitions == 1) {
