@@ -150,21 +150,26 @@ namespace Intrepid2 {
     }
 #endif
     const auto dim = inMat.dimension(0);
-
-    if (dim == 3)
-      return ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
-               inMat(1,0) * inMat(2,1) * inMat(0,2) +
-               inMat(2,0) * inMat(0,1) * inMat(1,2) -
-               inMat(2,0) * inMat(1,1) * inMat(0,2) -
-               inMat(0,0) * inMat(2,1) * inMat(1,2) -
-               inMat(1,0) * inMat(0,1) * inMat(2,2) );
-    else if (dim == 2)
-      return  ( inMat(0,0) * inMat(1,1) -
+    
+    inMatValueType r_val;
+    switch (dim) {
+    case 3:
+      r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
+                inMat(1,0) * inMat(2,1) * inMat(0,2) +
+                inMat(2,0) * inMat(0,1) * inMat(1,2) -
+                inMat(2,0) * inMat(1,1) * inMat(0,2) -
+                inMat(0,0) * inMat(2,1) * inMat(1,2) -
+                inMat(1,0) * inMat(0,1) * inMat(2,2) );
+      break;
+    case 2:
+      r_val = ( inMat(0,0) * inMat(1,1) -
                 inMat(0,1) * inMat(1,0) );
-    else 
-      return  ( inMat(0,0) );
-
-    return (0.0); // Unreachable dummy return to avoid compiler warning
+      break;
+    case 1:
+      r_val = ( inMat(0,0) );
+      break;
+    }
+    return r_val;
   }
 
   // ------------------------------------------------------------------------------------
