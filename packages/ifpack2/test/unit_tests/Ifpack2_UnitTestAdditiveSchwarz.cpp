@@ -51,6 +51,9 @@
 #include <Teuchos_ConfigDefs.hpp>
 
 #include <Ifpack2_ConfigDefs.hpp>
+#ifdef HAVE_IFPACK2_AMESOS2
+#include <Amesos2_config.h>
+#endif
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Ifpack2_Version.hpp>
 
@@ -603,9 +606,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, L
 
 // ///////////////////////////////////////////////////////////////////// //
 
-#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and defined(HAVE_AMESOS2_SUPERLU)
-// Test SuperLU sparse direct solver as subdomain solver for AdditiveSchwarz.
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, LocalOrdinal, GlobalOrdinal)
+#if defined(HAVE_IFPACK2_AMESOS2) && defined(HAVE_IFPACK2_XPETRA) && (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
+// Test sparse direct solver as subdomain solver for AdditiveSchwarz.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -626,7 +629,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   typedef Xpetra::Map<LO,GO,NT>                XMapType;
   typedef Xpetra::MultiVector<SC,LO,GO,NT>     XMVectorType;
 
-  out << "Test SuperLU (from Amesos2) as subdomain solver for AdditiveSchwarz" << endl;
+  out << "Test Amesos2 sparse direct solver"
+#if defined(HAVE_AMESOS2_SUPERLU)
+  << " (SuperLU)"
+#elif defined(HAVE_AMESOS2_KLU2)
+  << " (KLU2)"
+#endif
+  << " as subdomain solver for AdditiveSchwarz" << endl;
 
   // Generate the matrix using Galeri.  Galeri wraps it in an Xpetra
   // matrix, so after it finishes, ask it for the Tpetra matrix.
@@ -658,6 +667,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
 
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
+  params.set ("schwarz: overlap level", 0);  //FIXME Note that this test will fail for overlap>0.
+                                       //See github issue #460.
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   params.set ("schwarz: use reordering", true);
 #else
@@ -685,10 +696,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   */
 
   ParameterList &subdomainList = params.sublist("subdomain solver parameters");
+#if defined(HAVE_AMESOS2_SUPERLU)
   subdomainList.set("Amesos2 solver name","superlu");
-  ParameterList &amesos2List = subdomainList.sublist("Amesos2");
+  ParameterList &amesos2List = subdomainList.sublist("Amesos2"); // sublist required by Amesos2
   ParameterList &superluList = amesos2List.sublist("SuperLU");
   superluList.set("ILU_Flag",false);
+#elif defined(HAVE_AMESOS2_KLU2)
+  subdomainList.set("Amesos2 solver name","klu");
+  ParameterList &amesos2List = subdomainList.sublist("Amesos2"); // sublist required by Amesos2
+#endif
 
   out << "Setting AdditiveSchwarz's parameters" << endl;
 
@@ -913,10 +929,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
 # endif
 }
 
-#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
 
 #  define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SuperLU, Scalar, LocalOrdinal, GlobalOrdinal)
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SparseDirectSolver, Scalar, LocalOrdinal, GlobalOrdinal)
 #else
 #  define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal)
 #endif
