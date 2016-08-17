@@ -286,8 +286,6 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> blockOffsets;
    computeBlockOffsets(blockId,indexers_,blockOffsets);
 
-   int numDerivs = blockOffsets[blockOffsets.size()-1];
-
    // loop over the fields to be gathered
    for(std::size_t fieldIndex=0;
        fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -332,7 +330,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
              // set the value and seed the FAD object
              field(worksetCellIndex,basis).val() = local_x[lid];
-             field(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
+             field(worksetCellIndex,basis).fastAccessDx(startBlkOffset+offset) = seed_value;
            }
          }
 

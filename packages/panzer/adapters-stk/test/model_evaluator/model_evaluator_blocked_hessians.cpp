@@ -138,6 +138,7 @@ namespace panzer {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::ProductVectorBase<RealType> ProductVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -241,19 +242,24 @@ namespace panzer {
       out << "D2gDx2 = \n" << Teuchos::describe(*D2gDx2,Teuchos::VERB_EXTREME) << std::endl;
     }
 
-    Teuchos::ArrayRCP<const double> D2gDx2_data;
-    RCP<const SpmdVectorType> spmd_D2gDx2 = rcp_dynamic_cast<const SpmdVectorType>(D2gDx2);
-    rcp_dynamic_cast<const SpmdVectorType>(D2gDx2)->getLocalData(Teuchos::ptrFromRef(D2gDx2_data));
-    double scale = 2.0*DENSITY_VALUE*DENSITY_VALUE*DENSITY_VALUE*PERTURB_VALUE;
-    double int_phi = 1.0/192.0;
-    for(int i=0;i<D2gDx2_data.size();i++) {
-      out << D2gDx2_data[i]  << " " << D2gDx2_data[i]/(scale*int_phi) << std::endl;
-      bool a = std::fabs(D2gDx2_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
-      bool b = std::fabs(D2gDx2_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
-      bool c = std::fabs(D2gDx2_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
-      bool d = (D2gDx2_data[i]==0.0);
+    for(int b=0;b<2;b++) {
+      out << "checking vector: " << b << std::endl;
+      Teuchos::ArrayRCP<const double> D2gDx2_data;
 
-      TEST_ASSERT(a || b || c || d);
+      RCP<const ProductVectorType> product_D2gDx2 = rcp_dynamic_cast<const ProductVectorType>(D2gDx2,true);
+      RCP<const SpmdVectorType> spmd_D2gDx2 = rcp_dynamic_cast<const SpmdVectorType>(product_D2gDx2->getVectorBlock(b),true);
+      spmd_D2gDx2->getLocalData(Teuchos::ptrFromRef(D2gDx2_data));
+      double scale = 2.0*DENSITY_VALUE*DENSITY_VALUE*DENSITY_VALUE*PERTURB_VALUE;
+      double int_phi = 1.0/192.0;
+      for(int i=0;i<D2gDx2_data.size();i++) {
+        out << D2gDx2_data[i]  << " " << D2gDx2_data[i]/(scale*int_phi) << std::endl;
+        bool a = std::fabs(D2gDx2_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
+        bool b = std::fabs(D2gDx2_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
+        bool c = std::fabs(D2gDx2_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
+        bool d = (D2gDx2_data[i]==0.0);
+
+        TEST_ASSERT(a || b || c || d);
+      }
     }
   }
 
@@ -391,6 +397,7 @@ namespace panzer {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::ProductVectorBase<RealType> ProductVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -496,8 +503,9 @@ namespace panzer {
     }
 
     Teuchos::ArrayRCP<const double> D2gDpDx_data;
+
     RCP<const SpmdVectorType> spmd_D2gDpDx = rcp_dynamic_cast<const SpmdVectorType>(D2gDpDx);
-    rcp_dynamic_cast<const SpmdVectorType>(D2gDpDx)->getLocalData(Teuchos::ptrFromRef(D2gDpDx_data));
+    spmd_D2gDpDx->getLocalData(Teuchos::ptrFromRef(D2gDpDx_data));
     double scale = 6.0*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*PERTURB_VALUE;
     double int_phi = 1.0/192.0;
     for(int i=0;i<D2gDpDx_data.size();i++) {
@@ -506,7 +514,7 @@ namespace panzer {
       bool b = std::fabs(D2gDpDx_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
       bool c = std::fabs(D2gDpDx_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
       bool d = (D2gDpDx_data[i]==0.0);
-
+ 
       TEST_ASSERT(a || b || c || d);
     }
   }
@@ -518,6 +526,7 @@ namespace panzer {
     typedef panzer::Traits::RealType RealType;
     typedef Thyra::VectorBase<RealType> VectorType;
     typedef Thyra::SpmdVectorBase<RealType> SpmdVectorType;
+    typedef Thyra::ProductVectorBase<RealType> ProductVectorType;
     typedef Thyra::LinearOpBase<RealType> OperatorType;
 
     using Teuchos::RCP;
@@ -622,19 +631,24 @@ namespace panzer {
       out << "D2gDxDp = \n" << Teuchos::describe(*D2gDxDp,Teuchos::VERB_EXTREME) << std::endl;
     }
 
-    Teuchos::ArrayRCP<const double> D2gDxDp_data;
-    RCP<const SpmdVectorType> spmd_D2gDxDp = rcp_dynamic_cast<const SpmdVectorType>(D2gDxDp);
-    rcp_dynamic_cast<const SpmdVectorType>(D2gDxDp)->getLocalData(Teuchos::ptrFromRef(D2gDxDp_data));
-    double scale = 6.0*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*PERTURB_VALUE;
-    double int_phi = 1.0/192.0;
-    for(int i=0;i<D2gDxDp_data.size();i++) {
-      out << D2gDxDp_data[i]  << " " << D2gDxDp_data[i]/(scale*int_phi) << std::endl;
-      bool a = std::fabs(D2gDxDp_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
-      bool b = std::fabs(D2gDxDp_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
-      bool c = std::fabs(D2gDxDp_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
-      bool d = (D2gDxDp_data[i]==0.0);
+    for(int b=0;b<2;b++) {
+      out << "checking vector: " << b << std::endl;
+      Teuchos::ArrayRCP<const double> D2gDxDp_data;
 
-      TEST_ASSERT(a || b || c || d);
+      RCP<const ProductVectorType> product_D2gDxDp = rcp_dynamic_cast<const ProductVectorType>(D2gDxDp,true);
+      RCP<const SpmdVectorType> spmd_D2gDxDp = rcp_dynamic_cast<const SpmdVectorType>(product_D2gDxDp->getVectorBlock(b));
+      spmd_D2gDxDp->getLocalData(Teuchos::ptrFromRef(D2gDxDp_data));
+      double scale = 6.0*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*PERTURB_VALUE;
+      double int_phi = 1.0/192.0;
+      for(int i=0;i<D2gDxDp_data.size();i++) {
+        out << D2gDxDp_data[i]  << " " << D2gDxDp_data[i]/(scale*int_phi) << std::endl;
+        bool a = std::fabs(D2gDxDp_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
+        bool b = std::fabs(D2gDxDp_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
+        bool c = std::fabs(D2gDxDp_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
+        bool d = (D2gDxDp_data[i]==0.0);
+  
+        TEST_ASSERT(a || b || c || d);
+      }
     }
   }
 
@@ -735,7 +749,7 @@ namespace panzer {
 
     double scaling_of_mass_matrix = -2.0*PERTURB_VALUE*DENSITY_VALUE*DENSITY_VALUE;
 
-    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(out));
     const bool op_cmp = tester.compare( *Thyra::scaleAndAdjoint(scaling_of_mass_matrix,Thyra::NOTRANS,W.getConst()), *D2fDx2, Teuchos::ptrFromRef(fout));
     TEST_ASSERT(op_cmp);
   }
@@ -842,37 +856,6 @@ namespace panzer {
     Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
     const bool op_cmp = tester.compare( *Thyra::scaleAndAdjoint(scaling_of_mass_matrix,Thyra::NOTRANS,W.getConst()), *D2fDxDp, Teuchos::ptrFromRef(fout));
     TEST_ASSERT(op_cmp);
-  }
-
-  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
-                                  const Thyra::VectorBase<double> & b, 
-                                  double tolerance, bool write_to_cout)
-  {  
-    bool is_equal = true;
-
-    TEUCHOS_ASSERT(a.space()->dim() == b.space()->dim());
-
-    Teuchos::ArrayRCP<const double> a_data,b_data;
-    dynamic_cast<const Thyra::SpmdVectorBase<double> &>(a).getLocalData(Teuchos::ptrFromRef(a_data));
-    dynamic_cast<const Thyra::SpmdVectorBase<double> &>(b).getLocalData(Teuchos::ptrFromRef(b_data));
-
-    for (int i = 0; i < a_data.size(); ++i) {
-      
-      std::string output = "    equal!: ";
-      
-      if (std::fabs(a_data[i] - b_data[i]) > tolerance) {
-	is_equal = false;
-	output = "NOT equal!: ";
-      }
-      
-      if (write_to_cout)
-	std::cout << output << a_data[i] << " - " << b_data[i] << " = " << (a_data[i] - b_data[i]) << std::endl;
-    }
-
-    int globalSuccess = -1;
-    Teuchos::RCP<const Teuchos::Comm<Teuchos::Ordinal> > comm = Teuchos::DefaultComm<Teuchos::Ordinal>::getComm();
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, is_equal ? 0 : 1, Teuchos::outArg(globalSuccess) );
-    return (globalSuccess==0);
   }
 
   // Testing Parameter Support
@@ -1083,6 +1066,38 @@ namespace panzer {
     TEST_ASSERT(op_cmp);
   }
 
+  bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
+                                  const Thyra::VectorBase<double> & b, 
+                                  double tolerance, bool write_to_cout)
+  {  
+    bool is_equal = true;
+
+    TEUCHOS_ASSERT(a.space()->dim() == b.space()->dim());
+
+    Teuchos::ArrayRCP<const double> a_data,b_data;
+    dynamic_cast<const Thyra::SpmdVectorBase<double> &>(a).getLocalData(Teuchos::ptrFromRef(a_data));
+    dynamic_cast<const Thyra::SpmdVectorBase<double> &>(b).getLocalData(Teuchos::ptrFromRef(b_data));
+
+    for (int i = 0; i < a_data.size(); ++i) {
+      
+      std::string output = "    equal!: ";
+      
+      if (std::fabs(a_data[i] - b_data[i]) > tolerance) {
+	is_equal = false;
+	output = "NOT equal!: ";
+      }
+      
+      if (write_to_cout)
+	std::cout << output << a_data[i] << " - " << b_data[i] << " = " << (a_data[i] - b_data[i]) << std::endl;
+    }
+
+    int globalSuccess = -1;
+    Teuchos::RCP<const Teuchos::Comm<Teuchos::Ordinal> > comm = Teuchos::DefaultComm<Teuchos::Ordinal>::getComm();
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, is_equal ? 0 : 1, Teuchos::outArg(globalSuccess) );
+    return (globalSuccess==0);
+  }
+
+
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
   {
@@ -1106,7 +1121,6 @@ namespace panzer {
       p.set("Basis Order",1);
       p.set("Integration Order",1);
     }
-
 
     {
       std::size_t bc_id = 0;
