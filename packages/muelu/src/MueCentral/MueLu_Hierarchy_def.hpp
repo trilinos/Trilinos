@@ -48,7 +48,6 @@
 #define MUELU_HIERARCHY_DEF_HPP
 
 #include <time.h>  
-clock_t Timers_Max[4];
 
 #include <algorithm>
 #include <sstream>
