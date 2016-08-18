@@ -2758,12 +2758,14 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
          "X and Y must be constant stride.");
+
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (! isUpperTriangular () && ! isLowerTriangular (), std::runtime_error,
+        ( getNodeNumRows()>0 && ! isUpperTriangular () && ! isLowerTriangular (), std::runtime_error,
          "The matrix is neither upper triangular or lower triangular.  "
          "You may only call this method if the matrix is triangular.  "
          "Remember that this is a local (per MPI process) property, and that "
          "Tpetra only knows how to do a local (per process) triangular solve.");
+
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (STS::isComplex && mode == TRANS, std::logic_error, "This method does "
          "not currently support non-conjugated transposed solve (mode == "
