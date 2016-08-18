@@ -350,62 +350,6 @@ void copyFieldsToNewMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData
     }
 }
 
-void copySelectedEntitiesToNewMesh(const stk::mesh::BulkData& oldBulkData,
-                                   const stk::mesh::Selector subMeshSelector,
-                                   std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
-                                   stk::mesh::MetaData &newMeta,
-                                   stk::mesh::BulkData &newBulkData)
-{
-    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
-    {
-        const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
-        for(size_t i = 0; i < buckets.size(); i++)
-        {
-            stk::mesh::Bucket &bucket = *buckets[i];
-            for(size_t j = 0; j < bucket.size(); j++)
-            {
-                const stk::mesh::PartVector &oldParts = bucket.supersets();
-                stk::mesh::PartVector newParts(oldParts.size(), 0);
-                for(size_t k = 0; k < oldParts.size(); k++)
-                {
-                    newParts[k] = &newMeta.get_part(oldParts[k]->mesh_meta_data_ordinal());
-                }
-                stk::mesh::Entity newEntity = newBulkData.declare_entity(rank, oldBulkData.identifier(bucket[j]), newParts);
-                oldToNewEntityMap[bucket[j]] = newEntity;
-            }
-        }
-    }
-}
-
-void copyRelationsToNewMesh(const stk::mesh::BulkData& oldBulkData,
-                            const stk::mesh::Selector subMeshSelector,
-                            const std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
-                            stk::mesh::BulkData &newBulkData)
-{
-    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; rank++)
-    {
-        const stk::mesh::BucketVector &buckets = oldBulkData.get_buckets(rank, subMeshSelector);
-        for(size_t i = 0; i < buckets.size(); i++)
-        {
-            stk::mesh::Bucket &bucket = *buckets[i];
-            for(size_t j = 0; j < bucket.size(); j++)
-            {
-                stk::mesh::Entity newFromEntity = oldToNewEntityMap.find(bucket[j])->second;
-                for(stk::mesh::EntityRank downRank = stk::topology::NODE_RANK; downRank < rank; downRank++)
-                {
-                    unsigned numConnectedEntities = oldBulkData.num_connectivity(bucket[j], downRank);
-                    const stk::mesh::Entity *connectedEntities = oldBulkData.begin(bucket[j], downRank);
-                    for(unsigned connectOrder = 0; connectOrder < numConnectedEntities; connectOrder++)
-                    {
-                        stk::mesh::Entity newToEntity = oldToNewEntityMap.find(connectedEntities[connectOrder])->second;
-                        newBulkData.declare_relation(newFromEntity, newToEntity, connectOrder);
-                    }
-                }
-            }
-        }
-    }
-}
-
 void copyFieldDataToNewMesh(const stk::mesh::MetaData &oldMeta,
                             const stk::mesh::BulkData& oldBulkData,
                             const stk::mesh::Selector subMeshSelector,
