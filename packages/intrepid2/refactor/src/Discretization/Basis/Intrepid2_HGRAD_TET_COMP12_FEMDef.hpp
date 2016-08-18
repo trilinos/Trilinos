@@ -310,8 +310,8 @@ namespace Intrepid2 {
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_TET_COMP12_FEM): Operator type not implemented" );
+        INTREPID2_TEST_FOR_ABORT( true , 
+                                  ">>> ERROR (Basis_HGRAD_TET_COMP12_FEM): Operator type not implemented" );
       }
       }
     }
