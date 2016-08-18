@@ -68,8 +68,7 @@ void build_mesh(stk::mesh::MetaData & meta,
                 const stk::mesh::EntityIdVector * elem_node_ids,
                 int node_sharing[],
                 double coordinates[][3],
-                stk::mesh::EntityIdVector * face_node_ids = NULL,
-                stk::mesh::EntityIdVector * elem_face_ids = NULL )
+                bool createFaces = false )
 {
   const int p_rank = mesh.parallel_rank();
   double init_vals[] = {std::numeric_limits<double>::max(),
@@ -115,8 +114,8 @@ void build_mesh(stk::mesh::MetaData & meta,
   }
   mesh.modification_end();
 
-  mesh.modification_begin();
-  if (elem_face_ids != NULL && face_node_ids != NULL) {
+  if (createFaces) {
+    mesh.modification_begin();
     stk::mesh::PartVector add_parts;
     add_parts.push_back(face_part);
     for (size_t i = 0; i < num_elements; ++i) {
@@ -127,8 +126,8 @@ void build_mesh(stk::mesh::MetaData & meta,
         }
       }
     }
+    mesh.modification_end();
   }
-  mesh.modification_end();
 
   const stk::mesh::BucketVector & entityBuckets = mesh.get_buckets(stk::topology::NODE_RANK, meta.locally_owned_part());
   for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
@@ -1167,21 +1166,12 @@ TEST(Transfer, copy001T011Face)
                                 {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
                                 {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
                                 {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
-    stk::mesh::EntityIdVector face_node_ids[] {
-        { 9,10,14,13}, {10,2,6,14}, {2,1,5,6}, { 9,13,5, 1}, { 9,1,2,10}, {13,14,6,5},
-        {10,11,15,14}, {11,3,7,15}, {3,2,6,7}, {10, 2,6,14}, {10,2,3,11}, {14,15,7,6},
-        {11,12,16,15}, {12,4,8,16}, {4,3,7,8}, {11, 3,7,15}, {11,3,4,12}, {15,16,8,7}
-    };
-    stk::mesh::EntityIdVector elem_face_ids[] {
-        { 1,  2,  3,  4,  5,  6},
-        { 7,  8,  9,  2, 10, 11},
-        {12, 13, 14,  8, 15, 16}
-    };
 
     // Set up the "source" mesh for the transfer
     //
     stk::mesh::MetaData metaA(spatial_dimension);
     stk::mesh::BulkData meshA(metaA, pm);
+    const bool createFaces = true;
     build_mesh(metaA,
                meshA,
                num_elements,
@@ -1191,8 +1181,7 @@ TEST(Transfer, copy001T011Face)
                elem_node_ids,
                node_sharingA,
                coordinates,
-               face_node_ids,
-               elem_face_ids);
+               createFaces);
 
     // Set up the "target" mesh for the transfer
     //
@@ -1207,8 +1196,7 @@ TEST(Transfer, copy001T011Face)
                elem_node_ids,
                node_sharingB,
                coordinates,
-               face_node_ids,
-               elem_face_ids);
+               createFaces);
 
     // Fill "source" fields with valid data
     //

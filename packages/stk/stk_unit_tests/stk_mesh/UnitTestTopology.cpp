@@ -961,13 +961,13 @@ protected:
 
     void create_sides(stk::topology superSide, const stk::mesh::PartVector& parts, const SuperTopologySideData &s)
     {
-        stk::mesh::Entity side = get_bulk().declare_entity(get_meta().side_rank(), s.sharedFaceId, parts);
+        stk::mesh::Entity side = get_bulk().declare_solo_side(s.sharedFaceId, parts);
         for(unsigned i=0; i<s.sharedNodeIds.size(); ++i) {
             stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, s.sharedNodeIds[i]);
             get_bulk().declare_relation(side, node, i);
         }
-        int procId = get_bulk().parallel_rank();
 
+        int procId = get_bulk().parallel_rank();
         stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, s.elemIDsPerProc[procId]);
         get_bulk().declare_relation(elem, side, s.ordinalPerProc[procId], s.permPerProc[procId]);
     }
@@ -979,7 +979,6 @@ protected:
             stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, nodeId);
             get_bulk().add_node_sharing(node, otherProc);
         }
-
     }
 
 };
