@@ -73,7 +73,7 @@ TEST(stkMeshHowTo, useCustomConnectivityMap)
     //set up 1 element (3-node triangle) with elem->node and edge->node connections
     stk::mesh::EntityId elemId = 1;
     stk::mesh::EntityId elemNodeIds[] = {1, 2, 3};
-    stk::mesh::EntityId elemEdgeIds[] = {6, 7, 8};
+
     stk::mesh::Entity elemNodes[3];
     stk::mesh::Entity elemEdges[3];
     stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEM_RANK, elemId, tri_part);
@@ -81,19 +81,15 @@ TEST(stkMeshHowTo, useCustomConnectivityMap)
     elemNodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[1]);
     elemNodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[2]);
 
-    elemEdges[0] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[0], edge_part);
-    elemEdges[1] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[1], edge_part);
-    elemEdges[2] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[2], edge_part);
-
     //downward element -> node connectivity
     mesh.declare_relation(elem, elemNodes[0], 0);
     mesh.declare_relation(elem, elemNodes[1], 1);
     mesh.declare_relation(elem, elemNodes[2], 2);
 
-    //downward edge -> node connectivity
-    mesh.declare_relation(elemEdges[0], elemNodes[0], 0); mesh.declare_relation(elemEdges[0], elemNodes[1], 1);
-    mesh.declare_relation(elemEdges[1], elemNodes[1], 0); mesh.declare_relation(elemEdges[1], elemNodes[2], 1);
-    mesh.declare_relation(elemEdges[2], elemNodes[2], 0); mesh.declare_relation(elemEdges[2], elemNodes[0], 1);
+    elemEdges[0] = mesh.declare_element_side(elem, 0, {&edge_part});
+    elemEdges[1] = mesh.declare_element_side(elem, 1, {&edge_part});
+    elemEdges[2] = mesh.declare_element_side(elem, 2, {&edge_part});
+
     mesh.modification_end();
 
     //now test upward connectivity which stk-mesh would have created automatically if we didn't disable it.
