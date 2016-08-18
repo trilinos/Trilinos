@@ -1390,7 +1390,6 @@ powerMethodWithInitGuess (const op_type& A,
   using std::endl;
   if (debug_) {
     *out_ << " powerMethodWithInitGuess:" << endl;
-    //x.describe (*out_, Teuchos::VERB_EXTREME);
   }
 
   const ST zero = static_cast<ST> (0.0);
@@ -1423,13 +1422,7 @@ powerMethodWithInitGuess (const op_type& A,
       *out_ << "  Iteration " << iter << endl;
     }
     A.apply (x, y);
-    if (debug_) {
-      *out_ << "   norm1(y) before: " << y.norm1 ();
-    }
     solve (y, D_inv, y);
-    if (debug_) {
-      *out_ << ", norm1(y) after: " << y.norm1 () << endl;
-    }
     RQ_top = y.dot (x);
     RQ_bottom = x.dot (x);
     if (debug_) {
@@ -1454,7 +1447,7 @@ powerMethodWithInitGuess (const op_type& A,
 template<class ScalarType, class MV>
 void
 Chebyshev<ScalarType, MV>::
-computeInitialGuessForPowerMethod (V& x) const
+computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts) const
 {
   typedef typename MV::device_type::execution_space dev_execution_space;
   typedef typename MV::device_type::memory_space dev_memory_space;
@@ -1462,16 +1455,16 @@ computeInitialGuessForPowerMethod (V& x) const
 
   x.randomize ();
 
-  // Fix for #64.  The above fills x with pseudorandom numbers between
-  // -1 and 1.  Constrain those numbers to be between 0 and 1.
-  x.template modify<dev_memory_space> ();
-  auto x_lcl = x.template getLocalView<dev_memory_space> ();
-  auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
+  if (nonnegativeRealParts) {
+    x.template modify<dev_memory_space> ();
+    auto x_lcl = x.template getLocalView<dev_memory_space> ();
+    auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
 
-  const LO lclNumRows = static_cast<LO> (x.getLocalLength ());
-  Kokkos::RangePolicy<dev_execution_space, LO> range (0, lclNumRows);
-  PositivizeVector<decltype (x_lcl_1d), LO> functor (x_lcl_1d);
-  Kokkos::parallel_for (range, functor);
+    const LO lclNumRows = static_cast<LO> (x.getLocalLength ());
+    Kokkos::RangePolicy<dev_execution_space, LO> range (0, lclNumRows);
+    PositivizeVector<decltype (x_lcl_1d), LO> functor (x_lcl_1d);
+    Kokkos::parallel_for (range, functor);
+  }
 }
 
 template<class ScalarType, class MV>
@@ -1486,7 +1479,10 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
 
   const ST zero = static_cast<ST> (0.0);
   V x (A.getDomainMap ());
-  computeInitialGuessForPowerMethod (x);
+  // For the first pass, just let the pseudorandom number generator
+  // fill x with whatever values it wants; don't try to make its
+  // entries nonnegative.
+  computeInitialGuessForPowerMethod (x, false);
 
   ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
 
@@ -1506,7 +1502,10 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
     // with the random initial guess.  Try again with a different (but
     // still random) initial guess.  Only try again once, so that the
     // run time is bounded.
-    x.randomize ();
+
+    // For the second pass, make all the entries of the initial guess
+    // vector have nonnegative real parts.
+    computeInitialGuessForPowerMethod (x, true);
     lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
   }
   return lambdaMax;

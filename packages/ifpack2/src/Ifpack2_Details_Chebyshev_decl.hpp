@@ -640,9 +640,14 @@ private:
   ///
   /// \param x [out] Initial guess vector; a domain Map vector of the
   ///   matrix.
+  /// \param nonnegativeRealParts [in] Whether to force all entries of
+  ///   x (on output) to have nonnegative real parts.  Defaults to
+  ///   false (don't force).
   ///
-  /// This is an implementation detail of powerMethod() below.
-  void computeInitialGuessForPowerMethod (V& x) const;
+  /// This is an implementation detail of powerMethod() below.  For a
+  /// justification of the second parameter, see Github Issues #64 and
+  /// #567.
+  void computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts = false) const;
 
   /// \brief Use the power method to estimate the maximum eigenvalue
   ///   of A*D_inv, given an initial guess vector x.
