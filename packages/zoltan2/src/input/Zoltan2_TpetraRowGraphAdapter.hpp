@@ -488,15 +488,19 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
   RCP<tcrsgraph_t> G = rcp(new tcrsgraph_t(tmap, nnz_size_t,
                                         Tpetra::StaticProfile));
 
-  // TPetra::RowGraph is not a SrcDistObject
-  // But in our test we created a TPetra::CrsGraph (derives from Tpetra::RowGraph)
-  // So this means this adapter will not work for a pure Tpetra::RowGraph
-  // Not this is different from Tpetra::RowMatrix which is a SrcDistObject
-  const Tpetra::SrcDistObject& ref = dynamic_cast<const tcrsgraph_t &>(from);
+  // Current approach is to cast this to a TPetra::CrsGraph
+  // If that fails we throw an error
 
-  G->doImport(ref, importer, Tpetra::INSERT);
+  // could cast as a ref which will throw std::bad_cast but with ptr
+  // approach it might be clearer what's going on here
+  const tcrsgraph_t * pCrsGraphSrc = dynamic_cast<const tcrsgraph_t *>(&from);
+
+  if( !pCrsGraphSrc ) {
+    throw std::logic_error( "TpetraRowGraphAdapter failed to cast to a Tpetra::CrsGraph." );
+  }
+
+  G->doImport(*pCrsGraphSrc, importer, Tpetra::INSERT);
   G->fillComplete();
-
   return Teuchos::rcp_dynamic_cast<User>(G);
 }
 
