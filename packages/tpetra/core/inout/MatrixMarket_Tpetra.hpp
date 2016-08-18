@@ -53,7 +53,7 @@
 /// details) defines a human-readable ASCII text file format ("Matrix
 /// Market format") for interchange of sparse and dense matrices.
 ///
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_Vector.hpp"
@@ -4165,12 +4165,22 @@ namespace Tpetra {
       ///   only accessed on Process 0 of the given communicator.
       /// \param comm [in] Communicator containing all process(es)
       ///   over which the Map will be distributed.
-      /// \param node [in] Kokkos Node object.
       /// \param tolerant [in] Whether to read the data tolerantly
       ///   from the file.
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
+      static RCP<const map_type>
+      readMapFile (const std::string& filename,
+                   const RCP<const comm_type>& comm,
+                   const bool tolerant=false,
+                   const bool debug=false)
+      {
+        return readMapFile (filename, comm, Teuchos::null, tolerant, debug);
+      }
+
+      /// \brief Variant of readMapFile (above) that takes an explicit
+      ///   Node instance.
       static RCP<const map_type>
       readMapFile (const std::string& filename,
                    const RCP<const comm_type>& comm,
@@ -5246,6 +5256,19 @@ namespace Tpetra {
       static RCP<const map_type>
       readMap (std::istream& in,
                const RCP<const comm_type>& comm,
+               const bool tolerant=false,
+               const bool debug=false)
+      {
+        Teuchos::RCP<Teuchos::FancyOStream> err =
+          Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
+        return readMap (in, comm, err, tolerant, debug);
+      }
+
+      /// \brief Variant of readMap (above) that takes an explicit
+      ///   Node instance.
+      static RCP<const map_type>
+      readMap (std::istream& in,
+               const RCP<const comm_type>& comm,
                const RCP<node_type>& node,
                const bool tolerant=false,
                const bool debug=false)
@@ -5274,13 +5297,24 @@ namespace Tpetra {
       ///   given communicator.
       /// \param comm [in] Communicator containing all process(es)
       ///   over which the Map will be distributed.
-      /// \param node [in] Kokkos Node object.
       /// \param err [in] Optional output stream for debugging output.
       ///   This is only referenced if \c debug is true.
       /// \param tolerant [in] Whether to read the data tolerantly
       ///   from the file.
       /// \param debug [in] If true, write copious debugging output to
       ///   \c err on all processes in \c comm.
+      static RCP<const map_type>
+      readMap (std::istream& in,
+               const RCP<const comm_type>& comm,
+               const Teuchos::RCP<Teuchos::FancyOStream>& err,
+               const bool tolerant=false,
+               const bool debug=false)
+      {
+        return readMap (in, comm, Teuchos::null, err, tolerant, debug);
+      }
+
+      /// \brief Variant of readMap (above) that takes an explicit
+      ///   Node instance.
       static RCP<const map_type>
       readMap (std::istream& in,
                const RCP<const comm_type>& comm,
@@ -5594,8 +5628,38 @@ namespace Tpetra {
           *err << os.str ();
         }
         const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-        RCP<const map_type> newMap =
-          rcp (new map_type (INVALID, myGids (), indexBase, comm, node));
+        RCP<const map_type> newMap;
+
+        // Create the Map; test whether the constructor threw.  This
+        // avoids deadlock and makes error reporting more readable.
+
+        int lclSuccess = 1;
+        int gblSuccess = 0; // output argument
+        std::ostringstream errStrm;
+        try {
+          if (node.is_null ()) {
+            newMap = rcp (new map_type (INVALID, myGids (), indexBase, comm));
+          }
+          else {
+            newMap = rcp (new map_type (INVALID, myGids (), indexBase, comm, node));
+          }
+        }
+        catch (std::exception& e) {
+          lclSuccess = 0;
+          errStrm << "Process " << comm->getRank () << " threw an exception: "
+                  << e.what () << std::endl;
+        }
+        catch (...) {
+          lclSuccess = 0;
+          errStrm << "Process " << comm->getRank () << " threw an exception "
+            "not a subclass of std::exception" << std::endl;
+        }
+        Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN,
+                                      lclSuccess, Teuchos::outArg (gblSuccess));
+        if (gblSuccess != 1) {
+          Tpetra::Details::gathervPrint (std::cerr, errStrm.str (), *comm);
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(gblSuccess != 1, std::runtime_error, "Map constructor failed!");
 
         if (err.is_null ()) {
           err->popTab ();
