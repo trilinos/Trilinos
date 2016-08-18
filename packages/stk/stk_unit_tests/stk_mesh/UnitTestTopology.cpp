@@ -864,25 +864,13 @@ TEST(stkTopologyFunctions, permutation_consistency_check_2d)
 
         mesh.modification_end();
 
-        unsigned gold_side_node_ids[4][3] = {
-                {1, 2, 5},
-                {2, 3, 6},
-                {3, 4, 7},
-                {4, 1, 8}
-        };
-
         mesh.modification_begin();
 
-        unsigned global_side_id[] = {1, 2, 3, 4};
         stk::mesh::EntityVector sides(4);
-        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(1);
+        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
         for(size_t i=0;i<sides.size();++i)
         {
-            sides[i] = mesh.declare_entity(stk::topology::EDGE_RANK, global_side_id[i], meta.get_topology_root_part(stk::topology::LINE_3));
-            mesh.declare_relation(Quad9, sides[i], i, perm);
-            mesh.declare_relation(sides[i], nodes[gold_side_node_ids[i][0]-1], 1);
-            mesh.declare_relation(sides[i], nodes[gold_side_node_ids[i][1]-1], 0);
-            mesh.declare_relation(sides[i], nodes[gold_side_node_ids[i][2]-1], 2);
+            sides[i] = mesh.declare_element_side(Quad9, i, {&meta.get_topology_root_part(stk::topology::LINE_3)});
         }
 
         EXPECT_NO_THROW(mesh.modification_end());

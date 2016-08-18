@@ -58,7 +58,7 @@ TEST( UnitTestNoUpwardConnectivity, simpleTri )
    stk::mesh::ConnectivityMap custom_connectivity = stk::mesh::ConnectivityMap::none();
    //Now set which connectivities we want enabled:
    custom_connectivity(stk::topology::ELEM_RANK, stk::topology::NODE_RANK) = stk::mesh::ConnectivityMap::fixed();
-   custom_connectivity(stk::topology::ELEM_RANK, stk::topology::EDGE_RANK) = stk::mesh::ConnectivityMap::fixed();
+   custom_connectivity(stk::topology::ELEM_RANK, stk::topology::EDGE_RANK) = stk::mesh::ConnectivityMap::dynamic();
    custom_connectivity(stk::topology::EDGE_RANK, stk::topology::NODE_RANK) = stk::mesh::ConnectivityMap::fixed();
 
    //Now verify that node->edge, node->elem and edge->elem connections are disabled, but
@@ -87,27 +87,21 @@ TEST( UnitTestNoUpwardConnectivity, simpleTri )
    side_parts.push_back(&line2_part);
    stk::mesh::EntityId elemId = 1;
    stk::mesh::EntityId elemNodeIds[] = {1, 2, 3};
-   stk::mesh::EntityId elemEdgeIds[] = {6, 7, 8};
    stk::mesh::Entity elemNodes[3];
-   stk::mesh::Entity elemEdges[3];
    stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEM_RANK, elemId, elem_parts);
    elemNodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[0]);
    elemNodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[1]);
    elemNodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[2]);
-
-   elemEdges[0] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[0], side_parts);
-   elemEdges[1] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[1], side_parts);
-   elemEdges[2] = mesh.declare_entity(stk::topology::EDGE_RANK, elemEdgeIds[2], side_parts);
 
    //downward element -> node connectivity
    mesh.declare_relation(elem, elemNodes[0], 0);
    mesh.declare_relation(elem, elemNodes[1], 1);
    mesh.declare_relation(elem, elemNodes[2], 2);
 
-   //downward edge -> node connectivity
-   mesh.declare_relation(elemEdges[0], elemNodes[0], 0); mesh.declare_relation(elemEdges[0], elemNodes[1], 1);
-   mesh.declare_relation(elemEdges[1], elemNodes[1], 0); mesh.declare_relation(elemEdges[1], elemNodes[2], 1);
-   mesh.declare_relation(elemEdges[2], elemNodes[2], 0); mesh.declare_relation(elemEdges[2], elemNodes[0], 1);
+   mesh.declare_element_side(elem, 0, side_parts);
+   mesh.declare_element_side(elem, 1, side_parts);
+   mesh.declare_element_side(elem, 2, side_parts);
+
    mesh.modification_end();
 
    //verify that get_connectivity throws (rather than infinitely recursing) since node->elem connections are disabled.
