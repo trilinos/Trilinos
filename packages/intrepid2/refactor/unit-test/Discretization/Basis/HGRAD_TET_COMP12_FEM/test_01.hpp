@@ -57,6 +57,8 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include <random>
+
 namespace Intrepid2 {
 
   namespace Test {

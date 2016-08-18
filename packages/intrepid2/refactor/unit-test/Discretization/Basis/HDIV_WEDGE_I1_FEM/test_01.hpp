@@ -448,7 +448,7 @@ namespace Intrepid2 {
             }
 
             const ValueType expected_normal = (i == j);
-            if (std::abs(normal - expected_normal) > tol || isnan(normal)) {
+            if (std::abs(normal - expected_normal) > tol || std::isnan(normal)) {
               errorFlag++;
               std::stringstream ss;
               ss << "\nNormal component of basis function " << i << " at (" << cvals_host(j,0) << ", " << cvals_host(j,1)<< ", " << cvals_host(j,2) << ") is " << normal << " but should be " << expected_normal << "\n";
