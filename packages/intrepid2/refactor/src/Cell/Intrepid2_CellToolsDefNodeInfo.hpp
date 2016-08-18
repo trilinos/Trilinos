@@ -365,15 +365,16 @@ namespace Intrepid2 {
                                   parentCell.getDimension() != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): two or three-dimensional parent cell required");
   
-    INTREPID2_TEST_FOR_EXCEPTION( edgeOrd <  0 ||
-                                  edgeOrd >= parentCell.getSubcellCount(1), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
-
     INTREPID2_TEST_FOR_EXCEPTION( refEdgeTangent.rank() != 1, std::invalid_argument,  
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): rank = 1 required for output arrays"); 
     
     INTREPID2_TEST_FOR_EXCEPTION( refEdgeTangent.dimension(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
+
+    INTREPID2_TEST_FOR_EXCEPTION( edgeOrd <  0 ||
+                                  edgeOrd >= parentCell.getSubcellCount(1), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
+
 #endif
     // Edge parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
     // (subcOrd, coordinate, coefficient)
