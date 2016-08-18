@@ -1077,19 +1077,32 @@ namespace Tpetra {
 
     /// \brief Set all values in the multivector to pseudorandom numbers.
     ///
-    /// \note The implementation of this method may depend on the
-    ///   Kokkos Node type and on what third-party libraries you have
-    ///   available.  Do not expect repeatable results.
-    ///
+    /// \note Do not expect repeatable results.
     /// \note Behavior of this method may or may not depend on
     ///   external use of the C library routines srand() and rand().
-    ///
+    ///   In particular, setting the seed there may not affect it
+    ///   here.
     /// \warning This method does <i>not</i> promise to use a
     ///   distributed-memory parallel pseudorandom number generator.
     ///   Corresponding values on different processes might be
     ///   correlated.  It also does not promise to use a high-quality
     ///   pseudorandom number generator within each process.
     void randomize();
+
+    /// \brief Set all values in the multivector to pseudorandom
+    ///   numbers in the given range.
+    ///
+    /// \note Do not expect repeatable results.
+    /// \note Behavior of this method may or may not depend on
+    ///   external use of the C library routines srand() and rand().
+    ///   In particular, setting the seed there may not affect it
+    ///   here.
+    /// \warning This method does <i>not</i> promise to use a
+    ///   distributed-memory parallel pseudorandom number generator.
+    ///   Corresponding values on different processes might be
+    ///   correlated.  It also does not promise to use a high-quality
+    ///   pseudorandom number generator within each process.
+    void randomize (const Scalar& minVal, const Scalar& maxVal);
 
     /// \brief Replace the underlying Map in place.
     ///

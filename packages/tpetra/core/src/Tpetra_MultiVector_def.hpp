@@ -2263,6 +2263,21 @@ namespace Tpetra {
     typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
     typedef typename pool_type::generator_type generator_type;
 
+    const IST max = Kokkos::rand<generator_type, IST>::max ();
+    const IST min = ATS::is_signed ? IST (-max) : ATS::zero ();
+
+    this->randomize (static_cast<Scalar> (min), static_cast<Scalar> (max));
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  randomize (const Scalar& minVal, const Scalar& maxVal)
+  {
+    typedef impl_scalar_type IST;
+    typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
+
     // Seed the pseudorandom number generator using the calling
     // process' rank.  This helps decorrelate different process'
     // pseudorandom streams.  It's not perfect but it's effective and
@@ -2278,8 +2293,8 @@ namespace Tpetra {
     unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
 
     pool_type rand_pool (seed);
-    const IST max = Kokkos::rand<generator_type, IST>::max ();
-    const IST min = ATS::is_signed ? IST (-max) : ATS::zero ();
+    const IST max = static_cast<IST> (maxVal);
+    const IST min = static_cast<IST> (minVal);
 
     this->template modify<device_type> ();
     auto thisView = this->getLocalView<device_type> ();
