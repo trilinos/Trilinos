@@ -160,7 +160,7 @@ namespace MueLu {
 
     if (numProcs > 1) {
       // TODO: deal with block size > 1  (see comments above)
-      TEUCHOS_TEST_FOR_EXCEPTION(bx_ > 3 || by_ > 3 || bz_ > 3, Exceptions::RuntimeError, "Currently cannot deal with brick size > 3");
+      //TEUCHOS_TEST_FOR_EXCEPTION(bx_ > 3 || by_ > 3 || bz_ > 3, Exceptions::RuntimeError, "Currently cannot deal with brick size > 3");
     }
 
     RCP<MultiVector_d> overlappedCoords = coords;
