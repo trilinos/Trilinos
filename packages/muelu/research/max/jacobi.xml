@@ -1,0 +1,55 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                            type="string"   value="high"/>
+
+  <Parameter        name="number of equations"                  type="int"      value="1"/>
+
+  <Parameter        name="max levels"                           type="int"      value="1"/>
+
+  <Parameter        name="coarse: max size"                     type="int"      value="500"/>
+
+  <Parameter        name="multigrid algorithm"                  type="string"   value="unsmoothed"/>
+
+  <!-- ===========  AGGREGATION  =========== -->
+  <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
+  <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/>
+  <!-- <Parameter        name="aggregation: drop tol"                type="double"   value="0.1"/> -->
+
+  <!-- ===========  SMOOTHING  =========== -->
+  <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
+  <ParameterList    name="smoother: params">
+    <!--
+    <Parameter      name="relaxation: type"                     type="string"   value="Jacobi"/>
+    -->
+    <Parameter      name="relaxation: type"                     type="string"   value="Gauss-Seidel"/>
+    <Parameter      name="relaxation: sweeps"                    type="int"      value="1"/>
+    <Parameter      name="relaxation: damping factor"           type="double"   value="1.0"/>
+  </ParameterList>
+
+  <Parameter        name="coarse: type"                       type="string"   value="RELAXATION"/>
+  <ParameterList    name="coarse: params">
+    <!--
+    <Parameter      name="relaxation: type"                     type="string"   value="Jacobi"/>
+    -->
+    <Parameter      name="relaxation: type"                     type="string"   value="Gauss-Seidel"/>
+    <Parameter      name="relaxation: sweeps"                    type="int"      value="1"/>
+    <Parameter      name="relaxation: damping factor"           type="double"   value="1.0"/>
+  </ParameterList>
+  <!-- ===========  REPARTITIONING  =========== -->
+  <Parameter        name="repartition: enable"                  type="bool"     value="false"/>
+  <Parameter        name="repartition: partitioner"             type="string"   value="zoltan"/>
+  <Parameter        name="repartition: start level"             type="int"      value="2"/>
+  <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
+  <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
+  <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
+
+  <!-- ===========  EXPORT DATA  =========== -->
+  <!--
+  <ParameterList name="export data">
+    <Parameter        name="A"                  type="string"     value="{0,1}"/>
+    <Parameter        name="P"                  type="string"     value="{0,1}"/>
+    <Parameter        name="R"                  type="string"     value="{0}"/>
+  </ParameterList>
+  -->
+</ParameterList>
+
+
