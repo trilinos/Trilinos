@@ -99,25 +99,31 @@ trsv (const char uplo[],
                  typename XMV::non_const_value_type>::value,
                  "KokkosBlas::trsv: The output x must be nonconst.");
 
-  if (uplo[0] != 'U' && uplo[0] != 'u' && uplo[0] != 'L' && uplo[0] != 'l') {
+//The following three code lines have been moved up by Massimiliano Lupo Pasini
+  typedef typename BMV::size_type size_type;
+  const size_type numRows = static_cast<size_type> (A.numRows ());
+  const size_type numCols = static_cast<size_type> (A.numCols ());
+  const size_type zero = static_cast<size_type> (0);
+
+  if (zero!=numRows && uplo[0] != 'U' && uplo[0] != 'u' && uplo[0] != 'L' && uplo[0] != 'l') {
     std::ostringstream os;
     os << "Invalid uplo[0] = \'" << uplo << "\'";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
-  if (trans[0] != 'C' && trans[0] != 'c' && trans[0] != 'T' && trans[0] != 't' && trans[0] != 'N' && trans[0] != 'n') {
+  if (zero!=numRows && trans[0] != 'C' && trans[0] != 'c' && trans[0] != 'T' && trans[0] != 't' && trans[0] != 'N' && trans[0] != 'n') {
     std::ostringstream os;
     os << "Invalid trans[0] = \'" << trans << "\'";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
-  if (diag[0] != 'U' && diag[0] != 'u' && diag[0] != 'N' && diag[0] != 'n') {
+  if (zero!=numRows && diag[0] != 'U' && diag[0] != 'u' && diag[0] != 'N' && diag[0] != 'n') {
     std::ostringstream os;
     os << "Invalid diag[0] = \'" << diag << "\'";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
-  typedef typename BMV::size_type size_type;
+/*  typedef typename BMV::size_type size_type;
   const size_type numRows = static_cast<size_type> (A.numRows ());
-  const size_type numCols = static_cast<size_type> (A.numCols ());
+  const size_type numCols = static_cast<size_type> (A.numCols ());*/
 
   const bool transpose = trans[0] != 'N' && trans[0] != 'n';
   if (! transpose && (numCols != x.dimension_0 () || numRows != b.dimension_0 ())) {
