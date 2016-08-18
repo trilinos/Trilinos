@@ -59,6 +59,8 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityProc, etc
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
 namespace stk { namespace mesh { namespace fixtures { class RingFixture; } } }
@@ -800,27 +802,6 @@ void copySelectedEntitiesToNewMesh(const stk::unit_test_util::BulkDataTester& ol
     }
 }
 
-
-stk::mesh::ConnectivityOrdinal get_ordinal_from_side_entity(const std::vector<Entity> &sides, stk::mesh::ConnectivityOrdinal const * ordinals, stk::mesh::Entity side)
-{
-    for(unsigned i = 0; i<sides.size(); ++i)
-    {
-        if(sides[i] == side)
-            return ordinals[i];
-    }
-
-    return stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-}
-
-stk::mesh::ConnectivityOrdinal get_ordinal_for_element_side_pair(const BulkData &bulkData, stk::mesh::Entity element, stk::mesh::Entity side)
-{
-    const Entity * sides = bulkData.begin(element, bulkData.mesh_meta_data().side_rank());
-    stk::mesh::ConnectivityOrdinal const * ordinals = bulkData.begin_ordinals(element, bulkData.mesh_meta_data().side_rank());
-    std::vector<Entity> sideVector(sides, sides+bulkData.num_sides(element));
-    return get_ordinal_from_side_entity(sideVector, ordinals, side);
-}
-
-
 void copySelectedFacesToNewMesh(const stk::unit_test_util::BulkDataTester& oldBulkData,
                                    const stk::mesh::Selector subMeshSelector,
                                    std::map<stk::mesh::Entity, stk::mesh::Entity> &oldToNewEntityMap,
@@ -848,7 +829,7 @@ void copySelectedFacesToNewMesh(const stk::unit_test_util::BulkDataTester& oldBu
             const Entity oldFirstElement = connected_elements[0];
             ThrowRequire(oldBulkData.is_valid(oldFirstElement));
 
-            stk::mesh::ConnectivityOrdinal faceOrdinal = get_ordinal_for_element_side_pair(oldBulkData, oldFirstElement, oldSide);
+            stk::mesh::ConnectivityOrdinal faceOrdinal = stk::mesh::impl::get_ordinal_for_element_side_pair(oldBulkData, oldFirstElement, oldSide);
             stk::mesh::Entity newFirstElement = newBulkData.get_entity(oldBulkData.entity_key(oldFirstElement));
 
             stk::mesh::Entity newSide = newBulkData.declare_element_side(newFirstElement, faceOrdinal, newParts);

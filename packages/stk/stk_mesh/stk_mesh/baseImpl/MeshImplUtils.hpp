@@ -483,6 +483,13 @@ void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
                                     const OrdinalVector& input_ordinals,
                                     stk::mesh::PartVector& output_parts);
 
+stk::mesh::ConnectivityOrdinal get_ordinal_from_side_entity(const std::vector<stk::mesh::Entity> &sides,
+                                                            stk::mesh::ConnectivityOrdinal const * ordinals,
+                                                            stk::mesh::Entity side);
+stk::mesh::ConnectivityOrdinal get_ordinal_for_element_side_pair(const stk::mesh::BulkData &bulkData,
+                                                                 stk::mesh::Entity element,
+                                                                 stk::mesh::Entity side);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

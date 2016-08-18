@@ -1153,6 +1153,26 @@ void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
     }
 }
 
+stk::mesh::ConnectivityOrdinal get_ordinal_from_side_entity(const std::vector<stk::mesh::Entity> &sides,
+                                                            stk::mesh::ConnectivityOrdinal const * ordinals,
+                                                            stk::mesh::Entity side)
+{
+    for(unsigned i = 0; i<sides.size(); ++i)
+    {
+        if(sides[i] == side)
+            return ordinals[i];
+    }
+
+    return stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+}
+
+stk::mesh::ConnectivityOrdinal get_ordinal_for_element_side_pair(const stk::mesh::BulkData &bulkData, stk::mesh::Entity element, stk::mesh::Entity side)
+{
+    const stk::mesh::Entity * sides = bulkData.begin(element, bulkData.mesh_meta_data().side_rank());
+    stk::mesh::ConnectivityOrdinal const * ordinals = bulkData.begin_ordinals(element, bulkData.mesh_meta_data().side_rank());
+    std::vector<stk::mesh::Entity> sideVector(sides, sides+bulkData.num_sides(element));
+    return get_ordinal_from_side_entity(sideVector, ordinals, side);
+}
 
 } // namespace impl
 } // namespace mesh
