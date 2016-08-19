@@ -55,6 +55,7 @@ TEST ( UnitTestCreateEdges, Quad_2x2 )
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
+  fixture.m_bulk_data.initialize_face_adjacent_element_graph();
 
   stk::mesh::skin_mesh(fixture.m_bulk_data);
 

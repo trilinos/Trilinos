@@ -67,6 +67,7 @@ TEST ( UnitTestCreateEdges, Quad_2x1 )
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
+  fixture.m_bulk_data.initialize_face_adjacent_element_graph();
 
   {
     std::vector<size_t> counts ;
@@ -97,6 +98,7 @@ TEST ( UnitTestCreateEdges, Quad_3x1 )
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
+  fixture.m_bulk_data.initialize_face_adjacent_element_graph();
 
   {
     std::vector<size_t> counts ;
@@ -299,6 +301,7 @@ TEST( UnitTestCreateEdges , testCreateEdges3x3 )
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
+  fixture.m_bulk_data.initialize_face_adjacent_element_graph();
 
   {
     std::vector<size_t> counts ;

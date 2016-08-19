@@ -267,26 +267,34 @@ struct create_edge_impl
         typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
         Entity edge;
-        Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
-        if (iedge == m_edge_map.end()) {
-          ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
-          EntityId edge_id = m_available_ids[m_count_edges];
-          m_count_edges++;
+        if(2 == mesh.mesh_meta_data().spatial_dimension())
+        {
+            edge = mesh.declare_element_side(m_bucket[ielem], e, add_parts);
+            m_edge_map[edge_nodes] = edge;
+        }
+        else
+        {
+            Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+            if (iedge == m_edge_map.end()) {
+              ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
+              EntityId edge_id = m_available_ids[m_count_edges];
+              m_count_edges++;
 
-          edge = mesh.declare_entity( stk::topology::EDGE_RANK, edge_id, add_parts);
-          m_edge_map[edge_nodes] = edge;
-          const int num_edge_nodes = EdgeTopology::num_nodes;
-          for (int n=0; n<num_edge_nodes; ++n) {
-            Entity node = edge_nodes[n];
-            mesh.declare_relation(edge,node,n, perm, ordinal_scratch, part_scratch);
+              edge = mesh.declare_entity( stk::topology::EDGE_RANK, edge_id, add_parts);
+              m_edge_map[edge_nodes] = edge;
+              const int num_edge_nodes = EdgeTopology::num_nodes;
+              for (int n=0; n<num_edge_nodes; ++n) {
+                Entity node = edge_nodes[n];
+                mesh.declare_relation(edge,node,n, perm, ordinal_scratch, part_scratch);
+              }
+            }
+            else {
+              edge = iedge->second;
+            }
+            perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], e);
+            ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
+            mesh.declare_relation(m_bucket[ielem], edge, e, perm, ordinal_scratch, part_scratch);
           }
-        }
-        else {
-          edge = iedge->second;
-        }
-        perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], e);
-        ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
-        mesh.declare_relation(m_bucket[ielem], edge, e, perm, ordinal_scratch, part_scratch);
       }
     }
   }

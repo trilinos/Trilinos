@@ -155,7 +155,7 @@ TEST(UnitTestKeyhole, EdgeParts_case1)
   stk::mesh::BulkData bulk(meta, communicator);
 
   stk::mesh::unit_test::setupKeyholeMesh2D_case1(bulk);
-
+  bulk.initialize_face_adjacent_element_graph();
   stk::mesh::create_edges(bulk);
 
   //find the edge between nodes 2 and 3.
