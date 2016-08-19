@@ -451,8 +451,6 @@ void check_size_of_types()
 #endif
 }
 //----------------------------------------------------------------------
-enum {ELEM_DEATH_CHILDMASK1 = 1};
-
 BulkData::BulkData( MetaData & mesh_meta_data
                     , ParallelMachine parallel
                     , enum AutomaticAuraOption auto_aura_option
