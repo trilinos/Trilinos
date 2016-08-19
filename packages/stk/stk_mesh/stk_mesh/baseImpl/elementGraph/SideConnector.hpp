@@ -61,6 +61,7 @@ public:
 private:
     void connect_side_to_elements_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
     void connect_side_to_other_elements_nodes(const GraphEdge &edgeWithMinId, stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
+    stk::mesh::EntityVector get_permuted_side_nodes(stk::mesh::Entity elemEntity, int elemSide, const stk::mesh::EntityVector &sideNodes, int permutation);
 private:
     stk::mesh::BulkData &bulk;
     const stk::mesh::Graph &graph;
