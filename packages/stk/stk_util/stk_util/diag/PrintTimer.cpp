@@ -409,7 +409,7 @@ collect_timers(
 
   for(int ii=0; ii<num_cycles; ++ii) {
     std::vector<int> recv_count(parallel_size, 0);
-    int * const recv_count_ptr = &recv_count[0] ;
+    int * const recv_count_ptr = recv_count.data() ;
   
     //send_count is the amount of data this processor needs to send.
     int send_count = send_string.size();
@@ -438,14 +438,11 @@ collect_timers(
     const int recv_size = recv_displ[parallel_size] ;
   
     buffer.assign(recv_size, 0);
-//    if (recv_size > 0) {
-//      std::cerr<<"collect_timers: proc "<<parallel_rank<<", recv_size: "<<recv_size<<std::endl;
- //   }
   
     {
       const char * const send_ptr = send_string.data();
-      char * const recv_ptr = recv_size ? & buffer[0] : 0;
-      int * const recv_displ_ptr = & recv_displ[0] ;
+      char * const recv_ptr = recv_size ? buffer.data() : nullptr;
+      int * const recv_displ_ptr = recv_displ.data() ;
   
       result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                            recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
