@@ -30,8 +30,14 @@ void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk, stk::mesh
         unsigned numUpward = bulk.num_connectivity(connectedEntity, rank);
         const stk::mesh::Entity *upwardEntity = bulk.begin(connectedEntity, rank);
         for(unsigned j=0; j<numUpward; j++)
+        {
+            if(!bulk.is_valid(upwardEntity[j])) continue;
+
             if(bulk.bucket(upwardEntity[j]).in_aura())
+            {
                 bulk.destroy_entity(upwardEntity[j]);
+            }
+        }
     }
 }
 
