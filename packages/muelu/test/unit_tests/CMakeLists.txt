@@ -52,10 +52,14 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   APPEND_SET(SOURCES
     BlockedCoarseMapFactory.cpp
     BlockedPFactory.cpp
-    BlockedRepartition.cpp
     SchurComplementFactory.cpp
     SubBlockAFactory.cpp
   )
+  IF (TPL_ENABLE_MPI)
+    APPEND_SET(SOURCES
+    BlockedRepartition.cpp
+    )
+  ENDIF()
 ENDIF()
 
 ### Tests that require other Trilinos packages
