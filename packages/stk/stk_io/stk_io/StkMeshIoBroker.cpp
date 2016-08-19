@@ -679,11 +679,10 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
       size_t node_count = entity->get_field_data("ids", node_ids);
 
       std::vector<stk::mesh::Entity> nodes(node_count);
-      stk::mesh::EntityRank n_rank = stk::topology::NODE_RANK;
       for(size_t i=0; i<node_count; ++i) {
-        nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
+        nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, node_ids[i] );
         if (!bulk.is_valid(nodes[i])) {
-          bulk.declare_entity(n_rank, node_ids[i], add_parts );
+          bulk.declare_entity(stk::topology::NODE_RANK, node_ids[i], add_parts );
         }
       }
 
