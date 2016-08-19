@@ -459,7 +459,7 @@ BulkData::BulkData( MetaData & mesh_meta_data
 #ifdef SIERRA_MIGRATION
                     , bool add_fmwk_data
 #endif
-                    , ConnectivityMap const* arg_connectivity_map
+                    , ConnectivityMap const* /*arg_connectivity_map*/
                     , FieldDataManager *field_data_manager
                     , unsigned bucket_capacity
                     )
@@ -502,9 +502,7 @@ BulkData::BulkData( MetaData & mesh_meta_data
     m_bucket_repository(
         *this,
         mesh_meta_data.entity_rank_count(),
-        arg_connectivity_map != NULL ? *arg_connectivity_map :
         (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map()),
-/*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
         bucket_capacity),
     m_use_identifiers_for_resolving_sharing(false),
     m_modSummary(*this),

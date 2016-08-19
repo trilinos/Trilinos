@@ -42,7 +42,7 @@
 
 namespace {
 //-BEGIN
-TEST(stkMeshHowTo, useConnectivityMap)
+TEST(stkMeshHowTo, DISABLED_useConnectivityMap)
 {
     const unsigned spatialDimension = 2;
     stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());

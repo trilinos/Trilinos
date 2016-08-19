@@ -47,7 +47,7 @@ namespace {
 
 using namespace stk::mesh;
 
-TEST( UnitTestNoUpwardConnectivity, simpleTri )
+TEST( UnitTestNoUpwardConnectivity, DISABLED_simpleTri )
 {
    const unsigned spatialDimension = 2;
    stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());

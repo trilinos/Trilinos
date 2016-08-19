@@ -166,7 +166,7 @@ public:
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
-            , ConnectivityMap const* arg_connectivity_map = NULL
+            , ConnectivityMap const* arg_connectivity_map_no_longer_used_and_soon_to_be_deprecated = NULL
             , FieldDataManager *field_dataManager = NULL
             , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
             );
