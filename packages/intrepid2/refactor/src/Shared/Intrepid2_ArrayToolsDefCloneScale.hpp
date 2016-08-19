@@ -53,7 +53,8 @@ namespace Intrepid2 {
   
 
   namespace FunctorArrayTools {
-    template < typename outputFieldsViewType , typename inputFieldsViewType >
+    template < typename outputFieldsViewType, 
+               typename inputFieldsViewType >
     struct F_cloneFields{
       outputFieldsViewType _outputFields;
       inputFieldsViewType _inputFields;
@@ -67,12 +68,13 @@ namespace Intrepid2 {
       void operator()(const size_type iter) const {
         size_type cl, bf, pt;
         Util::unrollIndex( cl, bf, pt,
-                     _outputFields.dimension(0), 
-                     _outputFields.dimension(1),
-                     iter );
+                           _outputFields.dimension(0), 
+                           _outputFields.dimension(1),
+                           _outputFields.dimension(2),
+                           iter );
 
-        auto       output = Kokkos::subdynrankview( _outputFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-        const auto input  = Kokkos::subdynrankview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        auto       output = Kokkos::subview( _outputFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        const auto input  = Kokkos::subview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
 
         const size_type iend  = output.dimension(0);
         const size_type jend  = output.dimension(1);
@@ -135,13 +137,14 @@ namespace Intrepid2 {
       void operator()(const size_type iter) const {
         size_type cl, bf, pt;
         Util::unrollIndex( cl, bf, pt,
-                     _outputFields.dimension(0),
-                     _outputFields.dimension(1),
-                     iter );
+                           _outputFields.dimension(0),
+                           _outputFields.dimension(1),
+                           _outputFields.dimension(2),
+                           iter );
 
-        auto       output = Kokkos::subdynrankview( _outputFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-        const auto field  = Kokkos::subdynrankview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-        const auto factor = Kokkos::subdynrankview( _inputFactors, cl, bf );
+        auto       output = Kokkos::subview( _outputFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        const auto field  = Kokkos::subview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        const auto factor = Kokkos::subview( _inputFactors, cl, bf );
 
         const size_type iend  = _outputFields.dimension(3);
         const size_type jend  = _outputFields.dimension(4);
@@ -211,12 +214,13 @@ namespace Intrepid2 {
       void operator()(const size_type iter) const {
         size_type cl, bf, pt;
         Util::unrollIndex( cl, bf, pt,
-                     _inoutFields.dimension(0),
-                     _inoutFields.dimension(1),
-                     iter );
+                           _inoutFields.dimension(0),
+                           _inoutFields.dimension(1),
+                           _inoutFields.dimension(2),
+                           iter );
         
-        auto       inout  = Kokkos::subdynrankview( _inoutFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-        const auto factor = Kokkos::subdynrankview( _inputFactors, cl, bf );
+        auto       inout  = Kokkos::subview( _inoutFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
+        const auto factor = Kokkos::subview( _inputFactors, cl, bf );
 
         const size_type iend  = _inoutFields.dimension(3);
         const size_type jend  = _inoutFields.dimension(4);

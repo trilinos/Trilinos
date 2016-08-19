@@ -83,6 +83,7 @@ namespace Intrepid2 {
         size_type cell, pt;
         Util::unrollIndex( cell, pt,
                            _jacobian.dimension(0),
+                           _jacobian.dimension(1),
                            iter );
         /**/  auto jac  = Kokkos::subdynrankview( _jacobian, cell, pt, Kokkos::ALL(),Kokkos::ALL());
         const auto dofs = Kokkos::subdynrankview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());

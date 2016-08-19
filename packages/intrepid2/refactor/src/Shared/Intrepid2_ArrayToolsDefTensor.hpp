@@ -75,24 +75,26 @@ namespace Intrepid2 {
 
         if (_hasField) 
           Util::unrollIndex( cell, field, point, 
-                       _output.dimension(0),
-                       _output.dimension(1),
-                       iter );
+                             _output.dimension(0),
+                             _output.dimension(1),
+                             _output.dimension(2),
+                             iter );
         else           
           Util::unrollIndex( cell, point, 
-                       _output.dimension(0), 
-                       iter );
+                             _output.dimension(0), 
+                             _output.dimension(1), 
+                             iter );
 
-        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL()));
+        auto result = ( _hasField ? Kokkos::subview(_output, cell, field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subview(_output, cell,        point, Kokkos::ALL()));
 
-        auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL());
+        auto left   = Kokkos::subview(_leftInput, cell, point, Kokkos::ALL());
 
         auto right  = (rightRank == 2 + size_type(_hasField)) ?
-                      ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL())) :
-                      ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
+                      ( _hasField ? Kokkos::subview(_rightInput,       field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subview(_rightInput,              point, Kokkos::ALL())) :
+                      ( _hasField ? Kokkos::subview(_rightInput, cell, field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subview(_rightInput, cell,        point, Kokkos::ALL()));
 
         // branch prediction is possible
         if (_isCrossProd3D) {
@@ -396,24 +398,26 @@ namespace Intrepid2 {
 
         if (_hasField) 
           Util::unrollIndex( cell, field, point, 
-                       _output.dimension(0),
-                       _output.dimension(1),
-                       iter );
+                             _output.dimension(0),
+                             _output.dimension(1),
+                             _output.dimension(2),
+                             iter );
         else           
           Util::unrollIndex( cell, point, 
-                       _output.dimension(0), 
-                       iter );
+                             _output.dimension(0), 
+                             _output.dimension(1), 
+                             iter );
+        
+        auto result = ( _hasField ? Kokkos::subview(_output, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
+                        /**/        Kokkos::subview(_output, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
 
-        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
-
-        auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL());
+        auto left   = Kokkos::subview(_leftInput, cell, point, Kokkos::ALL());
 
         auto right  = (rightRank == 2 + size_type(_hasField)) ?
-                      ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL())) :
-                      ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
+                      ( _hasField ? Kokkos::subview(_rightInput,       field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subview(_rightInput,              point, Kokkos::ALL())) :
+                      ( _hasField ? Kokkos::subview(_rightInput, cell, field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subview(_rightInput, cell,        point, Kokkos::ALL()));
 
         const size_type iend = result.dimension(0);
         const size_type jend = result.dimension(1);
@@ -685,27 +689,29 @@ namespace Intrepid2 {
 
         if (_hasField) 
           Util::unrollIndex( cell, field, point, 
-                       _output.dimension(0),
-                       _output.dimension(1),
-                       iter );
+                             _output.dimension(0),
+                             _output.dimension(1),
+                             _output.dimension(2),
+                             iter );
         else           
           Util::unrollIndex( cell, point, 
-                       _output.dimension(0), 
-                       iter );
-
+                             _output.dimension(0), 
+                             _output.dimension(1), 
+                             iter );
         
-        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL()));
+        
+        auto result = ( _hasField ? Kokkos::subview(_output, cell, field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subview(_output, cell,        point, Kokkos::ALL()));
 
         auto lpoint = (_leftInput.dimension(1) == 1 ? size_type(0) : point);
-        auto left   = ( leftRank == 4 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL(), Kokkos::ALL()) :
-                        leftRank == 3 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL()) :
-                        /**/            Kokkos::subdynrankview(_leftInput, cell, lpoint));
+        auto left   = ( leftRank == 4 ? Kokkos::subview(_leftInput, cell, lpoint, Kokkos::ALL(), Kokkos::ALL()) :
+                        leftRank == 3 ? Kokkos::subview(_leftInput, cell, lpoint, Kokkos::ALL()) :
+                        /**/            Kokkos::subview(_leftInput, cell, lpoint));
         
-        auto right  = ( rightRank == static_cast<size_type>(2 + _hasField) ? ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
-                                                         /**/        Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL())) :
-                        /**/                           ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) : 
-                                                         /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL())) );
+        auto right  = ( rightRank == static_cast<size_type>(2 + _hasField) ? ( _hasField ? Kokkos::subview(_rightInput,       field, point, Kokkos::ALL()) :
+                                                         /**/        Kokkos::subview(_rightInput,              point, Kokkos::ALL())) :
+                        /**/                           ( _hasField ? Kokkos::subview(_rightInput, cell, field, point, Kokkos::ALL()) : 
+                                                         /**/        Kokkos::subview(_rightInput, cell,        point, Kokkos::ALL())) );
         
         const size_type iend = result.dimension(0);
         const size_type jend = right.dimension(0);
@@ -1101,26 +1107,28 @@ namespace Intrepid2 {
           Util::unrollIndex( cell, field, point, 
                              _output.dimension(0),
                              _output.dimension(1),
+                             _output.dimension(2),
                              iter );
         else           
           Util::unrollIndex( cell, point, 
                              _output.dimension(0), 
+                             _output.dimension(1), 
                              iter );
         
-        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
+        auto result = ( _hasField ? Kokkos::subview(_output, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
+                        /**/        Kokkos::subview(_output, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
         
         const auto lpoint = (_leftInput.dimension(1) == 1 ? 0 : point);
-        auto left   = ( leftRank == 4 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL(), Kokkos::ALL()) :
-                        leftRank == 3 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL()) :
-                        /**/            Kokkos::subdynrankview(_leftInput, cell, lpoint) );
+        auto left   = ( leftRank == 4 ? Kokkos::subview(_leftInput, cell, lpoint, Kokkos::ALL(), Kokkos::ALL()) :
+                        leftRank == 3 ? Kokkos::subview(_leftInput, cell, lpoint, Kokkos::ALL()) :
+                        /**/            Kokkos::subview(_leftInput, cell, lpoint) );
         
         //temporary 
         const bool hasCell = (_hasField ? rightRank == 5 : rightRank == 4); 
-        auto right  = ( _hasField ? ( hasCell ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
-                                      /**/      Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL(), Kokkos::ALL())):
-                        /**/        ( hasCell ? Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL(), Kokkos::ALL()) :
-                                      /**/      Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL(), Kokkos::ALL())));
+        auto right  = ( _hasField ? ( hasCell ? Kokkos::subview(_rightInput, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
+                                      /**/      Kokkos::subview(_rightInput,       field, point, Kokkos::ALL(), Kokkos::ALL())):
+                        /**/        ( hasCell ? Kokkos::subview(_rightInput, cell,        point, Kokkos::ALL(), Kokkos::ALL()) :
+                                      /**/      Kokkos::subview(_rightInput,              point, Kokkos::ALL(), Kokkos::ALL())));
         
         const size_type iend = result.dimension(0);
         const size_type jend = result.dimension(1);

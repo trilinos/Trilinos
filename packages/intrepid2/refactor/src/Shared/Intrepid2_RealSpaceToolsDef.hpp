@@ -151,7 +151,7 @@ namespace Intrepid2 {
 #endif
     const auto dim = inMat.dimension(0);
     
-    inMatValueType r_val;
+    inMatValueType r_val = 0.0;
     switch (dim) {
     case 3:
       r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
@@ -236,11 +236,13 @@ namespace Intrepid2 {
           Util::unrollIndex( k0, k1, k2,
                              _output.dimension(0),
                              _output.dimension(1),
+                             _output.dimension(2),
                              iter );
           break;
         case 2:
           Util::unrollIndex( k0, k1, 
                              _output.dimension(0),
+                             _output.dimension(1),
                              iter );
           break;
         case 1:
@@ -248,10 +250,10 @@ namespace Intrepid2 {
           break;
         }
         
-        auto out = (rankDiff == 3 ? Kokkos::subdynrankview(_output, k0, k1, k2, Kokkos::ALL(), Kokkos::ALL()) :
-                    rankDiff == 2 ? Kokkos::subdynrankview(_output, k0, k1,     Kokkos::ALL(), Kokkos::ALL()) :
-                    rankDiff == 1 ? Kokkos::subdynrankview(_output, k0,         Kokkos::ALL(), Kokkos::ALL()) :
-                    /**/            Kokkos::subdynrankview(_output,             Kokkos::ALL(), Kokkos::ALL()));
+        auto out = (rankDiff == 3 ? Kokkos::subview(_output, k0, k1, k2, Kokkos::ALL(), Kokkos::ALL()) :
+                    rankDiff == 2 ? Kokkos::subview(_output, k0, k1,     Kokkos::ALL(), Kokkos::ALL()) :
+                    rankDiff == 1 ? Kokkos::subview(_output, k0,         Kokkos::ALL(), Kokkos::ALL()) :
+                    /**/            Kokkos::subview(_output,             Kokkos::ALL(), Kokkos::ALL()));
         const auto iend = _input.dimension(0);
         const auto jend = _input.dimension(1);
         for (size_type i=0;i<iend;++i)
@@ -390,10 +392,11 @@ namespace Intrepid2 {
         ordinal_type i, j;
         Util::unrollIndex( i, j,
                            _normArray.dimension(0),
+                           _normArray.dimension(1),
                            iter );
 
-        auto vec = ( _inVecs.rank() == 2 ? Kokkos::subdynrankview(_inVecs, i,    Kokkos::ALL()) :
-                     /**/                  Kokkos::subdynrankview(_inVecs, i, j, Kokkos::ALL()) );
+        auto vec = ( _inVecs.rank() == 2 ? Kokkos::subview(_inVecs, i,    Kokkos::ALL()) :
+                     /**/                  Kokkos::subview(_inVecs, i, j, Kokkos::ALL()) );
 
         _normArray(i, j) = RealSpaceTools<>::Serial::vectorNorm(vec, _normType);
       }
@@ -449,19 +452,22 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         // the rank of normArray is either 1 or 2
-        size_type i, j;
-        Util::unrollIndex( i, j,
-                           _transposeMats.dimension(0),
-                           iter );
-
         const auto r = _transposeMats.rank();
-        auto dst = ( r == 2 ? Kokkos::subdynrankview(_transposeMats,       Kokkos::ALL(), Kokkos::ALL()) :
-                     r == 3 ? Kokkos::subdynrankview(_transposeMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
-                     /**/     Kokkos::subdynrankview(_transposeMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
+        size_type i = iter, j = 0;
 
-        auto src = ( r == 2 ? Kokkos::subdynrankview(_inMats,       Kokkos::ALL(), Kokkos::ALL()) :
-                     r == 3 ? Kokkos::subdynrankview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
-                     /**/     Kokkos::subdynrankview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
+        if ( r > 3 )
+          Util::unrollIndex( i, j,
+                             _transposeMats.dimension(0),
+                             _transposeMats.dimension(1),
+                             iter );
+
+        auto dst = ( r == 2 ? Kokkos::subview(_transposeMats,       Kokkos::ALL(), Kokkos::ALL()) :
+                     r == 3 ? Kokkos::subview(_transposeMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
+                     /**/     Kokkos::subview(_transposeMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
+
+        auto src = ( r == 2 ? Kokkos::subview(_inMats,       Kokkos::ALL(), Kokkos::ALL()) :
+                     r == 3 ? Kokkos::subview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
+                     /**/     Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
 
         for (size_t i=0;i<src.dimension(0);++i) {
           dst(i, i) = src(i, i);
@@ -529,19 +535,22 @@ namespace Intrepid2 {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type iter) const {
-        ordinal_type i, j;
-        Util::unrollIndex( i, j,
-                           _inMats.dimension(0),
-                           iter );
-
         const auto r = _inMats.rank();
-        const auto mat = ( r == 2 ? Kokkos::subdynrankview(_inMats,       Kokkos::ALL(), Kokkos::ALL()) :
-                           r == 3 ? Kokkos::subdynrankview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
-                           /**/     Kokkos::subdynrankview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
 
-        auto inv = ( r == 2 ? Kokkos::subdynrankview(_inverseMats,       Kokkos::ALL(), Kokkos::ALL()) :
-                     r == 3 ? Kokkos::subdynrankview(_inverseMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
-                     /**/     Kokkos::subdynrankview(_inverseMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
+        ordinal_type i = iter, j = 0;
+        if ( r > 3 ) 
+          Util::unrollIndex( i, j,
+                             _inverseMats.dimension(0),
+                             _inverseMats.dimension(1),
+                             iter );
+
+        const auto mat = ( r == 2 ? Kokkos::subview(_inMats,       Kokkos::ALL(), Kokkos::ALL()) :
+                           r == 3 ? Kokkos::subview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
+                           /**/     Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
+
+        auto inv = ( r == 2 ? Kokkos::subview(_inverseMats,       Kokkos::ALL(), Kokkos::ALL()) :
+                     r == 3 ? Kokkos::subview(_inverseMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
+                     /**/     Kokkos::subview(_inverseMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
 
         // compute determinant
         const value_type val = RealSpaceTools<>::Serial::det(mat);
@@ -662,12 +671,13 @@ namespace Intrepid2 {
       void operator()(const ordinal_type iter) const {
         ordinal_type i, j;
         Util::unrollIndex( i, j,
-                           _inMats.dimension(0),
+                           _detArray.dimension(0),
+                           _detArray.dimension(1),
                            iter );
 
         const auto r = _inMats.rank();
-        auto mat = ( r == 3 ? Kokkos::subdynrankview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
-                     /**/     Kokkos::subdynrankview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
+        auto mat = ( r == 3 ? Kokkos::subview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
+                     /**/     Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
 
         _detArray(i, j) = RealSpaceTools<>::Serial::det(mat);
       }
@@ -991,13 +1001,14 @@ namespace Intrepid2 {
         ordinal_type i, j;
         Util::unrollIndex( i, j,
                            _dotArray.dimension(0),
+                           _dotArray.dimension(1),
                            iter );
 
         const auto r = _inVecs1.rank();
-        auto vec1 = ( r == 2 ? Kokkos::subdynrankview(_inVecs1, i,    Kokkos::ALL()) :
-                      /**/     Kokkos::subdynrankview(_inVecs1, i, j, Kokkos::ALL()) );
-        auto vec2 = ( r == 2 ? Kokkos::subdynrankview(_inVecs2, i,    Kokkos::ALL()) :
-                      /**/     Kokkos::subdynrankview(_inVecs2, i, j, Kokkos::ALL()) );
+        auto vec1 = ( r == 2 ? Kokkos::subview(_inVecs1, i,    Kokkos::ALL()) :
+                      /**/     Kokkos::subview(_inVecs1, i, j, Kokkos::ALL()) );
+        auto vec2 = ( r == 2 ? Kokkos::subview(_inVecs2, i,    Kokkos::ALL()) :
+                      /**/     Kokkos::subview(_inVecs2, i, j, Kokkos::ALL()) );
 
         _dotArray(i,j) = RealSpaceTools<>::Serial::dot(vec1, vec2);
       }
@@ -1063,25 +1074,26 @@ namespace Intrepid2 {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type iter) const {
-        size_t i, j;
-        Util::unrollIndex( i, j,
-                           _matVecs.dimension(0),
-                           iter );
+        const ordinal_type rm = _inMats.rank(), rv = _inVecs.rank(), rr = _matVecs.rank();
+        size_t i = iter, j = 0;
 
-        const auto rm = _inMats.rank();
-        auto mat    = ( rm == 2 ? Kokkos::subdynrankview(_inMats,        Kokkos::ALL(), Kokkos::ALL()) :
-                        rm == 3 ? Kokkos::subdynrankview(_inMats,  i,    Kokkos::ALL(), Kokkos::ALL()) :
-                        /**/      Kokkos::subdynrankview(_inMats,  i, j, Kokkos::ALL(), Kokkos::ALL()) );
+        if ( rr > 2 )
+          Util::unrollIndex( i, j,
+                             _matVecs.dimension(0),
+                             _matVecs.dimension(1),
+                             iter );
+        
+        auto mat    = ( rm == 2 ? Kokkos::subview(_inMats,        Kokkos::ALL(), Kokkos::ALL()) :
+                        rm == 3 ? Kokkos::subview(_inMats,  i,    Kokkos::ALL(), Kokkos::ALL()) :
+                        /**/      Kokkos::subview(_inMats,  i, j, Kokkos::ALL(), Kokkos::ALL()) );
 
-        const auto rv = _inVecs.rank();
-        auto vec    = ( rv == 1 ? Kokkos::subdynrankview(_inVecs,        Kokkos::ALL()) :
-                        rv == 2 ? Kokkos::subdynrankview(_inVecs,  i,    Kokkos::ALL()) :
-                        /**/      Kokkos::subdynrankview(_inVecs,  i, j, Kokkos::ALL()) );
+        auto vec    = ( rv == 1 ? Kokkos::subview(_inVecs,        Kokkos::ALL()) :
+                        rv == 2 ? Kokkos::subview(_inVecs,  i,    Kokkos::ALL()) :
+                        /**/      Kokkos::subview(_inVecs,  i, j, Kokkos::ALL()) );
 
-        const auto rr = _matVecs.rank();
-        auto result = ( rr == 1 ? Kokkos::subdynrankview(_matVecs,       Kokkos::ALL()) :
-                        rr == 2 ? Kokkos::subdynrankview(_matVecs, i,    Kokkos::ALL()) :
-                        /**/      Kokkos::subdynrankview(_matVecs, i, j, Kokkos::ALL()) );
+        auto result = ( rr == 1 ? Kokkos::subview(_matVecs,       Kokkos::ALL()) :
+                        rr == 2 ? Kokkos::subview(_matVecs, i,    Kokkos::ALL()) :
+                        /**/      Kokkos::subview(_matVecs, i, j, Kokkos::ALL()) );
 
         const auto iend = result.dimension(0);
         const auto jend = vec.dimension(0);
@@ -1195,21 +1207,22 @@ namespace Intrepid2 {
         size_type i, j;
         Util::unrollIndex( i, j,
                            _inLeft.dimension(0),
+                           _inLeft.dimension(1),
                            iter );
 
         const auto r = _inLeft.rank();
 
-        auto left   = ( r == 1 ? Kokkos::subdynrankview(_inLeft,         Kokkos::ALL()) :
-                        r == 2 ? Kokkos::subdynrankview(_inLeft,   i,    Kokkos::ALL()) :
-                        /**/     Kokkos::subdynrankview(_inLeft,   i, j, Kokkos::ALL()) );
+        auto left   = ( r == 1 ? Kokkos::subview(_inLeft,         Kokkos::ALL()) :
+                        r == 2 ? Kokkos::subview(_inLeft,   i,    Kokkos::ALL()) :
+                        /**/     Kokkos::subview(_inLeft,   i, j, Kokkos::ALL()) );
 
-        auto right  = ( r == 1 ? Kokkos::subdynrankview(_inRight,        Kokkos::ALL()) :
-                        r == 2 ? Kokkos::subdynrankview(_inRight,  i,    Kokkos::ALL()) :
-                        /**/     Kokkos::subdynrankview(_inRight,  i, j, Kokkos::ALL()) );
+        auto right  = ( r == 1 ? Kokkos::subview(_inRight,        Kokkos::ALL()) :
+                        r == 2 ? Kokkos::subview(_inRight,  i,    Kokkos::ALL()) :
+                        /**/     Kokkos::subview(_inRight,  i, j, Kokkos::ALL()) );
 
-        auto result = ( r == 1 ? Kokkos::subdynrankview(_vecProd,        Kokkos::ALL()) :
-                        r == 2 ? Kokkos::subdynrankview(_vecProd,  i,    Kokkos::ALL()) :
-                        /**/     Kokkos::subdynrankview(_vecProd,  i, j, Kokkos::ALL()) );
+        auto result = ( r == 1 ? Kokkos::subview(_vecProd,        Kokkos::ALL()) :
+                        r == 2 ? Kokkos::subview(_vecProd,  i,    Kokkos::ALL()) :
+                        /**/     Kokkos::subview(_vecProd,  i, j, Kokkos::ALL()) );
 
         // branch prediction is possible
         if (_is_vecprod_3d) {
