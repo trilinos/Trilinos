@@ -71,13 +71,13 @@ int main (int argc, char *argv[]) {
        check,
        verbose);
 
-    // std::cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose, Variant::Two (internal)" << std::endl;
-    // r_val = exampleDenseGemmByBlocks
-    //   <Trans::NoTranspose,Trans::NoTranspose,Variant::Two,exec_space>
-    //   (mmin, mmax, minc, k, mb,
-    //    max_concurrency, max_task_dependence, team_size, mkl_nthreads,
-    //    check,
-    //    verbose);
+    std::cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose, Variant::Two (internal)" << std::endl;
+    r_val = exampleDenseGemmByBlocks
+      <Trans::NoTranspose,Trans::NoTranspose,Variant::Two,exec_space>
+      (mmin, mmax, minc, k, mb,
+       max_concurrency, memory_pool_grain_size, mkl_nthreads,
+       check,
+       verbose);
 
     // std::cout << "DenseGemmByBlocks:: ConjTranspose, NoTranspose, Variant::One (external)" << std::endl;
     // r_val = exampleDenseGemmByBlocks
