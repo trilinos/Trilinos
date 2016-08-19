@@ -103,14 +103,6 @@ namespace {
   const std::string base_stk_part_name = "_base_stk_part_name";
   const std::string block_nodes_suffix = "_nodes";
 
-  stk::mesh::EntityId get_side_entity_id(int64_t elem_id, int side_ordinal)
-  {
-    // NOTE: This function uses a 1-based side ordinal
-    int64_t ten = 10;
-    stk::mesh::EntityId side_id = elem_id * ten + side_ordinal;
-    return side_id;
-  }
-
   stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                         const stk::mesh::MetaData &meta)
   {

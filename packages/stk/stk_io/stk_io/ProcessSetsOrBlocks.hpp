@@ -32,8 +32,6 @@
 
 namespace stk { namespace io {
 
-stk::mesh::EntityId get_side_entity_id(int64_t elem_id, int side_ordinal);
-
 void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
 
 template <typename INT>
