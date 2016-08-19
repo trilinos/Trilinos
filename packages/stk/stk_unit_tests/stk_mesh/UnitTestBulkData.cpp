@@ -101,7 +101,6 @@ using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::BaseEntityRank;
 using stk::mesh::PairIterRelation;
 using stk::mesh::EntityProc;
 using stk::mesh::Entity;
@@ -145,7 +144,7 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
 
     for(stk::mesh::EntityCommListInfoVector::const_iterator i = mesh.my_internal_comm_list().begin(); i != mesh.my_internal_comm_list().end(); ++i)
     {
-        if(mesh.in_shared(i->key) && i->key.rank() == BaseEntityRank)
+        if(mesh.in_shared(i->key) && i->key.rank() == stk::topology::NODE_RANK)
         {
             node_key = i->key;
             break;
@@ -226,7 +225,7 @@ void donate_all_shared_nodes(stk::unit_test_util::BulkDataTester & mesh)
     std::vector<EntityProc> change;
 
     for(stk::mesh::EntityCommListInfoVector::const_iterator i = entity_comm.begin();
-            i != entity_comm.end() && i->key.rank() == BaseEntityRank; ++i)
+            i != entity_comm.end() && i->key.rank() == stk::topology::NODE_RANK; ++i)
             {
         Entity const node = i->entity;
         std::vector<int> shared_procs;
@@ -1098,7 +1097,7 @@ TEST(BulkData, testModifyPropagation)
 
     // Make a ring_mesh and add an extra part
     RingFixture ring_mesh(pm, nPerProc, false /* don't use element parts */);
-    stk::mesh::Part& special_part = ring_mesh.m_meta_data.declare_part("special_node_part", stk::mesh::BaseEntityRank);
+    stk::mesh::Part& special_part = ring_mesh.m_meta_data.declare_part("special_node_part", stk::topology::NODE_RANK);
     ring_mesh.m_meta_data.commit();
     BulkData& bulk = ring_mesh.m_bulk_data;
 
@@ -1117,7 +1116,7 @@ TEST(BulkData, testModifyPropagation)
     // get one of the nodes related to this element
     ASSERT_TRUE(bulk.num_nodes(element) > 0);
     stk::mesh::Entity node = *bulk.begin_nodes(element);
-    ASSERT_EQ( bulk.entity_rank(node), static_cast<unsigned>(stk::mesh::BaseEntityRank));
+    ASSERT_EQ( bulk.entity_rank(node), stk::topology::NODE_RANK);
 
     // make a modification to the node by changing its parts
     ring_mesh.m_bulk_data.modification_begin();
