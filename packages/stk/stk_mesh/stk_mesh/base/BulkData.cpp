@@ -829,32 +829,19 @@ Entity BulkData::declare_solo_side( EntityId ent_id, const PartVector & parts )
     return internal_declare_entity(mesh_meta_data().side_rank(), ent_id, parts);
 }
 
-Entity BulkData::declare_element_side(Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
+stk::mesh::EntityId BulkData::select_side_id(Entity elem, unsigned sideOrdinal)
 {
-    stk::mesh::Entity sideEntity = stk::mesh::impl::get_side_for_element(*this, elem, side_ordinal);
-    if(is_valid(sideEntity))
+    stk::mesh::EntityId globalSideId = impl::side_id_formula(identifier(elem), sideOrdinal);
+    if(has_face_adjacent_element_graph())
     {
-        change_entity_parts(sideEntity, add_parts, {});
+        stk::mesh::ElemElemGraph &graph = get_face_adjacent_element_graph();
+        stk::mesh::SideIdChooser sideIdChooser = graph.get_side_id_chooser();
+        globalSideId = sideIdChooser.get_chosen_side_id(elem, sideOrdinal);
     }
-    else
-    {
-        stk::mesh::EntityId globalSideId = impl::side_id_formula(identifier(elem), side_ordinal);
-        if(has_face_adjacent_element_graph())
-        {
-            stk::mesh::ElemElemGraph &graph = get_face_adjacent_element_graph();
-            stk::mesh::SideIdChooser sideIdChooser = graph.get_side_id_chooser();
-            globalSideId = sideIdChooser.get_chosen_side_id(elem, side_ordinal);
-        }
-        sideEntity = declare_element_side(globalSideId, elem, side_ordinal, add_parts);
-    }
-    return sideEntity;
+    return globalSideId;
 }
 
-void verify_declare_element_side(
-        const BulkData & mesh,
-        const Entity elem,
-        const unsigned local_side_id
-        )
+void check_declare_element_side_inputs(const BulkData & mesh, const Entity elem, const unsigned localSideId)
 {
     stk::topology elem_top = mesh.bucket(elem).topology();
 
@@ -863,55 +850,74 @@ void verify_declare_element_side(
 
     stk::topology invalid = stk::topology::INVALID_TOPOLOGY;
     stk::topology side_top =
-            ((elem_top != stk::topology::INVALID_TOPOLOGY) && (local_side_id < elem_top.num_sides()) )
-            ? elem_top.side_topology(local_side_id) : invalid;
+            ((elem_top != stk::topology::INVALID_TOPOLOGY) && (localSideId < elem_top.num_sides()) )
+            ? elem_top.side_topology(localSideId) : invalid;
 
-    ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && local_side_id >= elem_top.num_sides(),
-            "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
-            "local_side_id exceeds " << elem_top.name() << ".num_sides() = " << elem_top.num_sides());
+    ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && localSideId >= elem_top.num_sides(),
+            "For elem " << mesh.identifier(elem) << ", localSideId " << localSideId << ", " <<
+            "localSideId exceeds " << elem_top.name() << ".num_sides() = " << elem_top.num_sides());
 
     ThrowErrorMsgIf( side_top == stk::topology::INVALID_TOPOLOGY,
-            "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
+            "For elem " << mesh.identifier(elem) << ", localSideId " << localSideId << ", " <<
             "No element topology found");
 }
 
-Entity BulkData::declare_element_side(
-        const stk::mesh::EntityId global_side_id,
-        Entity elem,
-        const unsigned local_side_id,
-        const stk::mesh::PartVector& parts)
+stk::mesh::PartVector add_root_topology_part(const stk::mesh::PartVector &parts, stk::mesh::Part &rootTopoPart)
 {
-    verify_declare_element_side(*this, elem, local_side_id);
+    stk::mesh::PartVector initialParts(parts.size() + 1);
+    initialParts = parts;
+    initialParts.push_back(&rootTopoPart);
+    return initialParts;
+}
 
-    stk::topology elem_top = this->bucket(elem).topology();
-    stk::topology side_top = elem_top.side_topology(local_side_id);
+void use_graph_to_connect_side(stk::mesh::ElemElemGraph &graph, Entity side, Entity elem, unsigned localSideId)
+{
+    stk::mesh::SideNodeConnector sideNodeConnector = graph.get_side_node_connector();
+    sideNodeConnector.connect_side_to_nodes(side, elem, localSideId);
 
-    Entity side = this->get_entity(side_top.rank(), global_side_id);
-    if(!this->is_valid(side))
+    stk::mesh::SideConnector sideConnector = graph.get_side_connector();
+    sideConnector.connect_side_to_all_elements(side, elem, localSideId);
+}
+
+Entity BulkData::create_and_connect_side(const stk::mesh::EntityId globalSideId,
+                                         Entity elem,
+                                         const unsigned localSideId,
+                                         const stk::mesh::PartVector& parts)
+{
+    stk::topology sideTop = bucket(elem).topology().side_topology(localSideId);
+    Entity side = internal_declare_entity(sideTop.rank(), globalSideId, {});
+    if(has_face_adjacent_element_graph())
     {
-        PartVector empty_parts;
-        side = this->internal_declare_entity(side_top.rank(), global_side_id, empty_parts);
-
-        if (this->has_face_adjacent_element_graph())
-        {
-            stk::mesh::PartVector initialParts;
-            initialParts.reserve(parts.size() + 1);
-            initialParts = parts;
-            initialParts.push_back(&mesh_meta_data().get_topology_root_part(side_top));
-            change_entity_parts(side, initialParts);
-
-            stk::mesh::ElemElemGraph &graph = this->get_face_adjacent_element_graph();
-            stk::mesh::SideNodeConnector sideNodeConnector = graph.get_side_node_connector();
-            sideNodeConnector.connect_side_to_nodes(side, elem, local_side_id);
-
-            stk::mesh::SideConnector sideConnector = graph.get_side_connector();
-            sideConnector.connect_side_to_all_elements(side, elem, local_side_id);
-        }
-        else
-        {
-            impl::connect_element_to_entity(*this, elem, side, local_side_id, parts, side_top);
-        }
+        change_entity_parts(side, add_root_topology_part(parts, mesh_meta_data().get_topology_root_part(sideTop)));
+        use_graph_to_connect_side(get_face_adjacent_element_graph(), side, elem, localSideId);
     }
+    else
+    {
+        impl::connect_element_to_entity(*this, elem, side, localSideId, parts, sideTop);
+    }
+    return side;
+}
+
+Entity BulkData::declare_element_side(Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
+{
+    stk::mesh::Entity sideEntity = stk::mesh::impl::get_side_for_element(*this, elem, side_ordinal);
+    if(is_valid(sideEntity))
+        change_entity_parts(sideEntity, add_parts, {});
+    else
+        sideEntity = declare_element_side(select_side_id(elem, side_ordinal), elem, side_ordinal, add_parts);
+    return sideEntity;
+}
+
+Entity BulkData::declare_element_side(const stk::mesh::EntityId globalSideId,
+                                      Entity elem,
+                                      const unsigned localSideId,
+                                      const stk::mesh::PartVector& parts)
+{
+    check_declare_element_side_inputs(*this, elem, localSideId);
+
+    Entity side = get_entity(mesh_meta_data().side_rank(), globalSideId);
+    if(!is_valid(side))
+        side = create_and_connect_side(globalSideId, elem, localSideId, parts);
     return side;
 }
 

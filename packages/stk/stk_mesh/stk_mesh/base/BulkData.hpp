@@ -1205,7 +1205,6 @@ private:
 
   stk::mesh::EntityVector get_nodes_to_deactivate(const stk::mesh::EntityVector & deactivatedElements, const stk::mesh::Part & activePart) const;
 
-
   inline bool internal_add_node_sharing_called() const;
 
   void internal_sync_comm_list_owners();
@@ -1401,6 +1400,13 @@ private:
   void reset_add_node_sharing() { m_add_node_sharing_called = false; }
 
   void destroy_dependent_ghosts( Entity entity, EntityProcVec& entitiesToRemoveFromSharing );
+
+  Entity create_and_connect_side(const stk::mesh::EntityId globalSideId,
+                                 Entity elem,
+                                 const unsigned localSideId,
+                                 const stk::mesh::PartVector& parts);
+
+  stk::mesh::EntityId select_side_id(Entity elem, unsigned sideOrdinal);
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
