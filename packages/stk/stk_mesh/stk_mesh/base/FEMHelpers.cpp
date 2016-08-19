@@ -95,11 +95,7 @@ Entity declare_element(BulkData & mesh,
 
     PartVector empty;
 
-    const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
-
-    Entity elem = mesh.declare_entity(entity_rank, elem_id, parts);
-
-    const EntityRank node_rank = stk::topology::NODE_RANK;
+    Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, elem_id, parts);
 
     Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
     OrdinalVector ordinal_scratch;
@@ -110,10 +106,10 @@ Entity declare_element(BulkData & mesh,
     for(unsigned i = 0; i < top.num_nodes(); ++i)
     {
         //declare node if it doesn't already exist
-        Entity node = mesh.get_entity(node_rank, node_ids[i]);
+        Entity node = mesh.get_entity(stk::topology::NODE_RANK, node_ids[i]);
         if(!mesh.is_valid(node))
         {
-            node = mesh.declare_entity(node_rank, node_ids[i], empty);
+            node = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i], empty);
         }
 
         mesh.declare_relation(elem, node, i, perm, ordinal_scratch, part_scratch);
@@ -160,6 +156,11 @@ Entity declare_element_edge(
     stk::topology edge_top = elem_top.edge_topology();
 
     PartVector empty_parts;
+    if(mesh.mesh_meta_data().spatial_dimension() == 2)
+    {
+        return mesh.declare_element_side(elem, local_edge_id, parts);
+    }
+
     Entity edge = mesh.get_entity(edge_top.rank(), global_edge_id);
     if(!mesh.is_valid(edge))
     {
