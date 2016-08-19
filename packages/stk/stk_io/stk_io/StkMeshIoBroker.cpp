@@ -456,7 +456,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
       sides.reserve(side_count);
 
       for(size_t is = 0; is < side_count; ++is)
-          sides.push_back(stk::mesh::get_side_entity_for_elem_id_side_pair(bulk, elemSidePairs[is*2], elemSidePairs[is*2+1]-1));
+          sides.push_back(stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk, elemSidePairs[is*2], elemSidePairs[is*2+1]-1, side_rank));
 
       const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*sb_part);
       if (df_field != NULL) {

@@ -396,13 +396,13 @@ int get_entity_subcell_id(const BulkData& mesh,
     return INVALID_SIDE;
 }
 
-stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal)
+stk::mesh::Entity get_side_entity_for_elem_side_pair_of_rank(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal, stk::mesh::EntityRank sideRank)
 {
     if(bulk.is_valid(elem))
     {
-        unsigned numSides = bulk.num_sides(elem);
-        const stk::mesh::Entity* elemSides = bulk.begin(elem, bulk.mesh_meta_data().side_rank());
-        const stk::mesh::ConnectivityOrdinal* sideOrds = bulk.begin_ordinals(elem, bulk.mesh_meta_data().side_rank());
+        unsigned numSides = bulk.num_connectivity(elem, sideRank);
+        const stk::mesh::Entity* elemSides = bulk.begin(elem, sideRank);
+        const stk::mesh::ConnectivityOrdinal* sideOrds = bulk.begin_ordinals(elem, sideRank);
         for(unsigned i = 0; i < numSides; i++)
             if(sideOrds[i] == (sideOrdinal))
                 return elemSides[i];
@@ -410,10 +410,15 @@ stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &
     return stk::mesh::Entity();
 }
 
-stk::mesh::Entity get_side_entity_for_elem_id_side_pair(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal)
+stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal)
+{
+    return get_side_entity_for_elem_side_pair_of_rank(bulk, elem, sideOrdinal, bulk.mesh_meta_data().side_rank());
+}
+
+stk::mesh::Entity get_side_entity_for_elem_id_side_pair_of_rank(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal, stk::mesh::EntityRank sideRank)
 {
     stk::mesh::Entity const elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
-    return get_side_entity_for_elem_side_pair(bulk, elem, sideOrdinal);
+    return get_side_entity_for_elem_side_pair_of_rank(bulk, elem, sideOrdinal, sideRank);
 }
 
 }

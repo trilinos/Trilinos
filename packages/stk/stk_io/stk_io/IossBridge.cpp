@@ -955,7 +955,7 @@ namespace stk {
 	io_entity->get_field_data("element_side", elem_side);
 	size_t side_count = elem_side.size() / 2;
 	for(size_t is=0; is<side_count; ++is)
-	  entities.push_back(stk::mesh::get_side_entity_for_elem_id_side_pair(bulk, elem_side[is*2], elem_side[is*2+1]-1));
+	  entities.push_back(stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk, elem_side[is*2], elem_side[is*2+1]-1, part_type));
       }
       else {
 	std::vector<INT> ids ;
