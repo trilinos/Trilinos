@@ -63,6 +63,35 @@ namespace Tacho {
             for (auto i=0;i<iend;++i)
               B.Value(i,j) += alpha*A.Value(i,j);
         }
+
+        template<typename DenseMatrixHierType,
+                 typename DenseMatrixFlatType,
+                 typename OrdinalType>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        getHierMatrix(DenseMatrixHierType &hier,
+                      const DenseMatrixFlatType &flat,
+                      const OrdinalType mb,
+                      const OrdinalType nb) {
+          const OrdinalType hm = hier.NumRows(), hn = hier.NumCols();
+          const OrdinalType fm = flat.NumRows(), fn = flat.NumCols();
+          
+          typedef typename DenseMatrixHierType::ordinal_type ordinal_type;
+          
+          for (auto j=0;j<hn;++j) {
+            const OrdinalType offn = nb*j;
+            const OrdinalType ntmp = offn + nb; 
+            const OrdinalType n    = ntmp < fn ? nb : (fn - offn); 
+            
+            for (auto i=0;i<hm;++i) {
+              const OrdinalType offm = mb*i;
+              const OrdinalType mtmp = offm + mb; 
+              const OrdinalType m    = mtmp < fm ? mb : (fm - offm); 
+              hier.Value(i, j).setView(flat, offm, m,
+                                       /**/  offn, n);
+            }
+          }
+        }
       };
 
     };

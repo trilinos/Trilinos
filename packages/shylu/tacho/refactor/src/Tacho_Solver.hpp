@@ -418,9 +418,10 @@ namespace Tacho {
                                  block.Hier().setExternalMatrix(hm, hn,
                                                                 -1, -1,
                                                                 Kokkos::subview(_blks, range_type(offs(k), offs(k+1))));
-                                 DenseMatrixTools::getHierMatrix(block.Hier(),
-                                                                 block.Flat(),
-                                                                 _mb, _mb);
+                                 Impl::DenseMatrixTools::Serial
+                                   ::getHierMatrix(block.Hier(),
+                                                   block.Flat(),
+                                                   _mb, _mb);
                                } );
         }
       }

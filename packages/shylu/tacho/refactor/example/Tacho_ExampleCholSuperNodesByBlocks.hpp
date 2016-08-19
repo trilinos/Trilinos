@@ -448,9 +448,9 @@ namespace Tacho {
                                block.Hier().setExternalMatrix(hm, hn,
                                                               -1, -1,
                                                               Kokkos::subview(blks, range_type(offs(k), offs(k+1))));
-                               DenseMatrixTools::getHierMatrix(block.Hier(),
-                                                               block.Flat(),
-                                                               mb, mb);
+                               Impl::DenseMatrixTools::Serial::getHierMatrix(block.Hier(),
+                                                                             block.Flat(),
+                                                                             mb, mb);
                              } );
       }
 
@@ -523,7 +523,7 @@ namespace Tacho {
     }
     const double t_chol = timer.seconds();    
 
-    {
+    if (verbose) {
       std::ofstream out("tacho_f.mtx");
       out.precision(16);
       out << "%%MatrixMarket matrix coordinate "
