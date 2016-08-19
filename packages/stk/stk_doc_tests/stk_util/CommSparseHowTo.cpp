@@ -32,7 +32,7 @@
 // 
 
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
+#include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
 #include <stk_util/parallel/MPI.hpp>
 #include <gtest/gtest.h>
 #include <vector>                       // for vector
@@ -45,10 +45,10 @@
 TEST(ParallelComm, HowToCommunicateOneValue)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    stk::CommAll comm_all(comm);
+    stk::CommSparse commSparse(comm);
 
-    int myProcId = comm_all.parallel_rank();
-    int numProcs = comm_all.parallel_size();
+    int myProcId = commSparse.parallel_rank();
+    int numProcs = commSparse.parallel_size();
 
     double sendSomeNumber = 100-myProcId;
 
@@ -58,18 +58,17 @@ TEST(ParallelComm, HowToCommunicateOneValue)
         {
             if ( proc != myProcId )
             {
-                stk::CommBuffer& proc_buff = comm_all.send_buffer(proc);
+                stk::CommBuffer& proc_buff = commSparse.send_buffer(proc);
                 proc_buff.pack<double>(sendSomeNumber);
             }
         }
         if(phase == 0)
         {
-            // NOTE: The value passed into allocate_buffers determines whether a sparse or dense communication will occur
-            comm_all.allocate_buffers(numProcs / 4);
+            commSparse.allocate_buffers();
         }
         else
         {
-            comm_all.communicate();
+            commSparse.communicate();
         }
     }
 
@@ -78,7 +77,7 @@ TEST(ParallelComm, HowToCommunicateOneValue)
     {
         if ( proc != myProcId )
         {
-            stk::CommBuffer& dataReceived = comm_all.recv_buffer(proc);
+            stk::CommBuffer& dataReceived = commSparse.recv_buffer(proc);
             double val = -1;
             dataReceived.unpack(val);
             EXPECT_EQ(100-proc, val);
@@ -89,10 +88,10 @@ TEST(ParallelComm, HowToCommunicateOneValue)
 TEST(ParallelComm, HowToCommunicateAnArbitraryNumberOfValues)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    stk::CommAll comm_all(comm);
+    stk::CommSparse commSparse(comm);
 
-    int myProcId = comm_all.parallel_rank();
-    int numProcs = comm_all.parallel_size();
+    int myProcId = commSparse.parallel_rank();
+    int numProcs = commSparse.parallel_size();
 
     double sendSomeNumber = 100-myProcId;
 
@@ -102,7 +101,7 @@ TEST(ParallelComm, HowToCommunicateAnArbitraryNumberOfValues)
         {
             if ( proc != myProcId )
             {
-                stk::CommBuffer& proc_buff = comm_all.send_buffer(proc);
+                stk::CommBuffer& proc_buff = commSparse.send_buffer(proc);
                 for (int i=0;i<myProcId;i++)
                 {
                     proc_buff.pack<double>(sendSomeNumber+i);
@@ -111,12 +110,11 @@ TEST(ParallelComm, HowToCommunicateAnArbitraryNumberOfValues)
         }
         if(phase == 0)
         {
-            // NOTE: The value passed into allocate_buffers determines whether a sparse or dense communication will occur
-            comm_all.allocate_buffers(numProcs / 4);
+            commSparse.allocate_buffers();
         }
         else
         {
-            comm_all.communicate();
+            commSparse.communicate();
         }
     }
 
@@ -125,7 +123,7 @@ TEST(ParallelComm, HowToCommunicateAnArbitraryNumberOfValues)
     {
         if ( procFromWhichDataIsReceived != myProcId )
         {
-            stk::CommBuffer& dataReceived = comm_all.recv_buffer(procFromWhichDataIsReceived);
+            stk::CommBuffer& dataReceived = commSparse.recv_buffer(procFromWhichDataIsReceived);
             int numItemsReceived = 0;
             while ( dataReceived.remaining() )
             {
