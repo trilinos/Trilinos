@@ -186,27 +186,6 @@ bool does_element_side_exist(stk::mesh::BulkData& bulkData, stk::mesh::Entity el
     return bulkData.is_valid(side);
 }
 
-stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, int side_id)
-{
-    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
-
-    unsigned num_sides = bulkData.num_connectivity(element, side_rank);
-    const stk::mesh::Entity *sides = bulkData.begin(element, side_rank);
-    const stk::mesh::ConnectivityOrdinal *ordinals = bulkData.begin_ordinals(element, side_rank);
-
-    stk::mesh::Entity side;
-
-    for(unsigned ii = 0; ii < num_sides; ++ii)
-    {
-        if(ordinals[ii] == static_cast<stk::mesh::ConnectivityOrdinal>(side_id))
-        {
-            side = sides[ii];
-            break;
-        }
-    }
-    return side;
-}
-
 stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts)
 {
     stk::mesh::PartVector sideParts;
@@ -286,7 +265,7 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
         perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
     }
 
-    stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
+    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
 
     if(!bulkData.is_valid(side))
     {
@@ -315,7 +294,7 @@ bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity 
 void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
         stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id)
 {
-    stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
+    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
     if(side_created_during_death(bulkData, side))
     {
         deletedEntities.push_back(side);

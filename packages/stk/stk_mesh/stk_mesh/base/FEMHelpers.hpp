@@ -175,7 +175,10 @@ void get_parts_with_topology(stk::topology topology,
   }
 }
 
-/** \} */
+stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal);
+stk::mesh::Entity get_side_entity_for_elem_id_side_pair(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal);
+
+/** \---} */
 
 } //namespace mesh
 } //namespace stk

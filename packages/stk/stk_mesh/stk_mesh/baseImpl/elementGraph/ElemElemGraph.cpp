@@ -816,7 +816,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                         bool is_other_element_alive = bulkData.bucket(other_element).member(active);
                         if(is_other_element_alive)
                         {
-                            stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, this_element, side_id);
+                            stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, this_element, side_id);
 
                             if(bulkData.is_valid(side))
                             {
@@ -1562,7 +1562,7 @@ stk::mesh::Entity ElemElemGraph::add_side_to_mesh(const stk::mesh::impl::Element
 {
     stk::mesh::Entity element = m_idMapper.local_to_entity(sidePair.first);
     int side_ordinal = sidePair.second;
-    stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(m_bulk_data, element, side_ordinal);
+    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(m_bulk_data, element, side_ordinal);
     if(m_bulk_data.is_valid(side))
     {
         if(m_bulk_data.bucket(side).owned())
@@ -1603,7 +1603,7 @@ stk::mesh::EntityId add_shared_side_to_element(stk::mesh::BulkData& bulkData, co
         perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
     }
 
-    stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
+    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
 
     if(!bulkData.is_valid(side))
     {

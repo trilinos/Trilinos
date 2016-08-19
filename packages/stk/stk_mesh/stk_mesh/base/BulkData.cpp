@@ -900,7 +900,7 @@ Entity BulkData::create_and_connect_side(const stk::mesh::EntityId globalSideId,
 
 Entity BulkData::declare_element_side(Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
 {
-    stk::mesh::Entity sideEntity = stk::mesh::impl::get_side_for_element(*this, elem, side_ordinal);
+    stk::mesh::Entity sideEntity = stk::mesh::get_side_entity_for_elem_side_pair(*this, elem, side_ordinal);
     if(is_valid(sideEntity))
         change_entity_parts(sideEntity, add_parts, {});
     else
@@ -3806,7 +3806,7 @@ void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& s
         for(size_t i=0; i<sideNodeEntities.size(); ++i)
             sideNodeEntities[i] = get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
 
-        stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(*this, element, sideOrdinal);
+        stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(*this, element, sideOrdinal);
         stk::mesh::EntityRank sideRank = mesh_meta_data().side_rank();
         if(!is_valid(side))
         {

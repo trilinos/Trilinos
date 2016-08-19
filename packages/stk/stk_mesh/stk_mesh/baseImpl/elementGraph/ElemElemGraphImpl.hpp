@@ -370,8 +370,6 @@ void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::E
 
 stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
 
-stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
-
 int get_element_side_multiplier();
 
 bool is_id_already_in_use_locally(stk::mesh::BulkData& bulkData, stk::mesh::EntityRank rank, stk::mesh::EntityId id);
