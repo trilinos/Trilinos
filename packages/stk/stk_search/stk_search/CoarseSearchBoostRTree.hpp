@@ -55,6 +55,76 @@
 #include <vector>
 #include <utility>
 
+namespace boost {
+namespace geometry {
+namespace traits {
+
+// traits for stk::search::Box<T>
+template <typename T> struct tag< stk::search::Box<T> > { typedef box_tag type; };
+template <typename T> struct point_type< stk::search::Box<T> > { typedef stk::search::Point<T> type; };
+
+template <typename T, size_t Index>
+struct indexed_access< stk::search::Box<T>, min_corner, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const& get( stk::search::Box<T> const& s) { return s.min_corner()[Index]; }
+};
+
+
+
+
+template <typename T, size_t Index>
+struct indexed_access< stk::search::Box<T>, max_corner, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const& get( stk::search::Box<T> const& s) { return s.max_corner()[Index]; }
+};
+
+
+}}} // namespace boost::geometry::traits
+
+
+namespace boost { namespace geometry { namespace traits {
+
+// traits for stk::search::Point<T>
+template <typename T> struct tag< stk::search::Point<T> > { typedef point_tag type; };
+template <typename T> struct coordinate_type< stk::search::Point<T> > { typedef T type; };
+template <typename T> struct coordinate_system< stk::search::Point<T> > { typedef cs::cartesian type; };
+template <typename T> struct dimension< stk::search::Point<T> > : public boost::mpl::int_<3> {};
+
+template <typename T, size_t Index>
+struct access< stk::search::Point<T>, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const& get( stk::search::Point<T> const& p) { return p[Index]; }
+  static inline void set( stk::search::Point<T> const& p, T const& v) { p[Index] = v; }
+};
+
+}}} // namespace boost::geometry::traits
+
+namespace boost { namespace geometry { namespace traits {
+
+// traits for stk::search::Sphere<T>
+template <typename T> struct tag< stk::search::Sphere<T> > { typedef box_tag type; };
+template <typename T> struct point_type< stk::search::Sphere<T> > { typedef stk::search::Point<T> type; };
+
+template <typename T, size_t Index>
+struct indexed_access< stk::search::Sphere<T>, min_corner, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const get( stk::search::Sphere<T> const& s) { return s.center()[Index] - s.radius(); }
+};
+
+template <typename T, size_t Index>
+struct indexed_access< stk::search::Sphere<T>, max_corner, Index >
+{
+  BOOST_STATIC_ASSERT((Index < 3));
+  static inline T const get( stk::search::Sphere<T> const& s) { return s.center()[Index] + s.radius(); }
+};
+
+}}} // namespace boost::geometry::traits
+
+
 
 namespace stk { namespace search {
 

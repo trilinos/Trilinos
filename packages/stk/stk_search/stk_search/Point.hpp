@@ -35,7 +35,6 @@
 #define STK_SEARCH_POINT_HPP
 
 #include <stk_util/environment/ReportHandler.hpp>
-#include <boost/geometry/geometry.hpp>
 #include <iosfwd>
 
 namespace stk { namespace search {
@@ -95,22 +94,5 @@ private:
 
 }} // stk::search
 
-namespace boost { namespace geometry { namespace traits {
-
-// traits for stk::search::Point<T>
-template <typename T> struct tag< stk::search::Point<T> > { typedef point_tag type; };
-template <typename T> struct coordinate_type< stk::search::Point<T> > { typedef T type; };
-template <typename T> struct coordinate_system< stk::search::Point<T> > { typedef cs::cartesian type; };
-template <typename T> struct dimension< stk::search::Point<T> > : public boost::mpl::int_<3> {};
-
-template <typename T, size_t Index>
-struct access< stk::search::Point<T>, Index >
-{
-  BOOST_STATIC_ASSERT((Index < 3));
-  static inline T const& get( stk::search::Point<T> const& p) { return p[Index]; }
-  static inline void set( stk::search::Point<T> const& p, T const& v) { p[Index] = v; }
-};
-
-}}} // namespace boost::geometry::traits
 
 #endif //STK_SEARCH_POINT_HPP
