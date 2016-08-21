@@ -116,7 +116,7 @@ public:
         copy_data(buckets, field, [](T &staticData, T &fieldData){fieldData = staticData;});
     }
 
-    ~StaticField(){}
+    KOKKOS_INLINE_FUNCTION ~StaticField(){}
 
     template <typename Mesh> STK_FUNCTION
     T& get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
