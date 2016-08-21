@@ -22,36 +22,42 @@ public:
     T& get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
     {
         T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
+        ThrowAssert(data);
         return data[component];
     }
 
     const T& const_get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
     {
         const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
+        ThrowAssert(data);
         return data[component];
     }
 
     T& get(stk::mesh::FastMeshIndex entity, int component) const
     {
         T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
+        ThrowAssert(data);
         return data[component];
     }
 
     const T& const_get(stk::mesh::FastMeshIndex entity, int component) const
     {
         const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
+        ThrowAssert(data);
         return data[component];
     }
 
     T& get(StkMeshAdapter::MeshIndex entity, int component) const
     {
-        T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
+        T* data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
+        ThrowAssert(data);
         return data[component];
     }
 
     const T& const_get(StkMeshAdapter::MeshIndex entity, int component) const
     {
         const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
+        ThrowAssert(data);
         return data[component];
     }
 
