@@ -88,8 +88,8 @@ public:
   NonlinearLeastSquaresObjective(const Teuchos::RCP<EqualityConstraint<Real> > &con,
                                  const Vector<Real> &optvec,
                                  const Vector<Real> &convec,
-                                 const bool GHN = false)
-    : con_(con), GaussNewtonHessian_(GHN) {
+                                 const bool GNH = false)
+    : con_(con), GaussNewtonHessian_(GNH) {
     c1_ = convec.clone(); c1dual_ = c1_->dual().clone();
     c2_ = convec.clone();
     x_  = optvec.dual().clone();
