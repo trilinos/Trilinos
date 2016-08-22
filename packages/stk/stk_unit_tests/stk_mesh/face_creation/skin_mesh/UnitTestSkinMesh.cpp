@@ -991,6 +991,7 @@ void test_quad_2D_skin_with_aura_option (bool auraOn)
 {
   const unsigned X = 5, Y = 5;
   stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, X, Y, auraOn);
+  fixture.m_bulk_data.initialize_face_adjacent_element_graph();
 
   stk::mesh::EntityRank side_rank = fixture.m_meta.side_rank();
 

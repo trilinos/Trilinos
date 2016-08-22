@@ -217,6 +217,7 @@ TEST(UnitTestKeyhole, EdgeParts_case2)
   const unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
   stk::mesh::BulkData bulk(meta, communicator);
+  bulk.initialize_face_adjacent_element_graph();
 
   stk::mesh::unit_test::setupKeyholeMesh2D_case2(bulk);
 
