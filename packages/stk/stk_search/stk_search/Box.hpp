@@ -53,6 +53,12 @@ public:
     , m_max_corner(x_max_corner)
   {}
 
+  Box( const T x_min, const T y_min, const T z_min, 
+       const T x_max, const T y_max, const T z_max) :
+    m_min_corner(x_min, y_min, z_min),
+    m_max_corner(x_max, y_max, z_max) 
+  {}
+
   point_type const& min_corner() const { return m_min_corner; }
   point_type      & min_corner()       { return m_min_corner; }
   point_type const& max_corner() const { return m_max_corner; }
