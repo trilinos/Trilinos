@@ -117,19 +117,9 @@ void VisitClosureGeneral(
         if (mesh.is_valid(entity_of_interest)) {
             EntityRank entity_of_interest_rank = mesh.entity_rank(entity_of_interest);
             for (EntityRank rank = stk::topology::NODE_RANK ; rank < entity_of_interest_rank ; ++rank) {
-                EntityVector entities_of_rank;
-                size_t num_entities_of_rank = 0;
-                const Entity * entity_it = NULL;
-                if (mesh.connectivity_map().valid(mesh.entity_rank(entity_of_interest),rank))
-                {
-                    num_entities_of_rank = mesh.num_connectivity(entity_of_interest,rank);
-                    entity_it = mesh.begin(entity_of_interest,rank);
-                }
-                else
-                {
-                    num_entities_of_rank = get_connectivity(mesh,entity_of_interest,rank,entities_of_rank);
-                    entity_it = &*entities_of_rank.begin();
-                }
+                size_t num_entities_of_rank = mesh.num_connectivity(entity_of_interest,rank);
+                const Entity * entity_it = mesh.begin(entity_of_interest,rank);
+
                 for (size_t i=0 ; i<num_entities_of_rank ; ++i, ++entity_it) {
                     VisitClosureGeneral(mesh,*entity_it,do_this,desired_entity);
                 }
@@ -254,18 +244,9 @@ void VisitUpwardClosureGeneral(
             EntityRank entity_of_interest_rank = mesh.entity_rank(entity_of_interest);
             EntityVector entities_of_rank_up;
             for (EntityRank rank_up = EntityRank(stk::topology::END_RANK-1) ; rank_up > entity_of_interest_rank ; --rank_up) {
-                size_t num_entities_of_rank_up = 0;
-                const Entity * entity_up_it = NULL;
-                if (mesh.connectivity_map().valid(mesh.entity_rank(entity_of_interest),rank_up))
-                {
-                    num_entities_of_rank_up = mesh.num_connectivity(entity_of_interest,rank_up);
-                    entity_up_it = mesh.begin(entity_of_interest,rank_up);
-                }
-                else
-                {
-                    num_entities_of_rank_up = get_connectivity(mesh,entity_of_interest,rank_up,entities_of_rank_up);
-                    entity_up_it = &*entities_of_rank_up.begin();
-                }
+                size_t num_entities_of_rank_up = mesh.num_connectivity(entity_of_interest,rank_up);
+                const Entity * entity_up_it = mesh.begin(entity_of_interest,rank_up);
+
                 for (size_t j=0 ; j<num_entities_of_rank_up ; ++j, ++entity_up_it) {
                     VisitUpwardClosureGeneral(mesh,*entity_up_it,do_this,desired_entity);
                 }

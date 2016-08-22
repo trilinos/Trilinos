@@ -273,8 +273,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
-      --irank;
-      if (bulk.connectivity_map().valid(stk::topology::NODE_RANK, irank)) {
+        --irank;
         stk::mesh::Entity const *to_b = bulk.begin(node, irank);
         stk::mesh::Entity const *to_e = bulk.end(node, irank);
         for (; to_b != to_e;
@@ -282,7 +281,6 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
         {
           ASSERT_TRUE( bulk.destroy_entity(*(to_e -1)) );
         }
-      }
     }
     ASSERT_TRUE( bulk.destroy_entity( node ) );
 

@@ -1047,25 +1047,14 @@ bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
 
   // It is important that relations be destroyed from highest to lowest rank so
   // that the back relations are destroyed first.
-  stk::mesh::EntityVector temp_entities;
-  std::vector<stk::mesh::ConnectivityOrdinal> temp_ordinals;
-  stk::mesh::Entity const* rel_entities = nullptr;
-  int num_conn = 0;
-  stk::mesh::ConnectivityOrdinal const* rel_ordinals;
+
   for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
   {
     --irank;
 
-    if (connectivity_map().valid(erank, irank)) {
-      num_conn     = num_connectivity(entity, irank);
-      rel_entities = begin(entity, irank);
-      rel_ordinals = begin_ordinals(entity, irank);
-    }
-    else {
-      num_conn     = get_connectivity(*this, entity, irank, temp_entities, temp_ordinals);
-      rel_entities = &*temp_entities.begin();
-      rel_ordinals = &*temp_ordinals.begin();
-    }
+    int num_conn     = num_connectivity(entity, irank);
+    Entity const* rel_entities = begin(entity, irank);
+    stk::mesh::ConnectivityOrdinal const* rel_ordinals = begin_ordinals(entity, irank);
 
     for (int j = num_conn; j > 0; )
     {
@@ -1804,26 +1793,24 @@ void print_entity_connectivity(const BulkData& mesh, const MeshIndex& meshIndex,
     const std::vector<std::string> & rank_names = mesh.mesh_meta_data().entity_rank_names();
     EntityRank b_rank = bucket->entity_rank();
     for (EntityRank r = stk::topology::NODE_RANK, re = static_cast<EntityRank>(rank_names.size()); r < re; ++r) {
-        if (mesh.connectivity_map().valid(static_cast<EntityRank>(b_rank), r)) {
-            out << "        Connectivity to " << rank_names[r] << std::endl;
-            Entity const* entities = bucket->begin(b_ord, r);
-            ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);
-            const int num_conn         = bucket->num_connectivity(b_ord, r);
-            for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
-                Entity target_entity = entities[c_itr];
-                out << "          [" << ordinals[c_itr] << "]  " << mesh.entity_key(target_entity) << "  ";
-                if (r != stk::topology::NODE_RANK) {
-                    out << mesh.bucket(target_entity).topology();
-                    if (b_rank != stk::topology::NODE_RANK) {
-                        Permutation const *permutations = bucket->begin_permutations(b_ord, r);
-                        if (permutations) {
-                            out << " permutation index " << permutations[c_itr];
-                        }
+        out << "        Connectivity to " << rank_names[r] << std::endl;
+        Entity const* entities = bucket->begin(b_ord, r);
+        ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);
+        const int num_conn         = bucket->num_connectivity(b_ord, r);
+        for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
+            Entity target_entity = entities[c_itr];
+            out << "          [" << ordinals[c_itr] << "]  " << mesh.entity_key(target_entity) << "  ";
+            if (r != stk::topology::NODE_RANK) {
+                out << mesh.bucket(target_entity).topology();
+                if (b_rank != stk::topology::NODE_RANK) {
+                    Permutation const *permutations = bucket->begin_permutations(b_ord, r);
+                    if (permutations) {
+                        out << " permutation index " << permutations[c_itr];
                     }
                 }
-                out << ", state = " << mesh.state(target_entity);
-                out << std::endl;
             }
+            out << ", state = " << mesh.state(target_entity);
+            out << std::endl;
         }
     }
 }
@@ -1854,9 +1841,6 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
 
     out << "BulkData "
             << " info...(ptr=" << this << ")\n";
-
-    out << "ConnectivityMap = " << "\n";
-    out << this->connectivity_map();
 
     // Iterate all buckets for all ranks...
     const std::vector<std::string> & rank_names = m_mesh_meta_data.entity_rank_names();
@@ -1909,132 +1893,10 @@ void find_potential_upward_entities( const BulkData & mesh, Entity node, EntityR
 
   // NOTE: it's adequate to just look at one node
 
-  if ( mesh.connectivity_map().valid(stk::topology::NODE_RANK, rank) ) {
-    entities.assign(mesh.begin(node, rank), mesh.end(node, rank));
-  }
-  else {
-    // Have to go up to the elements, then back down to the target rank
-    ThrowRequireMsg(mesh.connectivity_map().valid(stk::topology::NODE_RANK, stk::topology::ELEMENT_RANK), "ERROR, stk::mesh::get_connectivity was called but upward node->element connections are disabled. For get_connectivity to find non-stored connectivities, node->element connections must be enabled.");
-
-    EntityVector elements;
-    find_potential_upward_entities(mesh, node, stk::topology::ELEMENT_RANK, elements);
-
-    for (unsigned i = 0, e = elements.size(); i < e; ++i) {
-      entities.insert(entities.end(), mesh.begin(elements[i], rank), mesh.end(elements[i], rank));
-    }
-
-    std::sort(entities.begin(), entities.end());
-    EntityVector::iterator new_end = std::unique(entities.begin(), entities.end());
-    entities.erase(new_end, entities.end());
-  }
+  entities.assign(mesh.begin(node, rank), mesh.end(node, rank));
 }
 
-template <bool GatherOrdinals, bool GatherPermutations>
-size_t get_connectivity_impl(const BulkData & mesh,
-                             Entity entity,
-                             EntityRank to_rank,
-                             EntityVector & entity_scratch_storage,
-                             std::vector<ConnectivityOrdinal>* ordinal_scratch_storage = NULL,
-                             std::vector<Permutation>* permutation_scratch_storage = NULL)
-{
-  ThrowAssert( !GatherOrdinals || ordinal_scratch_storage != NULL );
-  ThrowAssert( !GatherPermutations || permutation_scratch_storage != NULL );
-
-  const EntityRank source_rank = mesh.entity_rank(entity);
-
-  // if the connectivity stored on the mesh, we shouldn't be calling this
-  ThrowAssert( !mesh.connectivity_map().valid(source_rank, to_rank) );
-  if ( source_rank >= to_rank || (mesh.mesh_meta_data().spatial_dimension() == 2 && to_rank == stk::topology::FACE_RANK) ) {
-    // There is no possible connectivity
-    return 0;
-  }
-  // go through the nodes, keeping in mind that we may be a node
-  else {
-    entity_scratch_storage.clear();
-    if (GatherOrdinals)     { ordinal_scratch_storage->clear(); }
-    if (GatherPermutations) { permutation_scratch_storage->clear(); }
-
-    unsigned num_nodes;
-    Entity const * nodes;
-    if (source_rank == stk::topology::NODE_RANK) {
-      num_nodes = 1;
-      nodes     = &entity;
-    }
-    else {
-      num_nodes = mesh.num_nodes(entity);
-      nodes     = mesh.begin_nodes(entity);
-    }
-
-    if (num_nodes > 0) {
-      EntityVector potential_upward_entities;
-      find_potential_upward_entities( mesh, nodes[0], to_rank, potential_upward_entities);
-
-      for (size_t i = 0u, e = potential_upward_entities.size(); i < e; ++i) {
-        Entity potential_upward_entity = potential_upward_entities[i];
-        Entity const * potential_sources = mesh.begin(potential_upward_entity, source_rank);
-        ConnectivityOrdinal const * potential_ordinals = GatherOrdinals ? mesh.begin_ordinals(potential_upward_entity, source_rank) : NULL;
-        Permutation const * potential_permutations = GatherPermutations ? mesh.begin_permutations(potential_upward_entity, source_rank) : NULL;
-        const unsigned num_sources = mesh.num_connectivity(potential_upward_entity, source_rank);
-
-        for (unsigned is=0u; is < num_sources; ++is) {
-          if ( potential_sources[is] == entity) {
-            entity_scratch_storage.push_back(potential_upward_entity);
-            if (GatherOrdinals) { ordinal_scratch_storage->push_back(potential_ordinals[is]); }
-            if (GatherPermutations && potential_permutations != NULL) { permutation_scratch_storage->push_back(potential_permutations[is]); }
-          }
-        }
-      }
-    }
-
-    return entity_scratch_storage.size();
-  }
 }
-
-static const bool GATHER_ORDINALS     = true;
-static const bool GATHER_PERMUTATIONS = true;
-static const bool DONT_GATHER_ORDINALS     = false;
-static const bool DONT_GATHER_PERMUTATIONS = false;
-
-
-} // namespace
-
-size_t get_connectivity( const BulkData & mesh,
-                         Entity entity,
-                         EntityRank to_rank,
-                         EntityVector & entity_scratch_storage)
-{
-  return get_connectivity_impl<DONT_GATHER_ORDINALS, DONT_GATHER_PERMUTATIONS>(mesh, entity, to_rank, entity_scratch_storage);
-}
-
-size_t get_connectivity( const BulkData & mesh,
-                         Entity entity,
-                         EntityRank to_rank,
-                         EntityVector & entity_scratch_storage,
-                         std::vector<ConnectivityOrdinal> & ordinals )
-{
-  return get_connectivity_impl<GATHER_ORDINALS, DONT_GATHER_PERMUTATIONS>(mesh, entity, to_rank, entity_scratch_storage, &ordinals);
-}
-
-size_t get_connectivity( const BulkData & mesh,
-                         Entity entity,
-                         EntityRank to_rank,
-                         EntityVector & entity_scratch_storage,
-                         std::vector<Permutation> & permutations )
-{
-  std::vector<ConnectivityOrdinal>* ignore = NULL;
-  return get_connectivity_impl<DONT_GATHER_ORDINALS, GATHER_PERMUTATIONS>(mesh, entity, to_rank, entity_scratch_storage, ignore, &permutations);
-}
-
-size_t get_connectivity( const BulkData & mesh,
-                         Entity entity,
-                         EntityRank to_rank,
-                         EntityVector & entity_scratch_storage,
-                         std::vector<ConnectivityOrdinal> & ordinals,
-                         std::vector<Permutation> & permutations )
-{
-  return get_connectivity_impl<GATHER_ORDINALS, GATHER_PERMUTATIONS>(mesh, entity, to_rank, entity_scratch_storage, &ordinals, &permutations);
-}
-
 
 void BulkData::reserve_relation(Entity entity, const unsigned num)
 {
@@ -2128,11 +1990,11 @@ void BulkData::require_valid_relation( const char action[] ,
                                        const Entity e_from ,
                                        const Entity e_to )
 {
-  const bool error_type      = mesh.entity_rank(e_from) <= mesh.entity_rank(e_to);
+  const bool error_rank      = !(mesh.entity_rank(e_from) > mesh.entity_rank(e_to));
   const bool error_nil_from  = !mesh.is_valid(e_from);
   const bool error_nil_to    = !mesh.is_valid(e_to);
 
-  if ( error_type || error_nil_from || error_nil_to ) {
+  if ( error_rank || error_nil_from || error_nil_to ) {
     std::ostringstream msg ;
 
     msg << "Could not " << action << " relation from entity "
@@ -2144,7 +2006,7 @@ void BulkData::require_valid_relation( const char action[] ,
       }
     ThrowErrorMsgIf( error_nil_from  || error_nil_to,
                      msg.str() << ", entity was destroyed");
-    ThrowErrorMsgIf( error_type, msg.str() <<
+    ThrowErrorMsgIf( error_rank, msg.str() <<
                      "A relation must be from higher to lower ranking entity");
   }
 }
@@ -2273,19 +2135,9 @@ void BulkData::internal_declare_relation( Entity e_from ,
     // Should be an exact match if relation of local_id already exists (e_to should be the same).
     bool is_new_relation = internal_declare_relation(e_from, e_to, local_id, permut);
 
-    //TODO: check connectivity map
-    // Relationships should always be symmetrical
     if(is_new_relation)
     {
-
-        const bool higher_order_relation = stk::topology::ELEMENT_RANK < entity_rank(e_from);
-        if(higher_order_relation
-                || m_bucket_repository.connectivity_map()(entity_rank(e_to), entity_rank(e_from)) != stk::mesh::INVALID_CONNECTIVITY_TYPE
-                )
-        {
-            // the setup for the converse relationship works slightly differently
-            internal_declare_relation(e_to, e_from, local_id, permut);
-        }
+        internal_declare_relation(e_to, e_from, local_id, permut);
     }
 
     // It is critical that the modification be done AFTER the relations are
@@ -2370,7 +2222,6 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
 
   const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   const EntityRank e_to_entity_rank = entity_rank(e_to);
-  const EntityRank e_from_entity_rank = entity_rank(e_from);
 
   //------------------------------
   // When removing a relationship may need to
@@ -2393,22 +2244,13 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
     // For all relations that are *not* being deleted, add induced parts for
     // these relations to the 'keep' vector
     {
-      EntityVector temp_entities;
-      std::vector<ConnectivityOrdinal> temp_ordinals;
       Entity const* rel_entities = NULL;
       ConnectivityOrdinal const* rel_ordinals = NULL;
       int num_rels = 0;
       for (EntityRank irank = static_cast<EntityRank>(e_to_entity_rank + 1); irank < end_rank; ++irank) {
-        if (connectivity_map().valid(e_to_entity_rank, irank)) {
-          num_rels     = num_connectivity(e_to, irank);
-          rel_entities = begin(e_to, irank);
-          rel_ordinals = begin_ordinals(e_to, irank);
-        }
-        else {
-          num_rels     = get_connectivity(*this, e_to, irank, temp_entities, temp_ordinals);
-          rel_entities = &*temp_entities.begin();
-          rel_ordinals = &*temp_ordinals.begin();
-        }
+        num_rels     = num_connectivity(e_to, irank);
+        rel_entities = begin(e_to, irank);
+        rel_ordinals = begin_ordinals(e_to, irank);
 
         for (int j = 0; j < num_rels; ++j) {
           ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " with key " << entity_key(e_to) << " has invalid back-relation for ordinal: "
@@ -2458,9 +2300,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
 
 
   // Relationships should always be symmetrical
-  if ( caused_change_fwd &&
-       (e_to_entity_rank > stk::topology::ELEMENT_RANK || e_from_entity_rank > stk::topology::ELEMENT_RANK ||
-        connectivity_map().valid(entity_rank(e_to), entity_rank(e_from))) ) {
+  if ( caused_change_fwd ) {
     bool caused_change = bucket(e_to).destroy_relation(e_to, e_from, local_id);
     if (caused_change && bucket(e_to).owned() && (entity_rank(e_to) > entity_rank(e_from)) ) {
       --m_closure_count[e_from.local_offset()];
@@ -2479,15 +2319,9 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
   return caused_change_fwd;
 }
 
-
-
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
 //----------------------------------------------------------------------
 //ParallelVerify
 //----------------------------------------------------------------------
-
 
 bool BulkData::is_entity_in_sharing_comm_map(stk::mesh::Entity entity)
 {
@@ -3665,7 +3499,6 @@ void BulkData::fill_list_of_entities_to_send_for_aura_ghosting(std::vector<Entit
     // Iterate over all entities with communication info, get the sharing
     // comm info for each entity, and ensure that upwardly related
     // entities to the shared entity are ghosted on the sharing proc.
-    EntityVector temp_entities;
     Entity const* rels = NULL;
     int num_rels = 0;
     for ( EntityCommListInfoVector::const_iterator
@@ -3681,14 +3514,8 @@ void BulkData::fill_list_of_entities_to_send_for_aura_ghosting(std::vector<Entit
 
         for (EntityRank k_rank = static_cast<EntityRank>(erank + 1); k_rank < end_rank; ++k_rank)
         {
-          if (connectivity_map().valid(erank, k_rank)) {
-            num_rels = num_connectivity(i->entity, k_rank);
-            rels     = begin(i->entity, k_rank);
-          }
-          else {
-            num_rels = get_connectivity(*this, i->entity, k_rank, temp_entities);
-            rels     = &*temp_entities.begin();
-          }
+          num_rels = num_connectivity(i->entity, k_rank);
+          rels     = begin(i->entity, k_rank);
 
           for (int r = 0; r < num_rels; ++r)
           {
@@ -4654,45 +4481,26 @@ void fillFacesConnectedToNodes(stk::mesh::BulkData &stkMeshBulkData, const stk::
               std::vector<stk::mesh::Entity> & facesConnectedToNodes)
 {
     facesConnectedToNodes.clear();
-    stk::mesh::EntityRank needConnectivityOfType = stk::topology::FACE_RANK;
-    if (stkMeshBulkData.connectivity_map().valid(stk::topology::NODE_RANK, needConnectivityOfType))
+
+    //TODO: fill faces for all edge nodes
+    ThrowRequireMsg(numNodes==2, "fillFacesConnectedToNodes ERROR, num-edge-nodes must be 2 currently.");
+    if ( stkMeshBulkData.num_faces(nodes[0]) > 0 && stkMeshBulkData.num_faces(nodes[1]) > 0 )
     {
-        //TODO: fill faces for all edge nodes
-        ThrowRequireMsg(numNodes==2, "fillFacesConnectedToNodes ERROR, num-edge-nodes must be 2 currently.");
-        if ( stkMeshBulkData.num_faces(nodes[0]) > 0 && stkMeshBulkData.num_faces(nodes[1]) > 0 )
-        {
-            facesConnectedToNodes.resize(20);
-            stk::mesh::Entity const * facesStartNode1 = stkMeshBulkData.begin_faces(nodes[0]);
-            stk::mesh::Entity const * facesEndNode1 = stkMeshBulkData.end_faces(nodes[0]);
-            stk::mesh::Entity const * facesStartNode2 = stkMeshBulkData.begin_faces(nodes[1]);
-            stk::mesh::Entity const * facesEndNode2 = stkMeshBulkData.end_faces(nodes[1]);
+        facesConnectedToNodes.resize(20);
+        stk::mesh::Entity const * facesStartNode1 = stkMeshBulkData.begin_faces(nodes[0]);
+        stk::mesh::Entity const * facesEndNode1 = stkMeshBulkData.end_faces(nodes[0]);
+        stk::mesh::Entity const * facesStartNode2 = stkMeshBulkData.begin_faces(nodes[1]);
+        stk::mesh::Entity const * facesEndNode2 = stkMeshBulkData.end_faces(nodes[1]);
 
-            std::vector<stk::mesh::Entity> faces1(facesStartNode1, facesEndNode1);
-            std::sort(faces1.begin(), faces1.end());
-            std::vector<stk::mesh::Entity> faces2(facesStartNode2, facesEndNode2);
-            std::sort(faces2.begin(), faces2.end());
+        std::vector<stk::mesh::Entity> faces1(facesStartNode1, facesEndNode1);
+        std::sort(faces1.begin(), faces1.end());
+        std::vector<stk::mesh::Entity> faces2(facesStartNode2, facesEndNode2);
+        std::sort(faces2.begin(), faces2.end());
 
-            std::vector<stk::mesh::Entity>::iterator iter = std::set_intersection( faces1.begin(), faces1.end(),
-                  faces2.begin(), faces2.end(), facesConnectedToNodes.begin());
+        std::vector<stk::mesh::Entity>::iterator iter = std::set_intersection( faces1.begin(), faces1.end(),
+              faces2.begin(), faces2.end(), facesConnectedToNodes.begin());
 
-            facesConnectedToNodes.resize(iter-facesConnectedToNodes.begin());
-        }
-    }
-    else
-    {
-        stk::mesh::EntityVector entitiesNode1;
-        stk::mesh::EntityVector entitiesNode2;
-        int numFacesConnectedToNode1 = stk::mesh::get_connectivity(stkMeshBulkData, nodes[0], needConnectivityOfType, entitiesNode1);
-        int numFacesConnectedToNode2 = stk::mesh::get_connectivity(stkMeshBulkData, nodes[1], needConnectivityOfType, entitiesNode2);
-        if ( numFacesConnectedToNode1 > 0 && numFacesConnectedToNode2 > 0 )
-        {
-            facesConnectedToNodes.resize(entitiesNode1.size()+entitiesNode2.size());
-
-            std::vector<stk::mesh::Entity>::iterator iter = std::set_intersection( entitiesNode1.begin(), entitiesNode1.end(),
-                    entitiesNode2.begin(), entitiesNode2.end(), facesConnectedToNodes.begin());
-
-            facesConnectedToNodes.resize(iter-facesConnectedToNodes.begin());
-        }
+        facesConnectedToNodes.resize(iter-facesConnectedToNodes.begin());
     }
 }
 
@@ -4846,57 +4654,6 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk
     stk::mesh::impl::comm_sync_send_recv(mesh, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
 }
 
-void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(stk::mesh::BulkData &mesh, EntityRank entity_rank, stk::mesh::Selector selectedToSkin)
-{
-    if (entity_rank == stk::topology::EDGE_RANK && mesh.mesh_meta_data().spatial_dimension() == 3 && !mesh.connectivity_map().valid(stk::topology::EDGE_RANK, stk::topology::FACE_RANK) )
-    {
-        std::vector<stk::mesh::Entity> facesConnectedToNodes;
-        const stk::mesh::BucketVector& entity_buckets = mesh.buckets(stk::topology::EDGE_RANK);
-        for(size_t bucketIndex = 0; bucketIndex < entity_buckets.size(); bucketIndex++)
-        {
-            const stk::mesh::Bucket& bucket = *entity_buckets[bucketIndex];
-            if ( bucket.in_aura() )
-            {
-                for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
-                {
-                    Entity entity = bucket[entityIndex];
-                    if ( mesh.state(entity) == Unchanged ) continue;
-
-                    stk::mesh::Entity const *  nodes = mesh.begin_nodes(entity);
-
-                    fillFacesConnectedToNodes(mesh, nodes, bucket.topology().num_nodes(), facesConnectedToNodes);
-                    removeEntitiesNotSelected(mesh, selectedToSkin, facesConnectedToNodes);
-                    connectGhostedEntitiesToEntity(mesh, facesConnectedToNodes, entity, nodes);
-                }
-            }
-        }
-    }
-
-    if (!mesh.connectivity_map().valid(entity_rank, stk::topology::ELEMENT_RANK) )
-    {
-        std::vector<stk::mesh::Entity> elementsConnectedToNodes;
-        const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entity_rank);
-        for(size_t bucketIndex = 0; bucketIndex < entity_buckets.size(); bucketIndex++)
-        {
-            const stk::mesh::Bucket& bucket = *entity_buckets[bucketIndex];
-            if ( bucket.in_aura() )
-            {
-                for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
-                {
-                    Entity entity = bucket[entityIndex];
-                    if ( mesh.state(entity) == Unchanged ) continue;
-
-                    const stk::mesh::Entity* nodes = bucket.begin_nodes(entityIndex);
-
-                    fillElementsConnectedToNodes(mesh, nodes, bucket.num_nodes(entityIndex), elementsConnectedToNodes);
-                    removeEntitiesNotSelected(mesh, selectedToSkin, elementsConnectedToNodes);
-                    connectGhostedEntitiesToEntity(mesh, elementsConnectedToNodes, entity, nodes);
-                }
-            }
-        }
-    }
-}
-
 void BulkData::internal_finish_modification_end(impl::MeshModification::modification_optimization opt)
 {
     if(opt == impl::MeshModification::MOD_END_COMPRESS_AND_SORT)
@@ -4961,8 +4718,6 @@ void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(Ent
     find_upward_connected_entities_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors, entity_rank, selectedToSkin, connectFacesToPreexistingGhosts);
 
     ghost_entities_and_fields(aura_ghosting(), entitiesToGhostOntoOtherProcessors);
-
-    connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(*this, entity_rank, selectedToSkin);
 }
 
 bool BulkData::internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, impl::MeshModification::modification_optimization opt )
@@ -5896,7 +5651,6 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
     OrdinalVector scratchOrdinalVector , empty ;
     OrdinalVector partsThatShouldStillBeInduced;
     PartVector parts_to_actually_remove, emptyParts;
-    EntityVector temp_entities;
     for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
     {
         size_t num_rels = num_connectivity(entity, irank);
@@ -5932,7 +5686,6 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
                         partsThatShouldStillBeInduced.clear();
                         internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(entity,
                                                                                               e_to,
-                                                                                              temp_entities,
                                                                                               empty,
                                                                                               partsThatShouldStillBeInduced);
                         internal_fill_parts_to_actually_remove(parts_to_remove_assuming_not_induced_from_other_entities,
@@ -5951,28 +5704,16 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
 
 void BulkData::internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
                                                                                      stk::mesh::Entity e_to,
-                                                                                     EntityVector &temp_entities,
                                                                                      OrdinalVector &empty,
                                                                                      OrdinalVector &to_add)
 {
     EntityRank e_to_rank = entity_rank(e_to);
-
-    Entity const* upward_rel_entities = NULL;
-    int num_upward_rels = 0;
     EntityRank start_rank = static_cast<EntityRank>(e_to_rank + 1);
     EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
     for(EntityRank to_rel_rank_i = start_rank; to_rel_rank_i < end_rank; ++to_rel_rank_i)
     {
-        if (connectivity_map().valid(e_to_rank, to_rel_rank_i))
-        {
-            num_upward_rels = num_connectivity(e_to, to_rel_rank_i);
-            upward_rel_entities = begin(e_to, to_rel_rank_i);
-        }
-        else
-        {
-            num_upward_rels = get_connectivity(*this, e_to, to_rel_rank_i, temp_entities);
-            upward_rel_entities = &*temp_entities.begin();
-        }
+        int num_upward_rels = num_connectivity(e_to, to_rel_rank_i);
+        Entity const* upward_rel_entities = begin(e_to, to_rel_rank_i);
 
         for (int k = 0; k < num_upward_rels; ++k)
         {
@@ -7004,25 +6745,12 @@ bool BulkData::comm_mesh_verify_parallel_consistency(std::ostream & error_log )
 void BulkData::destroy_dependent_ghosts( Entity entity, EntityProcVec& entitiesToRemoveFromSharing )
 {
   EntityRank entity_rank = this->entity_rank(entity);
-
   const EntityRank end_rank = static_cast<EntityRank>(this->mesh_meta_data().entity_rank_count());
-  EntityVector temp_entities;
-  Entity const* rels = NULL;
-  int num_rels = 0;
 
   for (EntityRank irank = static_cast<EntityRank>(end_rank - 1); irank > entity_rank; --irank)
   {
-    bool canOneHaveConnectivityFromEntityRankToIrank = this->connectivity_map().valid(entity_rank, irank);
-    if (canOneHaveConnectivityFromEntityRankToIrank)
-    {
-      num_rels = this->num_connectivity(entity, irank);
-      rels     = this->begin(entity, irank);
-    }
-    else
-    {
-      num_rels = get_connectivity(*this, entity, irank, temp_entities);
-      rels     = &*temp_entities.begin();
-    }
+    int num_rels = this->num_connectivity(entity, irank);
+    const Entity* rels     = this->begin(entity, irank);
 
     for (int r = num_rels - 1; r >= 0; --r)
     {

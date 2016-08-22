@@ -219,29 +219,14 @@ void delete_entities_and_upward_relations(stk::mesh::BulkData &bulkData, const s
         }
 
         stk::mesh::EntityRank entity_rank = bulkData.entity_rank(entity);
-
-        EntityVector temp_entities;
-        std::vector<stk::mesh::ConnectivityOrdinal> temp_ordinals;
-        stk::mesh::Entity const * rel_entities = NULL;
-        int num_conn = 0;
-        stk::mesh::ConnectivityOrdinal const * rel_ordinals;
         const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulkData.mesh_meta_data().entity_rank_count() - 1);
         const stk::mesh::EntityRank begin_rank = static_cast<stk::mesh::EntityRank>(entity_rank);
 
         for(stk::mesh::EntityRank irank = end_rank; irank != begin_rank; --irank)
         {
-            if(bulkData.connectivity_map().valid(entity_rank, irank))
-            {
-                num_conn = bulkData.num_connectivity(entity, irank);
-                rel_entities = bulkData.begin(entity, irank);
-                rel_ordinals = bulkData.begin_ordinals(entity, irank);
-            }
-            else
-            {
-                num_conn = get_connectivity(bulkData, entity, irank, temp_entities, temp_ordinals);
-                rel_entities = &*temp_entities.begin();
-                rel_ordinals = &*temp_ordinals.begin();
-            }
+            int num_conn = bulkData.num_connectivity(entity, irank);
+            const stk::mesh::Entity* rel_entities = bulkData.begin(entity, irank);
+            const stk::mesh::ConnectivityOrdinal* rel_ordinals = bulkData.begin_ordinals(entity, irank);
 
             for(int j = num_conn - 1; j >= 0; --j)
             {
@@ -1048,19 +1033,10 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
 
     // There may be even higher-ranking entities that need to be ghosted, so we must recurse
     const EntityRank end_rank = static_cast<EntityRank>(bulk_data.mesh_meta_data().entity_rank_count());
-    EntityVector temp_entities;
-    Entity const* rels = NULL;
-    int num_rels = 0;
     for (EntityRank irank = static_cast<EntityRank>(rel_entity_rank + 1); irank < end_rank; ++irank)
     {
-      if (bulk_data.connectivity_map().valid(rel_entity_rank, irank)) {
-        num_rels = bulk_data.num_connectivity(rel_entity, irank);
-        rels     = bulk_data.begin(rel_entity, irank);
-      }
-      else {
-        num_rels = get_connectivity(bulk_data, rel_entity, irank, temp_entities);
-        rels     = &*temp_entities.begin();
-      }
+      int num_rels = bulk_data.num_connectivity(rel_entity, irank);
+      Entity const* rels     = bulk_data.begin(rel_entity, irank);
 
       for (int r = 0; r < num_rels; ++r)
       {

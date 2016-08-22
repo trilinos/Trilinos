@@ -903,7 +903,6 @@ protected: //functions
 
   void internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
                                                                                stk::mesh::Entity e_to,
-                                                                               EntityVector &temp_entities,
                                                                                OrdinalVector &empty,
                                                                                OrdinalVector &to_add);
 
