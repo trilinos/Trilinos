@@ -83,6 +83,12 @@ public:
 
   void setParameter(const std::vector<Real> &param) {
     ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
+    computeJ1_  = true;
+    computeJ2_  = true;
+    computeH11_ = true;
+    computeH12_ = true;
+    computeH21_ = true;
+    computeH22_ = true;
     pde_->setParameter(param);
   }
 

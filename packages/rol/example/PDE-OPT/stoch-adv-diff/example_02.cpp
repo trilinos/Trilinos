@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,pdeCon.getAssembler()));
     Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > objReduced
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, pp, false, false));
+      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, pp, true, false));
 
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
