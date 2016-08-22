@@ -323,9 +323,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareToLocalSol
       }
 
       out << "Set up the solver" << endl;
-      // Set up the solver.  For now, we only do this once.  Another test
-      // should exercise the case where we do repeated solves, between
-      // which we change the matrix itself, its graph, or its values.
+      TEST_NOTHROW( solver->initialize () );
+      if (success) {
+        TEST_NOTHROW( solver->compute () );
+      }
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0; // to be revised
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      TEST_EQUALITY( gblSuccess, 1 );
+      if (! gblSuccess) {
+        out << "Aborting test" << endl;
+        return;
+      }
+
+      out << "Make sure that we can call setMatrix with a null input matrix, "
+        "and that this resets the solver" << endl;
+      TEST_NOTHROW( solver->setMatrix (Teuchos::null) );
+      TEST_ASSERT( ! solver->isInitialized () );
+      TEST_ASSERT( ! solver->isComputed () );
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0; // to be revised
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      TEST_EQUALITY( gblSuccess, 1 );
+      if (! gblSuccess) {
+        out << "Aborting test" << endl;
+        return;
+      }
+
+      out << "Set up the solver again with the original input matrix A" << endl;
+      TEST_NOTHROW( solver->setMatrix (A) );
       TEST_NOTHROW( solver->initialize () );
       if (success) {
         TEST_NOTHROW( solver->compute () );
