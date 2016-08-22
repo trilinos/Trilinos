@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include "../../stk_util/stk_util/parallel/DistributedIndex.hpp"
-#include "../../stk_mesh/stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "../../stk_mesh/stk_mesh/base/GetEntities.hpp"
-#include "../../stk_util/stk_util/parallel/ParallelReduce.hpp"
-#include "../../stk_mesh/stk_mesh/base/FEMHelpers.hpp"
-#include "../../stk_mesh/stk_mesh/base/MeshDiagnostics.hpp"
+#include "stk_util/parallel/DistributedIndex.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_util/parallel/ParallelReduce.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/MeshDiagnostics.hpp"
 
 namespace
 {

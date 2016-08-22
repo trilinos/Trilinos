@@ -6,14 +6,14 @@
 #include <string>
 #include "BulkData.hpp"
 #include "MetaData.hpp"
-#include "../baseImpl/elementGraph/ElemElemGraph.hpp"
-#include "../baseImpl/elementGraph/MeshDiagnosticObserver.hpp"
-#include "../baseImpl/EquivalentEntityBlocks.hpp"
-#include "../../../stk_util/stk_util/parallel/DistributedIndex.hpp"
+#include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
+#include "stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp"
+#include "stk_mesh/baseImpl/EquivalentEntityBlocks.hpp"
+#include "stk_util/parallel/DistributedIndex.hpp"
 #include "GetEntities.hpp"
-#include "../baseImpl/MeshImplUtils.hpp"
-#include "../baseImpl/elementGraph/BulkDataIdMapper.hpp"
-#include "../baseImpl/elementGraph/ElemGraphCoincidentElems.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp"
+#include "stk_mesh/baseImpl/elementGraph/ElemGraphCoincidentElems.hpp"
 #include "stk_util/parallel/DebugTool.hpp"
 
 namespace stk { namespace mesh {

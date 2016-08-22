@@ -16,8 +16,8 @@
 #include "ElemGraphCoincidentElems.hpp"
 #include "GraphEdgeData.hpp"
 #include "SideConnector.hpp"
-#include "../MeshImplUtils.hpp"
-#include "../../../../stk_util/stk_util/util/SortAndUnique.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_util/util/SortAndUnique.hpp"
 #include "BulkDataIdMapper.hpp"
 
 namespace stk { class CommBuffer; }

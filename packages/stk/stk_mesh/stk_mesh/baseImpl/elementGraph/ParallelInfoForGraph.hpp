@@ -2,7 +2,7 @@
 #define STKMESHPARALLELINFOFORGRAPH_HPP
 #include <map>
 #include <vector>
-#include "../../base/Types.hpp"
+#include "stk_mesh/base/Types.hpp"
 #include "GraphTypes.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }

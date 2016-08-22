@@ -3,8 +3,8 @@
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
-#include "../../stk_mesh/stk_mesh/base/FEMHelpers.hpp"
-#include "../../stk_mesh/stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
 #include <stk_mesh/base/DestroyElements.hpp>
 
 namespace

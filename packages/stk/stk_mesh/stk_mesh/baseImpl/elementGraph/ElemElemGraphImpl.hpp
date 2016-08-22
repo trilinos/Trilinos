@@ -7,7 +7,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include "../../base/FEMHelpers.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
 #include "GraphTypes.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }

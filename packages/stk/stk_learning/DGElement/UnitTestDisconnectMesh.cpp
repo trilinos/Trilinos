@@ -17,7 +17,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
-#include "../../stk_io/stk_io/StkMeshIoBroker.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"
 
 class DisconnectMesh : public DGTetFixture {};
 

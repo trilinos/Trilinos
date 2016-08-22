@@ -91,7 +91,7 @@
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
 #include "stk_mesh/base/FieldParallel.hpp"
-#include "../../stk_util/stk_util/parallel/CommSparse.hpp"
+#include "stk_util/parallel/CommSparse.hpp"
 
 
 namespace stk {

@@ -3,7 +3,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include "../../base/GetEntities.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 
