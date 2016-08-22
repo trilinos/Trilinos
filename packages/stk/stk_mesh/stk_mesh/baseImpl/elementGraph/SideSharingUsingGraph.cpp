@@ -96,19 +96,12 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, stk::mesh::ElemElemGraph &
             if(edge.side1() == elementAndSide.side && edge.elem2() < 0)
             {
                 const stk::mesh::impl::ParallelInfo &pInfo = graph.get_parallel_info_for_graph_edge(edge);
-                const stk::mesh::Entity* nodes = bulkData.begin_nodes(sidesThatNeedFixing[i]);
-                unsigned numNodes = bulkData.num_nodes(sidesThatNeedFixing[i]);
 
                 SideSharingData localTemp({bulkData.identifier(elementAndSide.element), elementAndSide.side},
                                           sidesThatNeedFixing[i],
                                           pInfo.get_proc_rank_of_neighbor(),
                                           std::min(bulkData.parallel_rank(),pInfo.get_proc_rank_of_neighbor()),
                                           bulkData.identifier(sidesThatNeedFixing[i]));
-
-                localTemp.sideNodes.resize(numNodes);
-                for(unsigned j=0; j<numNodes; ++j) {
-                    localTemp.sideNodes[j] = bulkData.identifier(nodes[j]);
-                }
 
                 fill_part_ordinals_besides_owned_and_shared(bulkData.bucket(sidesThatNeedFixing[i]), sharedOrd, localTemp.partOrdinals);
 
@@ -129,10 +122,6 @@ void pack_data(stk::CommSparse& comm, const std::vector<SideSharingData>& sideSh
         comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(idAndSides[i].id);
         comm.send_buffer(other_proc).pack<int>(idAndSides[i].side);
         comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(sideSharingDataThisProc[i].chosenSideId);
-        comm.send_buffer(other_proc).pack<size_t>(sideSharingDataThisProc[i].sideNodes.size());
-        for(stk::mesh::EntityId nodeId : sideSharingDataThisProc[i].sideNodes) {
-            comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(nodeId);
-        }
         comm.send_buffer(other_proc).pack<size_t>(sideSharingDataThisProc[i].partOrdinals.size());
         for(stk::mesh::PartOrdinal partOrd : sideSharingDataThisProc[i].partOrdinals) {
             comm.send_buffer(other_proc).pack<stk::mesh::PartOrdinal>(partOrd);
@@ -175,7 +164,6 @@ void unpack_data(stk::CommSparse& comm, int my_proc_id, int num_procs, std::vect
             localTemp.owningProc = std::min(my_proc_id, i);;
             localTemp.sharingProc = i;
             localTemp.chosenSideId = chosenId;
-            unpack_vector(comm.recv_buffer(i), localTemp.sideNodes);
             unpack_vector(comm.recv_buffer(i), localTemp.partOrdinals);
 
             sideSharingDataThisProc.push_back(localTemp);

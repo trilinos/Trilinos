@@ -270,7 +270,7 @@ stk::mesh::Entity declare_element_side_with_nodes(stk::mesh::BulkData &mesh,
                                                   stk::mesh::Part &part)
 {
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, mesh.mesh_meta_data().side_rank(), nodes);
-    return mesh.declare_element_side(globalId, elem, ordinalAndPermutation.first, {&part});
+    return mesh.declare_element_side(elem, ordinalAndPermutation.first, {&part});
 }
 
 stk::mesh::Entity declare_element_to_edge_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,

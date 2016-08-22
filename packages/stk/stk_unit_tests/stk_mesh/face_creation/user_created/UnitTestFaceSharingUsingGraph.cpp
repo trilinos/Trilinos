@@ -54,11 +54,12 @@ protected:
         get_bulk().initialize_face_adjacent_element_graph();
         test_that_one_face_exists_on_both_procs_after_only_one_proc_makes_face();
 
+        stk::mesh::EntityVector sides;
+        stk::mesh::get_selected_entities(get_meta().globally_shared_part(), get_bulk().buckets(get_meta().side_rank()), sides);
         EXPECT_EQ(4u, stk::mesh::count_selected_entities(get_meta().globally_shared_part(), get_bulk().buckets(stk::topology::NODE_RANK)));
-        EXPECT_EQ(1u, stk::mesh::count_selected_entities(get_meta().globally_shared_part(), get_bulk().buckets(get_meta().side_rank())));
-        stk::mesh::Entity userCreatedFace = get_bulk().get_entity(get_meta().side_rank(), 1);
-        ASSERT_EQ(4u, get_bulk().num_nodes(userCreatedFace));
-        const stk::mesh::Entity *nodes = get_bulk().begin_nodes(userCreatedFace);
+        ASSERT_EQ(1u, sides.size());
+        ASSERT_EQ(4u, get_bulk().num_nodes(sides[0]));
+        const stk::mesh::Entity *nodes = get_bulk().begin_nodes(sides[0]);
         EXPECT_EQ(5u, get_bulk().identifier(nodes[0]));
         EXPECT_EQ(6u, get_bulk().identifier(nodes[1]));
         EXPECT_EQ(8u, get_bulk().identifier(nodes[2]));

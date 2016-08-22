@@ -3795,42 +3795,26 @@ void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& s
     stk::CommSparse comm(parallel());
     allocate_and_send(comm, sideSharingDataToSend, idAndSides);
     unpack_data(comm, parallel_rank(), parallel_size(), sideSharingDataReceived);
-    stk::mesh::EntityVector sideNodes;
     for(SideSharingData &sideSharingData : sideSharingDataReceived)
     {
         stk::mesh::Entity element = get_entity(stk::topology::ELEM_RANK, sideSharingData.elementAndSide.id);
         int sideOrdinal = sideSharingData.elementAndSide.side;
-        stk::mesh::PartVector addParts;
-        stk::mesh::impl::convert_part_ordinals_to_parts(mesh_meta_data(), sideSharingData.partOrdinals, addParts);
-        stk::mesh::EntityVector sideNodeEntities(sideSharingData.sideNodes.size());
-        for(size_t i=0; i<sideNodeEntities.size(); ++i)
-            sideNodeEntities[i] = get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
 
         stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(*this, element, sideOrdinal);
-        stk::mesh::EntityRank sideRank = mesh_meta_data().side_rank();
         if(!is_valid(side))
         {
-            stk::mesh::impl::fill_element_side_nodes_from_topology(*this, element, sideOrdinal, sideNodes);
-            stk::mesh::EntityVector localNodesOrderedByNeighbor(sideSharingData.sideNodes.size());
-            for(size_t i=0;i<localNodesOrderedByNeighbor.size();++i)
-                localNodesOrderedByNeighbor[i] = get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
-
+            stk::mesh::PartVector addParts;
+            stk::mesh::impl::convert_part_ordinals_to_parts(mesh_meta_data(), sideSharingData.partOrdinals, addParts);
             side = declare_element_side(sideSharingData.chosenSideId, element, sideOrdinal, addParts);
         }
         else
         {
             if (parallel_rank() != sideSharingData.owningProc)
             {
-                stk::mesh::EntityKey newKey(sideRank, sideSharingData.chosenSideId);
+                stk::mesh::EntityKey newKey(mesh_meta_data().side_rank(), sideSharingData.chosenSideId);
                 stk::mesh::EntityKey existingKey = entity_key(side);
                 if(newKey != existingKey)
                     internal_change_entity_key(existingKey, newKey, side);
-
-                std::vector<stk::mesh::EntityKey> nodeKeys(sideSharingData.sideNodes.size());
-                for(size_t i=0;i<sideSharingData.sideNodes.size();++i)
-                    nodeKeys[i] = stk::mesh::EntityKey(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
-
-                change_connectivity_for_edge_or_face(side, nodeKeys);
             }
         }
         sideSharingData.side = side;

@@ -1234,27 +1234,27 @@ TEST(Transfer, copy001T011Face)
       if (0 == p_rank) {
         stk::mesh::Entity elem1 = meshA.get_entity(stk::topology::ELEM_RANK, 1);
         stk::mesh::Entity elem2 = meshA.get_entity(stk::topology::ELEM_RANK, 2);
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem1, 0))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem1, 1))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem1, 2))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem1, 3))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem1, 4))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem1, 5))] = 0;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 0))] = 0;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 1))] = 0;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 2))] = 0;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 3))] = 0;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 4))] = 0;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 5))] = 0;
 
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem2, 0))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem2, 1))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem2, 2))] = 1;
-        //gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem2, 3))] = 0;  // Already in map from elem1
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem2, 4))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem2, 5))] = 1;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 0))] = 1;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 1))] = 1;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 2))] = 1;
+        //gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 3))] = 0;  // Already in map from elem1
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 4))] = 1;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 5))] = 1;
       } else {
         stk::mesh::Entity elem3 = meshA.get_entity(stk::topology::ELEM_RANK, 3);
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem3, 0))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem3, 1))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem3, 2))] = 1;
-        //gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem3, 3))] = 0;  // Not owned by this proc
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem3, 4))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::impl::get_side_for_element(meshA, elem3, 5))] = 1;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 0))] = 1;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 1))] = 1;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 2))] = 1;
+        //gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 3))] = 0;  // Not owned by this proc
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 4))] = 1;
+        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 5))] = 1;
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
 
@@ -1262,12 +1262,12 @@ TEST(Transfer, copy001T011Face)
       MeshIDSet gold_remote_keys;
       if (1 == p_rank) {
         stk::mesh::Entity elem2 = meshB.get_entity(stk::topology::ELEM_RANK, 2);
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::impl::get_side_for_element(meshB, elem2, 0)).m_value);
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::impl::get_side_for_element(meshB, elem2, 1)).m_value);
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::impl::get_side_for_element(meshB, elem2, 2)).m_value);
-        //gold_remote_keys.insert(meshB.entity_key(stk::mesh::impl::get_side_for_element(meshB, elem2, 3)).m_value);  // Not received because not owned
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::impl::get_side_for_element(meshB, elem2, 4)).m_value);
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::impl::get_side_for_element(meshB, elem2, 5)).m_value);
+        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 0)).m_value);
+        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 1)).m_value);
+        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 2)).m_value);
+        //gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 3)).m_value);  // Not received because not owned
+        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 4)).m_value);
+        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 5)).m_value);
       }
       EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
     }
