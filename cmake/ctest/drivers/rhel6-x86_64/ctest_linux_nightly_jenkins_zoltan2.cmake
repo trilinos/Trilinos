@@ -1,0 +1,313 @@
+# @HEADER
+# ************************************************************************
+#
+#            Trilinos: An Object-Oriented Solver Framework
+#                 Copyright (2001) Sandia Corporation
+#
+#
+# Copyright (2001) Sandia Corporation. Under the terms of Contract
+# DE-AC04-94AL85000, there is a non-exclusive license for use of this
+# work by or on behalf of the U.S. Government.  Export of this program
+# may require a license from the United States Government.
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# NOTICE:  The United States Government is granted for itself and others
+# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+# license in this data to reproduce, prepare derivative works, and
+# perform publicly and display publicly.  Beginning five (5) years from
+# July 25, 2001, the United States Government is granted for itself and
+# others acting on its behalf a paid-up, nonexclusive, irrevocable
+# worldwide license in this data to reproduce, prepare derivative works,
+# distribute copies to the public, perform publicly and display
+# publicly, and to permit others to do so.
+#
+# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+#
+# ************************************************************************
+# @HEADER
+
+# This will be modified later
+MESSAGE( "Turning CTEST_DO_UPDATES off to prevent attempt to access Sandia libraries." )
+SET(CTEST_DO_UPDATES FALSE)
+
+# To be deleted at some point
+#MESSAGE( "Turning CTEST_DO_SUBMIT off to prevent dashboard submissions temporarily." )
+#SET(CTEST_DO_SUBMIT FALSE)
+#SET(CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE FALSE)
+
+MACRO( RunTest testName commType buildType )
+
+SET( CTEST_BUILD_NAME ${testName} )
+
+  MESSAGE( "Running subtest: ${testName}" )
+  MESSAGE( "EXTRA_CONFIGURE_OPTIONS: ${EXTRA_CONFIGURE_OPTIONS}" )
+
+  SET(COMM_TYPE ${commType} )
+  SET(BUILD_TYPE ${buildType} )
+
+  # Currently just for Tech-X setup and not for normal Trilinos CDash testing
+  IF( DEFINED ENV{CUSTOM_ENV_VARIABLES} )
+    SET( CTEST_BINARY_DIRECTORY "$ENV{OVERRIDE_BINARY_LOCATION_ROOT}/${testName}" )
+    SET( CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/../../../../../Trilinos" )
+    MESSAGE( "Custom build location setup set CTEST_BINARY_DIRECTORY to ${CTEST_BINARY_DIRECTORY}")
+    MESSAGE( "Custom build location setup set CTEST_SOURCE_DIRECTORY to ${CTEST_SOURCE_DIRECTORY}")
+  ENDIF()
+
+  SET(CTEST_PARALLEL_LEVEL 8)
+  SET(CTEST_TEST_TYPE Experimental)
+  SET(CTEST_TEST_TIMEOUT 900)
+  SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY FALSE)
+
+  INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.generic.jenkins.cmake")
+  SET(Trilinos_PACKAGES Zoltan2)
+
+  TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
+
+ENDMACRO( RunTest )
+
+FOREACH( EPETRA_ENABLED TRUE FALSE )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTPL_ENABLE_Scotch:BOOL=TRUE"
+  "-DTPL_ENABLE_ParMETIS:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=TRUE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-int-int-double-scotch-parmetis-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTPL_ENABLE_ParMETIS:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=TRUE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-int-int-double-parmetis-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTPL_ENABLE_Scotch:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=TRUE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-int-int-double-scotch-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=TRUE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+  "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=TRUE"
+)
+RunTest( par-int-longlong-double-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=FALSE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+  "-DCMAKE_CXX_FLAGS=-DTEST_STK_DATA_TYPES"
+)
+RunTest( par-stk-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=FALSE"
+  "-DTpetra_INST_FLOAT:BOOL=TRUE"
+  "-DTpetra_INST_INT_INT:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=TRUE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-int-unsignedlong-float-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=TRUE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-int-unsignedlong-double-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=TRUE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-int-int-double-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=FALSE"
+  "-DTpetra_INST_FLOAT:BOOL=TRUE"
+  "-DTpetra_INST_INT_INT:BOOL=TRUE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-int-int-float-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=FALSE"
+  "-DTpetra_INST_FLOAT:BOOL=TRUE"
+  "-DTpetra_INST_INT_INT:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=TRUE"
+)
+RunTest( par-int-long-float-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=FALSE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-stk-off-epetra-${EPETRA_ENABLED} MPI Release )
+
+IF(EPETRA_ENABLED)
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTrilinos_ENABLE_Galeri:BOOL=TRUE"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=TRUE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-int-int-double-galeri-epetra-${EPETRA_ENABLED} MPI Release )
+ENDIF()
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTrilinos_ENABLE_Pamgen:BOOL=TRUE"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=TRUE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"mak
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-int-int-double-pamgen-epetra-${EPETRA_ENABLED} MPI Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=TRUE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( ser-int-int-double-epetra-${EPETRA_ENABLED} Serial Release )
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=TRUE"
+  "-DTrilinos_ENABLE_Epetra:BOOL=${EPETRA_ENABLED}"
+  "-DTpetra_INST_DOUBLE:BOOL=TRUE"
+  "-DTpetra_INST_FLOAT:BOOL=FALSE"
+  "-DTpetra_INST_INT_INT:BOOL=TRUE"
+  "-DTpetra_INST_INT_UNSIGNED:BOOL=FALSE"
+  "-DTpetra_INST_INT_UNSIGNED_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG_LONG:BOOL=FALSE"
+  "-DTpetra_INST_INT_LONG:BOOL=FALSE"
+)
+RunTest( par-debug-int-int-double-epetra-${EPETRA_ENABLED} MPI Debug )
+
+ENDFOREACH( EPETRA_ENABLED )
