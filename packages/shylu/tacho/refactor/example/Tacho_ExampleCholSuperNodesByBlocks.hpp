@@ -544,7 +544,7 @@ namespace Tacho {
           << "real "
           << "general "
           << std::endl;
-      size_type nnz = 0;
+      size_type nnz = 0, cnt = 0;
       const size_type nnz_blk = HA_factor.NumNonZeros();
       const value_type eps = 1.0e-11;
       for (ordinal_type k=0;k<nnz_blk;++k) {
@@ -555,11 +555,11 @@ namespace Tacho {
           offn = blk.OffsetCols()+1,
           m = blk.NumRows(),
           n = blk.NumCols();
-
+        
         if (offm == offn) {
           // print upper part only
           for (ordinal_type j=0;j<m;++j)
-            for (ordinal_type i=0;i<(j+1);++i)
+            for (ordinal_type i=0;i<(j+1);++i,++cnt)
               if (std::abs(flat.Value(i,j)) > eps) {
                 out << (offm+i) << " " << (offn+j) << " " << flat.Value(i,j) << std::endl;
                 ++nnz;
@@ -567,14 +567,14 @@ namespace Tacho {
         } else {
           // print entire matrix
           for (ordinal_type j=0;j<n;++j)
-            for (ordinal_type i=0;i<m;++i)
+            for (ordinal_type i=0;i<m;++i,++cnt)
               if (std::abs(flat.Value(i,j)) > eps) {
                 out << (offm+i) << " " << (offn+j) << " " << flat.Value(i,j) << std::endl;          
                 ++nnz;
               }
         }
       }
-      out << "## " << AA_reordered.NumRows() << " " << AA_reordered.NumCols() << " " << nnz << std::endl; 
+      out << "## " << AA_reordered.NumRows() << " " << AA_reordered.NumCols() << " " << nnz << " ## cnt " << cnt << std::endl; 
     }
 
     /// Phase 4 : Solve problem
