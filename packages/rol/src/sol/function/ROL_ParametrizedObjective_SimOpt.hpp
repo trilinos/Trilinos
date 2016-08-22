@@ -46,12 +46,12 @@
 #define ROL_PARAMETRIZEDOBJECTIVE_SIMOPT_H
 
 #include "ROL_Objective_SimOpt.hpp"
-#include "ROL_Parametrize.hpp"
+#include "ROL_ParametrizedObjective.hpp"
 
 namespace ROL {
 
 template <class Real>
-class ParametrizedObjective_SimOpt : public Objective_SimOpt<Real>, public Parametrize<Real>  {
+class ParametrizedObjective_SimOpt : public ParametrizedObjective<Real>, public Objective_SimOpt<Real> {
 public:
   virtual ~ParametrizedObjective_SimOpt(void){}
 }; // class ParametrizedObjective_SimOpt

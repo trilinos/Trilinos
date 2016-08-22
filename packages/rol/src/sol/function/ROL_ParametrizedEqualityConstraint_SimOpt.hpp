@@ -46,12 +46,12 @@
 #define ROL_PARAMETRIZEDEQUALITYCONSTRAINT_SIMOPT_H
 
 #include "ROL_EqualityConstraint_SimOpt.hpp"
-#include "ROL_Parametrize.hpp"
+#include "ROL_ParametrizedEqualityConstraint.hpp"
 
 namespace ROL {
 
 template <class Real>
-class ParametrizedEqualityConstraint_SimOpt : public EqualityConstraint_SimOpt<Real>, public Parametrize<Real> {
+class ParametrizedEqualityConstraint_SimOpt : public ParametrizedEqualityConstraint<Real>, public EqualityConstraint_SimOpt<Real> {
 public:
   virtual ~ParametrizedEqualityConstraint_SimOpt(void) {}
 }; // class ParametrizedEqualityConstraint_SimOpt

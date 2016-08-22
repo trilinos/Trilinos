@@ -41,20 +41,26 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_PARAMETRIZED_STDOBJECTIVE_H
+#define ROL_PARAMETRIZED_STDOBJECTIVE_H
 
-#ifndef ROL_PARAMETRIZEDEQUALITYCONSTRAINT_H
-#define ROL_PARAMETRIZEDEQUALITYCONSTRAINT_H
+#include "ROL_StdObjective.hpp"
+#include "ROL_ParametrizedObjective.hpp"
 
-#include "ROL_EqualityConstraint.hpp"
-#include "ROL_Parametrize.hpp"
+/** @ingroup func_group
+    \class ROL::ParametrizedStdObjective
+    \brief Specializes the ROL::Objective interface for objective functions
+    that operate on ROL::StdVector's.
+*/
+
 
 namespace ROL {
 
 template <class Real>
-class ParametrizedEqualityConstraint : public virtual EqualityConstraint<Real>, public Parametrize<Real> {
+class ParametrizedStdObjective : public ParametrizedObjective<Real>, public StdObjective<Real> {
 public:
-  virtual ~ParametrizedEqualityConstraint(void) {}
-}; // class ParametrizedEqualityConstraint
+  virtual ~ParametrizedStdObjective(void) {}
+};
 
 } // namespace ROL
 
