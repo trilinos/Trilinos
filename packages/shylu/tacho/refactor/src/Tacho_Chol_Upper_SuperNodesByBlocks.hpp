@@ -10,6 +10,21 @@ namespace Tacho {
   template<typename MT>
   class DenseMatrixView;
 
+  template<>
+  template<typename CrsExecViewTypeA>
+  inline
+  Stat
+  Chol<Uplo::Upper,
+       AlgoChol::SuperNodesByBlocks,Variant::One>
+  ::stat(CrsExecViewTypeA &A) {
+
+    DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA(A.Hier());
+      
+    return Chol<Uplo::Upper,
+      AlgoChol::DenseByBlocks,Variant::One>
+      ::stat(AA);
+  }
+
   /// Supernodal Cholesky
   /// ===================
   template<>

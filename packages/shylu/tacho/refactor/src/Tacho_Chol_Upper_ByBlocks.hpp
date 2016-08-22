@@ -13,6 +13,117 @@ namespace Tacho {
   class Chol<Uplo::Upper,
              AlgoChol::ByBlocks,ArgVariant,ControlType> {
   public:
+    // statistics
+    // ==========
+    template<typename CrsTaskViewTypeA>
+    inline
+    static Stat stat(CrsTaskViewTypeA &A) {
+      typedef typename CrsTaskViewTypeA::row_view_type row_view_type;
+
+      Stat r_val;
+      CrsTaskViewTypeA ATL, ATR,      A00, A01, A02,
+        /**/           ABL, ABR,      A10, A11, A12,
+        /**/                          A20, A21, A22;
+      
+      Part_2x2(A,  ATL, ATR,
+               /**/ABL, ABR,
+               0, 0, Partition::TopLeft);
+      
+      while (ATL.NumRows() < A.NumRows()) {
+        Part_2x2_to_3x3(ATL, ATR, /**/  A00, A01, A02,
+                        /*******/ /**/  A10, A11, A12,
+                        ABL, ABR, /**/  A20, A21, A22,
+                        1, 1, Partition::BottomRight);
+        // -----------------------------------------------------
+        
+        row_view_type diag(A11, 0); 
+        const bool diagNull = diag.Value(0).isNull();
+        
+        if (!diagNull) {
+          // A11 = chol(A11)
+          {
+            auto &aa = diag.Value(0);
+            r_val += Chol<Uplo::Upper,
+              CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
+              ::stat(aa);
+          }
+          
+          // A12 = inv(triu(A11)') * A12
+          {
+            row_view_type b(A12, 0); 
+            auto &aa = diag.Value(0);
+            
+            const auto nnz = b.NumNonZeros();
+            for (auto j=0;j<nnz;++j) {
+              auto &bb = b.Value(j);
+              
+              if (!bb.isNull()) {
+                r_val += Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                  CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm)>
+                  ::stat(Diag::NonUnit, 1.0, aa, bb);
+              } 
+            }
+          }
+          
+          // A22 = A22 - A12' * A12
+          {
+            // case that X.transpose, A.no_transpose, Y.no_transpose
+            row_view_type a(A12,0);
+            
+            const auto nnz = a.NumNonZeros();
+            
+            // update herk
+            for (auto i=0;i<nnz;++i) {
+              const auto row_at_i = a.Col(i);
+              auto &aa = a.Value(i);
+              
+              if (!aa.isNull()) {
+                row_view_type c(A22, row_at_i);
+                
+                auto idx = 0;
+                for (auto j=i;j<nnz && (idx > -2);++j) {
+                  const auto col_at_j = a.Col(j);
+                  auto &bb = a.Value(j);
+                  
+                  if (!bb.isNull()) {
+                    if (row_at_i == col_at_j) {
+                      idx = c.Index(row_at_i, idx);
+                      if (idx >= 0) {
+                        auto &cc = c.Value(idx);
+                        
+                        if (!cc.isNull()) {
+                          r_val += Herk<Uplo::Upper,Trans::ConjTranspose,
+                            CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk)>
+                            ::stat(-1.0, aa, 1.0, cc);
+                        } 
+                      }
+                    } else {
+                      idx = c.Index(col_at_j, idx);
+                      if (idx >= 0) {
+                        auto &cc = c.Value(idx);
+                        
+                        if (!cc.isNull()) {
+                          r_val += Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                            CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm)>
+                            ::stat(-1.0, aa, bb, 1.0, cc);
+                        } 
+                      }
+                    }
+                  } 
+                }
+              }
+            }
+          }
+        }
+        
+        // -----------------------------------------------------
+        Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
+                         A10, A11, A12, /**/ /******/
+                         A20, A21, A22, /**/ ABL, ABR,
+                         Partition::TopLeft);
+      }
+      return r_val;
+    }
 
     // function interface
     // ==================

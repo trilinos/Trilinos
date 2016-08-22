@@ -15,6 +15,31 @@ namespace Tacho {
   /// Gemm for supernodal factorization
   /// =================================
   template<>
+  template<typename ScalarType,
+           typename CrsExecViewTypeA,
+           typename CrsExecViewTypeB,
+           typename CrsExecViewTypeC>
+  inline
+  Stat
+  Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+       AlgoGemm::SparseSparseSuperNodesByBlocks,Variant::One>
+  ::stat(const ScalarType alpha,
+         CrsExecViewTypeA &A,
+         CrsExecViewTypeB &B,
+         const ScalarType beta,
+         CrsExecViewTypeC &C) {
+    DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA(A.Hier());
+    DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> BB(B.Hier());
+    DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> CC(C.Hier());
+    
+    return Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+      AlgoGemm::DenseByBlocks,Variant::One>
+      ::stat(alpha, AA, BB, beta, CC);
+  }
+
+  /// Gemm for supernodal factorization
+  /// =================================
+  template<>
   template<typename PolicyType,
            typename MemberType,
            typename ScalarType,

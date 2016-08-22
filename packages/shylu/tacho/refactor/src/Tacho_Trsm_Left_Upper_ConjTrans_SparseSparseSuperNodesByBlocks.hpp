@@ -12,6 +12,26 @@ namespace Tacho {
   template<typename MT>
   class DenseMatrixView;
 
+  template<>
+  template<typename ScalarType,
+           typename CrsExecViewTypeA,
+           typename CrsExecViewTypeB>
+  inline
+  Stat
+  Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+       AlgoTrsm::SparseSparseSuperNodesByBlocks,Variant::One>
+  ::stat(const int diagA,
+         const ScalarType alpha,
+         CrsExecViewTypeA &A,
+         CrsExecViewTypeB &B) {
+    DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA(A.Hier());
+    DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> BB(B.Hier());
+    
+    return Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+      AlgoTrsm::DenseByBlocks,Variant::One>
+      ::stat(diagA, alpha, AA, BB);
+  }
+  
   // Trsm for supernodal factorization
   // =================================
   template<>

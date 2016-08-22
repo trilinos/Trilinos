@@ -13,6 +13,83 @@ namespace Tacho {
   class Chol<Uplo::Upper,
              AlgoChol::DenseByBlocks,ArgVariant,ControlType> {
   public:
+
+    template<typename DenseTaskViewTypeA>
+    inline
+    static Stat stat(DenseTaskViewTypeA &A) {
+      Stat r_val;
+      DenseTaskViewTypeA ATL, ATR,      A00, A01, A02,
+        /**/             ABL, ABR,      A10, A11, A12,
+        /**/                            A20, A21, A22;
+      
+      Part_2x2(A,  ATL, ATR,
+               /**/ABL, ABR,
+               0, 0, Partition::TopLeft);
+      
+      while (ATL.NumRows() < A.NumRows()) {
+        Part_2x2_to_3x3(ATL, ATR, /**/  A00, A01, A02,
+                        /*******/ /**/  A10, A11, A12,
+                        ABL, ABR, /**/  A20, A21, A22,
+                        1, 1, Partition::BottomRight);
+        // -----------------------------------------------------
+        
+        // A11 = chol(A11)
+        {
+          auto &aa = A11.Value(0, 0);
+          
+          r_val += Chol<Uplo::Upper,
+            CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Chol)>
+            ::stat(aa);
+        }
+        
+        // A12 = inv(triu(A11)') * A12
+        {
+          auto &aa = A11.Value(0, 0);
+          
+          const auto ncols = A12.NumCols();
+          for (auto j=0;j<ncols;++j) {
+            auto &bb = A12.Value(0, j);
+            
+            r_val += Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+              CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
+              ::stat(Diag::NonUnit, 1.0, aa, bb);
+          }
+        }
+        
+        // A22 = A22 - A12' * A12
+        {
+          const auto ncols = A22.NumCols();
+          for (auto j=0;j<ncols;++j) {
+            {
+              auto &aa = A12.Value(0, j);
+              auto &cc = A22.Value(j, j);
+              
+              r_val += Herk<Uplo::Upper,Trans::ConjTranspose,
+                CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Herk)>
+                ::stat(-1.0, aa, 1.0, cc);
+            }
+            for (auto i=0;i<j;++i) {
+              auto &aa = A12.Value(0, i);
+              auto &bb = A12.Value(0, j);
+              auto &cc = A22.Value(i, j);
+              
+              r_val += Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Gemm)>
+                ::stat(-1.0, aa, bb, 1.0, cc);
+            }
+          }
+        }
+        
+        // -----------------------------------------------------
+        Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
+                         A10, A11, A12, /**/ /******/
+                         A20, A21, A22, /**/ ABL, ABR,
+                         Partition::TopLeft);
+      }
+      return r_val;
+    }
+
+
     template<typename PolicyType,
              typename MemberType,
              typename DenseTaskViewTypeA>

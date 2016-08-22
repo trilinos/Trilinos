@@ -13,6 +13,41 @@ namespace Tacho {
   class Herk<Uplo::Upper,Trans::ConjTranspose,
              AlgoHerk::DenseByBlocks,ArgVariant,ControlType> {
   public:
+
+    template<typename ScalarType,
+             typename DenseTaskViewTypeA,
+             typename DenseTaskViewTypeC>
+    inline
+    static Stat stat(const ScalarType alpha,
+                    DenseTaskViewTypeA &A,
+                    const ScalarType beta,
+                    DenseTaskViewTypeC &C) {
+      Stat r_val;
+      const auto pend = A.NumRows();
+      for (auto p=0;p<pend;++p) {
+        const auto beta_select = (p > 0 ? ScalarType(1.0) : beta);
+        const auto k2end = C.NumCols();
+        for (auto k2=0;k2<k2end;++k2) {
+          for (auto k1=0;k1<(k2+1);++k1) {
+            auto &aa = A.Value(p,  k1);
+            auto &cc = C.Value(k1, k2);
+            if (k1 == k2) {
+              r_val += Herk<Uplo::Upper,Trans::ConjTranspose,
+                CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Herk)>
+                ::stat(alpha, aa, beta_select, cc);
+            } else {
+              auto &bb = A.Value(p, k2);
+              
+              r_val += Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Gemm)>
+                ::stat(alpha, aa, bb, beta_select, cc);
+            }
+          }
+        }
+      }
+      return r_val;
+    }
+
     template<typename PolicyType,
              typename MemberType,
              typename ScalarType,

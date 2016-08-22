@@ -8,7 +8,25 @@
 #include "Teuchos_LAPACK.hpp"
 #endif
 
+#include "Tacho_DenseFlopCount.hpp"
+
 namespace Tacho {
+
+  template<>
+  template<typename DenseExecViewTypeA>
+  inline
+  Stat
+  Chol<Uplo::Upper,
+       AlgoChol::ExternalLapack,Variant::One>
+  ::stat(DenseExecViewTypeA &A) {
+    Stat r_val;
+
+    const ordinal_type m = A.NumRows();
+    r_val.flop = DenseFlopCount<typename DenseExecViewTypeA::value_type>::Chol(m);
+
+    return r_val;
+  }
+
   /// LAPACK Chol
   /// ===========
   /// Properties:

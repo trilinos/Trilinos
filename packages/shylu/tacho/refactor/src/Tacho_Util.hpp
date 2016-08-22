@@ -430,10 +430,9 @@ namespace Tacho {
   };
 
 
-  class Stat {
-  private:
+  struct Stat {
     double flop;
-  public:
+
     Stat() : flop(0.0) {}
     Stat& operator+=(const Stat &b) {
       flop += b.flop;

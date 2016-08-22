@@ -8,7 +8,35 @@
 #include "Teuchos_BLAS.hpp"
 #endif
 
+#include "Tacho_DenseFlopCount.hpp"
+
 namespace Tacho {
+
+  template<>
+  template<typename ScalarType,
+           typename DenseExecViewTypeA,
+           typename DenseExecViewTypeB,
+           typename DenseExecViewTypeC>
+  inline
+  Stat
+  Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+       AlgoGemm::ExternalBlas,Variant::One>
+  ::stat(const ScalarType alpha,
+         DenseExecViewTypeA &A,
+         DenseExecViewTypeB &B,
+         const ScalarType beta,
+         DenseExecViewTypeC &C) {
+    Stat r_val;
+
+    const ordinal_type m = C.NumRows();
+    const ordinal_type n = C.NumCols();
+    const ordinal_type k = B.NumRows();
+    
+    r_val.flop = DenseFlopCount<typename DenseExecViewTypeA::value_type>::Gemm(m, n, k);
+    
+    return r_val;
+  }
+
   /// BLAS Gemm
   /// =========
   /// Properties:

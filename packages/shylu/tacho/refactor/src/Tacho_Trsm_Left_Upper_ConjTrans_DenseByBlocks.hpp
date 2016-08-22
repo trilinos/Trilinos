@@ -11,6 +11,75 @@ namespace Tacho {
   class Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
              AlgoTrsm::DenseByBlocks,ArgVariant,ControlType> {
   public:
+
+    template<typename ScalarType,
+             typename DenseTaskViewTypeA,
+             typename DenseTaskViewTypeB>
+    inline
+    static Stat stat(const int diagA,
+                     const ScalarType alpha,
+                     DenseTaskViewTypeA &A,
+                     DenseTaskViewTypeB &B) {
+      Stat r_val;
+      DenseTaskViewTypeA ATL, ATR,      A00, A01, A02,
+        /**/             ABL, ABR,      A10, A11, A12,
+        /**/                            A20, A21, A22;
+      
+      DenseTaskViewTypeA BT,            B0,
+        /**/             BB,            B1,
+        /**/                            B2;
+      
+      Part_2x2(A,  ATL, ATR,
+               /**/ABL, ABR,
+               0, 0, Partition::TopLeft);
+      
+      Part_2x1(B,  BT,
+               /**/BB, 
+               0, Partition::Top);     
+      
+      while (ATL.NumRows() < A.NumRows()) {
+        const auto alpha_select = (ATL.NumRows() == 0 ? ScalarType(1.0) : alpha);
+        
+        Part_2x2_to_3x3(ATL, ATR, /**/ A00, A01, A02,
+                        /*******/ /**/ A10, A11, A12,
+                        ABL, ABR, /**/ A20, A21, A22,
+                        1, 1, Partition::BottomRight);
+        
+        Part_2x1_to_3x1(BT,  /**/ B0,
+                        /**/ /**/ B1,
+                        BB,  /**/ B2,
+                        1, Partition::Bottom);  
+        
+        //------------------------------------------------------------
+        auto &aa = A11.Value(0, 0);
+        const auto ncols = B1.NumCols();
+        for (auto j=0;j<ncols;++j) {
+          auto &bb = B1.Value(0, j);
+          
+          r_val += Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+            CtrlDetail(ControlType,AlgoChol::DenseByBlocks,ArgVariant,Trsm)>
+            ::stat(diagA, alpha_select, aa, bb);
+        }
+        
+        r_val += Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+          AlgoGemm::DenseByBlocks,Variant::One>
+          ::stat(-1.0, A12, B1, alpha_select, B2);
+
+        //------------------------------------------------------------
+        Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
+                         A10, A11, A12, /**/ /******/
+                         A20, A21, A22, /**/ ABL, ABR,
+                         Partition::TopLeft);
+        
+        Merge_3x1_to_2x1(B0, /**/ BT,
+                         B1, /**/ /**/
+                         B2, /**/ BB,
+                         Partition::Top);
+      }
+      return r_val;
+    }
+
+
     // data-parallel interface with nested task generation
     // ===================================================
     template<typename PolicyType,

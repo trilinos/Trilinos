@@ -9,7 +9,37 @@
 #include "Teuchos_BLAS.hpp"
 #endif
 
+#include "Tacho_DenseFlopCount.hpp"
+
 namespace Tacho {
+
+  /// BLAS Herk
+  /// =========
+  /// Properties:
+  /// - Compile with Device (o),
+  /// - Callable in KokkosFunctors (o)
+  /// - For now, this is for HostSpace only.
+  template<>
+  template<typename ScalarType,
+           typename DenseExecViewTypeA,
+           typename DenseExecViewTypeC>
+  inline
+  Stat
+  Herk<Uplo::Upper,Trans::ConjTranspose,
+       AlgoHerk::ExternalBlas,Variant::One>
+  ::stat(const ScalarType alpha,
+         DenseExecViewTypeA &A,
+         const ScalarType beta,
+         DenseExecViewTypeC &C) {
+    Stat r_val;
+    
+    const ordinal_type n = C.NumRows();
+    const ordinal_type k = A.NumRows();
+    r_val.flop = DenseFlopCount<typename DenseExecViewTypeA::value_type>::Syrk(k, n);
+    
+    return r_val;
+  }
+
   /// BLAS Herk
   /// =========
   /// Properties:

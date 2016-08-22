@@ -13,6 +13,38 @@ namespace Tacho {
   class Gemm<Trans::ConjTranspose,Trans::NoTranspose,
              AlgoGemm::DenseByBlocks,ArgVariant,ControlType> {
   public:
+
+    template<typename ScalarType,
+             typename DenseTaskViewTypeA,
+             typename DenseTaskViewTypeB,
+             typename DenseTaskViewTypeC>
+    inline
+    static Stat stat(const ScalarType alpha,
+                     DenseTaskViewTypeA &A,
+                     DenseTaskViewTypeB &B,
+                     const ScalarType beta,
+                     DenseTaskViewTypeC &C) {
+      Stat r_val;
+      const auto pend = A.NumRows();
+      for (auto p=0;p<pend;++p) {
+        const auto beta_select = (p > 0 ? ScalarType(1.0) : beta);
+        const auto k2end = C.NumCols();
+        for (auto k2=0;k2<k2end;++k2) {
+          auto &bb = B.Value(p, k2);
+          const auto k1end = C.NumRows();
+          for (auto k1=0;k1<k1end;++k1) {
+            auto &aa = A.Value(p,  k1);
+            auto &cc = C.Value(k1, k2);
+            
+            r_val += Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+              CtrlDetail(ControlType,AlgoGemm::DenseByBlocks,ArgVariant,Gemm)>
+              ::stat(alpha, aa, bb, beta_select, cc);
+          }
+        }
+      }
+      return r_val;
+    }
+
     template<typename PolicyType,
              typename MemberType,
              typename ScalarType,
