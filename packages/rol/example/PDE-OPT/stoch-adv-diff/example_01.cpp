@@ -258,11 +258,22 @@ int main(int argc, char *argv[]) {
     RealT tol(1.e-8);
     Teuchos::RCP<ROL::BatchManager<RealT> > bman_Eu
       = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
+    std::vector<RealT> sample(sdim);
+    std::stringstream name_samp;
+    name_samp << "samples_" << bman->batchID() << ".txt";
+    std::ofstream file_samp;
+    file_samp.open(name_samp.str());
     for (int i = 0; i < sampler->numMySamples(); ++i) {
-      con->setParameter(sampler->getMyPoint(i));
+      sample = sampler->getMyPoint(i);
+      con->setParameter(sample);
       con->solve(*cp,*dup,*zp,tol);
       up->axpy(sampler->getMyWeight(i),*dup);
+      for (int j = 0; j < sdim; ++j) {
+        file_samp << sample[j] << "  ";
+      }
+      file_samp << "\n";
     }
+    file_samp.close();
     bman_Eu->sumAll(*up,*pp);
     data->outputTpetraVector(p_rcp, "mean_state.txt");
 
@@ -272,9 +283,8 @@ int main(int argc, char *argv[]) {
       //= Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler_dist
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp_dist,bounds,bman));
-    std::vector<RealT> sample(sdim);
     std::stringstream name;
-    name << "samples_" << bman->batchID() << ".txt";
+    name << "obj_samples_" << bman->batchID() << ".txt";
     std::ofstream file;
     file.open(name.str());
     for (int i = 0; i < sampler_dist->numMySamples(); ++i) {
