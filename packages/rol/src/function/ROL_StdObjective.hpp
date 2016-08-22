@@ -57,7 +57,7 @@
 namespace ROL {
 
 template <class Real>
-class StdObjective : public Objective<Real> {
+class StdObjective : public virtual Objective<Real> {
 public:
   virtual void update( const std::vector<Real> &x, bool flag = true, int iter = -1 ) {}
 

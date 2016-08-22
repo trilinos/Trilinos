@@ -88,7 +88,7 @@ private:
         vec_grad1_[i] = u.dual().clone();
         vec_grad2_[i] = z.dual().clone();
         vec_hess1_[i] = u.dual().clone();
-        vec_hess2_[i] = u.dual().clone();
+        vec_hess2_[i] = z.dual().clone();
       }
       isInitialized_ = true;
     }

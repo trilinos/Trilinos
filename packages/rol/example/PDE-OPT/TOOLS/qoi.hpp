@@ -55,7 +55,7 @@ class QoI {
 public:
   virtual ~QoI() {}
 
-  virtual void value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
+  virtual Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
                      const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                      const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                      const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) = 0;

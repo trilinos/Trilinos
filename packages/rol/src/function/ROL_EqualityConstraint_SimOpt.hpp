@@ -92,7 +92,7 @@
 namespace ROL {
 
 template <class Real>
-class EqualityConstraint_SimOpt : public EqualityConstraint<Real> {
+class EqualityConstraint_SimOpt : public virtual EqualityConstraint<Real> {
 private:
   // Additional vector storage for solve
   Teuchos::RCP<Vector<Real> > unew_;

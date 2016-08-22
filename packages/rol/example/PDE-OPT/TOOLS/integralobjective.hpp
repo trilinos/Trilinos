@@ -47,6 +47,7 @@
 #include "ROL_ParametrizedObjective_SimOpt.hpp"
 #include "qoi.hpp"
 #include "assembler.hpp"
+#include "pdevector.hpp"
 
 template<class Real>
 class IntegralObjective : public ROL::ParametrizedObjective_SimOpt<Real> {
@@ -59,29 +60,26 @@ public:
     : qoi_(qoi), assembler_(assembler) {}
 
   void setParameter(const std::vector<Real> &param) {
-    qoi_->setParameter(param);
     ROL::ParametrizedObjective_SimOpt<Real>::setParameter(param);
+    qoi_->setParameter(param);
   }
 
   Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    return assembler_->assembleQoIValue(qoi_,up,zp);
+    Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+    Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+    Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+    return assembler_->assembleQoIValue(qoi_,uf,zf,zp);
   }
 
   void gradient_1(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
                   const ROL::Vector<Real> &z, Real &tol ) {
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > gp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIGradient1(qoi_,up,zp);
-      gp->scale(static_cast<Real>(1),*(assembler_->getQoIGradient1()));
+      Teuchos::RCP<Tpetra::MultiVector<> >       gf = getField(g);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      assembler_->assembleQoIGradient1(qoi_,uf,zf,zp);
+      gf->scale(static_cast<Real>(1),*(assembler_->getQoIGradient1()));
     }
     catch ( Exception::Zero & ez ) {
       g.zero();
@@ -93,20 +91,46 @@ public:
 
   void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
                   const ROL::Vector<Real> &z, Real &tol ) {
+    int NotImplemented(0), IsZero(0);
+    // Compute control field gradient
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > gp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIGradient2(qoi_,up,zp);
-      gp->scale(static_cast<Real>(1),*(assembler_->getQoIGradient2()));
+      // Get state and control vectors
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      Teuchos::RCP<Tpetra::MultiVector<> >       gf = getField(g);
+      assembler_->assembleQoIGradient2(qoi_,uf,zf,zp);
+      gf->scale(static_cast<Real>(1),*(assembler_->getQoIGradient2()));
     }
     catch ( Exception::Zero & ez ) {
-      g.zero();
+      IsZero++;
     }
     catch ( Exception::NotImplemented & eni ) {
+      NotImplemented++;
+    }
+    // Compute control parameter gradient
+    try {
+      // Get state and control vectors
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      Teuchos::RCP<std::vector<Real> >           gp = getParameter(g);
+      assembler_->assembleQoIGradient3(qoi_,uf,zf,zp);
+      gp->assign(assembler_->getQoIGradient3()->begin(),
+                 assembler_->getQoIGradient3()->end());
+    }
+    catch ( Exception::Zero & ez ) {
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      NotImplemented++;
+    }
+    // Zero gradient
+    if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
+      g.zero();
+    }
+    // Not Implemented
+    if ( NotImplemented == 2 ) {
       ROL::ParametrizedObjective_SimOpt<Real>::gradient_2(g,u,z,tol);
     }
   }
@@ -114,93 +138,180 @@ public:
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
              const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec11(qoi_,vp,up,zp);
-      hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec11()));
+      Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
+      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      assembler_->assembleQoIHessVec11(qoi_,vf,uf,zf,zp);
+      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec11()));
     }
     catch (Exception::Zero &ez) {
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
       ROL::ParametrizedObjective_SimOpt<Real>::hessVec_11(hv,v,u,z,tol);
-      //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_11): Hessian not implemented.");
     }
   }
 
   void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec12(qoi_,vp,up,zp);
-      hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec12()));
+      Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
+      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      assembler_->assembleQoIHessVec12(qoi_,vf,uf,zf,zp);
+      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec12()));
     }
     catch (Exception::Zero &ez) {
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
       ROL::ParametrizedObjective_SimOpt<Real>::hessVec_12(hv,v,u,z,tol);
-      //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_12): Hessian not implemented.");
     }
   }
 
   void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+    int NotImplemented(0), IsZero(0);
+    // Compute control field hessvec
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec21(qoi_,vp,up,zp);
-      hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec21()));
+      // Get state and control vectors
+      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
+      assembler_->assembleQoIHessVec21(qoi_,vf,uf,zf,zp);
+      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec21()));
     }
-    catch (Exception::Zero &ez) {
+    catch ( Exception::Zero & ez ) {
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      NotImplemented++;
+    }
+    // Compute control parameter hessvec
+    try {
+      //// Get state and control vectors
+      //Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      //Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      //Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      //Teuchos::RCP<std::vector<Real> >          hvp = getParameter(hv);
+      //assembler_->assembleQoIHessVec31(qoi_,vf,uf,zf,zp);
+      //hvp->assign(assembler_->getQoIHessVec31()->begin(),
+      //            assembler_->getQoIHessVec31()->end());
+      throw Exception::NotImplemented("");
+    }
+    catch ( Exception::Zero & ez ) {
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      NotImplemented++;
+    }
+    // Zero hessvec
+    if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
       hv.zero();
     }
-    catch (Exception::NotImplemented &eni) {
+    // Not Implemented
+    if ( NotImplemented == 2 ) {
       ROL::ParametrizedObjective_SimOpt<Real>::hessVec_21(hv,v,u,z,tol);
-      //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_21): Hessian not implemented.");
     }
   }
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
              const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
     try {
-      Teuchos::RCP<Tpetra::MultiVector<> > hvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec22(qoi_,vp,up,zp);
-      hvp->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec22()));
+      Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
+      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      assembler_->assembleQoIHessVec22(qoi_,vf,uf,zf,zp);
+      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec22()));
     }
     catch (Exception::Zero &ez) {
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
       ROL::ParametrizedObjective_SimOpt<Real>::hessVec_22(hv,v,u,z,tol);
-      //throw Exception::NotImplemented(">>> (IntegratedObjective::hessVec_22): Hessian not implemented.");
     }
+  }
+
+private: // Vector accessor functions
+
+  Teuchos::RCP<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
+    Teuchos::RCP<const Tpetra::MultiVector<> > xp;
+    try {
+      xp = Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(x).getVector();
+    }
+    catch (std::exception &e) {
+      Teuchos::RCP<const ROL::TpetraMultiVector<Real> > xvec
+        = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x).getField();
+      if (xvec == Teuchos::null) {
+        xp = Teuchos::null;
+      }
+      else {
+        xp = xvec->getVector();
+      }
+    }
+    return xp;
+  }
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
+    Teuchos::RCP<Tpetra::MultiVector<> > xp;
+    try {
+      xp = Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(x).getVector();
+    }
+    catch (std::exception &e) {
+      Teuchos::RCP<ROL::TpetraMultiVector<Real> > xvec
+        = Teuchos::dyn_cast<PDE_OptVector<Real> >(x).getField();
+      if ( xvec == Teuchos::null ) {
+        xp = Teuchos::null;
+      }
+      else {
+        xp = xvec->getVector();
+      }
+    }
+    return xp;
+  }
+
+  Teuchos::RCP<const std::vector<Real> > getConstParameter(const ROL::Vector<Real> &x) const {
+    Teuchos::RCP<const std::vector<Real> > xp;
+    try {
+      Teuchos::RCP<const ROL::StdVector<Real> > xvec
+        = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x).getParameter();
+      if ( xvec == Teuchos::null ) {
+        xp = Teuchos::null;
+      }
+      else {
+        xp = xvec->getVector();
+      }
+    }
+    catch (std::exception &e) {
+      xp = Teuchos::null;
+    }
+    return xp;
+  }
+
+  Teuchos::RCP<std::vector<Real> > getParameter(ROL::Vector<Real> &x) const {
+    Teuchos::RCP<std::vector<Real> > xp;
+    try {
+      Teuchos::RCP<ROL::StdVector<Real> > xvec
+        = Teuchos::dyn_cast<PDE_OptVector<Real> >(x).getParameter();
+      if ( xvec == Teuchos::null ) {
+        xp = Teuchos::null;
+      }
+      else {
+        xp = xvec->getVector();
+      }
+    }
+    catch (std::exception &e) {
+      xp = Teuchos::null;
+    }
+    return xp;
   }
 };
 

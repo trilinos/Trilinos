@@ -84,7 +84,7 @@ public:
     }
   }
 
-  void value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
+  Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
              const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
@@ -103,6 +103,7 @@ public:
     fe_->computeIntegral(val,valU_eval,valU_eval);
     // Scale by one half
     Intrepid::RealSpaceTools<Real>::scale(*val,static_cast<Real>(0.5));
+    return static_cast<Real>(0);
   }
 
   void gradient_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
@@ -132,11 +133,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    // Get relevant dimensions
-    int c = z_coeff->dimension(0);
-    int f = fe_->N()->dimension(1);
-    // Initialize output grad
-    grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    throw Exception::Zero(">>> QoI_L2Tracking_Stefan_Boltzmann::gradient_2 is zero.");
   }
 
   void gradient_3(std::vector<Real> & grad,
@@ -307,7 +304,7 @@ private:
 public:
   QoI_L2Penalty_Stefan_Boltzmann(const Teuchos::RCP<FE<Real> > &fe) : fe_(fe) {}
 
-  void value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
+  Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
              const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
@@ -322,17 +319,14 @@ public:
     fe_->evaluateValue(valZ_eval, z_coeff);
     fe_->computeIntegral(val,valZ_eval,valZ_eval);
     Intrepid::RealSpaceTools<Real>::scale(*val,static_cast<Real>(0.5));
+    return static_cast<Real>(0);
   }
 
   void gradient_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    // Get relevant dimensions
-    int c = u_coeff->dimension(0);
-    int f = fe_->N()->dimension(1);
-    // Initialize output grad
-    grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    throw Exception::Zero(">>> QoI_L2Tracking_Stefan_Boltzmann::gradient_1 is zero.");
   }
 
   void gradient_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,

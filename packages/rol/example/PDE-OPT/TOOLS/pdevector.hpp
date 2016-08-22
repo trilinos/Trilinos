@@ -45,6 +45,7 @@
 #define ROL_PDEOPT_PDEVECTOR_HPP
 
 #include "ROL_TpetraMultiVector.hpp"
+#include "ROL_StdVector.hpp"
 
 template <class Real,
           class LO=Tpetra::Map<>::local_ordinal_type, 
@@ -129,6 +130,10 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       return *dual_vec_;
     }
 
+    const Teuchos::RCP<Assembler<Real> > getAssembler(void) const {
+      return assembler_;
+    }
+
 }; // class PrimalScaledTpetraMultiVector
 
 template <class Real, class LO, class GO, class Node>
@@ -200,6 +205,10 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       // Scale *this with scale_vec_ and place in dual vector
       assembler_->applyPDEInverseRieszMap1(primal_vec_->getVector(),ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       return *primal_vec_;
+    }
+
+    const Teuchos::RCP<Assembler<Real> > getAssembler(void) const {
+      return assembler_;
     }
 
 }; // class DualScaledTpetraMultiVector
@@ -287,6 +296,10 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       return *dual_vec_;
     }
 
+    const Teuchos::RCP<Assembler<Real> > getAssembler(void) const {
+      return assembler_;
+    }
+
 }; // class PrimalScaledTpetraMultiVector
 
 template <class Real, class LO, class GO, class Node>
@@ -360,33 +373,42 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       return *primal_vec_;
     }
 
+    const Teuchos::RCP<Assembler<Real> > getAssembler(void) const {
+      return assembler_;
+    }
+
 }; // class DualScaledTpetraMultiVector
 
-template<class Real> 
+template <class Real,
+          class LO=Tpetra::Map<>::local_ordinal_type, 
+          class GO=Tpetra::Map<>::global_ordinal_type,
+          class Node=Tpetra::Map<>::node_type >
 class PDE_OptVector : public ROL::Vector<Real> {
 private:
-  Teuchos::RCP<ROL::TpetraMultiVector<Real> > vec1_;
-  Teuchos::RCP<ROL::StdVector<Real> > vec2_;
-  mutable Teuchos::RCP<ROL::Vector<Real> > dual_vec1_;
-  mutable Teuchos::RCP<ROL::Vector<Real> > dual_vec2_;
-  mutable Teuchos::RCP<PDE_OptVector<Real> > dual_vec_;
+  Teuchos::RCP<ROL::TpetraMultiVector<Real,LO,GO,Node> > vec1_;
+  Teuchos::RCP<ROL::StdVector<Real> >                    vec2_;
+  mutable Teuchos::RCP<ROL::TpetraMultiVector<Real,LO,GO,Node> > dual_vec1_;
+  mutable Teuchos::RCP<ROL::StdVector<Real> >                    dual_vec2_;
+  mutable Teuchos::RCP<PDE_OptVector<Real,LO,GO,Node> >          dual_vec_;
+  mutable bool isDualInitialized_;
 
 public:
-  PDE_OptVector(const Teuchos::RCP<ROL::TpetraMultiVector<Real> > &vec1,
-                const Teuchos::RCP<ROL::StdVector<Real> > &vec2 ) 
-    : vec1_(vec1), vec2_(vec2) {
-    dual_vec1_ = (vec1_->dual()).clone();
-    dual_vec2_ = (vec2_->dual()).clone();
+  PDE_OptVector(const Teuchos::RCP<ROL::TpetraMultiVector<Real,LO,GO,Node> > &vec1,
+                const Teuchos::RCP<ROL::StdVector<Real> >                    &vec2 ) 
+    : vec1_(vec1), vec2_(vec2), isDualInitialized_(false) {
+
+    dual_vec1_ = Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone());
+    dual_vec2_ = Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(vec2_->clone());
   }
 
-  PDE_OptVector(const Teuchos::RCP<ROL::TpetraMultiVector<Real> > &vec)
-    : vec1_(vec), vec2_(Teuchos::null), dual_vec2_(Teuchos::null) {
-    dual_vec1_ = (vec1_->dual()).clone();
+  PDE_OptVector(const Teuchos::RCP<ROL::TpetraMultiVector<Real,LO,GO,Node> > &vec)
+    : vec1_(vec), vec2_(Teuchos::null), dual_vec2_(Teuchos::null), isDualInitialized_(false) {
+    dual_vec1_ = Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone());
   }
 
   PDE_OptVector(const Teuchos::RCP<ROL::StdVector<Real> > &vec)
-    : vec1_(Teuchos::null), vec2_(vec), dual_vec1_(Teuchos::null) {
-    dual_vec2_ = (vec2_->dual()).clone();
+    : vec1_(Teuchos::null), vec2_(vec), dual_vec1_(Teuchos::null), isDualInitialized_(false) {
+    dual_vec2_ = Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(vec2_->clone());
   }
 
   void plus( const ROL::Vector<Real> &x ) {
@@ -443,62 +465,84 @@ public:
     return std::sqrt(val);
   } 
 
-  Teuchos::RCP<ROL::Vector<Real> > clone() const {
-    if ( vec1_ != Teuchos::null && vec2_ != Teuchos::null ) {
-      return Teuchos::rcp( new PDE_OptVector(vec1_->clone(),vec2_->clone()) );
+  Teuchos::RCP<ROL::Vector<Real> > clone(void) const {
+    if ( vec2_ == Teuchos::null ) {
+      return Teuchos::rcp(new PDE_OptVector<Real,LO,GO,Node>(
+             Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone())));
     }
-    if ( vec1_ != Teuchos::null && vec2_ == Teuchos::null ) {
-      return Teuchos::rcp( new PDE_OptVector(vec1_->clone(),Teuchos::null) );
+    if ( vec1_ == Teuchos::null ) {
+      return Teuchos::rcp(new PDE_OptVector<Real,LO,GO,Node>(
+             Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(vec2_->clone())));
     }
-    if ( vec1_ == Teuchos::null && vec2_ != Teuchos::null ) {
-      return Teuchos::rcp( new PDE_OptVector(Teuchos::null,vec2_->clone()) );
-    }
-    return Teuchos::null;
+    return Teuchos::rcp(new PDE_OptVector<Real,LO,GO,Node>(
+           Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone()),
+           Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(vec2_->clone())));
   }
 
   const ROL::Vector<Real> & dual(void) const {
+    if ( !isDualInitialized_ ) {
+      if ( vec1_ == Teuchos::null ) {
+        dual_vec_ = Teuchos::rcp(new PDE_OptVector<Real>(dual_vec2_));
+      }
+      else if ( vec2_ == Teuchos::null ) {
+        dual_vec_ = Teuchos::rcp(new PDE_OptVector<Real>(dual_vec1_));
+      }
+      else {
+        dual_vec_ = Teuchos::rcp(new PDE_OptVector<Real>(dual_vec1_,dual_vec2_));
+      }
+      isDualInitialized_ = true;
+    }
     if ( vec1_ != Teuchos::null ) {
       dual_vec1_->set(vec1_->dual());
     }
     if ( vec2_ != Teuchos::null ) {
       dual_vec2_->set(vec2_->dual());
     }
-    dual_vec_ = Teuchos::rcp( new PDE_OptVector<Real>(dual_vec1_,dual_vec2_) ); 
     return *dual_vec_;
   }
 
   Teuchos::RCP<ROL::Vector<Real> > basis( const int i )  const {
+    Teuchos::RCP<ROL::Vector<Real> > e;
     if ( vec1_ != Teuchos::null && vec2_ != Teuchos::null ) {
       int n1 = vec1_->dimension();
+      Teuchos::RCP<ROL::Vector<Real> > e1, e2;
       if ( i < n1 ) {
-        Teuchos::RCP<ROL::Vector<Real> > e1 = vec1_->basis(i);
-        Teuchos::RCP<ROL::Vector<Real> > e2 = vec2_->clone(); e2->zero();
-        Teuchos::RCP<ROL::Vector<Real> > e  = Teuchos::rcp(new PDE_OptVector(e1,e2));
-        return e;
+        e1 = vec1_->basis(i);
+        e2 = vec2_->clone(); e2->zero();
       }
       else {
-        Teuchos::RCP<ROL::Vector<Real> > e1 = vec1_->clone(); e1->zero();
-        Teuchos::RCP<ROL::Vector<Real> > e2 = vec2_->basis(i-n1);
-        Teuchos::RCP<ROL::Vector<Real> > e  = Teuchos::rcp(new PDE_OptVector<Real>(e1,e2));
-        return e;
+        e1 = vec1_->clone(); e1->zero();
+        e2 = vec2_->basis(i-n1);
       }
+      e = Teuchos::rcp(new PDE_OptVector(
+        Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real> >(e1),
+        Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(e2)));
     }
     if ( vec1_ != Teuchos::null && vec2_ == Teuchos::null ) {
       int n1 = vec1_->dimension();
+      Teuchos::RCP<ROL::Vector<Real> > e1;
       if ( i < n1 ) {
-        Teuchos::RCP<ROL::Vector<Real> > e1 = vec1_->basis(i);
-        Teuchos::RCP<ROL::Vector<Real> > e  = Teuchos::rcp(new PDE_OptVector(e1,Teuchos::null));
-        return e;
+        e1 = vec1_->basis(i);
       }
+      else {
+        e1->zero();
+      }
+      e = Teuchos::rcp(new PDE_OptVector(
+        Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real> >(e1)));
     }
     if ( vec1_ == Teuchos::null && vec2_ != Teuchos::null ) {
       int n2 = vec2_->dimension();
+      Teuchos::RCP<ROL::Vector<Real> > e2;
       if ( i < n2 ) {
-        Teuchos::RCP<ROL::Vector<Real> > e2 = vec2_->basis(i);
-        Teuchos::RCP<ROL::Vector<Real> > e  = Teuchos::rcp(new PDE_OptVector(Teuchos::null,e2));
-        return e;
+        e2 = vec2_->basis(i);
       }
+      else {
+        e2->zero();
+      }
+      e = Teuchos::rcp(new PDE_OptVector(
+        Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(e2)));
     }
+    return e;
   }
 
   void applyUnary( const ROL::Elementwise::UnaryFunction<Real> &f ) {
@@ -542,27 +586,27 @@ public:
     return dim;
   }
 
-  Teuchos::RCP<const ROL::Vector<Real> > getField() const { 
+  Teuchos::RCP<const ROL::TpetraMultiVector<Real> > getField(void) const { 
     return vec1_;
   }
 
-  Teuchos::RCP<const ROL::Vector<Real> > getParameter() const { 
+  Teuchos::RCP<const ROL::StdVector<Real> > getParameter(void) const { 
     return vec2_; 
   }
 
-  Teuchos::RCP<ROL::Vector<Real> > getField() { 
+  Teuchos::RCP<ROL::TpetraMultiVector<Real> > getField(void) { 
     return vec1_;
   }
 
-  Teuchos::RCP<ROL::Vector<Real> > getParameter() { 
+  Teuchos::RCP<ROL::StdVector<Real> > getParameter(void) { 
     return vec2_; 
   }
 
-  void set_1(const ROL::Vector<Real>& vec) { 
+  void setField(const ROL::Vector<Real>& vec) { 
     vec1_->set(vec);
   }
   
-  void set_2(const ROL::Vector<Real>& vec) { 
+  void setParameter(const ROL::Vector<Real>& vec) { 
     vec2_->set(vec); 
   }
 };

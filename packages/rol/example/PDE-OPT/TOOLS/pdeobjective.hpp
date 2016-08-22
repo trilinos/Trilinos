@@ -45,25 +45,25 @@
 #define PDE_PDEOBJECTIVE_HPP
 
 #include "ROL_ParametrizedObjective_SimOpt.hpp"
-#include "ROL_CompositeObjective_SimOpt.hpp"
-#include "ROL_StdObjective.hpp"
+#include "ROL_ParametrizedCompositeObjective_SimOpt.hpp"
+#include "ROL_ParametrizedStdObjective.hpp"
 #include "integralobjective.hpp"
 #include "qoi.hpp"
 #include "assembler.hpp"
 
 template <class Real>
-class PDE_Objective : public virtual ROL::ParametrizedObjective_SimOpt<Real> {
+class PDE_Objective : public ROL::ParametrizedObjective_SimOpt<Real> {
 private:
   const std::vector<Teuchos::RCP<QoI<Real> > > qoi_vec_;
-  const Teuchos::RCP<ROL::StdObjective<Real> > std_obj_;
+  const Teuchos::RCP<ROL::ParametrizedStdObjective<Real> > std_obj_;
   const Teuchos::RCP<Assembler<Real> > assembler_;
 
-  std::vector<Teuchos::RCP<ROL::Objective_SimOpt<Real> > > obj_vec_;
-  Teuchos::RCP<ROL::Objective_SimOpt<Real> > obj_;
+  std::vector<Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<Real> > > obj_vec_;
+  Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<Real> > obj_;
 
 public:
   PDE_Objective(const std::vector<Teuchos::RCP<QoI<Real> > > &qoi_vec,
-                const Teuchos::RCP<ROL::StdObjective<Real> > &std_obj,
+                const Teuchos::RCP<ROL::ParametrizedStdObjective<Real> > &std_obj,
                 const Teuchos::RCP<Assembler<Real> > &assembler)
     : qoi_vec_(qoi_vec), std_obj_(std_obj), assembler_(assembler) {
     int size = qoi_vec_.size();
@@ -71,7 +71,12 @@ public:
     for (int i = 0; i < size; ++i) {
       obj_vec_[i] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec[i],assembler));
     }
-    obj_ = Teuchos::rcp(new ROL::CompositeObjective_SimOpt<Real>(obj_vec_,std_obj_));
+    obj_ = Teuchos::rcp(new ROL::ParametrizedCompositeObjective_SimOpt<Real>(obj_vec_,std_obj_));
+  }
+
+  void setParameter(const std::vector<Real> &param) {
+    ROL::ParametrizedObjective_SimOpt<Real>::setParameter(param);
+    obj_->setParameter(param);
   }
 
   void update( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, bool flag = true, int iter = -1 ) {

@@ -62,7 +62,7 @@ public:
                             const Teuchos::RCP<Intrepid::FieldContainer<Real> > &force_eval)
     : fe_(fe), force_eval_(force_eval) {}
 
-  void value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
+  Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
              const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
@@ -77,6 +77,7 @@ public:
     fe_->evaluateValue(valU_eval, u_coeff);
     // Compute energy
     fe_->computeIntegral(val,valU_eval,force_eval_);
+    return static_cast<Real>(0);
   }
 
   void gradient_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
@@ -99,11 +100,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    // Get relevant dimensions
-    int c = fe_->N()->dimension(0);
-    int f = fe_->N()->dimension(1);
-    // Initialize output grad
-    grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::gradient_2 is zero.");
   }
 
   void gradient_3(std::vector<Real> & grad,
@@ -275,7 +272,7 @@ public:
     }
   }
 
-  void value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
+  Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
              const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
@@ -291,17 +288,14 @@ public:
     Intrepid::RealSpaceTools<Real>::subtract(*valZ_eval,*volFrac_);
     // Compute energy
     fe_->computeIntegral(val,valZ_eval,ones_);
+    return static_cast<Real>(0);
   }
 
   void gradient_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    // Get relevant dimensions
-    int c = fe_->N()->dimension(0);
-    int f = fe_->N()->dimension(1);
-    // Initialize output grad
-    grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    throw Exception::Zero(">>> QoI_Volume_Poisson::gradient_1 is zero.");
   }
 
   void gradient_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
