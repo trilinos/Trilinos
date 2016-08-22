@@ -67,6 +67,8 @@
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
 
+#include <MueLu_CreateXpetraPreconditioner.hpp>
+
 // This example demonstrates how to reuse some parts of a classical SA multigrid setup between runs.
 //
 // In this example, we suppose that the pattern of the matrix does not change between runs so that:
@@ -76,133 +78,6 @@
 //
 // The resulting preconditioners are identical to multigrid preconditioners built without recycling the parts described above.
 // This can be verified by using the --no-recycling option.
-
-#ifdef HAVE_MUELU_TPETRA
-#include <MueLu_CreateTpetraPreconditioner.hpp>
-#endif
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_CreateEpetraPreconditioner.hpp>
-#endif
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A, Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coords = Teuchos::null) {
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, paramList, Utilities::MV2NonConstTpetraMV(coords));
-
-    return tH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif // HAVE_MUELU_TPETRA
-  }
-
-  XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
-  XPETRA_FACTORY_END;
-}
-
-#ifdef HAVE_MUELU_EPETRA
-template<>
-Teuchos::RCP<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> >
-CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > A, Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> > coords) {
-  typedef double                Scalar;
-  typedef int                   LocalOrdinal;
-  typedef int                   GlobalOrdinal;
-  typedef Xpetra::EpetraNode    Node;
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, paramList, Utilities::MV2NonConstTpetraMV(coords));
-
-    return tH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-  }
-
-  if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-    RCP<Epetra_CrsMatrix>      eA = Utilities::Op2NonConstEpetraCrs(A);
-    RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, paramList, Utilities::MV2NonConstEpetraMV(coords));
-    return eH->GetHierarchy();
-#else
-    throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-  }
-
-  XPETRA_FACTORY_END;
-}
-#endif // HAVE_MUELU_EPETRA
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void
-ReuseHierarchy(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A, MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>& H) {
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    MueLu::TpetraOperator<SC, LO, GO, NO> tH(Teuchos::rcpFromRef(H));
-    MueLu::ReuseTpetraPreconditioner(Utilities::Op2NonConstTpetraCrs(A), tH);
-    return;
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-  }
-
-  XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
-  XPETRA_FACTORY_END;
-}
-
-#ifdef HAVE_MUELU_EPETRA
-template<>
-void
-ReuseHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > A, MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode>& H) {
-  typedef double                Scalar;
-  typedef int                   LocalOrdinal;
-  typedef int                   GlobalOrdinal;
-  typedef Xpetra::EpetraNode    Node;
-#include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-
-  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
-
-  if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-    MueLu::TpetraOperator<SC, LO, GO, NO> tH(Teuchos::rcpFromRef(H));
-    MueLu::ReuseTpetraPreconditioner(Utilities::Op2NonConstTpetraCrs(A), tH);
-    return;
-#else
-    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
-#endif
-  }
-
-  if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-    MueLu::EpetraOperator eH(Teuchos::rcpFromRef(H));
-    MueLu::ReuseEpetraPreconditioner(Utilities::Op2NonConstEpetraCrs(A), eH);
-    return;
-#else
-    throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
-  }
-
-  XPETRA_FACTORY_END;
-}
-#endif
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeriList,
@@ -380,7 +255,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         tm->start();
 
       A->SetMaxEigenvalueEstimate(-one);
-      H = CreateHierarchy(A, paramList, coordinates);
+      H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
 
       // Stop timing
       if (!(numRebuilds && i == 0)) {
@@ -395,7 +270,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
     // Run a build for matrix B to record its convergence
     B->SetMaxEigenvalueEstimate(-one);
-    H = CreateHierarchy(B, paramList, coordinates);
+    H = MueLu::CreateXpetraPreconditioner(B, paramList, coordinates);
 
     X->putScalar(zero);
     H->Iterate(*Y, *X, nIts);
@@ -418,7 +293,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     paramList.set("reuse: type", reuseTypes[k]);
 
     out << thinSeparator << " " << reuseTypes[k] << " (initial) " << thinSeparator << std::endl;
-    RCP<Hierarchy> H = CreateHierarchy(A, paramList, coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
 
     X->putScalar(zero);
     H->Iterate(*Y, *X, nIts);
@@ -436,7 +311,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         tm->start();
 
       B->SetMaxEigenvalueEstimate(-one);
-      ReuseHierarchy(B, *H);
+      MueLu::ReuseXpetraPreconditioner(B, H);
 
       // Stop timing
       if (!(numRebuilds && i == 0)) {
