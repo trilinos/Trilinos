@@ -118,16 +118,18 @@ struct create_single_edge_impl
     PartVector part_scratch;
     part_scratch.reserve(64);
 
-    Entity const *nodes = m_mesh.begin_nodes(m_element);
+    Entity ielem = m_element;
+
+    Entity const *nodes = m_mesh.begin_nodes(ielem);
     const int num_nodes = Topology::num_nodes;
     for (int n=0; n<num_nodes; ++n) {
       elem_nodes[n] = nodes[n];
     }
 
     std::vector<bool> edge_exist(Topology::num_edges,false);
-    const int num_edges = m_mesh.num_edges(m_element);
-    Entity const *edge_entity = m_mesh.begin_edges(m_element);
-    ConnectivityOrdinal const *edge_ords = m_mesh.begin_edge_ordinals(m_element);
+    const int num_edges = m_mesh.num_edges(ielem);
+    Entity const *edge_entity = m_mesh.begin_edges(ielem);
+    ConnectivityOrdinal const *edge_ords = m_mesh.begin_edge_ordinals(ielem);
     for (int i=0 ; i < num_edges ; ++i)
     {
       if (mesh.is_valid(edge_entity[i]))
@@ -148,35 +150,28 @@ struct create_single_edge_impl
     typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
     Entity edge;
-    if(2 == mesh.mesh_meta_data().spatial_dimension())
-    {
-        edge = mesh.declare_element_side(m_element, m_edge_ordinal, add_parts);
-        m_edge_map[edge_nodes] = edge;
-    }
-    else
-    {
-        Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
-        if (iedge == m_edge_map.end()) {
-          ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
-          EntityId edge_id = m_available_ids[m_count_edges];
-          m_count_edges++;
+    Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+    if (iedge == m_edge_map.end()) {
+      ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
+      EntityId edge_id = m_available_ids[m_count_edges];
+      m_count_edges++;
 
-          edge = mesh.declare_entity( stk::topology::EDGE_RANK, edge_id, add_parts);
-          m_edge_map[edge_nodes] = edge;
-          const int num_edge_nodes = EdgeTopology::num_nodes;
-          for (int n=0; n<num_edge_nodes; ++n) {
-            Entity node = edge_nodes[n];
-            mesh.declare_relation(edge,node,n, perm, ordinal_scratch, part_scratch);
-          }
-        }
-        else {
-          edge = iedge->second;
-        }
-        perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], m_edge_ordinal);
-        ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
-        mesh.declare_relation(m_element, edge, m_edge_ordinal, perm, ordinal_scratch, part_scratch);
+      edge = mesh.declare_entity( stk::topology::EDGE_RANK, edge_id, add_parts);
+      m_edge_map[edge_nodes] = edge;
+      const int num_edge_nodes = EdgeTopology::num_nodes;
+      for (int n=0; n<num_edge_nodes; ++n) {
+        Entity node = edge_nodes[n];
+        mesh.declare_relation(edge,node,n, perm, ordinal_scratch, part_scratch);
+      }
     }
+    else {
+      edge = iedge->second;
+    }
+    perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], m_edge_ordinal);
+    ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
+    mesh.declare_relation(ielem, edge, m_edge_ordinal, perm, ordinal_scratch, part_scratch);
   }
+
   //members
   size_t                                          & m_count_edges;
   std::vector<stk::mesh::EntityId>                & m_available_ids;
