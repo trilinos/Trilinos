@@ -1481,7 +1481,8 @@ namespace MueLu {
       Matrix& A = dynamic_cast<Matrix&>(Op);
       if (A.GetFixedBlockSize() != blockSize_)
         this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
-            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl
+            << "You may want to check \"number of equations\" (or \"PDE equations\" for factory style list) parameter." << std::endl;
 
       A.SetFixedBlockSize(blockSize_, dofOffset_);
 
