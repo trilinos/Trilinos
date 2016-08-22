@@ -480,7 +480,8 @@ namespace Tacho {
         }
       }
       std::cout << "CholSuperNodesByBlocks:: "
-                << "size of blocks = " << size_blocks
+                << "# of blocks = " << nblocks
+                << ", size of blocks = " << size_blocks
                 << ", max block = " << max_blk_nrows << " x " << max_blk_ncols
                 << std::endl;
     }
@@ -491,6 +492,19 @@ namespace Tacho {
     ///    input  - HA_factor
     ///    output - HA_factor
     ///
+
+    Stat statChol;
+    {
+      CrsTaskHierViewHostType TA_factor(HA_factor);
+      if (mb) {
+        std::cout << "CholSuperNodesByBlocks:: stat using DenseByBlocks with external LAPACK and BLAS" << std::endl;
+        statChol = Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Three>::stat(TA_factor);
+      } else {
+        std::cout << "CholSuperNodesByBlocks:: stat using external LAPACK and BLAS" << std::endl;
+        statChol = Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>::stat(TA_factor);
+      }
+    }
+
     timer.reset();    
     {
       CrsTaskHierViewHostType TA_factor(HA_factor);
@@ -699,7 +713,11 @@ namespace Tacho {
                 << "block specification = " << t_blocks << " [sec] "
                 << std::endl
                 << "CholSuperNodesByBlocks:: "
-                << "Chol = " << t_chol << " [sec] ";
+                << "Chol = " 
+                << statChol.flop/1.0e9 << " [GFLOP] " 
+                << t_chol << " [sec] " 
+                << (statChol.flop/t_chol)/1.0e9 << " [GFLOPs] ";
+
       if (nrhs)
         std::cout << "Solve = " << t_solve << " [sec] ";
 
