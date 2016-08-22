@@ -16,6 +16,17 @@ namespace Tacho {
            template<int,int> class ControlType = Control>
   class Chol {
   public:
+    // statistics
+    // ==========
+    template<typename ExecViewTypeA>
+    inline
+    static Stat stat(ExecViewTypeA &A) {
+      printf(">> Template Args - Uplo %d, Algo %d, Variant %d\n", 
+             ArgUplo, ArgAlgo, ArgVariant);           
+      TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
+      return Stat();
+    }
+
     // data-parallel interface with nested task generation
     // ===================================================
     template<typename PolicyType,
@@ -25,8 +36,8 @@ namespace Tacho {
     static int invoke(PolicyType &policy,
                       MemberType &member,
                       ExecViewTypeA &A) {
-      fprintf(stderr, ">> Template Args - Uplo %d, Algo %d, Variant %d\n", 
-              ArgUplo, ArgAlgo, ArgVariant);           
+      printf(">> Template Args - Uplo %d, Algo %d, Variant %d\n", 
+             ArgUplo, ArgAlgo, ArgVariant);           
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return -1;
     }

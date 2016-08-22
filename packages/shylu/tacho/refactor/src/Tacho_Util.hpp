@@ -429,6 +429,21 @@ namespace Tacho {
     static constexpr int DenseByBlocks = 2301;
   };
 
+
+  class Stat {
+  private:
+    double flop;
+  public:
+    Stat() : flop(0.0) {}
+    Stat& operator+=(const Stat &b) {
+      flop += b.flop;
+      return *this;
+    }
+  };
+  inline Stat operator+(Stat a, const Stat &b) {
+    return a += b;
+  }
+  
   /// \class Coo
   /// \brief Sparse coordinate format; (i, j, val).
   template<typename OrdinalType, typename ValueType>

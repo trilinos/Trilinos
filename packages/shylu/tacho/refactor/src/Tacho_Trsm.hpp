@@ -18,6 +18,22 @@ namespace Tacho {
   public:
     // data-parallel interface with nested task generation
     // ===================================================
+    template<typename ScalarType,
+             typename ExecViewTypeA,
+             typename ExecViewTypeB>
+    inline
+    static Stat stat(const int diagA,
+                     const ScalarType alpha,
+                     ExecViewTypeA &A,
+                     ExecViewTypeB &B) {
+      printf(">> Template Args - Side %d, Uplo %d, Trans %d, Algo %d, Variant %d\n", 
+             ArgSide, ArgUplo, ArgTrans, ArgAlgo, ArgVariant);           
+      TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
+      return Stat();
+    }
+
+    // data-parallel interface with nested task generation
+    // ===================================================
     template<typename PolicyType,
              typename MemberType,
              typename ScalarType,
@@ -30,8 +46,8 @@ namespace Tacho {
                       const ScalarType alpha,
                       ExecViewTypeA &A,
                       ExecViewTypeB &B) {
-      fprintf(stderr, ">> Template Args - Side %d, Uplo %d, Trans %d, Algo %d, Variant %d\n", 
-              ArgSide, ArgUplo, ArgTrans, ArgAlgo, ArgVariant);           
+      printf(">> Template Args - Side %d, Uplo %d, Trans %d, Algo %d, Variant %d\n", 
+             ArgSide, ArgUplo, ArgTrans, ArgAlgo, ArgVariant);           
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return -1;
     }
