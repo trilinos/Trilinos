@@ -90,6 +90,87 @@
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Map, class Matrix>
+Teuchos::RCP<Matrix> BuildMatrix(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) {
+  typedef GlobalOrdinal GO;
+  typedef LocalOrdinal  LO;
+  typedef Scalar        SC;
+  using  Teuchos::ArrayView;
+
+  GO nx = list.get("nx", (GO) -1);
+  GO ny = list.get("ny", (GO) -1);
+  GO nz = list.get("nz", (GO) -1);
+  if (nx == -1 || ny == -1 || nz == -1) {
+    GO n = map->getGlobalNumElements();
+    nx = (GO) Teuchos::ScalarTraits<double>::pow(n, 0.33334);
+    ny = nx; nz = nx;
+    TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
+  }
+
+  double  one = 1.0;
+  SC  stretchx = list.get("stretchx", one);
+  SC  stretchy = list.get("stretchy", one);
+  SC  stretchz = list.get("stretchz", one);
+
+  // bool keepBCs = list.get("keepBCs", false);
+
+  SC b = -one / (stretchx*stretchx);
+  SC c = -one / (stretchx*stretchx);
+  SC d = -one / (stretchy*stretchy);
+  SC e = -one / (stretchy*stretchy);
+  SC f = -one / (stretchz*stretchz);
+  SC g = -one / (stretchz*stretchz);
+  SC a = -(b + c + d + e + f + g);
+
+  LO nnz = 7;
+
+  Teuchos::RCP<Matrix> A = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(map, nnz);
+
+  LO numMyElements = map->getNodeNumElements();
+  GO indexBase     = map->getIndexBase();
+
+  ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+
+  std::vector<GO> inds(nnz);
+  std::vector<SC> vals(nnz);
+
+  //    e
+  //  b a c
+  //    d
+  // + f bottom and g top
+  GO center, left, right, bottom, top, front, back;
+  for (LO i = 0; i < numMyElements; ++i) {
+    size_t n = 0;
+
+    center = myGlobalElements[i] - indexBase;
+    Galeri::Xpetra::GetNeighboursCartesian3d(center, nx, ny, nz, left, right, front, back, bottom, top);
+
+    if (left   != -1) { inds[n] = left;   vals[n++] = b; }
+    if (right  != -1) { inds[n] = right;  vals[n++] = c; }
+    if (front  != -1) { inds[n] = front;  vals[n++] = d; }
+    if (back   != -1) { inds[n] = back;   vals[n++] = e; }
+    if (bottom != -1) { inds[n] = bottom; vals[n++] = f; }
+    if (top    != -1) { inds[n] = top;    vals[n++] = g; }
+
+    // diagonal (ignore Neumann for now => no update
+    inds[n]   = center;
+    vals[n++] = a;
+
+    for (size_t j = 0; j < n; j++)
+      inds[j] += indexBase;
+
+    ArrayView<GO> iv(&inds[0], n);
+    ArrayView<SC> av(&vals[0], n);
+    A->insertGlobalValues(myGlobalElements[i], iv, av);
+  }
+
+  A->fillComplete();
+
+  return A;
+}
+
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeriList,
                    Xpetra::UnderlyingLib lib, Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -104,59 +185,10 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
 
-  // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
-  //                                 d1  d2  d3
-  //                                 d4  d5  d6
-  //                                 d7  d8  d9
-  //                                 d10 d11 d12
-  // A perfect distribution is only possible when the #processors is a perfect square.
-  // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
-  // size. For example, np=14 will give a 7-by-2 distribution.
-  // If you don't want Galeri to do this, specify mx or my on the galeriList.
+  map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
+  coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
 
-  // Create map and coordinates
-  // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
-  // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-  if (matrixType == "Laplace1D") {
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
-
-  } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
-             matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
-
-  } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
-  }
-
-  // Expand map to do multiple DOF per node for block problems
-  if (matrixType == "Elasticity2D")
-    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2);
-  if (matrixType == "Elasticity3D")
-    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
-
-#if 0
-  if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
-    // Our default test case for elasticity: all boundaries of a square/cube have Neumann b.c. except left which has Dirichlet
-    galeriList.set("right boundary" , "Neumann");
-    galeriList.set("bottom boundary", "Neumann");
-    galeriList.set("top boundary"   , "Neumann");
-    galeriList.set("front boundary" , "Neumann");
-    galeriList.set("back boundary"  , "Neumann");
-  }
-#endif
-
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriList);
-  A = Pr->BuildMatrix();
-
-  if (matrixType == "Elasticity2D" ||
-      matrixType == "Elasticity3D") {
-    nullspace = Pr->BuildNullspace();
-    A->SetFixedBlockSize((matrixType == "Elasticity2D") ? 2 : 3);
-  }
+  A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap>(galeriList, map);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -368,7 +400,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   }
   for (size_t t = 1; t < numSteps; t++)
     for (size_t k = 0; k < reuseTypes.size(); k++)
-      printf("step #%u reuse \"%20s\": setup = %5.2le, solve = %5.2le, num_its = %3d\n", t, reuseNames[k].c_str(),
+      printf("step #%zu reuse \"%20s\": setup = %5.2le, solve = %5.2le, num_its = %3d\n", t, reuseNames[k].c_str(),
              setup_time[k*numSteps+t].count(), solve_time[k*numSteps+t].count(), num_its[k*numSteps+t]);
 
   return EXIT_SUCCESS;
