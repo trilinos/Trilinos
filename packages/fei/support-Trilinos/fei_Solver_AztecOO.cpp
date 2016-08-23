@@ -345,8 +345,8 @@ int Solver_AztecOO::setup_ml_operator(AztecOO& azoo, Epetra_CrsMatrix* A)
   if (variableDof)
   {
     bool * dofPresent = paramlist_->get("DOF present",(bool*)0);
-    assert(nullptr != dofPresent);
     int nOwnedEntities = paramlist_->get("num owned entities", 0);
+    assert( (nullptr != dofPresent) || (nOwnedEntities == 0));
     int maxDofPerEntity = paramlist_->get("max DOF per entity", 0);
     
     Epetra_Vector *dummy = nullptr;

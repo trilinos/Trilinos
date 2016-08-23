@@ -1029,6 +1029,7 @@ template <class T> MLVec<T>::MLVec(T *start, T *end, bool okToChangePtr,
 
   freeType_      = freeType;   okToChangePtr_ = okToChangePtr;
   data_          = start;      size_          = end - start;
+  if (size_ == 0) data_ = NULL;
   getPtrInvoked_ = false;
 }
 template <class T> void MLVec<T>::wrap(T *start, T *end, bool okToChangePtr,
@@ -1044,6 +1045,7 @@ template <class T> void MLVec<T>::wrap(T *start, T *end, bool okToChangePtr,
 
   freeType_      = freeType;   okToChangePtr_ = okToChangePtr;
   data_          = start;      size_          = end - start;
+  if (size_ == 0) data_ = NULL;
   getPtrInvoked_ = false;
 }
 
@@ -1105,6 +1107,7 @@ template <class T> void MLVec<T>::resize(int newsize) {
 
          freeType_ = useFree;
        }
+       else data_ = NULL;
      }
      else {
        if ( newsize > 0) {

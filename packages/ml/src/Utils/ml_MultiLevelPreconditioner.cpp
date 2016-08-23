@@ -530,7 +530,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
   YYY = List_.get("y-coordinates",(double *) 0);
   ZZZ = List_.get("z-coordinates",(double *) 0);
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(XXX == NULL,
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( (XXX == NULL) && (nDofs != 0),
              ErrorMsg_ << "Must supply coordinates to use multiphysics variable dof constructor\n"); 
 
   struct wrappedCommStruct epetraFramework;
@@ -4912,7 +4912,7 @@ int MLvariableDofAmalg(int nCols, const MLVec<int>& rowPtr,
    }
    amalgRowPtr[blockRow+1] = newNzs;
 
-   TEUCHOS_TEST_FOR_EXCEPTION(blockRow+1 != nNodes,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION((blockRow+1 != nNodes)&&(nNodes != 0),std::logic_error,
       "MLvariableDofAmalg error, computed # block rows (" << blockRow+1 <<
       ") != nNodes (" << nNodes << ")\n");
 
