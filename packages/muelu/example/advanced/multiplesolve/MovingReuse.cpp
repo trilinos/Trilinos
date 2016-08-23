@@ -78,6 +78,12 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
 
+#include <MueLu_CreateXpetraPreconditioner.hpp>
+
+#ifdef HAVE_MUELU_PAMGEN
+#include "RTC_FunctionRTC.hh"
+#endif
+
 // This example demonstrates how to reuse some parts of a classical SA multigrid setup between runs.
 //
 // In this example, we suppose that the pattern of the matrix does not change between runs so that:
@@ -88,15 +94,96 @@
 // The resulting preconditioners are identical to multigrid preconditioners built without recycling the parts described above.
 // This can be verified by using the --no-recycling option.
 
-#include <MueLu_CreateXpetraPreconditioner.hpp>
 
+template<class Scalar>
+class Tensor {
+private:
+  typedef Scalar                    SC;
+  typedef Teuchos::ScalarTraits<SC> STS;
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Map, class Matrix>
-Teuchos::RCP<Matrix> BuildMatrix(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) {
+public:
+  Tensor() : useSigmaRTC_(false) { }
+
+#ifdef HAVE_MUELU_PAMGEN
+  Tensor(const std::string& rtcString) : useSigmaRTC_(true) {
+    sigmaRTC_ = Teuchos::rcp(new PG_RuntimeCompiler::Function);
+
+    bool rc;
+
+    rc = sigmaRTC_->addVar("double", "x");     if (!rc) throw std::runtime_error("Error setting RTC input argument \"x\"");
+    rc = sigmaRTC_->addVar("double", "y");     if (!rc) throw std::runtime_error("Error setting RTC input argument \"y\"");
+    rc = sigmaRTC_->addVar("double", "z");     if (!rc) throw std::runtime_error("Error setting RTC input argument \"z\"");
+    rc = sigmaRTC_->addVar("double", "t");     if (!rc) throw std::runtime_error("Error setting RTC input argument \"t\"");
+    rc = sigmaRTC_->addVar("double", "sigma"); if (!rc) throw std::runtime_error("Error setting RTC input argument \"sigma\"");
+
+    rc = sigmaRTC_->addBody(rtcString);        if (!rc) throw std::runtime_error("Error in RTC function compilation");
+  }
+#endif
+
+  SC operator()(SC x, SC y, SC z) const {
+#ifdef HAVE_MUELU_PAMGEN
+    if (useSigmaRTC_)
+      return tensorRTC(x, y, z);
+#endif
+    return tensorDefault(x, y, z);
+  }
+
+  void setT(double t) { t_ = t; }
+
+  void operator=(const Tensor<Scalar>& tensor) {
+    useSigmaRTC_ = tensor.useSigmaRTC_;
+    t_           = tensor.t_;
+    sigmaRTC_    = tensor.sigmaRTC_;
+  }
+
+private:
+  SC tensorDefault(SC x, SC y, SC z) const {
+    SC one = STS::one();
+
+    // Moving plate
+    if (z >= 0.1*(1 + t_) && z <= 0.1*(2 + 1.5*t_))
+      return 1e-6*one;
+
+    return one;
+  }
+
+#ifdef HAVE_MUELU_PAMGEN
+  SC tensorRTC(SC x, SC y, SC z) const {
+    SC sigma;
+
+    bool rc;
+
+    int cnt = 0;
+    rc = sigmaRTC_->varValueFill(cnt++, x);      if (!rc) throw std::runtime_error("Could not fill \"x\"");
+    rc = sigmaRTC_->varValueFill(cnt++, y);      if (!rc) throw std::runtime_error("Could not fill \"y\"");
+    rc = sigmaRTC_->varValueFill(cnt++, z);      if (!rc) throw std::runtime_error("Could not fill \"z\"");
+    rc = sigmaRTC_->varValueFill(cnt++, t_);     if (!rc) throw std::runtime_error("Could not fill \"t\"");
+    rc = sigmaRTC_->varAddrFill (cnt++, &sigma); if (!rc) throw std::runtime_error("Could not fill \"sigma\"");
+
+    sigmaRTC_->execute();
+
+    return sigma;
+  }
+#endif
+
+private:
+  bool   useSigmaRTC_;
+  double t_;
+
+#ifdef HAVE_MUELU_PAMGEN
+  mutable
+    Teuchos::RCP<PG_RuntimeCompiler::Function> sigmaRTC_;
+#endif
+};
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Map, class Matrix, class MultiVector>
+Teuchos::RCP<Matrix> BuildMatrix(const Tensor<Scalar>& tensor, Teuchos::ParameterList& list,
+                                 const Teuchos::RCP<const Map>& map, const Teuchos::RCP<const MultiVector>& coords) {
   typedef GlobalOrdinal GO;
   typedef LocalOrdinal  LO;
   typedef Scalar        SC;
-  using  Teuchos::ArrayView;
+  using Teuchos::ArrayView;
+  using Teuchos::ArrayRCP;
 
   GO nx = list.get("nx", (GO) -1);
   GO ny = list.get("ny", (GO) -1);
@@ -115,14 +202,6 @@ Teuchos::RCP<Matrix> BuildMatrix(Teuchos::ParameterList& list, const Teuchos::RC
 
   // bool keepBCs = list.get("keepBCs", false);
 
-  SC b = -one / (stretchx*stretchx);
-  SC c = -one / (stretchx*stretchx);
-  SC d = -one / (stretchy*stretchy);
-  SC e = -one / (stretchy*stretchy);
-  SC f = -one / (stretchz*stretchz);
-  SC g = -one / (stretchz*stretchz);
-  SC a = -(b + c + d + e + f + g);
-
   LO nnz = 7;
 
   Teuchos::RCP<Matrix> A = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(map, nnz);
@@ -135,6 +214,10 @@ Teuchos::RCP<Matrix> BuildMatrix(Teuchos::ParameterList& list, const Teuchos::RC
   std::vector<GO> inds(nnz);
   std::vector<SC> vals(nnz);
 
+  ArrayRCP<const SC> x = coords->getData(0);
+  ArrayRCP<const SC> y = coords->getData(1);
+  ArrayRCP<const SC> z = coords->getData(2);
+
   //    e
   //  b a c
   //    d
@@ -145,6 +228,16 @@ Teuchos::RCP<Matrix> BuildMatrix(Teuchos::ParameterList& list, const Teuchos::RC
 
     center = myGlobalElements[i] - indexBase;
     Galeri::Xpetra::GetNeighboursCartesian3d(center, nx, ny, nz, left, right, front, back, bottom, top);
+
+    SC w = tensor(x[center], y[center], z[center]);
+
+    SC b = -((left   != -1) ? tensor(0.5*(x[center] + x[left]),   0.5*(y[center] + y[left]),   0.5*(z[center] + z[left]))  : w) / (stretchx*stretchx);
+    SC c = -((right  != -1) ? tensor(0.5*(x[center] + x[right]),  0.5*(y[center] + y[right]),  0.5*(z[center] + z[right])) : w) / (stretchx*stretchx);
+    SC d = -((front  != -1) ? tensor(0.5*(x[center] + x[front]),  0.5*(y[center] + y[front]),  0.5*(z[center] + z[front])) : w) / (stretchy*stretchy);
+    SC e = -((back   != -1) ? tensor(0.5*(x[center] + x[back]),   0.5*(y[center] + y[back]),   0.5*(z[center] + z[back]))  : w) / (stretchy*stretchy);
+    SC f = -((bottom != -1) ? tensor(0.5*(x[center] + x[bottom]), 0.5*(y[center] + y[bottom]), 0.5*(z[center] + z[bottom])): w) / (stretchz*stretchz);
+    SC g = -((top    != -1) ? tensor(0.5*(x[center] + x[top]),    0.5*(y[center] + y[top]),    0.5*(z[center] + z[top]))   : w) / (stretchz*stretchz);
+    SC a = -(b + c + d + e + f + g);
 
     if (left   != -1) { inds[n] = left;   vals[n++] = b; }
     if (right  != -1) { inds[n] = right;  vals[n++] = c; }
@@ -170,9 +263,8 @@ Teuchos::RCP<Matrix> BuildMatrix(Teuchos::ParameterList& list, const Teuchos::RC
   return A;
 }
 
-
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeriList,
+void ConstructData(const Tensor<Scalar>& tensor, const std::string& matrixType, Teuchos::ParameterList& galeriList,
                    Xpetra::UnderlyingLib lib, Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                    Teuchos::RCP<Xpetra::Matrix      <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                    Teuchos::RCP<const Xpetra::Map   <LocalOrdinal,GlobalOrdinal, Node> >&       map,
@@ -188,7 +280,7 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
   map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
   coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
 
-  A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap>(galeriList, map);
+  A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(tensor, galeriList, map, coordinates);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -220,8 +312,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // =========================================================================
   // Parameters initialization
   // =========================================================================
-  GO nx = 100, ny = 100, nz = 100;
-  Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
+  GO nx = 20, ny = 20, nz = 20;
+  Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace3D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
   std::string xmlFileName = "";     clp.setOption("xml",                &xmlFileName, "read parameters from a file");
@@ -230,6 +322,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   bool        modify      = true;   clp.setOption("modify", "nomodify", &modify,      "Change values of the matrix used for reuse");
   std::string solveType   = "cg";   clp.setOption("solver",             &solveType,   "solve type: (none | cg | standalone)");
   double      tol         = 1e-6;   clp.setOption("tol",                &tol,         "solver convergence tolerance");
+  int         maxIts      = 200;    clp.setOption("its",                &maxIts,      "maximum number of solver iterations");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -267,6 +360,18 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   if (xmlFileName != "")
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
 
+  Tensor<SC> tensor;
+  if (paramList.isParameter("sigma")) {
+    std::string sigmaString = paramList.get<std::string>("sigma");
+    paramList.remove("sigma");
+#ifdef HAVE_MUELU_PAMGEN
+    out << "Switching to RTC" << std::endl;
+    tensor = Tensor<SC>(sigmaString);
+#else
+    (void)sigmaString; // fix compiler warning
+#endif
+  }
+
   out << "Parameter list:" << std::endl << paramList << std::endl;
 
   // =========================================================================
@@ -279,7 +384,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   reuseTypes.push_back("RP");   reuseNames.push_back("smoothed P and R");
   reuseTypes.push_back("RAP");  reuseNames.push_back("coarse grids");
 
-  const size_t numSteps = 3;
+  const size_t numSteps = 5;
 
   high_resolution_clock::time_point tc;
   std::vector<duration<double>> setup_time(reuseTypes.size()*numSteps);
@@ -295,7 +400,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     RCP<const Map>    map;
     RCP<MultiVector>  coordinates, nullspace;
 
-    ConstructData(matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
+    tensor.setT(0);
+
+    ConstructData(tensor, matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
     A->SetMaxEigenvalueEstimate(-one);
 
     RCP<Vector> X = VectorFactory::Build(map);
@@ -308,11 +415,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
     for (size_t t = 1; t < numSteps; t++) {
       out << thinSeparator << " Step " << t << " " << thinSeparator << std::endl;
-      galeriList.set("stretchx", 1.0 + 10*t);
-      galeriList.set("stretchy", 1.0);
-      galeriList.set("stretchz", 0.5 / t);
 
-      ConstructData(matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
+      tensor.setT(t);
+
+      ConstructData(tensor, matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
       A->SetMaxEigenvalueEstimate(-one);
 
       tc = high_resolution_clock::now();
@@ -358,7 +464,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
         // Belos parameter list
         Teuchos::ParameterList belosList;
-        belosList.set("Maximum Iterations",    200); // Maximum number of iterations allowed
+        belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
         belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
         belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
         belosList.set("Output Frequency",      1);
@@ -398,10 +504,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       out << "residual(A) = " << Utilities::ResidualNorm(*A, *X, *B)[0] << " [reuse \"" << reuseNames[k] << "\"]" << std::endl;
     }
   }
-  for (size_t t = 1; t < numSteps; t++)
+  for (size_t t = 1; t < numSteps; t++) {
+    out << thinSeparator << std::endl;
     for (size_t k = 0; k < reuseTypes.size(); k++)
-      printf("step #%zu reuse \"%20s\": setup = %5.2le, solve = %5.2le, num_its = %3d\n", t, reuseNames[k].c_str(),
-             setup_time[k*numSteps+t].count(), solve_time[k*numSteps+t].count(), num_its[k*numSteps+t]);
+      printf("step #%zu reuse \"%20s\": setup = %5.2le, solve = %5.2le [%3d], total = %5.2le\n", t, reuseNames[k].c_str(),
+             setup_time[k*numSteps+t].count(), solve_time[k*numSteps+t].count(), num_its[k*numSteps+t],
+             setup_time[k*numSteps+t].count() + solve_time[k*numSteps+t].count());
+  }
 
   return EXIT_SUCCESS;
 }
@@ -451,7 +560,6 @@ int main(int argc, char* argv[]) {
 #endif
 #endif
     }
-
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
