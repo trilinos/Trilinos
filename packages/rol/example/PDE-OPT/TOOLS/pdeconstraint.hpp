@@ -60,7 +60,9 @@ private:
   Teuchos::RCP<Assembler<Real> > assembler_;
 
   bool computeJ1_, computeJ2_, computeJ3_;
-  bool computeH11_, computeH12_, computeH21_, computeH22_;
+  bool computeH11_, computeH12_, computeH13_;
+  bool computeH21_, computeH22_, computeH23_;
+  bool computeH31_, computeH32_, computeH33_;
 
 public:
   PDE_Constraint(const Teuchos::RCP<PDE<Real> > &pde,
@@ -69,7 +71,9 @@ public:
                  Teuchos::ParameterList &parlist,
                  std::ostream &outStream = std::cout)
     : pde_(pde), computeJ1_(true), computeJ2_(true), computeJ3_(true),
-      computeH11_(true), computeH12_(true), computeH21_(true), computeH22_(true) {
+      computeH11_(true), computeH12_(true), computeH13_(true),
+      computeH21_(true), computeH22_(true), computeH23_(true),
+      computeH31_(true), computeH32_(true), computeH33_(true) {
     assembler_ = Teuchos::rcp(new Assembler<Real>(pde_->getFields(),meshMgr,comm,parlist,outStream));
     assembler_->setCellNodes(*pde_);
   }
@@ -77,18 +81,18 @@ public:
   PDE_Constraint(const Teuchos::RCP<PDE<Real> > &pde,
                  const Teuchos::RCP<Assembler<Real> > &assembler)
     : pde_(pde), assembler_(assembler), computeJ1_(true), computeJ2_(true), computeJ3_(true),
-      computeH11_(true), computeH12_(true), computeH21_(true), computeH22_(true) {
+      computeH11_(true), computeH12_(true), computeH13_(true),
+      computeH21_(true), computeH22_(true), computeH23_(true),
+      computeH31_(true), computeH32_(true), computeH33_(true) {
     assembler_->setCellNodes(*pde_);
   }
 
   void setParameter(const std::vector<Real> &param) {
     ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
-    computeJ1_  = true;
-    computeJ2_  = true;
-    computeH11_ = true;
-    computeH12_ = true;
-    computeH21_ = true;
-    computeH22_ = true;
+    computeJ1_  = true; computeJ2_  = true;
+    computeH11_ = true; computeH12_ = true; computeH13_ = true;
+    computeH21_ = true; computeH22_ = true; computeH23_ = true;
+    computeH31_ = true; computeH32_ = true; computeH33_ = true;
     pde_->setParameter(param);
   }
 
@@ -112,8 +116,13 @@ public:
     update_2(z,flag,iter);
     computeH11_ = (flag ? true : computeH11_);
     computeH12_ = (flag ? true : computeH12_);
+    computeH13_ = (flag ? true : computeH13_);
     computeH21_ = (flag ? true : computeH21_);
     computeH22_ = (flag ? true : computeH22_);
+    computeH23_ = (flag ? true : computeH23_);
+    computeH31_ = (flag ? true : computeH31_);
+    computeH32_ = (flag ? true : computeH32_);
+    computeH33_ = (flag ? true : computeH33_);
   }
 
   using ROL::EqualityConstraint_SimOpt<Real>::value;
@@ -339,7 +348,6 @@ public:
     }
     catch (Exception::NotImplemented &eni) {
       ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_11(ahwv,w,v,u,z,tol);
-      //throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_11): Hessian not implemented.");
     }
     if ( computeH11_ ) {
       ahwv.zero();
@@ -357,8 +365,10 @@ public:
                         const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
+    // Apply Jacobian of field controls to vector
+    int NotImplemented(0), IsZero(0);
     try {
-      if ( computeH12_ ) {
+      if (computeH12_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > wf = getConstField(w);
         Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
@@ -368,20 +378,51 @@ public:
         computeH12_ = false;
       }
     }
-    catch (Exception::Zero &ez) {
+    catch ( Exception::Zero & ez ) {
       computeH12_ = true;
+      IsZero++;
     }
-    catch (Exception::NotImplemented &eni) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_12(ahwv,w,v,u,z,tol);
-      //throw Exception::NotImplemented(">>> (PDE_Constraint::applyAdjointHessian_12): Hessian not implemented.");
+    catch ( Exception::NotImplemented & eni ) {
+      computeH12_ = true;
+      NotImplemented++;
     }
-    if ( computeH12_ ) {
-      ahwv.zero();
-    }
-    else {
+    if ( !computeH12_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
       assembler_->applyPDEHessian12(ahwvf,vf);
+    }
+    // Apply Jacobian of parametric controls to vector
+    try {
+      if (computeH13_) {
+        Teuchos::RCP<const Tpetra::MultiVector<> > wf = getConstField(w);
+        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+        assembler_->assemblePDEHessian13(pde_,wf,uf,zf,zp);
+        computeH13_ = false;
+      }
+    }
+    catch ( Exception::Zero & ez ) {
+      computeH13_ = true;
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      computeH13_ = true;
+      NotImplemented++;
+    }
+    if ( !computeH13_ ) {
+      Teuchos::RCP<std::vector<Real> >        ahwvp = getParameter(ahwv);
+      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      assembler_->applyPDEHessian13(ahwvp,vf);
+    }
+    // Zero Jacobian if all routines return Exception::Zero
+    if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
+      ahwv.zero();
+    }
+    // Default to finite differences if all routines return Exception::NotImplemented
+    if ( NotImplemented == 2 ) {
+      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_12(ahwv,w,v,u,z,tol);
     }
   }
 
@@ -391,6 +432,8 @@ public:
                         const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
+    // Apply Jacobian of field controls to vector
+    int NotImplemented(0), IsZero(0);
     try {
       if (computeH21_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > wf = getConstField(w);
@@ -402,19 +445,53 @@ public:
         computeH21_ = false;
       }
     }
-    catch (Exception::Zero &ez) {
-      computeH21_ = true;
-    }
-    catch (Exception::NotImplemented &eni) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_21(ahwv,w,v,u,z,tol);
-    }
-    if ( computeH21_ ) {
+    catch ( Exception::Zero & ez ) {
       ahwv.zero();
+      computeH21_ = true;
+      IsZero++;
     }
-    else {
+    catch ( Exception::NotImplemented & eni ) {
+      ahwv.zero();
+      computeH21_ = true;
+      NotImplemented++;
+    }
+    if ( !computeH21_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
       assembler_->applyPDEHessian21(ahwvf,vf);
+    }
+    // Apply Jacobian of parametric controls to vector
+    try {
+      if (computeH31_) {
+        Teuchos::RCP<const Tpetra::MultiVector<> > wf = getConstField(w);
+        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+        assembler_->assemblePDEHessian31(pde_,wf,uf,zf,zp);
+        computeH31_ = false;
+      }
+    }
+    catch ( Exception::Zero & ez ) {
+      computeH31_ = true;
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      computeH31_ = true;
+      NotImplemented++;
+    }
+    if ( !computeH31_ ) {
+      Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
+      Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
+      assembler_->applyPDEHessian31(ahwvf,vp,false);
+    }
+    // Zero Jacobian if all routines return Exception::Zero
+    if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
+      ahwv.zero();
+    }
+    // Default to finite differences if all routines return Exception::NotImplemented
+    if ( NotImplemented == 2 ) {
+      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_21(ahwv,w,v,u,z,tol);
     }
   }
 
@@ -424,6 +501,8 @@ public:
                         const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
+    // Apply Hessian wrt field controls to field control vector
+    int NotImplemented(0), IsZero(0);
     try {
       if (computeH22_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > wf = getConstField(w);
@@ -435,19 +514,113 @@ public:
         computeH22_ = false;
       }
     }
-    catch (Exception::Zero &ez) {
-      computeH22_ = true;
-    }
-    catch (Exception::NotImplemented &eni) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_22(ahwv,w,v,u,z,tol);
-    }
-    if ( computeH22_ ) {
+    catch ( Exception::Zero & ez ) {
       ahwv.zero();
+      computeH22_ = true;
+      IsZero++;
     }
-    else {
+    catch ( Exception::NotImplemented & eni ) {
+      ahwv.zero();
+      computeH22_ = true;
+      NotImplemented++;
+    }
+    if ( !computeH22_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
       assembler_->applyPDEHessian22(ahwvf,vf);
+    }
+    // Apply Hessian wrt field controls to parametric control vector
+    try {
+      if (computeH23_) {
+        Teuchos::RCP<const Tpetra::MultiVector<> > wf = getConstField(w);
+        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+        assembler_->assemblePDEHessian23(pde_,wf,uf,zf,zp);
+        computeH23_ = false;
+      }
+    }
+    catch ( Exception::Zero & ez ) {
+      Teuchos::RCP<std::vector<Real> > ahwvp = getParameter(ahwv);
+      if ( ahwvp != Teuchos::null ) {
+        const int size = ahwvp->size();
+        ahwvp->assign(size,static_cast<Real>(0));
+      }
+      computeH23_ = true;
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      Teuchos::RCP<std::vector<Real> > ahwvp = getParameter(ahwv);
+      if ( ahwvp != Teuchos::null ) {
+        const int size = ahwvp->size();
+        ahwvp->assign(size,static_cast<Real>(0));
+      }
+      computeH23_ = true;
+      NotImplemented++;
+    }
+    if ( !computeH23_ ) {
+      Teuchos::RCP<std::vector<Real> >        ahwvp = getParameter(ahwv);
+      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      assembler_->applyPDEHessian23(ahwvp,vf,true);
+    }
+    // Apply Hessian wrt parametric controls to field control vector
+    try {
+      if (computeH32_) {
+        Teuchos::RCP<const Tpetra::MultiVector<> > wf = getConstField(w);
+        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+        assembler_->assemblePDEHessian32(pde_,wf,uf,zf,zp);
+        computeH32_ = false;
+      }
+    }
+    catch ( Exception::Zero & ez ) {
+      computeH32_ = true;
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      computeH32_ = true;
+      NotImplemented++;
+    }
+    if ( !computeH32_ ) {
+      Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
+      Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
+      assembler_->applyPDEHessian32(ahwvf,vp,false);
+    }
+    // Apply Hessian wrt parametric controls to field control vector
+    try {
+      if (computeH33_) {
+        Teuchos::RCP<const Tpetra::MultiVector<> > wf = getConstField(w);
+        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+        assembler_->assemblePDEHessian33(pde_,wf,uf,zf,zp);
+        computeH33_ = false;
+      }
+    }
+    catch ( Exception::Zero & ez ) {
+      computeH33_ = true;
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      computeH33_ = true;
+      NotImplemented++;
+    }
+    if ( !computeH33_ ) {
+      Teuchos::RCP<std::vector<Real> >        ahwvp = getParameter(ahwv);
+      Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
+      assembler_->applyPDEHessian33(ahwvp,vp,false);
+    }
+    // Zero Jacobian if all routines return Exception::Zero
+    if ( IsZero > 0 && (IsZero + NotImplemented == 4) ) {
+      ahwv.zero();
+    }
+    // Default to finite differences if all routines return Exception::NotImplemented
+    if ( NotImplemented == 4 ) {
+      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_22(ahwv,w,v,u,z,tol);
     }
   }
 

@@ -132,44 +132,49 @@ private:
   std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
 
   // Finite element vectors and matrices for PDE
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecR_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecR_overlap_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matJ1_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matJ1_trans_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matJ2_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matJ2_trans_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecJ3_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecJ3_overlap_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matH11_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matH12_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matH21_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matH22_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           pde_vecR_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           pde_vecR_overlap_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             pde_matJ1_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             pde_matJ1_trans_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             pde_matJ2_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             pde_matJ2_trans_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           pde_vecJ3_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           pde_vecJ3_overlap_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             pde_matH11_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             pde_matH12_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           pde_vecH13_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           pde_vecH13_overlap_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             pde_matH21_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             pde_matH22_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           pde_vecH23_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           pde_vecH23_overlap_;
+  Teuchos::RCP<std::vector<std::vector<Real> > > pde_matH33_;
 
   // Finite element vectors and matrices for QoI
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecG1_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecG1_overlap_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecG2_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecG2_overlap_;
-  Teuchos::RCP<std::vector<Real> >      vecG3_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH11_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH11_overlap_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH12_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH12_overlap_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH13_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH13_overlap_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH21_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH21_overlap_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH22_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH22_overlap_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH23_;
-  Teuchos::RCP<Tpetra::MultiVector<> >  vecH23_overlap_;
-  Teuchos::RCP<std::vector<Real> >      vecH31_;
-  Teuchos::RCP<std::vector<Real> >      vecH32_;
-  Teuchos::RCP<std::vector<Real> >      vecH33_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecG1_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecG1_overlap_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecG2_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecG2_overlap_;
+  Teuchos::RCP<std::vector<Real> >     qoi_vecG3_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH11_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH11_overlap_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH12_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH12_overlap_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH13_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH13_overlap_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH21_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH21_overlap_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH22_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH22_overlap_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH23_;
+  Teuchos::RCP<Tpetra::MultiVector<> > qoi_vecH23_overlap_;
+  Teuchos::RCP<std::vector<Real> >     qoi_vecH31_;
+  Teuchos::RCP<std::vector<Real> >     qoi_vecH32_;
+  Teuchos::RCP<std::vector<Real> >     qoi_vecH33_;
 
   // Finite element Riesz matrices
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matR1_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> >    matR2_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> > matR1_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> > matR2_;
 
   // Linear solvers for Jacobian and adjoint Jacobian
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_;
@@ -447,7 +452,7 @@ private:
     if ( transpose ) {
       try{
         solver_trans_
-          = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matJ1_trans_);
+          = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", pde_matJ1_trans_);
       } catch (std::invalid_argument e) {
         std::cout << e.what() << std::endl;
       }
@@ -456,7 +461,7 @@ private:
     else {
       try {
         solver_
-          = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matJ1_);
+          = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", pde_matJ1_);
       }
       catch (std::invalid_argument e) {
         std::cout << e.what() << std::endl;
@@ -506,22 +511,25 @@ public:
           std::ostream &outStream = std::cout)
     : isJ1Transposed_(false),      isJ2Transposed_(false),
       isSolverConstructed_(false), isSolverTransConstructed_(false),
-      vecR_(Teuchos::null),        vecR_overlap_(Teuchos::null),
-      matJ1_(Teuchos::null),       matJ2_(Teuchos::null),
-      vecJ3_(Teuchos::null),       vecJ3_overlap_(Teuchos::null),
-      matH11_(Teuchos::null),      matH12_(Teuchos::null),
-      matH21_(Teuchos::null),      matH22_(Teuchos::null),
-      vecG1_(Teuchos::null),       vecG1_overlap_(Teuchos::null),
-      vecG2_(Teuchos::null),       vecG2_overlap_(Teuchos::null),
-      vecG3_(Teuchos::null),
-      vecH11_(Teuchos::null),      vecH11_overlap_(Teuchos::null),
-      vecH12_(Teuchos::null),      vecH12_overlap_(Teuchos::null),
-      vecH13_(Teuchos::null),      vecH13_overlap_(Teuchos::null),
-      vecH21_(Teuchos::null),      vecH21_overlap_(Teuchos::null),
-      vecH22_(Teuchos::null),      vecH22_overlap_(Teuchos::null),
-      vecH23_(Teuchos::null),      vecH23_overlap_(Teuchos::null),
-      vecH31_(Teuchos::null),      vecH32_(Teuchos::null),
-      vecH33_(Teuchos::null),
+      pde_vecR_(Teuchos::null),    pde_vecR_overlap_(Teuchos::null),
+      pde_matJ1_(Teuchos::null),   pde_matJ2_(Teuchos::null),
+      pde_vecJ3_(Teuchos::null),   pde_vecJ3_overlap_(Teuchos::null),
+      pde_matH11_(Teuchos::null),  pde_matH12_(Teuchos::null),
+      pde_vecH13_(Teuchos::null),  pde_vecH13_overlap_(Teuchos::null),
+      pde_matH21_(Teuchos::null),  pde_matH22_(Teuchos::null),
+      pde_vecH23_(Teuchos::null),  pde_vecH23_overlap_(Teuchos::null),
+      pde_matH33_(Teuchos::null),
+      qoi_vecG1_(Teuchos::null),   qoi_vecG1_overlap_(Teuchos::null),
+      qoi_vecG2_(Teuchos::null),   qoi_vecG2_overlap_(Teuchos::null),
+      qoi_vecG3_(Teuchos::null),
+      qoi_vecH11_(Teuchos::null),  qoi_vecH11_overlap_(Teuchos::null),
+      qoi_vecH12_(Teuchos::null),  qoi_vecH12_overlap_(Teuchos::null),
+      qoi_vecH13_(Teuchos::null),  qoi_vecH13_overlap_(Teuchos::null),
+      qoi_vecH21_(Teuchos::null),  qoi_vecH21_overlap_(Teuchos::null),
+      qoi_vecH22_(Teuchos::null),  qoi_vecH22_overlap_(Teuchos::null),
+      qoi_vecH23_(Teuchos::null),  qoi_vecH23_overlap_(Teuchos::null),
+      qoi_vecH31_(Teuchos::null),  qoi_vecH32_(Teuchos::null),
+      qoi_vecH33_(Teuchos::null),
       matR1_(Teuchos::null),       matR2_(Teuchos::null) {
     setCommunicator(comm,parlist,outStream);
     setBasis(basisPtrs,parlist,outStream);
@@ -538,22 +546,25 @@ public:
           std::ostream &outStream = std::cout)
     : isJ1Transposed_(false),      isJ2Transposed_(false),
       isSolverConstructed_(false), isSolverTransConstructed_(false),
-      vecR_(Teuchos::null),        vecR_overlap_(Teuchos::null),
-      matJ1_(Teuchos::null),       matJ2_(Teuchos::null),
-      vecJ3_(Teuchos::null),       vecJ3_overlap_(Teuchos::null),
-      matH11_(Teuchos::null),      matH12_(Teuchos::null),
-      matH21_(Teuchos::null),      matH22_(Teuchos::null),
-      vecG1_(Teuchos::null),       vecG1_overlap_(Teuchos::null),
-      vecG2_(Teuchos::null),       vecG2_overlap_(Teuchos::null),
-      vecG3_(Teuchos::null),
-      vecH11_(Teuchos::null),      vecH11_overlap_(Teuchos::null),
-      vecH12_(Teuchos::null),      vecH12_overlap_(Teuchos::null),
-      vecH13_(Teuchos::null),      vecH13_overlap_(Teuchos::null),
-      vecH21_(Teuchos::null),      vecH21_overlap_(Teuchos::null),
-      vecH22_(Teuchos::null),      vecH22_overlap_(Teuchos::null),
-      vecH23_(Teuchos::null),      vecH23_overlap_(Teuchos::null),
-      vecH31_(Teuchos::null),      vecH32_(Teuchos::null),
-      vecH33_(Teuchos::null),
+      pde_vecR_(Teuchos::null),    pde_vecR_overlap_(Teuchos::null),
+      pde_matJ1_(Teuchos::null),   pde_matJ2_(Teuchos::null),
+      pde_vecJ3_(Teuchos::null),   pde_vecJ3_overlap_(Teuchos::null),
+      pde_matH11_(Teuchos::null),  pde_matH12_(Teuchos::null),
+      pde_vecH13_(Teuchos::null),  pde_vecH13_overlap_(Teuchos::null),
+      pde_matH21_(Teuchos::null),  pde_matH22_(Teuchos::null),
+      pde_vecH23_(Teuchos::null),  pde_vecH23_overlap_(Teuchos::null),
+      pde_matH33_(Teuchos::null),
+      qoi_vecG1_(Teuchos::null),   qoi_vecG1_overlap_(Teuchos::null),
+      qoi_vecG2_(Teuchos::null),   qoi_vecG2_overlap_(Teuchos::null),
+      qoi_vecG3_(Teuchos::null),
+      qoi_vecH11_(Teuchos::null),  qoi_vecH11_overlap_(Teuchos::null),
+      qoi_vecH12_(Teuchos::null),  qoi_vecH12_overlap_(Teuchos::null),
+      qoi_vecH13_(Teuchos::null),  qoi_vecH13_overlap_(Teuchos::null),
+      qoi_vecH21_(Teuchos::null),  qoi_vecH21_overlap_(Teuchos::null),
+      qoi_vecH22_(Teuchos::null),  qoi_vecH22_overlap_(Teuchos::null),
+      qoi_vecH23_(Teuchos::null),  qoi_vecH23_overlap_(Teuchos::null),
+      qoi_vecH31_(Teuchos::null),  qoi_vecH32_(Teuchos::null),
+      qoi_vecH33_(Teuchos::null),
       matR1_(Teuchos::null),       matR2_(Teuchos::null) {
     setCommunicator(comm,parlist,outStream);
     setBasis(basisPtrs,parlist,outStream);
@@ -575,15 +586,15 @@ public:
                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Initialize residual vectors if not done so
-    if ( vecR_ == Teuchos::null ) { // Unique components of residual vector
-      vecR_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueResidualMap_, 1, true));
+    if ( pde_vecR_ == Teuchos::null ) { // Unique components of residual vector
+      pde_vecR_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueResidualMap_, 1, true));
     }
-    if ( vecR_overlap_ == Teuchos::null ) { // Overlapping components of residual vector
-      vecR_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapResidualMap_, 1, true));
+    if ( pde_vecR_overlap_ == Teuchos::null ) { // Overlapping components of residual vector
+      pde_vecR_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapResidualMap_, 1, true));
     }
     // Set residual vectors to zero
-    vecR_->scale(static_cast<Real>(0));
-    vecR_overlap_->scale(static_cast<Real>(0));
+    pde_vecR_->scale(static_cast<Real>(0));
+    pde_vecR_overlap_->scale(static_cast<Real>(0));
     // Get degrees of freedom
     Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
     int numLocalDofs = cellDofs.dimension(1);
@@ -599,14 +610,14 @@ public:
     // assembly on the overlap map
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
-        vecR_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                          0,
-                                          (*res)[i*numLocalDofs+j]);
+        pde_vecR_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                              0,
+                                              (*res)[i*numLocalDofs+j]);
       }
     }
     // change map
-    Tpetra::Export<> exporter(vecR_overlap_->getMap(), vecR_->getMap()); // redistribution
-    vecR_->doExport(*vecR_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+    Tpetra::Export<> exporter(pde_vecR_overlap_->getMap(), pde_vecR_->getMap()); // redistribution
+    pde_vecR_->doExport(*pde_vecR_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
   }
 
   void assemblePDEJacobian1(const Teuchos::RCP<PDE<Real> > &pde,
@@ -623,11 +634,11 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > jac;
       pde->Jacobian_1(jac,u_coeff,z_coeff,z_param); // Throw if not implemented or is zero
       // Initialize Jacobian matrices
-      if ( matJ1_ == Teuchos::null ) {
-        matJ1_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ1Graph_));
+      if ( pde_matJ1_ == Teuchos::null ) {
+        pde_matJ1_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ1Graph_));
       }
       // Zero PDE Jacobian
-      matJ1_->resumeFill(); matJ1_->setAllToScalar(static_cast<Real>(0));
+      pde_matJ1_->resumeFill(); pde_matJ1_->setAllToScalar(static_cast<Real>(0));
       // Assemble PDE Jacobian
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
@@ -636,12 +647,12 @@ public:
       Teuchos::ArrayRCP<const Real> jacArrayRCP = jac->getData();
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          matJ1_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                      cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                      jacArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+          pde_matJ1_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                          cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                          jacArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
         }
       }
-      matJ1_->fillComplete();
+      pde_matJ1_->fillComplete();
       isJ1Transposed_ = false;
       isSolverConstructed_ = false;
       isSolverTransConstructed_ = false;
@@ -668,11 +679,11 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > jac;
       pde->Jacobian_2(jac,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
       // Initialize Jacobian matrices
-      if ( matJ2_ == Teuchos::null ) {
-        matJ2_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ2Graph_));
+      if ( pde_matJ2_ == Teuchos::null ) {
+        pde_matJ2_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ2Graph_));
       }
       // Zero PDE Jacobian
-      matJ2_->resumeFill(); matJ2_->setAllToScalar(static_cast<Real>(0));
+      pde_matJ2_->resumeFill(); pde_matJ2_->setAllToScalar(static_cast<Real>(0));
       // Assemble Jacobian
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
@@ -681,12 +692,12 @@ public:
       Teuchos::ArrayRCP<const Real> jacArrayRCP = jac->getData();
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          matJ2_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                      cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                      jacArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+          pde_matJ2_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                          cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                          jacArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
         }
       }
-      matJ2_->fillComplete();
+      pde_matJ2_->fillComplete();
       isJ2Transposed_ = false;
     }
     catch ( Exception::Zero & ez ) {
@@ -714,29 +725,29 @@ public:
         // Compute PDE local Jacobian wrt parametric controls
         pde->Jacobian_3(jac,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
         // Initialize Jacobian storage if not done so already
-        if (vecJ3_ == Teuchos::null) {
-          vecJ3_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueResidualMap_, size, true));
+        if (pde_vecJ3_ == Teuchos::null) {
+          pde_vecJ3_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueResidualMap_, size, true));
         }
-        if ( vecJ3_overlap_ == Teuchos::null) {
-          vecJ3_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapResidualMap_, size, true));
+        if ( pde_vecJ3_overlap_ == Teuchos::null) {
+          pde_vecJ3_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapResidualMap_, size, true));
         }
         // Assemble PDE Jacobian wrt parametric controls
-        vecJ3_->scale(static_cast<Real>(0));
-        vecJ3_overlap_->scale(static_cast<Real>(0));
+        pde_vecJ3_->scale(static_cast<Real>(0));
+        pde_vecJ3_overlap_->scale(static_cast<Real>(0));
         for (int k = 0; k < size; ++k) {
           Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
           int numLocalDofs = cellDofs.dimension(1);
           // assembly on the overlap map
           for (int i=0; i<numCells_; ++i) {
             for (int j=0; j<numLocalDofs; ++j) {
-              vecJ3_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                                 k,
-                                                 (*jac[k])[i*numLocalDofs+j]);
+              pde_vecJ3_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                     k,
+                                                     (*jac[k])[i*numLocalDofs+j]);
             }
           }
           // change map
-          Tpetra::Export<> exporter(vecJ3_overlap_->getMap(), vecJ3_->getMap()); // redistribution
-          vecJ3_->doExport(*vecJ3_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+          Tpetra::Export<> exporter(pde_vecJ3_overlap_->getMap(), pde_vecJ3_->getMap()); // redistribution
+          pde_vecJ3_->doExport(*pde_vecJ3_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
         }
       }
       catch ( Exception::Zero & ez ) {
@@ -768,11 +779,11 @@ public:
       // Compute PDE Hessian
       pde->Hessian_11(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
       // Initialize Hessian storage if not done so already
-      if ( matH11_ == Teuchos::null ) {
-        matH11_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH11Graph_));
+      if ( pde_matH11_ == Teuchos::null ) {
+        pde_matH11_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH11Graph_));
       }
       // Zero Hessian
-      matH11_->resumeFill(); matH11_->setAllToScalar(static_cast<Real>(0));
+      pde_matH11_->resumeFill(); pde_matH11_->setAllToScalar(static_cast<Real>(0));
       // Assemble PDE Hessian
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
@@ -781,12 +792,12 @@ public:
       Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          matH11_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+          pde_matH11_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                           cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                           hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
         }
       }
-      matH11_->fillComplete();
+      pde_matH11_->fillComplete();
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assemblePDEHessian11): Hessian is zero.");
@@ -813,11 +824,11 @@ public:
       // Compute PDE Hessian
       pde->Hessian_12(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
       // Initialize Hessian storage if not done so already
-      if ( matH12_ == Teuchos::null ) {
-        matH12_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH12Graph_));
+      if ( pde_matH12_ == Teuchos::null ) {
+        pde_matH12_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH12Graph_));
       }
       // Zero Hessian
-      matH12_->resumeFill(); matH12_->setAllToScalar(static_cast<Real>(0));
+      pde_matH12_->resumeFill(); pde_matH12_->setAllToScalar(static_cast<Real>(0));
       // Assemble PDE Hessian
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
@@ -826,18 +837,75 @@ public:
       Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          matH12_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+          pde_matH12_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                           cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                           hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
         }
       }
-      matH12_->fillComplete();
+      pde_matH12_->fillComplete();
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assemblePDEHessian12): Hessian is zero.");
     }
     catch (Exception::NotImplemented &eni) {
       throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian12): Hessian not implemented.");
+    }
+  }
+
+  void assemblePDEHessian13(const Teuchos::RCP<PDE<Real> > &pde,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &l,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    if ( z_param != Teuchos::null ) {
+      try {
+        int size = static_cast<int>(z_param->size());
+        // Initialize local hessian
+        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > hess(size);
+        // Get u_coeff from u, z_coeff from z and l_coeff from l
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
+        getCoeffFromStateVector(u_coeff,u);
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
+        getCoeffFromControlVector(z_coeff,z);
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff = Teuchos::null;
+        getCoeffFromStateVector(l_coeff,l);
+        // Compute PDE local Jacobian wrt parametric controls
+        pde->Hessian_13(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        // Initialize Jacobian storage if not done so already
+        if (pde_vecH13_ == Teuchos::null) {
+          pde_vecH13_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, size, true));
+        }
+        if ( pde_vecH13_overlap_ == Teuchos::null) {
+          pde_vecH13_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, size, true));
+        }
+        // Assemble PDE Jacobian wrt parametric controls
+        pde_vecH13_->scale(static_cast<Real>(0));
+        pde_vecH13_overlap_->scale(static_cast<Real>(0));
+        for (int k = 0; k < size; ++k) {
+          Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+          int numLocalDofs = cellDofs.dimension(1);
+          // assembly on the overlap map
+          for (int i=0; i<numCells_; ++i) {
+            for (int j=0; j<numLocalDofs; ++j) {
+              pde_vecH13_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                      k,
+                                                      (*hess[k])[i*numLocalDofs+j]);
+            }
+          }
+          // change map
+          Tpetra::Export<> exporter(pde_vecH13_overlap_->getMap(), pde_vecH13_->getMap()); // redistribution
+          pde_vecH13_->doExport(*pde_vecH13_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+        }
+      }
+      catch ( Exception::Zero & ez ) {
+        throw Exception::Zero(">>> (Assembler::assemblePDEHessian13): Hessian is zero.");
+      }
+      catch ( Exception::NotImplemented & eni ) {
+        throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian13): Hessian not implemented.");
+      }
+    }
+    else {
+      throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian13): Hessian not implemented.");
     }
   }
 
@@ -858,11 +926,11 @@ public:
       // Compute PDE Hessian
       pde->Hessian_21(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
       // Initialize Hessian storage if not done so already
-      if ( matH21_ == Teuchos::null ) {
-        matH21_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH21Graph_));
+      if ( pde_matH21_ == Teuchos::null ) {
+        pde_matH21_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH21Graph_));
       }
       // Zero Hessian
-      matH21_->resumeFill(); matH21_->setAllToScalar(static_cast<Real>(0));
+      pde_matH21_->resumeFill(); pde_matH21_->setAllToScalar(static_cast<Real>(0));
       // Assemble PDE Hessian
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
@@ -871,12 +939,12 @@ public:
       Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          matH21_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+          pde_matH21_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                           cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                           hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
         }
       }
-      matH21_->fillComplete();
+      pde_matH21_->fillComplete();
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assemblePDEHessian21): Hessian is zero.");
@@ -903,11 +971,11 @@ public:
       // Compute PDE Hessian
       pde->Hessian_22(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
       // Initialize Hessian storage if not done so already
-      if ( matH22_ == Teuchos::null ) {
-        matH22_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH22Graph_));
+      if ( pde_matH22_ == Teuchos::null ) {
+        pde_matH22_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH22Graph_));
       }
       // Zero Hessian
-      matH22_->resumeFill(); matH22_->setAllToScalar(static_cast<Real>(0));
+      pde_matH22_->resumeFill(); pde_matH22_->setAllToScalar(static_cast<Real>(0));
       // Assemble PDE Hessian
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
@@ -916,12 +984,12 @@ public:
       Teuchos::ArrayRCP<const Real> hessArrayRCP = hess->getData();
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          matH22_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
-                                       cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
-                                       hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+          pde_matH22_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                           cellDofsArrayRCP(myCellIds_[i] * numLocalDofs, numLocalDofs),
+                                           hessArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
         }
       }
-      matH22_->fillComplete();
+      pde_matH22_->fillComplete();
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assemblePDEHessian22): Hessian is zero.");
@@ -931,39 +999,226 @@ public:
     }
   }
 
+  void assemblePDEHessian23(const Teuchos::RCP<PDE<Real> > &pde,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &l,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    if ( z_param != Teuchos::null ) {
+      try {
+        int size = static_cast<int>(z_param->size());
+        // Initialize local hessian
+        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > hess(size);
+        // Get u_coeff from u, z_coeff from z and l_coeff from l
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
+        getCoeffFromStateVector(u_coeff,u);
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
+        getCoeffFromControlVector(z_coeff,z);
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff = Teuchos::null;
+        getCoeffFromStateVector(l_coeff,l);
+        // Compute PDE local Jacobian wrt parametric controls
+        pde->Hessian_23(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        // Initialize Jacobian storage if not done so already
+        if (pde_vecH23_ == Teuchos::null) {
+          pde_vecH23_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, size, true));
+        }
+        if ( pde_vecH23_overlap_ == Teuchos::null) {
+          pde_vecH23_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, size, true));
+        }
+        // Assemble PDE Jacobian wrt parametric controls
+        pde_vecH23_->scale(static_cast<Real>(0));
+        pde_vecH23_overlap_->scale(static_cast<Real>(0));
+        for (int k = 0; k < size; ++k) {
+          Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+          int numLocalDofs = cellDofs.dimension(1);
+          // assembly on the overlap map
+          for (int i=0; i<numCells_; ++i) {
+            for (int j=0; j<numLocalDofs; ++j) {
+              pde_vecH23_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                      k,
+                                                      (*hess[k])[i*numLocalDofs+j]);
+            }
+          }
+          // change map
+          Tpetra::Export<> exporter(pde_vecH23_overlap_->getMap(), pde_vecH23_->getMap()); // redistribution
+          pde_vecH23_->doExport(*pde_vecH23_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+        }
+      }
+      catch ( Exception::Zero & ez ) {
+        throw Exception::Zero(">>> (Assembler::assemblePDEHessian23): Hessian is zero.");
+      }
+      catch ( Exception::NotImplemented & eni ) {
+        throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian23): Hessian not implemented.");
+      }
+    }
+    else {
+      throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian23): Hessian not implemented.");
+    }
+  }
+
+  void assemblePDEHessian31(const Teuchos::RCP<PDE<Real> > &pde,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &l,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    assemblePDEHessian13(pde,l,u,z,z_param);
+  }
+
+  void assemblePDEHessian32(const Teuchos::RCP<PDE<Real> > &pde,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &l,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    assemblePDEHessian23(pde,l,u,z,z_param);
+  }
+
+  void assemblePDEHessian33(const Teuchos::RCP<PDE<Real> > &pde,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &l,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
+                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
+                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    if ( z_param != Teuchos::null ) {
+      try {
+        int size = static_cast<int>(z_param->size());
+        // Initialize local hessian
+        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > tmp(size,Teuchos::null);
+        std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > hess(size,tmp);
+        // Get u_coeff from u, z_coeff from z and l_coeff from l
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
+        getCoeffFromStateVector(u_coeff,u);
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
+        getCoeffFromControlVector(z_coeff,z);
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff = Teuchos::null;
+        getCoeffFromStateVector(l_coeff,l);
+        // Compute PDE local Jacobian wrt parametric controls
+        pde->Hessian_33(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        // Initialize Jacobian storage if not done so already
+        if (pde_matH33_ == Teuchos::null) {
+          std::vector<Real> col(size,static_cast<Real>(0));
+          pde_matH33_ = Teuchos::rcp(new std::vector<std::vector<Real> >(size,col));
+        }
+        // Assemble PDE Jacobian wrt parametric controls
+        int cnt = 0, matSize = static_cast<int>(0.5*static_cast<Real>((size+1)*size));
+        std::vector<Real> myHess(matSize,static_cast<Real>(0));
+        std::vector<Real> globHess(matSize,static_cast<Real>(0));
+        for (int k = 0; k < size; ++k) {
+          for (int j = k; j < size; ++j) {
+            for (int i=0; i<numCells_; ++i) {
+              myHess[cnt] += (*(hess[k][j]))(i);
+            }
+            cnt++;
+          }
+        }
+        Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_SUM,matSize,&myHess[0],&globHess[0]);
+        cnt = 0;
+        for (int k = 0; k < size; ++k) {
+          for (int j = k; j < size; ++j) {
+            (*pde_matH33_)[k][j] += globHess[cnt];
+            if ( j != k ) { 
+              (*pde_matH33_)[j][k] += globHess[cnt];
+            }
+            cnt++;
+          }
+        }
+      }
+      catch ( Exception::Zero & ez ) {
+        throw Exception::Zero(">>> (Assembler::assemblePDEHessian33): Hessian is zero.");
+      }
+      catch ( Exception::NotImplemented & eni ) {
+        throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian33): Hessian not implemented.");
+      }
+    }
+    else {
+      throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian33): Hessian not implemented.");
+    }
+  }
+
+  // Access routines
   Teuchos::RCP<Tpetra::MultiVector<> > getPDEResidual(void) const {
-    return vecR_;
+    return pde_vecR_;
   }
 
   Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEJacobian1(const bool transpose = false) {
     if ( transpose ) {
       if (!isJ1Transposed_) {
         // Create matrix transposes.
-        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
-        matJ1_trans_ = transposerJ1.createTranspose();
+        Tpetra::RowMatrixTransposer<> transposerJ1(pde_matJ1_);
+        pde_matJ1_trans_ = transposerJ1.createTranspose();
         isJ1Transposed_ = true;
       }
-      return matJ1_trans_;
+      return pde_matJ1_trans_;
     }
     else {
-      return matJ1_;
+      return pde_matJ1_;
     }
   }
 
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEJacobian2(const bool transpose = false) {
+    if ( transpose ) {
+      if (!isJ2Transposed_) {
+        // Create matrix transposes.
+        Tpetra::RowMatrixTransposer<> transposerJ2(pde_matJ2_);
+        pde_matJ2_trans_ = transposerJ2.createTranspose();
+        isJ2Transposed_ = true;
+      }
+      return pde_matJ2_trans_;
+    }
+    else {
+      return pde_matJ2_;
+    }
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian11(void) const {
+    return pde_matH11_;
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian12(void) const {
+    return pde_matH12_;
+  }
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getPDEHessian13(void) const {
+    return pde_vecH13_;
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian21(void) const {
+    return pde_matH21_;
+  }
+
+  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian22(void) const {
+    return pde_matH22_;
+  }
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getPDEHessian23(void) const {
+    return pde_vecH23_;
+  }
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getPDEHessian31(void) const {
+    return pde_vecH13_;
+  }
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getPDEHessian32(void) const {
+    return pde_vecH23_;
+  }
+
+  Teuchos::RCP<std::vector<std::vector<Real> > > getPDEHessian33(void) const {
+    return pde_matH33_;
+  }
+
+  // Application routines
   void applyPDEJacobian1(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                          const bool transpose = false) {
     if ( transpose ) {
       if (!isJ1Transposed_) {
         // Create matrix transposes.
-        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
-        matJ1_trans_ = transposerJ1.createTranspose();
+        Tpetra::RowMatrixTransposer<> transposerJ1(pde_matJ1_);
+        pde_matJ1_trans_ = transposerJ1.createTranspose();
         isJ1Transposed_ = true;
       }
-      matJ1_trans_->apply(*v,*Jv);
+      pde_matJ1_trans_->apply(*v,*Jv);
     }
     else {
-      matJ1_->apply(*v,*Jv);
+      pde_matJ1_->apply(*v,*Jv);
     }
   }
 
@@ -973,8 +1228,8 @@ public:
     if ( transpose ) {
       if (!isJ1Transposed_) {
         // Create matrix transposes.
-        Tpetra::RowMatrixTransposer<> transposerJ1(matJ1_);
-        matJ1_trans_ = transposerJ1.createTranspose();
+        Tpetra::RowMatrixTransposer<> transposerJ1(pde_matJ1_);
+        pde_matJ1_trans_ = transposerJ1.createTranspose();
         isJ1Transposed_ = true;
       }
       if (!isSolverTransConstructed_) {
@@ -996,91 +1251,126 @@ public:
     }
   }
 
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEJacobian2(const bool transpose = false) {
-    if ( transpose ) {
-      if (!isJ2Transposed_) {
-        // Create matrix transposes.
-        Tpetra::RowMatrixTransposer<> transposerJ2(matJ2_);
-        matJ2_trans_ = transposerJ2.createTranspose();
-        isJ2Transposed_ = true;
-      }
-      return matJ2_trans_;
-    }
-    else {
-      return matJ2_;
-    }
-  }
-
   void applyPDEJacobian2(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                          const bool transpose = false) {
     if ( transpose ) {
       if (!isJ2Transposed_) {
         // Create matrix transposes.
-        Tpetra::RowMatrixTransposer<> transposerJ2(matJ2_);
-        matJ2_trans_ = transposerJ2.createTranspose();
+        Tpetra::RowMatrixTransposer<> transposerJ2(pde_matJ2_);
+        pde_matJ2_trans_ = transposerJ2.createTranspose();
         isJ2Transposed_ = true;
       }
-      matJ2_trans_->apply(*v,*Jv);
+      pde_matJ2_trans_->apply(*v,*Jv);
     }
     else {
-      matJ2_->apply(*v,*Jv);
+      pde_matJ2_->apply(*v,*Jv);
     }
   }
 
   void applyPDEJacobian3(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
-                         const Teuchos::RCP<const std::vector<Real> > &v) {
+                         const Teuchos::RCP<const std::vector<Real> > &v) const {
     Jv->putScalar(static_cast<Real>(0));
     const int size = v->size();
     for (int i = 0; i < size; ++i) {
-      Jv->update((*v)[i],*(vecJ3_->getVector(i)),static_cast<Real>(1));
+      Jv->update((*v)[i],*(pde_vecJ3_->getVector(i)),static_cast<Real>(1));
     }
   }
 
   void applyPDEAdjointJacobian3(const Teuchos::RCP<std::vector<Real> > &Jv,
-                                const Teuchos::RCP<const Tpetra::MultiVector<> > &v) {
+                                const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
     const int size = Jv->size();
     Teuchos::Array<Real> val(1,0);
     for (int i = 0; i < size; ++i) {
-      vecJ3_->getVector(i)->dot(*v, val.view(0,1));
+      pde_vecJ3_->getVector(i)->dot(*v, val.view(0,1));
       (*Jv)[i] = val[0];
     }
   }
 
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian11(void) const {
-    return matH11_;
-  }
-
   void applyPDEHessian11(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
-    matH11_->apply(*v,*Hv);
-  }
-
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian12(void) const {
-    return matH12_;
+    pde_matH11_->apply(*v,*Hv);
   }
 
   void applyPDEHessian12(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
-    matH12_->apply(*v,*Hv);
+    pde_matH12_->apply(*v,*Hv);
   }
 
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian21(void) const {
-    return matH21_;
+  void applyPDEHessian13(const Teuchos::RCP<std::vector<Real> > &Hv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
+                         const bool zeroOut = true) const {
+    const int size = Hv->size();
+    if ( zeroOut ) {
+      Hv->assign(size,static_cast<Real>(0));
+    }
+    Teuchos::Array<Real> val(1,0);
+    for (int i = 0; i < size; ++i) {
+      pde_vecH13_->getVector(i)->dot(*v, val.view(0,1));
+      (*Hv)[i] += val[0];
+    }
   }
 
   void applyPDEHessian21(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
-    matH21_->apply(*v,*Hv);
-  }
-
-  Teuchos::RCP<Tpetra::CrsMatrix<> > getPDEHessian22(void) const {
-    return matH22_;
+    pde_matH21_->apply(*v,*Hv);
   }
 
   void applyPDEHessian22(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
-    matH22_->apply(*v,*Hv);
+    pde_matH22_->apply(*v,*Hv);
+  }
+
+  void applyPDEHessian23(const Teuchos::RCP<std::vector<Real> > &Hv,
+                         const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
+                         const bool zeroOut = true) const {
+    const int size = Hv->size();
+    if ( zeroOut ) {
+      Hv->assign(size,static_cast<Real>(0));
+    }
+    Teuchos::Array<Real> val(1,0);
+    for (int i = 0; i < size; ++i) {
+      pde_vecH23_->getVector(i)->dot(*v, val.view(0,1));
+      (*Hv)[i] += val[0];
+    }
+  }
+
+  void applyPDEHessian31(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
+                         const Teuchos::RCP<const std::vector<Real> > &v,
+                         const bool zeroOut = true) const {
+    if ( zeroOut ) {
+      Hv->putScalar(static_cast<Real>(0));
+    }
+    const int size = v->size();
+    for (int i = 0; i < size; ++i) {
+      Hv->update((*v)[i],*(pde_vecH13_->getVector(i)),static_cast<Real>(1));
+    }
+  }
+
+  void applyPDEHessian32(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
+                         const Teuchos::RCP<const std::vector<Real> > &v,
+                         const bool zeroOut = true) const {
+    if ( zeroOut ) {
+      Hv->putScalar(static_cast<Real>(0));
+    }
+    const int size = v->size();
+    for (int i = 0; i < size; ++i) {
+      Hv->update((*v)[i],*(pde_vecH23_->getVector(i)),static_cast<Real>(1));
+    }
+  }
+
+  void applyPDEHessian33(const Teuchos::RCP<std::vector<Real> > &Hv,
+                         const Teuchos::RCP<const std::vector<Real> > &v,
+                         const bool zeroOut = true ) const {
+    const int size = Hv->size();
+    if ( zeroOut ) {
+      Hv->assign(size,static_cast<Real>(0));
+    }
+    for (int i = 0; i < size; ++i) {
+      for (int j = 0; j < size; ++j) {
+        (*Hv)[i] += (*pde_matH33_)[i][j]*(*v)[j];
+      }
+    }
   }
   /***************************************************************************/
   /* End of PDE assembly routines.                                           */
@@ -1138,27 +1428,27 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locGrad;
       qoi->gradient_1(locGrad,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
       // Initialize state QoI gradient vectors
-      if ( vecG1_ == Teuchos::null ) {
-        vecG1_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
+      if ( qoi_vecG1_ == Teuchos::null ) {
+        qoi_vecG1_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
       }
-      if ( vecG1_overlap_ == Teuchos::null ) {
-        vecG1_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
+      if ( qoi_vecG1_overlap_ == Teuchos::null ) {
+        qoi_vecG1_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
       }
       // Assembly in to the overlap gradient
-      vecG1_->scale(static_cast<Real>(0));
-      vecG1_overlap_->scale(static_cast<Real>(0));
+      qoi_vecG1_->scale(static_cast<Real>(0));
+      qoi_vecG1_overlap_->scale(static_cast<Real>(0));
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          vecG1_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                             0,
-                                             (*locGrad)[i*numLocalDofs+j]);
+          qoi_vecG1_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                 0,
+                                                 (*locGrad)[i*numLocalDofs+j]);
         }
       }
       // Change to local map
-      Tpetra::Export<> exporter(vecG1_overlap_->getMap(), vecG1_->getMap()); // redistribution
-      vecG1_->doExport(*vecG1_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      Tpetra::Export<> exporter(qoi_vecG1_overlap_->getMap(), qoi_vecG1_->getMap()); // redistribution
+      qoi_vecG1_->doExport(*qoi_vecG1_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
     }
     catch ( Exception::Zero & ez ) {
       throw Exception::Zero(">>> (Assembler::assembleQoIGradient1): Gradient is zero.");
@@ -1182,27 +1472,27 @@ public:
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locGrad;
       qoi->gradient_2(locGrad,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
       // Initialize control gradient vectors
-      if ( vecG2_ == Teuchos::null ) {
-        vecG2_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
+      if ( qoi_vecG2_ == Teuchos::null ) {
+        qoi_vecG2_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
       }
-      if ( vecG2_overlap_ == Teuchos::null ) {
-        vecG2_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
+      if ( qoi_vecG2_overlap_ == Teuchos::null ) {
+        qoi_vecG2_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
       }
       // Assembly in to the overlap gradient
-      vecG2_->scale(static_cast<Real>(0));
-      vecG2_overlap_->scale(static_cast<Real>(0));
+      qoi_vecG2_->scale(static_cast<Real>(0));
+      qoi_vecG2_overlap_->scale(static_cast<Real>(0));
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          vecG2_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                             0,
-                                             (*locGrad)[i*numLocalDofs+j]);
+          qoi_vecG2_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                 0,
+                                                 (*locGrad)[i*numLocalDofs+j]);
         }
       }
       // Change to local map
-      Tpetra::Export<> exporter(vecG2_overlap_->getMap(), vecG2_->getMap()); // redistribution
-      vecG2_->doExport(*vecG2_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      Tpetra::Export<> exporter(qoi_vecG2_overlap_->getMap(), qoi_vecG2_->getMap()); // redistribution
+      qoi_vecG2_->doExport(*qoi_vecG2_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
     }
     catch ( Exception::Zero & ez ) {
       throw Exception::Zero(">>> (Assembler::assembleQoIGradient2): Gradient is zero.");
@@ -1218,20 +1508,20 @@ public:
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     if ( z_param != Teuchos::null ) {
       const int size = z_param->size();
-      if ( vecG3_ == Teuchos::null ) {
-        vecG3_ = Teuchos::rcp(new std::vector<Real>(size,0));
+      if ( qoi_vecG3_ == Teuchos::null ) {
+        qoi_vecG3_ = Teuchos::rcp(new std::vector<Real>(size,0));
       }
       try {
-        vecG3_->assign(size,0);
+        qoi_vecG3_->assign(size,0);
         // Initialize local gradient storage
-        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > locGrad;
+        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > locGrad(size,Teuchos::null);
         // Get u_coeff from u and z_coeff from z
         Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
         getCoeffFromStateVector(u_coeff,u);
         Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
         getCoeffFromControlVector(z_coeff,z);
         // Compute gradient
-        (*vecG3_) = qoi->gradient_3(locGrad,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        (*qoi_vecG3_) = qoi->gradient_3(locGrad,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
         // Assembly
         std::vector<Real> myGrad(size,0), globGrad(size,0);
         for (int j = 0; j < size; ++j) {
@@ -1243,11 +1533,11 @@ public:
         }
         Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_SUM,size,&myGrad[0],&globGrad[0]);
         for (int j = 0; j < size; ++j) {
-          (*vecG3_)[j] += globGrad[j];
+          (*qoi_vecG3_)[j] += globGrad[j];
         }
       }
       catch ( Exception::Zero & ez ) {
-        vecG3_->assign(size,0);
+        qoi_vecG3_->assign(size,0);
       }
       catch ( Exception::NotImplemented & eni ) {
         throw Exception::NotImplemented(">>> (Assembler::assembleQoIGradient3): Gradient not implemented.");
@@ -1275,27 +1565,27 @@ public:
       // Compute local gradient
       qoi->HessVec_11(locHess, v_coeff, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
       // Initialize state-state HessVec vectors
-      if ( vecH11_ == Teuchos::null ) {
-        vecH11_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
+      if ( qoi_vecH11_ == Teuchos::null ) {
+        qoi_vecH11_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
       }
-      if ( vecH11_overlap_ == Teuchos::null ) {
-        vecH11_overlap_  = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
+      if ( qoi_vecH11_overlap_ == Teuchos::null ) {
+        qoi_vecH11_overlap_  = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
       }
       // Assembly in to the overlap gradient
-      vecH11_->scale(static_cast<Real>(0));
-      vecH11_overlap_->scale(static_cast<Real>(0));
+      qoi_vecH11_->scale(static_cast<Real>(0));
+      qoi_vecH11_overlap_->scale(static_cast<Real>(0));
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          vecH11_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                              0,
-                                              (*locHess)[i*numLocalDofs+j]);
+          qoi_vecH11_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                  0,
+                                                  (*locHess)[i*numLocalDofs+j]);
         }
       }
       // Change to local map
-      Tpetra::Export<> exporter(vecH11_overlap_->getMap(), vecH11_->getMap()); // redistribution
-      vecH11_->doExport(*vecH11_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      Tpetra::Export<> exporter(qoi_vecH11_overlap_->getMap(), qoi_vecH11_->getMap()); // redistribution
+      qoi_vecH11_->doExport(*qoi_vecH11_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assembleQoIHessVec11): Hessian is zero.");
@@ -1322,27 +1612,27 @@ public:
       // Compute local gradient
       qoi->HessVec_12(locHess, v_coeff, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
       // Initialize state-control HessVec vectors
-      if ( vecH12_ == Teuchos::null ) {
-        vecH12_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
+      if ( qoi_vecH12_ == Teuchos::null ) {
+        qoi_vecH12_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
       }
-      if ( vecH12_overlap_ == Teuchos::null ) {
-        vecH12_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
+      if ( qoi_vecH12_overlap_ == Teuchos::null ) {
+        qoi_vecH12_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
       }
       // Assembly in to the overlap gradient
-      vecH12_->scale(static_cast<Real>(0));
-      vecH12_overlap_->scale(static_cast<Real>(0));
+      qoi_vecH12_->scale(static_cast<Real>(0));
+      qoi_vecH12_overlap_->scale(static_cast<Real>(0));
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          vecH12_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                              0,
-                                              (*locHess)[i*numLocalDofs+j]);
+          qoi_vecH12_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                  0,
+                                                  (*locHess)[i*numLocalDofs+j]);
         }
       }
       // Change to local map
-      Tpetra::Export<> exporter(vecH12_overlap_->getMap(), vecH12_->getMap()); // redistribution
-      vecH12_->doExport(*vecH12_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      Tpetra::Export<> exporter(qoi_vecH12_overlap_->getMap(), qoi_vecH12_->getMap()); // redistribution
+      qoi_vecH12_->doExport(*qoi_vecH12_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assembleQoIHessVec12): Hessian is zero.");
@@ -1367,27 +1657,27 @@ public:
       // Compute local gradient
       qoi->HessVec_13(locHess, v, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
       // Initialize state-control HessVec vectors
-      if ( vecH13_ == Teuchos::null ) {
-        vecH13_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
+      if ( qoi_vecH13_ == Teuchos::null ) {
+        qoi_vecH13_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
       }
-      if ( vecH13_overlap_ == Teuchos::null ) {
-        vecH13_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
+      if ( qoi_vecH13_overlap_ == Teuchos::null ) {
+        qoi_vecH13_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
       }
       // Assembly in to the overlap gradient
-      vecH13_->scale(static_cast<Real>(0));
-      vecH13_overlap_->scale(static_cast<Real>(0));
+      qoi_vecH13_->scale(static_cast<Real>(0));
+      qoi_vecH13_overlap_->scale(static_cast<Real>(0));
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          vecH13_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                              0,
-                                              (*locHess)[i*numLocalDofs+j]);
+          qoi_vecH13_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                  0,
+                                                  (*locHess)[i*numLocalDofs+j]);
         }
       }
       // Change to local map
-      Tpetra::Export<> exporter(vecH13_overlap_->getMap(), vecH13_->getMap()); // redistribution
-      vecH13_->doExport(*vecH13_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      Tpetra::Export<> exporter(qoi_vecH13_overlap_->getMap(), qoi_vecH13_->getMap()); // redistribution
+      qoi_vecH13_->doExport(*qoi_vecH13_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assembleQoIHessVec12): Hessian is zero.");
@@ -1414,27 +1704,27 @@ public:
       // Compute local gradient
       qoi->HessVec_21(locHess, v_coeff, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
       // Initialize control-state HessVec vectors
-      if ( vecH21_ == Teuchos::null ) {
-        vecH21_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
+      if ( qoi_vecH21_ == Teuchos::null ) {
+        qoi_vecH21_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
       }
-      if ( vecH21_overlap_ == Teuchos::null ) {
-        vecH21_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
+      if ( qoi_vecH21_overlap_ == Teuchos::null ) {
+        qoi_vecH21_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
       }
       // Assembly in to the overlap gradient
-      vecH21_->scale(static_cast<Real>(0));
-      vecH21_overlap_->scale(static_cast<Real>(0));
+      qoi_vecH21_->scale(static_cast<Real>(0));
+      qoi_vecH21_overlap_->scale(static_cast<Real>(0));
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          vecH21_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                              0,
-                                              (*locHess)[i*numLocalDofs+j]);
+          qoi_vecH21_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                  0,
+                                                  (*locHess)[i*numLocalDofs+j]);
         }
       }
       // Change to local map
-      Tpetra::Export<> exporter(vecH21_overlap_->getMap(), vecH21_->getMap()); // redistribution
-      vecH21_->doExport(*vecH21_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      Tpetra::Export<> exporter(qoi_vecH21_overlap_->getMap(), qoi_vecH21_->getMap()); // redistribution
+      qoi_vecH21_->doExport(*qoi_vecH21_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assembleQoIHessVec21): Hessian is zero.");
@@ -1461,27 +1751,27 @@ public:
       // Compute local gradient
       qoi->HessVec_22(locHess, v_coeff, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
       // Initialize control-control HessVec vectors
-      if ( vecH22_ == Teuchos::null ) {
-        vecH22_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
+      if ( qoi_vecH22_ == Teuchos::null ) {
+        qoi_vecH22_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
       }
-      if ( vecH22_overlap_ == Teuchos::null ) {
-        vecH22_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
+      if ( qoi_vecH22_overlap_ == Teuchos::null ) {
+        qoi_vecH22_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
       }
       // Assembly in to the overlap gradient
-      vecH22_->scale(static_cast<Real>(0));
-      vecH22_overlap_->scale(static_cast<Real>(0));
+      qoi_vecH22_->scale(static_cast<Real>(0));
+      qoi_vecH22_overlap_->scale(static_cast<Real>(0));
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          vecH22_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                              0,
-                                              (*locHess)[i*numLocalDofs+j]);
+          qoi_vecH22_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                  0,
+                                                  (*locHess)[i*numLocalDofs+j]);
         }
       }
       // Change to local map
-      Tpetra::Export<> exporter(vecH22_overlap_->getMap(), vecH22_->getMap()); // redistribution
-      vecH22_->doExport(*vecH22_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      Tpetra::Export<> exporter(qoi_vecH22_overlap_->getMap(), qoi_vecH22_->getMap()); // redistribution
+      qoi_vecH22_->doExport(*qoi_vecH22_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assembleQoIHessVec22): Hessian is zero.");
@@ -1506,27 +1796,27 @@ public:
       // Compute local gradient
       qoi->HessVec_23(locHess, v, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
       // Initialize control-control HessVec vectors
-      if ( vecH23_ == Teuchos::null ) {
-        vecH23_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
+      if ( qoi_vecH23_ == Teuchos::null ) {
+        qoi_vecH23_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
       }
-      if ( vecH23_overlap_ == Teuchos::null ) {
-        vecH23_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
+      if ( qoi_vecH23_overlap_ == Teuchos::null ) {
+        qoi_vecH23_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
       }
       // Assembly in to the overlap gradient
-      vecH23_->scale(static_cast<Real>(0));
-      vecH23_overlap_->scale(static_cast<Real>(0));
+      qoi_vecH23_->scale(static_cast<Real>(0));
+      qoi_vecH23_overlap_->scale(static_cast<Real>(0));
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
       int numLocalDofs = cellDofs.dimension(1);
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<numLocalDofs; ++j) {
-          vecH23_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                              0,
-                                              (*locHess)[i*numLocalDofs+j]);
+          qoi_vecH23_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                  0,
+                                                  (*locHess)[i*numLocalDofs+j]);
         }
       }
       // Change to local map
-      Tpetra::Export<> exporter(vecH23_overlap_->getMap(), vecH23_->getMap()); // redistribution
-      vecH23_->doExport(*vecH23_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      Tpetra::Export<> exporter(qoi_vecH23_overlap_->getMap(), qoi_vecH23_->getMap()); // redistribution
+      qoi_vecH23_->doExport(*qoi_vecH23_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
     }
     catch (Exception::Zero &ez) {
       throw Exception::Zero(">>> (Assembler::assembleQoIHessVec23): Hessian is zero.");
@@ -1543,13 +1833,13 @@ public:
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     if ( z_param != Teuchos::null ) {
       const int size = z_param->size();
-      if ( vecH31_ == Teuchos::null ) {
-        vecH31_ = Teuchos::rcp(new std::vector<Real>(size,0));
+      if ( qoi_vecH31_ == Teuchos::null ) {
+        qoi_vecH31_ = Teuchos::rcp(new std::vector<Real>(size,0));
       }
       try {
-        vecH31_->assign(size,0);
+        qoi_vecH31_->assign(size,0);
         // Initialize local gradient storage
-        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > locHess;
+        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > locHess(size,Teuchos::null);
         // Get u_coeff from u and z_coeff from z
         Teuchos::RCP<Intrepid::FieldContainer<Real> > v_coeff = Teuchos::null;
         getCoeffFromStateVector(v_coeff,v);
@@ -1558,7 +1848,7 @@ public:
         Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
         getCoeffFromControlVector(z_coeff,z);
         // Compute gradient
-        (*vecH31_) = qoi->HessVec_31(locHess,v_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        (*qoi_vecH31_) = qoi->HessVec_31(locHess,v_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
         // Assembly
         std::vector<Real> myHess(size,0), globHess(size,0);
         for (int j = 0; j < size; ++j) {
@@ -1570,11 +1860,11 @@ public:
         }
         Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_SUM,size,&myHess[0],&globHess[0]);
         for (int j = 0; j < size; ++j) {
-          (*vecH31_)[j] += globHess[j];
+          (*qoi_vecH31_)[j] += globHess[j];
         }
       }
       catch ( Exception::Zero & ez ) {
-        vecH31_->assign(size,0);
+        qoi_vecH31_->assign(size,0);
       }
       catch ( Exception::NotImplemented & eni ) {
         throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec31): HessVec not implemented.");
@@ -1592,13 +1882,13 @@ public:
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     if ( z_param != Teuchos::null ) {
       const int size = z_param->size();
-      if ( vecH32_ == Teuchos::null ) {
-        vecH32_ = Teuchos::rcp(new std::vector<Real>(size,0));
+      if ( qoi_vecH32_ == Teuchos::null ) {
+        qoi_vecH32_ = Teuchos::rcp(new std::vector<Real>(size,0));
       }
       try {
-        vecH32_->assign(size,0);
+        qoi_vecH32_->assign(size,0);
         // Initialize local hessian times a vector storage
-        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > locHess;
+        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > locHess(size,Teuchos::null);
         // Get u_coeff from u and z_coeff from z
         Teuchos::RCP<Intrepid::FieldContainer<Real> > v_coeff = Teuchos::null;
         getCoeffFromControlVector(v_coeff,v);
@@ -1607,7 +1897,7 @@ public:
         Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
         getCoeffFromControlVector(z_coeff,z);
         // Compute local hessian times a vector
-        (*vecH32_) = qoi->HessVec_32(locHess,v_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        (*qoi_vecH32_) = qoi->HessVec_32(locHess,v_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
         // Assembly
         std::vector<Real> myHess(size,0), globHess(size,0);
         for (int j = 0; j < size; ++j) {
@@ -1619,11 +1909,11 @@ public:
         }
         Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_SUM,size,&myHess[0],&globHess[0]);
         for (int j = 0; j < size; ++j) {
-          (*vecH32_)[j] += globHess[j];
+          (*qoi_vecH32_)[j] += globHess[j];
         }
       }
       catch ( Exception::Zero & ez ) {
-        vecH32_->assign(size,0);
+        qoi_vecH32_->assign(size,0);
       }
       catch ( Exception::NotImplemented & eni ) {
         throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec32): HessVec not implemented.");
@@ -1641,20 +1931,20 @@ public:
                             const Teuchos::RCP<const std::vector<Real> > &z_param = Teuchos::null) {
     if ( z_param != Teuchos::null ) {
       const int size = z_param->size();
-      if ( vecH33_ == Teuchos::null ) {
-        vecH33_ = Teuchos::rcp(new std::vector<Real>(size,0));
+      if ( qoi_vecH33_ == Teuchos::null ) {
+        qoi_vecH33_ = Teuchos::rcp(new std::vector<Real>(size,0));
       }
       try {
-        vecH33_->assign(size,0);
+        qoi_vecH33_->assign(size,0);
         // Initialize local hessian times a vector storage
-        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > locHess;
+        std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > locHess(size,Teuchos::null);
         // Get u_coeff from u and z_coeff from z
         Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
         getCoeffFromStateVector(u_coeff,u);
         Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
         getCoeffFromControlVector(z_coeff,z);
         // Compute local hessian times a vector
-        (*vecH33_) = qoi->HessVec_33(locHess,v,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        (*qoi_vecH33_) = qoi->HessVec_33(locHess,v,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
         // Assembly
         std::vector<Real> myHess(size,0), globHess(size,0);
         for (int j = 0; j < size; ++j) {
@@ -1666,11 +1956,11 @@ public:
         }
         Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_SUM,size,&myHess[0],&globHess[0]);
         for (int j = 0; j < size; ++j) {
-          (*vecH33_)[j] += globHess[j];
+          (*qoi_vecH33_)[j] += globHess[j];
         }
       }
       catch ( Exception::Zero & ez ) {
-        vecH33_->assign(size,0);
+        qoi_vecH33_->assign(size,0);
       }
       catch ( Exception::NotImplemented & eni ) {
         throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec33): HessVec not implemented.");
@@ -1682,51 +1972,51 @@ public:
   }
 
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIGradient1(void) const {
-    return vecG1_;
+    return qoi_vecG1_;
   }
 
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIGradient2(void) const {
-    return vecG2_;
+    return qoi_vecG2_;
   }
 
   Teuchos::RCP<std::vector<Real> > getQoIGradient3(void) const {
-    return vecG3_;
+    return qoi_vecG3_;
   }
 
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIHessVec11(void) const {
-    return vecH11_;
+    return qoi_vecH11_;
   }
 
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIHessVec12(void) const {
-    return vecH12_;
+    return qoi_vecH12_;
   }
 
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIHessVec13(void) const {
-    return vecH13_;
+    return qoi_vecH13_;
   }
 
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIHessVec21(void) const {
-    return vecH21_;
+    return qoi_vecH21_;
   }
 
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIHessVec22(void) const {
-    return vecH22_;
+    return qoi_vecH22_;
   }
 
   Teuchos::RCP<Tpetra::MultiVector<> > getQoIHessVec23(void) const {
-    return vecH23_;
+    return qoi_vecH23_;
   }
 
   Teuchos::RCP<std::vector<Real> > getQoIHessVec31(void) const {
-    return vecH31_;
+    return qoi_vecH31_;
   }
 
   Teuchos::RCP<std::vector<Real> > getQoIHessVec32(void) const {
-    return vecH32_;
+    return qoi_vecH32_;
   }
 
   Teuchos::RCP<std::vector<Real> > getQoIHessVec33(void) const {
-    return vecH33_;
+    return qoi_vecH33_;
   }
   /***************************************************************************/
   /* End QoI assembly routines                                               */
@@ -1946,9 +2236,9 @@ public:
 
   void outputTpetraData() const {
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > matWriter;
-    matWriter.writeSparseFile("jacobian1", matJ1_);
-    matWriter.writeSparseFile("jacobian2", matJ2_);
-    matWriter.writeDenseFile("residual", vecR_);
+    matWriter.writeSparseFile("jacobian1", pde_matJ1_);
+    matWriter.writeSparseFile("jacobian2", pde_matJ2_);
+    matWriter.writeDenseFile("residual", pde_vecR_);
   }
 
   void outputTpetraVector(const Teuchos::RCP<const Tpetra::MultiVector<> > &vec,

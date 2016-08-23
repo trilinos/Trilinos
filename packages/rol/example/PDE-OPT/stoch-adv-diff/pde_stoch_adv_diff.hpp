@@ -340,7 +340,7 @@ public:
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_32): Hessian is zero.");
   }
 
-  void Hessian_33(std::vector<std::vector<Real> > & hess,
+  void Hessian_33(std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,

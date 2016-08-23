@@ -79,17 +79,23 @@ public:
   virtual void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) = 0;
+                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::NotImplemented(">>> Jacobian_1 not implemented.");
+  }
 
   virtual void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) = 0;
+                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::NotImplemented(">>> Jacobian_2 not implemented.");
+  }
 
   virtual void Jacobian_3(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & jac,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) = 0;
+                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::NotImplemented(">>> Jacobian_3 not implemented.");
+  }
 
   virtual void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
@@ -155,7 +161,7 @@ public:
     throw Exception::NotImplemented(">>> Hessian_32 not implemented.");
   }
 
-  virtual void Hessian_33(std::vector<std::vector<Real> > & hess,
+  virtual void Hessian_33(std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > & hess,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
