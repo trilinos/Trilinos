@@ -213,9 +213,9 @@ public:
       obj_vec_[i]->update(u,z,flag,iter);
     }
     isValueComputed_     = false;
-    isGradientComputed_  = false; //(flag ? false : isGradientComputed_);
-    isGradient1Computed_ = false; //(flag ? false : isGradient1Computed_);
-    isGradient2Computed_ = false; //(flag ? false : isGradient2Computed_);
+    isGradientComputed_  = (flag ? false : isGradientComputed_);
+    isGradient1Computed_ = (flag ? false : isGradient1Computed_);
+    isGradient2Computed_ = (flag ? false : isGradient2Computed_);
   }
 
   Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {

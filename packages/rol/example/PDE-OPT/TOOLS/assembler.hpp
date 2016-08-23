@@ -353,7 +353,7 @@ private:
     }
   }
 
-  void setCellNodes(void) {
+  void setCellNodes(std::ostream &outStream = std::cout) {
     // Build volume cell nodes
     shards::CellTopology cellType = basisPtrs_[0]->getBaseCellTopology();
     int spaceDim = cellType.getDimension();
@@ -369,7 +369,7 @@ private:
       }
     }
     // Build boundary cell nodes
-    bdryCellIds_    = meshMgr_->getSideSets();
+    bdryCellIds_    = meshMgr_->getSideSets(outStream, (verbose_ && myRank_==0));
     int numSideSets = bdryCellIds_->size();
     if (numSideSets > 0) {
       bdryCellNodes_.resize(numSideSets);
@@ -537,7 +537,7 @@ public:
     setBasis(basisPtrs,parlist,outStream);
     setDiscretization(parlist,Teuchos::null,outStream);
     setParallelStructure(parlist,outStream);
-    setCellNodes();
+    setCellNodes(outStream);
   }
 
   // Constructor: Discretization set from MeshManager input
@@ -554,7 +554,7 @@ public:
     setBasis(basisPtrs,parlist,outStream);
     setDiscretization(parlist,meshMgr,outStream);
     setParallelStructure(parlist,outStream);
-    setCellNodes();
+    setCellNodes(outStream);
   }
 
   void setCellNodes(PDE<Real> &pde) const {
@@ -1516,10 +1516,12 @@ public:
     Teuchos::RCP<Intrepid::FieldContainer<int> >  cellToNodeMapPtr = meshMgr_->getCellToNodeMap();
     Intrepid::FieldContainer<Real>  &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
-    outStream << std::endl;
-    outStream << "Number of nodes = " << meshMgr_->getNumNodes() << std::endl;
-    outStream << "Number of cells = " << meshMgr_->getNumCells() << std::endl;
-    outStream << "Number of edges = " << meshMgr_->getNumEdges() << std::endl;
+    if ( verbose_ && myRank_ == 0) {
+      outStream << std::endl;
+      outStream << "Number of nodes = " << meshMgr_->getNumNodes() << std::endl;
+      outStream << "Number of cells = " << meshMgr_->getNumCells() << std::endl;
+      outStream << "Number of edges = " << meshMgr_->getNumEdges() << std::endl;
+    }
     // Print mesh to file.
     if ((myRank_ == 0)) {
       std::ofstream meshfile;

@@ -208,8 +208,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
     if ( checkDeriv ) {
-      up->checkVector(*pp,*dup);
-      zp->checkVector(*yzp,*dzp);
+      up->checkVector(*pp,*dup,true,*outStream);
+      zp->checkVector(*yzp,*dzp,true,*outStream);
       std::vector<RealT> param(stochDim,0);
       objReduced->setParameter(param);
       obj->checkGradient(x,d,true,*outStream);
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     algo.run(opt,true,*outStream);
     *outStream << "Optimization time: "
                << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
-               << " seconds." << std::endl;
+               << " seconds." << std::endl << std::endl;
 
     /*************************************************************************/
     /***************** OUTPUT RESULTS ****************************************/
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     file.close();
     *outStream << "Output time: "
                << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
-               << " seconds." << std::endl;
+               << " seconds." << std::endl << std::endl;
 
     Teuchos::Array<RealT> res(1,0);
     pdeCon.value(*rp,*up,*zp,tol);
@@ -302,7 +302,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** CHECK RESIDUAL NORM ***********************************/
     /*************************************************************************/
-    *outStream << "Residual Norm: " << res[0] << std::endl;
+    *outStream << "Residual Norm: " << res[0] << std::endl << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
   }
   catch (std::logic_error err) {

@@ -93,9 +93,13 @@ public:
 
   } // computeSideSets
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets() const {
-    std::cout << "Mesh_SB: getSideSets called" << std::endl;
-    std::cout << "Mesh_SB: numSideSets = " << meshSideSets_->size() << std::endl;
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+      std::ostream & outStream = std::cout,
+      const bool verbose = false) const {
+    if ( verbose ) {
+      outStream << "Mesh_SB: getSideSets called" << std::endl;
+      outStream << "Mesh_SB: numSideSets = " << meshSideSets_->size() << std::endl;
+    }
     return meshSideSets_;
   }
   
