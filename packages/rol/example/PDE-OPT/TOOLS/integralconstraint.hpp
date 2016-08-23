@@ -45,225 +45,112 @@
 #define PDE_INTEGRALCONSTRAINT_HPP
 
 #include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
-#include "ROL_StdVector.hpp"
-#include "qoi.hpp"
-#include "assembler.hpp"
+#include "integralobjective.hpp"
 
 template<class Real>
 class IntegralConstraint : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<QoI<Real> > qoi_;
   const Teuchos::RCP<Assembler<Real> > assembler_;
+  Teuchos::RCP<IntegralObjective<Real> > obj_;
+  Teuchos::RCP<ROL::Vector<Real> > dualUVector_;
+  Teuchos::RCP<ROL::Vector<Real> > dualZVector_;
+  bool isUvecInitialized_;
+  bool isZvecInitialized_;
+
 public:
   IntegralConstraint(const Teuchos::RCP<QoI<Real> > &qoi,
                      const Teuchos::RCP<Assembler<Real> > &assembler)
-    : qoi_(qoi), assembler_(assembler) {}
+    : qoi_(qoi), assembler_(assembler),
+      isUvecInitialized_(false), isZvecInitialized_(false) {
+    obj_ = Teuchos::rcp(new IntegralObjective<Real>(qoi,assembler));
+  }
 
   void setParameter(const std::vector<Real> &param) {
-    qoi_->setParameter(param);
     ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
+    obj_->setParameter(param);
   }
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<std::vector<Real> > cp =
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(c)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    (*cp)[0] = assembler_->assembleQoIValue(qoi_,up,zp);
+    (*cp)[0] = obj_->value(u,z,tol);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
                  const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    try {
-      Teuchos::RCP<std::vector<Real> > jvp =
-        (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      Teuchos::Array<Real> jdotv(1,0);
-      assembler_->assembleQoIGradient1(qoi_,up,zp);
-      assembler_->getQoIGradient1()->dot(*vp,jdotv.view(0,1));
-      (*jvp)[0] = jdotv[0];
+    if ( !isUvecInitialized_ ) {
+      dualUVector_ = u.dual().clone();
+      isUvecInitialized_ = true;
     }
-    catch ( Exception::Zero & ez ) {
-      jv.zero();
-    }
-    catch ( Exception::NotImplemented & eni ) {
-      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::applyJacobian_1(jv,v,u,z,tol);
-    }
+    Teuchos::RCP<std::vector<Real> > jvp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
+    obj_->gradient_1(*dualUVector_,u,z,tol);
+    (*jvp)[0] = v.dot(dualUVector_->dual());
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
                  const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    try {
-      Teuchos::RCP<std::vector<Real> > jvp =
-        (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      Teuchos::Array<Real> jdotv(1,0);
-      assembler_->assembleQoIGradient2(qoi_,up,zp);
-      assembler_->getQoIGradient2()->dot(*vp,jdotv.view(0,1));
-      (*jvp)[0] = jdotv[0];
+    if ( !isZvecInitialized_ ) {
+      dualZVector_ = z.dual().clone();
+      isZvecInitialized_ = true;
     }
-    catch ( Exception::Zero & ez ) {
-      jv.zero();
-    }
-    catch ( Exception::NotImplemented & eni ) {
-      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::applyJacobian_2(jv,v,u,z,tol);
-    }
+    Teuchos::RCP<std::vector<Real> > jvp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
+    obj_->gradient_2(*dualZVector_,u,z,tol);
+    (*jvp)[0] = v.dot(dualZVector_->dual());
   }
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
-    try {
-      Teuchos::RCP<Tpetra::MultiVector<> > jvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
-      Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIGradient1(qoi_,up,zp);
-      jvp->scale((*vp)[0],*(assembler_->getQoIGradient1()));
-    }
-    catch ( Exception::Zero & ez ) {
-      jv.zero();
-    }
-    catch ( Exception::NotImplemented & eni ) {
-      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::applyAdjointJacobian_1(jv,v,u,z,tol);
-    }
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
+    obj_->gradient_1(jv,u,z,tol);
+    jv.scale((*vp)[0]);
   }
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
-    try {
-      Teuchos::RCP<Tpetra::MultiVector<> > jvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
-      Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIGradient2(qoi_,up,zp);
-      jvp->scale((*vp)[0],*(assembler_->getQoIGradient2()));
-    }
-    catch ( Exception::Zero & ez ) {
-      jv.zero();
-    }
-    catch ( Exception::NotImplemented & eni ) {
-      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::applyAdjointJacobian_2(jv,v,u,z,tol);
-    }
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
+    obj_->gradient_2(jv,u,z,tol);
+    jv.scale((*vp)[0]);
   }
 
   void applyAdjointHessian_11( ROL::Vector<Real> &ahwv,
                          const ROL::Vector<Real> &w, const ROL::Vector<Real> &v, 
                          const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    try {
-      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const std::vector<Real> > wp =
-        (Teuchos::dyn_cast<const ROL::StdVector<Real> >(w)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec11(qoi_,vp,up,zp);
-      ahwvp->scale((*wp)[0],*(assembler_->getQoIHessVec11()));
-    }
-    catch (Exception::Zero &ez) {
-      ahwv.zero();
-    }
-    catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (IntegralConstraint::hessVec_11): Hessian not implemented.");
-    }
+    Teuchos::RCP<const std::vector<Real> > wp =
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(w)).getVector();
+    obj_->hessVec_11(ahwv,v,u,z,tol);
+    ahwv.scale((*wp)[0]);
   }
 
   void applyAdjointHessian_12( ROL::Vector<Real> &ahwv,
                          const ROL::Vector<Real> &w, const ROL::Vector<Real> &v, 
                          const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    try {
-      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const std::vector<Real> > wp =
-        (Teuchos::dyn_cast<const ROL::StdVector<Real> >(w)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec12(qoi_,vp,up,zp);
-      ahwvp->scale((*wp)[0],*(assembler_->getQoIHessVec12()));
-    }
-    catch (Exception::Zero &ez) {
-      ahwv.zero();
-    }
-    catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (IntegralConstraint::hessVec_12): Hessian not implemented.");
-    }
+    Teuchos::RCP<const std::vector<Real> > wp =
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(w)).getVector();
+    obj_->hessVec_12(ahwv,v,u,z,tol);
+    ahwv.scale((*wp)[0]);
   }
 
   void applyAdjointHessian_21( ROL::Vector<Real> &ahwv,
                          const ROL::Vector<Real> &w, const ROL::Vector<Real> &v, 
                          const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    try {
-      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const std::vector<Real> > wp =
-        (Teuchos::dyn_cast<const ROL::StdVector<Real> >(w)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec21(qoi_,vp,up,zp);
-      ahwvp->scale((*wp)[0],*(assembler_->getQoIHessVec21()));
-    }
-    catch (Exception::Zero &ez) {
-      ahwv.zero();
-    }
-    catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (IntegralConstraint::hessVec_21): Hessian not implemented.");
-    }
+    Teuchos::RCP<const std::vector<Real> > wp =
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(w)).getVector();
+    obj_->hessVec_21(ahwv,v,u,z,tol);
+    ahwv.scale((*wp)[0]);
   }
 
   void applyAdjointHessian_22( ROL::Vector<Real> &ahwv,
                          const ROL::Vector<Real> &w, const ROL::Vector<Real> &v, 
                          const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    try {
-      Teuchos::RCP<Tpetra::MultiVector<> > ahwvp =
-        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-      Teuchos::RCP<const std::vector<Real> > wp =
-        (Teuchos::dyn_cast<const ROL::StdVector<Real> >(w)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > up =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec22(qoi_,vp,up,zp);
-      ahwvp->scale((*wp)[0],*(assembler_->getQoIHessVec22()));
-    }
-    catch (Exception::Zero &ez) {
-      ahwv.zero();
-    }
-    catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (IntegralConstraint::hessVec_22): Hessian not implemented.");
-    }
+    Teuchos::RCP<const std::vector<Real> > wp =
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(w)).getVector();
+    obj_->hessVec_22(ahwv,v,u,z,tol);
+    ahwv.scale((*wp)[0]);
   }
 };
 
