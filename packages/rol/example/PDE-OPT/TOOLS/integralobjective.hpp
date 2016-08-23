@@ -156,6 +156,8 @@ public:
 
   void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+    int NotImplemented(0), IsZero(0);
+    // Compute state field/control field hessvec
     try {
       Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
@@ -167,25 +169,22 @@ public:
     }
     catch (Exception::Zero &ez) {
       hv.zero();
+      IsZero++;
     }
     catch (Exception::NotImplemented &eni) {
-      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_12(hv,v,u,z,tol);
+      hv.zero();
+      NotImplemented++;
     }
-  }
-
-  void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
-                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    int NotImplemented(0), IsZero(0);
-    // Compute control field hessvec
+    // Compute state field/control parameter hessvec
     try {
       // Get state and control vectors
-      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
+      Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
-      assembler_->assembleQoIHessVec21(qoi_,vf,uf,zf,zp);
-      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec21()));
+      assembler_->assembleQoIHessVec13(qoi_,vp,uf,zf,zp);
+      hvf->update(static_cast<Real>(1),*(assembler_->getQoIHessVec13()),static_cast<Real>(1));
     }
     catch ( Exception::Zero & ez ) {
       IsZero++;
@@ -193,16 +192,49 @@ public:
     catch ( Exception::NotImplemented & eni ) {
       NotImplemented++;
     }
-    // Compute control parameter hessvec
+    // Zero hessvec
+    if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
+      hv.zero();
+    }
+    // Not Implemented
+    if ( NotImplemented == 2 ) {
+      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_12(hv,v,u,z,tol);
+    }
+  }
+
+  void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+    int NotImplemented(0), IsZero(0);
+    // Compute control field/state field hessvec
     try {
-      //// Get state and control vectors
-      //Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-      //Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-      //Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      //Teuchos::RCP<std::vector<Real> >          hvp = getParameter(hv);
-      //assembler_->assembleQoIHessVec31(qoi_,vf,uf,zf,zp);
-      //hvp->assign(assembler_->getQoIHessVec31()->begin(),
-      //            assembler_->getQoIHessVec31()->end());
+      // Get state and control vectors
+      Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
+      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      assembler_->assembleQoIHessVec21(qoi_,vf,uf,zf,zp);
+      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec21()));
+    }
+    catch ( Exception::Zero & ez ) {
+      hv.zero();
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      hv.zero();
+      NotImplemented++;
+    }
+    // Compute control parameter/state field hessvec
+    try {
+      // Get state and control vectors
+      Teuchos::RCP<std::vector<Real> >          hvp = getParameter(hv);
+      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      assembler_->assembleQoIHessVec31(qoi_,vf,uf,zf,zp);
+      hvp->assign(assembler_->getQoIHessVec31()->begin(),
+                  assembler_->getQoIHessVec31()->end());
       throw Exception::NotImplemented("");
     }
     catch ( Exception::Zero & ez ) {
@@ -223,6 +255,8 @@ public:
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
              const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
+    int NotImplemented(0), IsZero(0);
+    // Compute control field/field hessvec
     try {
       Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
@@ -234,8 +268,82 @@ public:
     }
     catch (Exception::Zero &ez) {
       hv.zero();
+      IsZero++;
     }
     catch (Exception::NotImplemented &eni) {
+      hv.zero();
+      NotImplemented++;
+    }
+    // Compute control field/parameter hessvec
+    try {
+      // Get state and control vectors
+      Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
+      Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      assembler_->assembleQoIHessVec23(qoi_,vp,uf,zf,zp);
+      hvf->update(static_cast<Real>(1),*(assembler_->getQoIHessVec23()),static_cast<Real>(1));
+    }
+    catch ( Exception::Zero & ez ) {
+      IsZero++;
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      NotImplemented++;
+    }
+    // Compute control parameter/field hessvec
+    try {
+      Teuchos::RCP<std::vector<Real> >          hvp = getParameter(hv);
+      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      assembler_->assembleQoIHessVec32(qoi_,vf,uf,zf,zp);
+      hvp->assign(assembler_->getQoIHessVec32()->begin(),
+                  assembler_->getQoIHessVec32()->end());
+    }
+    catch (Exception::Zero &ez) {
+      Teuchos::RCP<std::vector<Real> > hvp = getParameter(hv);
+      if ( hvp != Teuchos::null ) {
+        const int size = hvp->size();
+        hvp->assign(size,static_cast<Real>(0));
+      }
+      IsZero++;
+    }
+    catch (Exception::NotImplemented &eni) {
+      Teuchos::RCP<std::vector<Real> > hvp = getParameter(hv);
+      if ( hvp != Teuchos::null ) {
+        const int size = hvp->size();
+        hvp->assign(size,static_cast<Real>(0));
+      }
+      NotImplemented++;
+    }
+    // Compute control parameter/parameter hessvec
+    try {
+      Teuchos::RCP<std::vector<Real> >          hvp = getParameter(hv);
+      Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
+      Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+      Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+      Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+      assembler_->assembleQoIHessVec33(qoi_,vp,uf,zf,zp);
+      const int size = hvp->size();
+      for (int i = 0; i < size; ++i) {
+        (*hvp)[i] += (*(assembler_->getQoIHessVec33()))[i];
+      }
+    }
+    catch (Exception::Zero &ez) {
+      IsZero++;
+    }
+    catch (Exception::NotImplemented &eni) {
+      NotImplemented++;
+    }
+
+    // Zero hessvec
+    if ( IsZero > 0 && (IsZero + NotImplemented == 4) ) {
+      hv.zero();
+    }
+    // Not Implemented
+    if ( NotImplemented == 4 ) {
       ROL::ParametrizedObjective_SimOpt<Real>::hessVec_22(hv,v,u,z,tol);
     }
   }

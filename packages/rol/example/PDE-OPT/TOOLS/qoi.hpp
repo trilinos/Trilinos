@@ -74,7 +74,7 @@ public:
     throw Exception::NotImplemented(">>> gradient_2 not implemented.");
   }
 
-  virtual void gradient_3(std::vector<Real> & grad,
+  virtual std::vector<Real> gradient_3(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & grad,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                           const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
@@ -97,8 +97,8 @@ public:
     throw Exception::NotImplemented(">>> HessVec_12 not implemented.");
   }
 
-  virtual void HessVec_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+  virtual void HessVec_13(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                          const Teuchos::RCP<const std::vector<Real> > & v_param,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                           const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
@@ -121,15 +121,15 @@ public:
     throw Exception::NotImplemented(">>> HessVec_22 not implemented.");
   }
 
-  virtual void HessVec_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+  virtual void HessVec_23(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                          const Teuchos::RCP<const std::vector<Real> > & v_param,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                           const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     throw Exception::NotImplemented(">>> HessVec_23 not implemented.");
   }
 
-  virtual void HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+  virtual std::vector<Real> HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
@@ -137,7 +137,7 @@ public:
     throw Exception::NotImplemented(">>> HessVec_31 not implemented.");
   }
 
-  virtual void HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+  virtual std::vector<Real> HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
@@ -145,8 +145,8 @@ public:
     throw Exception::NotImplemented(">>> HessVec_32 not implemented.");
   }
 
-  virtual void HessVec_33(std::vector<std::vector<Real> > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+  virtual std::vector<Real> HessVec_33(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                          const Teuchos::RCP<const std::vector<Real> > & v_param,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                           const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                           const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {

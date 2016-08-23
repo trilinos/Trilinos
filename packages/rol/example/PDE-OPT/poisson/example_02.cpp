@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,con->getAssembler()));
     // Create control vector and set to ones
     Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = con->getAssembler()->createControlVector();
-    z_rcp->putScalar(1.0);
+    z_rcp->randomize();  //putScalar(1.0);
     Teuchos::RCP<ROL::Vector<RealT> > zp
       = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,con->getAssembler()));
     // Create residual vector and set to zeros

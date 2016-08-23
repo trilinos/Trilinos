@@ -136,13 +136,6 @@ public:
     throw Exception::Zero(">>> QoI_L2Tracking_Poisson::gradient_2 is zero.");
   }
 
-  void gradient_3(std::vector<Real> & grad,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::gradient_3 is zero.");
-  }
-
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -169,14 +162,6 @@ public:
     throw Exception::Zero(">>> QoI_L2Tracking_Poisson::HessVec_12 is zero.");
   }
 
-  void HessVec_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::HessVec_13 is zero.");
-  }
-
   void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -191,107 +176,6 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     throw Exception::Zero(">>> QoI_L2Tracking_Poisson::HessVec_22 is zero.");
-  }
-
-  void HessVec_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::HessVec_23 is zero.");
-  }
-
-  void HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::HessVec_31 is zero.");
-  }
-
-  void HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::HessVec_32 is zero.");
-  }
-
-  void HessVec_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::HessVec_33 is zero.");
-  }
-
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    int c = u_coeff->dimension(0);
-    int f = fe_->N()->dimension(1);
-    hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*hess,
-                                                  *(fe_->N()),
-                                                  *(fe_->NdetJ()),
-                                                  Intrepid::COMP_CPP, false);
-  }
-
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::Hessian_12 is zero.");
-  }
-
-  void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::Hessian_13 is zero.");
-  }
-
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::Hessian_21 is zero.");
-  }
-
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::Hessian_22 is zero.");
-  }
-
-  void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::Hessian_23 is zero.");
-  }
-
-  void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::Hessian_31 is zero.");
-  }
-
-  void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::Hessian_32 is zero.");
-  }
-
-  void Hessian_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::Hessian_33 is zero.");
   }
 
 }; // QoI_L2Tracking
@@ -349,13 +233,6 @@ public:
                                                   Intrepid::COMP_CPP, false);
   }
 
-  void gradient_3(std::vector<Real> & grad,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::gradient_3 is zero.");
-  }
-
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -370,14 +247,6 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     throw Exception::Zero(">>> QoI_L2Penalty_Poisson::HessVec_12 is zero.");
-  }
-
-  void HessVec_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::HessVec_13 is zero.");
   }
 
   void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -406,111 +275,10 @@ public:
                                                   Intrepid::COMP_CPP, false);
   }
 
-  void HessVec_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::HessVec_23 is zero.");
-  }
-
-  void HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::HessVec_31 is zero.");
-  }
-
-  void HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::HessVec_32 is zero.");
-  }
-
-  void HessVec_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::HessVec_33 is zero.");
-  }
-
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::Hessian_11 is zero.");
-  }
-
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::Hessian_12 is zero.");
-  }
-
-  void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::Hessian_13 is zero.");
-  }
-
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::Hessian_21 is zero.");
-  }
-
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    int c = z_coeff->dimension(0);
-    int f = fe_->N()->dimension(1);
-    hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*hess,
-                                                  *(fe_->N()),
-                                                  *(fe_->NdetJ()),
-                                                  Intrepid::COMP_CPP, false);
-  }
-
-  void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::Hessian_23 is zero.");
-  }
-
-  void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::Hessian_31 is zero.");
-  }
-
-  void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::Hessian_32 is zero.");
-  }
-
-  void Hessian_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Penalty_Poisson::Hessian_33 is zero.");
-  }
-
 }; // QoI_L2Penalty
 
 template <class Real>
-class StdObjective_Poisson : public ROL::StdObjective<Real> {
+class StdObjective_Poisson : public ROL::ParametrizedStdObjective<Real> {
 private:
   Real alpha_;
 

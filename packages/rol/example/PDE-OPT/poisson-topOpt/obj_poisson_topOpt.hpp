@@ -103,13 +103,6 @@ public:
     throw Exception::Zero(">>> QoI_L2Tracking_Poisson::gradient_2 is zero.");
   }
 
-  void gradient_3(std::vector<Real> & grad,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::gradient_3 is zero.");
-  }
-
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -126,14 +119,6 @@ public:
     throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_12 is zero.");
   }
 
-  void HessVec_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_13 is zero.");
-  }
-
   void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -148,101 +133,6 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_22 is zero.");
-  }
-
-  void HessVec_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_23 is zero.");
-  }
-
-  void HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_31 is zero.");
-  }
-
-  void HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_32 is zero.");
-  }
-
-  void HessVec_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_33 is zero.");
-  }
-
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::Hessian_11 is zero.");
-  }
-
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::Hessian_12 is zero.");
-  }
-
-  void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::Hessian_13 is zero.");
-  }
-
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::Hessian_21 is zero.");
-  }
-
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::Hessian_22 is zero.");
-  }
-
-  void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::Hessian_23 is zero.");
-  }
-
-  void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::Hessian_31 is zero.");
-  }
-
-  void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::Hessian_32 is zero.");
-  }
-
-  void Hessian_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::Hessian_33 is zero.");
   }
 
 }; // QoI_Energy
@@ -314,13 +204,6 @@ public:
                                                   Intrepid::COMP_CPP, false);
   }
 
-  void gradient_3(std::vector<Real> & grad,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson::gradient_3 is zero.");
-  }
-
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -335,14 +218,6 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_12 is zero.");
-  }
-
-  void HessVec_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_13 is zero.");
   }
 
   void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -361,105 +236,10 @@ public:
     throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_22 is zero.");
   }
 
-  void HessVec_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_23 is zero.");
-  }
-
-  void HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_31 is zero.");
-  }
-
-  void HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_32 is zero.");
-  }
-
-  void HessVec_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_33 is zero.");
-  }
-
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Volume_TopOpt::Hessian_11 is zero.");
-  }
-
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Volume_TopOpt::Hessian_12 is zero.");
-  }
-
-  void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Volume_TopOpt::Hessian_13 is zero.");
-  }
-
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Volume_TopOpt::Hessian_21 is zero.");
-  }
-
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Volume_TopOpt::Hessian_22 is zero.");
-  }
-
-  void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Volume_TopOpt::Hessian_23 is zero.");
-  }
-
-  void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Volume_TopOpt::Hessian_31 is zero.");
-  }
-
-  void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Volume_TopOpt::Hessian_32 is zero.");
-  }
-
-  void Hessian_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Volume_TopOpt::Hessian_33 is zero.");
-  }
-
 }; // QoI_Volume
 
 template <class Real>
-class StdObjective_Poisson_TopOpt : public ROL::StdObjective<Real> {
+class StdObjective_Poisson_TopOpt : public ROL::ParametrizedStdObjective<Real> {
 public:
   StdObjective_Poisson_TopOpt() {}
 

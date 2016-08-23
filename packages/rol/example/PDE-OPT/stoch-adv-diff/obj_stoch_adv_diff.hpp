@@ -110,7 +110,7 @@ public:
     throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::gradient_2 is zero.");
   }
 
-  void gradient_3(std::vector<Real> & grad,
+  std::vector<Real> gradient_3(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & grad,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
@@ -143,8 +143,8 @@ public:
     throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::HessVec_12 is zero.");
   }
 
-  void HessVec_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+  void HessVec_13(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const std::vector<Real> > & v_param,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
@@ -167,15 +167,15 @@ public:
     throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::HessVec_22 is zero.");
   }
 
-  void HessVec_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+  void HessVec_23(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const std::vector<Real> > & v_param,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::HessVec_23 is zero.");
   }
 
-  void HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+  std::vector<Real> HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
@@ -183,7 +183,7 @@ public:
     throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::HessVec_31 is zero.");
   }
 
-  void HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+  std::vector<Real> HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
@@ -191,81 +191,12 @@ public:
     throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::HessVec_32 is zero.");
   }
 
-  void HessVec_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+  std::vector<Real> HessVec_33(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const std::vector<Real> > & v_param,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::HessVec_33 is zero.");
-  }
-
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    int c = u_coeff->dimension(0);
-    int f = fe_->N()->dimension(1);
-    hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*hess,
-                                                  *(fe_->N()),
-                                                  *(fe_->NdetJ()),
-                                                  Intrepid::COMP_CPP, false);
-  }
-
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::Hessian_12 is zero.");
-  }
-
-  void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::Hessian_13 is zero.");
-  }
-
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::Hessian_21 is zero.");
-  }
-
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::Hessian_22 is zero.");
-  }
-
-  void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::Hessian_23 is zero.");
-  }
-
-  void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::Hessian_31 is zero.");
-  }
-
-  void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::Hessian_32 is zero.");
-  }
-
-  void Hessian_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::Hessian_33 is zero.");
   }
 
 }; // QoI_State_Cost
@@ -302,12 +233,13 @@ public:
     throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::gradient_2 is zero.");
   }
 
-  void gradient_3(std::vector<Real> & grad,
+  std::vector<Real> gradient_3(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & grad,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     const int size = z_param->size();
-    grad.clear(); grad.resize(size,1);
+    std::vector<Real> g(size,static_cast<Real>(1));
+    return g;
   }
 
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -327,7 +259,7 @@ public:
   }
 
   void HessVec_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const std::vector<Real> > & v_param,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
@@ -351,14 +283,14 @@ public:
   }
 
   void HessVec_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const std::vector<Real> > & v_param,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::HessVec_23 is zero.");
   }
 
-  void HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+  std::vector<Real> HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
@@ -366,7 +298,7 @@ public:
     throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::HessVec_31 is zero.");
   }
 
-  void HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+  std::vector<Real> HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
@@ -374,75 +306,12 @@ public:
     throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::HessVec_32 is zero.");
   }
 
-  void HessVec_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+  std::vector<Real> HessVec_33(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const std::vector<Real> > & v_param,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::HessVec_33 is zero.");
-  }
-
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::Hessian_11 is zero.");
-  }
-
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::Hessian_12 is zero.");
-  }
-
-  void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::Hessian_13 is zero.");
-  }
-
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::Hessian_21 is zero.");
-  }
-
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::Hessian_22 is zero.");
-  }
-
-  void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::Hessian_23 is zero.");
-  }
-
-  void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::Hessian_31 is zero.");
-  }
-
-  void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::Hessian_32 is zero.");
-  }
-
-  void Hessian_33(std::vector<std::vector<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Control_Cost_stoch_adv_diff::Hessian_33 is zero.");
   }
 
 }; // QoI_Control_Cost

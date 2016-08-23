@@ -217,7 +217,7 @@ public:
       jv.zero();
     }
     // Default to finite differences if all routines return Exception::NotImplemented
-    if ( NotImplemented==2 ) {
+    if ( NotImplemented == 2 ) {
       ROL::EqualityConstraint_SimOpt<Real>::applyJacobian_2(jv,v,u,z,tol);
     }    
   }
@@ -281,7 +281,7 @@ public:
     if ( !computeJ2_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >     ajvf = getField(ajv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEJacobian2(ajvf,vf,false);
+      assembler_->applyPDEJacobian2(ajvf,vf,true);
     }
     // Apply Jacobian of parametric controls to vector
     try {
@@ -312,8 +312,8 @@ public:
       ajv.zero();
     }
     // Default to finite differences if all routines return Exception::NotImplemented
-    if ( NotImplemented==2 ) {
-      ROL::EqualityConstraint_SimOpt<Real>::applyJacobian_2(ajv,v,u,z,tol);
+    if ( NotImplemented == 2 ) {
+      ROL::EqualityConstraint_SimOpt<Real>::applyAdjointJacobian_2(ajv,v,u,z,tol);
     }    
   }
 
