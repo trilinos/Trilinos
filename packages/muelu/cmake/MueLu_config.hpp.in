@@ -55,6 +55,8 @@
 
 #cmakedefine HAVE_MUELU_ML
 
+#cmakedefine HAVE_MUELU_PAMGEN
+
 #cmakedefine HAVE_MUELU_TEKO
 
 #cmakedefine HAVE_MUELU_TPETRA
