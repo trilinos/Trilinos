@@ -8,6 +8,7 @@
 #include <ngp/NgpField.hpp>
 #include <ngp/NgpAtomics.hpp>
 #include <ngp/NgpForEachEntity.hpp>
+#include <ngp/NgpReductions.hpp>
 
 namespace ngp {
 
