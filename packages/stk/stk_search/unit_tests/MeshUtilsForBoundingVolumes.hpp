@@ -35,6 +35,7 @@
 #define STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 
 #include <exodusMeshInterface.h>
+#include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
 inline void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
@@ -445,8 +446,8 @@ inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domai
         send_indices[ghost_procs[i]].push_back(id);
     }
 
-    ACME::Parallel_Data_Exchange_T(send_indices, recv_indices, comm );
-    ACME::Parallel_Data_Exchange_T(send_list, recv_list, comm);
+    stk::parallel_data_exchange_t(send_indices, recv_indices, comm );
+    stk::parallel_data_exchange_t(send_list, recv_list, comm);
 
     for (size_t i=0;i<recv_list.size();i++)
     {

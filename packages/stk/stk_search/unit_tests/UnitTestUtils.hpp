@@ -42,8 +42,6 @@
 
 #include <temp_move_to_stk_search/Geom_AxisAlignedBB.h>
 #include <Geom_Specialized_Searches.h>
-#include <search/ContactRangeSearch.h>
-#include <search/ContactCommunication.h>
 
 #include <gtkTraitsForStkSearch.hpp>
 #include <stk_search/CoarseSearch.hpp>
