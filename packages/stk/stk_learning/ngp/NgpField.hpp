@@ -91,7 +91,7 @@ public:
     }
 
     StaticField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
-    : deviceData()
+    : deviceData(), rank(field.entity_rank())
     {
         stk::mesh::Selector selector = stk::mesh::selectField(field);
         const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
@@ -156,6 +156,7 @@ public:
         return constDeviceData(get_index(entity.bucket->bucket_id(), entity.bucketOrd)+component);
     }
 
+    STK_FUNCTION
     stk::mesh::EntityRank get_rank() const { return rank; }
 
 private:

@@ -32,6 +32,7 @@ public:
             fields[i] = ngp::Field<T>(bulk, *fieldOfState);
         }
     }
+    STK_FUNCTION
     virtual ~MultistateField() {}
     STK_FUNCTION
     unsigned get_num_states() const

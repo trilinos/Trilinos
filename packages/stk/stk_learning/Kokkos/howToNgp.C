@@ -215,44 +215,55 @@ TEST_F(NgpHowTo, useConvenientMultistateFields)
     verify_states_np1_and_n_have_values(get_bulk(), stkField, ngpMultistateField, 2, 1);
 }
 
-int get_min_field_value(const stk::mesh::BulkData &bulk, const stk::mesh::Field<int> &elemField)
-{
-    ngp::Mesh ngpMesh(bulk);
-    ngp::Field<int> ngpElemField(bulk, elemField);
-    return ngp::get_field_min(ngpMesh, ngpElemField, bulk.mesh_meta_data().universal_part());
-}
-
-int get_max_field_value(const stk::mesh::BulkData &bulk, const stk::mesh::Field<int> &elemField)
-{
-    ngp::Mesh ngpMesh(bulk);
-    ngp::Field<int> ngpElemField(bulk, elemField);
-    return ngp::get_field_max(ngpMesh, ngpElemField, bulk.mesh_meta_data().universal_part());
-}
-
 class NgpReduceHowTo : public stk::unit_test_util::MeshFixture
 {
 protected:
     NgpReduceHowTo()
     {
-        elemField = &create_field(get_meta());
-        setup_mesh("generated:1x1x1024", stk::mesh::BulkData::AUTO_AURA);
+        stk::mesh::Field<int> &elemField = create_field(get_meta());
+        setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
         stk::mesh::EntityVector elems;
         stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
         for(stk::mesh::Entity elem : elems)
         {
-            int *fieldData = stk::mesh::field_data(*elemField, elem);
+            int *fieldData = stk::mesh::field_data(elemField, elem);
             fieldData[0] = get_bulk().identifier(elem);
         }
+        ngpMesh = ngp::Mesh(get_bulk());
+        ngpElemField = ngp::Field<int>(get_bulk(), elemField);
     }
-    stk::mesh::Field<int> *elemField;
+    int get_num_elems()
+    {
+        return stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::ELEM_RANK));
+    }
+    ngp::Mesh ngpMesh;
+    ngp::Field<int> ngpElemField;
 };
 
+int get_min_field_value(ngp::Mesh &ngpMesh, ngp::Field<int> &ngpElemField, stk::mesh::Selector sel)
+{
+    return ngp::get_field_min(ngpMesh, ngpElemField, sel);
+}
 TEST_F(NgpReduceHowTo, getMinFieldValue)
 {
-    EXPECT_EQ(1, get_min_field_value(get_bulk(), *elemField));
+    EXPECT_EQ(1, get_min_field_value(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
 }
 
+int get_max_field_value(ngp::Mesh &ngpMesh, ngp::Field<int> &ngpElemField, stk::mesh::Selector sel)
+{
+    return ngp::get_field_max(ngpMesh, ngpElemField, sel);
+}
 TEST_F(NgpReduceHowTo, getMaxFieldValue)
 {
-    EXPECT_EQ(1024, get_max_field_value(get_bulk(), *elemField));
+    EXPECT_EQ(get_num_elems(), get_max_field_value(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
+}
+
+int get_sum_field_value(ngp::Mesh &ngpMesh, ngp::Field<int> &ngpElemField, stk::mesh::Selector sel)
+{
+    return ngp::get_field_sum(ngpMesh, ngpElemField, sel);
+}
+TEST_F(NgpReduceHowTo, getSumFieldValue)
+{
+    int numElems = get_num_elems();
+    EXPECT_EQ(numElems*(numElems+1)/2, get_sum_field_value(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
 }
