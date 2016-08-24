@@ -71,67 +71,99 @@ public:
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
     Teuchos::RCP<const Tpetra::MultiVector<> > zp =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    (*cp)[0] = assembler_->assembleQoIValue(*up,*zp,*qoi_);
+    (*cp)[0] = assembler_->assembleQoIValue(qoi_,up,zp);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
                  const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    Teuchos::Array<Real> jdotv(1,0);
-    assembler_->assembleQoIGradient1(*up,*zp,*qoi_);
-    assembler_->getQoIGradient1()->dot(*vp,jdotv.view(0,1));
-    (*jvp)[0] = jdotv[0];
+    try {
+      Teuchos::RCP<std::vector<Real> > jvp =
+        (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      Teuchos::Array<Real> jdotv(1,0);
+      assembler_->assembleQoIGradient1(qoi_,up,zp);
+      assembler_->getQoIGradient1()->dot(*vp,jdotv.view(0,1));
+      (*jvp)[0] = jdotv[0];
+    }
+    catch ( Exception::Zero & ez ) {
+      jv.zero();
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::applyJacobian_1(jv,v,u,z,tol);
+    }
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
                  const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    Teuchos::Array<Real> jdotv(1,0);
-    assembler_->assembleQoIGradient2(*up,*zp,*qoi_);
-    assembler_->getQoIGradient2()->dot(*vp,jdotv.view(0,1));
-    (*jvp)[0] = jdotv[0];
+    try {
+      Teuchos::RCP<std::vector<Real> > jvp =
+        (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > vp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      Teuchos::Array<Real> jdotv(1,0);
+      assembler_->assembleQoIGradient2(qoi_,up,zp);
+      assembler_->getQoIGradient2()->dot(*vp,jdotv.view(0,1));
+      (*jvp)[0] = jdotv[0];
+    }
+    catch ( Exception::Zero & ez ) {
+      jv.zero();
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::applyJacobian_2(jv,v,u,z,tol);
+    }
   }
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<Tpetra::MultiVector<> > jvp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    assembler_->assembleQoIGradient1(*up,*zp,*qoi_);
-    jvp->scale((*vp)[0],*(assembler_->getQoIGradient1()));
+    try {
+      Teuchos::RCP<Tpetra::MultiVector<> > jvp =
+        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
+      Teuchos::RCP<const std::vector<Real> > vp =
+        (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      assembler_->assembleQoIGradient1(qoi_,up,zp);
+      jvp->scale((*vp)[0],*(assembler_->getQoIGradient1()));
+    }
+    catch ( Exception::Zero & ez ) {
+      jv.zero();
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::applyAdjointJacobian_1(jv,v,u,z,tol);
+    }
   }
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<Tpetra::MultiVector<> > jvp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    assembler_->assembleQoIGradient2(*up,*zp,*qoi_);
-    jvp->scale((*vp)[0],*(assembler_->getQoIGradient2()));
+    try {
+      Teuchos::RCP<Tpetra::MultiVector<> > jvp =
+        (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
+      Teuchos::RCP<const std::vector<Real> > vp =
+        (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > up =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp =
+        (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      assembler_->assembleQoIGradient2(qoi_,up,zp);
+      jvp->scale((*vp)[0],*(assembler_->getQoIGradient2()));
+    }
+    catch ( Exception::Zero & ez ) {
+      jv.zero();
+    }
+    catch ( Exception::NotImplemented & eni ) {
+      ROL::ParametrizedEqualityConstraint_SimOpt<Real>::applyAdjointJacobian_2(jv,v,u,z,tol);
+    }
   }
 
   void applyAdjointHessian_11( ROL::Vector<Real> &ahwv,
@@ -148,7 +180,7 @@ public:
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec11(*vp,*up,*zp,*qoi_);
+      assembler_->assembleQoIHessVec11(qoi_,vp,up,zp);
       ahwvp->scale((*wp)[0],*(assembler_->getQoIHessVec11()));
     }
     catch (Exception::Zero &ez) {
@@ -173,7 +205,7 @@ public:
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec12(*vp,*up,*zp,*qoi_);
+      assembler_->assembleQoIHessVec12(qoi_,vp,up,zp);
       ahwvp->scale((*wp)[0],*(assembler_->getQoIHessVec12()));
     }
     catch (Exception::Zero &ez) {
@@ -198,7 +230,7 @@ public:
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec21(*vp,*up,*zp,*qoi_);
+      assembler_->assembleQoIHessVec21(qoi_,vp,up,zp);
       ahwvp->scale((*wp)[0],*(assembler_->getQoIHessVec21()));
     }
     catch (Exception::Zero &ez) {
@@ -223,7 +255,7 @@ public:
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       Teuchos::RCP<const Tpetra::MultiVector<> > zp =
         (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-      assembler_->assembleQoIHessVec22(*vp,*up,*zp,*qoi_);
+      assembler_->assembleQoIHessVec22(qoi_,vp,up,zp);
       ahwvp->scale((*wp)[0],*(assembler_->getQoIHessVec22()));
     }
     catch (Exception::Zero &ez) {

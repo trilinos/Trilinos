@@ -56,6 +56,7 @@
 #include <MueLu_TestHelpers.hpp>
 #include <MueLu_Version.hpp>
 
+#include <MueLu_RepartitionHeuristicFactory.hpp>
 #include <MueLu_RepartitionFactory.hpp>
 #include <MueLu_ZoltanInterface.hpp>
 
@@ -174,16 +175,13 @@ namespace MueLuTests {
 
     level.Set<RCP<Matrix> >     ("A",                    A);
     level.Set<RCP<MultiVector> >("Coordinates",          coords);
-    level.Set<GlobalOrdinal>               ("number of partitions", numPartitions);
+    level.Set<int>              ("number of partitions", numPartitions);
 
     level.Request("Partition", zoltan.get());
     level.Set<RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > >("Partition", decomposition, zoltan.get());
 
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
     Teuchos::ParameterList paramList;
-    paramList.set("repartition: start level",       1);
-    paramList.set("repartition: min rows per proc", 1);
-    paramList.set("repartition: max imbalance",     1.2);
     paramList.set("repartition: remap parts",       false);
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
@@ -762,16 +760,13 @@ namespace MueLuTests {
 
     level.Set<RCP<Matrix> >     ("A",                    A);
     level.Set<RCP<MultiVector> >("Coordinates",          coords);
-    level.Set<GlobalOrdinal>               ("number of partitions", numPartitions);
+    level.Set<int>              ("number of partitions", numPartitions);
 
     level.Request("Partition", zoltan.get());
     level.Set<RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > >("Partition", decomposition, zoltan.get());
 
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
     Teuchos::ParameterList paramList;
-    paramList.set("repartition: start level",       1);
-    paramList.set("repartition: min rows per proc", 1);
-    paramList.set("repartition: max imbalance",     1.2);
     paramList.set("repartition: remap parts",       false);
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
@@ -833,8 +828,8 @@ namespace MueLuTests {
     std::string scalarName = Teuchos::ScalarTraits<Scalar>::name();
     out << "scalar type = " << scalarName << std::endl;
     if (scalarName.find("complex") != std::string::npos) {
-      out << "Skipping Test for SC=complex" << std::endl; 
-      return; 
+      out << "Skipping Test for SC=complex" << std::endl;
+      return;
     }
 
     /*

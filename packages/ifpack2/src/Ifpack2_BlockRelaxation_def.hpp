@@ -68,7 +68,11 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
       IsParallel_ = (A->getRowMap ()->getComm ()->getSize () > 1);
     }
 
-    std::vector<Teuchos::RCP<ContainerType> > emptyVec;
+    // This is the standard idiom for clearing the contents of an
+    // std::vector.  Calling clear() or resizing to zero doesn't
+    // necessary call destructors, because a vector's capacity (number
+    // of entries actually stored) may be larger than its size.
+    std::vector<Teuchos::RCP<Container<row_matrix_type> > > emptyVec;
     std::swap (Containers_, emptyVec);
     NumLocalBlocks_ = 0;
 
@@ -82,9 +86,10 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
 : A_ (A),
   Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::BlockRelaxation"))),
   OverlapLevel_ (0),
-  PartitionerType_ ("linear"),
+  PartitionerType_ ("linear"), // this actually differs from the default in Ifpack2::getValidParameters
   NumSweeps_ (1),
   NumLocalBlocks_(0),
+  containerType_ ("Dense"),
   PrecType_ (Ifpack2::Details::JACOBI),
   DampingFactor_ (STS::one ()),
   IsParallel_ (false),
@@ -116,50 +121,121 @@ void
 BlockRelaxation<MatrixType,ContainerType>::
 setParameters (const Teuchos::ParameterList& List)
 {
-  Teuchos::ParameterList validparams;
-  Ifpack2::getValidParameters (validparams);
-  List.validateParameters (validparams);
+  //Teuchos::ParameterList validparams;
+  //Ifpack2::getValidParameters (validparams);
+  //List.validateParameters (validparams);
 
-  std::string PT;
-  if (PrecType_ == Ifpack2::Details::JACOBI) {
-    PT = "Jacobi";
-  } else if (PrecType_ == Ifpack2::Details::GS) {
-    PT = "Gauss-Seidel";
-  } else if (PrecType_ == Ifpack2::Details::SGS) {
-    PT = "Symmetric Gauss-Seidel";
-  }
+  // Don't change ANY parameter unless the user specified it
+  // explicitly, thus indicating that the user wants to change it.
+  // This avoids the (not really sensible) defaults in
+  // Ifpack2::getValidParameters.
 
-  Ifpack2::getParameter (List, "relaxation: type", PT);
-
-  if (PT == "Jacobi") {
-    PrecType_ = Ifpack2::Details::JACOBI;
-  }
-  else if (PT == "Gauss-Seidel") {
-    PrecType_ = Ifpack2::Details::GS;
-  }
-  else if (PT == "Symmetric Gauss-Seidel") {
-    PrecType_ = Ifpack2::Details::SGS;
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::invalid_argument, "Ifpack2::BlockRelaxation::setParameters: "
-      "Invalid parameter value \"" << PT << "\" for parameter \"relaxation: "
-      "type\".");
+  if (List.isParameter ("relaxation: container")) {
+    // If the container type isn't a string, this will throw, but it
+    // rightfully should.
+    containerType_ = List.get<std::string> ("relaxation: container");
   }
 
-  Ifpack2::getParameter (List, "relaxation: sweeps",NumSweeps_);
-  Ifpack2::getParameter (List, "relaxation: damping factor", DampingFactor_);
-  Ifpack2::getParameter (List, "relaxation: zero starting solution", ZeroStartingSolution_);
-  Ifpack2::getParameter (List, "relaxation: backward mode",DoBackwardGS_);
-  Ifpack2::getParameter (List, "partitioner: type",PartitionerType_);
-  Ifpack2::getParameter (List, "partitioner: local parts",NumLocalBlocks_);
-  Ifpack2::getParameter (List, "partitioner: overlap",OverlapLevel_);
+  if (List.isParameter ("relaxation: type")) {
+    const std::string relaxType = List.get<std::string> ("relaxation: type");
+
+    if (relaxType == "Jacobi") {
+      PrecType_ = Ifpack2::Details::JACOBI;
+    }
+    else if (relaxType == "Gauss-Seidel") {
+      PrecType_ = Ifpack2::Details::GS;
+    }
+    else if (relaxType == "Symmetric Gauss-Seidel") {
+      PrecType_ = Ifpack2::Details::SGS;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::invalid_argument, "Ifpack2::BlockRelaxation::"
+         "setParameters: Invalid parameter value \"" << relaxType
+         << "\" for parameter \"relaxation: type\".");
+    }
+  }
+
+  if (List.isParameter ("relaxation: sweeps")) {
+    NumSweeps_ = List.get<int> ("relaxation: sweeps");
+  }
+
+  // Users may specify this as a floating-point literal.  In that
+  // case, it may have type double, even if scalar_type is something
+  // else.  We take care to try the various types that make sense.
+  if (List.isParameter ("relaxation: damping factor")) {
+    if (List.isType<double> ("relaxation: damping factor")) {
+      const double dampingFactor =
+        List.get<double> ("relaxation: damping factor");
+      DampingFactor_ = static_cast<scalar_type> (dampingFactor);
+    }
+    else if (List.isType<scalar_type> ("relaxation: damping factor")) {
+      DampingFactor_ = List.get<scalar_type> ("relaxation: damping factor");
+    }
+    else if (List.isType<magnitude_type> ("relaxation: damping factor")) {
+      const magnitude_type dampingFactor =
+        List.get<magnitude_type> ("relaxation: damping factor");
+      DampingFactor_ = static_cast<scalar_type> (dampingFactor);
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::invalid_argument, "Ifpack2::BlockRelaxation::"
+         "setParameters: Parameter \"relaxation: damping factor\" "
+         "has the wrong type.");
+    }
+  }
+
+  if (List.isParameter ("relaxation: zero starting solution")) {
+    ZeroStartingSolution_ = List.get<bool> ("relaxation: zero starting solution");
+  }
+
+  if (List.isParameter ("relaxation: backward mode")) {
+    DoBackwardGS_ = List.get<bool> ("relaxation: backward mode");
+  }
+
+  if (List.isParameter ("partitioner: type")) {
+    PartitionerType_ = List.get<std::string> ("partitioner: type");
+  }
+
+  // Users may specify this as an int literal, so we need to allow
+  // both int and local_ordinal_type (not necessarily same as int).
+  if (List.isParameter ("partitioner: local parts")) {
+    if (List.isType<local_ordinal_type> ("partitioner: local parts")) {
+      NumLocalBlocks_ = List.get<local_ordinal_type> ("partitioner: local parts");
+    }
+    else if (! std::is_same<int, local_ordinal_type>::value &&
+             List.isType<int> ("partitioner: local parts")) {
+      NumLocalBlocks_ = List.get<int> ("partitioner: local parts");
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::invalid_argument, "Ifpack2::BlockRelaxation::"
+         "setParameters: Parameter \"partitioner: local parts\" "
+         "has the wrong type.");
+    }
+  }
+
+  if (List.isParameter ("partitioner: overlap level")) {
+    if (List.isType<int> ("partitioner: overlap level")) {
+      OverlapLevel_ = List.get<int> ("partitioner: overlap level");
+    }
+    else if (! std::is_same<int, local_ordinal_type>::value &&
+             List.isType<local_ordinal_type> ("partitioner: overlap level")) {
+      OverlapLevel_ = List.get<local_ordinal_type> ("partitioner: overlap level");
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::invalid_argument, "Ifpack2::BlockRelaxation::"
+         "setParameters: Parameter \"partitioner: overlap level\" "
+         "has the wrong type.");
+    }
+  }
 
   // check parameters
   if (PrecType_ != Ifpack2::Details::JACOBI) {
     OverlapLevel_ = 0;
   }
-  if (NumLocalBlocks_ < 0) {
+  if (NumLocalBlocks_ < static_cast<local_ordinal_type> (0)) {
     NumLocalBlocks_ = A_->getNodeNumRows() / (-NumLocalBlocks_);
   }
   // other checks are performed in Partitioner_
@@ -632,6 +708,16 @@ ExtractSubmatrices ()
   NumLocalBlocks_ = Partitioner_->numLocalParts ();
   Containers_.resize (NumLocalBlocks_);
 
+  // All blocks use the same kind of solver ("container type"),
+  // so we only need to extract the solver type once.
+  std::string containerType = ContainerType::getName ();
+  if (containerType == "Generic") {
+    // ContainerType is Container<row_matrix_type>.  Thus, we need to
+    // get the container name from the parameter list.  We use "Dense"
+    // as the default container type.
+    containerType = containerType_;
+  }
+
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
     const size_t numRows = Partitioner_->numRowsInPart (i);
 
@@ -641,13 +727,7 @@ ExtractSubmatrices ()
       localRows[j] = (*Partitioner_) (i,j);
     }
     if(numRows>1 || hasBlockCrsMatrix_) { // only do for non-singletons
-      std::string containerName = ContainerType::getName();
-      if(containerName == "Generic")
-      {
-        //container type was not specified through templates, so get from param list
-        containerName = List_.get<std::string>("relaxation: container");
-      }
-      Containers_[i] = Teuchos::rcp_static_cast<ContainerType, Container<MatrixType> >(Details::createContainer(containerName, A_, localRows()));
+      Containers_[i] = Details::createContainer<row_matrix_type> (containerType, A_, localRows());
       Containers_[i]->setParameters (List_);
       Containers_[i]->initialize ();
       Containers_[i]->compute ();
@@ -1285,64 +1365,24 @@ BlockRelaxation<MatrixType,ContainerType>::getMatDiag () const
 }//namespace Ifpack2
 
 
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
-// For ETI
-#include "Ifpack2_DenseContainer_decl.hpp"
-#include "Ifpack2_SparseContainer_decl.hpp"
-#include "Ifpack2_TriDiContainer_decl.hpp"
-#include "Ifpack2_BandedContainer_decl.hpp"
-#include "Ifpack2_ILUT_decl.hpp"
-#ifdef HAVE_IFPACK2_AMESOS2
-#include "Ifpack2_Details_Amesos2Wrapper.hpp"
-#endif
-
-// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// Macro that does explicit template instantiation (ETI) for
+// Ifpack2::BlockRelaxation.  S, LO, GO, N correspond to the four
+// template parameters of Ifpack2::Preconditioner and
+// Tpetra::RowMatrix.
+//
+// We only instantiate for MatrixType = Tpetra::RowMatrix.  There's no
+// need to instantiate for Tpetra::CrsMatrix too.  All Ifpack2
 // preconditioners can and should do dynamic casts if they need a type
-// more specific than RowMatrix.
+// more specific than RowMatrix.  This keeps build time short and
+// library and executable sizes small.
 
-#ifdef HAVE_IFPACK2_AMESOS2
-#define IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N) \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::SparseContainer<       \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      Ifpack2::Details::Amesos2Wrapper<Tpetra::RowMatrix<S,LO,GO,N> > > >;
-#else
-#define IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N) /* */
-#endif
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
   template \
   class Ifpack2::BlockRelaxation<      \
     Tpetra::RowMatrix<S, LO, GO, N>,   \
-    Ifpack2::Container<Tpetra::RowMatrix<S, LO, GO, N> > >; \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::SparseContainer<       \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      Ifpack2::ILUT< ::Tpetra::RowMatrix<S,LO,GO,N> > > >; \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::DenseContainer<        \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      S > >; \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::TriDiContainer<        \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      S > >; \
-  template \
-  class Ifpack2::BlockRelaxation<      \
-    Tpetra::RowMatrix<S, LO, GO, N>, \
-    Ifpack2::BandedContainer<        \
-      Tpetra::RowMatrix<S, LO, GO, N>, \
-      S > >; \
-  IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N)
+    Ifpack2::Container<Tpetra::RowMatrix<S, LO, GO, N> > >;
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 

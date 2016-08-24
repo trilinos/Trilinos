@@ -52,13 +52,12 @@ namespace Tacho {
     /// Properties: 
     /// - Compile with Device (o), 
     /// - Callable in KokkosFunctors (x)
-    KOKKOS_INLINE_FUNCTION    
+    inline
     void createInternalArrays(const ordinal_type m, 
                               const ordinal_type n,
                               const ordinal_type rs,
                               const ordinal_type cs) {
       // compute necessary storage and adjust strides
-      const size_type value_type_size = sizeof(value_type);
       size_type size = 0;
       if (m == 0 || n == 0) { // empty
         _rs = 1;
@@ -93,7 +92,7 @@ namespace Tacho {
     /// Properties: 
     /// - Compile with Device (o), 
     /// - Callable in KokkosFunctors (x)
-    KOKKOS_INLINE_FUNCTION        
+    inline
     void createInternalArrays(const ordinal_type m, 
                               const ordinal_type n) {
       createInternalArrays(m, n, 1, m);
@@ -127,7 +126,10 @@ namespace Tacho {
 
     KOKKOS_INLINE_FUNCTION    
     void setLabel(const char *label) { 
-      strncpy(_label, label, Util::min(strlen(label)+1, Util::LabelSize));
+      int i = 0 ;
+      for ( ; i < int(Util::LabelSize - 1) && label[i] ; ++i )
+        _label[i] = label[i] ;
+      _label[i] = 0 ;
     }
     
     KOKKOS_INLINE_FUNCTION
@@ -147,15 +149,15 @@ namespace Tacho {
 
     KOKKOS_INLINE_FUNCTION
     value_type& Value(const ordinal_type i, 
-                      const ordinal_type j) { 
+                      const ordinal_type j) const { 
       return _a[i*_rs + j*_cs]; 
     }
 
-    KOKKOS_INLINE_FUNCTION
-    value_type Value(const ordinal_type i, 
-                     const ordinal_type j) const { 
-      return _a[i*_rs + j*_cs]; 
-    }
+    // KOKKOS_INLINE_FUNCTION
+    // value_type Value(const ordinal_type i, 
+    //                 const ordinal_type j) const { 
+    //  return _a[i*_rs + j*_cs]; 
+    // }
 
     // KOKKOS_INLINE_FUNCTION
     // value_type Value(const Kokkos::pair<ordinal_type,ordinal_type> idx) { 
@@ -170,8 +172,8 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     value_type* ValuePtr() const { return &_a[0]; }
 
-    //KOKKOS_INLINE_FUNCTION
-    //value_type_array ValueArray() const { return _a; }
+    KOKKOS_INLINE_FUNCTION
+    value_type_array Values() const { return _a; }
 
     /// ------------------------------------------------------------------
     
@@ -186,14 +188,13 @@ namespace Tacho {
     /// \brief Default constructor.
     KOKKOS_INLINE_FUNCTION
     DenseMatrixBase() 
-      : _m(0),
+      : _label{"DenseMatrixBase"},
+        _m(0),
         _n(0),
         _rs(0),
         _cs(0),
         _a()
-    { 
-      setLabel("DenseMatrixBase"); 
-    }
+    {}
 
     /// \brief Constructor with label
     KOKKOS_INLINE_FUNCTION
@@ -208,13 +209,8 @@ namespace Tacho {
     }
 
     /// \brief Copy constructor (shallow copy)
-    /// Question : what would happen when SpT is different ? Does Kokkos can filter it out ? UVM allows this ?
-    template<typename VT,
-             typename OT,
-             typename ST,
-             typename SpT>
     KOKKOS_INLINE_FUNCTION
-    DenseMatrixBase(const DenseMatrixBase<VT,OT,ST,SpT> &b) 
+    DenseMatrixBase(const DenseMatrixBase &b) 
       : _m(b._m),
         _n(b._n),
         _rs(b._rs),
@@ -272,7 +268,7 @@ namespace Tacho {
     /// - Compile with Device (o), 
     /// - Callable in KokkosFunctors (x) 
 
-    KOKKOS_INLINE_FUNCTION
+    inline
     void 
     create(const ordinal_type m, 
            const ordinal_type n) {
@@ -280,7 +276,7 @@ namespace Tacho {
     }
     
     template<typename SpT>
-    KOKKOS_INLINE_FUNCTION
+    inline
     void 
     createConfTo(const DenseMatrixBase<value_type,ordinal_type,size_type,SpT> &b) {
       createInternalArrays(b._m, b._n, b._rs, b._cs);
@@ -289,10 +285,9 @@ namespace Tacho {
     /// \brief deep copy of matrix b
     /// Callable: Device (o), KokkosFunctors (x), Blocking (o)
     template<typename SpT>
-    KOKKOS_INLINE_FUNCTION
-    void 
+    inline
+    typename std::enable_if< Kokkos::Impl::is_same<SpT,space_type>::value >::type
     mirror(const DenseMatrixBase<value_type,ordinal_type,size_type,SpT> &b) {
-      if (Kokkos::Impl::is_same<SpT,space_type>::value) {
         // when the space is same, everything is shallow copy 
         // setLabel(b._label);
         _m  = b._m;
@@ -300,7 +295,12 @@ namespace Tacho {
         _rs = b._rs;
         _cs = b._cs;
         _a  = b._a;
-      } else {
+    }
+
+    template<typename SpT>
+    inline
+    typename std::enable_if< ! Kokkos::Impl::is_same<SpT,space_type>::value >::type
+    mirror(const DenseMatrixBase<value_type,ordinal_type,size_type,SpT> &b) {
         // when the space is different, perform deep copy
         createInternalArrays(b._m, b._n, b._rs, b._cs);
         
@@ -309,8 +309,8 @@ namespace Tacho {
         space_type::execution_space::fence();      
         Kokkos::deep_copy(Kokkos::subview(_a, range), Kokkos::subview(b._a, range));
         space_type::execution_space::fence();
-      }
     }
+
     /// ------------------------------------------------------------------
 
 

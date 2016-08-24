@@ -199,28 +199,29 @@ public:
     return ovlDomainMap;
   }
 
-  /*! @brief Helper function to shrink the GIDs and generate a standard map whith GIDs starting at 0
+  /*! @brief replace set of global ids by new global ids
    *
-    @param  input                Input map (may be overlapping) containing all GIDs. Think of it as a column map.
-    @param  nonOvlInput          Non-overlapping version of "input" map. Think of it is the corresponding domain map associated with the column map "input"
-    @param  nonOvlReferenceInput Non-overlapping version of reference "input" map. Think of it is the corresponding domain map associated with the column map "input"
-    @return                      New map with unique continuous global ids starting with GID 0
+    @param  input                Overlapping input map.
+    @param  nonOvlInput          Non-overlapping map containing GIDs corresponding to "input". Think of it is the corresponding domain map associated with the column map "input"
+    @param  nonOvlReferenceInput Non-overlapping reference map containing new GIDs.
+    @return                      Overlapping map compatible to "input" using the GIDs as defined by "nonOvlReferenceInput"
 
-    TODO
-    Example: input = { 10, 15, 26, 37, 48 }; on proc 0
-             input = { 37, 48, 59, 60, 70 }; on proc 1
-             nonOvlInput = { 10, 15, 26, 37 }; on proc 0
-             nonOvlInput = { 48, 59, 60, 70 }: on proc 1
-             result = { 0, 1, 2, 3, 4 }; on proc 0
-             result = { 3, 4, 5, 6, 7 }; on proc 1
+    Example: input = { 0, 1, 2, 3 }; on proc 0
+             input = { 2, 3, 4, 5 }; on proc 1
+             nonOvlInput = { 0, 1, 2 }; on proc 0
+             nonOvlInput = { 3, 4, 5 }: on proc 1
+             nonOvlReferenceInput = { 33, 44, 55 }; on proc 0
+             nonOvlReferenceInput = { 101, 102, 103 }; on proc 1
+             result = { 33, 44, 55, 101 }; on proc 0
+             result = { 55, 101, 102, 103}; on proc 1
     */
   static Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > transformThyra2XpetraGIDs(
       const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& input,
       const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlInput,
       const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlReferenceInput) {
-    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() > input.getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the non-overlapping map must not have more local ids than the overlapping map.");
+    //TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() > input.getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the non-overlapping map must not have more local ids than the overlapping map.");
     TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() != nonOvlReferenceInput.getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the number of local Xpetra reference GIDs and local Thyra GIDs of the non-overlapping maps must be the same!");
-    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getMaxAllGlobalIndex() != input.getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the maximum GIDs of the overlapping and non-overlapping maps must be the same.");
+    //TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getMaxAllGlobalIndex() != input.getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the maximum GIDs of the overlapping and non-overlapping maps must be the same. nonOvlInput.getMaxAllGlobalIndex() = " << nonOvlInput.getMaxAllGlobalIndex() << " ovlInput.getMaxAllGlobalIndex() = " << input.getMaxAllGlobalIndex());
 
     RCP< const Teuchos::Comm<int> > comm = input.getComm();
 
@@ -283,6 +284,10 @@ public:
     RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ovlDomainMap =
         Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build
         (nonOvlInput.lib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),ovlDomainMapArray(),0,comm);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(input.getNodeNumElements() != ovlDomainMap->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the number of local Thyra reference GIDs (overlapping) and local Xpetra GIDs (overlapping) must be the same!");
+    //TEUCHOS_TEST_FOR_EXCEPTION(nonOvlReferenceInput.getMaxAllGlobalIndex() != ovlDomainMap->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the maximum GIDs of the overlapping and non-overlapping Xpetra maps must be the same.");
+
     return ovlDomainMap;
   }
 

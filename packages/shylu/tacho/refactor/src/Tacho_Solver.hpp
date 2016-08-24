@@ -64,7 +64,7 @@ namespace Tacho {
     typedef GraphTools_CAMD<ordinal_type,ordinal_type,HostSpaceType> GraphToolsHostType_CAMD;
     
     // Policy on device
-    typedef Kokkos::Experimental::TaskPolicy<DeviceSpaceType> PolicyType;
+    typedef Kokkos::TaskPolicy<DeviceSpaceType> PolicyType;
     
     // Hierarchical block matrices
     typedef TaskView<CrsMatrixViewHostType> CrsTaskViewHostType;
@@ -82,7 +82,7 @@ namespace Tacho {
     typedef TaskView<DenseHierViewHostType> DenseTaskHierViewHostType;
 
     typedef Kokkos::pair<size_type,size_type> range_type;
-    typedef Kokkos::Experimental::Future<int,HostSpaceType> future_type;
+    typedef Kokkos::Future<int,HostSpaceType> future_type;
 
     struct PhaseMask { 
       static constexpr int Reorder = 1;
@@ -150,15 +150,13 @@ namespace Tacho {
     CrsHierBaseHostType getHierU() const { return _HF; }
     ordinal_type getMaxRangeSize() const { return _maxrange; }
 
-    void setPolicy(const size_type max_concurrency = 25000) {
+    void setPolicy(const size_type max_concurrency = 25000, 
+                   const size_type memory_pool_grain_size = 16) {
       const size_type max_task_size = (3*sizeof(CrsTaskViewHostType)+sizeof(PolicyType)+128);
-      const size_type max_task_dependence = 3;
-      const size_type team_size = 1;
 
-      _policy = PolicyType(max_concurrency,
-                           max_task_size,
-                           max_task_dependence,
-                           team_size);
+      _policy = PolicyType(typename PolicyType::memory_space(),
+                           max_task_size*max_concurrency,
+                           memory_pool_grain_size );
     }
 
     void setProblem(const CrsMatrixBaseHostType AA,
@@ -420,9 +418,10 @@ namespace Tacho {
                                  block.Hier().setExternalMatrix(hm, hn,
                                                                 -1, -1,
                                                                 Kokkos::subview(_blks, range_type(offs(k), offs(k+1))));
-                                 DenseMatrixTools::getHierMatrix(block.Hier(),
-                                                                 block.Flat(),
-                                                                 _mb, _mb);
+                                 Impl::DenseMatrixTools::Serial
+                                   ::getHierMatrix(block.Hier(),
+                                                   block.Flat(),
+                                                   _mb, _mb);
                                } );
         }
       }
@@ -472,16 +471,18 @@ namespace Tacho {
 
         switch (variant) {
         case Variant::Three: 
-          future = _policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Three>
-                                            ::createTaskFunctor(_policy, TF), 0);
+          future = _policy.host_spawn(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Three>
+                                      ::createTaskFunctor(_policy, TF));
           break;
         case Variant::Two: 
-          future = _policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>
-                                            ::createTaskFunctor(_policy, TF), 0);
+          future = _policy.host_spawn(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>
+                                      ::createTaskFunctor(_policy, TF));
           break;
         }
-        _policy.spawn(future);
-        Kokkos::Experimental::wait(_policy);
+        TACHO_TEST_FOR_EXCEPTION(future.is_null(), std::runtime_error,
+                                 ">> host_spawn returns a null future");
+        
+        Kokkos::wait(_policy);
         TACHO_TEST_FOR_EXCEPTION(future.get(), std::runtime_error, 
                                  "Fail to perform CholeskySuperNodesByBlocks");
       }
@@ -524,22 +525,23 @@ namespace Tacho {
         DenseTaskHierViewHostType TY(_HY);
 
         auto future_forward_solve
-          = _policy.proc_create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,
-                                     AlgoTriSolve::ByBlocks,Variant::Two>
-                                     ::createTaskFunctor(_policy,
-                                                         Diag::NonUnit, TF, TY), 0);
-        _policy.spawn(future_forward_solve);
-
-        auto future_backward_solve
-          = _policy.proc_create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,
-                                     AlgoTriSolve::ByBlocks,Variant::Two>
-                                     ::createTaskFunctor(_policy,
-                                                         Diag::NonUnit, TF, TY), 1);
-
-        _policy.add_dependence(future_backward_solve, future_forward_solve);
-        _policy.spawn(future_backward_solve);
+          = _policy.host_spawn(TriSolve<Uplo::Upper,Trans::ConjTranspose,
+                               AlgoTriSolve::ByBlocks,Variant::Two>
+                               ::createTaskFunctor(_policy,
+                                                   Diag::NonUnit, TF, TY));
+        TACHO_TEST_FOR_EXCEPTION(future_forward_solve.is_null(), std::runtime_error,
+                                 ">> host_spawn returns a null future");
         
-        Kokkos::Experimental::wait(_policy);
+        auto future_backward_solve
+          = _policy.host_spawn(TriSolve<Uplo::Upper,Trans::NoTranspose,
+                               AlgoTriSolve::ByBlocks,Variant::Two>
+                               ::createTaskFunctor(_policy,
+                                                   Diag::NonUnit, TF, TY),
+                               future_forward_solve);
+        TACHO_TEST_FOR_EXCEPTION(future_backward_solve.is_null(), std::runtime_error,
+                                 ">> host_spawn returns a null future");
+
+        Kokkos::wait(_policy);
         
         TACHO_TEST_FOR_ABORT(future_forward_solve.get(),  "Fail to perform TriSolveSuperNodesByBlocks (forward)");
         TACHO_TEST_FOR_ABORT(future_backward_solve.get(), "Fail to perform TriSolveSuperNodesByBlocks (backward)");

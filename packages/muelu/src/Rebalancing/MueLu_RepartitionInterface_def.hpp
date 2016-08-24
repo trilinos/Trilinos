@@ -25,6 +25,7 @@ namespace MueLu {
  RCP<const ParameterList> RepartitionInterface<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< RCP<const FactoryBase> >("AmalgamatedPartition", Teuchos::null, "(advanced) Factory generating the AmalgamatedPartition (e.g. an IsorropiaInterface)");
 
     return validParamList;
@@ -34,6 +35,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionInterface<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "number of partitions");
     Input(currentLevel, "AmalgamatedPartition");
   } //DeclareInput()
 
@@ -43,13 +45,28 @@ namespace MueLu {
 
     RCP<Matrix>      A                                  = Get< RCP<Matrix> >     (level, "A");
     RCP<Xpetra::Vector<GO, LO, GO, NO> > amalgPartition = Get< RCP<Xpetra::Vector<GO, LO, GO, NO> > >(level, "AmalgamatedPartition");
-    //RCP<AmalgamationInfo> amalgInfo                     = Get< RCP<AmalgamationInfo> >(level, "UnAmalgamationInfo");
-
-    RCP<const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
-
-    ArrayRCP<GO> amalgPartitionData = amalgPartition->getDataNonConst(0);
+    int numParts                                        = Get<int>(level, "number of partitions");
 
     RCP<const Map> rowMap        = A->getRowMap();
+
+    // standard case: use matrix info and amalgamated rebalancing info to create "Partition" vector
+    RCP<const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
+
+    // Short cut: if we only need one partition, then create a dummy partition vector
+    if (numParts == 1 || numParts == -1) {
+      // Single processor, decomposition is trivial: all zeros
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
+      Set(level, "Partition", decomposition);
+      return;
+    } else if (numParts == -1) {
+      // No repartitioning
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Teuchos::null; //Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
+      //decomposition->putScalar(Teuchos::as<Scalar>(comm->getRank()));
+      Set(level, "Partition", decomposition);
+      return;
+    }
+
+    ArrayRCP<GO> amalgPartitionData = amalgPartition->getDataNonConst(0);
     RCP<const Map> nodeMap       = amalgPartition->getMap();
 
     // extract amalgamation information from matrix A
@@ -79,7 +96,7 @@ namespace MueLu {
         stridedblocksize = blockdim;
       }
       oldView = A->SwitchToView(oldView);
-      GetOStream(Statistics0, -1) << "RepartitionInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
+      //GetOStream(Statistics0, -1) << "RepartitionInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
     } else GetOStream(Statistics0, -1) << "RepartitionInterface::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
 
     // vector which stores final (unamalgamated) repartitioning

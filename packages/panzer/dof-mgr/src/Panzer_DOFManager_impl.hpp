@@ -648,6 +648,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
 
   // LINE 10: In the GUN paper
 
+/*
   RCP<const Map> gid_map;
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_10 prefix_sum");
@@ -656,6 +657,17 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
     // so we abuse it here to compute a bunch of unique IDs for each processor to define
     gid_map = rcp (new Map (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (),
                             static_cast<size_t> (localsum), static_cast<GO> (0), getComm()));
+  }
+  */
+  
+  GO myOffset = -1;
+  {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_10 prefix_sum");
+
+    // do a prefix sum
+    GO scanResult = 0;
+    Teuchos::scan<int, GO> (*getComm(), Teuchos::REDUCE_SUM, static_cast<size_t> (localsum), Teuchos::outArg (scanResult));
+    myOffset = scanResult - localsum;
   }
 
   // LINE 11 and 12: In the GUN paper, these steps are eliminated because
@@ -670,13 +682,13 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
   { 
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_13-21 gid_assignment");
 
-    ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
+    // ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
     int which_id=0;
     ArrayRCP<ArrayRCP<GO> > editnonoverlap = non_overlap_mv->get2dViewNonConst();
     for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
       for(int j=0; j<numFields_; ++j){
         if(editnonoverlap[j][i]!=0){
-          editnonoverlap[j][i]=owned_ids[which_id];
+          editnonoverlap[j][i]=myOffset+which_id;
           which_id++;
         }
         else{

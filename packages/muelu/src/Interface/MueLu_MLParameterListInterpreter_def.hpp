@@ -85,6 +85,7 @@
 
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 #include "MueLu_IsorropiaInterface.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionInterface.hpp"
@@ -314,26 +315,33 @@ namespace MueLu {
       MUELU_READ_PARAM(paramList, "repartition: max min ratio",            double,                 1.3,       maxminratio);
       MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
 
+      // Repartitioning heuristic
+      RCP<RepartitionHeuristicFactory> RepartitionHeuristicFact = Teuchos::rcp(new RepartitionHeuristicFactory());
+      {
+        Teuchos::ParameterList paramListRepFact;
+        paramListRepFact.set("repartition: min rows per proc", minperproc);
+        paramListRepFact.set("repartition: max imbalance", maxminratio);
+        RepartitionHeuristicFact->SetParameterList(paramListRepFact);
+      }
+      RepartitionHeuristicFact->SetFactory("A", AcFact);
+
       // create "Partition"
       Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
       isoInterface->SetFactory("A", AcFact);
+      isoInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
       isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
 
       // create "Partition" by unamalgamtion
       Teuchos::RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = Teuchos::rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
       repInterface->SetFactory("A", AcFact);
+      repInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
       repInterface->SetFactory("AmalgamatedPartition", isoInterface);
       //repInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact); // not necessary?
 
       // Repartitioning (creates "Importer" from "Partition")
       RepartitionFact = Teuchos::rcp(new RepartitionFactory());
-      {
-        Teuchos::ParameterList paramListRepFact;
-        paramListRepFact.set("repartition: min rows per proc", minperproc);
-        paramListRepFact.set("repartition: max imbalance", maxminratio);
-        RepartitionFact->SetParameterList(paramListRepFact);
-      }
       RepartitionFact->SetFactory("A", AcFact);
+      RepartitionFact->SetFactory("number of partitions", RepartitionHeuristicFact);
       RepartitionFact->SetFactory("Partition", repInterface);
 
       // Reordering of the transfer operators

@@ -76,6 +76,38 @@ LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A) :
 
 template<class MatrixType>
 LocalSparseTriangularSolver<MatrixType>::
+LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A,
+                             const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+  A_ (A),
+  out_ (out),
+  isInitialized_ (false),
+  isComputed_ (false),
+  numInitialize_ (0),
+  numCompute_ (0),
+  numApply_ (0),
+  initializeTime_ (0.0),
+  computeTime_ (0.0),
+  applyTime_ (0.0)
+{
+  if (! out_.is_null ()) {
+    *out_ << ">>> DEBUG Ifpack2::LocalSparseTriangularSolver constructor"
+          << std::endl;
+  }
+  typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+    global_ordinal_type, node_type> crs_matrix_type;
+  if (! A.is_null ()) {
+    Teuchos::RCP<const crs_matrix_type> A_crs =
+      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_crs.is_null (), std::invalid_argument,
+       "Ifpack2::LocalSparseTriangularSolver constructor: "
+       "The input matrix A is not a Tpetra::CrsMatrix.");
+    A_crs_ = A_crs;
+  }
+}
+
+template<class MatrixType>
+LocalSparseTriangularSolver<MatrixType>::
 ~LocalSparseTriangularSolver ()
 {}
 
@@ -91,14 +123,24 @@ LocalSparseTriangularSolver<MatrixType>::
 initialize ()
 {
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::initialize: ";
+  if (! out_.is_null ()) {
+    *out_ << ">>> DEBUG " << prefix << std::endl;
+  }
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (A_.is_null (), std::runtime_error, prefix << "You must call "
      "setMatrix() with a nonnull input matrix before you may call "
      "initialize() or compute().");
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (A_crs_.is_null (), std::logic_error, prefix << "A_ is nonnull, but "
-     "A_crs_ is null.  Please report this bug to the Ifpack2 developers.");
+  if (A_crs_.is_null ()) {
+    typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+      global_ordinal_type, node_type> crs_matrix_type;
+    Teuchos::RCP<const crs_matrix_type> A_crs =
+      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_crs.is_null (), std::invalid_argument, prefix <<
+       "The input matrix A is not a Tpetra::CrsMatrix.");
+    A_crs_ = A_crs;
+  }
   auto G = A_->getGraph ();
   TEUCHOS_TEST_FOR_EXCEPTION
     (G.is_null (), std::logic_error, prefix << "A_ and A_crs_ are nonnull, "
@@ -121,6 +163,9 @@ LocalSparseTriangularSolver<MatrixType>::
 compute ()
 {
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::compute: ";
+  if (! out_.is_null ()) {
+    *out_ << ">>> DEBUG " << prefix << std::endl;
+  }
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (A_.is_null (), std::runtime_error, prefix << "You must call "
@@ -162,6 +207,23 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
   typedef scalar_type ST;
   typedef Teuchos::ScalarTraits<ST> STS;
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::apply: ";
+  if (! out_.is_null ()) {
+    *out_ << ">>> DEBUG " << prefix;
+    if (A_crs_.is_null ()) {
+      *out_ << "A_crs_ is null!" << std::endl;
+    }
+    else {
+      const std::string uplo = A_crs_->isUpperTriangular () ? "U" :
+        (A_crs_->isLowerTriangular () ? "L" : "N");
+      const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+        (mode == Teuchos::TRANS ? "T" : "N");
+      const std::string diag =
+        (A_crs_->getNodeNumDiags () < A_crs_->getNodeNumRows ()) ? "U" : "N";
+      *out_ << "uplo=\"" << uplo
+            << "\", trans=\"" << trans
+            << "\", diag=\"" << diag << "\"" << std::endl;
+    }
+  }
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (! isComputed (), std::runtime_error, prefix << "If compute() has not yet "
@@ -408,41 +470,42 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::setMatrix: ";
 
-  // Check in serial or one-process mode if the matrix is square.
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (! A.is_null () && A->getComm ()->getSize () == 1 &&
-     A->getNodeNumRows () != A->getNodeNumCols (),
-     std::runtime_error, prefix << "If A's communicator only contains one "
-     "process, then A must be square.  Instead, you provided a matrix A with "
-     << A->getNodeNumRows () << " rows and " << A->getNodeNumCols ()
-     << " columns.");
-
-  // It's legal for A to be null; in that case, you may not call
-  // initialize() until calling setMatrix() with a nonnull input.
-  // Regardless, setting the matrix invalidates the preconditioner.
-  isInitialized_ = false;
-  isComputed_ = false;
-
-  typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> crs_matrix_type;
-  if (A.is_null ()) {
-    A_crs_ = Teuchos::null;
-  }
-  else {
-    Teuchos::RCP<const crs_matrix_type> A_crs =
-      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A);
+  // If the pointer didn't change, do nothing.  This is reasonable
+  // because users are supposed to call this method with the same
+  // object over all participating processes, and pointer identity
+  // implies object identity.
+  if (A.getRawPtr () != A_.getRawPtr ()) {
+    // Check in serial or one-process mode if the matrix is square.
     TEUCHOS_TEST_FOR_EXCEPTION
-      (A_crs.is_null (), std::invalid_argument, prefix <<
-       "The input matrix A is not a Tpetra::CrsMatrix.");
-    A_crs_ = A_crs;
-  }
-  A_ = A;
+      (! A.is_null () && A->getComm ()->getSize () == 1 &&
+       A->getNodeNumRows () != A->getNodeNumCols (),
+       std::runtime_error, prefix << "If A's communicator only contains one "
+       "process, then A must be square.  Instead, you provided a matrix A with "
+       << A->getNodeNumRows () << " rows and " << A->getNodeNumCols ()
+       << " columns.");
 
-  TEUCHOS_TEST_FOR_EXCEPTION
-    ((A.is_null () && A_.is_null () && A_crs_.is_null ()) ||
-     (A_.getRawPtr () == A.getRawPtr () && ! A_crs_.is_null ()),
-     std::logic_error, prefix << "This class' matrix pointers were set "
-     "incorrectly.  Please report this bug to the Ifpack2 developers.");
+    // It's legal for A to be null; in that case, you may not call
+    // initialize() until calling setMatrix() with a nonnull input.
+    // Regardless, setting the matrix invalidates the preconditioner.
+    isInitialized_ = false;
+    isComputed_ = false;
+
+    typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+      global_ordinal_type, node_type> crs_matrix_type;
+    if (A.is_null ()) {
+      A_crs_ = Teuchos::null;
+      A_ = Teuchos::null;
+    }
+    else { // A is not null
+      Teuchos::RCP<const crs_matrix_type> A_crs =
+        Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (A_crs.is_null (), std::invalid_argument, prefix <<
+         "The input matrix A is not a Tpetra::CrsMatrix.");
+      A_crs_ = A_crs;
+      A_ = A;
+    }
+  } // pointers are not the same
 }
 
 } // namespace Ifpack2

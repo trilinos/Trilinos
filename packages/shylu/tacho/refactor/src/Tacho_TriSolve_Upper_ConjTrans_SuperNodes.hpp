@@ -18,7 +18,7 @@ namespace Tacho {
   TriSolve<Uplo::Upper,Trans::ConjTranspose,
            AlgoTriSolve::SuperNodes,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            const int diagA,
            CrsExecViewTypeA &A,
            DenseExecViewTypeB &B) {

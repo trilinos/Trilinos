@@ -1,6 +1,4 @@
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Qthread.hpp>                                                                                         
-#include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>  
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -12,25 +10,22 @@ typedef int    size_type;
 
 typedef Kokkos::Qthread exec_space;
 
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) \
-        || defined(HAVE_SHYLUTACHO_AMESOS)))
+#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD) || defined(HAVE_SHYLUTACHO_AMESOS)))
 #include "Tacho_ExampleCholSuperNodesByBlocks.hpp"
 using namespace Tacho;
 #endif
 
 int main (int argc, char *argv[]) {
 
+#ifdef HAVE_SHYLUTACHO_VTUNE
+  __itt_pause();
+#endif
+
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("Tacho::DenseMatrixBase examples on Pthreads execution space.\n");
 
   int nthreads = 0;
   clp.setOption("nthreads", &nthreads, "Number of threads");
-
-  // int numa = 0;
-  // clp.setOption("numa", &numa, "Number of numa node");
-
-  // int core_per_numa = 0;
-  // clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
   bool verbose_blocks = false;
   clp.setOption("enable-verbose-blocks", "disable-verbose-blocks", &verbose_blocks, "Flag for verbose printing blocks");
@@ -47,23 +42,17 @@ int main (int argc, char *argv[]) {
   int prunecut = 0;
   clp.setOption("prunecut", &prunecut, "Level to prune tree from bottom");
 
-  int fill_level = -1;
-  clp.setOption("fill-level", &fill_level, "Fill level");
-
-  int rows_per_team = 4096;
-  clp.setOption("rows-per-team", &rows_per_team, "Workset size");
-
   int max_concurrency = 1000000;
   clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
 
-  int max_task_dependence = 3;
-  clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
+  int memory_pool_grain_size = 16;
+  clp.setOption("memory-pool-grain-size", &memory_pool_grain_size, "Memorypool chunk size (12 - 16)");
 
-  int team_size = 1;
-  clp.setOption("team-size", &team_size, "Team size");
+  int mkl_nthreads = 1;
+  clp.setOption("mkl-nthreads", &mkl_nthreads, "MKL threads for nested parallelism");
 
-  int nrhs = 1;
-  clp.setOption("nrhs", &team_size, "# of right hand side");
+  int nrhs = 0;
+  clp.setOption("nrhs", &nrhs, "# of right hand side");
 
   int mb = 0;
   clp.setOption("mb", &mb, "Dense nested blocks size");
@@ -88,7 +77,7 @@ int main (int argc, char *argv[]) {
     r_val = exampleCholSuperNodesByBlocks<exec_space>
       (file_input, 
        treecut, prunecut, 
-       max_concurrency, max_task_dependence, team_size,
+       max_concurrency, memory_pool_grain_size, mkl_nthreads,
        nrhs, mb, nb,
        verbose_blocks,
        verbose);

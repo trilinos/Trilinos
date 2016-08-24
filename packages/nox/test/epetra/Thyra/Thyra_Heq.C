@@ -125,10 +125,9 @@ int main(int argc, char *argv[])
 
     const int num_elements = 400;
 
-    // Check we have only one processor since this problem doesn't work
-    // for more than one proc
+    // Check we have at least one unknown per processor
     if (Comm.NumProc() > num_elements)
-      throw "Error! Number of elements must be greate than number of processors!";
+      throw "Error! Number of elements must be greater than number of processors!";
 
     // Create the model evaluator object
     Teuchos::RCP<ModelEvaluatorHeq<double> > model =
@@ -156,7 +155,6 @@ int main(int argc, char *argv[])
 
     Teuchos::RCP<NOX::Thyra::Group> nox_group =
       Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model));
-    //Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null));
 
     nox_group->computeF();
 
@@ -192,7 +190,6 @@ int main(int argc, char *argv[])
     nl_params->sublist("Direction").sublist("Newton").sublist("Linear Solver").set("Tolerance", 1.0e-4);
     nl_params->sublist("Printing").sublist("Output Information").set("Details",true);
     nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration",true);
-    //nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration StatusTest",true);
 
     if (verbose){
       nl_params->sublist("Printing").sublist("Output Information").set("Error",true);
@@ -212,6 +209,14 @@ int main(int argc, char *argv[])
     Teuchos::RCP<NOX::Solver::Generic> solver =
       NOX::Solver::buildSolver(nox_group, combo, nl_params);
     NOX::StatusTest::StatusType solvStatus = solver->solve();
+    Teuchos::RCP<NOX::Abstract::Vector> diff = solver->getSolutionGroup().getX().clone();
+
+    // Test the reset function by resolving the same problem
+    Teuchos::RCP<NOX::Abstract::Vector> newGuess = diff->clone(NOX::ShapeCopy);
+    newGuess->init(1.0);
+    solver->reset(*newGuess);
+    solver->solve();
+    diff->update(1.0, solver->getSolutionGroup().getX(), -1.0);
 
     // Create a print class for controlling output below
     nl_params->sublist("Printing").set("MyPID", Comm.MyPID());
@@ -233,15 +238,20 @@ int main(int argc, char *argv[])
     if (solvStatus != NOX::StatusTest::Converged)
       status = 1;
     // 2. Number of iterations
-    if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 19)
+    if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 18)
       status = 2;
+    // 3. Same reset solution
+    if (diff->norm() >= 1.0e-14)
+      status = 3;
 
     success = status==0;
 
-    if (success)
-      std::cout << "Test passed!" << std::endl;
-    else
-      std::cout << "Test failed!" << std::endl;
+    if (Comm.MyPID() == 0) {
+      if (success)
+        std::cout << "Test passed!" << std::endl;
+      else
+        std::cout << "Test failed!" << std::endl;
+    }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

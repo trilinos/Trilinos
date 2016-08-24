@@ -804,7 +804,7 @@ namespace MueLu {
       manager.SetFactory("P", P);
 
       if (reuseType == "tP" && !filteringChangesMatrix)
-        keeps.push_back(keep_pair("AP graph", P.get()));
+        keeps.push_back(keep_pair("AP reuse data", P.get()));
 
     } else if (multigridAlgo == "emin") {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: pattern", std::string, patternType);
@@ -970,8 +970,8 @@ namespace MueLu {
       manager.SetFactory("A", RAP);
 
       if (reuseType == "RP" || (reuseType == "tP" && !filteringChangesMatrix)) {
-        keeps.push_back(keep_pair("AP graph",  RAP.get()));
-        keeps.push_back(keep_pair("RAP graph", RAP.get()));
+        keeps.push_back(keep_pair("AP reuse data",  RAP.get()));
+        keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
       }
     }
 
@@ -1051,12 +1051,23 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(this->doPRrebalance_ && (reuseType == "tP" || reuseType == "RP"), Exceptions::InvalidArgument,
                                  "Reuse types \"tP\" and \"PR\" require \"repartition: rebalance P and R\" set to \"false\"");
 
-      TEUCHOS_TEST_FOR_EXCEPTION(aggType == "brick", Exceptions::InvalidArgument,
-                                 "Aggregation type \"brick\" requires \"repartition: enable\" set to \"false\"");
+      //TEUCHOS_TEST_FOR_EXCEPTION(aggType == "brick", Exceptions::InvalidArgument,
+      //                           "Aggregation type \"brick\" requires \"repartition: enable\" set to \"false\"");
 
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
+
+      // RepartitionHeuristic
+      RCP<RepartitionHeuristicFactory> repartheurFactory = rcp(new RepartitionHeuristicFactory());
+      ParameterList repartheurParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartheurParams);
+      repartheurFactory->SetParameterList(repartheurParams);
+      repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
+      manager.SetFactory("number of partitions", repartheurFactory);
+
       // Partitioner
       RCP<Factory> partitioner;
       if (partName == "zoltan") {
@@ -1078,21 +1089,19 @@ namespace MueLu {
 #endif
       }
       partitioner->SetFactory("A",           manager.GetFactory("A"));
+      partitioner->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
       partitioner->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
       manager.SetFactory("Partition", partitioner);
 
       // Repartitioner
       RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
       ParameterList repartParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",                   int, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",             int, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",              double, repartParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: keep proc 0",                  bool, repartParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: print partition distribution", bool, repartParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts",                  bool, repartParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values",              int, repartParams);
       repartFactory->SetParameterList(repartParams);
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
+      repartFactory->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
       manager.SetFactory("Importer", repartFactory);
       if (reuseType != "none" && reuseType != "S" && levelID)
@@ -1472,7 +1481,8 @@ namespace MueLu {
       Matrix& A = dynamic_cast<Matrix&>(Op);
       if (A.GetFixedBlockSize() != blockSize_)
         this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
-            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl
+            << "You may want to check \"number of equations\" (or \"PDE equations\" for factory style list) parameter." << std::endl;
 
       A.SetFixedBlockSize(blockSize_, dofOffset_);
 

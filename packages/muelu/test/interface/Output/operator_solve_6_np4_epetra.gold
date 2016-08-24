@@ -138,7 +138,7 @@ Level 3
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
 
- Setup Smoother (MueLu::AmesosSmoother{type = Klu})
+ Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -165,6 +165,6 @@ Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 2) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Klu}
+Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Superlu}
 Smoother (level 3) post : no smoother
 

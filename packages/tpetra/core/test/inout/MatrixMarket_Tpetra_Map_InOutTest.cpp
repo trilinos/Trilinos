@@ -169,6 +169,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigUniformIndexBase0, LO, 
     cerr << os.str ();
   }
   TEST_ASSERT( map.isSameAs (*inMap) );
+
+  // Now try readMap without the node argument.
+
+  // This input stream can exist on all processes,
+  // but only Process 0 will read from it.
+  std::istringstream mapInStream2 (mapOutStream.str ());
+  RCP<const map_type> inMap2 =
+    reader_type::readMap (mapInStream2, map.getComm (),
+                          tolerant, globallyVerbose);
+  // Make sure that all processes finished the above step before
+  // continuing the test.
+  comm->barrier ();
+
+  if (globallyVerbose) {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Testing sameness" << endl;
+    cerr << os.str ();
+  }
+  TEST_ASSERT( map.isSameAs (*inMap2) );
+
   if (globallyVerbose) {
     std::ostringstream os;
     os << "Proc " << myRank << ": Finished with test" << endl;

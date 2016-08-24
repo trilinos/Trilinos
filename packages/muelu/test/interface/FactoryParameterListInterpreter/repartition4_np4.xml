@@ -41,9 +41,26 @@
 
     </ParameterList>
 
+    <ParameterList name="myRepartitionHeuristicFact">
+      <Parameter name="factory"                                     type="string"   value="RepartitionHeuristicFactory"/>
+      <Parameter name="A"                                           type="string"   value="myRAPFact"/>
+    </ParameterList>
+
+    <ParameterList name="myZoltanInterface">
+      <Parameter name="factory"                                     type="string"   value="Zoltan2Interface"/>
+      <Parameter name="A"                                           type="string"   value="myRAPFact"/>
+      <Parameter name="Coordinates"                                 type="string"   value="myTransferCoordinatesFact"/>
+      <Parameter name="number of partitions"                        type="string"   value="myRepartitionHeuristicFact"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="algorithm"                                 type="string"   value="multijagged"/>
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="myRepartitionFact">
       <Parameter name="factory"                                     type="string"   value="RepartitionFactory"/>
       <Parameter name="A"                                           type="string"   value="myRAPFact"/>
+      <Parameter name="number of partitions"                        type="string"   value="myRepartitionHeuristicFact"/>
+      <Parameter name="Partition"                                   type="string"   value="myZoltanInterface"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceProlongatorFact">

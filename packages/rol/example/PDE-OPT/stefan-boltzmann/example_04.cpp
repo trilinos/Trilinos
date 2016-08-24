@@ -56,15 +56,14 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
 
-//#include "../TOOLS/meshmanager.hpp"
-#include "mesh_stefan_boltzmann.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
 #include "../TOOLS/pdeobjective.hpp"
+#include "../TOOLS/pdevector.hpp"
 #include "pde_stefan_boltzmann.hpp"
 #include "obj_stefan_boltzmann.hpp"
+#include "mesh_stefan_boltzmann.hpp"
 
 typedef double RealT;
 
@@ -120,28 +119,28 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = con->getAssembler()->createStateVector();
     u_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,con->getAssembler()));
     // Create control vector and set to ones
     Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = con->getAssembler()->createControlVector();
     z_rcp->putScalar(1.0);
     Teuchos::RCP<ROL::Vector<RealT> > zp
-      = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,con->getAssembler()));
     // Create residual vector and set to zeros
     Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = con->getAssembler()->createResidualVector();
     r_rcp->putScalar(0.0);
     Teuchos::RCP<ROL::Vector<RealT> > rp
-      = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(r_rcp));
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,con->getAssembler()));
     // Create state direction vector and set to random
     Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = con->getAssembler()->createStateVector();
     du_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dup
-      = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,con->getAssembler()));
     // Create control direction vector and set to random
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = con->getAssembler()->createControlVector();
     dz_rcp->putScalar(0.0);
     //dz_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dzp
-      = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,con->getAssembler()));
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);

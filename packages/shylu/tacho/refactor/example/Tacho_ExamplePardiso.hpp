@@ -4,7 +4,7 @@
 #ifdef HAVE_SHYLUTACHO_MKL
 using namespace std;
 
-#include "util.hpp"
+#include "Tacho_Util.hpp"
 #include "mkl_pardiso.h"
 
 namespace Tacho {
@@ -89,48 +89,47 @@ namespace Tacho {
 
       // setParameter( 1, 1); // default param: 0 - default, 1 - user provided
       // setParameter( 2, 0); // reordering: 0 - mindegreem, 2 - nd, 3 - parallel nd
-      // setParameter(27, 1); // mat check: 0 - no, 1 - check
+      setParameter(27, 1); // mat check: 0 - no, 1 - check
       setParameter(35, 1); // row and col index: 0 - fortran, 1 - CXX
 
       return ierr;
     }
 
     ostream& showErrorCode(ostream &os) const {
-      os << "   0 No error" << endl
-         << "-  1 Input inconsistent" << endl
-         << "-  2 Not enough memory" << endl
-         << "-  3 Reordering problem" << endl
-         << "-  4 Zero pivot" << endl
-         << "-  5 Unclassified (internal) error" << endl
-         << "-  6 Preordering fail (matrix types 11,13)" << endl
-         << "-  7 Diagonal matrix problem" << endl
-         << "-  8 32-bit integer overflow" << endl
-         << "- 10 No license file pardiso.lic found" << endl
-         << "- 11 License expired " << endl
-         << "- 12 Wrong user name or host" << endl
-         << "-100 over, Krylov fail" << endl ;
-
+      os << "   0 No error" << std::endl
+         << "-  1 Input inconsistent" << std::endl
+         << "-  2 Not enough memory" << std::endl
+         << "-  3 Reordering problem" << std::endl
+         << "-  4 Zero pivot" << std::endl
+         << "-  5 Unclassified (internal) error" << std::endl
+         << "-  6 Preordering fail (matrix types 11,13)" << std::endl
+         << "-  7 Diagonal matrix problem" << std::endl
+         << "-  8 32-bit integer overflow" << std::endl
+         << "- 10 No license file pardiso.lic found" << std::endl
+         << "- 11 License expired " << std::endl
+         << "- 12 Wrong user name or host" << std::endl
+         << "-100 over, Krylov fail" << std::endl ;
       return os;
     }
 
     ostream& showStat(ostream &os, const Phase phase) const {
       switch(phase) {
       case Analyze:
-        os << "- Phase: Analyze -" << endl
-           << "Number of perturbed pivots          = " << _iparm[Fort(14)] << endl
-           << "Number of peak memory symbolic      = " << _iparm[Fort(15)] << endl
-           << "Number of permenant memory symbolic = " << _iparm[Fort(16)] << endl;
+        os << "- Phase: Analyze -" << std::endl
+           << "Number of perturbed pivots          = " << _iparm[Fort(14)] << std::endl
+           << "Number of peak memory symbolic      = " << _iparm[Fort(15)] << std::endl
+           << "Number of permenant memory symbolic = " << _iparm[Fort(16)] << std::endl;
         break;
       case Factorize:
-        os << "- Phase: Factorize -" << endl
-           << "Memory numerical factorization      = " << _iparm[Fort(17)] << endl
-           << "Number of nonzeros in factors       = " << _iparm[Fort(18)] << endl
-           << "Number of factorization MFLOP       = " << _iparm[Fort(19)] << endl
-           << "MFLOPs                              = " << _iparm[Fort(19)] << endl;
+        os << "- Phase: Factorize -" << std::endl
+           << "Memory numerical factorization      = " << _iparm[Fort(17)] << std::endl
+           << "Number of nonzeros in factors       = " << _iparm[Fort(18)] << std::endl
+           << "Number of factorization MFLOP       = " << _iparm[Fort(19)] << std::endl
+           << "MFLOPs                              = " << _iparm[Fort(19)] << std::endl;
         break;
       case Solve:
-        os << "- Phase: Solve -" << endl
-           << "Number of iterative refinements     = " << _iparm[Fort(7)] << endl;
+        os << "- Phase: Solve -" << std::endl
+           << "Number of iterative refinements     = " << _iparm[Fort(7)] << std::endl;
         break;
       case AnalyzeFactorize:
         showStat(os, Analyze);
@@ -146,11 +145,10 @@ namespace Tacho {
         showStat(os, Solve);
         break;
       default:
-        os << "- Phase: " << phase << " -" << endl
-           << "Nothing serious in this phase" << endl;
+        os << "- Phase: " << phase << " -" << std::endl
+           << "Nothing serious in this phase" << std::endl;
         break;
       }
-
       return os;
     }
 
@@ -195,11 +193,30 @@ namespace Tacho {
 
   };
 
+  // Pardiso mtype 
+  //  1 - real    structure sym
+  //  2 - real    sym posdef
+  // -2 - real    sym indef
+  //  3 - complex structure sym
+  //  4 - complex her posdef
+  // -4 - complex her indef
+  //  6 - complex structure sym
+  // 11 - real    non sym
+  // 13 - complex non sym
+  //
+  // pardiso does not like 2 4; for not we use 1 and 3 or 11 and 13.
+
   template<>
-  void Pardiso::setMatrixType<double, AlgoChol::ExternalPardiso>() { _mtype = 2; } // SPD
+  void Pardiso::setMatrixType<float, AlgoChol::ExternalPardiso>() { _mtype = 1; setParameter(28, 1); } // SPD
+
+  template<>
+  void Pardiso::setMatrixType<double, AlgoChol::ExternalPardiso>() { _mtype = 1; setParameter(28, 0); } // SPD
   
   template<>
-  void Pardiso::setMatrixType<complex<double>, AlgoChol::ExternalPardiso>() { _mtype = 4; } // HPD
+  void Pardiso::setMatrixType<complex<float>, AlgoChol::ExternalPardiso>() { _mtype = 3; setParameter(28, 1); } // HPD
+
+  template<>
+  void Pardiso::setMatrixType<complex<double>, AlgoChol::ExternalPardiso>() { _mtype = 3; setParameter(28, 0); } // HPD
 }
 
 #endif

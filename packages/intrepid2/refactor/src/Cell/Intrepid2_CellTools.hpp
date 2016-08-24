@@ -1299,28 +1299,27 @@ namespace Intrepid2 {
                     const Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoords,
                     const shards::CellTopology primaryCell );
     
-    // //============================================================================================//
-    // //                                                                                            //
-    // //                                        Inclusion tests                                     //
-    // //                                                                                            //
-    // //============================================================================================//
+    //============================================================================================//
+    //                                                                                            //
+    //                                        Inclusion tests                                     //
+    //                                                                                            //
+    //============================================================================================//
 
-    // /** \brief  Checks if a point belongs to a reference cell.
-
-    //             Requires cell topology with a reference cell.
-
-    //     \param  point             [in]  - spatial coordinates of the point tested for inclusion
-    //     \param  pointDim          [in]  - spatial dimension of that point
-    //     \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
-    //     \param  threshold         [in]  - "tightness" of the inclusion test
-    //     \return 1 if the point is in the closure of the specified reference cell and 0 otherwise.
-    // */
-    // static int checkPointInclusion(const Scalar*                 point,
-    //                                const int                     pointDim,
-    //                                const shards::CellTopology &  cellTopo,
-    //                                const double &                threshold = INTREPID2_THRESHOLD);
-
-
+    /** \brief  Checks if a point belongs to a reference cell.
+        
+        Requires cell topology with a reference cell.
+        
+        \param  point             [in]  - spatial coordinates of the point tested for inclusion
+        \param  pointDim          [in]  - spatial dimension of that point
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
+        \param  threshold         [in]  - "tightness" of the inclusion test
+        \return 1 if the point is in the closure of the specified reference cell and 0 otherwise.
+    */
+    template<typename pointViewType>
+    static bool 
+    checkPointInclusion( const pointViewType        point,
+                         const shards::CellTopology cellTopo,
+                         const double               threshold = threshold() );
 
     // /** \brief  Checks if a set of points belongs to a reference cell.
 
@@ -1579,7 +1578,7 @@ namespace Intrepid2 {
 #include "Intrepid2_CellToolsDefControlVolume.hpp"
 
 // not yet converted ...
-// #include "Intrepid2_CellToolsDefInclusion.hpp"
+#include "Intrepid2_CellToolsDefInclusion.hpp"
 
 // #include "Intrepid2_CellToolsDefDebug.hpp"
 

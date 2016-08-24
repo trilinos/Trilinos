@@ -36,8 +36,7 @@ namespace Tacho {
                                const ordinal_type minc,
                                const ordinal_type mb,
                                const int max_concurrency,
-                               const int max_task_dependence,
-                               const int team_size,
+                               const int memory_pool_grain_size,
                                const int mkl_nthreads,
                                const bool check,
                                const bool verbose) {
@@ -48,7 +47,7 @@ namespace Tacho {
     std::cout << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, detail);
     std::cout << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, detail);
 
-    typedef Kokkos::Experimental::TaskPolicy<DeviceSpaceType> PolicyType;
+    typedef Kokkos::TaskPolicy<DeviceSpaceType> PolicyType;
 
     typedef DenseMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> DenseMatrixBaseHostType;
     typedef DenseMatrixView<DenseMatrixBaseHostType> DenseMatrixViewHostType;
@@ -72,10 +71,12 @@ namespace Tacho {
               << " , mb = " << mb << std::endl;
 
     const size_t max_task_size = (3*sizeof(DenseTaskViewDeviceType)+sizeof(PolicyType)+128); 
-    PolicyType policy(max_concurrency,
-                      max_task_size,
-                      max_task_dependence,
-                      team_size);
+
+    PolicyType policy( typename PolicyType::memory_space(),
+                       max_task_size*max_concurrency,
+                       memory_pool_grain_size );
+
+    typename Kokkos::TaskPolicy<Kokkos::Serial>::member_type serial_member;
 
     std::ostringstream os;
     os.precision(3);
@@ -124,7 +125,7 @@ namespace Tacho {
         timer.reset();
         DenseMatrixViewHostType A_host(AB_host); 
         ierr = Chol<ArgUplo,AlgoChol::ExternalLapack,Variant::One>::invoke
-          (policy, policy.member_single(),
+          (policy, serial_member,
            A_host);
         t = timer.seconds();
         TACHO_TEST_FOR_ABORT( ierr, "Fail to perform Cholesky (serial)");
@@ -147,12 +148,14 @@ namespace Tacho {
         DenseHierTaskViewDeviceType TA_device(HA_device);
 
         timer.reset();
-        auto future = policy.proc_create_team
+
+        auto future = policy.host_spawn
           (Chol<ArgUplo,AlgoChol::DenseByBlocks,ArgVariant>
-           ::createTaskFunctor(policy, TA_device), 
-           0);
-        policy.spawn(future);
-        Kokkos::Experimental::wait(policy);
+           ::createTaskFunctor(policy, TA_device));
+        TACHO_TEST_FOR_EXCEPTION(future.is_null(), std::runtime_error,
+                                 ">> host_spawn returns a null future");
+        Kokkos::wait(policy);
+
         t = timer.seconds();
         os << ":: Parallel Performance = " << (flop/t/1.0e9) << " [GFLOPs]  ";
       }

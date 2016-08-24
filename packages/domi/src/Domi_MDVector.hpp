@@ -258,7 +258,8 @@ public:
    *
    * \param plist [in] ParameterList with construction information
    *        \htmlonly
-   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <iframe src="domi.xml" width="100%" scrolling="no" frameborder="0">
+   *        </iframe>
    *        <hr />
    *        \endhtmlonly
    */
@@ -272,7 +273,8 @@ public:
    *
    * \param plist [in] ParameterList with construction information
    *        \htmlonly
-   *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
+   *        <iframe src="domi.xml" width="100%" scrolling="no" frameborder="0">
+   *        </iframe>
    *        <hr />
    *        \endhtmlonly
    */

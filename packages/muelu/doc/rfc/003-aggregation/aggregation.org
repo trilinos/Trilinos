@@ -1,0 +1,424 @@
+#+TITLE: MueLu aggregation
+#+AUTHOR: Andrey Prokopenko
+#+EMAIL: aprokop@sandia.gov
+#+DATE: 06 Nov 2013
+#+LATEX_HEADER: \usepackage{listings}
+#+LATEX_HEADER: \usepackage{color}
+#+LATEX_HEADER: \usepackage{enumerate}
+#+LaTeX_HEADER: \usepackage[margin=0.75in]{geometry}
+#+LATEX_HEADER: \setlength{\parindent}{0}
+
+* Motivation
+* Goals
+
+- Better aggregation
+
+In order to be sure that we improve things, we need some
+metrics. However, it is not obvious which ones are most
+important. Particularly, how does having smaller/larger aggregates
+effects setup and solve times.
+
+Some info we can easily gather:
+- Number of aggregates
+- Distribution of the number of points in aggregates (is it Gaussian?)
+- Number of aggregates with distance-2 or more neighbors
+-
+
+
+* Current implementation
+
+** MueLu uncoupled aggregation
+
+The =UncoupledAggregationFactory= is mainly a vector/list of
+algorithms (see below). It is responsible for the parameter handling
+(but we could/should move this into the different aggregation
+algorithms!) and the preparation of the input for the algorithms
+(e.g. marking the boundary nodes, etc…).
+
+First, the =UncoupledAggregationRoutine= generates an empty
+=Aggregates= object (using the amalgamated graph that is provided by
+the =CoalesceDropFactory=). Then the =aggStat= array (of type
+=Teuchos::RCP<unsigned int>=) is generated. Initially, all entries are
+set to =READY=. Then some nodes (the information comes from the graph
+object) are changed from =READY= to =BOUNDARY=. If there are some maps
+provided for =OnePtNodes= and =SmallAggregates=, the corresponding
+entries in =aggStat= are set to =SMALLAG= and =ONEPT=. The ordering is
+important: first all node entries are set to =READY= or
+=BOUNDARY=. Then some nodes are overwritten with =SMALLAGG= and in a
+last step with =ONEPT=. In the end the =aggStats= array has entries
+with =READY=, =BOUNDARY=, and maybe =SMALLAGG= and =ONEPT=.
+
++ *NOTE 1*
+
+  Both small aggregate map and one point map are based on row
+  GIDs. This means that we have an extra translation (node GID -> row
+  GID) inside. In the current version of code this is done not using
+  =AmalgamationFactory= and is incorrect (no Strided maps info) and
+  slow (getting map every time??):
+  #+BEGIN_SRC CPP
+     GO grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
+  #+END_SRC
+
++ *NOTE 2*
+
+  The =BOUNDARY= status of a node is set in the factory, but they are
+  detected by the =CoalesceAndDropFactory=, and stored in a map that
+  is given to the =Graph= object. The =UncoupledAggregationFactory=
+  checks whether there is boundary node information stored within the
+  =Graph= object and then initializes the corresponding =aggStat=
+  entries with =BOUNDARY=.
+
+Then, the =UncoupledAggregationFactory= just builds the aggregates by
+calling the specific =BuildAggregates= routine for each aggregation
+algorithm. Within the aggregation algorithms the =Aggregates= object is
+filled and the status of each node in is tracked in the =aggStat=
+array. In the end, all nodes have the =AGGREGATED= status in the
+=aggStat= array. The ordering of the aggregation algorithms is as
+follows:
+
+*** =OnePtAlgorithm=
+
+  The =UncoupledAggregationFactory= allows to define a DOF map whose
+  corresponding nodes shall be transferred one-to-one to the coarsest
+  level. For the corresponding nodes, the =aggStat= vector is set to
+  =ONEPT=. The algorithm loops over all nodes and builds
+  one-point aggregates for all nodes with status =ONEPT=. The
+  status of the =ONEPT= nodes is then changed to
+  =AGGREGATED=.
+
+*** =SmallAggregationAlgorithm=
+
+  The =SmallAggregationAlgorithm= works similar as the
+  =OnePtAlgorithm=. The =UncoupledAggregationFactory= allows to define
+  a DOF map whose corresponding nodes are set to =SMALLAGG=. Then all
+  these =SMALLAGG= nodes are aggregated. There are no restrictions for
+  the aggregates (no minimum size,…) except that only nodes with the
+  =SMALLAGG= status can be aggregated (and only if they are
+  neighbours).
+
+  It's currently not used/necessary. The idea was to be able to build
+  aggregates in specific regions (e.g. at the contact interface only
+  in a structural contact problem).
+
+  After =the OnePtAggregationAlgorithm= and the
+  =SmallAggAggregationAlgorithm= all nodes which had the status
+  =ONEPT= or =SMALLAGG= have now the status =AGGREGATED=.
+
+*** =UncoupledAggregationAlgorithm=
+
+  This is the main aggregation algorithm and does basically the same
+  as the =LocalAggregationAlgorithm= in the =CoupledAggregation=
+  framework!
+
+  In principle it's just a loop over all nodes. For each node we check
+  all neighbour nodes if they have the status =READY= or =NOTSEL=. Then we
+  put all these nodes together to a tentative new aggregate. The
+  aggregate is only accepted if it has at least =MinNodesPerAggregate=
+  nodes and the number of neighbour nodes, which are already
+  aggregated in other aggregates is not above
+  =MaxNeighAlreadySelected=.
+
+  + *COMMENT 1*
+
+    Parameter =MinNodesPerAggregate= is the problematic
+    one. If it's too big (i.e. less neighbours than
+    =MinNodesPerAggregate=), then nothing is happening in the
+    =UncoupledAggregationAlgorithm=.
+
+  + *NOTE 1*
+
+    Parameter =MaxNeighAlreadySelected= is meant to
+    build aggregates that are not too close to each other. The
+    =MaxLinkAggregationAlgorithm= then can add the in between nodes to the
+    aggregates.
+
+  Altogether we then obtain bigger aggregates. If the aggregate is not
+  accepted, the current node for building the aggregate around itself
+  is set to =NOTSEL=. That means, the node shall not be root node for
+  an aggregate. It can be added to another aggregate later as a
+  neighbour to some root node.
+
+  The option "ordering" defines how we loop over all nodes. The
+  options are =NATURAL= (follow the numbering of the nodes), =GRAPH=
+  (start with one node and then proceed with all it's direct
+  neighbours…) and =RANDOM= (randomly pick out the next non-aggregated
+  node).
+
+  #+BEGIN_COMMENT
+  + *COMMENT (AP)*
+
+    My intuition tells me that we can probably get rid of
+    =MinNodesPerAggregate= and replace it by a dynamic value without
+    significantly worsening the aggregation. For instance, something
+    like "The aggregate is accepted if the number of nodes in it is
+    larger or equal to the average of number of connections for neighbor
+    points", or "The aggregate is accepted if it is of the maximal size
+    for all neighbor points". Or something similar (we'll need to play
+    with it). I would really prefer some dynamic metric, which should
+    work much better for unstructured meshes than the static value. One
+    use case that comes to mind is when you use different kind of FEM in
+    different parts of your domain. You want your aggregation to be able
+    to capture the changing connectivity structure.
+
+  + *COMMENT (TW)*
+
+    It would be nice if the user would have at least a rough way
+    to control the size of the aggregates. E.g. for aggressive
+    coarsening one would like to have extremely big aggregates or for
+    very complicated problems the user has to choose rather small
+    aggregates and use more multigrid levels which tackle more
+    different modes.
+
+  + *COMMENT (AP)*
+
+    We could try to manage that by using hops. For instance, the
+    standard version is to select a root node, and aggregate all nodes
+    within one hop of it, which are neighbor nodes. User could specify
+    to use two hops, which is a more aggressive setting, in which case
+    we also add neighbors of neighbors. I'm not sure, however, that
+    this is the right approach, as the aggregates' shapes will
+    probably very distorted at the later stage.
+  #+END_COMMENT
+
+*** =MaxLinkAggregationAlgorithm=
+
+  The =MaxLinkAggregationAlgorithm= loops over all nodes and picks out
+  the non-aggregated nodes (with status different to =AGGREGATED=). For
+  each non-aggregated node it loops over all its neighbours and looks
+  for the aggregate with the most connections to it.
+
+  + *BUG 1*
+
+    Both =OnePtAlgorithm= and
+    =SmallAggAlgorithm= mark nodes as =AGGREGATED=, so, theoretically,
+    we could merge some unaggregated nodes with some of one-points or
+    small aggregates, which is _not_ what we want.
+
+  + *BUG 2*
+
+    It also loops through all nodes. At this point, some nodes
+    may still be =BOUNDARY=, so if boundary nodes are not isolated,
+    they are merged into existing aggregates.
+
+*** =PreserveDirichletAggregationAlgorithm=
+
+  For some applications, it's necessary to preserve Dirichlet
+  boundaries on the the coarse level. In this case, we use this
+  factory to aggregate =BOUNDARY= and isolated nodes into 1-point
+  aggregates to transfer 1-to-1 to the coarse level. Per default this
+  factory is off (i.e. not used unless the user requests it in the
+  parameter list of the =UncoupledAggregationFactory=). The default
+  behaviour is to use the =IsolatedNodeAggregationAlgorithm= to mark
+  those nodes to be aggregated without building an aggregate for them.
+
+*** =IsolatedNodeAggregationAlgorithm=
+
+  For all =BOUNDARY= and isolated nodes (node without any neighbour),
+  it marks the node as =AGGREGATED= without building an
+  aggregate. This way isolated nodes are just dropped.
+
+*** =EmergencyAggregationAlgorithm=
+
+  The =EmergencyAggregationAlgorithm= just loops over all nodes and
+  tries to put all non-aggregated left over nodes into small
+  aggregates.
+
+  + *QUESTION*
+
+    Does it actually do anything? It is run after =MaxLinkAggregationAlgorithm=.
+
+** MueLu coupled aggregation
+
+=CoupledAggregationFactory= consists of two stages with a separate
+algorithm for each.
+
+*** =LocalAggregationAlgorithm=
+
+Same as =UncoupledAggregationAlgorithm=, except
+
+- Uses slightly different internal structures (=MueLu_SuperNode=)
+- Has only three node states (=READY=, =NOTSEL=, =SELECTED=)
+
+*** =LeftOverAggregationAlgorithm=
+
+This algorithm is needed to take care of vertices that are left over after
+creating a bunch of ideal aggregates (root plus immediate neighbors).
+
+On input, the structure =Aggregates= describes already aggregated
+vertices.  The field =procWinners= indicates the processor owning the
+aggregate to which a vertex is "definitively" assigned. If on entry
+~procWinners[i] == MUELU_UNASSIGNED~, =ArbitrateAndCommunicate()= will
+arbitrate and decide which processor's aggregate really has the
+vertex. If only one processor claims ownership (as in the uncoupled
+case), no real arbitration is needed. Otherwise, random arbitration is
+done.
+
+The stage consists of several phases:
+**** Phase 1b
+
+Invoke =ArbitrateAndCommunicate()= to ensure that all processors have
+the same view of aggregated vertices (e.g., to which aggregate they
+have been assigned and which processor owns that aggregate).
+
+Root nodes have weight 2, regular assigned nodes have
+weight 1. Therefore, root nodes are always assigned to the same
+processor.
+
+**** Phase 2
+
+Check for vertices (local or nonlocal) which are adjacent
+to root nodes. Tentatively assign these to the aggregate
+associated with the root. Arbitrate any cases where
+several processors claim the same vertex for one of
+their aggregates via =ArbitrateAndCommunicate()=.
+
+**** Phase 3
+
+Try to create new aggregates if it looks like there are
+root node candidates which have many unaggregated neighbors.
+This decision to make a new aggregate is based on only local
+information. However, the new aggregate will be tentatively
+assigned any unaggregated ghost vertices. Arbitration is again
+done by =ArbitrateAndCommunicate()=, where local vertices
+use a ~weight = 2~ and ghost vertices have ~weight = 1~.
+The basic idea is that after arbitration, each aggregate
+is guaranteed to keep all local vertices assigned in
+this phase. Thus, by basing the aggregation creation logic
+on local information, we are guaranteed to have a sufficiently
+large aggregation. The only local vertices that might be
+assigned to another processor's aggregates are unclaimed
+during this phase of the aggregation.
+
++ *QUESTION*
+
+  Does this phase do anything? Is it actually possible to find
+  aggregates that have enough (>= =MinNodesPerAggregate=) local nodes?
+  Those should have been gone after first (uncoupled) phase.
+
++ *ANSWER*
+
+  It is possible. First phase contains an extra criterium beside
+  =MinNodesPerAggregate=: =MaxNeighAlreadySelected=.
+
+**** Phase 4 (EXPERIMENTAL)
+
+**** Phase 5
+
+Sweep new points into existing aggregates. Each processor tries
+to assign any (whether it is a ghost or local) unaggregated
+vertex that it has to an aggregate that it owns. In other words,
+processor $p$ attempts to assign vertex $v$ to aggregate $y$ where
+$y$ is owned by $p$ but $v$ may be a ghost vertex (and so really
+assigned to another processor). Deciding which aggregate
+a vertex is assigned to is done by scoring. Roughly, we want
+  - larger scores for $y$ if $v$ is close (graph distance) to $y$'s
+    root;
+  - larger scores for $y$ if $v$ has direct connections to several
+    different vertices already assigned to $y$;
+  - lower scores for $y$ if several vertices have already been swept
+    into $y$ during this phase.
+
+Some care must be taken for vertices that are shared (either local
+vertices that are sent to other processors or ghost vertices) in that
+each processor sharing the vertex will attempt to assign it to
+different aggregates.  =ArbitrateAndCommunicate()= is again used for
+arbitration with the score being given as the weight.
+
+The main tricky thing occurs when $v$ is tentatively added to $y$.
+When assigning $v'$ to $y$, the assumed connection with $v$ should not
+be the sole basis of this decision if there is some chance that $v$
+might be lost in arbitration. This could actually lead to $v'$ being
+disconnected from the rest of the aggregate.  This is by building a
+list of shared ids and checking that there is at least one vertex in
+the scoring that is either not shared or has already been definitively
+assigned to this processor's aggregate (i.e. have been assigned to a
+local aggregate and have been through arbitration).
+
+Scoring is done by first giving a mark to vertices that have been
+already been assigned to aggregates. This mark essentially
+reflects the distance of this point to the root. Specifically,
+
+- if $v$ was assigned to an aggregate prior to this phase:
+
+  $mark(v) \leftarrow \texttt{MUELU\_DISTONE\_VERTEX\_WEIGHT}$
+
+- otherwise:
+
+  $mark(v) \leftarrow max(mark(v_k))/2$,
+
+  where $max(mark(v_k))$ considers all vertices definitively
+  assigned to $y$ that have direct connections to $v$.
+
+
+Finally,
+
+$score(\tilde{v},y) \leftarrow \Sigma(mark(\hat{v}_k)) - \texttt{AggregateIncrementPenalty}$,
+
+where $\tilde{v}$ is an unaggregated vertex being considered for
+assignment in aggregate $y$ and $\hat{v}_k$ are all vertices in $y$
+with a direct connection to $\tilde{v}$. =AggregateIncrementPenalty=
+is equal to
+
+$\max(\texttt{INCR\_SCALING}*NNewVtx, \Sigma(mark(\hat{v}_k))*(1-\texttt{MUELU\_PENALTYFACTOR}))$,
+
+where $NNewVtx$ is the number of phase 5 vertices already assigned to
+$y$.
+
+One last wrinkle, is that we have wrapped the whole scoring/assigning
+of vertices inside a big loop that looks something like
+
+#+BEGIN_SRC CPP
+  for (Threshold = big; Threshold >= 0; Reduce(Threshold));
+#+END_SRC
+
+New vertices are swept into aggregates only if their best score is >=
+a Threshold. This encourages only very good vertices to be assigned
+first followed by somewhat less well connected ones in later
+iterations of the loop. It also helps minimize the number of
+exclusions that would occur to address the issue mentioned above where
+we don't want to make assignment decisions based on connections to
+vertices that might be later lost in arbitration.
+
+**** Phase 6
+
+Aggregate remaining vertices and avoid small aggregates (e.g.,
+singletons) at all costs. Typically, most everything should be
+aggregated by Phases 1-5. One way that we could still have
+unaggregated vertices is if processor $p$ was never assigned a root
+node (perhaps because the number of local vertices on p is less than
+=minNodesPerAggregate=) and additionally $p$ has local ids which are
+not shared with any other processors (so that no other processor's
+aggregate can claim these vertices).
+
+Phase 6 looks at the first unassigned vertex and all of its local
+unassigned neighbors and makes a new aggregate. If this aggregate has
+at least =minNodesPerAggregate= vertices, we continue this process of
+creating new aggregates by examining other unassigned vertices. If the
+new aggregate is too small, we try add the next unassigned vertex and
+its neighbors to the same newly created aggregate.  Once again, we
+check the size of this new aggregate to decide whether other
+unassigned vertices should be added to this aggregate or used to
+create a new aggregate.  If the last newly created aggregate (of
+course there may be just one newly created aggregate) is too small, we
+then see if there is at least one other aggregate that this processor
+owns. If so, we merge the small newly created aggregate with
+aggregate 0. If not, we accept the fact that a small aggregate has
+been created.
+
+
+One final note about the use of =ArbitrateAndCommunicate()=. No
+arbitration occurs (which means the =procWinner[]= is not set as well)
+for a global shared id if and only if all weights on all processors
+corresponding to this id is zero. Thus, the general idea is that any
+global id where we want arbitration to occur should have at least one
+associated weight on one processor which is nonzero. Any global id
+where we don't want any arbitration should have all weights set to 0.
+
+*NOTE* =procWinners= is also set to =MyPid()= by
+=ArbitrateAndCommunicate()= for any nonshared gid's with a nonzero
+weight.
+
+
+*** =CoupledAggregationCommHelper=
+
+* Proposal

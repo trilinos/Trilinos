@@ -72,14 +72,15 @@ namespace Intrepid2 {
       void operator()(const size_type iter) const {
         size_type cl, lbf, rbf;
         Util::unrollIndex( cl, lbf, rbf, 
-                           _leftFields.dimension(0),
-                           _leftFields.dimension(1),
+                           _outputFields.dimension(0),
+                           _outputFields.dimension(1),
+                           _outputFields.dimension(2),
                            iter );
 
-        auto result = Kokkos::subdynrankview( _outputFields,  cl, lbf, rbf );
+        auto result = Kokkos::subview( _outputFields,  cl, lbf, rbf );
 
-        const auto left  = Kokkos::subdynrankview( _leftFields,  cl, lbf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
-        const auto right = Kokkos::subdynrankview( _rightFields, cl, rbf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        const auto left  = Kokkos::subview( _leftFields,  cl, lbf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        const auto right = Kokkos::subview( _rightFields, cl, rbf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
 
         const size_type npts = left.dimension(0);
         const size_type iend = left.dimension(1);
@@ -143,13 +144,14 @@ namespace Intrepid2 {
       void operator()(const size_type iter) const {
         size_type cl, bf;
         Util::unrollIndex( cl, bf, 
-                     _inputFields.dimension(0),
-                     iter );
+                           _inputFields.dimension(0),
+                           _inputFields.dimension(1),
+                           iter );
         
-        auto result = Kokkos::subdynrankview( _outputFields, cl, bf );
+        auto result = Kokkos::subview( _outputFields, cl, bf );
 
-        const auto field = Kokkos::subdynrankview( _inputFields, cl, bf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
-        const auto data  = Kokkos::subdynrankview( _inputData,   cl,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        const auto field = Kokkos::subview( _inputFields, cl, bf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        const auto data  = Kokkos::subview( _inputData,   cl,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
 
         const size_type npts = field.dimension(0);
         const size_type iend = field.dimension(1);
@@ -220,9 +222,9 @@ namespace Intrepid2 {
       void operator()(const size_type iter) const {
         const size_type cl = iter;
         
-        auto result = Kokkos::subdynrankview( _outputData, cl );
-        const auto left  = Kokkos::subdynrankview( _inputDataLeft,  cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
-        const auto right = Kokkos::subdynrankview( _inputDataRight, cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        auto result = Kokkos::subview( _outputData, cl );
+        const auto left  = Kokkos::subview( _inputDataLeft,  cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        const auto right = Kokkos::subview( _inputDataRight, cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
 
         size_type npts = left.dimension(0);
         size_type iend = left.dimension(1);

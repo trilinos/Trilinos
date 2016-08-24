@@ -94,13 +94,16 @@ public:
 
   void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
                 const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     int p = fe_vol_->N()->dimension(2);
     int d = cellCub_->getDimension();
+    // INITIALIZE RESIDUAL
     res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-    // Integrate Laplacian term
+    // COMPUTE STIFFNESS TERM
     Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
     fe_vol_->evaluateGradient(gradU_eval, u_coeff);
@@ -108,7 +111,7 @@ public:
                                                   *gradU_eval,
                                                   *(fe_vol_->gradNdetJ()),
                                                   Intrepid::COMP_CPP, false);
-    // Integrate nonlinear term
+    // ADD NONLINEAR TERM
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     fe_vol_->evaluateValue(valU_eval, u_coeff);
@@ -121,30 +124,35 @@ public:
                                                   *valU_eval,
                                                   *(fe_vol_->NdetJ()),
                                                   Intrepid::COMP_CPP, true);
-    // Integrate control term
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    fe_vol_->evaluateValue(valZ_eval, z_coeff);
-    Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,static_cast<Real>(-1));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*res,
-                                                  *valZ_eval,
-                                                  *(fe_vol_->NdetJ()),
-                                                  Intrepid::COMP_CPP, true);
+    // ADD CONTROL TERM
+    if ( z_coeff != Teuchos::null ) {
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
+        Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      fe_vol_->evaluateValue(valZ_eval, z_coeff);
+      Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,static_cast<Real>(-1));
+      Intrepid::FunctionSpaceTools::integrate<Real>(*res,
+                                                    *valZ_eval,
+                                                    *(fe_vol_->NdetJ()),
+                                                    Intrepid::COMP_CPP, true);
+    }
   }
 
   void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     int p = fe_vol_->N()->dimension(2);
+    // INITIALIZE JACOBIAN
     jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    // Integrate Laplacian term
+    // COMPUTE STIFFNESS TERM
     Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
                                                   *(fe_vol_->gradN()),
                                                   *(fe_vol_->gradNdetJ()),
                                                   Intrepid::COMP_CPP, false);
-    // Integrate nonlinear term
+    // ADD NONLINEAR TERM
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     fe_vol_->evaluateValue(valU_eval, u_coeff);
@@ -165,26 +173,42 @@ public:
 
   void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff) {
-    int c = fe_vol_->N()->dimension(0);
-    int f = fe_vol_->N()->dimension(1);
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
-                                                  *(fe_vol_->N()),
-                                                  *(fe_vol_->NdetJ()),
-                                                  Intrepid::COMP_CPP, false);
-    Intrepid::RealSpaceTools<Real>::scale(*jac,static_cast<Real>(-1));
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    if ( z_coeff != Teuchos::null ) {
+      // GET DIMENSIONS
+      int c = fe_vol_->N()->dimension(0);
+      int f = fe_vol_->N()->dimension(1);
+      // INITIALIZE JACOBIAN
+      jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+      // ADD CONTROL TERM
+      Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
+                                                    *(fe_vol_->N()),
+                                                    *(fe_vol_->NdetJ()),
+                                                    Intrepid::COMP_CPP, false);
+      Intrepid::RealSpaceTools<Real>::scale(*jac,static_cast<Real>(-1));
+    }
+  }
+
+  void Jacobian_3(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & jac,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Jacobian_3): Jacobian is zero.");
   }
 
   void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     int p = fe_vol_->N()->dimension(2);
+    // INITIALIZE HESSIAN
     hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    // Integrate nonlinear term
+    // COMPUTE NONLINEAR TERM
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     fe_vol_->evaluateValue(valU_eval, u_coeff);
@@ -207,24 +231,76 @@ public:
   }
 
   void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::Zero(">>> Zero Hessian.");
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_12: Hessian is zero.");
+  }
+
+  void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_13: Hessian is zero.");
   }
 
   void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::Zero(">>> Zero Hessian.");
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_21: Hessian is zero.");
   }
 
   void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff) {
-    throw Exception::Zero(">>> Zero Hessian.");
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_22: Hessian is zero.");
+  }
+
+  void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_23: Hessian is zero.");
+  }
+
+  void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_31: Hessian is zero.");
+  }
+
+  void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_32: Hessian is zero.");
+  }
+
+  void Hessian_33(std::vector<std::vector<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (PDE_Poisson_Boltzmann:Hessian_33: Hessian is zero.");
+  }
+
+  void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+    riesz = fe_vol_->stiffMat();
+    Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+  }
+
+  void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+    riesz = fe_vol_->massMat();
   }
 
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
@@ -245,6 +321,6 @@ public:
     return fe_vol_;
   }
 
-}; // PDE_Poisson
+}; // PDE_Poisson_Boltzmann
 
 #endif

@@ -28,7 +28,7 @@ doxygen Doxyfile
 # Files needed for collapsible parameter list (short term proof of concept)
 #TODO:
 mkdir html/common
-cp -r ../../../packages/common/paramList html/common/paramList
-cp parameterList/domi.xml html
+cp -r ../../../doc/DocumentingParameterLists/webfiles html/common/parameterList
+cp parameterList/Domi.xml html/domi.xml
 
 echo "DONE"

@@ -51,6 +51,7 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",   Teuchos::null, "Generating factory of UnAmalgamationInfo");
 
     return validParamList;
@@ -60,6 +61,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "number of partitions");
     Input(currentLevel, "UnAmalgamationInfo");
   }
 
@@ -69,15 +71,14 @@ namespace MueLu {
 
     RCP<Matrix> A                  = Get< RCP<Matrix> >(level, "A");
     RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(level, "UnAmalgamationInfo");
-    GO          numParts           = level.Get<GO>("number of partitions");
+    GO          numParts           = Get< int >(level, "number of partitions");
 
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
 
-    if (numParts == 1) {
+    if (numParts == 1 || numParts == -1) {
       // Running on one processor, so decomposition is the trivial one, all zeros.
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
-      //Set(level, "Partition", decomposition);
       Set(level, "AmalgamatedPartition", decomposition);
       return;
     }
@@ -121,8 +122,8 @@ namespace MueLu {
         stridedblocksize = blockdim;
       }
       oldView = A->SwitchToView(oldView);
-      GetOStream(Statistics0, -1) << "IsorropiaInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
-    } else GetOStream(Statistics0, -1) << "IsorropiaInterface::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+      //GetOStream(Statistics0) << "IsorropiaInterface::Build():" << " found blockdim=" << blockdim << " from strided maps (blockid=" << blockid << ", strided block size=" << stridedblocksize << "). offset=" << offset << std::endl;
+    } else GetOStream(Statistics0) << "IsorropiaInterface::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
 
     // 2) get row map for amalgamated matrix (graph of A)
     //    with same distribution over all procs as row map of A

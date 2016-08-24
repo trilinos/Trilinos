@@ -110,6 +110,7 @@
 
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
 #include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RebalanceBlockAcFactory.hpp"
@@ -325,6 +326,21 @@ int main(int argc, char *argv[]) {
     AcFact->SetFactory("P", PFact);  // use non-rebalanced block prolongator as input
     AcFact->SetFactory("R", RFact);  // use non-rebalanced block restrictor as input
 
+    // Repartitioning (decides how many partitions are built)
+    RCP<Factory> RepartitionHeuristicFact = rcp(new RepartitionHeuristicFactory());
+    {
+      Teuchos::ParameterList paramList;
+      paramList.set("repartition: min rows per proc", 200);
+      paramList.set("repartition: max imbalance", 1.3);
+      if(rebalanceBlocks == 1)
+        paramList.set("repartition: start level",1);
+      else
+        paramList.set("repartition: start level",10); // supress rebalancing
+      RepartitionHeuristicFact->SetParameterList(paramList);
+    }
+    RepartitionHeuristicFact->SetFactory("A", AcFact);
+
+
     // define matrix sub-blocks of possibly rebalanced block matrix A
     // These are used as input for
     //   - the sub blocks of the transfer operators
@@ -356,25 +372,18 @@ int main(int argc, char *argv[]) {
 
     RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface1 = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
     isoInterface1->SetFactory("A", rebA11Fact);
+    isoInterface1->SetFactory("number of partitions", RepartitionHeuristicFact);
     isoInterface1->SetFactory("UnAmalgamationInfo", rebAmalgFact11);
 
     RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface1 = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
     repInterface1->SetFactory("A", rebA11Fact);
+    repInterface1->SetFactory("number of partitions", RepartitionHeuristicFact);
     repInterface1->SetFactory("AmalgamatedPartition", isoInterface1);
 
     // Repartitioning (creates "Importer" from "Partition")
     RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
-    {
-      Teuchos::ParameterList paramList;
-      paramList.set("repartition: min rows per proc", 200);
-      paramList.set("repartition: max imbalance", 1.3);
-      if(rebalanceBlocks == 1)
-        paramList.set("repartition: start level",1);
-      else
-        paramList.set("repartition: start level",10); // supress rebalancing
-      RepartitionFact->SetParameterList(paramList);
-    }
     RepartitionFact->SetFactory("A", rebA11Fact);
+    RepartitionFact->SetFactory("number of partitions", RepartitionHeuristicFact);
     RepartitionFact->SetFactory("Partition", repInterface1);
 
     // define rebalancing factory for coarse block matrix A(1,1)
@@ -384,21 +393,13 @@ int main(int argc, char *argv[]) {
 
     RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface2 = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
     repInterface2->SetFactory("A", rebA22Fact);
+    repInterface2->SetFactory("number of partitions", RepartitionHeuristicFact);
     repInterface2->SetFactory("AmalgamatedPartition", isoInterface1);
 
     // second repartition factory
     RCP<Factory> RepartitionFact2 = rcp(new RepartitionFactory());
-    {
-      Teuchos::ParameterList paramList;
-      paramList.set("repartition: min rows per proc", 100);
-      paramList.set("repartition: max imbalance", 1.2);
-      if(rebalanceBlocks == 1)
-        paramList.set("repartition: start level",1);
-      else
-        paramList.set("repartition: start level",10); // supress rebalancing
-      RepartitionFact2->SetParameterList(paramList);
-    }
     RepartitionFact2->SetFactory("A", rebA22Fact);
+    RepartitionFact2->SetFactory("number of partitions", RepartitionHeuristicFact);
     RepartitionFact2->SetFactory("Partition", repInterface2); // this is not valid
 
     ////////////////////////////////////////// build non-rebalanced matrix blocks

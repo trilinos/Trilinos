@@ -33,11 +33,8 @@ int main (int argc, char *argv[]) {
   int max_concurrency = 250000;
   clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
 
-  int max_task_dependence = 3;
-  clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
-
-  int team_size = 1;
-  clp.setOption("team-size", &team_size, "Team size");
+  int memory_pool_grain_size = 16;
+  clp.setOption("memory-pool-grain-size", &memory_pool_grain_size, "Memorypool chunk size (12 - 16)");
 
   int mkl_nthreads = 1;
   clp.setOption("mkl-nthreads", &mkl_nthreads, "MKL threads for nested parallelism");
@@ -79,7 +76,7 @@ int main (int argc, char *argv[]) {
     r_val = exampleDenseHerkByBlocks
       <Uplo::Upper,Trans::ConjTranspose,Variant::One,exec_space>
       (mmin, mmax, minc, k, mb,
-       max_concurrency, max_task_dependence, team_size, mkl_nthreads,
+       max_concurrency, memory_pool_grain_size, mkl_nthreads,
        check,
        verbose);
 

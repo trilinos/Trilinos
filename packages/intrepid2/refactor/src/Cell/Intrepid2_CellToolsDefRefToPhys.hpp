@@ -82,6 +82,7 @@ namespace Intrepid2 {
         size_type cell, pt;
         Util::unrollIndex( cell, pt,
                            _physPoints.dimension(0),
+                           _physPoints.dimension(1),
                            iter );
         /**/  auto phys = Kokkos::subdynrankview( _physPoints, cell, pt, Kokkos::ALL());
         const auto dofs = Kokkos::subdynrankview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());

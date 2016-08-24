@@ -83,7 +83,8 @@ void Multiply(
   bool transposeB,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool call_FillComplete_on_result,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   // Convience typedefs
   typedef Scalar                            SC;
@@ -192,7 +193,7 @@ void Multiply(
   // above to handle that.
   if (!use_optimized_ATB) {
     RCP<const import_type> dummyImporter;
-    MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, true, label);
+    MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, true, label, params);
   }
 
   // We will also need local access to all rows of B that correspond to the
@@ -202,7 +203,7 @@ void Multiply(
 
   // Import any needed remote rows and populate the Bview struct.
   if (!use_optimized_ATB)
-    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label);
+    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label, params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
@@ -250,7 +251,8 @@ void Jacobi(Scalar omega,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
             CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
             bool call_FillComplete_on_result,
-	    const std::string & label)
+	         const std::string& label,
+            const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   // Convience typedefs
   typedef Scalar                            SC;
@@ -923,8 +925,9 @@ void mult_AT_B_newmatrix(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label) {
-
+  const std::string & label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
+{
   // Using &  Typedefs
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1005,7 +1008,8 @@ void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string & label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   typedef Teuchos::ScalarTraits<Scalar> STS;
   // TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
@@ -1241,7 +1245,8 @@ void mult_A_B_newmatrix(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1468,7 +1473,8 @@ void mult_A_B_reuse(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1635,7 +1641,8 @@ void jacobi_A_B_newmatrix(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -1886,7 +1893,8 @@ void jacobi_A_B_reuse(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label)
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -2070,12 +2078,13 @@ template<class Scalar,
          class GlobalOrdinal,
          class Node>
 void import_and_extract_views(
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
-  RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
-  bool userAssertsThereAreNoRemotes,
-  const std::string & label)
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   A,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >            targetMap,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   Aview,
+  RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >         prototypeImporter,
+  bool                                                          userAssertsThereAreNoRemotes,
+  const std::string&                                            label,
+  const Teuchos::RCP<Teuchos::ParameterList>&                   params)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -2097,116 +2106,122 @@ void import_and_extract_views(
   RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Alloc"))));
 #endif
 
-  // The goal of this method is to populate the 'Mview' struct with views of the
-  // rows of M, including all rows that correspond to elements in 'targetMap'.
+  // The goal of this method is to populate the 'Aview' struct with views of the
+  // rows of A, including all rows that correspond to elements in 'targetMap'.
   //
   // If targetMap includes local elements that correspond to remotely-owned rows
-  // of M, then those remotely-owned rows will be imported into
-  // 'Mview.importMatrix', and views of them will be included in 'Mview'.
-  Mview.deleteContents();
+  // of A, then those remotely-owned rows will be imported into
+  // 'Aview.importMatrix', and views of them will be included in 'Aview'.
+  Aview.deleteContents();
 
-  RCP<const map_type> Mrowmap = M.getRowMap();
-  RCP<const map_type> MremoteRowMap;
-  const int numProcs = Mrowmap->getComm()->getSize();
-
-  ArrayView<const GlobalOrdinal> Mrows = targetMap->getNodeElementList();
-
-  size_t numRemote = 0;
-  size_t numRows   = targetMap->getNodeNumElements();
-  Mview.origMatrix = rcp(&M, false);
-  Mview.origRowMap = M.getRowMap();
-  Mview.rowMap = targetMap;
-  Mview.colMap = M.getColMap();
-  Mview.domainMap = M.getDomainMap();
-  Mview.importColMap = null;
+  Aview.origMatrix   = rcp(&A, false);
+  Aview.origRowMap   = A.getRowMap();
+  Aview.rowMap       = targetMap;
+  Aview.colMap       = A.getColMap();
+  Aview.domainMap    = A.getDomainMap();
+  Aview.importColMap = null;
 
   // Short circuit if the user swears there are no remotes
   if (userAssertsThereAreNoRemotes)
     return;
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap"))));
-#endif
-
-  // Mark each row in targetMap as local or remote, and go ahead and get a view
-  // for the local rows
-  int mode = 0;
-  if (!prototypeImporter.is_null() && prototypeImporter->getSourceMap()->isSameAs(*Mrowmap) &&
-      prototypeImporter->getTargetMap()->isSameAs(*targetMap)) {
-    // We have a valid prototype importer --- ask it for the remotes
-    numRemote = prototypeImporter->getNumRemoteIDs();
-    Array<GlobalOrdinal> MremoteRows(numRemote);
-    ArrayView<const LocalOrdinal> RemoteLIDs = prototypeImporter->getRemoteLIDs();
-    for (size_t i = 0; i < numRemote; i++)
-      MremoteRows[i] = targetMap->getGlobalElement(RemoteLIDs[i]);
-
-    MremoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), MremoteRows(),
-                                     Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
-    mode = 1;
-
-  } else if (prototypeImporter.is_null()) {
-    // No prototype importer --- count the remotes the hard way
-    Array<GO> MremoteRows(numRows);
-    for(size_t i = 0; i < numRows; ++i) {
-      const LO mlid = Mrowmap->getLocalElement(Mrows[i]);
-
-      if (mlid == OrdinalTraits<LO>::invalid()) {
-        MremoteRows[numRemote] = Mrows[i];
-        ++numRemote;
-      }
-    }
-    MremoteRows.resize(numRemote);
-    MremoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), MremoteRows(),
-                                     Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
-    mode = 2;
+  RCP<const import_type> importer;
+  if (params != null && params->isParameter("importer")) {
+    importer = params->get<RCP<const import_type> >("importer");
 
   } else {
-    // PrototypeImporter is bad.  But if we're in serial that's OK.
-    mode = 3;
-  }
-
-  if (numProcs < 2) {
-    TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
-      "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows." <<std::endl);
-    // If only one processor we don't need to import any remote rows, so return.
-    return;
-  }
-
-  //
-  // Now we will import the needed remote rows of M, if the global maximum
-  // value of numRemote is greater than 0.
-  //
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Collective-0"))));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap"))));
 #endif
 
-  global_size_t globalMaxNumRemote = 0;
-  Teuchos::reduceAll(*(Mrowmap->getComm()) , Teuchos::REDUCE_MAX, (global_size_t)numRemote, Teuchos::outArg(globalMaxNumRemote) );
+    // Mark each row in targetMap as local or remote, and go ahead and get a view
+    // for the local rows
+    RCP<const map_type> rowMap = A.getRowMap(), remoteRowMap;
+    size_t numRemote = 0;
+    int mode = 0;
+    if (!prototypeImporter.is_null() &&
+        prototypeImporter->getSourceMap()->isSameAs(*rowMap)     &&
+        prototypeImporter->getTargetMap()->isSameAs(*targetMap)) {
+      // We have a valid prototype importer --- ask it for the remotes
+      ArrayView<const LO> remoteLIDs = prototypeImporter->getRemoteLIDs();
+      numRemote = prototypeImporter->getNumRemoteIDs();
 
+      Array<GO> remoteRows(numRemote);
+      for (size_t i = 0; i < numRemote; i++)
+        remoteRows[i] = targetMap->getGlobalElement(remoteLIDs[i]);
 
-  if (globalMaxNumRemote > 0) {
+      remoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), remoteRows(),
+                                      rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
+      mode = 1;
+
+    } else if (prototypeImporter.is_null()) {
+      // No prototype importer --- count the remotes the hard way
+      ArrayView<const GO> rows    = targetMap->getNodeElementList();
+      size_t              numRows = targetMap->getNodeNumElements();
+
+      Array<GO> remoteRows(numRows);
+      for(size_t i = 0; i < numRows; ++i) {
+        const LO mlid = rowMap->getLocalElement(rows[i]);
+
+        if (mlid == OrdinalTraits<LO>::invalid())
+          remoteRows[numRemote++] = rows[i];
+      }
+      remoteRows.resize(numRemote);
+      remoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), remoteRows(),
+                                      rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
+      mode = 2;
+
+    } else {
+      // PrototypeImporter is bad.  But if we're in serial that's OK.
+      mode = 3;
+    }
+
+    const int numProcs = rowMap->getComm()->getSize();
+    if (numProcs < 2) {
+      TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
+            "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows.");
+      // If only one processor we don't need to import any remote rows, so return.
+      return;
+    }
+
+    //
+    // Now we will import the needed remote rows of A, if the global maximum
+    // value of numRemote is greater than 0.
+    //
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-2"))));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Collective-0"))));
 #endif
-    // Create an importer with target-map MremoteRowMap and source-map Mrowmap.
-    RCP<const import_type> importer;
 
-    if (mode == 1)
-      importer = prototypeImporter->createRemoteOnlyImport(MremoteRowMap);
-    else if (mode == 2)
-      importer = rcp(new import_type(Mrowmap, MremoteRowMap));
-    else
-      throw std::runtime_error("prototypeImporter->SourceMap() does not match M.getRowMap()!");
+    global_size_t globalMaxNumRemote = 0;
+    Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_MAX, (global_size_t)numRemote, Teuchos::outArg(globalMaxNumRemote) );
 
+    if (globalMaxNumRemote > 0) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-2"))));
+#endif
+      // Create an importer with target-map remoteRowMap and source-map rowMap.
+      if (mode == 1)
+        importer = prototypeImporter->createRemoteOnlyImport(remoteRowMap);
+      else if (mode == 2)
+        importer = rcp(new import_type(rowMap, remoteRowMap));
+      else
+        throw std::runtime_error("prototypeImporter->SourceMap() does not match A.getRowMap()!");
+    }
+
+    if (params != null)
+      params->set("importer", importer);
+  }
+
+  if (importer != null) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-3"))));
 #endif
 
-    // Now create a new matrix into which we can import the remote rows of M that we need.
+    // Now create a new matrix into which we can import the remote rows of A that we need.
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
-    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcp(&M,false),
-                                    *importer, M.getDomainMap(), MremoteRowMap, rcp(&labelList,false));
+    Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
+                                    A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
 
 #ifdef HAVE_TPETRA_MMM_STATISTICS
     printMultiplicationStatistics(importer, label + std::string(" I&X MMM"));
@@ -2218,7 +2233,7 @@ void import_and_extract_views(
 #endif
 
     // Save the column map of the imported matrix, so that we can convert indices back to global for arithmetic later
-    Mview.importColMap = Mview.importMatrix->getColMap();
+    Aview.importColMap = Aview.importMatrix->getColMap();
   }
 }
 
@@ -2243,7 +2258,8 @@ void import_and_extract_views(
     bool transposeB, \
     CrsMatrix< SCALAR , LO , GO , NODE >& C, \
     bool call_FillComplete_on_result, \
-    const std::string & label); \
+    const std::string & label, \
+    const Teuchos::RCP<Teuchos::ParameterList>& params); \
 \
 template \
   void MatrixMatrix::Jacobi( \
@@ -2253,7 +2269,8 @@ template \
     const CrsMatrix< SCALAR , LO , GO , NODE >& B, \
     CrsMatrix< SCALAR , LO , GO , NODE >& C, \
     bool call_FillComplete_on_result, \
-    const std::string & label); \
+    const std::string & label, \
+    const Teuchos::RCP<Teuchos::ParameterList>& params); \
 \
   template \
   void MatrixMatrix::Add( \

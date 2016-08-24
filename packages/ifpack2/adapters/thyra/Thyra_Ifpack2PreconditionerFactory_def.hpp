@@ -160,7 +160,10 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 
   // Process parameter list
 
-  const Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
+  Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
+  if (constParamList.is_null ()) {
+    constParamList = getValidParameters ();
+  }
   const std::string preconditionerType = Teuchos::getParameter<std::string>(*constParamList, "Prec Type");
   const Teuchos::RCP<const Teuchos::ParameterList> packageParamList = Teuchos::sublist(constParamList, "Ifpack2 Settings");
 

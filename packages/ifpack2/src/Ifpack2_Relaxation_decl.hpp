@@ -52,7 +52,7 @@
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <type_traits>
 
-#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 #include <KokkosKernels_Handle.hpp>
 #endif
 
@@ -592,7 +592,7 @@ private:
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
 
-#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   typedef typename crs_matrix_type::local_matrix_type kokkos_csr_matrix;
   typedef typename kokkos_csr_matrix::StaticCrsGraphType crs_graph_type;
   typedef typename kokkos_csr_matrix::StaticCrsGraphType::row_map_type lno_row_view_t;

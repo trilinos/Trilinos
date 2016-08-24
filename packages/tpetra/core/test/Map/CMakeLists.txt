@@ -185,3 +185,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-10
   STANDARD_PASS_OUTPUT
   )
+
+# This test needs to run on at least 2 MPI processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_isLocallyFitted
+  SOURCES
+    Map_isLocallyFitted.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2-10
+  STANDARD_PASS_OUTPUT
+  )

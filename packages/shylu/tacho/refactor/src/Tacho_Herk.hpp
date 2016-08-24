@@ -16,6 +16,22 @@ namespace Tacho {
            template<int,int> class ControlType = Control>
   class Herk {
   public:
+    // statistics
+    // ==========
+    template<typename ScalarType,
+             typename ExecViewTypeA,
+             typename ExecViewTypeC>
+    inline
+    static Stat stat(const ScalarType alpha,
+                     ExecViewTypeA &A,
+                     const ScalarType beta,
+                     ExecViewTypeC &C) { 
+      printf(">> Template Args - Uplo %d, Trans %d, Algo %d, Variant %d\n", 
+             ArgUplo, ArgTrans, ArgAlgo, ArgVariant);  
+      TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
+      return Stat();
+    }
+
     // data-parallel interface with nested task generation
     // ===================================================
     template<typename PolicyType,
@@ -25,13 +41,13 @@ namespace Tacho {
              typename ExecViewTypeC>
     KOKKOS_INLINE_FUNCTION
     static int invoke(PolicyType &policy,
-                      const MemberType &member,
+                      MemberType &member,
                       const ScalarType alpha,
                       ExecViewTypeA &A,
                       const ScalarType beta,
                       ExecViewTypeC &C) { 
-      fprintf(stderr, ">> Template Args - Uplo %d, Trans %d, Algo %d, Variant %d\n", 
-              ArgUplo, ArgTrans, ArgAlgo, ArgVariant);  
+      printf(">> Template Args - Uplo %d, Trans %d, Algo %d, Variant %d\n", 
+             ArgUplo, ArgTrans, ArgAlgo, ArgVariant);  
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
       return -1;
     }
@@ -56,6 +72,9 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
+      TaskFunctor() = delete;
+
+      KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const ScalarType alpha,
                   const ExecViewTypeA &A,
@@ -72,14 +91,7 @@ namespace Tacho {
       const char* Label() const { return "Herk"; }
 
       KOKKOS_INLINE_FUNCTION
-      void apply(value_type &r_val) {
-        r_val = Herk::invoke(_policy, _policy.member_single(),
-                             _alpha, _A, _beta, _C);
-        _C.setFuture(typename ExecViewTypeC::future_type());
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void apply(const member_type &member, value_type &r_val) {
+      void operator()(member_type &member, value_type &r_val) {
         const int ierr = Herk::invoke(_policy, member,
                                       _alpha, _A, _beta, _C);
         

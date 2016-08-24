@@ -55,6 +55,11 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     SchurComplementFactory.cpp
     SubBlockAFactory.cpp
   )
+  IF (TPL_ENABLE_MPI)
+    APPEND_SET(SOURCES
+    BlockedRepartition.cpp
+    )
+  ENDIF()
 ENDIF()
 
 ### Tests that require other Trilinos packages

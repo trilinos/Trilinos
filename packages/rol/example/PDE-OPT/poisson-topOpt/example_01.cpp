@@ -56,7 +56,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_AugmentedLagrangian_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
@@ -65,6 +64,7 @@
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
 #include "../TOOLS/pdeobjective.hpp"
+#include "../TOOLS/pdevector.hpp"
 #include "../TOOLS/integralconstraint.hpp"
 #include "pde_poisson_topOpt.hpp"
 #include "obj_poisson_topOpt.hpp"
@@ -125,33 +125,39 @@ int main(int argc, char *argv[]) {
     u_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > up
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
+      //= Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,con->getAssembler()));
     // Create control vector and set to ones
     Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = con->getAssembler()->createControlVector();
     z_rcp->putScalar(0.5);
     Teuchos::RCP<ROL::Vector<RealT> > zp
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
+      //= Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,con->getAssembler()));
     // Create Lagrange multiplier vector and set to zeroes
     Teuchos::RCP<Tpetra::MultiVector<> > l_rcp = con->getAssembler()->createStateVector();
     l_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > lp
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(l_rcp));
+      //= Teuchos::rcp(new PDE_PrimalSimVector<RealT>(l_rcp,pde,con->getAssembler()));
     // Create residual vector and set to zeros
     Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = con->getAssembler()->createResidualVector();
     r_rcp->putScalar(0.0);
     Teuchos::RCP<ROL::Vector<RealT> > rp
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(r_rcp));
+      //= Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,con->getAssembler()));
     // Create state direction vector and set to random
     Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = con->getAssembler()->createStateVector();
     //du_rcp->putScalar(0.0);
     du_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dup
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
+      //= Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,con->getAssembler()));
     // Create control direction vector and set to random
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = con->getAssembler()->createControlVector();
     //dz_rcp->putScalar(0.0);
     dz_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dzp
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
+      //= Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,con->getAssembler()));
     // Create volume constraint vector and set to zero
     Teuchos::RCP<std::vector<RealT> > c1_rcp = Teuchos::rcp(new std::vector<RealT>(1,0));
     Teuchos::RCP<ROL::Vector<RealT> > c1p = Teuchos::rcp(new ROL::StdVector<RealT>(c1_rcp));
@@ -170,8 +176,10 @@ int main(int argc, char *argv[]) {
     lo_rcp->putScalar(0.0); hi_rcp->putScalar(1.0);
     Teuchos::RCP<ROL::Vector<RealT> > lop
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(lo_rcp));
+      //= Teuchos::rcp(new PDE_PrimalOptVector<RealT>(lo_rcp,pde,con->getAssembler()));
     Teuchos::RCP<ROL::Vector<RealT> > hip
       = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(hi_rcp));
+      //= Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,con->getAssembler()));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
 
     // Run derivative checks

@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
 
       fancyout << "Read fine level coordinates from file " << cooFileName << std::endl;
       coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(cooFileName), myCoordMap);
-      fancyout << "Found " << nullspace->getNumVectors() << " coordinate vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
+      fancyout << "Found " << coordinates->getNumVectors() << " coordinate vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
     }
 
     // shouldn't these be const?

@@ -58,8 +58,8 @@ namespace Intrepid2 {
   // -----------------------------------------------------------------------------------------  
   // Front interface
   // -----------------------------------------------------------------------------------------
-
-  template<typename pointValueType, class ...pointProperties>
+  
+  inline
   ordinal_type
   PointTools::
   getLatticeSize( const shards::CellTopology cellType,
@@ -116,7 +116,7 @@ namespace Intrepid2 {
                                   std::invalid_argument ,
                                   ">>> ERROR (PointTools::getLattice): order and offset must be positive values." );
 
-    const auto latticeSize = getLatticeSize<pointValueType,pointProperties...>( cell, order, offset );
+    const auto latticeSize = getLatticeSize( cell, order, offset );
     const auto spaceDim = cell.getDimension();
     
     INTREPID2_TEST_FOR_EXCEPTION( points.dimension(0) != latticeSize ||
@@ -131,7 +131,7 @@ namespace Intrepid2 {
     // // the interface assumes that the input array follows the cell definition
     // // so, let's match all dimensions according to the cell specification
     // typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-    // auto pts = Kokkos::subdynrankview( points, 
+    // auto pts = Kokkos::subview( points, 
     //                                    range_type(0, latticeSize), 
     //                                    range_type(0, spaceDim) );   
     switch (pointType) {
@@ -172,7 +172,7 @@ namespace Intrepid2 {
     Polylib::Serial::Cubature<POLYTYPE_GAUSS>::getValues(zHost, wHost, np, alpha, beta);
 
     typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-    auto pts = Kokkos::subdynrankview( points, range_type(0,np), 0 );
+    auto pts = Kokkos::subview( points, range_type(0,np), 0 );
     // should be fixed after view and dynrankview are inter-operatible
     auto z   = Kokkos::DynRankView<pointValueType,Kokkos::HostSpace>(zHost.data(), np);
     Kokkos::deep_copy(pts, z);
@@ -273,7 +273,7 @@ namespace Intrepid2 {
       Polylib::Serial::Cubature<POLYTYPE_GAUSS_LOBATTO>::getValues(zHost, wHost, np, alpha, beta);
       
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-      auto pts = Kokkos::subdynrankview( points, range_type(0, s), 0 );
+      auto pts = Kokkos::subview( points, range_type(0, s), 0 );
       
       // this should be fixed after view and dynrankview is interoperatable
       auto z   = Kokkos::DynRankView<pointValueType,Kokkos::HostSpace>(zHost.data() + offset, np-offset);

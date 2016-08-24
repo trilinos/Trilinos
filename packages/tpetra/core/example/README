@@ -14,6 +14,9 @@ topic.
 Other examples
 ==============
 
+The utilities/ subdirectory builds executable utilities that Trilinos
+developers may find useful.
+
 The advanced/ subdirectory contains examples best suited for either
 advanced Tpetra users or Tpetra developers.
 

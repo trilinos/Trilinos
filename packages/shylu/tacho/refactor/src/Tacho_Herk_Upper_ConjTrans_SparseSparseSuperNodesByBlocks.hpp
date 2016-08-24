@@ -12,6 +12,26 @@ namespace Tacho {
   template<typename MT>
   class DenseMatrixView;
 
+  template<>
+  template<typename ScalarType,
+           typename CrsExecViewTypeA,
+           typename CrsExecViewTypeC>
+  inline
+  Stat
+  Herk<Uplo::Upper,Trans::ConjTranspose,
+       AlgoHerk::SparseSparseSuperNodesByBlocks,Variant::One>
+  ::stat(const ScalarType alpha,
+         CrsExecViewTypeA &A,
+         const ScalarType beta,
+         CrsExecViewTypeC &C) {
+    DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA(A.Hier());
+    DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> CC(C.Hier());
+    
+    return Herk<Uplo::Upper,Trans::ConjTranspose,
+      AlgoHerk::DenseByBlocks,Variant::One>
+      ::stat(alpha, AA, beta, CC);
+  }
+
   // Herk used in the supernodal factorization
   // =========================================
   template<>
@@ -25,7 +45,7 @@ namespace Tacho {
   Herk<Uplo::Upper,Trans::ConjTranspose,
        AlgoHerk::SparseSparseSuperNodesByBlocks,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
            const ScalarType beta,

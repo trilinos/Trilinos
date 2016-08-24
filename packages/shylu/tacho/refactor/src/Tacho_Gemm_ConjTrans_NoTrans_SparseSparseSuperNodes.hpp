@@ -10,6 +10,29 @@ namespace Tacho {
   template<typename MT>
   class DenseMatrixView;
 
+  template<>
+  template<typename ScalarType,
+           typename CrsExecViewTypeA,
+           typename CrsExecViewTypeB,
+           typename CrsExecViewTypeC>
+  inline
+  Stat
+  Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+       AlgoGemm::SparseSparseSuperNodes,Variant::One>
+  ::stat(const ScalarType alpha,
+         CrsExecViewTypeA &A,
+         CrsExecViewTypeB &B,
+         const ScalarType beta,
+         CrsExecViewTypeC &C) {    
+    DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> AA(A.Flat());
+    DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> BB(B.Flat());
+    DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> CC(C.Flat());
+    
+    return Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+      AlgoGemm::ExternalBlas,Variant::One>
+      ::stat(alpha, AA, BB, beta, CC);
+  }
+
   /// Gemm for supernodal factorization
   /// =================================
   template<>
@@ -24,7 +47,7 @@ namespace Tacho {
   Gemm<Trans::ConjTranspose,Trans::NoTranspose,
        AlgoGemm::SparseSparseSuperNodes,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
            CrsExecViewTypeB &B,

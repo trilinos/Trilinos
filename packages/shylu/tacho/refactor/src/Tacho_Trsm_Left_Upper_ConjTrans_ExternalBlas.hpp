@@ -9,7 +9,38 @@
 #include "Teuchos_BLAS.hpp"
 #endif
 
+#include "Tacho_DenseFlopCount.hpp"
+
 namespace Tacho {
+
+  /// BLAS Trsm
+  /// =========
+  /// Properties:
+  /// - Compile with Device (o),
+  /// - Callable in KokkosFunctors (o)
+  /// - For now, this is for HostSpace only.
+  template<>
+  template<typename ScalarType,
+           typename DenseExecViewTypeA,
+           typename DenseExecViewTypeB>
+  inline
+  Stat
+  Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+       AlgoTrsm::ExternalBlas,Variant::One>
+  ::stat(const int diagA,
+         const ScalarType alpha,
+         DenseExecViewTypeA &A,
+         DenseExecViewTypeB &B) {
+
+    Stat r_val;
+
+    const ordinal_type m = A.NumRows();
+    const ordinal_type n = B.NumCols();
+    r_val.flop = DenseFlopCount<typename DenseExecViewTypeA::value_type>::TrsmLower(m, n);    
+
+    return r_val;
+  }
+
   /// BLAS Trsm
   /// =========
   /// Properties:
@@ -27,29 +58,24 @@ namespace Tacho {
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
        AlgoTrsm::ExternalBlas,Variant::One>
   ::invoke(PolicyType &policy,
-           const MemberType &member,
+           MemberType &member,
            const int diagA,
            const ScalarType alpha,
            DenseExecViewTypeA &A,
            DenseExecViewTypeB &B) {
     // static_assert( Kokkos::Impl::is_same<
     //                typename DenseMatrixTypeA::space_type,
-    //                Kokkos::Cuda
-    //                >::value,
-    //                "Cuda space is not available for calling external BLAS" );
-
-    // static_assert( Kokkos::Impl::is_same<
-    //                typename DenseMatrixTypeA::space_type,
     //                typename DenseMatrixTypeB::space_type
     //                >::value,
     //                "Space type of input matrices does not match" );
 
-    //typedef typename DenseExecViewTypeA::space_type   space_type;
-    typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
-    typedef typename DenseExecViewTypeA::value_type   value_type;
-
     if (member.team_rank() == 0) {
-#ifdef HAVE_SHYLUTACHO_TEUCHOS
+#if                                                     \
+  defined( HAVE_SHYLUTACHO_TEUCHOS ) &&                 \
+  defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
+      typedef typename DenseExecViewTypeA::value_type   value_type;
+      
       Teuchos::BLAS<ordinal_type,value_type> blas;
 
       const ordinal_type m = A.NumRows();

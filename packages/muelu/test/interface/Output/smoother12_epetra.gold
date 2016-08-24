@@ -3,25 +3,25 @@ Level 0
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother -> 
+ smoother ->
   chebyshev: ratio eigenvalue = 2
- 
+
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
     Build (MueLu::AmalgamationFactory)
     [empty list]
-    
+
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   filtered matrix: use lumping = 1   [default]
   filtered matrix: reuse graph = 1   [default]
   filtered matrix: reuse eigenvalue = 1   [default]
-  
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
    aggregation: max agg size = -1   [default]
@@ -36,52 +36,52 @@ Level 1
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother -> 
+ smoother ->
   chebyshev: ratio eigenvalue = 5   [unused]
- 
+
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
     Build (MueLu::AmalgamationFactory)
     [empty list]
-    
+
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   filtered matrix: use lumping = 1   [default]
   filtered matrix: reuse graph = 1   [default]
   filtered matrix: reuse eigenvalue = 1   [default]
-  
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
    aggregation: max agg size = -1   [default]
@@ -96,52 +96,52 @@ Level 2
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother -> 
+ smoother ->
   chebyshev: ratio eigenvalue = 4   [unused]
- 
+
 Level 3
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
     Build (MueLu::AmalgamationFactory)
     [empty list]
-    
+
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   filtered matrix: use lumping = 1   [default]
   filtered matrix: reuse graph = 1   [default]
   filtered matrix: reuse eigenvalue = 1   [default]
-  
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
    aggregation: max agg size = -1   [default]
@@ -156,52 +156,52 @@ Level 3
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother -> 
+ smoother ->
   chebyshev: ratio eigenvalue = 2.99461   [unused]
- 
+
 Level 4
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
     Build (MueLu::AmalgamationFactory)
     [empty list]
-    
+
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   filtered matrix: use lumping = 1   [default]
   filtered matrix: reuse graph = 1   [default]
   filtered matrix: reuse eigenvalue = 1   [default]
-  
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
    aggregation: max agg size = -1   [default]
@@ -216,52 +216,52 @@ Level 4
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother -> 
+ smoother ->
   chebyshev: ratio eigenvalue = 2.99194   [unused]
- 
+
 Level 5
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
     Build (MueLu::AmalgamationFactory)
     [empty list]
-    
+
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   filtered matrix: use lumping = 1   [default]
   filtered matrix: reuse graph = 1   [default]
   filtered matrix: reuse eigenvalue = 1   [default]
-  
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
    aggregation: max agg size = -1   [default]
@@ -276,36 +276,36 @@ Level 5
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
- Setup Smoother (MueLu::AmesosSmoother{type = Klu})
+
+ Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- presmoother -> 
+ presmoother ->
   [empty list]
- 
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -332,6 +332,6 @@ Smoother (level 3) both : MueLu::IfpackSmoother{type = Chebyshev}
 
 Smoother (level 4) both : MueLu::IfpackSmoother{type = Chebyshev}
 
-Smoother (level 5) pre  : MueLu::AmesosSmoother{type = Klu}
+Smoother (level 5) pre  : MueLu::AmesosSmoother{type = Superlu}
 Smoother (level 5) post : no smoother
 

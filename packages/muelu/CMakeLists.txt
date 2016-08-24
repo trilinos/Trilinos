@@ -74,6 +74,13 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   MESSAGE(STATUS "Enabling MueLu experimental code")
 ENDIF()
 
+# Enable additive variant
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_ADDITIVE_VARIANT
+  HAVE_${PACKAGE_NAME_UC}_ADDITIVE_VARIANT
+  "Enable Additive Variant."
+  NO)
+
 # Split ETI cpp files
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES

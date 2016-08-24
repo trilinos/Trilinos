@@ -111,6 +111,7 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
   for (Index i{0}; i < dimension; ++i) {
     x_ad(i) = AD(dimension, i, x(i));
   }
+
   Vector<AD, N> const
   r_ad = f.gradient(x_ad);
 
@@ -307,11 +308,12 @@ printReport(std::ostream & os)
 }
 
 //
-// Trust region subproblem. Exact algorithm, Nocedal 2nd Ed 4.3
+// Trust region subproblem with given objective function.
+// Exact algorithm, Nocedal 2nd Ed 4.3
 //
 template<typename T, Index N>
 Vector<T, N>
-TrustRegionExact<T, N>::
+TrustRegionExactValue<T, N>::
 step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
 {
   Index const
@@ -323,16 +325,26 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
   Vector<T, N>
   step(dimension);
 
+  // set to Hessian norm to ensure that K is positive definite
   T
-  lambda = initial_lambda;
+  lambda = norm(Hessian);
 
   for (Index i{0}; i < max_num_iter; ++i) {
 
     Tensor<T, N> const
     K = Hessian + lambda * I;
 
-    Tensor<T, N> const
-    L = cholesky(K).first;
+    Tensor<T, N>
+    L(ZEROS);
+
+    bool
+    is_posdef{false};
+
+    boost::tie(L, is_posdef) = cholesky(K);
+
+    if (is_posdef == false) {
+      MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
+    }
 
     step = - Intrepid2::solve(K, gradient);
 
@@ -355,10 +367,174 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
       
   }
 
+  return step;
+}
+ 
+
+//
+// Trust region subproblem with given gradient/residual.
+// Exact algorithm, Nocedal 2nd Ed 4.3
+//
+template<typename T, Index N>
+Vector<T, N>
+TrustRegionExactGradient<T, N>::
+step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
+{
+  Index const
+  dimension = gradient.get_dimension();
+
+  Tensor<T, N> const
+  I = identity<T, N>(dimension);
+
+  Vector<T, N>
+  step(dimension);
+
+  // set to Hessian norm to ensure that K is positive definite
+  T
+  lambda = norm(Hessian);
+
+  for (Index i{0}; i < max_num_iter; ++i) {
+
+    
+    Tensor<T, N> const
+    HTH = dot(transpose(Hessian), Hessian);
+
+    Vector<T, N> const
+    HTr = dot(transpose(Hessian), gradient);
+      
+    Tensor<T, N> const
+    K = HTH + lambda * I;
+
+    Tensor<T, N>
+    L(ZEROS);
+
+    bool
+    is_posdef{false};
+
+    boost::tie(L, is_posdef) = cholesky(K);
+
+    if (is_posdef == false) {
+      MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
+    }
+
+    step = - Intrepid2::solve(K, HTr);
+
+    Vector<T, N> const
+    q = Intrepid2::solve(L, step);
+
+    T const
+    np = norm(step);
+
+    T const
+    nps = np * np;
+
+    T const
+    nqs = norm_square(q);
+
+    T const
+    lambda_incr = nps * (np - region_size) / nqs / region_size;
+
+    lambda += std::max(lambda_incr, 0.0);
+      
+  }
 
   return step;
 }
 
+
+//
+// Trust region subproblem. Dog-leg algorithm with given gradient/residual.
+// See pp. 73 - 74, Nocedal 2nd Ed 4.3
+//
+template<typename T, Index N>
+Vector<T, N>
+TrustRegionDogLegValue<T, N>::
+step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
+{    
+  T const
+  normg_H = dot(gradient, dot(Hessian, gradient));
+
+  if (normg_H < 0.0) {
+    MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
+  }
+
+  if (normg_H == 0.0) return Vector<T, N>(gradient.get_dimension(), ZEROS);
+
+  T const
+  normg_squared = dot(gradient, gradient);
+
+  Vector<T, N> const
+  step_minimizer = - normg_squared / normg_H * gradient;
+
+  Vector<T, N> const
+  step_unconstrained = - Intrepid2::solve(Hessian, gradient);
+
+  T const
+  normg_cubed = norm(gradient) * normg_squared;
+
+  T const
+  tau = std::min(1.0, normg_cubed / (region_size * normg_H));
+    
+  Vector<T, N>
+  step{tau * step_minimizer};
+
+  if (tau > 1.0) {
+    step = step_minimizer + (tau - 1.0) * (step_unconstrained - step_minimizer);
+  }
+
+  return step;
+}
+ 
+
+//
+// Trust region subproblem. Dog-leg algorithm with given gradient/residual.
+// See pp. 73 - 74, Nocedal 2nd Ed 4.3
+//
+template<typename T, Index N>
+Vector<T, N>
+TrustRegionDogLegGradient<T, N>::
+step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
+{    
+  Vector<T, N> const
+  HTr = dot(transpose(Hessian), gradient);
+  
+  T const
+  normHTr_squared = dot(HTr, HTr);
+
+  Tensor<T, N> const
+  HTH = dot(transpose(Hessian), Hessian);
+
+  T const
+  normHTr_HTH = dot(HTr, dot(HTH, HTr));
+
+  if (normHTr_HTH <  0.0) {
+    MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
+  }
+
+  if (normHTr_HTH == 0.0) return Vector<T, N>(gradient.get_dimension(), ZEROS);
+
+  T const
+  normHTr_cubed = norm(HTr) * normHTr_squared;
+
+  T const
+  tau = std::min(1.0, normHTr_cubed / (region_size * normHTr_HTH));
+    
+  Vector<T, N> const
+  step_minimizer = - normHTr_squared / normHTr_HTH * HTr;
+
+  Vector<T, N> const
+  step_unconstrained = - Intrepid2::solve(HTH, HTr);
+
+  Vector<T, N>
+  step{tau * step_minimizer};
+
+  if (tau > 1.0) {
+    step = step_minimizer + (tau - 1.0) * (step_unconstrained - step_minimizer);
+  }
+
+  return step;
+}
+ 
 //
 // Newton line search
 //
@@ -485,9 +661,12 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
     den = resid_line_norm + resid_line_norm_old * (0.5 * alpha - 1.0);
 
     T const
-    quad_approx = num / den;
+    den_tol = 1.0e-10;
 
-    alpha = std::max(0.5 * alpha, quad_approx);
+    bool const
+    is_zero_den = (std::fabs(den) < den_tol);
+
+    alpha = is_zero_den == true ? 0.5 * alpha : max(0.5 * alpha, num / den);
 
     line_iter++;
 
@@ -595,10 +774,9 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   if (norm_step < region_size) return step;
 
   // Trust region subproblem. Exact algorithm, Nocedal 2nd Ed 4.3
-  TrustRegionExact<T, N>
+  TrustRegionExactValue<T, N>
   tr_exact;
 
-  tr_exact.initial_lambda = 0.0;
   tr_exact.region_size = region_size;
 
   step = tr_exact.step(Hessian, resi);
@@ -772,10 +950,9 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & gradient)
   if (bad_hessian == true) {
 
     // Trust region subproblem. Exact algorithm, Nocedal 2nd Ed 4.3
-    TrustRegionExact<T, N>
+    TrustRegionExactValue<T, N>
     tr_exact;
 
-    tr_exact.initial_lambda = 1.0;
     tr_exact.region_size = step_length;
 
     step = tr_exact.step(Hessian, gradient);

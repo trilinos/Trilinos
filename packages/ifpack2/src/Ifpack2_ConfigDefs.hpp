@@ -95,6 +95,12 @@ namespace Ifpack2 {
   */
   namespace Experimental {
   }
+
+  /// \namespace DeprecatedAndMayDisappearAtAnyTime
+  /// \brief Ifpack2 features that have been DEPRECATED and may
+  ///   DISAPPEAR AT ANY TIME.  USE AT YOUR OWN RISK.
+  namespace DeprecatedAndMayDisappearAtAnyTime {}
+
 } // namespace Ifpack2
 
 #endif /*_IFPACK2_CONFIGDEFS_HPP_*/

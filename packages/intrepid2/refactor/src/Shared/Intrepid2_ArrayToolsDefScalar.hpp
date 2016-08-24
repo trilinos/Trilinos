@@ -75,24 +75,26 @@ namespace Intrepid2 {
 
         if (_hasField) 
           Util::unrollIndex( cl, bf, pt, 
-                       _output.dimension(0),
-                       _output.dimension(1),
-                       iter );
+                             _output.dimension(0),
+                             _output.dimension(1),
+                             _output.dimension(2),
+                             iter );
         else          
           Util::unrollIndex( cl, pt,
-                       _output.dimension(0),
-                       iter );
+                             _output.dimension(0),
+                             _output.dimension(1),
+                             iter );
 
-        auto result = ( _hasField ? Kokkos::subdynrankview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_output, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
+        auto result = ( _hasField ? Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                        /**/        Kokkos::subview(_output, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
         
-        const auto right = ( outputRank == rightRank ? ( _hasField ? Kokkos::subdynrankview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                                                         /**/        Kokkos::subdynrankview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL()) ) : 
-                             /**/                      ( _hasField ? Kokkos::subdynrankview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                                                         /**/        Kokkos::subdynrankview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()) ) );
+        const auto right = ( outputRank == rightRank ? ( _hasField ? Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                                                         /**/        Kokkos::subview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL()) ) : 
+                             /**/                      ( _hasField ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                                                         /**/        Kokkos::subview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()) ) );
                                                                 
-        const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subdynrankview(_leftInput, cl, 0) :
-                            /**/                           Kokkos::subdynrankview(_leftInput, cl, pt);
+        const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subview(_leftInput, cl, 0) :
+                            /**/                           Kokkos::subview(_leftInput, cl, pt);
 
         const size_type iend  = result.dimension(0);
         const size_type jend  = result.dimension(1);

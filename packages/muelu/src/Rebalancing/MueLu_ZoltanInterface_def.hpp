@@ -65,6 +65,7 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory of the coordinates");
 
     return validParamList;
@@ -74,6 +75,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "number of partitions");
     Input(currentLevel, "Coordinates");
   }
 
@@ -88,11 +90,16 @@ namespace MueLu {
     RCP<double_multivector_type> Coords   = Get< RCP<double_multivector_type> >(level, "Coordinates");
     size_t           dim      = Coords->getNumVectors();
 
-    GO               numParts = level.Get<GO>("number of partitions");
+    int numParts = Get<int>(level, "number of partitions");
 
     if (numParts == 1) {
       // Running on one processor, so decomposition is the trivial one, all zeros.
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
+      Set(level, "Partition", decomposition);
+      return;
+    } else if (numParts == -1) {
+      // No repartitioning
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Teuchos::null;
       Set(level, "Partition", decomposition);
       return;
     }

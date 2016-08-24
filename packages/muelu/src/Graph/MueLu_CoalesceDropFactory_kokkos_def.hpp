@@ -63,23 +63,124 @@ namespace MueLu {
 
   namespace { // anonymous
 
-    template<class LocalOrdinal, class RowType>
+    template<class LO, class RowType>
     class ScanFunctor {
     public:
-      ScanFunctor(RowType rows) : rows_(rows) { }
+      ScanFunctor(RowType rows_) : rows(rows_) { }
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const LocalOrdinal i, LocalOrdinal& upd, const bool& final) const {
-        upd += rows_(i);
+      void operator()(const LO i, LO& upd, const bool& final) const {
+        upd += rows(i);
         if (final)
-          rows_(i) = upd;
+          rows(i) = upd;
       }
 
     private:
-      RowType rows_;
+      RowType rows;
     };
 
-  }
+    template<class MatrixType, class GhostedDiagType, class RowType>
+    class Stage1ScalarFunctor {
+    private:
+      typedef typename MatrixType::ordinal_type LO;
+      typedef typename MatrixType::value_type   SC;
+      typedef Kokkos::ArithTraits<SC>           ATS;
+      typedef typename ATS::magnitudeType       magnitudeType;
+
+    public:
+      Stage1ScalarFunctor(MatrixType kokkosMatrix_, double threshold_, GhostedDiagType ghostedDiag_, RowType rows_) :
+        kokkosMatrix(kokkosMatrix_),
+        threshold(threshold_),
+        ghostedDiag(ghostedDiag_),
+        rows(rows_)
+      { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO row, LO& nnz) const {
+        auto rowView = kokkosMatrix.row (row);
+        auto length  = rowView.length;
+
+        LO rownnz = 0;
+        for (decltype(length) colID = 0; colID < length; colID++) {
+          LO col = rowView.colidx(colID);
+
+          // Avoid square root by using squared values
+          magnitudeType aiiajj = threshold*threshold * ATS::magnitude(ghostedDiag(row, 0))*ATS::magnitude(ghostedDiag(col, 0));   // eps^2*|a_ii|*|a_jj|
+          magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
+
+          if (aij2 > aiiajj || row == col)
+            rownnz++;
+        }
+        rows(row+1) = rownnz;
+        nnz += rownnz;
+      }
+
+    private:
+      MatrixType        kokkosMatrix;
+      double            threshold;
+      GhostedDiagType   ghostedDiag;
+      RowType           rows;
+    };
+
+    template<class MatrixType, class GhostedDiagType, class RowType, class ColType, class BndNodesType>
+    class Stage2ScalarFunctor {
+    private:
+      typedef typename MatrixType::ordinal_type LO;
+      typedef typename MatrixType::value_type   SC;
+      typedef Kokkos::ArithTraits<SC>           ATS;
+      typedef typename ATS::magnitudeType       magnitudeType;
+
+    public:
+      Stage2ScalarFunctor(MatrixType kokkosMatrix_, GhostedDiagType ghostedDiag_, RowType rows_, ColType cols_, BndNodesType bndNodes_, double threshold_) :
+        kokkosMatrix(kokkosMatrix_),
+        ghostedDiag(ghostedDiag_),
+        rows(rows_),
+        cols(cols_),
+        bndNodes(bndNodes_),
+        threshold(threshold_)
+      { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO row, LO& dropped) const {
+        auto rowView = kokkosMatrix.row (row);
+        auto length = rowView.length;
+
+        LO rownnz = 0;
+        for (decltype(length) colID = 0; colID < length; colID++) {
+          LO col = rowView.colidx(colID);
+
+          // Avoid square root by using squared values
+          magnitudeType aiiajj = threshold*threshold * ATS::magnitude(ghostedDiag(row, 0))*ATS::magnitude(ghostedDiag(col, 0));   // eps^2*|a_ii|*|a_jj|
+          magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
+
+          if (aij2 > aiiajj || row == col) {
+            cols(rows(row) + rownnz) = col;
+            rownnz++;
+          } else {
+            dropped++;
+          }
+          if (rownnz == 1) {
+            // If the only element remaining after filtering is diagonal, mark node as boundary
+            // FIXME: this should really be replaced by the following
+            //    if (indices.size() == 1 && indices[0] == row)
+            //        boundaryNodes[row] = true;
+            // We do not do it this way now because there is no framework for distinguishing isolated
+            // and boundary nodes in the aggregation algorithms
+            bndNodes(row) = true;
+          }
+        }
+      }
+
+    private:
+      MatrixType        kokkosMatrix;
+      GhostedDiagType   ghostedDiag;
+      RowType           rows;
+      ColType           cols;
+      BndNodesType      bndNodes;
+      double            threshold;
+    };
+
+  } // namespace
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
@@ -121,7 +222,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     typedef Teuchos::ScalarTraits<SC> STS;
-    SC zero = STS::zero(), one = STS::one();
+    SC zero = STS::zero();
 
     auto A         = Get< RCP<Matrix> >(currentLevel, "A");
     LO   blkSize   = A->GetFixedBlockSize();
@@ -139,7 +240,7 @@ namespace MueLu {
     double threshold = pL.get<double>("aggregation: drop tol");
     GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
 
-    Set(currentLevel, "Filtering", (threshold != STS::zero()));
+    Set(currentLevel, "Filtering", (threshold != zero));
 
     const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
 
@@ -151,26 +252,32 @@ namespace MueLu {
     typedef typename LWGraph_kokkos::boundary_nodes_type boundary_nodes_type;
     boundary_nodes_type boundaryNodes;
 
-    if (algo == "classical") {
+    if (blkSize == 1 && threshold == zero) {
+      // Case 1:  scalar problem without dropping
 
-      if (blkSize == 1 && threshold == STS::zero()) {
-        //
-        // Case 1:  scalar problem without dropping
-        //
-        graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getRowMap(), A->getColMap(), "graph of A"));
+      graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getRowMap(), A->getColMap(), "graph of A"));
 
-        // Detect and record rows that correspond to Dirichlet boundary conditions
-        boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
-        graph->SetBoundaryNodeMap(boundaryNodes);
+      // Detect and record rows that correspond to Dirichlet boundary conditions
+      boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+      graph->SetBoundaryNodeMap(boundaryNodes);
 
-        numTotal = A->getNodeNumEntries();
+      numTotal = A->getNodeNumEntries();
 
-        dofsPerNode = 1;
+      dofsPerNode = 1;
 
-      } else if (blkSize == 1 && threshold != STS::zero()) {
-        //
+    } else if (blkSize > 1 && threshold == zero) {
+      // Case 3:  block problem without filtering
+
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Block systems without filtering are not implemented");
+
+      // Detect and record rows that correspond to Dirichlet boundary conditions
+      // boundary_nodes_type pointBoundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+
+    } else if (algo == "classical") {
+
+      if (blkSize == 1 && threshold != zero) {
         // Case 2:  scalar problem with filtering
-        //
+
         RCP<Vector> ghostedDiagVec = Utilities_kokkos::GetMatrixOverlappedDiagonal(*A);
         auto        ghostedDiag    = ghostedDiagVec->template getLocalView<typename NO::device_type>();
 
@@ -189,71 +296,23 @@ namespace MueLu {
         typename row_map_type::non_const_type rows("row_map", numRows+1);       // rows(0) = 0 automatically
 
         LO realnnz = 0;
-        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1_reduce", numRows, KOKKOS_LAMBDA(const LO row, LO& nnz) {
-          auto rowView = kokkosMatrix.row (row);
-          auto length  = rowView.length;
 
-          LO rownnz = 0;
-          for (decltype(length) colID = 0; colID < length; colID++) {
-            LO col = rowView.colidx(colID);
-
-            // Avoid square root by using squared values
-            magnitudeType aiiajj = threshold*threshold * ATS::magnitude(ghostedDiag(row, 0))*ATS::magnitude(ghostedDiag(col, 0));   // eps^2*|a_ii|*|a_jj|
-            magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
-
-            if (aij2 > aiiajj || row == col)
-              rownnz++;
-          }
-          rows(row+1) = rownnz;
-          nnz += rownnz;
-        }, realnnz);
+        Stage1ScalarFunctor<decltype(kokkosMatrix), decltype(ghostedDiag), decltype(rows)> stage1Functor(kokkosMatrix, threshold, ghostedDiag, rows);
+        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1_reduce", numRows, stage1Functor, realnnz);
 
         // parallel_scan (exclusive)
-        // NOTE: parallel_scan with KOKKOS_LAMBDA does not work with CUDA for now
-#if 0
-        Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", numRows+1, KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
-          upd += rows(i);
-          if (final)
-            rows(i) = upd;
-        });
-#else
         ScanFunctor<LO,decltype(rows)> scanFunctor(rows);
         Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", numRows+1, scanFunctor);
-#endif
 
 
         // Stage 2: fill in the column indices
         typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
         typename entries_type::non_const_type        cols    ("entries",       realnnz);
-        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage2_reduce", numRows, KOKKOS_LAMBDA(const LO row, GO& dropped) {
-          auto rowView = kokkosMatrix.row (row);
-          auto length = rowView.length;
 
-          LO rownnz = 0;
-          for (decltype(length) colID = 0; colID < length; colID++) {
-            LO col = rowView.colidx(colID);
+        Stage2ScalarFunctor<decltype(kokkosMatrix), decltype(ghostedDiag), decltype(rows), decltype(cols), decltype(bndNodes)>
+          stage2Functor(kokkosMatrix, ghostedDiag, rows, cols, bndNodes, threshold);
+        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage2_reduce", numRows, stage2Functor, numDropped);
 
-            // Avoid square root by using squared values
-            magnitudeType aiiajj = threshold*threshold * ATS::magnitude(ghostedDiag(row, 0))*ATS::magnitude(ghostedDiag(col, 0));   // eps^2*|a_ii|*|a_jj|
-            magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
-
-            if (aij2 > aiiajj || row == col) {
-              cols(rows(row) + rownnz) = col;
-              rownnz++;
-            } else {
-              dropped++;
-            }
-            if (rownnz == 1) {
-              // If the only element remaining after filtering is diagonal, mark node as boundary
-              // FIXME: this should really be replaced by the following
-              //    if (indices.size() == 1 && indices[0] == row)
-              //        boundaryNodes[row] = true;
-              // We do not do it this way now because there is no framework for distinguishing isolated
-              // and boundary nodes in the aggregation algorithms
-              bndNodes(row) = true;
-            }
-          }
-        }, numDropped);
         boundaryNodes = bndNodes;
 
         kokkos_graph_type kokkosGraph(cols, rows);
@@ -265,19 +324,9 @@ namespace MueLu {
 
         dofsPerNode = 1;
 
-      } else if (blkSize > 1 && threshold == STS::zero()) {
-        //
-        // Case 3:  block problem without filtering
-        //
-        throw Exceptions::RuntimeError("Block systems without filtering are not implemented");
-
-        // Detect and record rows that correspond to Dirichlet boundary conditions
-        // boundary_nodes_type pointBoundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
-
-      } else if (blkSize > 1 && threshold != STS::zero()) {
-        //
+      } else if (blkSize > 1 && threshold != zero) {
         // Case 4:  block problem with filtering
-        //
+
         throw Exceptions::RuntimeError("Block systems with filtering are not implemented");
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
@@ -289,106 +338,35 @@ namespace MueLu {
 
       auto coords = Get<RCP<doubleMultiVector> >(currentLevel, "Coordinates");
 
-      if (A->GetFixedBlockSize() == 1 && threshold == STS::zero()) {
-        //
-        // Case 1:  scalar problem without dropping
-        //
-        graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getRowMap(), A->getColMap(), "graph of A"));
-
-        // Detect and record rows that correspond to Dirichlet boundary conditions
-        boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
-        graph->SetBoundaryNodeMap(boundaryNodes);
-
-        numTotal = A->getNodeNumEntries();
-
-        dofsPerNode = 1;
-
-      } else if (blkSize == 1 && threshold != STS::zero()) {
-        //
+      if (blkSize == 1 && threshold != zero) {
         // Case 2:  scalar problem with filtering
-        //
+
         throw Exceptions::RuntimeError("not implemented");
 
-      } else if (blkSize > 1 && threshold == STS::zero()) {
-        //
-        // Case 3:  block problem without filtering
-        //
-        throw Exceptions::RuntimeError("Block systems without filtering are not implemented");
-
-        // Detect and record rows that correspond to Dirichlet boundary conditions
-        boundary_nodes_type pointBoundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
-
-      } else if (blkSize > 1 && threshold != STS::zero()) {
-        //
+      } else if (blkSize > 1 && threshold != zero) {
         // Case 4:  block problem with filtering
-        //
+
         throw Exceptions::RuntimeError("Block systems with filtering are not implemented");
-
-        // Detect and record rows that correspond to Dirichlet boundary conditions
-        boundary_nodes_type pointBoundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
       }
-
-    } else if (algo == "distance laplacian") {
-      typedef Xpetra::MultiVector<double,LO,GO,NO> doubleMultiVector;
-
-      auto coords = Get<RCP<doubleMultiVector> >(currentLevel, "Coordinates");
-
-      if (A->GetFixedBlockSize() == 1 && threshold == STS::zero()) {
-        //
-        // Case 1:  scalar problem without dropping
-        //
-        graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getRowMap(), A->getColMap(), "graph of A"));
-
-        // Detect and record rows that correspond to Dirichlet boundary conditions
-        boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
-        graph->SetBoundaryNodeMap(boundaryNodes);
-
-        numTotal = A->getNodeNumEntries();
-
-        dofsPerNode = 1;
-
-      } else if (blkSize == 1 && threshold != STS::zero()) {
-        //
-        // Case 2:  scalar problem with filtering
-        //
-        throw Exceptions::RuntimeError("not implemented");
-
-      } else if (blkSize > 1 && threshold == STS::zero()) {
-        //
-        // Case 3:  block problem without filtering
-        //
-        throw Exceptions::RuntimeError("Block systems without filtering are not implemented");
-
-        // Detect and record rows that correspond to Dirichlet boundary conditions
-        // boundary_nodes_type pointBoundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
-
-      } else if (blkSize > 1 && threshold != STS::zero()) {
-        //
-        // Case 4:  block problem with filtering
-        //
-        throw Exceptions::RuntimeError("Block systems with filtering are not implemented");
-
-        // Detect and record rows that correspond to Dirichlet boundary conditions
-        // boundary_nodes_type pointBoundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
-      }
-
-
     }
 
     if (GetVerbLevel() & Statistics1) {
       GO numLocalBoundaryNodes  = 0;
       GO numGlobalBoundaryNodes = 0;
+#if 0
+      // Convert to functors later
       Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:bnd", boundaryNodes.dimension_0(), KOKKOS_LAMBDA(const LO i, GO& n) {
         if (boundaryNodes(i))
           n++;
       }, numLocalBoundaryNodes);
+#endif
 
       RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
       GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
     }
 
-    if ((GetVerbLevel() & Statistics1) && threshold != STS::zero()) {
+    if ((GetVerbLevel() & Statistics1) && threshold != zero) {
       RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       GO numGlobalTotal, numGlobalDropped;
       MueLu_sumAll(comm, numTotal,   numGlobalTotal);

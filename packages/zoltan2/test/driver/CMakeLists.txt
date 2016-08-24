@@ -38,7 +38,7 @@ IF (${PACKAGE_NAME}_ENABLE_PuLP)
   TRIBITS_ADD_TEST(
     test_driver
     NAME pulpTest
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
     "./driverinputs/pulpTest.xml"

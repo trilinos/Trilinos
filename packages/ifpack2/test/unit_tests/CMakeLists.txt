@@ -124,5 +124,48 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# This test only needs to run on 1 process.  We should already have
+# separate tests for the different Container types.  (If we don't,
+# that's a bug!)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ContainerFactory
+  SOURCES 
+    Ifpack2_UnitTestContainerFactory.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test only needs to run on 1 process, since it just tests
+# whether Chebyshev accepts a certain parameter of a certain type.
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue234
+  SOURCES 
+    Ifpack2_UnitTest234.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
+IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SGSMT
+    SOURCES 
+      Ifpack2_UnitTestSGSMT.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
 
 

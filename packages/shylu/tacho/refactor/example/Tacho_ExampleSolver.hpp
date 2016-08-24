@@ -6,6 +6,9 @@
 #ifdef HAVE_SHYLUTACHO_VTUNE
 #include "ittnotify.h"
 #endif
+#ifdef HAVE_SHYLUTACHO_MKL
+#include "mkl_service.h"
+#endif
 
 namespace Tacho {
 
@@ -16,6 +19,8 @@ namespace Tacho {
                     const int treecut,
                     const int prunecut,
                     const int max_concurrency,
+                    const int memory_pool_grain_size,
+                    const int mkl_nthreads,
                     const int nrhs,
                     const int mb,
                     const int nb,
@@ -27,6 +32,7 @@ namespace Tacho {
     const bool detail = false;
     std::cout << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, detail);
     std::cout << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, detail);
+    std::cout << std::endl;
 
     typedef Solver<value_type,ordinal_type,size_type,DeviceSpaceType> SolverType;
 
@@ -38,7 +44,7 @@ namespace Tacho {
     Kokkos::Impl::Timer timer;
 
     SolverType tacho("Tacho::CholSolver");
-    tacho.setPolicy(max_concurrency);
+    tacho.setPolicy(max_concurrency, memory_pool_grain_size);
     tacho.setBlocksize(mb, nb);
     tacho.setCrossOverSize(hier_minsize);
 
@@ -173,6 +179,10 @@ namespace Tacho {
     ///
     /// Solver interface
     ///
+#ifdef HAVE_SHYLUTACHO_MKL
+    mkl_set_num_threads(mkl_nthreads);
+#endif
+
     TACHO_SOLVER_RUN(tacho.reorder(treecut, prunecut), t_reorder);
     TACHO_SOLVER_RUN(tacho.analyze(), t_analyze);
 

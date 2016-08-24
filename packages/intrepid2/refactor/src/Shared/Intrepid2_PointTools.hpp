@@ -215,7 +215,7 @@ namespace Intrepid2 {
         \param  offset       [in]  - the number of boundary layers to omit
 
     */    
-    template<typename pointValueType, class ...pointProperties>
+    inline
     static ordinal_type 
     getLatticeSize( const shards::CellTopology cellType,
                     const ordinal_type order,

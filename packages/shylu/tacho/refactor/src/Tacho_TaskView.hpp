@@ -15,7 +15,7 @@ namespace Tacho {
     typedef typename MatViewType::size_type    size_type;
     typedef typename MatViewType::space_type   space_type;
 
-    typedef Kokkos::Experimental::Future<int,space_type> future_type;
+    typedef Kokkos::Future<int,space_type> future_type;
 
   private:
     future_type _f;

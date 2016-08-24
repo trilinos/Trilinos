@@ -336,9 +336,32 @@ inline
 void
 TensorBase<T, ST>::set_number_components(Index const number_components)
 {
-  fill(NANS);
+  using S = typename Sacado::ScalarType<T>::type;
+
+  Index const
+  old_size = get_number_components();
+
+  Index const
+  new_size = number_components;
+
+  if (new_size < old_size) {
+    for (auto i = new_size; i < old_size; ++i) {
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, not_a_number<S>());
+      entry = not_a_number<T>();
+    }
+  }
+
   components_.resize(number_components);
-  fill(NANS);
+
+  if (new_size > old_size) {
+    for (auto i = old_size; i < new_size; ++i) {
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, not_a_number<S>());
+      entry = not_a_number<T>();
+    }
+  }
+
   return;
 }
 

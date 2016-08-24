@@ -220,8 +220,8 @@ class EpetraCrsMatrixT <int, EpetraNode>
 {
   typedef int                                                                       GlobalOrdinal;
   typedef EpetraNode                                                                Node;
-  typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::scalar_type         Scalar;
-  typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::local_ordinal_type  LocalOrdinal;
+  typedef CrsMatrix<double, int, GlobalOrdinal, Node>::scalar_type         Scalar;
+  typedef CrsMatrix<double, int, GlobalOrdinal, Node>::local_ordinal_type  LocalOrdinal;
 
 
   // The following typedefs are used by the Kokkos interface
@@ -721,7 +721,7 @@ public:
   bool isFillActive() const { XPETRA_MONITOR("EpetraCrsMatrixT::isFillActive"); return !isFillComplete(); }
 
   //! Returns the Frobenius norm of the matrix.
-  typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("EpetraCrsMatrixT::getFrobeniusNorm"); return mtx_->NormFrobenius(); }
+  ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("EpetraCrsMatrixT::getFrobeniusNorm"); return mtx_->NormFrobenius(); }
 
   //! Returns true if getLocalRowView() and getGlobalRowView() are valid for this class.
   bool supportsRowViews() const { XPETRA_MONITOR("EpetraCrsMatrixT::supportsRowViews"); return true; }

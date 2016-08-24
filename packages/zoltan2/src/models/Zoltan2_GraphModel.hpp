@@ -223,7 +223,7 @@ public:
    *  Array of size comm->getSize() + 1
    *  Array[n+1] - Array[n] is number of vertices on rank n
    */
-  inline void getVertexDist(ArrayView<size_t> &vtxdist) 
+  inline void getVertexDist(ArrayView<size_t> &vtxdist) const
   {
     vtxdist = vtxDist_();
     if (vtxDist_.size() == 0) {

@@ -80,6 +80,7 @@ namespace MueLu {
     validParamList->set< int >                      ("rowWeight",                 0, "Default weight to rows (total weight = nnz + rowWeight");
 
     validParamList->set< RCP<const FactoryBase> >   ("A",             Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >   ("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< RCP<const FactoryBase> >   ("Coordinates",   Teuchos::null, "Factory of the coordinates");
     validParamList->set< RCP<const ParameterList> > ("ParameterList", Teuchos::null, "Zoltan2 parameters");
 
@@ -90,6 +91,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "number of partitions");
     Input(currentLevel, "Coordinates");
   }
 
@@ -123,13 +125,20 @@ namespace MueLu {
                                  << ", row GID = " << rowElements[i*blkSize] << ", blkSize = " << blkSize << std::endl);
 #endif
 
-    GO numParts = level.Get<GO>("number of partitions");
+    int numParts = Get<int>(level, "number of partitions");
     if (numParts == 1) {
       // Single processor, decomposition is trivial: all zeros
       RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
       Set(level, "Partition", decomposition);
       return;
+    } else if (numParts == -1) {
+      // No repartitioning
+      RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Teuchos::null; //Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
+      //decomposition->putScalar(Teuchos::as<Scalar>(rowMap->getComm()->getRank()));
+      Set(level, "Partition", decomposition);
+      return;
     }
+
 
     const ParameterList& pL = GetParameterList();
 

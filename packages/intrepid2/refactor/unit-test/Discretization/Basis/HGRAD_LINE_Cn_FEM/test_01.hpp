@@ -57,7 +57,7 @@
 //#include "Intrepid2_CubatureDirectLineGauss.hpp"
 //#include "Intrepid2_FunctionSpaceTools.hpp"
 
-#include "Intrepid2_PointTools.hpp"
+//#include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"

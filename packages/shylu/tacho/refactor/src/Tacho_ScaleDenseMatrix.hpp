@@ -75,6 +75,9 @@ namespace Tacho {
 
     public:
       KOKKOS_INLINE_FUNCTION
+      TaskFunctor() = delete;
+
+      KOKKOS_INLINE_FUNCTION
       TaskFunctor(const PolicyType &policy,
                   const ScalarType alpha,
                   const DenseExecViewTypeA &A)

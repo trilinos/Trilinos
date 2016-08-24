@@ -1,0 +1,74 @@
+#+TITLE: Repartitioning in MueLu
+#+AUTHOR: Andrey Prokopenko
+#+EMAIL: aprokop@sandia.gov
+#+DATE: 11 Feb 2014
+#+LaTeX_HEADER: \usepackage[margin=0.75in]{geometry}
+#+LATEX_HEADER: \setlength{\parindent}{0}
+
+
+* Current implementation
+  *Test 1*
+
+  If a level is too fine, do not repartition.
+
+  *Test 2*
+
+  If there is a single active processor, do not repartition.
+
+  *Test 3*
+
+  If the number of matrix rows on at least one processor less than
+  threshold, repartition.
+
+  *Test 4*
+
+  If the nnz imbalance is larger than a threshold, partition.
+
+* Comments
+Tests 1 and 2 are obviously fine. Test 3 is not. It could happen
+that 2 out of 1000 processors get slightly less rows than the
+threshold, and we have to repartition. I think that the test should
+be modified to the following:
+
+*Test 3 (alternative)*
+
+If the number of processors with numRows < threshold is larger than
+XX% of the total active processors, repartition. My first guess
+would be something like 20% or 30%. I think it is better to run with
+70% processors for one more level, than to spend time repartitioning
+of already sufficiently small matrix, which would be repartitioned
+on the next level anyway.
+
+*Test 4 (alternative)*
+
+Similar to test 3, I think it should be slightly modified. The
+simple case is when you have a number of processors with smaller
+number of rows/nnz. If this is less than some percentage, it should
+be fine. For instance, if 20% of all processors have significantly
+less rows than the maximum, we don't really want to repartition. A
+more complex case is what to do, if you have few processors with
+significantly larger than average number of nonzeros. I don't know
+how to deal with them.
+
+* TODO
+  1. Need models
+
+     Ideally, we should come up with a performance model to guide
+     repartitioning. Of course, there is the fear that the performance
+     model may fall far away from the real implementation of Tpetra :)
+
+  2. Need refinement, not repartitioning
+
+     At the moment, we use Zoltan to construct an entirely new partition,
+     which means a huge amount of data migration. Could we do something
+     like refinement, to limit the volume of communication? It would also
+     be nice if we did first migration inside a single node, and only
+     after that among nodes. Migration inside a node should be
+     faster. And from the hybrid programming point of view is preferable.
+
+* Thoughts
+  1. Try to incorporate number of hops in the bipartite graph matching
+  2. Take a look at the coarsest level times after K-means clustering
+  3. Make data movement more expensive
+  4. Use fine-level remapping with bipartite repartitioning on levels
+  5. Node-bipartite graph
