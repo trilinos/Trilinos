@@ -76,6 +76,38 @@ LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A) :
 
 template<class MatrixType>
 LocalSparseTriangularSolver<MatrixType>::
+LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A,
+                             const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+  A_ (A),
+  out_ (out),
+  isInitialized_ (false),
+  isComputed_ (false),
+  numInitialize_ (0),
+  numCompute_ (0),
+  numApply_ (0),
+  initializeTime_ (0.0),
+  computeTime_ (0.0),
+  applyTime_ (0.0)
+{
+  if (! out_.is_null ()) {
+    *out_ << ">>> DEBUG Ifpack2::LocalSparseTriangularSolver constructor"
+          << std::endl;
+  }
+  typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+    global_ordinal_type, node_type> crs_matrix_type;
+  if (! A.is_null ()) {
+    Teuchos::RCP<const crs_matrix_type> A_crs =
+      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_crs.is_null (), std::invalid_argument,
+       "Ifpack2::LocalSparseTriangularSolver constructor: "
+       "The input matrix A is not a Tpetra::CrsMatrix.");
+    A_crs_ = A_crs;
+  }
+}
+
+template<class MatrixType>
+LocalSparseTriangularSolver<MatrixType>::
 ~LocalSparseTriangularSolver ()
 {}
 
@@ -91,6 +123,9 @@ LocalSparseTriangularSolver<MatrixType>::
 initialize ()
 {
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::initialize: ";
+  if (! out_.is_null ()) {
+    *out_ << ">>> DEBUG " << prefix << std::endl;
+  }
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (A_.is_null (), std::runtime_error, prefix << "You must call "
@@ -128,6 +163,9 @@ LocalSparseTriangularSolver<MatrixType>::
 compute ()
 {
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::compute: ";
+  if (! out_.is_null ()) {
+    *out_ << ">>> DEBUG " << prefix << std::endl;
+  }
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (A_.is_null (), std::runtime_error, prefix << "You must call "
@@ -169,6 +207,23 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
   typedef scalar_type ST;
   typedef Teuchos::ScalarTraits<ST> STS;
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::apply: ";
+  if (! out_.is_null ()) {
+    *out_ << ">>> DEBUG " << prefix;
+    if (A_crs_.is_null ()) {
+      *out_ << "A_crs_ is null!" << std::endl;
+    }
+    else {
+      const std::string uplo = A_crs_->isUpperTriangular () ? "U" :
+        (A_crs_->isLowerTriangular () ? "L" : "N");
+      const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+        (mode == Teuchos::TRANS ? "T" : "N");
+      const std::string diag =
+        (A_crs_->getNodeNumDiags () < A_crs_->getNodeNumRows ()) ? "U" : "N";
+      *out_ << "uplo=\"" << uplo
+            << "\", trans=\"" << trans
+            << "\", diag=\"" << diag << "\"" << std::endl;
+    }
+  }
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (! isComputed (), std::runtime_error, prefix << "If compute() has not yet "

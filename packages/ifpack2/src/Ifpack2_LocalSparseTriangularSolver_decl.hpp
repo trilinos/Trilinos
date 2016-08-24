@@ -45,6 +45,7 @@
 
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Teuchos_FancyOStream.hpp"
 #include <type_traits>
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -142,6 +143,17 @@ public:
   /// class is responsible for figuring out whether the matrix has
   /// those properties.
   LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A);
+
+  /// \brief Constructor that takes an optional debug output stream.
+  ///
+  /// \param A [in] The input sparse matrix.  Though its type is
+  ///   Tpetra::RowMatrix for consistency with other Ifpack2 solvers,
+  ///   this must be a Tpetra::CrsMatrix specialization.
+  ///
+  /// \param out [in/out] Optional debug output stream.  If nonnull,
+  ///   this solver will print copious debug output to the stream.
+  LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A,
+                               const Teuchos::RCP<Teuchos::FancyOStream>& out);
 
   //! Destructor (virtual for memory safety).
   virtual ~LocalSparseTriangularSolver ();
@@ -296,11 +308,14 @@ public:
 private:
   //! The original input matrix.
   Teuchos::RCP<const row_matrix_type> A_;
+  //! Debug output stream; may be null (not used in that case)
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
   //! The original input matrix, as a Tpetra::CrsMatrix.
   Teuchos::RCP<const Tpetra::CrsMatrix<scalar_type,
                                        local_ordinal_type,
                                        global_ordinal_type,
                                        node_type, false> > A_crs_;
+
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   mutable Teuchos::RCP<MV> X_colMap_;
   mutable Teuchos::RCP<MV> Y_rowMap_;
