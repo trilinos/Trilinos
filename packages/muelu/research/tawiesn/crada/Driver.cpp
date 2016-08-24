@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
       Teuchos::Array<GlobalOrdinal> mySpecialGids;
       Teuchos::Array<GlobalOrdinal> nonSpecialGids;
       GlobalOrdinal cnt = 0;   // count overall number of gids
-      GlobalOrdinal mycnt = 0; // count only local gids
+      //GlobalOrdinal mycnt = 0; // count only local gids
       while ( std::getline(infile, line)) {
         if(0 == line.find("%")) continue;
         if(0 == line.find(" ")) {
@@ -348,13 +348,32 @@ int main(int argc, char *argv[]) {
           gid--; // note, that the matlab vector starts counting at 1 and not 0!
           if(map->isNodeGlobalElement(gid)) {
             mySpecialGids.push_back(gid);
-            mycnt++;
+            //mycnt++;
           }
         }
       }
 
+      std::vector<GlobalOrdinal> mySpecialNodeGids;
+      for(size_t k = 0; k < mySpecialGids.size(); k++) {
+        mySpecialNodeGids.push_back(mySpecialGids[k]/3);
+      }
+
+      std::sort(mySpecialNodeGids.begin(),mySpecialNodeGids.end());
+      mySpecialNodeGids.erase(std::unique(mySpecialNodeGids.begin(), mySpecialNodeGids.end()), mySpecialNodeGids.end());
+
+      cnt = 0;
+      Teuchos::Array<GlobalOrdinal> myFinalSpecialGids;
+      for(size_t k = 0; k < mySpecialNodeGids.size(); k++) {
+        myFinalSpecialGids.push_back(mySpecialNodeGids[k]*3);
+        myFinalSpecialGids.push_back(mySpecialNodeGids[k]*3+1);
+        myFinalSpecialGids.push_back(mySpecialNodeGids[k]*3+2);
+        cnt += 3;
+      }
+
+      std::cout << "Number of special gids read: " << mySpecialGids.size() << " Final number of special gids: " << myFinalSpecialGids.size() << std::endl;
+
       //Teuchos::Array<GlobalOrdinal> eltList(mySpecialGids);
-      mySpecialMap    = MapFactory::Build (xpetraParameters.GetLib(),cnt,mySpecialGids(),0,comm);
+      mySpecialMap    = MapFactory::Build (xpetraParameters.GetLib(),cnt,myFinalSpecialGids(),0,comm);
 
       // empty processors
       std::vector<size_t> lelePerProc(comm->getSize(),0);
@@ -431,6 +450,22 @@ int main(int argc, char *argv[]) {
           nonSpecialGids.push_back(gid);
         }
       }
+
+      std::cout << "non special gids: " << nonSpecialGids.size() << std::endl;
+
+      // TODO check special map
+      /*int numA = 0;
+      int numB = 0;
+      int numC = 0;
+      for (size_t t = 0; t < mySpecialMap->getNodeNumElements(); t++) {
+        GlobalOrdinal gid = mySpecialMap->getGlobalElement(t);
+        if(gid % 3 == 0) numA++;
+        if(gid % 3 == 1) numB++;
+        if(gid % 3 == 2) numC++;
+      }
+
+      std::cout << "A " << numA << " B " << numB << " C " << numC << std::endl;*/
+
       //MapFactory::Build (xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialGids(),0,comm);
       std::vector<size_t> strInfo(1,nPDE);
       RCP<const Map> myStridedNonSpecialMap = StridedMapFactory::Build(xpetraParameters.GetLib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),nonSpecialGids(),0,strInfo,comm);
@@ -439,6 +474,7 @@ int main(int argc, char *argv[]) {
       //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(myNonSpecialMap)->getEpetra_Map() << std::endl;
       //std::cout << Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int, Node> >(mySpecialMap)->getEpetra_Map() << std::endl;
 
+      // We always build an Xpetra style map extractor with unique global ids
       std::vector<Teuchos::RCP<const Map> > xmaps;
       xmaps.push_back(myStridedNonSpecialMap);
       xmaps.push_back(myStridedSpecialMap);
