@@ -33,6 +33,9 @@ MESSAGE("-- " "Configuring ROL with " ${PACKAGE_NAME}_ENABLE_TIMERS=${${PACKAGE_
 
 ADD_SUBDIRECTORY(src)
 
+# No reason for this to be conditional since ROL depends on Teuchos
+ADD_SUBDIRECTORY(adapters/teuchos)
+
 IF (ROL_ENABLE_Epetra)
   ADD_SUBDIRECTORY(adapters/epetra)
 ENDIF()
