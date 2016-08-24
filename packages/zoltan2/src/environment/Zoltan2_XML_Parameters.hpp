@@ -291,27 +291,31 @@
     docString='  perform repartitioning (default false)' \
     /> \
    <Parameter  \
-    id=\"57\" name=\"scotch_verbose\" type=\"string\" validatorId=\"51\" value=\"false\" \
+    id=\"57\" name=\"pulp_seed\" type=\"string\" validatorId=\"51\" value=\"false\" \
+    docString='  set pulp seed (default random)' \
+    /> \
+   <Parameter  \
+    id=\"58\" name=\"scotch_verbose\" type=\"string\" validatorId=\"51\" value=\"false\" \
     docString='  verbose output (default false)' \
     /> \
    <Parameter  \
-    id=\"58\" name=\"scotch_level\" type=\"int\" validatorId=\"50\" value=\"0\" \
+    id=\"59\" name=\"scotch_level\" type=\"int\" validatorId=\"50\" value=\"0\" \
     docString='  scotch ordering - Level of the subgraph in the separators tree for the initial graph at the root of the tree  (default 0)' \
     /> \
    <Parameter  \
-    id=\"59\" name=\"scotch_imbalance_ratio\" type=\"string\" validatorId=\"19\" value=\"0.2\" \
+    id=\"60\" name=\"scotch_imbalance_ratio\" type=\"string\" validatorId=\"19\" value=\"0.2\" \
     docString='  scotch ordering - Dissection imbalance ratio  (default 0.2)' \
     /> \
    <Parameter  \
-    id=\"60\" name=\"scotch_ordering_default\" type=\"string\" validatorId=\"51\" value=\"true\" \
+    id=\"61\" name=\"scotch_ordering_default\" type=\"string\" validatorId=\"51\" value=\"true\" \
     docString='  use default scotch ordering strategy (default true)' \
     /> \
    <Parameter  \
-    id=\"61\" name=\"scotch_ordering_strategy\" type=\"string\" value=\"\" \
+    id=\"62\" name=\"scotch_ordering_strategy\" type=\"string\" value=\"\" \
     docString='  scotch ordering - Dissection imbalance ratio (default  )' \
     /> \
    <Parameter  \
-    id=\"62\" name=\"mapping_algorithm\" type=\"string\" validatorId=\"52\" value=\"default\" \
+    id=\"63\" name=\"mapping_algorithm\" type=\"string\" validatorId=\"52\" value=\"default\" \
     docString='  mapping algorithm' \
     /> \
    <ParameterList  name=\"zoltan_parameters\"> \

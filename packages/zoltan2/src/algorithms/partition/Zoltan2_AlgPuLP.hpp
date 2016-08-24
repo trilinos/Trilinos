@@ -88,6 +88,7 @@ public:
 namespace Zoltan2 {
 
 extern "C" {
+// TODO: XtraPuLP
 #ifndef HAVE_ZOLTAN2_MPI
 #include "pulp.h"
 #else
@@ -272,6 +273,9 @@ void AlgPuLP<Adapter>::partition(
   int num_parts = (int)numGlobalParts;
   //TPL_Traits<int, size_t>::ASSIGN(num_parts, numGlobalParts, env);
 
+  //#ifdef HAVE_ZOLTAN2_MPI
+  // TODO: XtraPuLP
+
   int ierr = 0;
   int np = problemComm->getSize();
 
@@ -407,16 +411,14 @@ void AlgPuLP<Adapter>::partition(
     // If we're doing the secondary objective, 
     //   set the additional constraint as well
     if (do_maxcut_min) do_edge_bal = 1;
-  } 
+  }
 
   pe = pl.getEntryPtr("pulp_do_repart");
   if (pe) {
     do_repart = pe->getValue<int>(&do_repart);
     // Do repartitioning with input parts
-    if (do_repart) {
-      do_bfs_init = 0;
-      do_lp_init = 0;
-    }
+    do_bfs_init = 0;
+    do_lp_init = 0;
     // TODO: read in current parts
     // for (int i = 0; i < num_verts; ++i)
     //   parts[i] = something;
@@ -445,11 +447,16 @@ void AlgPuLP<Adapter>::partition(
   pe = pl.getEntryPtr("pulp_verbose");
   if (pe) verbose_output = pe->getValue<int>(&verbose_output);
 
+  // using pulp seed? 
+  int pulp_seed = rand();
+  pe = pl.getEntryPtr("pulp_seed");
+  if (pe) pulp_seed = pe->getValue<int>(&verbose_output);
+
   // Create PuLP's partitioning data structure
   pulp_part_control_t ppc = {vert_imbalance, edge_imbalance,
     (bool)do_lp_init, (bool)do_bfs_init, (bool)do_repart,
     (bool)do_edge_bal, (bool)do_maxcut_min,
-    (bool)verbose_output};
+    (bool)verbose_output, pulp_seed};
 
 
   if (verbose_output) {
@@ -460,7 +467,8 @@ void AlgPuLP<Adapter>::partition(
 
   // Call partitioning; result returned in parts array
 #ifndef HAVE_ZOLTAN2_MPI
-  ierr = pulp_run(&g, &ppc, parts, num_parts);
+  ierr = pulp_run(&g, &ppc, parts, num_parts);  
+
   env->globalInputAssertion(__FILE__, __LINE__, "pulp_run", 
     !ierr, BASIC_ASSERTION, problemComm);
 #else
@@ -468,6 +476,8 @@ void AlgPuLP<Adapter>::partition(
   env->globalInputAssertion(__FILE__, __LINE__, "xtrapulp_run", 
     !ierr, BASIC_ASSERTION, problemComm);
 #endif
+
+
 
   // Load answer into the solution if necessary
   if ((sizeof(int) != sizeof(part_t)) || (num_verts == 0)) {
