@@ -154,3 +154,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
+IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SGSMT
+    SOURCES 
+      Ifpack2_UnitTestSGSMT.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
+
