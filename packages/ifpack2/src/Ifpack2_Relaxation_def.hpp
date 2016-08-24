@@ -43,22 +43,20 @@
 #ifndef IFPACK2_RELAXATION_DEF_HPP
 #define IFPACK2_RELAXATION_DEF_HPP
 
-#include <Teuchos_StandardParameterEntryValidators.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
-#include <Ifpack2_Utilities.hpp>
-#include <Ifpack2_Relaxation_decl.hpp>
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
+#include "Ifpack2_Utilities.hpp"
+#include "Ifpack2_Relaxation_decl.hpp"
 
-#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
-#include <KokkosKernels_GaussSeidel.hpp>
-#endif
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+#  include "KokkosKernels_GaussSeidel.hpp"
+#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
 #ifdef HAVE_IFPACK2_DUMP_MTX_MATRIX
- #include <MatrixMarket_Tpetra.hpp>
+#  include "MatrixMarket_Tpetra.hpp"
 #endif
-
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
@@ -586,7 +584,7 @@ void Relaxation<MatrixType>::initialize ()
   }
 
 
-#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
     //KokkosKernels GaussSiedel Initialization.
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
       const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
@@ -1167,7 +1165,7 @@ void Relaxation<MatrixType>::compute ()
       Importer_ = A_->getGraph ()->getImporter ();
       Diagonal_->template sync<device_type> ();
     }
-#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
     //KokkosKernels GaussSiedel Initialization.
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
       const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
@@ -1681,7 +1679,7 @@ void Relaxation<MatrixType>::MTGaussSeidel (
     const int numSweeps,
     const bool zeroInitialGuess) const
 {
-#ifdef HAVE_IFPACK2_AND_TPETRAKERNELS_EXPERIMENTAL
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   using Teuchos::null;
   using Teuchos::RCP;
   using Teuchos::rcp;
