@@ -51,13 +51,6 @@ namespace ROL
 template <typename T, Intrepid2::Index N>
 class MiniTensorVector : public Vector<T> {
 
-  using uint = Intrepid2::Index;
-
-private:
-
-  Intrepid2::Vector<T, N>
-  vector_;
-
 public:
 
   MiniTensorVector(Intrepid2::Vector<T, N> & v) : vector_(v)
@@ -99,7 +92,7 @@ public:
     auto const
     dim = xval.get_dimension();
 
-    for (auto i = 0; i < dim; ++i) {
+    for (auto i{0}; i < dim; ++i) {
       vector_(i) += xval(i);
     }
   }
@@ -120,7 +113,7 @@ public:
 
     assert(vector_.get_dimension() == dim);
 
-    for (auto i = 0; i < dim; ++i) {
+    for (auto i{0}; i < dim; ++i) {
       vector_(i) += alpha * xval(i);
     }
   }
@@ -131,7 +124,7 @@ public:
     auto const
     dim = vector_.get_dimension();
 
-    for (auto i = 0; i < dim; ++i) {
+    for (auto i{0}; i < dim; ++i) {
       vector_(i) *= alpha;
     }
   }
@@ -188,15 +181,13 @@ public:
     auto const
     dim = vector_.get_dimension();
 
-    auto
-    p_mt_vector = Teuchos::rcp(new Intrepid2::Vector<T, N>(dim));
+    auto &&
+    mt_vector = Intrepid2::Vector<T, N>(dim, Intrepid2::ZEROS);
 
-    p_mt_vector->fill(Intrepid2::ZEROS);
-
-    (*p_mt_vector)(i) = 1.0;
+    mt_vector(i) = 1.0;
 
     Teuchos::RCP<MiniTensorVector>
-    e = Teuchos::rcp(new MiniTensorVector(*p_mt_vector));
+    e = Teuchos::rcp(new MiniTensorVector(mt_vector));
 
     return e;
   }
@@ -236,13 +227,13 @@ public:
   }
 
   T
-  reduce(Elementwise::ReductionOp<T> & r ) const
+  reduce(Elementwise::ReductionOp<T> & r) const
   {
     T
     result = r.initialValue();
 
     auto const
-    dim  = vector_.get_dimension();
+    dim = vector_.get_dimension();
 
     for(auto i{0}; i < dim; ++i) {
       r.reduce(vector_(i), result);
@@ -251,8 +242,13 @@ public:
     return result;
   }
 
+private:
+
+  Intrepid2::Vector<T, N>
+  vector_;
 }; // class MiniTensorVector
-}
+
+} // namespace ROL
 
 #include "Intrepid2_MiniTensor_ROL_Vector.t.h"
 
