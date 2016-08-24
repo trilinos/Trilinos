@@ -11,13 +11,11 @@ template<typename T>
 class StkFieldAdapter
 {
 public:
-    StkFieldAdapter() : field(nullptr)
-    {
-    }
+    typedef T value_type;
 
-    StkFieldAdapter(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(&f)
-    {
-    }
+    StkFieldAdapter() : field(nullptr) { }
+
+    StkFieldAdapter(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(&f) { }
 
     T& get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
     {
@@ -65,6 +63,8 @@ public:
     {
     }
 
+    stk::mesh::EntityRank get_rank() const { return field->entity_rank(); }
+
 private:
     const stk::mesh::FieldBase * field;
 };
@@ -74,12 +74,12 @@ private:
 template<typename T>
 class StaticField {
 public:
-    StaticField()
-    {
-    }
+    typedef T value_type;
 
-    StaticField(stk::mesh::EntityRank rank, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
-    : deviceData()
+    StaticField() { }
+
+    StaticField(stk::mesh::EntityRank r, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
+    : deviceData(), rank(r)
     {
         const stk::mesh::BucketVector& buckets = bulk.get_buckets(rank, selector);
         const stk::mesh::BucketVector& allBuckets = bulk.buckets(rank);
@@ -155,6 +155,8 @@ public:
     {
         return constDeviceData(get_index(entity.bucket->bucket_id(), entity.bucketOrd)+component);
     }
+
+    stk::mesh::EntityRank get_rank() const { return rank; }
 
 private:
     template <typename Mesh> STK_FUNCTION
@@ -280,6 +282,7 @@ private:
     typename FieldDataType::HostMirror hostData;
     FieldDataType deviceData;
     ConstFieldDataType constDeviceData;
+    stk::mesh::EntityRank rank;
 };
 
 

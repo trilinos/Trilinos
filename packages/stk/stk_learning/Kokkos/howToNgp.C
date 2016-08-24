@@ -135,6 +135,11 @@ stk::mesh::Field<int> &create_field_with_num_states(stk::mesh::MetaData &meta, i
     return field;
 }
 
+stk::mesh::Field<int> &create_field(stk::mesh::MetaData &meta)
+{
+    return create_field_with_num_states(meta, 1);
+}
+
 void verify_states_np1_and_n_have_values(stk::mesh::BulkData &bulk,
                                          stk::mesh::Field<int>& field,
                                          ngp::MultistateField<int> &ngpMultistateField,
@@ -210,3 +215,26 @@ TEST_F(NgpHowTo, useConvenientMultistateFields)
     verify_states_np1_and_n_have_values(get_bulk(), stkField, ngpMultistateField, 2, 1);
 }
 
+int get_min_field_value(const stk::mesh::BulkData &bulk, const stk::mesh::Field<int> &elemField)
+{
+    ngp::Mesh ngpMesh(bulk);
+    ngp::Field<int> ngpElemField(bulk, elemField);
+    return ngp::get_field_min(ngpMesh, ngpElemField, bulk.mesh_meta_data().universal_part());
+}
+
+TEST_F(NgpHowTo, getMinFieldValue)
+{
+    stk::mesh::Field<int> &elemField = create_field(get_meta());
+    setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+    stk::mesh::EntityVector elems;
+    stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
+    for(stk::mesh::Entity elem : elems)
+    {
+        int *fieldData = stk::mesh::field_data(elemField, elem);
+        fieldData[0] = get_bulk().identifier(elem);
+    }
+
+    int minFieldVal = get_min_field_value(get_bulk(), elemField);
+
+    EXPECT_EQ(1, minFieldVal);
+}
