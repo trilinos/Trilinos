@@ -1,16 +1,16 @@
 
-#include <Kokkos_Core.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <impl/Kokkos_Timer.hpp>
-#include <Kokkos_MemoryTraits.hpp>
-#include <KokkosKernels_SortKeyValue.hpp>
+#include "Kokkos_Core.hpp"
+#include "Kokkos_Atomic.hpp"
+#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_MemoryTraits.hpp"
+#include "KokkosKernels_SortKeyValue.hpp"
+#include "Kokkos_ArithTraits.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 #include <iostream>
 #include <limits>
-#include <Kokkos_UnorderedMap.hpp>
 
 #ifndef _KOKKOSKERNELSUTILS_HPP
 #define _KOKKOSKERNELSUTILS_HPP
-
 
 #define KOKKOSKERNELS_MACRO_MIN(x,y) ((x) < (y) ? (x) : (y))
 
@@ -1011,25 +1011,13 @@ void permute_vector(
 
 }
 
-template <typename value_array_type>
-struct ZeroVector{
-  value_array_type myview;
-  ZeroVector(value_array_type myview_): myview(myview_){}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_t i ) const {
-    myview(i) = 0;
-  }
-};
-
 template <typename value_array_type, typename MyExecSpace>
 void zero_vector(
     typename value_array_type::value_type num_elements,
     value_array_type &vector
     ){
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0,num_elements), ZeroVector<value_array_type>(vector));
-
+  typedef typename value_array_type::non_const_value_type val_type;
+  Kokkos::deep_copy (vector, Kokkos::Details::ArithTraits<val_type>::zero ());
 }
 
 
