@@ -1834,7 +1834,7 @@ void Relaxation<MatrixType>::MTGaussSeidel (
 
     if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap_host_view.ptr_on_device () != X_domainMap_host_view.h_view.ptr_on_device (),
+        X_colMap_host_view.ptr_on_device () != X_domainMap_host_view.ptr_on_device (),
         std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
         "Pointer to start of column Map view of X is not equal to pointer to "
         "start of (domain Map view of) X.  This may mean that "
