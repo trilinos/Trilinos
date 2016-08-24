@@ -39,16 +39,17 @@
 // ************************************************************************
 // @HEADER
 
+#if defined(ENABLE_ROL)
 #if !defined(Intrepid2_MiniTensor_ROL_Vector_h)
 #define Intrepid2_MiniTensor_ROL_Vector_h
 
 #include <Intrepid2_MiniTensor.h>
-#include <vector/ROL_Vector.hpp>
+#include "ROL_Vector.hpp"
 
 namespace ROL
 {
 
-template <typename T, Intrepid2::Index N>
+template <typename T, Index N>
 class MiniTensorVector : public Vector<T> {
 
   using uint = Intrepid2::Index;
@@ -61,12 +62,6 @@ private:
 public:
 
   MiniTensorVector(Intrepid2::Vector<T, N> & v) : vector_(v)
-  {
-    return;
-  }
-
-  virtual
-  ~MiniTensorVector()
   {
     return;
   }
@@ -99,7 +94,7 @@ public:
     auto const
     dim = xval.get_dimension();
 
-    for (auto i = 0; i < dim; ++i) {
+    for (auto const i = 0; i < dim; ++i) {
       vector_(i) += xval(i);
     }
   }
@@ -120,7 +115,7 @@ public:
 
     assert(vector_.get_dimension() == dim);
 
-    for (auto i = 0; i < dim; ++i) {
+    for (auto const i = 0; i < dim); ++i) {
       vector_(i) += alpha * xval(i);
     }
   }
@@ -131,7 +126,7 @@ public:
     auto const
     dim = vector_.get_dimension();
 
-    for (auto i = 0; i < dim; ++i) {
+    for (auto const i = 0; i < dim); ++i) {
       vector_(i) *= alpha;
     }
   }
@@ -204,14 +199,14 @@ public:
   int
   dimension() const
   {
-    return static_cast<int>(vector_.get_dimension());
+    return static_cast<int>(vector_->get_dimension());
   }
 
   void
   applyUnary(Elementwise::UnaryFunction<T> const & f)
   {
     auto const
-    dim  = vector_.get_dimension();
+    dim  = vector_->get_dimension();
 
     for(auto i{0}; i < dim; ++i) {
       vector_(i) = f.apply(vector_(i));
@@ -228,7 +223,7 @@ public:
     xval = ex.getVector();
 
     auto const
-    dim  = vector_.get_dimension();
+    dim  = vector_->get_dimension();
 
     for(auto i{0}; i < dim; ++i) {
       vector_(i) = f.apply(vector_(i), xval(i));
@@ -242,7 +237,7 @@ public:
     result = r.initialValue();
 
     auto const
-    dim  = vector_.get_dimension();
+    dim  = vector_->get_dimension();
 
     for(auto i{0}; i < dim; ++i) {
       r.reduce(vector_(i), result);
@@ -257,3 +252,4 @@ public:
 #include "Intrepid2_MiniTensor_ROL_Vector.t.h"
 
 #endif // Intrepid2_MiniTensor_ROL_Vector_h
+#endif // ENABLE_ROL
