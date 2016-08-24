@@ -19,3 +19,6 @@
 /* Define if want to build with sacado enabled */
 #cmakedefine HAVE_INTREPID2_SACADO
 
+/* Define if want to build with rol enabled */
+#cmakedefine HAVE_INTREPID2_ROL
+

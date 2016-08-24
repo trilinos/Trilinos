@@ -119,6 +119,17 @@ IF (Intrepid2_ENABLE_Boost)
   )
   IF (Intrepid2_ENABLE_ROL)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared/MiniTensor/rol)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../rol/src)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src/algorithm)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src/elementwise)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src/function)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src/sol)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src/status)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src/step)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src/utils)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src/vector)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../rol/src/zoo)
     APPEND_SET(HEADERS ${HEADERS}
       Shared/MiniTensor/rol/Intrepid2_MiniTensor_ROL_Vector.h
       Shared/MiniTensor/rol/Intrepid2_MiniTensor_ROL_Vector.t.h
