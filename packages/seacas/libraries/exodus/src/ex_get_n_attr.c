@@ -45,7 +45,6 @@
  * \param      start_num     the starting index of the attributes to be
  * returned.
  * \param      num_ent       the number of entities to read attributes for.
- * \param      attrib_index  index of attribute to write
  * \param      attrib         array of attributes
  */
 /*

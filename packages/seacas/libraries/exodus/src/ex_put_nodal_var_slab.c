@@ -68,70 +68,13 @@
  * is 1
  */
 
+/*!
+ * \deprecated Use ex_put_partial_var() instead.
+ */
 int ex_put_nodal_var_slab(int exoid, int time_step, int nodal_var_index, int64_t start_pos,
                           int64_t num_vals, void *nodal_var_vals)
 
 {
-  int    status;
-  int    varid;
-  size_t start[3], count[3];
-  char   errmsg[MAX_ERR_LENGTH];
-
-  exerrval = 0; /* clear error code */
-
-  /* inquire previously defined variable  -- if not found assume that
-     the new separate 'blob' per nodal var storage is being used */
-
-  if (ex_large_model(exoid) == 0) {
-    /* write values of the nodal variable */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
-      exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
-               nodal_var_index, exoid);
-      ex_err("ex_put_nodal_var_slab", errmsg, exerrval);
-      return (EX_WARN);
-    }
-
-    start[0] = --time_step;
-    start[1] = --nodal_var_index;
-    start[2] = --start_pos;
-
-    count[0] = 1;
-    count[1] = 1;
-    count[2] = num_vals;
-  }
-  else {
-
-    /* nodal variables stored separately, find variable for this variable
-       index */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
-      exerrval = status;
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
-               nodal_var_index, exoid);
-      ex_err("ex_put_nodal_var_slab", errmsg, exerrval);
-      return (EX_WARN);
-    }
-
-    start[0] = --time_step;
-    start[1] = --start_pos;
-
-    count[0] = 1;
-    count[1] = num_vals;
-  }
-
-  if (ex_comp_ws(exoid) == 4) {
-    status = nc_put_vara_float(exoid, varid, start, count, nodal_var_vals);
-  }
-  else {
-    status = nc_put_vara_double(exoid, varid, start, count, nodal_var_vals);
-  }
-
-  if (status != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store nodal variables in file id %d", exoid);
-    ex_err("ex_put_nodal_var_slab", errmsg, exerrval);
-    return (EX_FATAL);
-  }
-
-  return (EX_NOERR);
+  return ex_put_partial_nodal_var(exoid, time_step, nodal_var_index, start_pos, num_vals,
+                                  nodal_var_vals);
 }
