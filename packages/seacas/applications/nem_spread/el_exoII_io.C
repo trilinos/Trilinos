@@ -1330,9 +1330,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
         iend_elem = istart_elem + num_to_get;
 
         int el_type;
-        check_exodus_error(ex_get_n_conn(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
+        check_exodus_error(ex_get_partial_conn(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk],
                                          (istart_elem + 1), num_to_get, elem_blk, nullptr, nullptr),
-                           "ex_get_n_conn");
+                           "ex_get_partial_conn");
         if (Debug_Flag >= 2)
           printf("\t\tread connectivity\n");
 
@@ -1396,14 +1396,14 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
           iend_attr = istart_attr + num_attr_left_over;
 
         if (num_attr_left_over == 0 || i < (num_attr_messages - 1)) {
-          check_exodus_error(ex_get_n_elem_attr(exoid, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
+          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
                                                 num_attr_per_message, elem_attr),
-                             "ex_get_n_elem_attr");
+                             "ex_get_partial_attr");
         }
         else {
-          check_exodus_error(ex_get_n_elem_attr(exoid, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
+          check_exodus_error(ex_get_partial_attr(exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[ielem_blk], (istart_attr + 1),
                                                 num_attr_left_over, elem_attr),
-                             "ex_get_n_elem_attr");
+                             "ex_get_partial_attr");
         }
 
         for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
@@ -2111,14 +2111,14 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
         }
 
         /* Read in the part of the node set that will fit in the message */
-        check_exodus_error(ex_get_n_node_set(exoid, Node_Set_Ids[i], (istart_ns + 1),
-                                             num_node_per_message, TOPTR(node_set)),
-                           "ex_get_n_node_set");
+        check_exodus_error(ex_get_partial_set(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
+					      num_node_per_message, TOPTR(node_set), nullptr),
+                           "ex_get_partial_set");
 
         if (num_df_in_nsets[i] > 0) {
-          check_exodus_error(ex_get_n_node_set_df(exoid, Node_Set_Ids[i], (istart_ns + 1),
+          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
                                                   num_node_per_message, TOPTR(node_set_df)),
-                             "ex_get_n_node_set_df");
+                             "ex_get_partial_node_set_df");
         }
 
         /* Renumber nodes to start at node '0' instead of node '1' */
@@ -2507,10 +2507,10 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
 
         /* Read in the part of the side set that will fit in the message. */
 
-        check_exodus_error(ex_get_n_side_set(exoid, Side_Set_Ids[i], (istart_ss + 1),
+        check_exodus_error(ex_get_partial_set(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
                                              num_elem_per_message, TOPTR(ss_elem_list),
                                              TOPTR(ss_side_list)),
-                           "ex_get_n_side_set");
+                           "ex_get_partial_set");
 
         /* Fill in the distribution factor pointer vector */
         if (imess == 0) {
@@ -2680,9 +2680,9 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
             num_elem_per_message = num_left_over;
 
           /* Read in the part of the side set df's that will fit in the msg. */
-          check_exodus_error(ex_get_n_side_set_df(exoid, Side_Set_Ids[i], (istart_ss + 1),
-                                                  num_elem_per_message, TOPTR(ss_dist_fact)),
-                             "ex_get_n_side_set_df");
+          check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
+							  num_elem_per_message, TOPTR(ss_dist_fact)),
+                             "ex_get_partial_set_dist_fact");
 
           /*
            * At this point a processor has the list of global element IDs
