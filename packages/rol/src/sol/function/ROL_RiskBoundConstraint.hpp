@@ -44,7 +44,7 @@
 #ifndef ROL_RISK_BOUND_CONSTRAINT_H
 #define ROL_RISK_BOUND_CONSTRAINT_H
 
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_StdBoundConstraint.hpp"
 #include "ROL_RiskVector.hpp"
 #include "ROL_Types.hpp"
 
@@ -54,20 +54,21 @@ template <class Real>
 class RiskBoundConstraint : public BoundConstraint<Real> {
 private:
   Teuchos::RCP<BoundConstraint<Real> > bc_;
+  Teuchos::RCP<StdBoundConstraint<Real> > stat_bc_;
+  std::vector<Real> lower_, upper_;
+
   bool augmented_;
   bool activated_;
   int nStat_;
-  std::vector<Real> lower_;
-  std::vector<Real> upper_;
-  Real min_diff_;
 
 public:
 
   RiskBoundConstraint(Teuchos::ParameterList &parlist,
                 const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null)
-   : BoundConstraint<Real>(), bc_(bc), augmented_(false), activated_(false), nStat_(0) {
+   : BoundConstraint<Real>(), bc_(bc), stat_bc_(Teuchos::null),
+     augmented_(false), activated_(false), nStat_(0) {
     lower_.clear(); upper_.clear();
-    Real zero(0);
+    // Get stochastic optimization information
     std::string optType = parlist.sublist("SOL").get("Stochastic Optimization Type","Risk Averse");
     if ( optType == "BPOE" ) {
       augmented_ = true;
@@ -75,7 +76,7 @@ public:
       nStat_     = 1;
       lower_.resize(nStat_,ROL_NINF<Real>());
       upper_.resize(nStat_,ROL_INF<Real>());
-      lower_[0] = zero;
+      lower_[0] = static_cast<Real>(0);
     }
     else if ( optType == "Risk Averse" ) {
       std::string name;
@@ -91,151 +92,115 @@ public:
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::RiskBoundConstraint): Invalid stochastic optimization type!" << optType);
     }
-
+    // Build statistic bound constraint
+    if ( augmented_ ) {
+      stat_bc_ = Teuchos::rcp(new StdBoundConstraint<Real>(lower_,upper_));
+    }
+    // Determine whether or not bound constraint is activated
+    BoundConstraint<Real>::activate();
     if ( !activated_ ) {
+      if ( stat_bc_ != Teuchos::null ) {
+        stat_bc_->deactivate();
+      }
       if ( bc == Teuchos::null || (bc != Teuchos::null && !bc->isActivated()) ) {
         BoundConstraint<Real>::deactivate();
-      }
-    }
-    else {
-      Real tmp(0), half(0.5);
-      min_diff_ = ROL_INF<Real>();
-      for (int i = 0; i < nStat_; ++i) {
-        tmp = half*(upper_[i]-lower_[i]);
-        min_diff_ = ((min_diff_ < tmp) ? min_diff_ : tmp); 
       }
     }
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    if ( augmented_ && activated_ ) {
+      Teuchos::RCP<const StdVector<Real> > xs = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
+      stat_bc_->update(*xs,flag,iter);
+    }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<const Vector<Real> > xv
-        = (Teuchos::dyn_cast<RiskVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+      Teuchos::RCP<const Vector<Real> > xv = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
       bc_->update(*xv,flag,iter);
     }
   }
 
   void project( Vector<Real> &x ) {
     if ( augmented_ && activated_ ) {
-      std::vector<Real> xstat(nStat_,0);
-      for ( int i = 0; i < nStat_; i++ ) {
-        xstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(x).getStatistic(i);
-        xstat[i] = std::min(upper_[i],std::max(lower_[i],xstat[i]));
-      }
-      (Teuchos::dyn_cast<RiskVector<Real> >(x)).setStatistic(xstat);
+      Teuchos::RCP<StdVector<Real> > xs = Teuchos::dyn_cast<RiskVector<Real> >(x).getStatistic();
+      stat_bc_->project(*xs);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
       Teuchos::RCP<Vector<Real> > xvec = Teuchos::dyn_cast<RiskVector<Real> >(x).getVector();
       bc_->project(*xvec);
-      (Teuchos::dyn_cast<RiskVector<Real> >(x)).setVector(*xvec);
     }
   }
 
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real xstat(0), zero(0), epsn(std::min(eps,min_diff_));
-      std::vector<Real> vstat(nStat_,zero);
-      for (int i = 0; i < nStat_; i++) {
-        xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( xstat >= upper_[i] - epsn ) {
-          vstat[i] = zero;
-        }
-        else {
-          vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
-        }
-      }
-      Teuchos::dyn_cast<RiskVector<Real> >(v).setStatistic(vstat);
+      Teuchos::RCP<StdVector<Real> >       vs = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic();
+      Teuchos::RCP<const StdVector<Real> > xs = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
+      stat_bc_->pruneUpperActive(*vs,*xs,eps);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > vvec = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
-      Teuchos::RCP<const Vector<Real> > xvec = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-      bc_->pruneUpperActive(*vvec,*xvec,eps);
+      Teuchos::RCP<Vector<Real> >       vv = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
+      Teuchos::RCP<const Vector<Real> > xv = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
+      bc_->pruneUpperActive(*vv,*xv,eps);
     }
   }
 
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real gstat(0), xstat(0), zero(0), epsn(std::min(eps,min_diff_));
-      std::vector<Real> vstat(nStat_,zero);
-      for (int i = 0; i < nStat_; i++) {
-        gstat = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic(i);
-        xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( (xstat >= upper_[i] - epsn) && (gstat < zero) ) {
-          vstat[i] = zero;
-        }
-        else {
-          vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
-        }
-      }
-      Teuchos::dyn_cast<RiskVector<Real> >(v).setStatistic(vstat);
+      Teuchos::RCP<StdVector<Real> >       vs = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic();
+      Teuchos::RCP<const StdVector<Real> > gs = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic();
+      Teuchos::RCP<const StdVector<Real> > xs = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
+      stat_bc_->pruneUpperActive(*vs,*gs,*xs,eps);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > vvec = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
-      Teuchos::RCP<const Vector<Real> > gvec = Teuchos::dyn_cast<const RiskVector<Real> >(g).getVector();
-      Teuchos::RCP<const Vector<Real> > xvec = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-      bc_->pruneUpperActive(*vvec,*gvec,*xvec,eps);
+      Teuchos::RCP<Vector<Real> >       vv = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
+      Teuchos::RCP<const Vector<Real> > gv = Teuchos::dyn_cast<const RiskVector<Real> >(g).getVector();
+      Teuchos::RCP<const Vector<Real> > xv = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
+      bc_->pruneUpperActive(*vv,*gv,*xv,eps);
     }
   }
  
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real xstat(0), zero(0), epsn(std::min(eps,min_diff_));
-      std::vector<Real> vstat(nStat_,zero);
-      for (int i = 0; i < nStat_; i++) {
-        xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( xstat <= lower_[i] + epsn ) {
-          vstat[i] = zero;
-        }
-        else {
-          vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
-        }
-      }
-      Teuchos::dyn_cast<RiskVector<Real> >(v).setStatistic(vstat);
+      Teuchos::RCP<StdVector<Real> >       vs = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic();
+      Teuchos::RCP<const StdVector<Real> > xs = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
+      stat_bc_->pruneLowerActive(*vs,*xs,eps);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > vvec = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
-      Teuchos::RCP<const Vector<Real> > xvec = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-      bc_->pruneLowerActive(*vvec,*xvec,eps);
+      Teuchos::RCP<Vector<Real> >       vv = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
+      Teuchos::RCP<const Vector<Real> > xv = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
+      bc_->pruneLowerActive(*vv,*xv,eps);
     }
   }
 
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real gstat(0), xstat(0), zero(0), epsn(std::min(eps,min_diff_));
-      std::vector<Real> vstat(nStat_,zero);
-      for (int i = 0; i < nStat_; i++) {
-        gstat = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic(i);
-        xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( (xstat <= lower_[i] + epsn) && (gstat > zero) ) {
-          vstat[i] = zero;
-        }
-        else {
-          vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
-        }
-      }
-      Teuchos::dyn_cast<RiskVector<Real> >(v).setStatistic(vstat);
+      Teuchos::RCP<StdVector<Real> >       vs = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic();
+      Teuchos::RCP<const StdVector<Real> > gs = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic();
+      Teuchos::RCP<const StdVector<Real> > xs = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
+      stat_bc_->pruneLowerActive(*vs,*gs,*xs,eps);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > vvec = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
-      Teuchos::RCP<const Vector<Real> > gvec = Teuchos::dyn_cast<const RiskVector<Real> >(g).getVector();
-      Teuchos::RCP<const Vector<Real> > xvec = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-      bc_->pruneLowerActive(*vvec,*gvec,*xvec,eps);
+      Teuchos::RCP<Vector<Real> >       vv = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
+      Teuchos::RCP<const Vector<Real> > gv = Teuchos::dyn_cast<const RiskVector<Real> >(g).getVector();
+      Teuchos::RCP<const Vector<Real> > xv = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
+      bc_->pruneLowerActive(*vv,*gv,*xv,eps);
     }
   } 
 
   void setVectorToUpperBound( Vector<Real> &u ) {
     if ( augmented_ && activated_ ) {
-      Teuchos::dyn_cast<RiskVector<Real> >(u).setStatistic(upper_);
+      Teuchos::RCP<StdVector<Real> > us = Teuchos::dyn_cast<RiskVector<Real> >(u).getStatistic();
+      stat_bc_->setVectorToUpperBound(*us);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > uvec = Teuchos::dyn_cast<RiskVector<Real> >(u).getVector();
-      bc_->setVectorToUpperBound(*uvec);
+      Teuchos::RCP<Vector<Real> > uv = Teuchos::dyn_cast<RiskVector<Real> >(u).getVector();
+      bc_->setVectorToUpperBound(*uv);
     }
   }
 
   void setVectorToLowerBound( Vector<Real> &l ) {
     if ( augmented_ && activated_ ) {
-      Teuchos::dyn_cast<RiskVector<Real> >(l).setStatistic(lower_);
+      Teuchos::RCP<StdVector<Real> > ls = Teuchos::dyn_cast<RiskVector<Real> >(l).getStatistic();
+      stat_bc_->setVectorToLowerBound(*ls);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
       Teuchos::RCP<Vector<Real> > lvec = Teuchos::dyn_cast<RiskVector<Real> >(l).getVector();
@@ -245,66 +210,41 @@ public:
 
   void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real xstat(0), zero(0), epsn(std::min(eps,min_diff_));
-      std::vector<Real> vstat(nStat_,zero);
-      for (int i = 0; i < nStat_; i++) {
-        xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( (xstat <= lower_[i] + epsn) || (xstat >= upper_[i] - epsn) ) {
-          vstat[i] = zero;
-        }
-        else {
-          vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
-        }
-      }
-      Teuchos::dyn_cast<RiskVector<Real> >(v).setStatistic(vstat);
+      Teuchos::RCP<StdVector<Real> >       vs = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic();
+      Teuchos::RCP<const StdVector<Real> > xs = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
+      stat_bc_->pruneActive(*vs,*xs,eps);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > vvec = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
-      Teuchos::RCP<const Vector<Real> > xvec = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-      bc_->pruneActive(*vvec,*xvec,eps);
+      Teuchos::RCP<Vector<Real> >       vv = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
+      Teuchos::RCP<const Vector<Real> > xv = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
+      bc_->pruneActive(*vv,*xv,eps);
     }
   }
 
   void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real gstat(0), xstat(0), zero(0), epsn(std::min(eps,min_diff_));
-      std::vector<Real> vstat(nStat_,zero);
-      for (int i = 0; i < nStat_; i++) {
-        gstat = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic(i);
-        xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( ((xstat <= lower_[i] + epsn) && (gstat > zero)) ||
-             ((xstat >= upper_[i] - epsn) && (gstat < zero)) ) {
-          vstat[i] = zero;
-        }
-        else {
-          vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
-        }
-      }
-      Teuchos::dyn_cast<RiskVector<Real> >(v).setStatistic(vstat);
+      Teuchos::RCP<StdVector<Real> >       vs = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic();
+      Teuchos::RCP<const StdVector<Real> > gs = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic();
+      Teuchos::RCP<const StdVector<Real> > xs = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
+      stat_bc_->pruneActive(*vs,*gs,*xs,eps);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > vvec = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
-      Teuchos::RCP<const Vector<Real> > gvec = Teuchos::dyn_cast<const RiskVector<Real> >(g).getVector();
-      Teuchos::RCP<const Vector<Real> > xvec = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
-      bc_->pruneActive(*vvec,*gvec,*xvec,eps);
+      Teuchos::RCP<Vector<Real> >       vv = Teuchos::dyn_cast<RiskVector<Real> >(v).getVector();
+      Teuchos::RCP<const Vector<Real> > gv = Teuchos::dyn_cast<const RiskVector<Real> >(g).getVector();
+      Teuchos::RCP<const Vector<Real> > xv = Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector();
+      bc_->pruneActive(*vv,*gv,*xv,eps);
     }
   }
 
   bool isFeasible( const Vector<Real> &v ) { 
     bool flagstat = true, flagvec = true;
     if ( augmented_ && activated_ ) {
-      Real vstat(0);
-      for ( int i = 0; i < nStat_; i++ ) {
-        vstat = Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(i);
-        flagstat *= ((vstat >= lower_[i] && vstat <= upper_[i]) ? true : false);
-      }
+      Teuchos::RCP<const StdVector<Real> > vs = Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic();
+      flagstat = stat_bc_->isFeasible(*vs);
     }
     if ( bc_ != Teuchos::null && bc_->isActivated() ) {
-      Teuchos::RCP<const Vector<Real> > vvec
-        = (Teuchos::dyn_cast<RiskVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-      if ( bc_->isActivated() ) {
-        flagvec = bc_->isFeasible(*vvec);
-      }
+      Teuchos::RCP<const Vector<Real> > vv = Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector();
+      flagvec = bc_->isFeasible(*vv);
     }
     return (flagstat && flagvec);
   }

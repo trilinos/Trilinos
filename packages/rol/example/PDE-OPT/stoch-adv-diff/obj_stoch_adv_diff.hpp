@@ -67,8 +67,8 @@ public:
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
              const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Get relevant dimensions
-    const int c = u_coeff->dimension(0);
-    const int p = fe_->cubPts()->dimension(1);
+    const int c = fe_->gradN()->dimension(0);
+    const int p = fe_->gradN()->dimension(2);
     // Initialize output val
     val = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
     // Evaluate state on FE basis
@@ -87,9 +87,9 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Get relevant dimensions
-    const int c = u_coeff->dimension(0);
-    const int p = fe_->cubPts()->dimension(1);
-    const int f = fe_->N()->dimension(1);
+    const int c = fe_->gradN()->dimension(0);
+    const int f = fe_->gradN()->dimension(1);
+    const int p = fe_->gradN()->dimension(2);
     // Initialize output grad
     grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
     // Evaluate state on FE basis
@@ -122,9 +122,9 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    const int c = v_coeff->dimension(0);
-    const int p = fe_->cubPts()->dimension(1);
-    const int f = fe_->N()->dimension(1);
+    const int c = fe_->gradN()->dimension(0);
+    const int f = fe_->gradN()->dimension(1);
+    const int p = fe_->gradN()->dimension(2);
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valV_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));

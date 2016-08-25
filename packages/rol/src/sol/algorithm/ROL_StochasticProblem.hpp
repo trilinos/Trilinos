@@ -348,7 +348,7 @@ public:
 //  Real getSolutionStatistic(void) {
 //    try {
 //      return Teuchos::dyn_cast<const RiskVector<Real> >(
-//               Teuchos::dyn_cast<const Vector<Real> >(*vec_)).getStatistic();
+//               Teuchos::dyn_cast<const Vector<Real> >(*vec_)).getStatistic(0);
 //    }
 //    catch (std::exception &e) {
 //      return 0.;
@@ -395,11 +395,11 @@ public:
             val = half*(x.getStatistic(0) + x.getStatistic(1));
           }
           else {
-            val = x.getStatistic();
+            val = x.getStatistic(0);
           }
         }
         else {
-          val = x.getStatistic();
+          val = x.getStatistic(0);
         }
         return val;
       }

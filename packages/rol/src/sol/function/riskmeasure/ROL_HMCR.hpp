@@ -168,7 +168,7 @@ public:
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
-    xvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
+    xvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(0);
     // Initialize additional vector storage
     if ( HMCR_firstReset_ ) {
       mDualVector0_ = (x0->dual()).clone();
@@ -188,7 +188,7 @@ public:
     reset(x0,x);
     v0    = Teuchos::rcp_const_cast<Vector<Real> >(
             Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
-    vvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic();
+    vvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(0);
     // Zero temporary storage
     const Real zero(0);
     mDualVector1_->zero(); gDualVector1_->zero();

@@ -109,13 +109,9 @@ public:
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
-    Real zero(0);
     RiskMeasure<Real>::reset(x0,x);
-    for (int i = 0; i < 2; i++) {
-      xvar_[i] = Teuchos::dyn_cast<const RiskVector<Real> >(
-                 Teuchos::dyn_cast<const Vector<Real> >(x)).getStatistic(i);
-      vec_[i]  = zero;
-    }
+    Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(xvar_);
+    vec_.assign(2,static_cast<Real>(0));
     if ( firstReset_ ) {
       dualVector_ = (x0->dual()).clone();
       firstReset_ = false;
@@ -126,12 +122,8 @@ public:
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
-           Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
-    for (int i = 0; i < 2; i++) {
-      vvar_[i] = Teuchos::dyn_cast<const RiskVector<Real> >(
-                 Teuchos::dyn_cast<const Vector<Real> >(v)).getStatistic(i);
-    }
+    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
+    Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(vvar_);
   }
 
   void update(const Real val, const Real weight) {
@@ -139,6 +131,13 @@ public:
     Real pf1 = plusFunction_->evaluate(val-xvar_[0],0);
     Real pf2 = plusFunction_->evaluate(-val-xvar_[1],0);
     RiskMeasure<Real>::val_ += weight*(val + half*coeff_/(one-prob_)*(pf1 + pf2));
+  }
+
+  Real getValue(SampleGenerator<Real> &sampler) {
+    Real val  = RiskMeasure<Real>::val_, cvar(0), half(0.5);
+    sampler.sumAll(&val,&cvar,1);
+    cvar += half*coeff_*(xvar_[0] + xvar_[1]);
+    return cvar;
   }
 
   void update(const Real val, const Vector<Real> &g, const Real weight) {
@@ -149,6 +148,19 @@ public:
     vec_[0] -= c*pf1;
     vec_[1] -= c*pf2;
     RiskMeasure<Real>::g_->axpy(weight + c * (pf1 - pf2),g);
+  }
+
+  void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
+    Real half(0.5);
+    RiskVector<Real> &gs = Teuchos::dyn_cast<RiskVector<Real> >(g);
+    std::vector<Real> var(2);
+    sampler.sumAll(&vec_[0],&var[0],2);
+    
+    sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
+    var[0] += half*coeff_;
+    var[1] += half*coeff_;
+    gs.setStatistic(var);
+    gs.setVector(*dualVector_); 
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
@@ -165,34 +177,14 @@ public:
     RiskMeasure<Real>::hv_->axpy(weight + c * (pf11 - pf21),hv);
   }
 
-  Real getValue(SampleGenerator<Real> &sampler) {
-    Real val  = RiskMeasure<Real>::val_, cvar(0), half(0.5);
-    sampler.sumAll(&val,&cvar,1);
-    cvar += half*coeff_*(xvar_[0] + xvar_[1]);
-    return cvar;
-  }
-
-  void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
-    Real half(0.5);
-    RiskVector<Real> &gs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(g));
-    std::vector<Real> var(2);
-    sampler.sumAll(&vec_[0],&var[0],2);
-    
-    sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
-    var[0] += half*coeff_;
-    var[1] += half*coeff_;
-    gs.setStatistic(var);
-    gs.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(dualVector_))); 
-  }
-
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
-    RiskVector<Real> &hs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(hv));
+    RiskVector<Real> &hs = Teuchos::dyn_cast<RiskVector<Real> >(hv);
     std::vector<Real> var(2);
     sampler.sumAll(&vec_[0],&var[0],2);
 
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector_);
     hs.setStatistic(var);
-    hs.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(dualVector_)));
+    hs.setVector(*dualVector_);
   }
 };
 

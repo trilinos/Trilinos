@@ -167,7 +167,6 @@ public:
       for (int k = 0; k < numCellsSide; ++k) {
         int cidx = bdryCellLocIds_[0][j][k];
         for (int l = 0; l < numBdryDofs; ++l) {
-          //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
           (*res)(cidx,fidx_[j][l])
             = (*u_coeff)(cidx,fidx_[j][l]) - (*bdryCellDofValues_[0][j])(k,fidx_[j][l]);
         }
@@ -268,7 +267,6 @@ public:
         for (int k = 0; k < numCellsSide; ++k) {
           int cidx = bdryCellLocIds_[0][j][k];
           for (int l = 0; l < numBdryDofs; ++l) {
-            //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
             (*(jac[i]))(cidx,fidx_[j][l]) = static_cast<Real>(0);
           }
         }

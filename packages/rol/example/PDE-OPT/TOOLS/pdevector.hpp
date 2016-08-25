@@ -411,6 +411,16 @@ public:
     dual_vec2_ = Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(vec2_->clone());
   }
 
+  void set( const ROL::Vector<Real> &x ) {
+    const PDE_OptVector<Real> &xs = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x);
+    if ( vec1_ != Teuchos::null ) {
+      vec1_->set(*(xs.getField()));
+    }
+    if ( vec2_ != Teuchos::null ) {
+      vec2_->set(*(xs.getParameter()));
+    }
+  }
+
   void plus( const ROL::Vector<Real> &x ) {
     const PDE_OptVector<Real> &xs = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x);
     if ( vec1_ != Teuchos::null ) {

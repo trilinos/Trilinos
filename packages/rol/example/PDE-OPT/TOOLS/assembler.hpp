@@ -1271,18 +1271,20 @@ public:
   void applyPDEJacobian3(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
                          const Teuchos::RCP<const std::vector<Real> > &v) const {
     Jv->putScalar(static_cast<Real>(0));
-    const int size = v->size();
-    for (int i = 0; i < size; ++i) {
-      Jv->update((*v)[i],*(pde_vecJ3_->getVector(i)),static_cast<Real>(1));
+    const size_t size = static_cast<size_t>(v->size());
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      Jv->update((*v)[i],*(pde_vecJ3_->subView(col)),static_cast<Real>(1));
     }
   }
 
   void applyPDEAdjointJacobian3(const Teuchos::RCP<std::vector<Real> > &Jv,
                                 const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
-    const int size = Jv->size();
     Teuchos::Array<Real> val(1,0);
-    for (int i = 0; i < size; ++i) {
-      pde_vecJ3_->getVector(i)->dot(*v, val.view(0,1));
+    const size_t size = static_cast<size_t>(Jv->size());
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      pde_vecJ3_->subView(col)->dot(*v, val.view(0,1));
       (*Jv)[i] = val[0];
     }
   }
@@ -1300,13 +1302,14 @@ public:
   void applyPDEHessian13(const Teuchos::RCP<std::vector<Real> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                          const bool zeroOut = true) const {
-    const int size = Hv->size();
+    const size_t size = static_cast<size_t>(Hv->size());
     if ( zeroOut ) {
       Hv->assign(size,static_cast<Real>(0));
     }
     Teuchos::Array<Real> val(1,0);
-    for (int i = 0; i < size; ++i) {
-      pde_vecH13_->getVector(i)->dot(*v, val.view(0,1));
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      pde_vecH13_->subView(col)->dot(*v, val.view(0,1));
       (*Hv)[i] += val[0];
     }
   }
@@ -1324,13 +1327,14 @@ public:
   void applyPDEHessian23(const Teuchos::RCP<std::vector<Real> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                          const bool zeroOut = true) const {
-    const int size = Hv->size();
+    const size_t size = static_cast<size_t>(Hv->size());
     if ( zeroOut ) {
       Hv->assign(size,static_cast<Real>(0));
     }
     Teuchos::Array<Real> val(1,0);
-    for (int i = 0; i < size; ++i) {
-      pde_vecH23_->getVector(i)->dot(*v, val.view(0,1));
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      pde_vecH23_->subView(col)->dot(*v, val.view(0,1));
       (*Hv)[i] += val[0];
     }
   }
@@ -1341,9 +1345,10 @@ public:
     if ( zeroOut ) {
       Hv->putScalar(static_cast<Real>(0));
     }
-    const int size = v->size();
-    for (int i = 0; i < size; ++i) {
-      Hv->update((*v)[i],*(pde_vecH13_->getVector(i)),static_cast<Real>(1));
+    const size_t size = static_cast<size_t>(v->size());
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      Hv->update((*v)[i],*(pde_vecH13_->subView(col)),static_cast<Real>(1));
     }
   }
 
@@ -1353,9 +1358,10 @@ public:
     if ( zeroOut ) {
       Hv->putScalar(static_cast<Real>(0));
     }
-    const int size = v->size();
-    for (int i = 0; i < size; ++i) {
-      Hv->update((*v)[i],*(pde_vecH23_->getVector(i)),static_cast<Real>(1));
+    const size_t size = static_cast<size_t>(v->size());
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      Hv->update((*v)[i],*(pde_vecH23_->subView(col)),static_cast<Real>(1));
     }
   }
 
