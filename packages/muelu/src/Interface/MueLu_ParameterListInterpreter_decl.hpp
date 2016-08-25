@@ -64,7 +64,7 @@
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_EminPFactory_fwd.hpp"
 #include "MueLu_FacadeClassBase.hpp"
-#include "MueLu_FacadeClassFactory_fwd.hpp"
+#include "MueLu_FacadeClassFactory.hpp"
 #include "MueLu_FactoryFactory_fwd.hpp"
 #include "MueLu_FilteredAFactory_fwd.hpp"
 #include "MueLu_GenericRFactory_fwd.hpp"
@@ -226,7 +226,7 @@ namespace MueLu {
     Teuchos::RCP<FactoryFactory> factFact_;
 
     //! FacadeClass factory
-    Teuchos::RCP<FacadeClassFactory> facadeFact_;
+    Teuchos::RCP<MueLu::FacadeClassFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> > facadeFact_;
 
     //@}
   };
