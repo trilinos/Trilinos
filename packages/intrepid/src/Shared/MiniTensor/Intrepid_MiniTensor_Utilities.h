@@ -105,17 +105,10 @@ machine_epsilon();
 ///
 /// Number of digits for integer types.
 ///
+
 template<typename T>
 Index
 num_digits();
-
-template<>
-Index
-num_digits<Index>();
-
-template<>
-Index
-num_digits<LongIndex>();
 
 ///
 /// The circle constant

@@ -253,18 +253,37 @@ public:
   {
   }
 
+  // GCC 4.7.2 gets confused about index out of bounds here.
+  // Guard against that.
+
   T const &
   operator[](Index const i) const
   {
     assert(i < size());
+#if defined (__GNUC__) & (__GNUC__ == 4)
+    if (i < N) {
+      return storage_[i];
+    } else {
+      MT_ERROR_EXIT("Index out of bounds");
+    }
+#else
     return storage_[i];
+#endif
   }
 
   T &
   operator[](Index const i)
   {
     assert(i < size());
+#if defined (__GNUC__) & (__GNUC__ == 4)
+    if (i < N) {
+      return storage_[i];
+    } else {
+      MT_ERROR_EXIT("Index out of bounds");
+    }
+#else
     return storage_[i];
+#endif
   }
 
   Index

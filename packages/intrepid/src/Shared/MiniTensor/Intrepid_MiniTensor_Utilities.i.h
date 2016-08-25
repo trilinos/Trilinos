@@ -141,25 +141,12 @@ machine_epsilon()
 //
 // Number of digits for integer types.
 //
+
 template<typename T>
 Index
 num_digits()
 {
-  return 0;
-}
-
-template<>
-Index
-num_digits<Index>()
-{
-  return INDEX_SIZE;
-}
-
-template<>
-Index
-num_digits<LongIndex>()
-{
-  return LONG_INDEX_SIZE;
+  return std::numeric_limits<T>::digits;
 }
 
 //
