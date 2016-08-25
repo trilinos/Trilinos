@@ -74,6 +74,18 @@
 
 typedef double RealT;
 
+template<class Real>
+Real random(const Teuchos::Comm<int> &comm,
+            const Real a = -1, const Real b = 1) {
+  Real val(0), u(0);
+  if ( Teuchos::rank<int>(comm)==0 ) {
+    u   = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+    val = (b-a)*u + a;
+  }
+  Teuchos::broadcast<int,Real>(comm,0,1,&val);
+  return val;
+}
+
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -124,8 +136,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD VECTORS *****************************************/
     /*************************************************************************/
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = pdeCon.getAssembler()->createStateVector();
-    Teuchos::RCP<Tpetra::MultiVector<> > p_rcp = pdeCon.getAssembler()->createStateVector();
+    Teuchos::RCP<Tpetra::MultiVector<> >  u_rcp = pdeCon.getAssembler()->createStateVector();
+    Teuchos::RCP<Tpetra::MultiVector<> >  p_rcp = pdeCon.getAssembler()->createStateVector();
     Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = pdeCon.getAssembler()->createStateVector();
     u_rcp->randomize();  //u_rcp->putScalar(static_cast<RealT>(1));
     p_rcp->randomize();  //p_rcp->putScalar(static_cast<RealT>(1));
@@ -142,14 +154,14 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > rp
       = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,pdeCon.getAssembler()));
     // Create control vector and set to ones
-    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp(new std::vector<RealT>(controlDim));
+    Teuchos::RCP<std::vector<RealT> >  z_rcp = Teuchos::rcp(new std::vector<RealT>(controlDim));
     Teuchos::RCP<std::vector<RealT> > dz_rcp = Teuchos::rcp(new std::vector<RealT>(controlDim));
     Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp(new std::vector<RealT>(controlDim));
     // Create control direction vector and set to random
     for (int i = 0; i < controlDim; ++i) {
-      (*z_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*dz_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*yz_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*z_rcp)[i]  = random<RealT>(*comm);
+      (*dz_rcp)[i] = random<RealT>(*comm);
+      (*yz_rcp)[i] = random<RealT>(*comm);
     }
     Teuchos::RCP<ROL::Vector<RealT> > zp
       = Teuchos::rcp(new PDE_OptVector<RealT>(Teuchos::rcp(new ROL::StdVector<RealT>(z_rcp))));

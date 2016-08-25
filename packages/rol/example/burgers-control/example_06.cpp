@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
       *outStream0 << "\n";
     }
     *outStream0 << "\n";
-    *outStream0 << "Scalar Parameter: " << z.getStatistic() << "\n";
+    *outStream0 << "Scalar Parameter: " << z.getStatistic(0) << "\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

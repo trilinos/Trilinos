@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
       }
       ofs.close();
     }
-    *outStream0 << "Scalar Parameter: " << z.getStatistic() << "\n\n";
+    *outStream0 << "Scalar Parameter: " << z.getStatistic(0) << "\n\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
