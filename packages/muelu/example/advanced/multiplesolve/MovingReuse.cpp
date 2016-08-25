@@ -102,36 +102,39 @@ private:
   typedef Teuchos::ScalarTraits<SC> STS;
 
 public:
-  Tensor() : useSigmaRTC_(false) { }
+  Tensor() : useSigmaRTC_(false), is3D_(true) { }
 
 #ifdef HAVE_MUELU_PAMGEN
-  Tensor(const std::string& rtcString) : useSigmaRTC_(true) {
+  Tensor(const std::string& rtcString, bool is3D = true) : useSigmaRTC_(true), is3D_(is3D) {
     sigmaRTC_ = Teuchos::rcp(new PG_RuntimeCompiler::Function);
 
-    bool rc;
+    if (!sigmaRTC_->addVar("double", "x"))          throw std::runtime_error("Error setting RTC input argument \"x\"");
+    if (!sigmaRTC_->addVar("double", "y"))          throw std::runtime_error("Error setting RTC input argument \"y\"");
+    if (is3D_ &&
+        !sigmaRTC_->addVar("double", "z"))          throw std::runtime_error("Error setting RTC input argument \"z\"");
+    if (!sigmaRTC_->addVar("double", "t"))          throw std::runtime_error("Error setting RTC input argument \"t\"");
+    if (!sigmaRTC_->addVar("double", "sigmax"))     throw std::runtime_error("Error setting RTC input argument \"sigmax\"");
+    if (!sigmaRTC_->addVar("double", "sigmay"))     throw std::runtime_error("Error setting RTC input argument \"sigmay\"");
+    if (is3D_ &&
+        !sigmaRTC_->addVar("double", "sigmaz"))     throw std::runtime_error("Error setting RTC input argument \"sigmaz\"");
 
-    rc = sigmaRTC_->addVar("double", "x");     if (!rc) throw std::runtime_error("Error setting RTC input argument \"x\"");
-    rc = sigmaRTC_->addVar("double", "y");     if (!rc) throw std::runtime_error("Error setting RTC input argument \"y\"");
-    rc = sigmaRTC_->addVar("double", "z");     if (!rc) throw std::runtime_error("Error setting RTC input argument \"z\"");
-    rc = sigmaRTC_->addVar("double", "t");     if (!rc) throw std::runtime_error("Error setting RTC input argument \"t\"");
-    rc = sigmaRTC_->addVar("double", "sigma"); if (!rc) throw std::runtime_error("Error setting RTC input argument \"sigma\"");
-
-    rc = sigmaRTC_->addBody(rtcString);        if (!rc) throw std::runtime_error("Error in RTC function compilation");
+    if (!sigmaRTC_->addBody(rtcString))             throw std::runtime_error("Error in RTC function compilation");
   }
 #endif
 
-  SC operator()(SC x, SC y, SC z) const {
+  SC operator()(char c, SC x, SC y, SC z = 0.0) const {
 #ifdef HAVE_MUELU_PAMGEN
     if (useSigmaRTC_)
-      return tensorRTC(x, y, z);
+      return tensorRTC(c, x, y, z);
 #endif
-    return tensorDefault(x, y, z);
+    return tensorDefault(c, x, y, z);
   }
 
   void setT(double t) { t_ = t; }
 
   void operator=(const Tensor<Scalar>& tensor) {
     useSigmaRTC_ = tensor.useSigmaRTC_;
+    is3D_        = tensor.is3D_;
     t_           = tensor.t_;
 #ifdef HAVE_MUELU_PAMGEN
     sigmaRTC_    = tensor.sigmaRTC_;
@@ -139,37 +142,40 @@ public:
   }
 
 private:
-  SC tensorDefault(SC x, SC y, SC z) const {
-    SC one = STS::one();
-
-    // Moving plate
-    if (z >= 0.1*(1 + t_) && z <= 0.1*(2 + 1.5*t_))
-      return 1e-6*one;
-
-    return one;
+  SC tensorDefault(char c, SC x, SC y, SC z) const {
+    // isotropic tensor
+    return STS::one();
   }
 
 #ifdef HAVE_MUELU_PAMGEN
-  SC tensorRTC(SC x, SC y, SC z) const {
-    SC sigma;
-
-    bool rc;
+  SC tensorRTC(char c, SC x, SC y, SC z) const {
+    SC sigmax, sigmay, sigmaz;
 
     int cnt = 0;
-    rc = sigmaRTC_->varValueFill(cnt++, x);      if (!rc) throw std::runtime_error("Could not fill \"x\"");
-    rc = sigmaRTC_->varValueFill(cnt++, y);      if (!rc) throw std::runtime_error("Could not fill \"y\"");
-    rc = sigmaRTC_->varValueFill(cnt++, z);      if (!rc) throw std::runtime_error("Could not fill \"z\"");
-    rc = sigmaRTC_->varValueFill(cnt++, t_);     if (!rc) throw std::runtime_error("Could not fill \"t\"");
-    rc = sigmaRTC_->varAddrFill (cnt++, &sigma); if (!rc) throw std::runtime_error("Could not fill \"sigma\"");
+    if (!sigmaRTC_->varValueFill(cnt++, x))       throw std::runtime_error("Could not fill \"x\"");
+    if (!sigmaRTC_->varValueFill(cnt++, y))       throw std::runtime_error("Could not fill \"y\"");
+    if (is3D_ &&
+        !sigmaRTC_->varValueFill(cnt++, z))       throw std::runtime_error("Could not fill \"z\"");
+    if (!sigmaRTC_->varValueFill(cnt++, t_))      throw std::runtime_error("Could not fill \"t\"");
+    if (!sigmaRTC_->varAddrFill (cnt++, &sigmax)) throw std::runtime_error("Could not fill \"sigmax\"");
+    if (!sigmaRTC_->varAddrFill (cnt++, &sigmay)) throw std::runtime_error("Could not fill \"sigmay\"");
+    if (is3D_ &&
+        !sigmaRTC_->varAddrFill (cnt++, &sigmaz)) throw std::runtime_error("Could not fill \"sigmaz\"");
 
     sigmaRTC_->execute();
 
-    return sigma;
+    if (c == 'x') return sigmax;
+    if (c == 'y') return sigmay;
+    if (is3D_ &&
+        c == 'z') return sigmaz;
+
+    throw std::runtime_error("Wrong c");
   }
 #endif
 
 private:
   bool   useSigmaRTC_;
+  bool   is3D_;
   double t_;
 
 #ifdef HAVE_MUELU_PAMGEN
@@ -179,7 +185,7 @@ private:
 };
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Map, class Matrix, class MultiVector>
-Teuchos::RCP<Matrix> BuildMatrix(const Tensor<Scalar>& tensor, Teuchos::ParameterList& list,
+Teuchos::RCP<Matrix> BuildMatrix(bool is3D, const Tensor<Scalar>& tensor, Teuchos::ParameterList& list,
                                  const Teuchos::RCP<const Map>& map, const Teuchos::RCP<const MultiVector>& coords) {
   typedef GlobalOrdinal GO;
   typedef LocalOrdinal  LO;
@@ -189,12 +195,25 @@ Teuchos::RCP<Matrix> BuildMatrix(const Tensor<Scalar>& tensor, Teuchos::Paramete
 
   GO nx = list.get("nx", (GO) -1);
   GO ny = list.get("ny", (GO) -1);
-  GO nz = list.get("nz", (GO) -1);
-  if (nx == -1 || ny == -1 || nz == -1) {
-    GO n = map->getGlobalNumElements();
-    nx = (GO) Teuchos::ScalarTraits<double>::pow(n, 0.33334);
-    ny = nx; nz = nx;
-    TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
+  GO nz = -1;
+  if (is3D) {
+    // 3D
+    nz = list.get("nz", (GO) -1);
+
+    if (nx == -1 || ny == -1 || nz == -1) {
+      GO n = map->getGlobalNumElements();
+      nx = (GO) Teuchos::ScalarTraits<double>::pow(n, 0.33334);
+      ny = nx; nz = nx;
+      TEUCHOS_TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
+    }
+  } else {
+    // 2D
+    if (nx == -1 || ny == -1) {
+      GO n = map->getGlobalNumElements();
+      nx = (GO) Teuchos::ScalarTraits<double>::pow(n, 0.5);
+      ny = nx;
+      TEUCHOS_TEST_FOR_EXCEPTION(nx * ny != n, std::logic_error, "You need to specify nx, ny, and nz");
+    }
   }
 
   double  one = 1.0;
@@ -204,7 +223,7 @@ Teuchos::RCP<Matrix> BuildMatrix(const Tensor<Scalar>& tensor, Teuchos::Paramete
 
   // bool keepBCs = list.get("keepBCs", false);
 
-  LO nnz = 7;
+  LO nnz = (is3D ? 7 : 5);
 
   Teuchos::RCP<Matrix> A = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(map, nnz);
 
@@ -218,7 +237,7 @@ Teuchos::RCP<Matrix> BuildMatrix(const Tensor<Scalar>& tensor, Teuchos::Paramete
 
   ArrayRCP<const SC> x = coords->getData(0);
   ArrayRCP<const SC> y = coords->getData(1);
-  ArrayRCP<const SC> z = coords->getData(2);
+  ArrayRCP<const SC> z = (is3D ? coords->getData(2) : Teuchos::null);
 
   //    e
   //  b a c
@@ -229,28 +248,70 @@ Teuchos::RCP<Matrix> BuildMatrix(const Tensor<Scalar>& tensor, Teuchos::Paramete
     size_t n = 0;
 
     center = myGlobalElements[i] - indexBase;
-    Galeri::Xpetra::GetNeighboursCartesian3d(center, nx, ny, nz, left, right, front, back, bottom, top);
 
-    SC w = tensor(x[center], y[center], z[center]);
+    if (is3D) {
+      // 3D
+      Galeri::Xpetra::GetNeighboursCartesian3d(center, nx, ny, nz, left, right, front, back, bottom, top);
 
-    SC b = -((left   != -1) ? tensor(0.5*(x[center] + x[left]),   0.5*(y[center] + y[left]),   0.5*(z[center] + z[left]))  : w) / (stretchx*stretchx);
-    SC c = -((right  != -1) ? tensor(0.5*(x[center] + x[right]),  0.5*(y[center] + y[right]),  0.5*(z[center] + z[right])) : w) / (stretchx*stretchx);
-    SC d = -((front  != -1) ? tensor(0.5*(x[center] + x[front]),  0.5*(y[center] + y[front]),  0.5*(z[center] + z[front])) : w) / (stretchy*stretchy);
-    SC e = -((back   != -1) ? tensor(0.5*(x[center] + x[back]),   0.5*(y[center] + y[back]),   0.5*(z[center] + z[back]))  : w) / (stretchy*stretchy);
-    SC f = -((bottom != -1) ? tensor(0.5*(x[center] + x[bottom]), 0.5*(y[center] + y[bottom]), 0.5*(z[center] + z[bottom])): w) / (stretchz*stretchz);
-    SC g = -((top    != -1) ? tensor(0.5*(x[center] + x[top]),    0.5*(y[center] + y[top]),    0.5*(z[center] + z[top]))   : w) / (stretchz*stretchz);
-    SC a = -(b + c + d + e + f + g);
+      SC w;
 
-    if (left   != -1) { inds[n] = left;   vals[n++] = b; }
-    if (right  != -1) { inds[n] = right;  vals[n++] = c; }
-    if (front  != -1) { inds[n] = front;  vals[n++] = d; }
-    if (back   != -1) { inds[n] = back;   vals[n++] = e; }
-    if (bottom != -1) { inds[n] = bottom; vals[n++] = f; }
-    if (top    != -1) { inds[n] = top;    vals[n++] = g; }
+      w = tensor('x', x[center], y[center], z[center]);
+      SC b = -((left   != -1) ? tensor('x', 0.5*(x[center] + x[left]),   0.5*(y[center] + y[left]),   0.5*(z[center] + z[left]))  : w) / (stretchx*stretchx);
+      SC c = -((right  != -1) ? tensor('x', 0.5*(x[center] + x[right]),  0.5*(y[center] + y[right]),  0.5*(z[center] + z[right])) : w) / (stretchx*stretchx);
+      w = tensor('y', x[center], y[center], z[center]);
+      SC d = -((front  != -1) ? tensor('y', 0.5*(x[center] + x[front]),  0.5*(y[center] + y[front]),  0.5*(z[center] + z[front])) : w) / (stretchy*stretchy);
+      SC e = -((back   != -1) ? tensor('y', 0.5*(x[center] + x[back]),   0.5*(y[center] + y[back]),   0.5*(z[center] + z[back]))  : w) / (stretchy*stretchy);
+      w = tensor('z', x[center], y[center], z[center]);
+      SC f = -((bottom != -1) ? tensor('z', 0.5*(x[center] + x[bottom]), 0.5*(y[center] + y[bottom]), 0.5*(z[center] + z[bottom])): w) / (stretchz*stretchz);
+      SC g = -((top    != -1) ? tensor('z', 0.5*(x[center] + x[top]),    0.5*(y[center] + y[top]),    0.5*(z[center] + z[top]))   : w) / (stretchz*stretchz);
 
-    // diagonal (ignore Neumann for now => no update
-    inds[n]   = center;
-    vals[n++] = a;
+      SC a = -(b + c + d + e + f + g);
+
+      if (left   != -1) { inds[n] = left;   vals[n++] = b; }
+      if (right  != -1) { inds[n] = right;  vals[n++] = c; }
+      if (front  != -1) { inds[n] = front;  vals[n++] = d; }
+      if (back   != -1) { inds[n] = back;   vals[n++] = e; }
+      if (bottom != -1) { inds[n] = bottom; vals[n++] = f; }
+      if (top    != -1) { inds[n] = top;    vals[n++] = g; }
+
+      if (bottom != -1 && Galeri::Xpetra::IsBoundary3d(center, nx, ny, nz)) {
+        // Neumann boundary unknown (diagonal = sum of all offdiagonal)
+        a = Teuchos::ScalarTraits<Scalar>::zero();
+        for (size_t j = 0; j < n; j++)
+          a -= vals[j];
+      }
+      inds[n]   = center;
+      vals[n++] = a;
+
+    } else {
+      // 2D
+      Galeri::Xpetra::GetNeighboursCartesian2d(center, nx, ny, left, right, front, back);
+
+      SC w;
+
+      w = tensor('x', x[center], y[center]);
+      SC b = -((left   != -1) ? tensor('x', 0.5*(x[center] + x[left]),   0.5*(y[center] + y[left]))  : w) / (stretchx*stretchx);
+      SC c = -((right  != -1) ? tensor('x', 0.5*(x[center] + x[right]),  0.5*(y[center] + y[right])) : w) / (stretchx*stretchx);
+      w = tensor('y', x[center], y[center]);
+      SC d = -((front  != -1) ? tensor('y', 0.5*(x[center] + x[front]),  0.5*(y[center] + y[front])) : w) / (stretchy*stretchy);
+      SC e = -((back   != -1) ? tensor('y', 0.5*(x[center] + x[back]),   0.5*(y[center] + y[back]))  : w) / (stretchy*stretchy);
+
+      SC a = -(b + c + d + e);
+
+      if (left   != -1) { inds[n] = left;   vals[n++] = b; }
+      if (right  != -1) { inds[n] = right;  vals[n++] = c; }
+      if (front  != -1) { inds[n] = front;  vals[n++] = d; }
+      if (back   != -1) { inds[n] = back;   vals[n++] = e; }
+
+      if (front != -1 && Galeri::Xpetra::IsBoundary2d(center, nx, ny)) {
+        // Neumann boundary unknown (diagonal = sum of all offdiagonal)
+        a = Teuchos::ScalarTraits<Scalar>::zero();
+        for (size_t j = 0; j < n; j++)
+          a -= vals[j];
+      }
+      inds[n]   = center;
+      vals[n++] = a;
+    }
 
     for (size_t j = 0; j < n; j++)
       inds[j] += indexBase;
@@ -266,7 +327,7 @@ Teuchos::RCP<Matrix> BuildMatrix(const Tensor<Scalar>& tensor, Teuchos::Paramete
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ConstructData(const Tensor<Scalar>& tensor, const std::string& matrixType, Teuchos::ParameterList& galeriList,
+void ConstructData(bool is3D, const Tensor<Scalar>& tensor, const std::string& matrixType, Teuchos::ParameterList& galeriList,
                    Xpetra::UnderlyingLib lib, Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                    Teuchos::RCP<Xpetra::Matrix      <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                    Teuchos::RCP<const Xpetra::Map   <LocalOrdinal,GlobalOrdinal, Node> >&       map,
@@ -279,10 +340,18 @@ void ConstructData(const Tensor<Scalar>& tensor, const std::string& matrixType, 
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
 
-  map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-  coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+  if (is3D) {
+    // 3D
+    map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
 
-  A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(tensor, galeriList, map, coordinates);
+  } else {
+    // 2D
+    map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+  }
+
+  A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(is3D, tensor, galeriList, map, coordinates);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -318,13 +387,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace3D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName = "";     clp.setOption("xml",                &xmlFileName, "read parameters from a file");
-  int         numRebuilds = 0;      clp.setOption("rebuild",            &numRebuilds, "#times to rebuild hierarchy");
-  bool        useFilter   = true;   clp.setOption("filter", "nofilter", &useFilter,   "Print out only Setup times");
-  bool        modify      = true;   clp.setOption("modify", "nomodify", &modify,      "Change values of the matrix used for reuse");
-  std::string solveType   = "cg";   clp.setOption("solver",             &solveType,   "solve type: (none | cg | standalone)");
-  double      tol         = 1e-6;   clp.setOption("tol",                &tol,         "solver convergence tolerance");
-  int         maxIts      = 200;    clp.setOption("its",                &maxIts,      "maximum number of solver iterations");
+  std::string xmlFileName = "";     clp.setOption("xml",    &xmlFileName, "read parameters from a file");
+  std::string solveType   = "cg";   clp.setOption("solver", &solveType,   "solve type: (none | cg | standalone)");
+  double      tol         = 1e-6;   clp.setOption("tol",    &tol,         "solver convergence tolerance");
+  int         maxIts      = 200;    clp.setOption("its",    &maxIts,      "maximum number of solver iterations");
+  int         dim         = 3;      clp.setOption("dim",    &dim,         "space dimension");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -334,6 +401,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
   Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+
+  bool is3D = (dim == 3);
 
   // Retrieve matrix parameters (they may have been changed on the command line)
   // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
@@ -368,7 +437,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     paramList.remove("sigma");
 #ifdef HAVE_MUELU_PAMGEN
     out << "Switching to RTC" << std::endl;
-    tensor = Tensor<SC>(sigmaString);
+    tensor = Tensor<SC>(sigmaString, is3D);
 #else
     (void)sigmaString; // fix compiler warning
 #endif
@@ -404,7 +473,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
     tensor.setT(0);
 
-    ConstructData(tensor, matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
+    ConstructData(is3D, tensor, matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
     A->SetMaxEigenvalueEstimate(-one);
 
     RCP<Vector> X = VectorFactory::Build(map);
@@ -420,7 +489,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
       tensor.setT(t);
 
-      ConstructData(tensor, matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
+      ConstructData(is3D, tensor, matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
       A->SetMaxEigenvalueEstimate(-one);
 
       tc = high_resolution_clock::now();
