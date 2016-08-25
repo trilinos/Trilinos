@@ -55,6 +55,10 @@
 #include "exodusII.h"  // for ex_put_partial_id_map, etc
 #include <sys/types.h> // for int64_t
 
+/*!
+ * \deprecated Use ex_put_partial_id_map() instead.
+ */
+
 /*
  * writes out a portion of the element numbering map to the database;
  * this allows element numbers to be non-contiguous

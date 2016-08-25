@@ -33,16 +33,16 @@
  *
  */
 
-#include <exodusII.h>  // for ex_get_partial_nodal_var
-#include <sys/types.h> // for int64_t
+#include <exodusII.h>
+#include <sys/types.h>
 
 /*!
- * \deprecated Use ex_get_partial_nodal_var() instead
+ * \deprecated Use ex_get_partial_var() instead
  */
 
 int ex_get_n_nodal_var(int exoid, int time_step, int nodal_var_index, int64_t start_node,
                        int64_t num_nodes, void *var_vals)
 {
-  return ex_get_partial_nodal_var(exoid, time_step, nodal_var_index, start_node, num_nodes,
-                                  var_vals);
+  return ex_get_partial_var(exoid, time_step, EX_NODAL, nodal_var_index, 1, start_node, num_nodes,
+                            var_vals);
 }

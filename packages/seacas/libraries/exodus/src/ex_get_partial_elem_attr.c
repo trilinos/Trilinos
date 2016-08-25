@@ -53,13 +53,12 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include "exodusII.h"     // for ex_err, exerrval, etc
-#include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
-#include <inttypes.h>     // for PRId64
-#include <stddef.h>       // for size_t
-#include <stdio.h>
+#include "exodusII.h"  // for ex_err, exerrval, etc
 #include <sys/types.h> // for int64_t
+
+/*!
+ * \deprecated use ex_get_partial_attr()
+ */
 
 /*
  * reads the attributes for an element block
@@ -69,108 +68,5 @@ int ex_get_partial_elem_attr(int exoid, ex_entity_id elem_blk_id, int64_t start_
                              int64_t num_elems, void *attrib)
 
 {
-  int    numelbdim, numattrdim, attrid, elem_blk_id_ndx, status;
-  size_t num_elem_this_blk, num_attr, start[2], count[2];
-  char   errmsg[MAX_ERR_LENGTH];
-
-  exerrval = 0; /* clear error code */
-
-  /* Determine index of elem_blk_id in VAR_ID_EL_BLK array */
-  if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) < 0) {
-    if (exerrval == EX_NULLENTITY) {
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "Warning: no attributes found for NULL block %" PRId64 " in file id %d", elem_blk_id,
-               exoid);
-      ex_err("ex_get_partial_elem_attr", errmsg, EX_NULLENTITY);
-      return (EX_WARN); /* no attributes for this element block */
-    }
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "Warning: failed to locate element block %" PRId64 " in %s array in file id %d",
-             elem_blk_id, VAR_ID_EL_BLK, exoid);
-    ex_err("ex_get_partial_elem_attr", errmsg, exerrval);
-    return (EX_WARN);
-  }
-
-  /* inquire id's of previously defined dimensions  */
-
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_EL_IN_BLK(elem_blk_id_ndx), &numelbdim)) != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate number of elements for block %" PRId64 " in file id %d",
-             elem_blk_id, exoid);
-    ex_err("ex_get_partial_elem_attr", errmsg, exerrval);
-    return (EX_FATAL);
-  }
-
-  if ((status = nc_inq_dimlen(exoid, numelbdim, &num_elem_this_blk)) != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to get number of elements for block %" PRId64 " in file id %d",
-             elem_blk_id, exoid);
-    ex_err("ex_get_partial_elem_attr", errmsg, exerrval);
-    return (EX_FATAL);
-  }
-
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_ATT_IN_BLK(elem_blk_id_ndx), &numattrdim)) !=
-      NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "Warning: no attributes found for block %" PRId64 " in file id %d", elem_blk_id,
-             exoid);
-    ex_err("ex_get_partial_elem_attr", errmsg, EX_MSG);
-    return (EX_WARN); /* no attributes for this element block */
-  }
-
-  if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to get number of attributes for block %" PRId64 " in file id %d",
-             elem_blk_id, exoid);
-    ex_err("ex_get_partial_elem_attr", errmsg, exerrval);
-    return (EX_FATAL);
-  }
-
-  if ((status = nc_inq_varid(exoid, VAR_ATTRIB(elem_blk_id_ndx), &attrid)) != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to locate attributes for block %" PRId64 " in file id %d", elem_blk_id,
-             exoid);
-    ex_err("ex_get_partial_elem_attr", errmsg, exerrval);
-    return (EX_FATAL);
-  }
-
-  /* do some error checking */
-  if (num_elem_this_blk < (start_elem_num + num_elems - 1)) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: requested attributes from too many elements in "
-                                     "this block, %" PRId64 "",
-             elem_blk_id);
-    ex_err("ex_get_partial_elem_attr", errmsg, exerrval);
-    return (EX_FATAL);
-  }
-
-  /* read in the attributes */
-
-  start[0] = --start_elem_num;
-  start[1] = 0;
-
-  count[0] = num_elems;
-  count[1] = num_attr;
-
-  if (ex_comp_ws(exoid) == 4) {
-    status = nc_get_vara_float(exoid, attrid, start, count, attrib);
-  }
-  else {
-    status = nc_get_vara_double(exoid, attrid, start, count, attrib);
-  }
-
-  if (status != NC_NOERR) {
-    exerrval = status;
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to get attributes for block %" PRId64 " in file id %d", elem_blk_id,
-             exoid);
-    ex_err("ex_get_partial_elem_attr", errmsg, exerrval);
-    return (EX_FATAL);
-  }
-  return (EX_NOERR);
+  return ex_get_partial_attr(exoid, EX_ELEM_BLOCK, elem_blk_id, start_elem_num, num_elems, attrib);
 }

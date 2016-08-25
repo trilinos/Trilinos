@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+n * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -58,6 +58,10 @@
 
 #include "exodusII.h"  // for ex_get_partial_var, etc
 #include <sys/types.h> // for int64_t
+
+/*!
+ * \deprecated use ex_get_partial_var()
+ */
 
 /*
  * reads the values of a single element variable for one element block at

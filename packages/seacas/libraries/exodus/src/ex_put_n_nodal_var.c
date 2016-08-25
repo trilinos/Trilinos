@@ -56,6 +56,10 @@
 #include <sys/types.h> // for int64_t
 
 /*!
+ * \deprecated Use ex_put_partial_var() instead.
+ */
+
+/*!
  * writes the values of a single nodal variable for a partial block at
  * one single time step to the database; assume the first time step
  * and nodal variable index is 1
@@ -71,6 +75,6 @@ int ex_put_n_nodal_var(int exoid, int time_step, int nodal_var_index, int64_t st
                        int64_t num_nodes, const void *nodal_var_vals)
 
 {
-  return ex_put_partial_nodal_var(exoid, time_step, nodal_var_index, start_node, num_nodes,
-                                  nodal_var_vals);
+  return ex_put_partial_var(exoid, time_step, EX_NODAL, nodal_var_index, 1, start_node, num_nodes,
+                            nodal_var_vals);
 }

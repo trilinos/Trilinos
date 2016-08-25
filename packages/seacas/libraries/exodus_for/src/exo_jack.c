@@ -2874,7 +2874,8 @@ void F2C(exgnss, EXGNSS)(int *idne, entity_id *ss_id, void_int *start, void_int 
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_get_n_side_set(*idne, *ss_id, st, cnt, ss_elem_list, ss_side_list)) != 0) {
+  if ((*ierr = ex_get_partial_set(*idne, EX_SIDE_SET, *ss_id, st, cnt, ss_elem_list,
+                                  ss_side_list)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read side set element list from file id %d",
              *idne);
@@ -2898,7 +2899,8 @@ void F2C(expnss, EXPNSS)(int *idne, entity_id *ss_id, void_int *start, void_int 
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_put_n_side_set(*idne, *ss_id, st, cnt, ss_elem_list, ss_side_list)) != 0) {
+  if ((*ierr = ex_put_partial_set(*idne, EX_SIDE_SET, *ss_id, st, cnt, ss_elem_list,
+                                  ss_side_list)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write side set element list to file id %d",
              *idne);
@@ -2922,7 +2924,7 @@ void F2C(exgnssd, EXGNSSD)(int *idne, entity_id *ss_id, void_int *start, void_in
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_get_n_side_set_df(*idne, *ss_id, st, cnt, ss_df)) != 0) {
+  if ((*ierr = ex_get_partial_set_dist_fact(*idne, EX_SIDE_SET, *ss_id, st, cnt, ss_df)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read side set dist factor from file id %d",
              *idne);
@@ -2946,7 +2948,7 @@ void F2C(expnssd, EXPNSSD)(int *idne, entity_id *ss_id, void_int *start, void_in
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_put_n_side_set_df(*idne, *ss_id, st, cnt, ss_df)) != 0) {
+  if ((*ierr = ex_put_partial_set_dist_fact(*idne, EX_SIDE_SET, *ss_id, st, cnt, ss_df)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write side set dist factor to file id %d",
              *idne);
@@ -2970,7 +2972,7 @@ void F2C(exgnns, EXGNNS)(int *idne, entity_id *ns_id, void_int *start, void_int 
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_get_n_node_set(*idne, *ns_id, st, cnt, ns_node_list)) != 0) {
+  if ((*ierr = ex_get_partial_set(*idne, EX_NODE_SET, *ns_id, st, cnt, ns_node_list, NULL)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read node set node list from file id %d",
              *idne);
@@ -2994,7 +2996,7 @@ void F2C(expnns, EXPNNS)(int *idne, entity_id *ns_id, void_int *start, void_int 
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_put_n_node_set(*idne, *ns_id, st, cnt, ns_node_list)) != 0) {
+  if ((*ierr = ex_put_partial_set(*idne, EX_NODE_SET, *ns_id, st, cnt, ns_node_list, NULL)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write node set node list to file id %d",
              *idne);
@@ -3018,7 +3020,7 @@ void F2C(exgnnsd, EXGNNSD)(int *idne, entity_id *ns_id, void_int *start, void_in
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_get_n_node_set_df(*idne, *ns_id, st, cnt, ns_df)) != 0) {
+  if ((*ierr = ex_get_partial_set_dist_fact(*idne, EX_NODE_SET, *ns_id, st, cnt, ns_df)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read node set dist factor from file id %d",
              *idne);
@@ -3042,7 +3044,7 @@ void F2C(expnnsd, EXPNNSD)(int *idne, entity_id *ns_id, void_int *start, void_in
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_put_n_node_set_df(*idne, *ns_id, st, cnt, ns_df)) != 0) {
+  if ((*ierr = ex_put_partial_set_dist_fact(*idne, EX_NODE_SET, *ns_id, st, cnt, ns_df)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write node set dist factor to file id %d",
              *idne);
@@ -3066,7 +3068,7 @@ void F2C(exgncor, EXGNCOR)(int *idne, void_int *start, void_int *count, real *x_
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_get_n_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
+  if ((*ierr = ex_get_partial_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read node coordinates from file id %d",
              *idne);
@@ -3090,7 +3092,7 @@ void F2C(expncor, EXPNCOR)(int *idne, void_int *start, void_int *count, real *x_
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_put_n_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
+  if ((*ierr = ex_put_partial_coord(*idne, st, cnt, x_coor, y_coor, z_coor)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write node coordinates to file id %d",
              *idne);
@@ -3114,7 +3116,8 @@ void F2C(exgnec, EXGNEC)(int *idne, entity_id *elem_blk_id, void_int *start, voi
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_get_n_elem_conn(*idne, *elem_blk_id, st, cnt, connect)) != 0) {
+  if ((*ierr = ex_get_partial_conn(*idne, EX_ELEM_BLOCK, *elem_blk_id, st, cnt, connect, NULL,
+                                   NULL)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read element block connectivity from file id %d", *idne);
@@ -3138,7 +3141,8 @@ void F2C(expnec, EXPNEC)(int *idne, entity_id *elem_blk_id, void_int *start, voi
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_put_n_elem_conn(*idne, *elem_blk_id, st, cnt, connect)) != 0) {
+  if ((*ierr = ex_put_partial_conn(*idne, EX_ELEM_BLOCK, *elem_blk_id, st, cnt, connect, NULL,
+                                   NULL)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to write element block connectivity to file id %d", *idne);
@@ -3162,7 +3166,7 @@ void F2C(exgneat, EXGNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, v
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_get_n_elem_attr(*idne, *elem_blk_id, st, cnt, attrib)) != 0) {
+  if ((*ierr = ex_get_partial_attr(*idne, EX_ELEM_BLOCK, *elem_blk_id, st, cnt, attrib)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read element block attribute from file id %d", *idne);
@@ -3186,7 +3190,7 @@ void F2C(expneat, EXPNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, v
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_put_n_elem_attr(*idne, *elem_blk_id, st, cnt, attrib)) != 0) {
+  if ((*ierr = ex_put_partial_attr(*idne, EX_ELEM_BLOCK, *elem_blk_id, st, cnt, attrib)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write element block attribute to file id %d",
              *idne);
@@ -3248,8 +3252,8 @@ void F2C(exgnev, EXGNEV)(int *idne, int *time_step, int *elem_var_index, entity_
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_get_n_var(*idne, *time_step, EX_ELEM_BLOCK, *elem_var_index, *elem_blk_id, st,
-                            cnt, elem_var_vals)) != 0) {
+  if ((*ierr = ex_get_partial_var(*idne, *time_step, EX_ELEM_BLOCK, *elem_var_index, *elem_blk_id,
+                                  st, cnt, elem_var_vals)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read element block variable from file id %d",
              *idne);
@@ -3298,8 +3302,8 @@ void F2C(exgnnv, EXGNNV)(int *idne, int *time_step, int *nodal_var_index, void_i
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_get_n_var(*idne, *time_step, EX_NODAL, *nodal_var_index, 1, st, cnt,
-                            nodal_vars)) != 0) {
+  if ((*ierr = ex_get_partial_var(*idne, *time_step, EX_NODAL, *nodal_var_index, 1, st, cnt,
+                                  nodal_vars)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read nodal variable from file id %d", *idne);
     ex_err("negnnv", errmsg, EX_MSG);
@@ -3347,7 +3351,7 @@ void F2C(exgnenm, EXGNENM)(int *idne, void_int *starte, void_int *num_ent, void_
     cnt = *(int *)num_ent;
   }
 
-  if ((*ierr = ex_get_n_elem_num_map(*idne, st, cnt, elem_map)) != 0) {
+  if ((*ierr = ex_get_partial_id_map(*idne, EX_ELEM_MAP, st, cnt, elem_map)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read element numbering map from file id %d",
              *idne);
@@ -3395,7 +3399,7 @@ void F2C(exgnnnm, EXGNNNM)(int *idne, void_int *startn, void_int *num_ent, void_
     cnt = *(int *)num_ent;
   }
 
-  if ((*ierr = ex_get_n_node_num_map(*idne, st, cnt, node_map)) != 0) {
+  if ((*ierr = ex_get_partial_id_map(*idne, EX_NODE_MAP, st, cnt, node_map)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read node numbering map from file id %d",
              *idne);

@@ -56,11 +56,12 @@
 #include <sys/types.h> // for int64_t
 
 /*!
- * \deprecated Use ex_get_partial_node_set() instead
+ * \deprecated Use ex_get_partial_set() instead
  */
 
 int ex_get_n_node_set(int exoid, ex_entity_id node_set_id, int64_t start_node_num,
                       int64_t num_nodes, void_int *node_set_node_list)
 {
-  return ex_get_partial_node_set(exoid, node_set_id, start_node_num, num_nodes, node_set_node_list);
+  return ex_get_partial_set(exoid, EX_NODE_SET, node_set_id, start_node_num, num_nodes,
+                            node_set_node_list, NULL);
 }
