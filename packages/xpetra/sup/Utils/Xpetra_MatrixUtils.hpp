@@ -387,7 +387,7 @@ public:
         GlobalOrdinal gcolid = input.getColMap()->getGlobalElement(indices[i]);
 
         //size_t colBlockId = myColumnMapExtractor->getMapIndexForGID(gcolid); // old buggy thing
-        size_t colBlockId = coCheckData[indices[i]];
+        size_t colBlockId = Teuchos::as<size_t>(coCheckData[indices[i]]);
 
         // global column id used for subblocks to insert information
         GlobalOrdinal subblock_gcolid = gcolid; // for Xpetra-style numbering the global col ids are not changing
