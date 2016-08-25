@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
-    mybasker.Options.verbose            = BASKER_TRUE;
+    mybasker.Options.verbose            = BASKER_FALSE;
     mybasker.Options.verbose_matrix_out = BASKER_FALSE;
     mybasker.Options.realloc            = BASKER_TRUE;
     mybasker.Options.transpose          = BASKER_FALSE;
