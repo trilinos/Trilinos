@@ -133,7 +133,9 @@ public:
   void operator=(const Tensor<Scalar>& tensor) {
     useSigmaRTC_ = tensor.useSigmaRTC_;
     t_           = tensor.t_;
+#ifdef HAVE_MUELU_PAMGEN
     sigmaRTC_    = tensor.sigmaRTC_;
+#endif
   }
 
 private:
