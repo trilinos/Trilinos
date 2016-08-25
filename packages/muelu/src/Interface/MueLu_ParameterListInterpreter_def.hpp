@@ -118,6 +118,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm, Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
 
+    facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
+
     if (paramList.isParameter("xml parameter file")) {
       std::string filename = paramList.get("xml parameter file", "");
       if (filename.length() != 0) {
@@ -138,6 +140,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
+    facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
+
     ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), comm);
     SetParameterList(paramList);
@@ -152,12 +156,8 @@ namespace MueLu {
     if (paramList.isSublist("Hierarchy")) {
       SetFactoryParameterList(paramList);
     } else if (paramList.isParameter("MueLu preconditioner") == true) {
-      //Teuchos::ParameterList pp;
-      MueLu::FacadeClassFactory<SC,LO,GO,NO> test;
-      Teuchos::RCP<ParameterList> pp = test.SetParameterList(paramList);
-
-      std::cout << "generated parameters:" << std::endl;
-      std::cout << *pp << std::endl;
+      this->GetOStream(Runtime0) << "Use facade class: " << paramList.get<std::string>("MueLu preconditioner")  << std::endl;
+      Teuchos::RCP<ParameterList> pp = facadeFact_->SetParameterList(paramList);
 
       SetFactoryParameterList(*pp);
 

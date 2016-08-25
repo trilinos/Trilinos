@@ -63,6 +63,8 @@
 #include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_EminPFactory_fwd.hpp"
+#include "MueLu_FacadeClassBase.hpp"
+#include "MueLu_FacadeClassFactory_fwd.hpp"
 #include "MueLu_FactoryFactory_fwd.hpp"
 #include "MueLu_FilteredAFactory_fwd.hpp"
 #include "MueLu_GenericRFactory_fwd.hpp"
@@ -116,6 +118,7 @@ namespace MueLu {
      */
     ParameterListInterpreter() {
       factFact_ = Teuchos::null;
+      facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
     }
 
   public:
@@ -169,6 +172,17 @@ namespace MueLu {
     //! Call the SetupHierarchy routine from the HiearchyManager object.
     void SetupHierarchy(Hierarchy& H) const;
 
+    /*! @brief Register new facade class
+     *
+     * Register new externally provided facade class in FacadeClassFactory
+     *
+     * @param[in] name: name that is used to access Facade class
+     * @param[in] facadeclass: RCP pointer to facade class instance
+     */
+    void RegisterFacadeClass(std::string name, Teuchos::RCP<FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> > facadeclass) {
+      facadeFact_->RegisterFacadeClass(name,facadeclass);
+    }
+
   private:
     //! Setup Operator object
     virtual void SetupOperator(Operator& A) const;
@@ -210,6 +224,10 @@ namespace MueLu {
 
     //! Internal factory for factories
     Teuchos::RCP<FactoryFactory> factFact_;
+
+    //! FacadeClass factory
+    Teuchos::RCP<FacadeClassFactory> facadeFact_;
+
     //@}
   };
 
