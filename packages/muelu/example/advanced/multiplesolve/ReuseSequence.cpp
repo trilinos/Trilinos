@@ -387,11 +387,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace3D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName = "";     clp.setOption("xml",    &xmlFileName, "read parameters from a file");
-  std::string solveType   = "cg";   clp.setOption("solver", &solveType,   "solve type: (none | cg | standalone)");
-  double      tol         = 1e-6;   clp.setOption("tol",    &tol,         "solver convergence tolerance");
-  int         maxIts      = 200;    clp.setOption("its",    &maxIts,      "maximum number of solver iterations");
-  int         dim         = 3;      clp.setOption("dim",    &dim,         "space dimension");
+  std::string xmlFileName = "reuse_seq.xml";    clp.setOption("xml",    &xmlFileName, "read parameters from a file");
+  std::string solveType   = "cg";               clp.setOption("solver", &solveType,   "solve type: (none | cg | standalone)");
+  double      tol         = 1e-6;               clp.setOption("tol",    &tol,         "solver convergence tolerance");
+  int         maxIts      = 200;                clp.setOption("its",    &maxIts,      "maximum number of solver iterations");
+  int         dim         = 3;                  clp.setOption("dim",    &dim,         "space dimension");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -455,7 +455,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   reuseTypes.push_back("RP");   reuseNames.push_back("smoothed P and R");
   reuseTypes.push_back("RAP");  reuseNames.push_back("coarse grids");
 
-  const size_t numSteps = 5;
+  const size_t numSteps = 8;
 
   high_resolution_clock::time_point tc;
   std::vector<duration<double>> setup_time(reuseTypes.size()*numSteps);
