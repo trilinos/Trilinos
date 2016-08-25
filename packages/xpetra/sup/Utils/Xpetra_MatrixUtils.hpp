@@ -183,6 +183,8 @@ public:
     @param input Input matrix, must already have had 'FillComplete()' called.
     @param rangeMapExtractor MapExtractor object describing the splitting of rows of the output block matrix
     @param domainMapExtractor MapExtractor object describing the splitting of columns of the output block matrix
+    @param columnMapExtractor (not fully clear whether we need that. is always Teuchos::null)
+    @param bThyraMode If true, build a n x n blocked operator using Thyra GIDs
   */
   static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > SplitMatrix(
                        const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& input,
@@ -220,16 +222,21 @@ public:
     Teuchos::RCP<const MapExtractor> myColumnMapExtractor = Teuchos::null;
     if(columnMapExtractor == Teuchos::null) {
       TEUCHOS_TEST_FOR_EXCEPTION(domainMapExtractor->getThyraMode() == true, Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Auto generation of column map extractor not supported for Thyra style numbering.");
+      // This code is always executed, since we always provide map extractors in Xpetra numbering!
       std::vector<Teuchos::RCP<const Map> > ovlxmaps(numCols, Teuchos::null);
       for(size_t c = 0; c < numCols; c++) {
+        // TODO: is this routine working correctly?
         Teuchos::RCP<const Map> colMap = MatrixUtils::findColumnSubMap(input, *(domainMapExtractor->getMap(c)));
         ovlxmaps[c] = colMap;
       }
       RCP<const Map> fullColMap = MapUtils::concatenateMaps(ovlxmaps);
+      // This MapExtractor is always in Xpetra mode!
       myColumnMapExtractor = MapExtractorFactory::Build(fullColMap,ovlxmaps);
     } else
       myColumnMapExtractor = columnMapExtractor; // use user-provided column map extractor.
 
+    // all above MapExtractors are always in Xpetra mode
+    // build separate ones containing Thyra mode GIDs (if necessary)
     Teuchos::RCP<const MapExtractor> thyRangeMapExtractor  = Teuchos::null;
     Teuchos::RCP<const MapExtractor> thyDomainMapExtractor = Teuchos::null;
     Teuchos::RCP<const MapExtractor> thyColMapExtractor    = Teuchos::null;
@@ -292,7 +299,6 @@ public:
     }
     // create submatrices
     std::vector<Teuchos::RCP<Matrix> > subMatrices(numRows*numCols, Teuchos::null);
-
     for (size_t r = 0; r < numRows; r++) {
       for (size_t c = 0; c < numCols; c++) {
         // create empty CrsMatrix objects
@@ -304,6 +310,44 @@ public:
           subMatrices[r*numCols+c] = MatrixFactory::Build (rangeMapExtractor->getMap(r),input.getNodeMaxNumRowEntries());
       }
     }
+
+    // We need a vector which lives on the column map of input and stores the block id that the column belongs to.
+    // create a vector on the domain map. Loop over it and fill in the corresponding block id numbers
+    // create a vector on the column map and import the data
+    // Importer: source map is non-overlapping. Target map is overlapping
+    // call colMap.Import(domMap,Importer,Insert)
+    // do the same with "Add" to make sure only one processor is responsible for the different GIDs!
+
+    typedef Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>  VectorFactory;
+    typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  Vector;
+    typedef Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node> ImportFactory;
+    typedef Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> Import;
+
+    RCP<Vector> doCheck = VectorFactory::Build(input.getDomainMap(), true);
+    doCheck->putScalar(1.0);
+    RCP<Vector> coCheck = VectorFactory::Build(input.getColMap(), true);
+    RCP<Import> imp = ImportFactory::Build(input.getDomainMap(), input.getColMap());
+    coCheck->doImport(*doCheck, *imp, Xpetra::ADD);
+    TEUCHOS_TEST_FOR_EXCEPTION(coCheck->normInf() != Teuchos::ScalarTraits< Scalar >::magnitude(1.0), Xpetra::Exceptions::RuntimeError, "Xpetra::MatrixUtils::SplitMatrix: error when distributing data.");
+
+    doCheck->putScalar(-1.0);
+    coCheck->putScalar(-1.0);
+
+    Teuchos::ArrayRCP< Scalar > doCheckData = doCheck->getDataNonConst(0);
+    for (size_t rrr = 0; rrr < input.getDomainMap()->getNodeNumElements(); rrr++) {
+      // global row id to extract data from global monolithic matrix
+      GlobalOrdinal id = input.getDomainMap()->getGlobalElement(rrr); // LID -> GID (column)
+
+      // Find the block id in range map extractor that belongs to same global id.
+      size_t BlockId = domainMapExtractor->getMapIndexForGID(id);
+
+      doCheckData[rrr] = Teuchos::as<Scalar>(BlockId);
+    }
+
+    coCheck->doImport(*doCheck, *imp, Xpetra::INSERT);
+
+    Teuchos::ArrayRCP< Scalar > coCheckData = coCheck->getDataNonConst(0);
+
     // loop over all rows of input matrix
     for (size_t rr = 0; rr < input.getRowMap()->getNodeNumElements(); rr++) {
 
@@ -341,7 +385,10 @@ public:
       for(size_t i=0; i<(size_t)indices.size(); i++) {
         // gobal column id to extract data from full monolithic matrix
         GlobalOrdinal gcolid = input.getColMap()->getGlobalElement(indices[i]);
-        size_t colBlockId = myColumnMapExtractor->getMapIndexForGID(gcolid);
+
+        //size_t colBlockId = myColumnMapExtractor->getMapIndexForGID(gcolid); // old buggy thing
+        size_t colBlockId = coCheckData[indices[i]];
+
         // global column id used for subblocks to insert information
         GlobalOrdinal subblock_gcolid = gcolid; // for Xpetra-style numbering the global col ids are not changing
         if(bThyraMode == true) {
