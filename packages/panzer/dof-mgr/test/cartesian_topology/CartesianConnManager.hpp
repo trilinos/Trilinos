@@ -207,6 +207,10 @@ public:
    /** What are the blockIds included in this connection manager?
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const;
+   /** What are the cellTopologies linked to element blocks in this connection manager?
+     */
+   virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const;
+
 
    /** Get the local element IDs for a paricular element
      * block.

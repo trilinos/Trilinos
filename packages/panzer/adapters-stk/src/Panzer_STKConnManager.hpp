@@ -126,7 +126,16 @@ public:
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
    { return stkMeshDB_->getElementBlockNames(elementBlockIds); }
-
+   /** What are the cellTopologies linked to element blocks in this connection manager?
+    */
+   virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const{
+     std::vector<std::string> elementBlockIds;
+     getElementBlockIds(elementBlockIds);
+     elementBlockTopologies.reserve(elementBlockIds.size());
+     for (unsigned i=0; i<elementBlockIds.size(); ++i) {
+       elementBlockTopologies.push_back(*(stkMeshDB_->getCellTopology(elementBlockIds[i])));
+     }
+   }
    /** Get the local element IDs for a paricular element
      * block. These are only the owned element ids.
      *
