@@ -228,17 +228,10 @@ namespace BaskerNS
       }//for all threads
     
     if(nthread_remalloc == 0)
-      {
-	return BASKER_SUCCESS;
-      }
+        return BASKER_SUCCESS;
     else
-      {
-	return nthread_remalloc;
-      }
+        return nthread_remalloc;
 
-    //Should never be here
-    BASKER_ASSERT(0==1, "nfactor_domain_error, should never");
-    return BASKER_SUCCESS;
   }//end nfactor_domain_error
 
  
