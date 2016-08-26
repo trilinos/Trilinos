@@ -317,7 +317,7 @@ public:
     // Importer: source map is non-overlapping. Target map is overlapping
     // call colMap.Import(domMap,Importer,Insert)
     // do the same with "Add" to make sure only one processor is responsible for the different GIDs!
-
+#if 0 // TAW needs to be fixed (does not compile for Scalar=complex)
     typedef Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>  VectorFactory;
     typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  Vector;
     typedef Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node> ImportFactory;
@@ -347,7 +347,7 @@ public:
     coCheck->doImport(*doCheck, *imp, Xpetra::INSERT);
 
     Teuchos::ArrayRCP< Scalar > coCheckData = coCheck->getDataNonConst(0);
-
+#endif
     // loop over all rows of input matrix
     for (size_t rr = 0; rr < input.getRowMap()->getNodeNumElements(); rr++) {
 
@@ -386,8 +386,8 @@ public:
         // gobal column id to extract data from full monolithic matrix
         GlobalOrdinal gcolid = input.getColMap()->getGlobalElement(indices[i]);
 
-        //size_t colBlockId = myColumnMapExtractor->getMapIndexForGID(gcolid); // old buggy thing
-        size_t colBlockId = Teuchos::as<size_t>(coCheckData[indices[i]]);
+        size_t colBlockId = myColumnMapExtractor->getMapIndexForGID(gcolid); // old buggy thing
+        //size_t colBlockId = Teuchos::as<size_t>(coCheckData[indices[i]]);
 
         // global column id used for subblocks to insert information
         GlobalOrdinal subblock_gcolid = gcolid; // for Xpetra-style numbering the global col ids are not changing
