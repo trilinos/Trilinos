@@ -166,7 +166,9 @@ public:
     // Set vector component 
     dual_vec1_->set(vec_->dual());
     // Set statistic component
-    Teuchos::rcp_dynamic_cast<RiskVector<Real> >(dual_vec_)->setStatistic(*stat_);
+    if ( augmented_ ) {
+      Teuchos::rcp_dynamic_cast<RiskVector<Real> >(dual_vec_)->setStatistic(*stat_);
+    }
     // Return dual vector
     return *dual_vec_;
   }
