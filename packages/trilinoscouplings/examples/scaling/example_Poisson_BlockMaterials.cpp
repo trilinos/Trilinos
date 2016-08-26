@@ -296,15 +296,7 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
   Epetra_Time Time(Comm);
 
-   //Check number of arguments
-  if (argc > 3) {
-      std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
-      std::cout <<"Usage:\n\n";
-      std::cout <<"  ./TrilinosCouplings_examples_scaling_Example_Poisson.exe [meshfile.xml] [solver.xml]\n\n";
-      std::cout <<"   meshfile.xml(optional) - xml file with description of Pamgen mesh\n\n";
-      std::cout <<"   solver.xml(optional) - xml file with ML solver options\n\n";
-      exit(1);
-   }
+ 
 
  if (MyPID == 0){
   std::cout \
@@ -494,10 +486,19 @@ int main(int argc, char *argv[]) {
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
     }
+
+    // Get the "time" value for the RTC
+    double time = 0.0;
+    if(inputMeshList.isParameter("time"))
+      time = inputMeshList.get("time",time);
     
+
+    
+    
+    // TODO: Figure out why repartitioning isn't working
+
     
     // Get sigma value for each block of elements from parameter list
-    ///CMS start hacking here
     std::vector<double>  sigma(numElemBlk);
     std::vector<PG_RuntimeCompiler::Function> sigmaRTC(numElemBlk);
     std::vector<bool> useSigmaRTC(numElemBlk,false);
@@ -509,17 +510,30 @@ int main(int argc, char *argv[]) {
       if(inputMeshList.isParameter(sigmaBlock.str()))
        sigma[b] = inputMeshList.get(sigmaBlock.str(),1.0);
       else if(inputMeshList.isParameter(mysigmaRTC.str())) {
-	std::string dummy;
-	sigmaRTC[b].addBody(inputMeshList.get(mysigmaRTC.str(),dummy));
-	sigmaRTC[b].addVar("double","x");
-	sigmaRTC[b].addVar("double","y");
-	sigmaRTC[b].addVar("double","z");
-	sigmaRTC[b].addVar("double","sigma");
+	std::string mystr;
+	mystr = inputMeshList.get(mysigmaRTC.str(),mystr);
+	if(!sigmaRTC[b].addVar("double","x")) {printf("ERROR: sigmaRTC.addVar(x) failed\n");exit(-1);}
+	if(!sigmaRTC[b].addVar("double","y")) {printf("ERROR: sigmaRTC.addVar(y) failed\n");exit(-1);}
+	if(!sigmaRTC[b].addVar("double","z")) {printf("ERROR: sigmaRTC.addVar(z) failed\n");exit(-1);}
+	if(!sigmaRTC[b].addVar("double","time")) {printf("ERROR: sigmaRTC.addVar(time) failed\n");exit(-1);}
+	if(!sigmaRTC[b].addVar("double","sigma")) {printf("ERROR: sigmaRTC.addVar(sigma) failed\n");exit(-1);}
+	if(!sigmaRTC[b].addBody(mystr)) {printf("ERROR: sigmaRTC[%d].addBody failed\n",b);exit(-1);}
 	useSigmaRTC[b]=true;
       }
       else
 	sigma[b]=1.0;
     }
+#if 0
+    if(MyPID==0) {
+      printf("** Material Parameters **\n");
+      for(int b=0; b<numElemBlk; b++)
+	if(useSigmaRTC[b])
+	  {printf("sigma %2d: ",b);std::cout<<sigmaRTC[b];}
+      else
+	printf("sigma %2d: %22.16e\n",b,sigma[b]);
+    }
+    exit(1);
+#endif
 
     // Get node-element connectivity and set element mu/sigma value
     int telct = 0;
@@ -538,12 +552,17 @@ int main(int argc, char *argv[]) {
 	  sigmaRTC[b].varAddrFill(0,&centercoord[0]);
 	  sigmaRTC[b].varAddrFill(1,&centercoord[1]);
 	  sigmaRTC[b].varAddrFill(2,&centercoord[2]);
-	  sigmaRTC[b].varAddrFill(3,&sigmaVal(telct));
+	  sigmaRTC[b].varAddrFill(3,&time);
+	  sigmaRTC[b].varAddrFill(4,&sigmaVal(telct));
 	  sigmaRTC[b].execute();
 	}
 	else
 	  sigmaVal(telct) = sigma[b];
+	//	printf("CMS sigma = %22.16e z= %10.4e\n",sigmaVal(telct),centercoord[2]);
+
         telct ++;
+
+
       }
     }
 
