@@ -98,6 +98,7 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   /* Smoothing Options (Section 6.4.4) */
   setStringToIntegralParameter<int>("smoother: type", std::string("Chebyshev"),
 				    "Smoothing algorithm",smoothers,PL);
+  setIntParameter("smoother: min size for coarse", -1, "Use fine smoother when coarsest is large", PL, intParam);
   setIntParameter("smoother: sweeps", 2, "Number of smoothing sweeps", PL, intParam);
   setDoubleParameter("smoother: line detection threshold",-1.0,"Smoother line detection threshold",PL,dblParam);
   PL->set("smoother: line detection mode",std::string("coordinates"));

@@ -462,6 +462,10 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
         ML_Operator_Destroy(&Pmatrix);
      }
      if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
+     if ( ml->comm->ML_mypid == 0 && 3 < ML_Get_PrintLevel()) {
+        printf("Warning: ML aborts further coarsening, perhaps diagonally dominant matrix after dropping is nearly diagonal!\n");
+        fflush(stdout);
+      }
      return -1;
    }
 

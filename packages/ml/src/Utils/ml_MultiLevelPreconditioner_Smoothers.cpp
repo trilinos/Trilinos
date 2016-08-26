@@ -304,6 +304,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
   std::string Smoother = List_.get("smoother: type","Chebyshev");
 
+  int  minSizeForCoarse = List_.get("smoother: min size for coarse",-1);
+  bool CoarsestIsFine = false;
 #ifdef HAVE_ML_AZTECOO
   RCP<std::vector<int> > aztecOptions = List_.get("smoother: Aztec options",SmootherOptions_);
   RCP<std::vector<double> > aztecParams = List_.get("smoother: Aztec params",SmootherParams_);
@@ -433,6 +435,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
   int startLevel=0;
   int issueSmootherReuseWarning = keepFineLevelSmoother;
   for (int level = startLevel ; level < SmootherLevels ; ++level) {
+    CoarsestIsFine = false;
 
     if (verbose_) std::cout << std::endl;
 
@@ -441,9 +444,23 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
     int coarseLevel  = LevelID_[NumLevels_-1];
     int currentLevel = LevelID_[level];
 
+    int local[2];
+    int global[2];
+    local[0] = ml_->Amat[currentLevel].invec_leng;
+    local[1] = ml_->Amat[currentLevel].N_nonzeros;
+
+    if (minSizeForCoarse != -1) {
+       // check if the coarsest grid is larger than some user specified value
+       // (which might happen if ML aborted its coarsening process). In this
+       // case, use the fine smoother instead of the coarse solver
+       
+       Comm().SumAll(local,global,2);
+       if (global[0] > minSizeForCoarse)  CoarsestIsFine = true;
+    }
+
     // general parameters for more than one smoother
 
-    if (currentLevel != coarseLevel)
+    if ( (currentLevel != coarseLevel) || CoarsestIsFine)
       sprintf(smListName,"smoother: list (level %d)",currentLevel);
     else
       strcpy(smListName,"coarse: list");
@@ -470,23 +487,22 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
     double AddToDiag = smList.get("smoother: add to diag", 1e-12);
     int MaxProcs=-1;
 
-    if (currentLevel != coarseLevel)
+
+    if ( (currentLevel != coarseLevel) || CoarsestIsFine) 
     {
       // smoothers
       sprintf(msg,"Smoother (level %d) : ", currentLevel);
+
+      if (minSizeForCoarse == -1) Comm().SumAll(local,global,2);
+
       // minor information about matrix size on each level
-      double local[2];
-      double global[2];
-      local[0] = ml_->Amat[currentLevel].invec_leng;
-      local[1] = ml_->Amat[currentLevel].N_nonzeros;
-      Comm().SumAll(local,global,2);
       if (verbose_) {
         int i = std::cout.precision(0);
         std::cout.setf(std::ios::fixed);
         std::cout << msg << "# global rows = " << global[0]
              << ", # estim. global nnz = " << global[1];
         std::cout.precision(2);
-        std::cout << ", # nnz per row = " << ((double)global[1]) / global[0] << std::endl;
+        std::cout << ", # nnz per row = " << ((double)global[1]) / ((double) global[0]) << std::endl;
         std::cout.precision(i);
         std::cout.unsetf(std::ios::fixed);
       }
