@@ -83,12 +83,12 @@ namespace Tacho {
       }
       
       // somehow pardiso does not like symmetric matrix
-      // CrsMatrixBaseHostType AA_tmp("AA_tmp");
-      // AA_tmp.createConfTo(AA);
-      // CrsMatrixTools::copy(AA_tmp,
-      //                      Uplo::Lower, 0, 
-      //                      AA);
-      // AA = AA_tmp;
+      CrsMatrixBaseHostType AA_tmp("AA_tmp");
+      AA_tmp.createConfTo(AA);
+      CrsMatrixTools::copy(AA_tmp,
+                           Uplo::Upper, 0, 
+                           AA);
+      AA = AA_tmp;
     }
     t = timer.seconds();
 

@@ -207,10 +207,10 @@ namespace Tacho {
   // pardiso does not like 2 4; for not we use 1 and 3 or 11 and 13.
 
   template<>
-  void Pardiso::setMatrixType<float, AlgoChol::ExternalPardiso>() { _mtype = 1; setParameter(28, 1); } // SPD
+  void Pardiso::setMatrixType<float, AlgoChol::ExternalPardiso>() { _mtype = 2; setParameter(28, 1); } // SPD
 
   template<>
-  void Pardiso::setMatrixType<double, AlgoChol::ExternalPardiso>() { _mtype = 1; setParameter(28, 0); } // SPD
+  void Pardiso::setMatrixType<double, AlgoChol::ExternalPardiso>() { _mtype = 2; setParameter(28, 0); } // SPD
   
   template<>
   void Pardiso::setMatrixType<complex<float>, AlgoChol::ExternalPardiso>() { _mtype = 3; setParameter(28, 1); } // HPD
