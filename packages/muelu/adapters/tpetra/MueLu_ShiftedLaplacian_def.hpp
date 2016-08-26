@@ -307,7 +307,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
     precList_.set("schwarz: overlap level", schwarz_overlap_);
     precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
-    precList_.set("schwarz: filter singletons", true);
+    //    precList_.set("schwarz: filter singletons", true); // Disabled due to issues w/ Ifpack2/Zoltan2 w.r.t. Issue #560 - CMS 8/26/16
     precList_.set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
     precList_.sublist("schwarz: subdomain solver parameters").set("fact: ilut level-of-fill", ilu_leveloffill_);
