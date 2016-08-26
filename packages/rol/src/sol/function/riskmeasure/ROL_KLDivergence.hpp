@@ -151,21 +151,21 @@ public:
   }
 
   void update(const Real val, const Real weight) {
-    Real ev = std::exp(val*xstat_);
+    Real ev = exponential(val,xstat_*eps_);
     RiskMeasure<Real>::val_ += weight * ev;
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
-    Real val = RiskMeasure<Real>::val_, ev(0), zero(0);
-    sampler.sumAll(&val,&ev,1);
-    if ( xstat_ == zero ) {
+    if ( xstat_ == static_cast<Real>(0) ) {
       return ROL_INF<Real>();
     }
-    return (eps_ + std::log(ev))/xstat_;
+    Real val = RiskMeasure<Real>::val_, ev(0);
+    sampler.sumAll(&val,&ev,1);
+    return (static_cast<Real>(1) + std::log(ev)/eps_)/xstat_;
   }
 
   void update(const Real val, const Vector<Real> &g, const Real weight) {
-    Real ev = std::exp(val*xstat_);
+    Real ev = exponential(val,xstat_*eps_);
     RiskMeasure<Real>::val_ += weight * ev;
     gval_                   += weight * ev * val;
     RiskMeasure<Real>::g_->axpy(weight*ev,g);
@@ -176,26 +176,26 @@ public:
     local[0] = RiskMeasure<Real>::val_;
     local[1] = gval_;
     sampler.sumAll(&local[0],&global[0],2);
-    Real ev = global[0], egval = global[1], zero(0), one(1);
+    Real ev = global[0], egval = global[1];
 
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector1_);
-    dualVector1_->scale(one/ev);
+    dualVector1_->scale(static_cast<Real>(1)/ev);
+    Teuchos::dyn_cast<RiskVector<Real> >(g).setVector(*dualVector1_);
 
     Real gstat(0);
-    if ( xstat_ == zero ) {
+    if ( xstat_ == static_cast<Real>(0) ) {
       gstat = ROL_INF<Real>();
     }
     else {
-      gstat = -((eps_ + std::log(ev))/xstat_ - egval/ev)/xstat_;
+      gstat = -((static_cast<Real>(1) + std::log(ev)/eps_)/xstat_
+              - egval/ev)/xstat_;
     }
-
-    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector1_);
-    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setStatistic(gstat);
+    Teuchos::dyn_cast<RiskVector<Real> >(g).setStatistic(gstat);
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
                       const Real weight) {
-    Real ev = std::exp(val*xstat_);
+    Real ev = exponential(val,xstat_*eps_);
     RiskMeasure<Real>::val_ += weight * ev;
     RiskMeasure<Real>::gv_  += weight * ev * gv;
     gval_                   += weight * ev * val;
@@ -216,36 +216,64 @@ public:
     local[4] = hval_;
     sampler.sumAll(&local[0],&global[0],5);
     Real ev     = global[0], egv   = global[1], egval = global[2];
-    Real egvval = global[3], ehval = global[4], zero(0), one(1), two(2);
+    Real egvval = global[3], ehval = global[4];
+    Real c0 = static_cast<Real>(1)/ev, c1 = c0*egval, c2 = c0*egv, c3 = eps_*c0;
 
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector1_);
-
     sampler.sumAll(*scaledGradient_,*dualVector2_);
-    dualVector1_->axpy(xstat_,*dualVector2_);
-    dualVector1_->scale(one/ev);
+    dualVector1_->axpy(xstat_*eps_,*dualVector2_);
+    dualVector1_->scale(c0);
 
     dualVector2_->zero();
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector2_);
-    dualVector1_->axpy(-(vstat_*egval + egv*xstat_)/(ev*ev),*dualVector2_);
+    dualVector1_->axpy(-c3*(vstat_*c1 + xstat_*c2),*dualVector2_);
 
     dualVector2_->zero();
     sampler.sumAll(*scaledHessVec_,*dualVector2_);
-    dualVector1_->axpy(vstat_/ev,*dualVector2_);
+    dualVector1_->axpy(vstat_*c3,*dualVector2_);
 
-    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setVector(*dualVector1_);
+    Teuchos::dyn_cast<RiskVector<Real> >(hv).setVector(*dualVector1_);
 
     Real hstat(0);
-    if ( xstat_ == zero ) {
+    if ( xstat_ == static_cast<Real>(0) ) {
       hstat = ROL_INF<Real>();
     }
     else {
-      Real xstat2 = xstat_*xstat_;
-      Real h11 = two/xstat2 * ( (eps_ + std::log(ev))/xstat_ - egval/ev )
-                 + ( ehval - egval*egval/ev )/( ev*xstat_ );
-      hstat = vstat_ * h11 + ( egvval - egv*egval/ev )/ev;
+      Real xstat2 = static_cast<Real>(2)/(xstat_*xstat_);
+      Real h11 = xstat2*((static_cast<Real>(1) + std::log(ev)/eps_)/xstat_ - c1)
+                 + (c3*ehval - eps_*c1*c1)/xstat_;
+      hstat = vstat_ * h11 + (c3*egvval - eps_*c1*c2);
     }
 
-    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setStatistic(hstat);
+    Teuchos::dyn_cast<RiskVector<Real> >(hv).setStatistic(hstat);
+  }
+
+private:
+  Real exponential(const Real arg1, const Real arg2) const {
+    if ( arg1 < arg2 ) {
+      return power(exponential(arg1),arg2);
+    }
+    else {
+      return power(exponential(arg2),arg1);
+    }
+  }
+
+  Real exponential(const Real arg) const {
+    if ( arg >= std::log(ROL_INF<Real>()) ) {
+      return ROL_INF<Real>();
+    }
+    else {
+      return std::exp(arg);
+    }
+  }
+
+  Real power(const Real arg, const Real pow) const {
+    if ( arg >= std::pow(ROL_INF<Real>(),static_cast<Real>(1)/pow) ) {
+      return ROL_INF<Real>();
+    }
+    else {
+      return std::pow(arg,pow);
+    }
   }
 };
 
