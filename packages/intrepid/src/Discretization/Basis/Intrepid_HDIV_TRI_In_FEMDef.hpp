@@ -131,17 +131,20 @@ namespace Intrepid {
     // first 3 * degree nodes are normals at each edge
     // get the points on the line
     FieldContainer<Scalar> linePts( n , 1 );
-    
-    // change by Nate Roberts 8/25/16: use getLattice() for warp blend points, too
-    // (under previous approach--which used Gauss cubature points on the line--the
-    //  resulting RT basis would be numerically linearly dependent for orders >= 5.)
-    shards::CellTopology linetop(shards::getCellTopologyData<shards::Line<2> >() );
+    if (pointType == POINTTYPE_WARPBLEND) {
+      CubatureDirectLineGauss<Scalar> edgeRule( n );
+      FieldContainer<Scalar> edgeCubWts( n );
+      edgeRule.getCubature( linePts , edgeCubWts );
+    }
+    else if (pointType == POINTTYPE_EQUISPACED ) {
+      shards::CellTopology linetop(shards::getCellTopologyData<shards::Line<2> >() );
 
-    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( linePts ,
-                                                            linetop ,
-                                                            n+1 , 1 ,
-                                                            pointType );
-    // holds the image of the line points
+      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( linePts , 
+                                                              linetop ,
+                                                              n+1 , 1 ,
+                                                              POINTTYPE_EQUISPACED );
+    }
+    // holds the image of the line points 
     FieldContainer<Scalar> edgePts( n , 2 );
     FieldContainer<Scalar> phisAtEdgePoints( scalarBigN , n );
 
