@@ -116,9 +116,11 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm, Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
-
-    facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm, Teuchos::RCP<FactoryFactory> factFact, Teuchos::RCP<FacadeClassFactory> facadeFact) : factFact_(factFact) {
+    if(facadeFact == Teuchos::null)
+      facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
+    else
+      facadeFact_ = facadeFact;
 
     if (paramList.isParameter("xml parameter file")) {
       std::string filename = paramList.get("xml parameter file", "");
@@ -139,8 +141,11 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
-    facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm,Teuchos::RCP<FactoryFactory> factFact, Teuchos::RCP<FacadeClassFactory> facadeFact) : factFact_(factFact) {
+    if(facadeFact == Teuchos::null)
+      facadeFact_ = Teuchos::rcp(new FacadeClassFactory());
+    else
+      facadeFact_ = facadeFact;
 
     ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), comm);

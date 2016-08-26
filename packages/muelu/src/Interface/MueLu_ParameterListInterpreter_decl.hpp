@@ -131,9 +131,10 @@ namespace MueLu {
         @param[in] paramList (Teuchos::ParameterList): ParameterList containing the MueLu parameters
         @param[in] comm  (RCP<Teuchos::Comm<int> >): Optional RCP of a Teuchos communicator  (default: Teuchos::null)
         @param[in] factFact  (RCP<FactoryFactory>): Optional parameter allowing to define user-specific factory interpreters for user-specific extensions of the XML interface. (default: Teuchos::null)
+        @param[in] facadeFact (RCP<FacadeFactory>): Optional parameter containing a FacadeFactory class. The user can register its own facade classes in the FacadeFactory and provide it to the ParameterListInterpreter. (default: Teuchos::null, means, only standard FacadeClass that come with MueLu are available)
 
      */
-    ParameterListInterpreter(Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::null, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null);
+    ParameterListInterpreter(Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::null, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null, Teuchos::RCP<FacadeClassFactory> facadeFact = Teuchos::null);
 
     /*! @brief Constructor that reads parameters from an XML file.
 
@@ -142,9 +143,10 @@ namespace MueLu {
         @param[in] xmlFileName (std::string): XML file to read
         @param[in] comm  (Teuchos::Comm<int>): Teuchos communicator
         @param[in] factFact  (RCP<FactoryFactory>): Optional parameter allowing to define user-specific factory interpreters for user-specific extensions of the XML interface. (default: Teuchos::null)
+        @param[in] facadeFact (RCP<FacadeFactory>): Optional parameter containing a FacadeFactory class. The user can register its own facade classes in the FacadeFactory and provide it to the ParameterListInterpreter. (default: Teuchos::null, means, only standard FacadeClass that come with MueLu are available)
 
     */
-    ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null);
+    ParameterListInterpreter(const std::string& xmlFileName, const Teuchos::Comm<int>& comm, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null, Teuchos::RCP<FacadeClassFactory> facadeFact = Teuchos::null);
 
     //! Destructor.
     virtual ~ParameterListInterpreter() { }
@@ -171,17 +173,6 @@ namespace MueLu {
 
     //! Call the SetupHierarchy routine from the HiearchyManager object.
     void SetupHierarchy(Hierarchy& H) const;
-
-    /*! @brief Register new facade class
-     *
-     * Register new externally provided facade class in FacadeClassFactory
-     *
-     * @param[in] name: name that is used to access Facade class
-     * @param[in] facadeclass: RCP pointer to facade class instance
-     */
-    void RegisterFacadeClass(std::string name, Teuchos::RCP<FacadeClassBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> > facadeclass) {
-      facadeFact_->RegisterFacadeClass(name,facadeclass);
-    }
 
   private:
     //! Setup Operator object
