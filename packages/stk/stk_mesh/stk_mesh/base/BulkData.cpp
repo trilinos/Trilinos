@@ -1912,19 +1912,6 @@ void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVec
     }
 }
 
-namespace {
-
-void find_potential_upward_entities( const BulkData & mesh, Entity node, EntityRank rank, EntityVector & entities)
-{
-  entities.clear();
-
-  // NOTE: it's adequate to just look at one node
-
-  entities.assign(mesh.begin(node, rank), mesh.end(node, rank));
-}
-
-}
-
 void BulkData::reserve_relation(Entity entity, const unsigned num)
 {
   if (num == 0 && aux_relations(entity).empty()) {
