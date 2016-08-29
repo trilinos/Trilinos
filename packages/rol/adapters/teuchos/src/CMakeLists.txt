@@ -31,7 +31,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
   APPEND_SET(HEADERS 
-    vector/ROL_TeuchoVector.hpp
+    vector/ROL_TeuchosVector.hpp
 )
 
 
