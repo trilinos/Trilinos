@@ -828,7 +828,7 @@ public:
         MyExecSpace::fence();
       }
     }
-    if (apply_backward){
+    if (apply_backward && numColors){
       for (row_lno_t i = numColors - 1; ; --i){
         row_lno_t color_index_begin = h_color_xadj(i);
         row_lno_t color_index_end = h_color_xadj(i + 1);
