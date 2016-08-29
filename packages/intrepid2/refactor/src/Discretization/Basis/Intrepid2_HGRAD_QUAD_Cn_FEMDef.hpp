@@ -321,6 +321,9 @@ namespace Intrepid2 {
       ordinal_type tags[maxCardLine*maxCardLine][4];
 
       const ordinal_type vert[2][2] = { {0,1}, {3,2} }; //[y][x]
+
+      const ordinal_type edge_x[2] = {1,3}; 
+      const ordinal_type edge_y[2] = {0,2}; 
       {
         ordinal_type idx = 0;
         for (auto j=0;j<cardLine;++j) { // y      
@@ -335,15 +338,15 @@ namespace Intrepid2 {
               tags[idx][2] = 0; // local dof id
               tags[idx][3] = 1; // total number of dofs in this vertex
             } else if (tag_x(0) == 1 && tag_y(0) == 0) {
-              // horizontal edge 
+              // edge: x edge, y vert
               tags[idx][0] = 1; // edge dof
-              tags[idx][1] = (tag_y(1) == 0 ? 1 : 3);
+              tags[idx][1] = edge_x[tag_y(1)];
               tags[idx][2] = tag_x(2); // local dof id
               tags[idx][3] = tag_x(3); // total number of dofs in this vertex
             } else if (tag_x(0) == 0 && tag_y(0) == 1) {
-              // vertical edge 
+              // edge: x vert, y edge
               tags[idx][0] = 1; // edge dof
-              tags[idx][1] = (tag_x(1) == 0 ? 4 : 2);
+              tags[idx][1] = edge_y[tag_x(1)];
               tags[idx][2] = tag_y(2); // local dof id
               tags[idx][3] = tag_y(3); // total number of dofs in this vertex
             } else {

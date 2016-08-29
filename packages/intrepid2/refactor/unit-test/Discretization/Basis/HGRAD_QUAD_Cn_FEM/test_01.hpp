@@ -131,11 +131,8 @@ namespace Intrepid2 {
       // for virtual function, value and point types are declared in the class
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      //typedef ValueType weightValueType;
 
       typedef Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadBasisType;
-      //typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
-      //typedef FunctionSpaceTools<DeviceSpaceType> fst;
 
       *outStream
         << "\n"

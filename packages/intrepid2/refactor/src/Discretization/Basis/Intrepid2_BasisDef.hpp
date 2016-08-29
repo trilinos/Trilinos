@@ -388,9 +388,9 @@ namespace Intrepid2 {
                                 const ordinal_type spaceDim) {
 
     // This should only be called for Dk operators
-    ordinal_type derivativeOrder;
-    switch(operatorType) {
-
+    ordinal_type derivativeOrder = -1;
+    switch (operatorType) {
+    case OPERATOR_GRAD:
     case OPERATOR_D1:
     case OPERATOR_D2:
     case OPERATOR_D3:
@@ -403,12 +403,12 @@ namespace Intrepid2 {
     case OPERATOR_D10:
       derivativeOrder = Intrepid2::getOperatorOrder(operatorType);
       break;
-
     default:
-      INTREPID2_TEST_FOR_ABORT(true,
-                               ">>> ERROR (Intrepid2::getDkCardinality): operator type Dk required for this method");
-    }// switch
-
+      break;
+    }
+    INTREPID2_TEST_FOR_ABORT( derivativeOrder < 0,
+                              ">>> ERROR (Intrepid2::getDkCardinality): derivative order is not determined ");
+    
     ordinal_type cardinality = -999;
     switch(spaceDim) {
 
