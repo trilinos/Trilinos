@@ -47,8 +47,8 @@
     \brief Defines the TpetraRowMatrixAdapter class.
 */
 
-#ifndef _ZOLTAN2_XPETRAROWMATRIXADAPTER_HPP_
-#define _ZOLTAN2_XPETRAROWMATRIXADAPTER_HPP_
+#ifndef _ZOLTAN2_TPETRAROWMATRIXADAPTER_HPP_
+#define _ZOLTAN2_TPETRAROWMATRIXADAPTER_HPP_
 
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
