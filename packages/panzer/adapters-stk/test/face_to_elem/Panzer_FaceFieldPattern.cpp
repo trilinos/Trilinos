@@ -58,7 +58,10 @@ void FaceFieldPattern::setCellTopology(const shards::CellTopology & ct)
 
    // allocate the space and setup the indices
    FaceIndices_.clear();
-   FaceIndices_.resize(cellTopo_.getFaceCount());
+   if ( cellTopo_.getDimension() == 3 ) 
+     FaceIndices_.resize(cellTopo_.getFaceCount());
+   else
+     FaceIndices_.resize(1);
    for(std::size_t n=0;n<FaceIndices_.size();n++)
       FaceIndices_[n].push_back(n);
 }

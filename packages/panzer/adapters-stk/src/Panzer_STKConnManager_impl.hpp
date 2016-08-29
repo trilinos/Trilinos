@@ -261,10 +261,10 @@ void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
    buildOffsetsAndIdCounts(fp, nodeIdCnt,  edgeIdCnt,  faceIdCnt,  cellIdCnt,
                                nodeOffset, edgeOffset, faceOffset, cellOffset);
 
-   // std::cout << "node: count = " << nodeIdCnt << ", offset = " << nodeOffset << std::endl;
-   // std::cout << "edge: count = " << edgeIdCnt << ", offset = " << edgeOffset << std::endl;
-   // std::cout << "face: count = " << faceIdCnt << ", offset = " << faceOffset << std::endl;
-   // std::cout << "cell: count = " << cellIdCnt << ", offset = " << cellOffset << std::endl;
+    // std::cout << "node: count = " << nodeIdCnt << ", offset = " << nodeOffset << std::endl;
+    // std::cout << "edge: count = " << edgeIdCnt << ", offset = " << edgeOffset << std::endl;
+    // std::cout << "face: count = " << faceIdCnt << ", offset = " << faceOffset << std::endl;
+    // std::cout << "cell: count = " << cellIdCnt << ", offset = " << cellOffset << std::endl;
 
    // loop over elements and build global connectivity 
    for(std::size_t elmtLid=0;elmtLid!=elements_->size();++elmtLid) {
