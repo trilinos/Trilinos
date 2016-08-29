@@ -49,7 +49,9 @@
 
 #include <mpi.h>
 #include <stddef.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <limits.h>
 
 /* int64_t is needed by 64-bit PT-Scotch header file .
