@@ -63,7 +63,8 @@ cmake \
 -D Trilinos_ENABLE_STKUnit_test_utils:BOOL=OFF \
 -D TPL_ENABLE_GLM=OFF \
 -D Trilinos_ENABLE_Stokhos:BOOL=OFF \
--D Trilinos_ENABLE_Tempus:BOOL=ON \
+      -D Trilinos_ENABLE_Tempus:BOOL=ON \
+      -D Tempus_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_Drekar:BOOL=ON \
 -D Trilinos_ENABLE_DrekarMHD:BOOL=ON \
 -D Drekar_ENABLE_TESTS:BOOL=ON \
