@@ -441,6 +441,26 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tcrsgraph_t;
   typedef Tpetra::RowGraph<lno_t, gno_t, node_t> trowgraph_t;
+
+  // We cannot create a Tpetra::RowGraph, unless the underlying type is 
+  // something we know (like Tpetra::CrsGraph).
+  // If the underlying type is something different, the user probably doesn't 
+  // want a Tpetra::CrsGraph back, so we throw an error.
+
+  // Try to cast "from" graph to a TPetra::CrsGraph
+  // If that fails we throw an error.
+  // We could cast as a ref which will throw std::bad_cast but with ptr
+  // approach it might be clearer what's going on here
+  const tcrsgraph_t *pCrsGraphSrc = dynamic_cast<const tcrsgraph_t *>(&from);
+
+  if(!pCrsGraphSrc) {
+    throw std::logic_error("TpetraRowGraphAdapter cannot migrate data for "
+                           "your RowGraph; it can migrate data only for "
+                           "Tpetra::CrsGraph.  "
+                           "You can inherit from TpetraRowGraphAdapter and "
+                           "implement migration for your RowGraph.");
+  }
+
   lno_t base = 0;
 
   // source map
@@ -486,18 +506,7 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
 
   // target graph
   RCP<tcrsgraph_t> G = rcp(new tcrsgraph_t(tmap, nnz_size_t,
-                                        Tpetra::StaticProfile));
-
-  // Current approach is to cast this to a TPetra::CrsGraph
-  // If that fails we throw an error
-
-  // could cast as a ref which will throw std::bad_cast but with ptr
-  // approach it might be clearer what's going on here
-  const tcrsgraph_t * pCrsGraphSrc = dynamic_cast<const tcrsgraph_t *>(&from);
-
-  if( !pCrsGraphSrc ) {
-    throw std::logic_error( "TpetraRowGraphAdapter failed to cast to a Tpetra::CrsGraph." );
-  }
+                                           Tpetra::StaticProfile));
 
   G->doImport(*pCrsGraphSrc, importer, Tpetra::INSERT);
   G->fillComplete();

@@ -390,10 +390,28 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
   const gno_t *myNewRows
 ) const
 {
-  // Since cannot create a Tpetra::RowMatrix, do the migration into 
-  // a Tpetra::CrsMatrix object.
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsmatrix_t;
+
+  // We cannot create a Tpetra::RowMatrix, unless the underlying type is 
+  // something we know (like Tpetra::CrsMatrix).
+  // If the underlying type is something different, the user probably doesn't 
+  // want a Tpetra::CrsMatrix back, so we throw an error.
+
+  // Try to cast "from" matrix to a TPetra::CrsMatrix
+  // If that fails we throw an error.
+  // We could cast as a ref which will throw std::bad_cast but with ptr
+  // approach it might be clearer what's going on here
+  const tcrsmatrix_t *pCrsMatrix = dynamic_cast<const tcrsmatrix_t *>(&from);
+
+  if(!pCrsMatrix) {
+    throw std::logic_error("TpetraRowMatrixAdapter cannot migrate data for "
+                           "your RowMatrix; it can migrate data only for "
+                           "Tpetra::CrsMatrix.  "
+                           "You can inherit from TpetraRowMatrixAdapter and "
+                           "implement migration for your RowMatrix.");
+  }
+
   lno_t base = 0;
 
   // source map
