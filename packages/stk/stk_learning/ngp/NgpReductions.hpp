@@ -17,7 +17,6 @@ struct FieldAccessFunctor
     void operator()(int i, typename Field::value_type& update) const
     {
         update = field.get(typename Mesh::MeshIndex{bucket, static_cast<unsigned>(i)}, 0);
-//        printf("%s : %d, i=%d, update=%d\n", __FILE__, __LINE__, i, update);
     }
 private:
     const typename Mesh::BucketType *bucket;
@@ -35,16 +34,13 @@ struct ReductionTeamFunctor
     STK_FUNCTION
     void init(FieldData &update) const
     {
-//        printf("%s : %d, init=%d\n", __FILE__, __LINE__, initialValue);
         update = initialValue;
     }
 
     STK_FUNCTION
     void join(volatile FieldData& update, volatile const FieldData& input) const
     {
-//        printf("%s : %d, update=%d, input=%d\n", __FILE__, __LINE__, update, input);
         ReductionOp()(update, input);
-//        update = input;
     }
 
     typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ngp::ScheduleType>::member_type TeamHandleType;
@@ -55,11 +51,11 @@ struct ReductionTeamFunctor
         const int bucketIndex = bucketIds.device_get(team.league_rank());
         const typename Mesh::BucketType &bucket = mesh.get_bucket(field.get_rank(), bucketIndex);
         unsigned numElements = bucket.size();
-//        int intRank = field.get_rank();
-//        printf("%s : %d, rank=%d, numElem=%d, update=%d\n", __FILE__, __LINE__, intRank, numElements, update);
+        FieldData localUpdate = initialValue;
         Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, 0u, numElements),
                                 FieldAccessFunctor<Mesh, Field>(&bucket, field),
-                                ReductionOp(), update);
+                                ReductionOp(), localUpdate);
+        Kokkos::single(Kokkos::PerTeam(team), [&](){join(update, localUpdate);});
     }
 
 private:
@@ -76,7 +72,6 @@ typename Field::value_type get_field_reduction(Mesh &mesh, Field field, const st
     const unsigned numBuckets = bucketIds.size();
     ReductionTeamFunctor<Mesh, Field, ReductionOp> teamFunctor(mesh, field, bucketIds, initialValue);
     typename Field::value_type reduction = initialValue;
-//    printf("%s : %d, initialValue=%d\n", __FILE__, __LINE__, initialValue);
     Kokkos::parallel_reduce(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO), teamFunctor, reduction);
     return reduction;
 }
@@ -87,7 +82,6 @@ struct MinFunctor
     STK_FUNCTION
     void operator()(volatile T& update, volatile const T& input) const
     {
-//        printf("%s : %d, update=%d, input=%d\n", __FILE__, __LINE__, update, input);
         update = update < input ? update : input;
     }
 };
