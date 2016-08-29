@@ -50,7 +50,7 @@ protected:
         stk::unit_test_util::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
     }
 
-    MPI_Comm get_comm()
+    MPI_Comm get_comm() const
     {
         return communicator;
     }
@@ -64,9 +64,14 @@ protected:
         metaData = nullptr;
     }
 
-    int get_parallel_rank()
+    int get_parallel_rank() const
     {
-        return get_bulk().parallel_rank();
+        return stk::parallel_machine_rank(get_comm());
+    }
+
+    int get_parallel_size() const
+    {
+        return stk::parallel_machine_size(get_comm());
     }
 
     virtual stk::mesh::MetaData& get_meta()
