@@ -23,6 +23,19 @@ TRIBITS_ADD_EXECUTABLE(
 )
 
 
+IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME parmetisSubComm
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    ARGS
+    "./driverinputs/parmetisSubComm.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
+
 TRIBITS_ADD_TEST(
     test_driver
     NAME geometricTest

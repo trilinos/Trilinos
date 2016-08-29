@@ -29,6 +29,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         pamgenRectilinearTest3D.xml 
         pamgenSphericalTest.xml 
         pamgenPoissonTest.xml 
+        parmetisSubComm.xml
         galeriTest.xml 
         simple.pmgen
         simplePamgen.xml
