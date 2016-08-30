@@ -79,9 +79,9 @@ struct shared_face_type
   EntityKey                 global_key;
 
   shared_face_type(stk::topology my_topology) :
-    topology(my_topology.value())
+    topology(my_topology.value()),
+    nodes(my_topology.num_nodes())
   {
-    nodes.resize(my_topology.num_nodes());
   }
 
   shared_face_type(const shared_face_type & a) :

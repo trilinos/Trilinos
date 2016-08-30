@@ -365,8 +365,8 @@ inline void parallel_sum_including_ghosts(
   CommAll sparse ;
 
   {
-    const unsigned * const snd_size = & send_size[0] ;
-    const unsigned * const rcv_size = & recv_size[0] ;
+    const unsigned * const snd_size = send_size.data() ;
+    const unsigned * const rcv_size = recv_size.data() ;
     sparse.allocate_buffers( mesh.parallel(), snd_size, rcv_size);
   }
 

@@ -899,18 +899,9 @@ const std::vector<std::string>&
 entity_rank_names()
 {
   // TODO - Not thread safe; Use c++11 to initialize vector once c++11 is available
-  static std::vector< std::string > names;
-  if (names.empty()) {
-    names.reserve( 4 );
-    names.push_back(std::string("NODE"));
-    names.push_back(std::string("EDGE"));
-    names.push_back(std::string("FACE"));
-    names.push_back(std::string("ELEMENT"));
-    // TODO - Add constraint?
-  }
+  static std::vector< std::string > names = { std::string("NODE"), std::string("EDGE"), std::string("FACE"), std::string("ELEMENT") } ;
   return names;
 }
-
 
 stk::topology
 get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<const unsigned*, const unsigned*>& supersets)

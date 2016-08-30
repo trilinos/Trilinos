@@ -167,7 +167,7 @@ struct create_single_edge_impl
     else {
       edge = iedge->second;
     }
-    perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], m_edge_ordinal);
+    perm = mesh.find_permutation(elem_topo, elem_nodes.data(), edge_topo, edge_nodes.data(), m_edge_ordinal);
     ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
     mesh.declare_relation(ielem, edge, m_edge_ordinal, perm, ordinal_scratch, part_scratch);
   }
@@ -279,7 +279,7 @@ struct create_edge_impl
         else {
           edge = iedge->second;
         }
-        perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], e);
+        perm = mesh.find_permutation(elem_topo, elem_nodes.data(), edge_topo, edge_nodes.data(), e);
         ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
         mesh.declare_relation(m_bucket[ielem], edge, e, perm, ordinal_scratch, part_scratch);
       }
@@ -361,7 +361,7 @@ struct connect_face_impl
         //which is fine
         if (iedge != m_edge_map.end()) {
           Entity edge = iedge->second;
-          Permutation perm = mesh.find_permutation(face_topo, &face_nodes[0], edge_topo, &edge_nodes[0], e);
+          Permutation perm = mesh.find_permutation(face_topo, face_nodes.data(), edge_topo, edge_nodes.data(), e);
           ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
           mesh.declare_relation(m_bucket[iface], edge, e, perm, ordinal_scratch, part_scratch);
         }

@@ -25,10 +25,11 @@ namespace stk { namespace mesh {
 
 stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityKey>& keys)
 {
-    stk::mesh::EntityVector entities;
-    entities.resize(keys.size());
+    stk::mesh::EntityVector entities(keys.size());
     for(size_t i=0;i<keys.size();++i)
+    {
         entities[i] = bulkData.get_entity(keys[i]);
+    }
     return entities;
 }
 

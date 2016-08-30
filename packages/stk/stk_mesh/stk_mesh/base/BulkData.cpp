@@ -3738,7 +3738,7 @@ void BulkData::change_connectivity_for_edge_or_face(stk::mesh::Entity side, cons
         if(bucket(elements[i]).owned())
         {
             stk::mesh::Bucket& bucket_edge = bucket(side);
-            bucket_edge.change_existing_connectivity(bucket_ordinal(side), &nodes[0]);
+            bucket_edge.change_existing_connectivity(bucket_ordinal(side), nodes.data());
 
             stk::mesh::Permutation new_permutation = get_permutation(*this, elements[i], nodes);
             ThrowRequireWithSierraHelpMsg(new_permutation!=stk::mesh::INVALID_PERMUTATION);
@@ -4034,8 +4034,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
   std::vector< int > ghosting_change_flags_global( ghosting_count , 0 );
 
   all_reduce_sum( parallel() ,
-                  & ghosting_change_flags[0] ,
-                  & ghosting_change_flags_global[0] ,
+                  ghosting_change_flags.data() ,
+                  ghosting_change_flags_global.data() ,
                   ghosting_change_flags.size() );
 
   for ( unsigned ic = 0 ; ic < ghosting_change_flags_global.size() ; ++ic ) {
@@ -5989,7 +5989,7 @@ void BulkData::unpack_not_owned_verify_compare_comm_info( CommBuffer&           
       bad_comm = bad_comm || check_tag(*this, buf, PACK_TAG_GHOST_COUNT);
       buf.unpack<unsigned>(recv_comm_count);
       recv_comm.resize( recv_comm_count);
-      buf.unpack<int>( & recv_comm[0] , recv_comm_count);
+      buf.unpack<int>( recv_comm.data() , recv_comm_count);
     }
 
     if ( !in_shared( key ) || ghost_after_shared_count) {
@@ -6273,7 +6273,7 @@ bool BulkData::unpack_not_owned_verify( CommAll & comm_all , std::ostream & erro
               recv_comm_count = 0 ;
               buf.unpack<unsigned>( recv_comm_count );
               recv_comm.resize( recv_comm_count );
-              buf.unpack<int>( & recv_comm[0] , recv_comm_count );
+              buf.unpack<int>( recv_comm.data() , recv_comm_count );
           }
       }
 
