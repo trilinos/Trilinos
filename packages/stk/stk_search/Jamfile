@@ -36,13 +36,6 @@
 import set ;
 import path ;
 
-local boost-root-inc ;
-if $(RTenv-arg) = "user" {
-  boost-root-inc = $(boost-root)/include ;
-} else {
-  boost-root-inc = $(boost-root) ;
-}
-
 local stk_search-root-inc ;
 if $(RTenv-arg) = "user" {
   stk_search-root-inc = $(stk_search-root)/include ;
@@ -54,11 +47,9 @@ project votd
   : requirements
     $(sierra-warnings)
     <include>$(stk_search-root-inc)
-    <include>$(boost-root-inc)
     <define>STK_BUILT_IN_SIERRA
   : usage-requirements
     <include>$(stk_search-root-inc)
-    <include>$(boost-root-inc)
   : build-dir $(stk_search-builddir)
   ;
 
@@ -132,6 +123,7 @@ lib stk_search
     /sierra/stk_util//stk_util_diag
     /sierra/stk_util//stk_util_parallel
     /tpl/trilinos//tpi
+    /tpl/boost//boost_header_only_libs
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
