@@ -413,8 +413,8 @@ inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domai
     MPI_Comm_rank(comm, &proc_id);
     MPI_Comm_size(comm, &num_procs);
 
-    std::vector<gtk::AxisAlignedBB> rangeBoxes(local_range.size());
-    std::vector<gtk::AxisAlignedBB> domainBoxes(local_domain.size());
+    std::vector<stk::search::Box<float> > rangeBoxes(local_range.size());
+    std::vector<stk::search::Box<float> > domainBoxes(local_domain.size());
 
     for (size_t i=0;i<local_domain.size();i++)
     {
@@ -430,8 +430,8 @@ inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domai
     std::vector<int> ghost_procs;
     gtk::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
 
-    std::vector< std::vector<gtk::AxisAlignedBB> > send_list(num_procs);
-    std::vector< std::vector<gtk::AxisAlignedBB> > recv_list(num_procs);
+    std::vector< std::vector<stk::search::Box<float> > > send_list(num_procs);
+    std::vector< std::vector<stk::search::Box<float> > > recv_list(num_procs);
 
     // i am sending proc 'ghost proc[i]' my range box 'ghost_indices[i]'
     // ghost_indices.size() is total number of communications that need to occur with all procs

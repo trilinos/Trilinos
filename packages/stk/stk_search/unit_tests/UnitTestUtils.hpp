@@ -40,7 +40,6 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
-#include <temp_move_to_stk_search/Geom_AxisAlignedBB.h>
 #include <Geom_Specialized_Searches.h>
 
 #include <gtkTraitsForStkSearch.hpp>
@@ -58,7 +57,7 @@ typedef stk::search::Box<double> StkBox;
 typedef std::pair<StkBox,Ident> StkBoxWithId;
 typedef std::vector< StkBoxWithId > StkBoxVector;
 
-typedef gtk::AxisAlignedBB GtkBox;
+typedef stk::search::Box<float> GtkBox;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 typedef std::pair<GtkBox,Ident> BoxWithId;
 typedef std::vector< BoxWithId > GtkBoxVector;
