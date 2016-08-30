@@ -1773,7 +1773,7 @@ Default: {\tt false}.  }
 \choicebox{\tt smoother: pre or post $\star$}{[{\tt string}] It can assume
 one of the following values: {\tt pre, post, both}. Default: {\tt both}.}
 
-\choicebox{\tt smoother: min size for coarse}{[{\tt int}] If the dimension of the coarsest grid operator is larger than this size, then fine level smoothers will be used instead of the coarse solve options. This address cases where coarsening is aborted early.}
+\choicebox{\tt smoother: min size for coarse}{[{\tt int}] If the dimension of the coarsest grid operator is larger than this size, then fine level smoothers will be used instead of the coarse solve options. This address cases where coarsening is aborted early. Default: -1, which ignores this option (i.e. always uses the coarse smoother on the coarsest level).}
 
 \choicebox{\tt smoother: Aztec options $\star$}{[{\tt RCP<vector<int>>}] \teuchos\
 reference-counted pointer to {\sc Aztec}'s options vector (only for {\tt Aztec}
