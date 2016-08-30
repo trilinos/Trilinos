@@ -156,11 +156,26 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
 IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SET(SGSMT_MATRIX_FILE sherman1.mtx)
+
+  TRIBITS_ADD_EXECUTABLE(
     SGSMT
     SOURCES 
       Ifpack2_UnitTestSGSMT.cpp
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2_UnitTest_SGSMT_CopyFile
+    DEST_FILES ${SGSMT_MATRIX_FILE}
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    EXEDEPS SGSMT
+  )
+
+  TRIBITS_ADD_TEST(
+    SGSMT Ifpack2_UnitTest_SGSMT_CopyFile
+    NAME SGSMT_compare_with_Jacobi
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1-4
