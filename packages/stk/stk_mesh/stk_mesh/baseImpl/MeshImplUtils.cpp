@@ -594,20 +594,20 @@ void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVec
     for (unsigned count=0 ; count<sideTopology.num_nodes() ; ++count) {
         side_nodes[count] = mesh.get_entity(stk::topology::NODE_RANK,side_node_ids[count]);
     }
-    bool is_connected_to_shell = stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,sideTopology.num_nodes(),&side_nodes[0]);
+    bool is_connected_to_shell = stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,sideTopology.num_nodes(),side_nodes.data());
 
     if (elemTopology.is_shell() || is_connected_to_shell) {
 
         EntityIdVector element_node_id_vector(sideTopology.num_nodes());
         EntityIdVector element_node_ordinal_vector(sideTopology.num_nodes());
         EntityVector element_node_vector(sideTopology.num_nodes());
-        elemTopology.side_node_ordinals(side_ordinal, &element_node_ordinal_vector[0]);
+        elemTopology.side_node_ordinals(side_ordinal, element_node_ordinal_vector.data());
         for (unsigned count = 0; count < sideTopology.num_nodes(); ++count) {
             element_node_vector[count] = mesh.begin_nodes(element)[element_node_ordinal_vector[count]];
             element_node_id_vector[count] = mesh.identifier(element_node_vector[count]);
         }
         smallest_permutation = sideTopology.lexicographical_smallest_permutation_preserve_polarity(side_node_ids, element_node_id_vector);
-        sideTopology.permutation_nodes(&element_node_vector[0], smallest_permutation, permuted_side_nodes.begin());
+        sideTopology.permutation_nodes(element_node_vector.data(), smallest_permutation, permuted_side_nodes.begin());
     }
     else {
         smallest_permutation = sideTopology.lexicographical_smallest_permutation(side_node_ids);
@@ -657,7 +657,7 @@ Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
     EntityVector entity_top_nodes(entity_top.num_nodes());
     elem_top.sub_topology_nodes(elem_nodes, mesh.entity_rank(entity), relationOrdinal, entity_top_nodes.begin());
 
-    Permutation perm = mesh.find_permutation(elem_top, elem_nodes, entity_top, &entity_top_nodes[0], relationOrdinal);
+    Permutation perm = mesh.find_permutation(elem_top, elem_nodes, entity_top, entity_top_nodes.data(), relationOrdinal);
 
     OrdinalVector ordinal_scratch;
     ordinal_scratch.reserve(64);
@@ -770,9 +770,9 @@ void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
     stk::topology side_topology = elem_topology.face_topology(elem_with_face_side_ordinal);
     int num_side_nodes = side_topology.num_nodes();
     std::vector<stk::mesh::Entity> side_nodes(num_side_nodes);
-    elem_topology.face_nodes(bulk.begin_nodes(elem_with_face),elem_with_face_side_ordinal,&side_nodes[0]);
+    elem_topology.face_nodes(bulk.begin_nodes(elem_with_face),elem_with_face_side_ordinal,side_nodes.data());
     std::vector<stk::mesh::Entity> common_elements;
-    stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk,stk::topology::ELEMENT_RANK,num_side_nodes,&side_nodes[0],common_elements);
+    stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk,stk::topology::ELEMENT_RANK,num_side_nodes,side_nodes.data(),common_elements);
 
     std::vector<stk::topology> element_topology_touching_surface_vector(common_elements.size());
     for (size_t i=0 ; i<common_elements.size() ; ++i) {

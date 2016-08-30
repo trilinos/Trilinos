@@ -556,16 +556,15 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     recv_lists[iproc].resize(numToRecvFrom[iproc]);
     if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
+      char* recv_buffer = (char*)recv_lists[iproc].data();
       int recv_size = recv_lists[iproc].size()*class_size;
-      MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
-                iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
+      MPI_Irecv(recv_buffer, recv_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
     }
   }
   MPI_Barrier(mpi_communicator);
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
+      char* send_buffer = (char*)send_lists[iproc].data();
       int send_size = send_lists[iproc].size()*class_size;
       MPI_Send(send_buffer, send_size, MPI_CHAR,
                iproc, msg_tag, mpi_communicator);
@@ -604,7 +603,7 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     recv_lists[iproc].resize(send_lists[iproc].size());
     if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
+      char* recv_buffer = (char*)recv_lists[iproc].data();
       int recv_size = recv_lists[iproc].size()*class_size;
       MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
                 iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
@@ -613,7 +612,7 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
   MPI_Barrier(mpi_communicator);
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
+      char* send_buffer = (char*)send_lists[iproc].data();
       int send_size = send_lists[iproc].size()*class_size;
       MPI_Send(send_buffer, send_size, MPI_CHAR,
                iproc, msg_tag, mpi_communicator);
@@ -644,7 +643,7 @@ inline void parallel_data_exchange_nonsym_known_sizes_t(std::vector< std::vector
   std::vector<MPI_Request> recv_handles(num_procs);
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
+      char* recv_buffer = (char*)recv_lists[iproc].data();
       int recv_size = recv_lists[iproc].size()*class_size;
       MPI_Irecv(recv_buffer, recv_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
     }
@@ -654,7 +653,7 @@ inline void parallel_data_exchange_nonsym_known_sizes_t(std::vector< std::vector
 
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
+      char* send_buffer = (char*)send_lists[iproc].data();
       int send_size = send_lists[iproc].size()*class_size;
       MPI_Send(send_buffer, send_size, MPI_CHAR, iproc, msg_tag, mpi_communicator);
     }
@@ -717,7 +716,7 @@ void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &se
   //
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(recv_lists[iproc].size() > 0) {
-      char* recv_buffer = (char*)&recv_lists[iproc][0];
+      char* recv_buffer = (char*)recv_lists[iproc].data();
       int recv_size = recv_lists[iproc].size()*class_size;
       MPI_Irecv(recv_buffer, recv_size, MPI_CHAR,
                 iproc, msg_tag, mpi_communicator, &recv_handles[iproc]);
@@ -726,7 +725,7 @@ void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &se
   MPI_Barrier(mpi_communicator);
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(send_lists[iproc].size() > 0) {
-      char* send_buffer = (char*)&send_lists[iproc][0];
+      char* send_buffer = (char*)send_lists[iproc].data();
       int send_size = send_lists[iproc].size()*class_size;
       MPI_Send(send_buffer, send_size, MPI_CHAR,
                iproc, msg_tag, mpi_communicator);

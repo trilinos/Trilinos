@@ -298,7 +298,7 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
       // attach side to element
       Permutation permut =
               mesh.find_permutation(element_topology, elem_nodes,
-                                    side_topology, &ordered_side_nodes[0], side_ordinal);
+                                    side_topology, ordered_side_nodes.data(), side_ordinal);
       ThrowRequireMsg(permut != INVALID_PERMUTATION, ":  skin_mesh_attach_new_sides_to_connected_entities could not find valid permutation to connect face to element");
 
       mesh.declare_relation(elem, side, static_cast<RelationIdentifier>(side_ordinal), permut);

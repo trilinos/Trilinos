@@ -257,7 +257,7 @@ public:
   }
 
 #ifndef DOXYGEN_COMPILE
-  const unsigned * key() const { return &m_key[0] ; }
+  const unsigned * key() const { return m_key.data() ; }
 #endif /* DOXYGEN_COMPILE */
 
   /** \brief  The allocation size, in bytes, of this bucket */

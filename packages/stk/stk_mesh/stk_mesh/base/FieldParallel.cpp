@@ -118,8 +118,8 @@ void communicate_field_data(
   CommAll sparse ;
 
   {
-    const unsigned * const snd_size = & send_size[0] ;
-    const unsigned * const rcv_size = & recv_size[0] ;
+    const unsigned * const snd_size = send_size.data() ;
+    const unsigned * const rcv_size = recv_size.data() ;
     sparse.allocate_buffers( mesh.parallel(), snd_size, rcv_size);
   }
 
@@ -244,11 +244,11 @@ void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
     pack_msg(iproc, send_data[i]);
     recv_data[i].resize(send_data[i].size());
 
-    char* recv_buffer = (char*)&recv_data[i][0];
+    char* recv_buffer = (char*)recv_data[i].data();
     int buf_size = recv_data[i].size()*class_size;
     MPI_Irecv(recv_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &recv_requests[i]);
 
-    char* send_buffer = (char*)&send_data[i][0];
+    char* send_buffer = (char*)send_data[i].data();
     MPI_Isend(send_buffer, buf_size, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_requests[i]);
   }
 
@@ -259,12 +259,12 @@ void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
           MPI_Wait(&recv_requests[i], &status);
       }
       else {
-          MPI_Waitany(num_comm_procs, &recv_requests[0], &idx, &status);
+          MPI_Waitany(num_comm_procs, recv_requests.data(), &idx, &status);
       }
       unpack_msg(comm_procs[idx], recv_data[idx]);
   }
 
-  MPI_Waitall(num_comm_procs, &send_requests[0], &statuses[0]);
+  MPI_Waitall(num_comm_procs, send_requests.data(), statuses.data());
 #endif
 }
 

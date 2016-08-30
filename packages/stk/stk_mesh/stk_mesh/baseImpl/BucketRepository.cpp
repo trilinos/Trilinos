@@ -225,9 +225,9 @@ Partition *BucketRepository::get_or_create_partition(
 
   // If the partition is found, the iterator will be right after it, thanks to the
   // trickiness above.
-  const std::vector<Partition *>::iterator ik = lower_bound( partitions , &key[0] );
+  const std::vector<Partition *>::iterator ik = lower_bound( partitions , key.data() );
   const bool partition_exists =
-    (ik != partitions.begin()) && raw_part_equal( ik[-1]->key() , &key[0] );
+    (ik != partitions.begin()) && raw_part_equal( ik[-1]->key() , key.data() );
 
   if (partition_exists)
   {

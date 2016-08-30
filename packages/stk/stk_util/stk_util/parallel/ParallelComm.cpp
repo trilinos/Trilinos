@@ -1202,7 +1202,7 @@ std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &m
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     if(sendSizeArray[iproc] > 0) local_number_to_receive[iproc] = 1;
   }
-  MPI_Allreduce(&local_number_to_receive[0], &global_number_to_receive[0], num_procs, MPI_INT, MPI_SUM, mpi_communicator);
+  MPI_Allreduce(local_number_to_receive.data(), global_number_to_receive.data(), num_procs, MPI_INT, MPI_SUM, mpi_communicator);
   //
   //  Now each processor knows how many messages it will recive, but does not know the message lengths or where
   //  the messages will be recived from.  Need to extract this information.
