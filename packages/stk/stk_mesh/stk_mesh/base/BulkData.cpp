@@ -6223,7 +6223,7 @@ void BulkData::unpack_not_owned_verify_report_errors(Entity entity,
 //----------------------------------------------------------------------------
 // Unpacking all of my not-owned entities.
 
-bool BulkData::unpack_not_owned_verify( CommSparse & commSparse , std::ostream & error_log )
+bool BulkData::unpack_not_owned_verify( CommAll & comm_all , std::ostream & error_log )
 {
   const int               p_rank = parallel_rank();
   const EntityCommListInfoVector & entity_comm = internal_comm_list();
@@ -6252,7 +6252,7 @@ bool BulkData::unpack_not_owned_verify( CommSparse & commSparse , std::ostream &
     if ( i->owner != p_rank ) {
 
       bool broken_tag = false;
-      CommBuffer & buf = commSparse.recv_buffer( i->owner );
+      CommBuffer & buf = comm_all.recv_buffer( i->owner );
 
       broken_tag = broken_tag || check_tag(*this, buf, PACK_TAG_ENTITY_SHARED, PACK_TAG_ENTITY_GHOST);
       if(!broken_tag)
@@ -6345,10 +6345,10 @@ bool BulkData::unpack_not_owned_verify( CommSparse & commSparse , std::ostream &
   return result ;
 }
 
-void BulkData::pack_owned_verify( CommSparse & commSparse )
+void BulkData::pack_owned_verify( CommAll & all )
 {
   const EntityCommListInfoVector & entity_comm = internal_comm_list();
-  const int p_rank = commSparse.parallel_rank();
+  const int p_rank = all.parallel_rank();
 
   for ( EntityCommListInfoVector::const_iterator
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
@@ -6379,7 +6379,7 @@ void BulkData::pack_owned_verify( CommSparse & commSparse )
 
         const int share_proc = share_procs[j] ;
 
-        CommBuffer & buf = commSparse.send_buffer( share_proc );
+        CommBuffer & buf = all.send_buffer( share_proc );
 
         put_tag(buf,PACK_TAG_ENTITY_SHARED);
 
@@ -6413,7 +6413,7 @@ void BulkData::pack_owned_verify( CommSparse & commSparse )
       for ( size_t j = 0 ; j < ghost_procs.size() ; ++j ) {
         const int ghost_proc = ghost_procs[j] ;
 
-        CommBuffer & buf = commSparse.send_buffer( ghost_proc );
+        CommBuffer & buf = all.send_buffer( ghost_proc );
 
         put_tag(buf,PACK_TAG_ENTITY_GHOST);
         pack_entity_info(*this, buf , i->entity );
@@ -6716,17 +6716,17 @@ bool BulkData::comm_mesh_verify_parallel_consistency(std::ostream & error_log )
   // Verify entities against owner.
 
   if ( verified_ok ) {
-    CommSparse comm( parallel() );
+    CommAll all( parallel() );
 
-    pack_owned_verify( comm );
+    pack_owned_verify( all );
 
-    comm.allocate_buffers();
+    all.allocate_buffers( all.parallel_size() / 4 );
 
-    pack_owned_verify(comm);
+    pack_owned_verify( all );
 
-    comm.communicate();
+    all.communicate();
 
-    verified_ok = unpack_not_owned_verify( comm , error_log );
+    verified_ok = unpack_not_owned_verify( all , error_log );
 
     if (parallel_size() > 1) {
       all_reduce( parallel() , ReduceMin<1>( & verified_ok ) );

@@ -40,8 +40,7 @@
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
 
 #include <stddef.h>                     // for size_t
@@ -276,7 +275,7 @@ inline void communicate_field_data(
 }
 
 template<typename FIELD_DATA_TYPE>
-inline void send_or_recv_field_data_for_assembly(stk::CommSparse& sparse, int phase, const stk::mesh::FieldBase& f, int owner, const EntityCommInfoVector& infovec, unsigned scalars_per_entity, unsigned bucketId, unsigned bucket_ordinal)
+inline void send_or_recv_field_data_for_assembly(stk::CommAll& sparse, int phase, const stk::mesh::FieldBase& f, int owner, const EntityCommInfoVector& infovec, unsigned scalars_per_entity, unsigned bucketId, unsigned bucket_ordinal)
 {
     FIELD_DATA_TYPE * ptr =
       reinterpret_cast<FIELD_DATA_TYPE *>(stk::mesh::field_data( f , bucketId, bucket_ordinal, scalars_per_entity*sizeof(FIELD_DATA_TYPE) ));
@@ -321,8 +320,8 @@ inline void parallel_sum_including_ghosts(
   // Sizing for send and receive
 
   const unsigned zero = 0 ;
-  std::vector<int> send_size( parallel_size , zero );
-  std::vector<int> recv_size( parallel_size , zero );
+  std::vector<unsigned> send_size( parallel_size , zero );
+  std::vector<unsigned> recv_size( parallel_size , zero );
 
   const EntityCommListInfoVector& comm_info_vec = mesh.internal_comm_list();
   size_t comm_info_vec_size = comm_info_vec.size();
@@ -363,9 +362,13 @@ inline void parallel_sum_including_ghosts(
 
   // Allocate send and receive buffers:
 
-  CommSparse sparse(mesh.parallel());
+  CommAll sparse ;
 
-  sparse.allocate_buffers( send_size, recv_size);
+  {
+    const unsigned * const snd_size = send_size.data() ;
+    const unsigned * const rcv_size = recv_size.data() ;
+    sparse.allocate_buffers( mesh.parallel(), snd_size, rcv_size);
+  }
 
   // Send packing:
 

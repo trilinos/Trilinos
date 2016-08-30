@@ -81,6 +81,7 @@ namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { namespace mesh { class ElemElemGraphUpdater; } }
 namespace stk { class CommSparse; }
+namespace stk { class CommAll; }
 namespace stk { namespace mesh { class ModificationObserver; } }
 namespace stk { namespace io { class StkMeshIoBroker; } }
 namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; } } }
@@ -1344,8 +1345,8 @@ private:
                                                    stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
 
   bool ordered_comm( const Entity entity );
-  void pack_owned_verify(CommSparse & commSparse);
-  bool unpack_not_owned_verify(CommSparse & commSparse, std::ostream & error_log);
+  void pack_owned_verify(CommAll & all);
+  bool unpack_not_owned_verify(CommAll & comm_all, std::ostream & error_log);
   bool verify_parallel_attributes( std::ostream & error_log );
   bool verify_parallel_attributes_comm_list_info(size_t comm_count, std::ostream & error_log);
   bool verify_parallel_attributes_for_bucket( Bucket const& bucket, std::ostream & error_log, size_t& comm_count );

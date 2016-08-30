@@ -3,7 +3,6 @@
 #include <stk_mesh/base/MetaData.hpp>   // for BulkData
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/CommSparse.hpp>
 
 
 namespace
@@ -28,7 +27,7 @@ void test_that_ids_are_unique(stk::mesh::BulkData &bulkData, stk::topology::rank
     std::vector<stk::mesh::EntityId>::iterator iter1 = std::unique(requestedIds.begin(), requestedIds.end());
     ThrowRequireMsg(iter1 == requestedIds.end(), "Oh no! " << __FILE__ << __LINE__);
 
-    stk::CommSparse comm(bulkData.parallel());
+    stk::CommAll comm(bulkData.parallel());
 
     for(int phase = 0; phase < 2; ++phase)
     {
@@ -47,7 +46,7 @@ void test_that_ids_are_unique(stk::mesh::BulkData &bulkData, stk::topology::rank
 
         if(phase == 0)
         {
-            comm.allocate_buffers();
+            comm.allocate_buffers(bulkData.parallel_size() / 4);
         }
         else
         {
