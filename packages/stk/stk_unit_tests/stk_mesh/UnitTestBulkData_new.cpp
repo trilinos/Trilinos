@@ -60,7 +60,8 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
-#include "stk_util/parallel/ParallelComm.hpp"  // for CommAll, CommBuffer
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+#include "stk_util/parallel/CommSparse.hpp"
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 namespace stk { namespace mesh { class Part; } }
 
@@ -902,10 +903,9 @@ TEST ( UnitTestBulkData_new , testEntityComm )
   // ranking entities may be owned by different processes,
   // as such unpacking must be performed in rank order.
 
-  //Start of CommAll section:
+  //Start of CommSparse section:
   {
-    bool propagate_local_error_flags = true;
-    stk::CommAll comm( MPI_COMM_WORLD, propagate_local_error_flags );
+    stk::CommSparse comm(MPI_COMM_WORLD);
 
     for ( std::set< EntityProc , EntityLess >::iterator
           j = new_send.begin(); j != new_send.end() ; ++j ) {
@@ -919,7 +919,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
       }
     }
 
-    comm.allocate_buffers( size / 4 );
+    comm.allocate_buffers();
 
     for ( std::set< EntityProc , EntityLess >::iterator
           j = new_send.begin(); j != new_send.end() ; ++j ) {
@@ -965,7 +965,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
       }
 
     }
-  }//end of CommAll section
+  }//end of CommSparse section
 
   //bulk.modification_end ();
 }
@@ -1033,7 +1033,7 @@ void new_comm_sync_send_recv(
   const int parallel_rank = mesh.parallel_rank();
   const int parallel_size = mesh.parallel_size();
 
-  stk::CommAll all( mesh.parallel() );
+  stk::CommSparse all( mesh.parallel() );
 
   // Communication sizing:
 
@@ -1046,7 +1046,7 @@ void new_comm_sync_send_recv(
     }
   }
 
-  all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
+  all.allocate_buffers();
 
   // Communication packing (with message content comments):
   for ( std::set< EntityProc , EntityLess >::iterator
@@ -1118,7 +1118,7 @@ void new_comm_recv_to_send(
 {
   const int parallel_size = mesh.parallel_size();
 
-  stk::CommAll all( mesh.parallel() );
+  stk::CommSparse all( mesh.parallel() );
 
   for ( std::set< Entity , EntityLess >::const_iterator
         i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
@@ -1126,7 +1126,7 @@ void new_comm_recv_to_send(
     all.send_buffer( owner ).skip<EntityKey>(1);
   }
 
-  all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
+  all.allocate_buffers();
 
   for ( std::set< Entity , EntityLess >::const_iterator
         i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
