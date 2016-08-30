@@ -236,11 +236,19 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       for (auto i=0;i<itest;++i) {
+        const auto ratio = (t_view[i]/t_dynrankview[i]);
         std::cout 
           << "TEST " << i 
           << ":  t_view = " << t_view[i] 
           << ",  t_dynrankview = " << t_dynrankview[i] 
-          << ", ratio (v/drv) = " << (t_view[i]/t_dynrankview[i]) << "\n";
+          << ", ratio (v/drv) = " << ratio << "\n";
+
+        const auto tol = 0.95;
+        if (ratio < tol)  {
+          std::cout << "Performance test failed as view/dynrankview is below " << tol << std::endl;
+          errorFlag = -1;
+        }
+        
       }
       std::cout 
         << "===============================================================================\n";
