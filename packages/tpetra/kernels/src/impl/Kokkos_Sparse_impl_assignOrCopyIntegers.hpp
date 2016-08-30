@@ -46,11 +46,10 @@
 
 #include "TpetraKernels_config.h"
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Sparse_impl_copyIntegers.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
-
-namespace { // (anonymous)
 
 /// \brief Either copy or assign input to output, where both input and
 ///   output are 1-D Kokkos Views of integers
@@ -107,7 +106,7 @@ assignOrCopyIntegers (OutputType& out,
   out = Kokkos::Impl::if_c<assignable,
     InputType, OutputType>::select (in, out);
   if (assignable) {
-    return true; // of course no overflow; we just assigned 'in' to 'out'
+    return; // of course no overflow; we just assigned 'in' to 'out'
   }
   else {
     if (reuseGraph && out.dimension_0 () == in.dimension_0 ()) {
@@ -127,7 +126,7 @@ assignOrCopyIntegers (OutputType& out,
         // If we get here, that means that out is NOT const, and is
         // not long enough.  Repeat the above allocation step.  In
         // this case, assume that 'out' may not have a label yet.
-        const std::string label = (out.label () = "") ?
+        const std::string label = (out.label () == "") ?
           in.label () : out.label ();
         out_tmp = nc_output_type (label, in.dimension_0 ());
       }
