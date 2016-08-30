@@ -906,15 +906,25 @@ namespace Belos {
         PR0_ = R0_;
       }
     }
-    else {
-      // If the left preconditioner has been set and the user-defined 
-      // preconditioned residual has not, then we didn't set the problem
-      if(LP_!=Teuchos::null && PR0_user_==Teuchos::null) {
-        isSet_ = false;
-        return isSet_;
+    else { // User specified the residuals
+      if (MVT::GetNumberVecs( *R0_user_ )!=MVT::GetNumberVecs( *B_ )) {
+        Teuchos::RCP<MV> helper = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
+        computeCurrResVec( &*helper, &*X_, &*B_ );
+        R0_user_ = helper;
       }
-      // If there is no left preconditioner, then the user-defined
-      // preconditioned residual must point to the user-defined residual
+
+      if (LP_!=Teuchos::null) {
+        if (PR0_user_==Teuchos::null || (PR0_user_==R0_) || (MVT::GetNumberVecs(*PR0_user_)!=MVT::GetNumberVecs(*B_))) {
+          Teuchos::RCP<MV> helper = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
+          {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+            Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
+            OPT::Apply( *LP_, *R0_user_, *helper );
+          }
+          PR0_user_ = helper;
+        }
+      }
       else {
         PR0_user_ = R0_user_;
       }
