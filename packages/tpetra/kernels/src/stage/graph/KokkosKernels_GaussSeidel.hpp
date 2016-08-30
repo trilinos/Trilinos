@@ -13,8 +13,8 @@ namespace Graph{
   template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
   void gauss_seidel_symbolic(
       KernelHandle *handle,
-      typename KernelHandle::row_lno_t num_rows,
-      typename KernelHandle::row_lno_t num_cols,
+      typename KernelHandle::nnz_lno_t num_rows,
+      typename KernelHandle::nnz_lno_t num_cols,
       lno_row_view_t_ row_map,
       lno_nnz_view_t_ entries,
       bool is_graph_symmetric = true){
@@ -29,8 +29,8 @@ namespace Graph{
             typename lno_nnz_view_t_,
             typename scalar_nnz_view_t_>
   void gauss_seidel_numeric(KernelHandle *handle,
-      typename KernelHandle::row_lno_t num_rows,
-      typename KernelHandle::row_lno_t num_cols,
+      typename KernelHandle::nnz_lno_t num_rows,
+      typename KernelHandle::nnz_lno_t num_cols,
       lno_row_view_t_ row_map,
       lno_nnz_view_t_ entries,
       scalar_nnz_view_t_ values,
@@ -50,8 +50,8 @@ namespace Graph{
     typename x_scalar_view_t,
     typename y_scalar_view_t>
   void symmetric_gauss_seidel_apply(KernelHandle *handle,
-      typename KernelHandle::row_lno_t num_rows,
-      typename KernelHandle::row_lno_t num_cols,
+      typename KernelHandle::nnz_lno_t num_rows,
+      typename KernelHandle::nnz_lno_t num_cols,
       lno_row_view_t_ row_map,
       lno_nnz_view_t_ entries,
       scalar_nnz_view_t_ values,
@@ -83,8 +83,8 @@ namespace Graph{
   typename x_scalar_view_t, typename y_scalar_view_t>
   void forward_sweep_gauss_seidel_apply(
       KernelHandle *handle,
-      typename KernelHandle::row_lno_t num_rows,
-      typename KernelHandle::row_lno_t num_cols,
+      typename KernelHandle::nnz_lno_t num_rows,
+      typename KernelHandle::nnz_lno_t num_cols,
       lno_row_view_t_ row_map,
       lno_nnz_view_t_ entries,
       scalar_nnz_view_t_ values,
@@ -113,8 +113,8 @@ namespace Graph{
   typename x_scalar_view_t, typename y_scalar_view_t>
   void backward_sweep_gauss_seidel_apply(
       KernelHandle *handle,
-      typename KernelHandle::row_lno_t num_rows,
-      typename KernelHandle::row_lno_t num_cols,
+      typename KernelHandle::nnz_lno_t num_rows,
+      typename KernelHandle::nnz_lno_t num_cols,
       lno_row_view_t_ row_map,
       lno_nnz_view_t_ entries,
       scalar_nnz_view_t_ values,

@@ -19,9 +19,9 @@ namespace Graph{
 
   void spgemm_symbolic(
       KernelHandle *handle,
-      typename KernelHandle::row_lno_t m,
-      typename KernelHandle::row_lno_t n,
-      typename KernelHandle::row_lno_t k,
+      typename KernelHandle::nnz_lno_t m,
+      typename KernelHandle::nnz_lno_t n,
+      typename KernelHandle::nnz_lno_t k,
       lno_row_view_t_ row_mapA,
       lno_nnz_view_t_ entriesA,
       bool transposeA,
@@ -85,9 +85,9 @@ namespace Graph{
   void spgemm_numeric(
 
       KernelHandle *handle,
-      typename KernelHandle::row_lno_t m,
-      typename KernelHandle::row_lno_t n,
-      typename KernelHandle::row_lno_t k,
+      typename KernelHandle::nnz_lno_t m,
+      typename KernelHandle::nnz_lno_t n,
+      typename KernelHandle::nnz_lno_t k,
       lno_row_view_t_ row_mapA,
       lno_nnz_view_t_ entriesA,
       scalar_nnz_view_t_ valuesA,
@@ -140,9 +140,9 @@ namespace Graph{
     typename scalar_nnz_view_t_>
   void spgemm_apply(
       KernelHandle *handle,
-      typename KernelHandle::row_lno_t m,
-      typename KernelHandle::row_lno_t n,
-      typename KernelHandle::row_lno_t k,
+      typename KernelHandle::nnz_lno_t m,
+      typename KernelHandle::nnz_lno_t n,
+      typename KernelHandle::nnz_lno_t k,
       lno_row_view_t_ row_mapA,
       lno_nnz_view_t_ entriesA,
       scalar_nnz_view_t_ valuesA,

@@ -151,7 +151,7 @@ int read_mtx (
 
   int mtx_object = 0; // 0- matrix, 1-vector
   int mtx_format = 0; // 0- coordinate; 1- array
-  int mtx_field = 0; //0-real, 1-double, 2-complex, 3- integer, 4-pattern
+  //int mtx_field = 0; //0-real, 1-double, 2-complex, 3- integer, 4-pattern
   int mtx_sym = 0; //0-general, 1-symmetric, 2-skew-symmetric, 3-hermitian
 
   if (fline.find("matrix") != std::string::npos){
@@ -168,19 +168,19 @@ int read_mtx (
   }
 
   if (fline.find("real") != std::string::npos){
-    mtx_field = 0;
+    //mtx_field = 0;
   }
   else if (fline.find("double") != std::string::npos){
-    mtx_field = 1;
+    //mtx_field = 1;
   }
   else if (fline.find("complex") != std::string::npos){
-    mtx_field = 2;
+    //mtx_field = 2;
   }
   else if (fline.find("integer") != std::string::npos){
-    mtx_field = 3;
+    //mtx_field = 3;
   }
   else if (fline.find("pattern") != std::string::npos){
-    mtx_field = 4;
+    //mtx_field = 4;
   }
 
   if (fline.find("skew-symmetric") != std::string::npos){

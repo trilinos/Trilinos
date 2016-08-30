@@ -6,6 +6,7 @@
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_GraphColor.hpp"
 
+typedef size_t size_type;
 typedef int idx;
 typedef double wt;
 
@@ -217,7 +218,7 @@ int main (int argc, char ** argv){
 
 
     typedef Kokkos::Threads myExecSpace;
-    typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+    typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
 
     typedef typename crsMat_t::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
@@ -387,7 +388,7 @@ int main (int argc, char ** argv){
 
 
     typedef Kokkos::OpenMP myExecSpace;
-    typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+    typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
 
     typedef typename crsMat_t::StaticCrsGraphType graph_t;
     typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
@@ -638,7 +639,7 @@ int main (int argc, char ** argv){
     idx ne = nnzA;
 
     typedef Kokkos::Cuda myExecSpace;
-    typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+    typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
 
     typedef typename crsMat_t::StaticCrsGraphType graph_t;
     typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
@@ -911,9 +912,9 @@ crsMat_t run_experiment(
     kh.set_dynamic_scheduling(true);
   }
 
-  const size_t m = crsMat.numRows();
-  const size_t n = crsMat2.numRows();
-  const size_t k = crsMat2.numCols();
+  const idx m = crsMat.numRows();
+  const idx n = crsMat2.numRows();
+  const idx k = crsMat2.numCols();
 
   std::cout << "m:" << m << " n:" << n << " k:" << k << std::endl;
   if (n != crsMat.numCols()){
@@ -1090,12 +1091,12 @@ crsMat_t run_experiment(
 
     std::vector <KokkosKernels::Experimental::Graph::Utils::Edge<idx, wt>> edge_list (he.dimension_0());
 
-
-    for (idx i = 0; i < hr.dimension_0() - 1; ++i){
-      idx begin = hr(i);
-      idx end = hr(i + 1);
-      idx edge_ind = 0;
-      for (idx j = begin; j < end; ++j){
+    idx numr = hr.dimension_0() - 1;
+    for (idx i = 0; i < numr; ++i){
+      size_type begin = hr(i);
+      size_type end = hr(i + 1);
+      size_type edge_ind = 0;
+      for (size_type j = begin; j < end; ++j){
         edge_list[edge_ind].src = i;
         edge_list[edge_ind].dst = he(j);
         edge_list[edge_ind].ew = hv(j);
@@ -1104,7 +1105,7 @@ crsMat_t run_experiment(
       std::sort (edge_list.begin(), edge_list.begin() + edge_ind);
 
       edge_ind = 0;
-      for (int j = begin; j < end; ++j){
+      for (size_type j = begin; j < end; ++j){
         he(j) = edge_list[edge_ind].dst;
         hv(j) = edge_list[edge_ind++].ew;
       }

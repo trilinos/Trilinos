@@ -7,6 +7,7 @@
 
 #define MAXVAL 1
 
+typedef size_t size_type;
 typedef int idx;
 typedef double wt;
 
@@ -268,7 +269,7 @@ int main (int argc, char ** argv){
       Kokkos::Threads::print_configuration(std::cout);
 
       typedef Kokkos::Threads myExecSpace;
-      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
 
       typedef typename crsMat_t::StaticCrsGraphType graph_t;
       typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
@@ -314,7 +315,7 @@ int main (int argc, char ** argv){
 
 
       typedef Kokkos::OpenMP myExecSpace;
-      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
 
       typedef typename crsMat_t::StaticCrsGraphType graph_t;
       typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
@@ -356,7 +357,7 @@ int main (int argc, char ** argv){
 
 
       typedef Kokkos::Cuda myExecSpace;
-      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, size_type > crsMat_t;
 
       typedef typename crsMat_t::StaticCrsGraphType graph_t;
       typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;

@@ -30,63 +30,35 @@ public:
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
   typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
 
-  typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
-  typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
-  typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
-  typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
-  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
-  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
+  //typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
+  typedef typename in_lno_row_view_t::non_const_value_type size_type;
+
+
+  //typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
 
   typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
-  typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
-  typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
-  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
-  //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
+  //typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
 
   typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::array_layout nnz_scalar_view_array_layout;
-  typedef typename in_scalar_nnz_view_t::device_type nnz_scalar_view_device_t;
-  typedef typename in_scalar_nnz_view_t::memory_traits nnz_scalar_view_memory_traits;
-  typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
+  //typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
 
 
-
-  typedef typename in_lno_row_view_t::const_data_type const_row_lno_t;
-  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_lno_t;
   typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
   typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
-
-
-
-  typedef typename in_lno_nnz_view_t::const_data_type const_nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nnz_lno_t;
   typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
   typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
 
-
-
-  typedef typename in_scalar_nnz_view_t::const_data_type const_nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nnz_scalar_t;
   typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
   typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
 
-
-  //typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> idx_temp_work_array_type;
-  typedef typename Kokkos::View<row_lno_t *, HandleTempMemorySpace> row_lno_temp_work_view_t;
-  //typedef typename Kokkos::View<row_index_type *, HandlePersistentMemorySpace> idx_persistent_work_array_type;
-  typedef typename Kokkos::View<row_lno_t *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
-
-  //typedef typename row_index_persistent_work_view_type::HostMirror host_idx_persistent_view_type; //Host view type
+  typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
   typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
 
-  //typedef typename Kokkos::View<nonzero_value_type *, HandleTempMemorySpace> value_temp_work_array_type;
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
-
-  //typedef typename Kokkos::View<nonzero_value_type *, HandlePersistentMemorySpace> value_persistent_work_array_type;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
-
+  typedef typename scalar_persistent_work_view_t::HostMirror scalar_persistent_work_host_view_t; //Host view type
 
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
@@ -97,14 +69,14 @@ private:
   bool owner_of_coloring;
   GSAlgorithm algorithm_type;
 
-  row_lno_persistent_work_host_view_t color_set_xadj;
-  row_lno_persistent_work_view_t color_sets;
-  row_lno_t numColors;
+  nnz_lno_persistent_work_host_view_t color_set_xadj;
+  nnz_lno_persistent_work_view_t color_sets;
+  nnz_lno_t numColors;
 
   row_lno_persistent_work_view_t permuted_xadj;
-  row_lno_persistent_work_view_t permuted_adj;
+  nnz_lno_persistent_work_view_t permuted_adj;
   scalar_persistent_work_view_t permuted_adj_vals;
-  row_lno_persistent_work_view_t old_to_new_map;
+  nnz_lno_persistent_work_view_t old_to_new_map;
 
   bool called_symbolic;
   bool called_numeric;
@@ -192,26 +164,26 @@ private:
   GSAlgorithm get_algorithm_type() const {return this->algorithm_type;}
   bool is_owner_of_coloring() const {return this->owner_of_coloring;}
 
-  row_lno_persistent_work_host_view_t get_color_xadj() {
+  nnz_lno_persistent_work_host_view_t get_color_xadj() {
     return this->color_set_xadj;
   }
-  row_lno_persistent_work_view_t get_color_adj() {
+  nnz_lno_persistent_work_view_t get_color_adj() {
     return this->color_sets;
   }
-  row_lno_t get_num_colors() {
+  nnz_lno_t get_num_colors() {
     return this->numColors;
   }
 
   row_lno_persistent_work_view_t get_new_xadj() {
     return this->permuted_xadj;
   }
-  row_lno_persistent_work_view_t get_new_adj() {
+  nnz_lno_persistent_work_view_t get_new_adj() {
     return this->permuted_adj;
   }
   scalar_persistent_work_view_t get_new_adj_val() {
     return this->permuted_adj_vals;
   }
-  row_lno_persistent_work_view_t get_old_to_new_map() {
+  nnz_lno_persistent_work_view_t get_old_to_new_map() {
     return this->old_to_new_map;
   }
 
@@ -225,26 +197,26 @@ private:
   void set_call_symbolic(bool call = true){this->called_symbolic = call;}
   void set_call_numeric(bool call = true){this->called_numeric = call;}
 
-  void set_color_set_xadj(const row_lno_persistent_work_host_view_t &color_set_xadj_) {
+  void set_color_set_xadj(const nnz_lno_persistent_work_host_view_t &color_set_xadj_) {
     this->color_set_xadj = color_set_xadj_;
   }
-  void set_color_set_adj(const row_lno_persistent_work_view_t &color_sets_) {
+  void set_color_set_adj(const nnz_lno_persistent_work_view_t &color_sets_) {
     this->color_sets = color_sets_;
   }
-  void set_num_colors(const row_lno_t &numColors_) {
+  void set_num_colors(const nnz_lno_t &numColors_) {
     this->numColors = numColors_;
   }
 
   void set_new_xadj(const row_lno_persistent_work_view_t &xadj_) {
     this->permuted_xadj = xadj_;
   }
-  void set_new_adj(const row_lno_persistent_work_view_t &adj_) {
+  void set_new_adj(const nnz_lno_persistent_work_view_t &adj_) {
     this->permuted_adj = adj_;
   }
   void set_new_adj_val(const scalar_persistent_work_view_t &adj_vals_) {
     this->permuted_adj_vals = adj_vals_;
   }
-  void set_old_to_new_map(const row_lno_persistent_work_view_t &old_to_new_map_) {
+  void set_old_to_new_map(const nnz_lno_persistent_work_view_t &old_to_new_map_) {
     this->old_to_new_map = old_to_new_map_;
   }
   void set_permuted_diagonals (const scalar_persistent_work_view_t permuted_diagonals_){
@@ -255,7 +227,7 @@ private:
     return this->permuted_diagonals;
   }
 
-  void allocate_x_y_vectors(row_lno_t num_rows, row_lno_t num_cols){
+  void allocate_x_y_vectors(nnz_lno_t num_rows, nnz_lno_t num_cols){
     if(permuted_y_vector.dimension_0() != size_t(num_rows)){
       permuted_y_vector = scalar_persistent_work_view_t("PERMUTED Y VECTOR", num_rows);
     }
@@ -270,7 +242,7 @@ private:
       int max_allowed_team_size,
       int &suggested_vector_size_,
       int &suggested_team_size_,
-      row_lno_t nr, row_lno_t nnz){
+      size_type nr, size_type nnz){
     //suggested_team_size_ =  this->suggested_team_size = 1;
     //suggested_vector_size_=this->suggested_vector_size = 1;
     //return;
@@ -280,7 +252,7 @@ private:
       return;
     }
     else {
-      KokkosKernels::Experimental::Util::get_suggested_vector_team_size<row_lno_t, ExecutionSpace>(
+      KokkosKernels::Experimental::Util::get_suggested_vector_team_size<size_type, ExecutionSpace>(
           max_allowed_team_size, suggested_vector_size_, suggested_team_size_, nr, nnz);
       this->suggested_team_size = suggested_vector_size_;
       this->suggested_vector_size = suggested_vector_size_;

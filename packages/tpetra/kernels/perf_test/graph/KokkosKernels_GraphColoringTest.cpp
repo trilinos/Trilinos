@@ -50,6 +50,8 @@ int main (int argc, char ** argv){
 
 
     std::cout << "SERIAL TEST 1" << std::endl;
+
+    typedef unsigned int size_type;
     typedef int lno_t;
     typedef double scalar_t;
     //typedef unsigned int color_t;
@@ -63,7 +65,7 @@ int main (int argc, char ** argv){
     typedef Kokkos::Serial::memory_space TempWorkSpace;
     typedef Kokkos::Serial::memory_space PersistentWorkSpace;
 
-    typedef Kokkos::View<lno_t *, RowMemorySpace> row_index_view_type;
+    typedef Kokkos::View<size_type *, RowMemorySpace> row_index_view_type;
     typedef Kokkos::View<lno_t *, NonzeroMemorySpace> nonzero_index_view_type;
     typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
 
@@ -135,6 +137,7 @@ int main (int argc, char ** argv){
     {
 
       std::cout << "OPENMP TEST 1" << std::endl;
+      typedef size_t size_type;
       typedef int lno_t;
       typedef double scalar_t;
       //typedef unsigned int color_t;
@@ -148,7 +151,7 @@ int main (int argc, char ** argv){
       typedef Kokkos::OpenMP TempWorkSpace;
       typedef Kokkos::OpenMP PersistentWorkSpace;
 
-      typedef Kokkos::View<lno_t *, RowMemorySpace> row_index_view_type;
+      typedef Kokkos::View<size_type *, RowMemorySpace> row_index_view_type;
       typedef Kokkos::View<lno_t *, NonzeroMemorySpace> nonzero_index_view_type;
       typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
 
@@ -216,6 +219,7 @@ int main (int argc, char ** argv){
     {
 
       std::cout << "OPENMP TEST 2" << std::endl;
+      typedef int size_type;
       typedef unsigned long lno_t;
       typedef float scalar_t;
       //typedef int color_t;
@@ -228,11 +232,11 @@ int main (int argc, char ** argv){
       typedef Kokkos::OpenMP TempWorkSpace;
       typedef Kokkos::OpenMP PersistentWorkSpace;
 
-      typedef Kokkos::View<lno_t *, Kokkos::LayoutLeft, RowMemorySpace> row_index_view_type;
+      typedef Kokkos::View<size_type *, Kokkos::LayoutLeft, RowMemorySpace> row_index_view_type;
       typedef Kokkos::View<lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> nonzero_index_view_type;
       typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
 
-      typedef Kokkos::View<const lno_t *, Kokkos::LayoutLeft, RowMemorySpace> const_row_index_view_type;
+      typedef Kokkos::View<const size_type *, Kokkos::LayoutLeft, RowMemorySpace> const_row_index_view_type;
       typedef Kokkos::View<const lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> const_nonzero_index_view_type;
 
 
@@ -305,6 +309,7 @@ int main (int argc, char ** argv){
     {
 
       std::cout << "Cuda TEST 1" << std::endl;
+      typedef unsigned int size_type;
       typedef int lno_t;
       typedef double scalar_t;
       typedef unsigned int color_t;
@@ -317,7 +322,7 @@ int main (int argc, char ** argv){
       typedef Kokkos::Cuda TempWorkSpace;
       typedef Kokkos::Cuda PersistentWorkSpace;
 
-      typedef Kokkos::View<lno_t *, RowMemorySpace> row_index_view_type;
+      typedef Kokkos::View<size_type *, RowMemorySpace> row_index_view_type;
       typedef Kokkos::View<lno_t *, NonzeroMemorySpace> nonzero_index_view_type;
       typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
 
@@ -387,6 +392,7 @@ int main (int argc, char ** argv){
     {
 
       std::cout << "Cuda TEST 2" << std::endl;
+      typedef int size_type;
       typedef unsigned long lno_t;
       typedef float scalar_t;
       typedef int color_t;
@@ -399,7 +405,7 @@ int main (int argc, char ** argv){
       typedef Kokkos::Cuda TempWorkSpace;
       typedef Kokkos::Cuda PersistentWorkSpace;
 
-      typedef Kokkos::View<lno_t *, Kokkos::LayoutLeft, RowMemorySpace> row_index_view_type;
+      typedef Kokkos::View<size_type *, Kokkos::LayoutLeft, RowMemorySpace> row_index_view_type;
       typedef Kokkos::View<lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> nonzero_index_view_type;
       typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
 
@@ -411,7 +417,7 @@ int main (int argc, char ** argv){
       um_array_type _xadj (xadj, nr + 1);
       um_edge_array_type _adj (adj, ne);
 
-      typedef Kokkos::View<const lno_t *, Kokkos::LayoutLeft, RowMemorySpace> const_row_index_view_type;
+      typedef Kokkos::View<const size_type *, Kokkos::LayoutLeft, RowMemorySpace> const_row_index_view_type;
       typedef Kokkos::View<const lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> const_nonzero_index_view_type;
 
 
@@ -484,6 +490,7 @@ int main (int argc, char ** argv){
     //CUDA TEST3
     {
       std::cout << "Cuda TEST 3" << std::endl;
+      typedef unsigned int size_type;
       typedef unsigned long lno_t;
       typedef float scalar_t;
       typedef int color_t;
@@ -496,7 +503,7 @@ int main (int argc, char ** argv){
       typedef Kokkos::CudaUVMSpace TempWorkSpace;
       typedef Kokkos::CudaHostPinnedSpace PersistentWorkSpace;
 
-      typedef Kokkos::View<lno_t *, Kokkos::LayoutLeft, RowMemorySpace> row_index_view_type;
+      typedef Kokkos::View<size_type *, Kokkos::LayoutLeft, RowMemorySpace> row_index_view_type;
       typedef Kokkos::View<lno_t *, Kokkos::LayoutRight, NonzeroMemorySpace> nonzero_index_view_type;
       typedef Kokkos::View<scalar_t *, NonzeroMemorySpace> nonzero_scalar_view_type;
 

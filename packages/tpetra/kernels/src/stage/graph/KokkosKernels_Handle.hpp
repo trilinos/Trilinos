@@ -38,7 +38,7 @@ public:
 
   //typedef typename row_index_view_type::value_type idx;
   //typedef typename in_lno_row_view_t::non_const_value_type row_index_type;
-  typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
+  //typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
   typedef typename in_lno_row_view_t::non_const_value_type size_type;
 
   //typedef typename row_index_view_type::array_layout idx_array_layout;
@@ -98,10 +98,11 @@ public:
 
 
   //typedef typename in_lno_row_view_t::const_data_type const_row_data_type;
-  typedef typename in_lno_row_view_t::const_data_type const_row_lno_t;
+  typedef typename in_lno_row_view_t::const_value_type const_row_lno_t;
+  typedef typename in_lno_row_view_t::const_value_type const_size_type;
 
   //typedef typename in_lno_row_view_t::non_const_data_type non_const_row_data_type;
-  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_lno_t;
+  typedef typename in_lno_row_view_t::non_const_value_type non_const_row_lno_t;
 
   //typedef typename in_row_index_view_type::memory_space row_view_memory_space;
   //typedef typename Kokkos::View<const_row_lno_t, row_view_array_layout,
@@ -115,10 +116,10 @@ public:
 
 
   //typedef typename in_lno_nnz_view_t::const_data_type const_nonzero_index_data_type;
-  typedef typename in_lno_nnz_view_t::const_data_type const_nnz_lno_t;
+  typedef typename in_lno_nnz_view_t::const_value_type const_nnz_lno_t;
 
   //typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nonzero_index_data_type;
-  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nnz_lno_t;
+  //typedef typename in_lno_nnz_view_t::non_const_value_type non_const_nnz_lno_t;
 
 
   //typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
@@ -148,7 +149,7 @@ public:
   typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
 
   typedef typename Graph::GraphColoringHandle
-      <in_lno_row_view_t, non_const_lno_row_view_t, in_lno_nnz_view_t,
+      <in_lno_row_view_t, non_const_lno_nnz_view_t, in_lno_nnz_view_t,
       ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GraphColoringHandleType;
 
   typedef typename Graph::GaussSeidelHandle
@@ -163,14 +164,17 @@ public:
   //typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> idx_temp_work_array_type;
   //typedef typename Kokkos::View<row_lno_t *, HandleTempMemorySpace> row_index_temp_work_view_type;
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
 
   //typedef typename Kokkos::View<row_index_type *, HandlePersistentMemorySpace> idx_persistent_work_array_type;
   //typedef typename Kokkos::View<row_lno_t *, HandlePersistentMemorySpace> row_index_persistent_work_view_type;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
 
   //typedef typename row_index_persistent_work_view_type::HostMirror host_idx_persistent_view_type; //Host view type
   //typedef typename lno_persistent_work_view_t::HostMirror row_index_persistent_host_view_type; //Host view type
   typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
+  typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t; //Host view type
 
   //typedef typename Kokkos::View<nonzero_value_type *, HandleTempMemorySpace> value_temp_work_array_type;
   //typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> nonzero_value_temp_work_view_type;
@@ -195,11 +199,11 @@ private:
   nnz_lno_t team_work_size;
   size_t shared_memory_size;
   int suggested_team_size;
+  KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space;
   bool use_dynamic_scheduling;
   //idx_array_type row_map;
   //idx_edge_array_type entries;
   //value_array_type values;
-  KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space;
 public:
 
 

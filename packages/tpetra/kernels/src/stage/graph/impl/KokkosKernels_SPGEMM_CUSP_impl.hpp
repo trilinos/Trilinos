@@ -37,9 +37,9 @@ template <typename KernelHandle,
   typename in_nonzero_value_view_type>
 void CUSP_apply(
     KernelHandle *handle,
-    typename KernelHandle::row_lno_t m,
-    typename KernelHandle::row_lno_t n,
-    typename KernelHandle::row_lno_t k,
+    typename KernelHandle::nnz_lno_t m,
+    typename KernelHandle::nnz_lno_t n,
+    typename KernelHandle::nnz_lno_t k,
     in_row_index_view_type row_mapA,
     in_nonzero_index_view_type entriesA,
     in_nonzero_value_view_type valuesA,
@@ -53,7 +53,7 @@ void CUSP_apply(
     typename in_nonzero_index_view_type::non_const_type &entriesC,
     typename in_nonzero_value_view_type::non_const_type &valuesC){
 #ifdef KERNELS_HAVE_CUSP
-  typedef typename KernelHandle::row_lno_t idx;
+  typedef typename KernelHandle::nnz_lno_t idx;
   typedef typename KernelHandle::nnz_scalar_t value_type;
 
   typedef typename in_row_index_view_type::device_type device1;

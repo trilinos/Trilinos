@@ -15,8 +15,8 @@ namespace Graph{
 template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
 void graph_color_symbolic(
     KernelHandle *handle,
-    typename KernelHandle::row_lno_t num_rows,
-    typename KernelHandle::row_lno_t num_cols,
+    typename KernelHandle::nnz_lno_t num_rows,
+    typename KernelHandle::nnz_lno_t num_cols,
     lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries,
     bool is_symmetric = true){
@@ -99,8 +99,8 @@ template <class KernelHandle,
           typename lno_col_view_t_, typename lno_colnnz_view_t_>
 void d2_graph_color(
     KernelHandle *handle,
-    typename KernelHandle::row_lno_t num_rows,
-    typename KernelHandle::row_lno_t num_cols,
+    typename KernelHandle::nnz_lno_t num_rows,
+    typename KernelHandle::nnz_lno_t num_cols,
     lno_row_view_t_ row_map,
     lno_nnz_view_t_ row_entries,
     lno_col_view_t_ col_map, //if graph is symmetric, simply give same for col_map and row_map, and row_entries and col_entries.

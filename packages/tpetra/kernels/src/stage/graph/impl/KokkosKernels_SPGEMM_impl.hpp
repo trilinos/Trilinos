@@ -151,7 +151,7 @@ private:
   bool transposeB;
 
   const size_t shmem_size;
-  const int concurrency;
+  const size_t concurrency;
   bool use_dynamic_schedule;
   //const int KOKKOSKERNELS_VERBOSE = 1;
 public:
@@ -224,7 +224,7 @@ public:
           row_mapA(row_mapA_), entriesA(entriesA_),
           oldrow_mapB(oldrow_mapB_),
           row_mapB(row_mapB_), rough_row_mapC(rough_row_mapC_),
-          min_val(KOKKOSKERNELS_MACRO_MIN(-std::numeric_limits<size_type>::max(), 0)),
+          min_val(((std::numeric_limits<size_type>::lowest()))),
           team_row_chunk_size(team_row_chunk_size_){}
 
     KOKKOS_INLINE_FUNCTION
@@ -384,6 +384,7 @@ public:
         int shared_mem,
         nnz_lno_t team_row_chunk_size_
         ):
+      numrows(row_map_.dimension_0() - 1),
       row_map(row_map_),
       entries(entries_),
       compression_bit_mask(compression_bit_mask_),
@@ -401,7 +402,6 @@ public:
       pset_index_nexts(set_index_nexts_.ptr_on_device()),
       pset_index_entries(set_index_entries_.ptr_on_device()),
       pset_entries(set_entries_.ptr_on_device()),
-      numrows(row_map_.dimension_0() - 1),
       shared_memory_size(shared_mem),
       team_row_chunk_size(team_row_chunk_size_)
       {}
@@ -601,7 +601,8 @@ public:
           nnz_lno_t hash = -1;
           if (num_unsuccess) hash = n_set_index % hm2.hash_key_size;
 
-          int insertion = hm2.vector_atomic_insert_into_hash_mergeOr(
+          //int insertion =
+          hm2.vector_atomic_insert_into_hash_mergeOr(
               teamMember, vector_size, hash,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size);
         }
 
@@ -1159,9 +1160,8 @@ public:
                 hash = b_col_ind % global_memory_hash_size;
               }
 
-
-
-              int insertion = hm2.vector_atomic_insert_into_hash_mergeAdd(
+              //int insertion =
+              hm2.vector_atomic_insert_into_hash_mergeAdd(
                   teamMember, vector_size,
                   hash,b_col_ind,b_val,
                   used_hash_sizes + 1, hm2.max_value_size
@@ -1616,7 +1616,8 @@ public:
             nnz_lno_t hash = b_col_ind & pow2_hash_func;
 
             //this has to be a success, we do not need to check for the success.
-            int insertion = hm2.sequential_insert_into_hash_mergeAdd_TrackHashes(
+            //int insertion =
+            hm2.sequential_insert_into_hash_mergeAdd_TrackHashes(
                 hash, b_col_ind, b_val,
                 &used_hash_sizes, hm2.max_value_size
                 ,&globally_used_hash_count,
@@ -1826,7 +1827,8 @@ public:
               }
 
               //this has to be a success, we do not need to check for the success.
-              int insertion = hm2.vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
+              //int insertion =
+              hm2.vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
                   teamMember, vector_size,
                   hash,b_col_ind,b_val,
                   used_hash_sizes + 1, hm2.max_value_size
@@ -2133,7 +2135,8 @@ public:
             nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
 
-            int insertion = hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
+            //int insertion =
+            hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
                 hash,b_set_ind,b_set,
                 &used_hash_size, hm2.max_value_size
                 ,&globally_used_hash_count, globally_used_hash_indices
@@ -2309,7 +2312,8 @@ public:
             nnz_lno_t hash = -1;
             if (num_unsuccess) hash = b_set_ind & pow2_hash_func;
 
-            int insertion = hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
+            //int insertion =
+            hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
                 teamMember, vector_size,
                 hash,b_set_ind,b_set,
                 used_hash_sizes + 1, hm2.max_value_size
@@ -2549,7 +2553,8 @@ public:
             nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
 
-            int insertion = hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
+            //int insertion =
+            hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
                 hash,b_set_ind,b_set,
                 &used_hash_size, hm2.max_value_size
                 ,&globally_used_hash_count, globally_used_hash_indices
@@ -2729,7 +2734,8 @@ public:
             nnz_lno_t hash = -1;
             if (num_unsuccess) hash = b_set_ind & pow2_hash_func;
 
-            int insertion = hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
+            //int insertion =
+            hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
                 teamMember, vector_size,
                 hash,b_set_ind,b_set,
                 used_hash_sizes + 1, hm2.max_value_size
@@ -3659,6 +3665,7 @@ public:
     */
   }
 
+#if 0
   template <typename out_row_view_t, typename out_nnz_view_t, typename in_row_view_t, typename in_nnz_view_t>
   void uncompressMatrix(
       out_row_view_t &out_row_map, out_nnz_view_t &out_entries,
@@ -3721,6 +3728,7 @@ public:
     MyExecSpace::fence();
 
   }
+#endif
 
   template <typename c_row_view_t, typename c_nnz_view_t>
   void d2_color_c_matrix(c_row_view_t &rowmapC, c_nnz_view_t &entryIndicesC_,

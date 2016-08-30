@@ -24,50 +24,32 @@ class GaussSeidel{
 
 public:
 
-
   typedef lno_row_view_t_ in_lno_row_view_t;
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
   typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
 
-  typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
-  typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
-  typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
-  typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
-  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
-
-  typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
-  typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
-  typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
-  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
-
-
-  typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::array_layout nnz_scalar_view_array_layout;
-  typedef typename in_scalar_nnz_view_t::device_type nnz_scalar_view_device_t;
-  typedef typename in_scalar_nnz_view_t::memory_traits nnz_scalar_view_memory_traits;
-  typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
-
-
-  typedef typename in_lno_row_view_t::const_data_type const_row_lno_t;
-  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_lno_t;
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
-
-  typedef typename in_lno_nnz_view_t::const_data_type const_nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
-
-  typedef typename in_scalar_nnz_view_t::const_data_type const_nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
-  typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
-
-
   typedef typename HandleType::HandleExecSpace MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
   typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
+
+
+  typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
+
+  typedef typename HandleType::size_type size_type;
+  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+  typedef typename HandleType::nnz_scalar_t nnz_scalar_t;
+
+
+  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
+  typedef typename HandleType::non_const_lno_row_view_t non_const_lno_row_view_t;
+
+  typedef typename HandleType::const_lno_nnz_view_t const_lno_nnz_view_t;
+  typedef typename HandleType::non_const_lno_nnz_view_t non_const_lno_nnz_view_t;
+
+  typedef typename HandleType::const_scalar_nnz_view_t const_scalar_nnz_view_t;
+  typedef typename HandleType::non_const_scalar_nnz_view_t non_const_scalar_nnz_view_t;
+
+
 
 
   typedef typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
@@ -75,19 +57,25 @@ public:
   typedef typename HandleType::row_lno_persistent_work_host_view_t row_lno_persistent_work_host_view_t; //Host view type
 
 
+
+  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_host_view_t nnz_lno_persistent_work_host_view_t; //Host view type
+
+
   typedef typename HandleType::scalar_temp_work_view_t scalar_temp_work_view_t;
   typedef typename HandleType::scalar_persistent_work_view_t scalar_persistent_work_view_t;
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  typedef row_lno_t color_t;
-  typedef Kokkos::View<row_lno_t *, MyTempMemorySpace> color_view_t;
+  typedef nnz_lno_t color_t;
+  typedef Kokkos::View<color_t *, MyTempMemorySpace> color_view_t;
 
   typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
 
 private:
   HandleType *handle;
-  row_lno_t num_rows, num_cols;
+  nnz_lno_t num_rows, num_cols;
 
   const_lno_row_view_t row_map;
   const_lno_nnz_view_t entries;
@@ -98,7 +86,7 @@ public:
   struct PSGS{
 
     row_lno_persistent_work_view_t _xadj;
-    row_lno_persistent_work_view_t _adj; // CSR storage of the graph.
+    nnz_lno_persistent_work_view_t _adj; // CSR storage of the graph.
     scalar_persistent_work_view_t _adj_vals; // CSR storage of the graph.
 
     scalar_persistent_work_view_t _Xvector /*output*/;
@@ -106,8 +94,8 @@ public:
 
     scalar_persistent_work_view_t _permuted_diagonals;
 
-    PSGS(row_lno_persistent_work_view_t xadj_, row_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
-        scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_, row_lno_persistent_work_view_t color_adj_,
+    PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
+        scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_, nnz_lno_persistent_work_view_t color_adj_,
         scalar_persistent_work_view_t permuted_diagonals_):
           _xadj( xadj_),
           _adj( adj_),
@@ -116,15 +104,15 @@ public:
           _Yvector( Yvector_), _permuted_diagonals(permuted_diagonals_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_lno_t &ii) const {
+    void operator()(const nnz_lno_t &ii) const {
 
-      row_lno_t row_begin = _xadj[ii];
-      row_lno_t row_end = _xadj[ii + 1];
+      size_type row_begin = _xadj[ii];
+      size_type row_end = _xadj[ii + 1];
 
       nnz_scalar_t sum = _Yvector[ii];
 
-      for (row_lno_t adjind = row_begin; adjind < row_end; ++adjind){
-        row_lno_t colIndex = _adj[adjind];
+      for (size_type adjind = row_begin; adjind < row_end; ++adjind){
+        nnz_lno_t colIndex = _adj[adjind];
         nnz_scalar_t val = _adj_vals[adjind];
         sum -= val * _Xvector[colIndex];
       }
@@ -136,20 +124,20 @@ public:
   struct Team_PSGS{
 
     row_lno_persistent_work_view_t _xadj;
-    row_lno_persistent_work_view_t _adj; // CSR storage of the graph.
+    nnz_lno_persistent_work_view_t _adj; // CSR storage of the graph.
     scalar_persistent_work_view_t _adj_vals; // CSR storage of the graph.
 
     scalar_persistent_work_view_t _Xvector /*output*/;
     scalar_persistent_work_view_t _Yvector;
-    row_lno_t _color_set_begin;
-    row_lno_t _color_set_end;
+    nnz_lno_t _color_set_begin;
+    nnz_lno_t _color_set_end;
 
     scalar_persistent_work_view_t _permuted_diagonals;
 
 
-    Team_PSGS(row_lno_persistent_work_view_t xadj_, row_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
+    Team_PSGS(row_lno_persistent_work_view_t xadj_, nnz_lno_persistent_work_view_t adj_, scalar_persistent_work_view_t adj_vals_,
         scalar_persistent_work_view_t Xvector_, scalar_persistent_work_view_t Yvector_,
-        row_lno_t color_set_begin, row_lno_t color_set_end,
+        nnz_lno_t color_set_begin, nnz_lno_t color_set_end,
         scalar_persistent_work_view_t permuted_diagonals_):
           _xadj( xadj_),
           _adj( adj_),
@@ -164,15 +152,15 @@ public:
       //idx ii = _color_adj[i];
       //int ii = teamMember.league_rank()  + _shift_index;
 
-      row_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank() + _color_set_begin;
+      nnz_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank() + _color_set_begin;
       //check ii is out of range. if it is, just return.
       if (ii >= _color_set_end)
         return;
 
 
 
-      row_lno_t row_begin = _xadj[ii];
-      row_lno_t row_end = _xadj[ii + 1];
+      size_type row_begin = _xadj[ii];
+      size_type row_end = _xadj[ii + 1];
 
       //bool am_i_the_diagonal = false;
       //nnz_scalar_t diagonal = 1;
@@ -180,33 +168,18 @@ public:
       Kokkos::parallel_reduce(
           Kokkos::ThreadVectorRange(teamMember, row_end - row_begin),
           //Kokkos::TeamThreadRange(teamMember, row_end - row_begin),
-          [&] (row_lno_t i, nnz_scalar_t & valueToUpdate) {
-        row_lno_t adjind = i + row_begin;
-        row_lno_t colIndex = _adj[adjind];
+          [&] (size_type i, nnz_scalar_t & valueToUpdate) {
+        size_type adjind = i + row_begin;
+        nnz_lno_t colIndex = _adj[adjind];
         nnz_scalar_t val = _adj_vals[adjind];
-        /*
-        if (colIndex == ii){
-          diagonal = val;
-          am_i_the_diagonal = true;
-        }
-        else {
-          valueToUpdate += val * _Xvector[colIndex];
-        }
-        */
         valueToUpdate += val * _Xvector[colIndex];
       },
       product);
-
-      /*
-      if (am_i_the_diagonal) {
-        _Xvector[ii] = (_Yvector[ii] - product) / diagonal;
-      }*/
 
       Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
         nnz_scalar_t diagonalVal = _permuted_diagonals[ii];
         _Xvector[ii] = (_Yvector[ii] - product + diagonalVal * _Xvector[ii])/ diagonalVal;
       });
-
      }
   };
 
@@ -217,8 +190,8 @@ public:
    */
 
   GaussSeidel(HandleType *handle_,
-      row_lno_t num_rows_,
-      row_lno_t num_cols_,
+      nnz_lno_t num_rows_,
+      nnz_lno_t num_cols_,
       const_lno_row_view_t row_map_,
       const_lno_nnz_view_t entries_,
       const_scalar_nnz_view_t values_):
@@ -227,8 +200,8 @@ public:
 
 
   GaussSeidel(HandleType *handle_,
-      row_lno_t num_rows_,
-      row_lno_t num_cols_,
+      nnz_lno_t num_rows_,
+      nnz_lno_t num_cols_,
       const_lno_row_view_t row_map_,
       const_lno_nnz_view_t entries_,
       bool is_symmetric_ = true):
@@ -245,8 +218,8 @@ public:
    * \brief constructor
    */
   GaussSeidel(HandleType *handle_,
-      row_lno_t num_rows_,
-      row_lno_t num_cols_,
+      nnz_lno_t num_rows_,
+      nnz_lno_t num_cols_,
       const_lno_row_view_t row_map_,
       const_lno_nnz_view_t entries_,
       const_scalar_nnz_view_t values_,
@@ -275,7 +248,7 @@ public:
 
     const_lno_row_view_t xadj = this->row_map;
     const_lno_nnz_view_t adj = this->entries;
-    row_lno_t nnz = adj.dimension_0();
+    size_type nnz = adj.dimension_0();
 
 #ifdef KOKKOSKERNELS_TIME_REVERSE
     Kokkos::Impl::Timer timer;
@@ -291,22 +264,20 @@ public:
         }
         else {
           row_lno_temp_work_view_t tmp_xadj;
-          row_lno_temp_work_view_t tmp_adj;
+          nnz_lno_temp_work_view_t tmp_adj;
           KokkosKernels::Experimental::Util::symmetrize_graph_symbolic_hashmap
           < const_lno_row_view_t, const_lno_nnz_view_t,
-          row_lno_temp_work_view_t, row_lno_temp_work_view_t,
+          row_lno_temp_work_view_t, nnz_lno_temp_work_view_t,
           MyExecSpace>
           (num_rows, xadj, adj, tmp_xadj, tmp_adj );
-
-
-          graph_color_symbolic <HandleType, row_lno_temp_work_view_t, row_lno_temp_work_view_t> (this->handle, num_rows, num_rows, tmp_xadj , tmp_adj);
+          graph_color_symbolic <HandleType, row_lno_temp_work_view_t, nnz_lno_temp_work_view_t> (this->handle, num_rows, num_rows, tmp_xadj , tmp_adj);
         }
       }
       else {
         graph_color_symbolic <HandleType, const_lno_row_view_t, const_lno_nnz_view_t> (this->handle, num_rows, num_rows, xadj , adj);
       }
     }
-    row_lno_t numColors = gchandle->get_num_colors();
+    color_t numColors = gchandle->get_num_colors();
    //std::cout << "numCol:" << numColors << " numRows:" << num_rows << " cols:" << num_cols << " nnz:" << adj.dimension_0() <<  std::endl;
 
 #ifdef KOKKOSKERNELS_TIME_REVERSE
@@ -316,9 +287,9 @@ public:
 
     typename HandleType::GraphColoringHandleType::color_view_t colors =  gchandle->get_vertex_colors();
 
-    row_lno_persistent_work_view_t color_xadj;
+    nnz_lno_persistent_work_view_t color_xadj;
 
-    row_lno_persistent_work_view_t color_adj;
+    nnz_lno_persistent_work_view_t color_adj;
 
 
 #ifdef KOKKOSKERNELS_TIME_REVERSE
@@ -327,8 +298,8 @@ public:
 
     KokkosKernels::Experimental::Util::create_reverse_map
       <typename HandleType::GraphColoringHandleType::color_view_t,
-        row_lno_persistent_work_view_t, MyExecSpace>
-          (num_rows, numColors, colors, color_xadj, color_adj);
+        nnz_lno_persistent_work_view_t, MyExecSpace>
+        (num_rows, numColors, colors, color_xadj, color_adj);
     MyExecSpace::fence();
 
 #ifdef KOKKOSKERNELS_TIME_REVERSE
@@ -336,7 +307,7 @@ public:
     timer.reset();
 #endif
 
-    row_lno_persistent_work_host_view_t  h_color_xadj = Kokkos::create_mirror_view (color_xadj);
+    nnz_lno_persistent_work_host_view_t  h_color_xadj = Kokkos::create_mirror_view (color_xadj);
     Kokkos::deep_copy (h_color_xadj , color_xadj);
     MyExecSpace::fence();
 
@@ -348,11 +319,11 @@ public:
 
 #if defined( KOKKOS_HAVE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, MyExecSpace >::value){
-      for (row_lno_t i = 0; i < numColors; ++i){
-        row_lno_t color_index_begin = h_color_xadj(i);
-        row_lno_t color_index_end = h_color_xadj(i + 1);
+      for (nnz_lno_t i = 0; i < numColors; ++i){
+        nnz_lno_t color_index_begin = h_color_xadj(i);
+        nnz_lno_t color_index_end = h_color_xadj(i + 1);
         if (color_index_begin + 1 >= color_index_end ) continue;
-        row_lno_persistent_work_view_t colorsubset =
+        auto colorsubset =
             subview(color_adj, Kokkos::pair<row_lno_t, row_lno_t> (color_index_begin, color_index_end));
         Kokkos::sort (colorsubset);
       }
@@ -367,8 +338,8 @@ public:
 #endif
 
     row_lno_persistent_work_view_t permuted_xadj ("new xadj", num_rows + 1);
-    row_lno_persistent_work_view_t old_to_new_map ("old_to_new_index_", num_rows );
-    row_lno_persistent_work_view_t permuted_adj ("newadj_", nnz );
+    nnz_lno_persistent_work_view_t old_to_new_map ("old_to_new_index_", num_rows );
+    nnz_lno_persistent_work_view_t permuted_adj ("newadj_", nnz );
     Kokkos::parallel_for( my_exec_space(0,num_rows),
         create_permuted_xadj(
             color_adj,
@@ -437,59 +408,59 @@ public:
   }
 
   struct create_permuted_xadj{
-    row_lno_persistent_work_view_t color_adj;
+    nnz_lno_persistent_work_view_t color_adj;
     const_lno_row_view_t oldxadj;
     row_lno_persistent_work_view_t newxadj;
-    row_lno_persistent_work_view_t old_to_new_index;
+    nnz_lno_persistent_work_view_t old_to_new_index;
     create_permuted_xadj(
-        row_lno_persistent_work_view_t color_adj_,
+        nnz_lno_persistent_work_view_t color_adj_,
         const_lno_row_view_t oldxadj_,
         row_lno_persistent_work_view_t newxadj_,
-        row_lno_persistent_work_view_t old_to_new_index_):
+        nnz_lno_persistent_work_view_t old_to_new_index_):
           color_adj(color_adj_), oldxadj(oldxadj_),
           newxadj(newxadj_),old_to_new_index(old_to_new_index_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_lno_t &i) const{
-      row_lno_t index = color_adj(i);
+    void operator()(const nnz_lno_t &i) const{
+      nnz_lno_t index = color_adj(i);
       newxadj(i + 1) = oldxadj[index + 1] - oldxadj[index];
       old_to_new_index[index] = i;
     }
   };
 
   struct fill_matrix_symbolic{
-    row_lno_t num_rows;
-    row_lno_persistent_work_view_t color_adj;
+    nnz_lno_t num_rows;
+    nnz_lno_persistent_work_view_t color_adj;
     const_lno_row_view_t oldxadj;
     const_lno_nnz_view_t oldadj;
     //value_array_type oldadjvals;
     row_lno_persistent_work_view_t newxadj;
-    row_lno_persistent_work_view_t newadj;
+    nnz_lno_persistent_work_view_t newadj;
     //value_persistent_work_array_type newadjvals;
-    row_lno_persistent_work_view_t old_to_new_index;
+    nnz_lno_persistent_work_view_t old_to_new_index;
     fill_matrix_symbolic(
-        row_lno_t num_rows_,
-        row_lno_persistent_work_view_t color_adj_,
+        nnz_lno_t num_rows_,
+        nnz_lno_persistent_work_view_t color_adj_,
         const_lno_row_view_t oldxadj_,
         const_lno_nnz_view_t oldadj_,
         //value_array_type oldadjvals_,
         row_lno_persistent_work_view_t newxadj_,
-        row_lno_persistent_work_view_t newadj_,
+        nnz_lno_persistent_work_view_t newadj_,
         //value_persistent_work_array_type newadjvals_,
-        row_lno_persistent_work_view_t old_to_new_index_):
+        nnz_lno_persistent_work_view_t old_to_new_index_):
           num_rows(num_rows_),
           color_adj(color_adj_), oldxadj(oldxadj_), oldadj(oldadj_), //oldadjvals(oldadjvals_),
           newxadj(newxadj_), newadj(newadj_), //newadjvals(newadjvals_),
           old_to_new_index(old_to_new_index_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_lno_t &i) const{
-      row_lno_t index = color_adj(i);
-      row_lno_t xadj_begin = newxadj(i);
+    void operator()(const nnz_lno_t &i) const{
+      nnz_lno_t index = color_adj(i);
+      size_type xadj_begin = newxadj(i);
 
-      row_lno_t old_xadj_end = oldxadj[index + 1];
-      for (row_lno_t j = oldxadj[index]; j < old_xadj_end; ++j){
-        row_lno_t neighbor = oldadj[j];
+      size_type old_xadj_end = oldxadj[index + 1];
+      for (size_type j = oldxadj[index]; j < old_xadj_end; ++j){
+        nnz_lno_t neighbor = oldadj[j];
         if(neighbor < num_rows) neighbor = old_to_new_index[neighbor];
         newadj[xadj_begin++] = neighbor;
         //newadjvals[xadj_begin++] = oldadjvals[j];
@@ -499,13 +470,13 @@ public:
 
 
   struct fill_matrix_numeric{
-    row_lno_persistent_work_view_t color_adj;
+    nnz_lno_persistent_work_view_t color_adj;
     const_lno_row_view_t oldxadj;
     const_scalar_nnz_view_t oldadjvals;
     row_lno_persistent_work_view_t newxadj;
     scalar_persistent_work_view_t newadjvals;
     fill_matrix_numeric(
-        row_lno_persistent_work_view_t color_adj_,
+        nnz_lno_persistent_work_view_t color_adj_,
         const_lno_row_view_t oldxadj_,
         const_scalar_nnz_view_t oldadjvals_,
         row_lno_persistent_work_view_t newxadj_,
@@ -514,12 +485,12 @@ public:
           newxadj(newxadj_), newadjvals(newadjvals_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_lno_t &i) const{
-      row_lno_t index = color_adj(i);
-      row_lno_t xadj_begin = newxadj(i);
+    void operator()(const nnz_lno_t &i) const{
+      nnz_lno_t index = color_adj(i);
+      size_type xadj_begin = newxadj(i);
 
-      row_lno_t old_xadj_end = oldxadj[index + 1];
-      for (row_lno_t j = oldxadj[index]; j < old_xadj_end; ++j){
+      size_type old_xadj_end = oldxadj[index + 1];
+      for (size_type j = oldxadj[index]; j < old_xadj_end; ++j){
         newadjvals[xadj_begin++] = oldadjvals[j];
       }
     }
@@ -529,14 +500,14 @@ public:
   struct Get_Matrix_Diagonals{
 
     row_lno_persistent_work_view_t _xadj;
-    row_lno_persistent_work_view_t _adj; // CSR storage of the graph.
+    nnz_lno_persistent_work_view_t _adj; // CSR storage of the graph.
     scalar_persistent_work_view_t _adj_vals; // CSR storage of the graph.
     scalar_persistent_work_view_t _diagonals;
-    row_lno_t nr;
+    size_type nr;
 
     Get_Matrix_Diagonals(
         row_lno_persistent_work_view_t xadj_,
-        row_lno_persistent_work_view_t adj_,
+        nnz_lno_persistent_work_view_t adj_,
         scalar_persistent_work_view_t adj_vals_,
         scalar_persistent_work_view_t diagonals_):
           _xadj( xadj_),
@@ -545,11 +516,11 @@ public:
           nr(xadj_.dimension_0() - 1){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const size_t & ii) const {
-      row_lno_t row_begin = _xadj[ii];
-      row_lno_t row_end = _xadj[ii + 1];
-      for (row_lno_t c = row_begin; c < row_end; ++c){
-        row_lno_t colIndex = _adj[c];
+    void operator()(const nnz_lno_t & ii) const {
+      size_type row_begin = _xadj[ii];
+      size_type row_end = _xadj[ii + 1];
+      for (size_type c = row_begin; c < row_end; ++c){
+        nnz_lno_t colIndex = _adj[c];
         if (colIndex == ii){
           nnz_scalar_t val = _adj_vals[c];
           _diagonals[ii] = val;
@@ -573,7 +544,7 @@ public:
       const_lno_row_view_t xadj = this->row_map;
       const_lno_nnz_view_t adj = this->entries;
 
-      nnz_lno_t nnz = adj.dimension_0();
+      size_type nnz = adj.dimension_0();
       const_scalar_nnz_view_t adj_vals = this->values;
 
       typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
@@ -581,10 +552,10 @@ public:
 
 
       row_lno_persistent_work_view_t newxadj_ = gsHandler->get_new_xadj();
-      row_lno_persistent_work_view_t old_to_new_map = gsHandler->get_old_to_new_map();
-      row_lno_persistent_work_view_t newadj_ = gsHandler->get_new_adj();
+      nnz_lno_persistent_work_view_t old_to_new_map = gsHandler->get_old_to_new_map();
+      nnz_lno_persistent_work_view_t newadj_ = gsHandler->get_new_adj();
 
-      row_lno_persistent_work_view_t color_adj = gsHandler->get_color_adj();
+      nnz_lno_persistent_work_view_t color_adj = gsHandler->get_color_adj();
       scalar_persistent_work_view_t permuted_adj_vals (Kokkos::ViewAllocateWithoutInitializing("newvals_"), nnz );
 
       Kokkos::parallel_for( my_exec_space(0,num_rows),
@@ -650,11 +621,11 @@ public:
 
 
     row_lno_persistent_work_view_t newxadj_ = gsHandler->get_new_xadj();
-    row_lno_persistent_work_view_t old_to_new_map = gsHandler->get_old_to_new_map();
-    row_lno_persistent_work_view_t newadj_ = gsHandler->get_new_adj();
-    row_lno_persistent_work_view_t color_adj = gsHandler->get_color_adj();
+    nnz_lno_persistent_work_view_t old_to_new_map = gsHandler->get_old_to_new_map();
+    nnz_lno_persistent_work_view_t newadj_ = gsHandler->get_new_adj();
+    nnz_lno_persistent_work_view_t color_adj = gsHandler->get_color_adj();
 
-    row_lno_t numColors = gsHandler->get_num_colors();
+    color_t numColors = gsHandler->get_num_colors();
 
 
 
@@ -662,7 +633,7 @@ public:
       KokkosKernels::Experimental::Util::permute_vector
         <y_value_array_type,
         scalar_persistent_work_view_t,
-        row_lno_persistent_work_view_t, MyExecSpace>(
+        nnz_lno_persistent_work_view_t, MyExecSpace>(
           num_rows,
           old_to_new_map,
           y_rhs_input_vec,
@@ -671,12 +642,11 @@ public:
     }
     MyExecSpace::fence();
     if(init_zero_x_vector){
-      KokkosKernels::Experimental::Util::zero_vector<
-          scalar_persistent_work_view_t, MyExecSpace>(num_cols, Permuted_Xvector);
+      KokkosKernels::Experimental::Util::zero_vector<scalar_persistent_work_view_t, MyExecSpace>(num_cols, Permuted_Xvector);
     }
     else{
       KokkosKernels::Experimental::Util::permute_vector
-        <x_value_array_type, scalar_persistent_work_view_t, row_lno_persistent_work_view_t, MyExecSpace>(
+        <x_value_array_type, scalar_persistent_work_view_t, nnz_lno_persistent_work_view_t, MyExecSpace>(
           num_cols,
           old_to_new_map,
           x_lhs_output_vec,
@@ -686,11 +656,11 @@ public:
     MyExecSpace::fence();
 
     row_lno_persistent_work_view_t permuted_xadj = gsHandler->get_new_xadj();
-    row_lno_persistent_work_view_t permuted_adj = gsHandler->get_new_adj();
+    nnz_lno_persistent_work_view_t permuted_adj = gsHandler->get_new_adj();
     scalar_persistent_work_view_t permuted_adj_vals = gsHandler->get_new_adj_val();
     scalar_persistent_work_view_t permuted_diagonals = gsHandler->get_permuted_diagonals();
 
-    row_lno_persistent_work_host_view_t h_color_xadj = gsHandler->get_color_xadj();
+    nnz_lno_persistent_work_host_view_t h_color_xadj = gsHandler->get_color_xadj();
 
 
 
@@ -724,7 +694,7 @@ public:
 
 
     KokkosKernels::Experimental::Util::permute_vector
-    <scalar_persistent_work_view_t,x_value_array_type,  row_lno_persistent_work_view_t, MyExecSpace>(
+    <scalar_persistent_work_view_t,x_value_array_type,  nnz_lno_persistent_work_view_t, MyExecSpace>(
         num_cols,
         color_adj,
         Permuted_Xvector,
@@ -736,8 +706,8 @@ public:
 
   void IterativePSGS(
       Team_PSGS &gs,
-      row_lno_t numColors,
-      row_lno_persistent_work_host_view_t h_color_xadj,
+      color_t numColors,
+      nnz_lno_persistent_work_host_view_t h_color_xadj,
       int num_iteration,
       bool apply_forward,
       bool apply_backward){
@@ -747,7 +717,7 @@ public:
     }
   }
 
-  void DoPSGS(Team_PSGS &gs, row_lno_t numColors, row_lno_persistent_work_host_view_t h_color_xadj,
+  void DoPSGS(Team_PSGS &gs, color_t numColors, nnz_lno_persistent_work_host_view_t h_color_xadj,
       bool apply_forward,
       bool apply_backward){
     int teamSizeMax = 0;
@@ -755,7 +725,7 @@ public:
     int max_allowed_team_size = team_policy_t::team_size_max(gs);
 
 
-    row_lno_t nnz = this->entries.dimension_0();
+    size_type nnz = this->entries.dimension_0();
 
 
     this->handle->get_gs_handle()->vector_team_size(max_allowed_team_size, vector_size, teamSizeMax, num_rows, nnz);
@@ -765,9 +735,9 @@ public:
         << " teamSizeMax:" << teamSizeMax << std::endl;
     */
     if (apply_forward){
-      for (row_lno_t i = 0; i < numColors; ++i){
-        row_lno_t color_index_begin = h_color_xadj(i);
-        row_lno_t color_index_end = h_color_xadj(i + 1);
+      for (color_t i = 0; i < numColors; ++i){
+        nnz_lno_t color_index_begin = h_color_xadj(i);
+        nnz_lno_t color_index_end = h_color_xadj(i + 1);
 
         int overall_work = color_index_end - color_index_begin;// /256 + 1;
 
@@ -783,11 +753,11 @@ public:
     }
     if (apply_backward){
       if (numColors > 0)
-      for (row_lno_t i = numColors - 1;  ; --i){
-        row_lno_t color_index_begin = h_color_xadj(i);
-        row_lno_t color_index_end = h_color_xadj(i + 1);
+      for (color_t i = numColors - 1;  ; --i){
+        nnz_lno_t color_index_begin = h_color_xadj(i);
+        nnz_lno_t color_index_end = h_color_xadj(i + 1);
 
-        int numberOfTeams = color_index_end - color_index_begin;// /256 + 1;
+        nnz_lno_t numberOfTeams = color_index_end - color_index_begin;// /256 + 1;
         gs._color_set_begin = color_index_begin;
         gs._color_set_end = color_index_end;
 
@@ -804,8 +774,8 @@ public:
 
   void IterativePSGS(
       PSGS &gs,
-      row_lno_t numColors,
-      row_lno_persistent_work_host_view_t h_color_xadj,
+      color_t numColors,
+      nnz_lno_persistent_work_host_view_t h_color_xadj,
       int num_iteration,
       bool apply_forward,
       bool apply_backward){
@@ -817,21 +787,21 @@ public:
 
 
 
-  void DoPSGS(PSGS &gs, row_lno_t numColors, row_lno_persistent_work_host_view_t h_color_xadj,
+  void DoPSGS(PSGS &gs, color_t numColors, nnz_lno_persistent_work_host_view_t h_color_xadj,
       bool apply_forward,
       bool apply_backward){
     if (apply_forward){
-      for (row_lno_t i = 0; i < numColors; ++i){
-        row_lno_t color_index_begin = h_color_xadj(i);
-        row_lno_t color_index_end = h_color_xadj(i + 1);
+      for (color_t i = 0; i < numColors; ++i){
+        nnz_lno_t color_index_begin = h_color_xadj(i);
+        nnz_lno_t color_index_end = h_color_xadj(i + 1);
         Kokkos::parallel_for (my_exec_space (color_index_begin, color_index_end) , gs);
         MyExecSpace::fence();
       }
     }
     if (apply_backward && numColors){
-      for (row_lno_t i = numColors - 1; ; --i){
-        row_lno_t color_index_begin = h_color_xadj(i);
-        row_lno_t color_index_end = h_color_xadj(i + 1);
+      for (size_type i = numColors - 1; ; --i){
+        nnz_lno_t color_index_begin = h_color_xadj(i);
+        nnz_lno_t color_index_end = h_color_xadj(i + 1);
         Kokkos::parallel_for (my_exec_space (color_index_begin, color_index_end) , gs);
         MyExecSpace::fence();
         if (i == 0){

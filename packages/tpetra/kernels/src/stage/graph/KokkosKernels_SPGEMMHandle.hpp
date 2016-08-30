@@ -38,52 +38,58 @@ public:
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
   typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
 
-  typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
+  typedef typename in_lno_row_view_t::non_const_value_type size_type;
+  /*
   typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
   typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
   typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
   typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
+  */
   //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
   typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
+  /*
   typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
   typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
   typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
   typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
+  */
   //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
 
   typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
+  /*
   typedef typename in_scalar_nnz_view_t::array_layout nnz_scalar_view_array_layout;
   typedef typename in_scalar_nnz_view_t::device_type nnz_scalar_view_device_t;
   typedef typename in_scalar_nnz_view_t::memory_traits nnz_scalar_view_memory_traits;
   typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
+  */
 
 
+  /*
   typedef typename in_lno_row_view_t::const_data_type const_row_lno_t;
   typedef typename in_lno_row_view_t::non_const_data_type non_const_row_lno_t;
+  */
 
   typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
   typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
-
-
-
-
+  /*
   typedef typename in_lno_nnz_view_t::const_data_type const_nnz_lno_t;
   typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nnz_lno_t;
+  */
   typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
   typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
 
-
-
+  /*
   typedef typename in_scalar_nnz_view_t::const_data_type const_nnz_scalar_t;
   typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nnz_scalar_t;
+  */
   typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
   typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
 
 
-  typedef typename Kokkos::View<row_lno_t *, HandleTempMemorySpace> row_lno_temp_work_view_t;
-  typedef typename Kokkos::View<row_lno_t *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
   typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
 
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
@@ -404,7 +410,7 @@ private:
       int max_allowed_team_size,
       int &suggested_vector_size_,
       int &suggested_team_size_,
-      row_lno_t nr, row_lno_t nnz){
+      size_type nr, size_type nnz){
     //suggested_team_size_ =  this->suggested_team_size = 1;
     //suggested_vector_size_=this->suggested_vector_size = 1;
     //return;

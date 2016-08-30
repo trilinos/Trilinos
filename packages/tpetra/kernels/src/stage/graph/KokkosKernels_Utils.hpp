@@ -989,7 +989,7 @@ struct PermuteVector{
         old_vector(old_vector_), new_vector(new_vector_),old_to_new_mapping(old_to_new_mapping_), mapping_size(old_to_new_mapping_.dimension_0()){}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t &ii) const {
+  void operator()(const idx &ii) const {
 
     idx mapping = ii;
     if (ii < mapping_size) mapping = old_to_new_mapping[ii];
@@ -1095,7 +1095,7 @@ template <typename in_lno_row_view_t,
           typename out_lno_nnz_view_t,
           typename MyExecSpace>
 void symmetrize_and_get_lower_diagonal_edge_list(
-    typename in_lno_row_view_t::value_type num_rows_to_symmetrize,
+    typename in_lno_nnz_view_t::value_type num_rows_to_symmetrize,
     in_lno_row_view_t xadj,
     in_lno_nnz_view_t adj,
     out_lno_nnz_view_t &sym_srcs,
@@ -1462,7 +1462,7 @@ struct ReduceMaxFunctor{
   const value_type min_val;
   ReduceMaxFunctor(
       view_type view_to_reduce_): view_to_reduce(view_to_reduce_),
-          min_val(KOKKOSKERNELS_MACRO_MIN (-std::numeric_limits<value_type>::max(), 0)){
+          min_val((std::numeric_limits<value_type>::lowest())){
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, value_type &max_reduction) const {
@@ -1503,7 +1503,7 @@ struct ReduceMaxRowFunctor{
   const value_type min_val;
   ReduceMaxRowFunctor(
       view_type rowmap_view_): rowmap_view(rowmap_view_),
-          min_val(KOKKOSKERNELS_MACRO_MIN (-std::numeric_limits<value_type>::max(), 0)){
+          min_val((std::numeric_limits<value_type>::lowest())){
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, value_type &max_reduction) const {

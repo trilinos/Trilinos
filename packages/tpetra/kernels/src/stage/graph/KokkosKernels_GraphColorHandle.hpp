@@ -35,7 +35,8 @@ public:
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
 
   //typedef typename row_index_view_type::value_type idx;
-  typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
+  //typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
+  typedef typename in_lno_row_view_t::non_const_value_type size_type;
 
   //typedef typename row_index_view_type::array_layout idx_array_layout;
   typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
@@ -77,8 +78,9 @@ public:
 
 
 
-  typedef typename in_lno_row_view_t::const_data_type const_row_lno_t;
-  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_lno_t;
+  //typedef typename in_lno_row_view_t::const_value_type const_row_lno_t;
+  typedef typename in_lno_row_view_t::const_value_type const_size_type;
+  //typedef typename in_lno_row_view_t::non_const_value_type non_const_row_lno_t;
   //typedef typename in_row_index_view_type::memory_space row_view_memory_space;
   //typedef typename Kokkos::View<const_row_lno_t, row_view_array_layout,
   //    row_view_device_t, row_view_memory_traits> const_row_index_view_type;
@@ -91,8 +93,8 @@ public:
 
 
 
-  typedef typename in_lno_nnz_view_t::const_data_type const_nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nnz_lno_t;
+  typedef typename in_lno_nnz_view_t::const_value_type const_nnz_lno_t;
+  //typedef typename in_lno_nnz_view_t::non_const_value_type non_const_nnz_lno_t;
   //typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
   //typedef typename Kokkos::View<const_nnz_lno_t, nnz_lno_view_array_layout,
   //    nnz_lno_view_device_t, nnz_lno_view_memory_traits> const_nonzero_index_view_type;
@@ -107,18 +109,21 @@ public:
 
 
   //typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> idx_temp_work_array_type;
-  typedef typename Kokkos::View<row_lno_t *, HandleTempMemorySpace> row_lno_temp_work_view_t;
+  //typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
   //typedef typename row_index_persistent_work_view_type idx_persistent_work_array_type;
-  typedef typename Kokkos::View<row_lno_t *, PersistentMemorySpace> row_lno_persistent_work_view_t;
+  //typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
 
   //typedef typename row_index_persistent_work_view_type::HostMirror host_idx_persistent_view_type; //Host view type
-  typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
+  //typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
+  typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t; //Host view type
 
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
-  typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t ;
 
+  typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
 private:
 
@@ -154,13 +159,13 @@ private:
   int num_phases; //
 
 
-  row_lno_t size_of_edge_list;
-  row_lno_persistent_work_view_t lower_triangle_src;
-  row_lno_persistent_work_view_t lower_triangle_dst;
+  size_type size_of_edge_list;
+  nnz_lno_persistent_work_view_t lower_triangle_src;
+  nnz_lno_persistent_work_view_t lower_triangle_dst;
 
   color_view_t vertex_colors;
   bool is_coloring_called_before;
-  row_lno_t num_colors;
+  nnz_lno_t num_colors;
 
 
 
@@ -273,13 +278,13 @@ private:
 
   template<typename v1, typename v2, typename v3>
   struct CountLowerTriangle{
-    row_lno_t nv;
+    nnz_lno_t nv;
     v1 xadj;
     v2 adj;
     v3 lower_xadj_counts;
 
     CountLowerTriangle(
-        row_lno_t nv_,
+        nnz_lno_t nv_,
         v1 xadj_,
         v2 adj_,
         v3 lower_xadj_counts_
@@ -288,13 +293,13 @@ private:
             lower_xadj_counts(lower_xadj_counts_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_lno_t &i, row_lno_t &new_num_edge) const {
-      row_lno_t xadj_begin = xadj(i);
-      row_lno_t xadj_end = xadj(i + 1);
+    void operator()(const nnz_lno_t &i, size_type &new_num_edge) const {
+      size_type xadj_begin = xadj(i);
+      size_type xadj_end = xadj(i + 1);
 
-      row_lno_t new_edge_count = 0;
-      for (row_lno_t j = xadj_begin; j < xadj_end; ++j){
-        row_lno_t n = adj(j);
+      size_type new_edge_count = 0;
+      for (size_type j = xadj_begin; j < xadj_end; ++j){
+        nnz_lno_t n = adj(j);
         if (i < n && n < nv){
           new_edge_count += 1;
         }
@@ -307,13 +312,13 @@ private:
   template<typename v1, typename v2, typename v3>
   struct CountLowerTriangleTeam{
 
-    row_lno_t nv;
+    nnz_lno_t nv;
     v1 xadj;
     v2 adj;
     v3 lower_xadj_counts;
 
     CountLowerTriangleTeam(
-        row_lno_t nv_,
+        nnz_lno_t nv_,
         v1 xadj_,
         v2 adj_,
         v3 lower_xadj_counts_
@@ -325,23 +330,23 @@ private:
     void operator()(const team_member_t & teamMember/*, row_lno_t &new_num_edge*/) const {
 
 
-      row_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+      nnz_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
       if (ii >= nv) {
         return;
       }
 
-      row_lno_t xadj_begin = xadj(ii);
-      row_lno_t xadj_end = xadj(ii + 1);
+      size_type xadj_begin = xadj(ii);
+      size_type xadj_end = xadj(ii + 1);
 
-      row_lno_t new_edge_count = 0;
+      size_type new_edge_count = 0;
 
 
       Kokkos::parallel_reduce(
           Kokkos::ThreadVectorRange(teamMember, xadj_end - xadj_begin),
-          [&] (row_lno_t i, row_lno_t &numEdges) {
+          [&] (size_type i, size_type &numEdges) {
 
-        row_lno_t adjind = i + xadj_begin;
-        row_lno_t n = adj[adjind];
+        size_type adjind = i + xadj_begin;
+        nnz_lno_t n = adj[adjind];
         if (ii < n && n < nv){
           numEdges += 1;
         }
@@ -356,7 +361,7 @@ private:
 
   template<typename v1, typename v2, typename v3, typename v4>
   struct FillLowerTriangleTeam{
-    row_lno_t nv;
+    nnz_lno_t nv;
     v1 xadj;
     v2 adj;
     v3 lower_xadj_counts;
@@ -364,7 +369,7 @@ private:
     v4 lower_dsts;
 
     FillLowerTriangleTeam(
-        row_lno_t nv_,
+        nnz_lno_t nv_,
         v1 xadj_,
         v2 adj_,
         v3 lower_xadj_counts_,
@@ -380,22 +385,22 @@ private:
     void operator()(const team_member_t & teamMember) const {
 
 
-      row_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+      nnz_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
       if (ii >= nv) {
         return;
       }
 
-      row_lno_t xadj_begin = xadj(ii);
-      row_lno_t xadj_end = xadj(ii + 1);
+      size_type xadj_begin = xadj(ii);
+      size_type xadj_end = xadj(ii + 1);
 
       Kokkos::parallel_for(
           Kokkos::ThreadVectorRange(teamMember, xadj_end - xadj_begin),
-          [&] (row_lno_t i) {
+          [&] (size_type i) {
 
-        row_lno_t adjind = i + xadj_begin;
-        row_lno_t n = adj[adjind];
+        size_type adjind = i + xadj_begin;
+        nnz_lno_t n = adj[adjind];
         if (ii < n && n < nv){
-          row_lno_t position =
+          size_type position =
               Kokkos::atomic_fetch_add( &(lower_xadj_counts(ii)), 1);
           lower_srcs(position) = ii;
           lower_dsts(position) = n;
@@ -407,7 +412,7 @@ private:
 
   template<typename v1, typename v2, typename v3, typename v4>
   struct FillLowerTriangle{
-    row_lno_t nv;
+    nnz_lno_t nv;
     v1 xadj;
     v2 adj;
     v3 lower_xadj_counts;
@@ -415,7 +420,7 @@ private:
     v4 lower_dsts;
 
     FillLowerTriangle(
-        row_lno_t nv_,
+        nnz_lno_t nv_,
         v1 xadj_,
         v2 adj_,
         v3 lower_xadj_counts_,
@@ -427,15 +432,15 @@ private:
             lower_srcs(lower_srcs_), lower_dsts(lower_dsts_) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_lno_t &i) const{
+    void operator()(const nnz_lno_t &i) const{
 
-      row_lno_t xadj_begin = xadj[i];
-      row_lno_t xadj_end = xadj[i + 1];
+      size_type xadj_begin = xadj[i];
+      size_type xadj_end = xadj[i + 1];
 
-      for (row_lno_t j = xadj_begin; j < xadj_end; ++j){
-        row_lno_t n = adj(j);
+      for (size_type j = xadj_begin; j < xadj_end; ++j){
+        nnz_lno_t n = adj(j);
         if (i < n && n < nv){
-          row_lno_t position = lower_xadj_counts(i)++;
+          size_type position = lower_xadj_counts(i)++;
           lower_srcs(position) = i;
           lower_dsts(position) = n;
         }
@@ -444,11 +449,11 @@ private:
   };
   template <typename row_index_view_type, typename nonzero_view_type>
   void symmetrize_and_calculate_lower_diagonal_edge_list(
-      row_lno_t nv,
+      nnz_lno_t nv,
       row_index_view_type xadj, nonzero_view_type adj){
 
     KokkosKernels::Experimental::Util::symmetrize_and_get_lower_diagonal_edge_list
-    <row_index_view_type, nonzero_view_type, row_lno_persistent_work_view_t, HandleExecSpace>
+    <row_index_view_type, nonzero_view_type, nnz_lno_persistent_work_view_t, HandleExecSpace>
       (
         nv,
         xadj,
@@ -462,11 +467,11 @@ private:
 
   template <typename row_index_view_type, typename nonzero_view_type>
   void get_lower_diagonal_edge_list(
-      row_lno_t nv, row_lno_t ne,
+      nnz_lno_t nv, size_type ne,
       row_index_view_type xadj, nonzero_view_type adj,
-      row_lno_t  &num_out_edges,
-      row_lno_persistent_work_view_t &src,
-      row_lno_persistent_work_view_t &dst){
+      size_type  &num_out_edges,
+      nnz_lno_persistent_work_view_t &src,
+      nnz_lno_persistent_work_view_t &dst){
 
     if (size_of_edge_list > 0){
       num_out_edges = size_of_edge_list;
@@ -477,8 +482,8 @@ private:
     }
     else {
 
-      row_lno_temp_work_view_t lower_count("LowerXADJ", nv + 1);
-      row_lno_t new_num_edge = 0;
+      size_type_temp_work_view_t lower_count("LowerXADJ", nv + 1);
+      size_type new_num_edge = 0;
       typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
 
 
@@ -492,25 +497,20 @@ private:
         int teamSizeMax = 0;
         int vector_size = 0;
 
-        CountLowerTriangleTeam<row_index_view_type, nonzero_view_type, row_lno_temp_work_view_t> clt (nv, xadj, adj, lower_count);
+        CountLowerTriangleTeam<row_index_view_type, nonzero_view_type, size_type_temp_work_view_t> clt (nv, xadj, adj, lower_count);
         int max_allowed_team_size = team_policy_t::team_size_max(clt);
-        KokkosKernels::Experimental::Util::get_suggested_vector_team_size<row_lno_t, HandleExecSpace>(
+        KokkosKernels::Experimental::Util::get_suggested_vector_team_size<size_type, HandleExecSpace>(
             max_allowed_team_size,
             vector_size,
             teamSizeMax,
             nv, ne);
-
-        //std::cout << "teamSizeMax:" << teamSizeMax << " vector_size:" << vector_size << std::endl;
-        //Kokkos::parallel_reduce(
-
-
 
         Kokkos::parallel_for(
             team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
             clt//, new_num_edge
         );
 
-        KokkosKernels::Experimental::Util::inclusive_parallel_prefix_sum<row_lno_temp_work_view_t, HandleExecSpace>
+        KokkosKernels::Experimental::Util::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, HandleExecSpace>
         (nv+1, lower_count);
         //Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_lno_temp_work_view_t>(lower_count));
         HandleExecSpace::fence();
@@ -519,13 +519,13 @@ private:
         Kokkos::deep_copy (hlower, lower_total_count);
 
         new_num_edge = hlower();
-        row_lno_persistent_work_view_t half_src = row_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
-        row_lno_persistent_work_view_t half_dst = row_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
+        nnz_lno_persistent_work_view_t half_src (Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
+        nnz_lno_persistent_work_view_t half_dst (Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
         Kokkos::parallel_for(
             team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
             FillLowerTriangleTeam
             <row_index_view_type, nonzero_view_type,
-           row_lno_temp_work_view_t,row_lno_persistent_work_view_t> (nv, xadj, adj, lower_count, half_src, half_dst));
+           size_type_temp_work_view_t,nnz_lno_persistent_work_view_t> (nv, xadj, adj, lower_count, half_src, half_dst));
 
         src = lower_triangle_src = half_src;
         dst = lower_triangle_dst = half_dst;
@@ -534,19 +534,19 @@ private:
       else {
         if (nv > 0) {
           Kokkos::parallel_reduce(my_exec_space(0,nv),
-              CountLowerTriangle<row_index_view_type, nonzero_view_type, row_lno_temp_work_view_t> (nv, xadj, adj, lower_count), new_num_edge);
+              CountLowerTriangle<row_index_view_type, nonzero_view_type, size_type_temp_work_view_t> (nv, xadj, adj, lower_count), new_num_edge);
         }
 
         //Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_lno_temp_work_view_t>(lower_count));
 
-        KokkosKernels::Experimental::Util::inclusive_parallel_prefix_sum<row_lno_temp_work_view_t, HandleExecSpace>
+        KokkosKernels::Experimental::Util::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, HandleExecSpace>
         (nv+1, lower_count);
-        row_lno_persistent_work_view_t half_src = row_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
-        row_lno_persistent_work_view_t half_dst = row_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
+        nnz_lno_persistent_work_view_t half_src (Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
+        nnz_lno_persistent_work_view_t half_dst (Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
 
         Kokkos::parallel_for(my_exec_space(0,nv), FillLowerTriangle
             <row_index_view_type, nonzero_view_type,
-            row_lno_temp_work_view_t,row_lno_persistent_work_view_t> (nv, xadj, adj, lower_count, half_src, half_dst));
+            size_type_temp_work_view_t,nnz_lno_persistent_work_view_t> (nv, xadj, adj, lower_count, half_src, half_dst));
 
         src = lower_triangle_src = half_src;
         dst = lower_triangle_dst = half_dst;
@@ -561,7 +561,7 @@ private:
     ReduceMaxFunctor(color_view_t cat):colors(cat){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_lno_t &i, color_t & color_max) const {
+    void operator()(const nnz_lno_t &i, color_t & color_max) const {
       if (color_max < colors(i) ) color_max = colors(i);
     }
 
@@ -579,7 +579,7 @@ private:
   };
 
 
-  row_lno_t get_num_colors(){
+  nnz_lno_t get_num_colors(){
     if (num_colors == 0){
       typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
       Kokkos::parallel_reduce(my_exec_space(0, vertex_colors.dimension_0()),

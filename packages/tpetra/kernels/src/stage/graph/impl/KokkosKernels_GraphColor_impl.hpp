@@ -34,47 +34,29 @@ public:
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
   typedef typename HandleType::color_view_t color_view_t;
 
-  typedef typename in_lno_row_view_t::non_const_value_type row_index_type;
-  typedef typename in_lno_row_view_t::array_layout row_view_array_layout;
-  typedef typename in_lno_row_view_t::device_type row_view_device_type;
-  typedef typename in_lno_row_view_t::memory_traits row_view_memory_traits;
-  typedef typename in_lno_row_view_t::HostMirror row_host_view_type; //Host view type
-  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
+  typedef typename HandleType::size_type size_type;
+  typedef typename HandleType::row_lno_host_view_t row_lno_host_view_t; //Host view type
 
-  typedef typename in_lno_nnz_view_t::non_const_value_type nonzero_index_type;
-  typedef typename in_lno_nnz_view_t::array_layout nonzero_index_view_array_layout;
-  typedef typename in_lno_nnz_view_t::device_type nonzero_index_view_device_type;
-  typedef typename in_lno_nnz_view_t::memory_traits nonzero_index_view_memory_traits;
-  typedef typename in_lno_nnz_view_t::HostMirror nonzero_index_host_view_type; //Host view type
-  //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
 
-  typedef typename HandleType::color_t color_type;
-  typedef typename HandleType::color_view_array_layout color_view_array_layout;
-  typedef typename HandleType::color_view_device_t color_view_device_type;
-  typedef typename HandleType::color_view_memory_traits color_view_memory_traits;
-  typedef typename HandleType::color_host_view_t color_host_view_type; //Host view type
+  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+  typedef typename HandleType::nnz_lno_host_view_t nnz_lno_host_view_t; //Host view type
+
+  typedef typename HandleType::color_t color_t;
+  typedef typename HandleType::color_host_view_t color_host_view_t; //Host view type
 
   typedef typename HandleType::HandleExecSpace MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
   typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
 
+  typedef typename HandleType::const_size_type const_size_type;
+  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
 
-
-  typedef typename in_lno_row_view_t::const_data_type const_row_data_type;
-  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_data_type;
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
-
-
-
-  typedef typename in_lno_nnz_view_t::const_data_type const_nonzero_index_data_type;
-  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nonzero_index_data_type;
-  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t_::const_type const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
 
 protected:
-  row_index_type nv; //# vertices
-  row_index_type ne; //# edges
+  nnz_lno_t nv; //# vertices
+  size_type ne; //# edges
   const_lno_row_view_t xadj; //rowmap
   const_lno_nnz_view_t adj; // entries
   const_lno_nnz_view_t kok_src, kok_dst; //Edge list storage of the graph
@@ -91,8 +73,8 @@ public:
    *    including parameters.
    */
   GraphColor(
-      row_index_type nv_,
-      row_index_type ne_,
+      nnz_lno_t nv_,
+      size_type ne_,
       const_lno_row_view_t row_map,
       const_lno_nnz_view_t entries,
       HandleType *coloring_handle):
@@ -119,9 +101,9 @@ public:
     num_phases = 1;
 
 
-    color_host_view_type colors = Kokkos::create_mirror_view (d_colors);
-    row_host_view_type h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nonzero_index_host_view_type h_adj = Kokkos::create_mirror_view (this->adj);
+    color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
+    row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
+    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
 
@@ -132,28 +114,28 @@ public:
 
     //create a ban color array to keep track of
     //which colors have been taking by the neighbor vertices.
-    row_index_type *banned_colors = new row_index_type[this->nv];
+    nnz_lno_t *banned_colors = new nnz_lno_t[this->nv];
 
 
-    for (row_index_type i = 0; i < this->nv; ++i) banned_colors[i] = 0;
+    for (nnz_lno_t i = 0; i < this->nv; ++i) banned_colors[i] = 0;
 
-    color_type max_color = 0;
+    color_t max_color = 0;
     //traverse vertices greedily
-    for (row_index_type i = 0; i < this->nv; ++i){
+    for (nnz_lno_t i = 0; i < this->nv; ++i){
 
-      row_index_type nbegin = h_xadj(i);
-      row_index_type nend = h_xadj(i + 1);
+      size_type nbegin = h_xadj(i);
+      size_type nend = h_xadj(i + 1);
       //std::cout << "nb:" << nbegin << " ne:" << nend << std::endl;
       //check the colors of neighbors
-      for (row_index_type j = nbegin; j < nend; ++j){
-        row_index_type n = h_adj(j);
+      for (size_type j = nbegin; j < nend; ++j){
+        nnz_lno_t n = h_adj(j);
         if (n >= nv) continue;
         //set the banned_color of the color of the neighbor vertex to my vertex index.
         //the entries in the banned_color array that has my vertex index will be the set of prohibeted colors.
         banned_colors[colors(n)] = i;
       }
       //check the prohibeted colors, and pick the first available one.
-      for (color_type j = 1; j <= max_color; ++j) {
+      for (color_t j = 1; j <= max_color; ++j) {
         if(banned_colors[j] != i){
           colors(i) = j;
           break;
@@ -180,14 +162,14 @@ public:
   void d2_color_graph(
       color_view_t d_colors,
       int &num_phases,
-      row_index_type num_cols,
+      nnz_lno_t num_cols,
       col_view_t_ col_map, lno_colnnz_view_t_ col_entries){
-    std::cout << "Simple Sequential D2" << std::endl;
-    num_phases = 1;
-    color_host_view_type colors = Kokkos::create_mirror_view (d_colors);
 
-    row_host_view_type h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nonzero_index_host_view_type h_adj = Kokkos::create_mirror_view (this->adj);
+    num_phases = 1;
+    color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
+
+    row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
+    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
     MyExecSpace::fence();
@@ -205,44 +187,43 @@ public:
     Kokkos::Impl::Timer timer;
     //create a ban color array to keep track of
     //which colors have been taking by the neighbor vertices.
-    row_index_type *banned_colors = new row_index_type[this->nv];
+    nnz_lno_t *banned_colors = new nnz_lno_t[this->nv];
 
     //size_t howmany = 0;
 
-    for (row_index_type i = 0; i < this->nv; ++i) {
+    for (nnz_lno_t i = 0; i < this->nv; ++i) {
       colors(i) = banned_colors[i] = 0;
     }
 
-    color_type max_color = 0;
+    color_t max_color = 0;
     //traverse vertices greedily
-    for (row_index_type i = 0; i < this->nv; ++i){
+    for (nnz_lno_t i = 0; i < this->nv; ++i){
 
-      row_index_type col_begin = h_xadj(i);
-      row_index_type col_end = h_xadj(i + 1);
+      size_type col_begin = h_xadj(i);
+      size_type col_end = h_xadj(i + 1);
       //check the colors of neighbors
-      for (row_index_type j = col_begin; j < col_end; ++j){
-        row_index_type col = h_adj(j);
+      for (size_type j = col_begin; j < col_end; ++j){
+        nnz_lno_t col = h_adj(j);
         if (col >= num_cols) continue;
         //set the banned_color of the color of the neighbor vertex to my vertex index.
         //the entries in the banned_color array that has my vertex index will be the set of prohibeted colors.
         //banned_colors[colors(col)] = i;
 
 
-        row_index_type d2_rowbegin = h_c_xadj(col);
-        row_index_type d2_rowend = h_c_xadj(col + 1);
+        size_type d2_rowbegin = h_c_xadj(col);
+        size_type d2_rowend = h_c_xadj(col + 1);
 
-        for (row_index_type j2 = d2_rowbegin; j2 < d2_rowend; ++j2){
+        for (size_type j2 = d2_rowbegin; j2 < d2_rowend; ++j2){
 
           //howmany++;
-          row_index_type d2row = h_c_adj(j2);
-
+          nnz_lno_t d2row = h_c_adj(j2);
 
           if (d2row >= nv || d2row == i) continue;
           banned_colors[colors(d2row)] = i;
         }
       }
       //check the prohibeted colors, and pick the first available one.
-      for (color_type j = 1; j <= max_color; ++j) {
+      for (color_t j = 1; j <= max_color; ++j) {
         if(banned_colors[j] != i){
           colors(i) = j;
           break;
@@ -253,7 +234,7 @@ public:
     }
     //std::cout << "howmany:" << howmany << std::endl;
     delete [] banned_colors;
-    std::cout << "D2 Seq Color time:" << timer.seconds()  << std::endl;
+    //std::cout << "D2 Seq Color time:" << timer.seconds()  << std::endl;
     Kokkos::deep_copy (d_colors, colors); // Copy from host to device.
   }
 
@@ -271,9 +252,9 @@ public:
       int &num_phases){
 
     num_phases = 1;
-    color_host_view_type colors = Kokkos::create_mirror_view (d_colors);
-    row_host_view_type h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nonzero_index_host_view_type h_adj = Kokkos::create_mirror_view (this->adj);
+    color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
+    row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
+    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
     MyExecSpace::fence();
@@ -283,38 +264,38 @@ public:
     //row_index_type *banned_colors = new row_index_type[this->nv];
     //std::vector <nonzero_index_type> banned_colors(this->nv);
 
-    std::vector <nonzero_index_type> vertex_cs(this->nv);
+    std::vector <nnz_lno_t> vertex_cs(this->nv);
 
-    std::vector <nonzero_index_type> col_d1_max_cs(this->nv);
-    std::vector <color_type> col_d1_forbid_colors(this->nv);
-    std::vector <nonzero_index_type> col_d1forbid_cs(this->nv);
-
-
+    std::vector <nnz_lno_t> col_d1_max_cs(this->nv);
+    std::vector <color_t> col_d1_forbid_colors(this->nv);
+    std::vector <nnz_lno_t> col_d1forbid_cs(this->nv);
 
 
 
 
-    for (nonzero_index_type i = 0; i < this->nv; ++i) {
+
+
+    for (nnz_lno_t i = 0; i < this->nv; ++i) {
       col_d1_max_cs[i] = col_d1_forbid_colors[i] =  col_d1forbid_cs[i] = 0;
       colors(i) = vertex_cs[i] = 0;
     }
 
-    std::cout << "coloring now" << std::endl;
-    color_type max_color = 0;
+    //std::cout << "coloring now" << std::endl;
+    color_t max_color = 0;
     //traverse vertices greedily
-    for (nonzero_index_type i = 0; i < this->nv; ++i){
+    for (nnz_lno_t i = 0; i < this->nv; ++i){
 
-      row_index_type nbegin = h_xadj(i);
-      nonzero_index_type row_size = h_xadj(i + 1) - nbegin;
+      size_type nbegin = h_xadj(i);
+      nnz_lno_t row_size = h_xadj(i + 1) - nbegin;
 
-      nonzero_index_type my_cs = vertex_cs[i];
-      nonzero_index_type my_max_ncs = col_d1_max_cs[i];
+      nnz_lno_t my_cs = vertex_cs[i];
+      nnz_lno_t my_max_ncs = col_d1_max_cs[i];
 
 
       //now find maximum d1 cs
-      for (nonzero_index_type jj = 0; jj < row_size; ++jj){
-        row_index_type j = jj +  nbegin;
-        nonzero_index_type n = h_adj(j);
+      for (nnz_lno_t jj = 0; jj < row_size; ++jj){
+        size_type j = jj +  nbegin;
+        nnz_lno_t n = h_adj(j);
         if (n >= nv || n == i) continue;
         if (col_d1forbid_cs[n] > my_cs) my_cs = col_d1forbid_cs[n];
         if (vertex_cs[n] > my_max_ncs) my_max_ncs = vertex_cs[n];
@@ -325,12 +306,12 @@ public:
 
       while (true){
 
-        color_type my_d2_forbidden = 0;
+        color_t my_d2_forbidden = 0;
         //color_type my_d1_forbidden = 0;
 
-        for (nonzero_index_type jj = 0; jj < row_size; ++jj){
-          row_index_type j = jj +  nbegin;
-          nonzero_index_type n = h_adj(j);
+        for (nnz_lno_t jj = 0; jj < row_size; ++jj){
+          size_type j = jj +  nbegin;
+          nnz_lno_t n = h_adj(j);
           if (n >= nv || n == i) continue;
 
           if (my_cs == vertex_cs[n]){
@@ -340,11 +321,11 @@ public:
             my_d2_forbidden = my_d2_forbidden | col_d1_forbid_colors[n];
           }
           else if (my_cs > col_d1forbid_cs[n] && my_cs <= col_d1_max_cs[n]){
-            row_index_type nbegin2 = h_xadj(n);
-            nonzero_index_type row_size2 = h_xadj(n + 1) - nbegin2;
-            for (nonzero_index_type jj2 = 0; jj2 < row_size2; ++jj2){
-              row_index_type j2 = jj2 +  nbegin2;
-              nonzero_index_type n2 = h_adj(j2);
+            size_type nbegin2 = h_xadj(n);
+            nnz_lno_t row_size2 = h_xadj(n + 1) - nbegin2;
+            for (nnz_lno_t jj2 = 0; jj2 < row_size2; ++jj2){
+              size_type j2 = jj2 +  nbegin2;
+              nnz_lno_t n2 = h_adj(j2);
               if (n2 >= nv || n2 == i) continue;
               if (my_cs == vertex_cs[n2]){
                 my_d2_forbidden = my_d2_forbidden | colors(n2);
@@ -356,7 +337,7 @@ public:
           }
         }
 
-        color_type avaliable_colors = ~my_d2_forbidden;
+        color_t avaliable_colors = ~my_d2_forbidden;
         if (avaliable_colors == 0) {
           ++my_cs;
         }
@@ -365,23 +346,23 @@ public:
           vertex_cs[i] = my_cs;
 
 
-          for (nonzero_index_type jj = 0; jj < row_size; ++jj){
-            row_index_type j = jj +  nbegin;
-            nonzero_index_type n = h_adj(j);
+          for (nnz_lno_t jj = 0; jj < row_size; ++jj){
+            size_type j = jj +  nbegin;
+            nnz_lno_t n = h_adj(j);
             if (n >= nv || n == i) continue;
             if (my_cs == col_d1forbid_cs[n]){
               col_d1_forbid_colors[n] = col_d1_forbid_colors[n] | colors(i);
               if (~col_d1_forbid_colors[n] == 0){
-                nonzero_index_type my_d1_cs = my_cs + 1;
-                color_type my_d1_forbidden = 0;
+                nnz_lno_t my_d1_cs = my_cs + 1;
+                color_t my_d1_forbidden = 0;
 
-                row_index_type nbegin2 = h_xadj(n);
-                nonzero_index_type row_size2 = h_xadj(n + 1) - nbegin2;
+                size_type nbegin2 = h_xadj(n);
+                nnz_lno_t row_size2 = h_xadj(n + 1) - nbegin2;
 
                 while (true){
-                  for (nonzero_index_type jj = 0; jj < row_size2; ++jj){
-                    row_index_type j = jj +  nbegin2;
-                    nonzero_index_type n2 = h_adj(j);
+                  for (nnz_lno_t jj = 0; jj < row_size2; ++jj){
+                    size_type j = jj +  nbegin2;
+                    nnz_lno_t n2 = h_adj(j);
                     if (n2 >= nv || n2 == n) continue;
                     if (vertex_cs[n2] == my_d1_cs) my_d1_forbidden = my_d1_forbidden | colors(n2);
                     if (~my_d1_forbidden == 0){
@@ -407,10 +388,10 @@ public:
       }
     }
 
-    int color_size = sizeof (color_type) * 8;
+    int color_size = sizeof (color_t) * 8;
 
-    for (nonzero_index_type ii = 0; ii < this->nv; ++ii){
-      color_type val = colors(ii);
+    for (nnz_lno_t ii = 0; ii < this->nv; ++ii){
+      color_t val = colors(ii);
       if (val){
         //find the position in the bit.
         int i = 1;
@@ -436,25 +417,20 @@ public:
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
   typedef typename HandleType::color_view_t color_view_t;
 
-  typedef typename in_lno_row_view_t::non_const_value_type row_index_type;
-  typedef typename in_lno_row_view_t::array_layout row_view_array_layout;
-  typedef typename in_lno_row_view_t::device_type row_view_device_type;
-  typedef typename in_lno_row_view_t::memory_traits row_view_memory_traits;
-  typedef typename in_lno_row_view_t::HostMirror row_host_view_type; //Host view type
-  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
-  typedef typename in_lno_nnz_view_t::non_const_value_type nonzero_index_type;
-  typedef typename in_lno_nnz_view_t::array_layout nonzero_index_view_array_layout;
-  typedef typename in_lno_nnz_view_t::device_type nonzero_index_view_device_type;
-  typedef typename in_lno_nnz_view_t::memory_traits nonzero_index_view_memory_traits;
-  typedef typename in_lno_nnz_view_t::HostMirror nonzero_index_host_view_type; //Host view type
+  typedef typename HandleType::size_type size_type;
+  typedef typename HandleType::row_lno_host_view_t row_lno_host_view_t; //Host view type
+
+
+  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+  typedef typename HandleType::nnz_lno_host_view_t nnz_lno_host_view_t; //Host view type
   //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
 
-  typedef typename HandleType::color_t color_type;
-  typedef typename HandleType::color_view_array_layout color_view_array_layout;
-  typedef typename HandleType::color_view_device_t color_view_device_type;
-  typedef typename HandleType::color_view_memory_traits color_view_memory_traits;
-  typedef typename HandleType::color_host_view_t color_host_view_type; //Host view type
+
+
+  typedef typename HandleType::color_t color_t;
+  typedef typename HandleType::color_host_view_t color_host_view_t; //Host view type
+
 
   typedef typename HandleType::HandleExecSpace MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
@@ -462,17 +438,15 @@ public:
 
 
 
-  typedef typename in_lno_row_view_t::const_data_type const_row_data_type;
-  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_data_type;
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
 
 
-  typedef typename in_lno_nnz_view_t::const_data_type const_nonzero_index_data_type;
-  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nonzero_index_data_type;
+  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
+  //typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
+
+
   typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
+  //typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
 
 
 public:
@@ -486,8 +460,8 @@ public:
    *    including parameters.
    */
   GraphColor2(
-      row_index_type nv_,
-      row_index_type ne_,
+      nnz_lno_t nv_,
+      size_type ne_,
       const_lno_row_view_t row_map,
       const_lno_nnz_view_t entries,
       HandleType *coloring_handle):
@@ -510,14 +484,14 @@ public:
   void d2_color_graph(
       color_view_t d_colors,
       int &num_phases,
-      row_index_type num_cols,
+      nnz_lno_t num_cols,
       col_view_t_ col_map, lno_colnnz_view_t_ col_entries){
 
     std::cout << "Optimized Sequential D2" << std::endl;
     num_phases = 1;
-    color_host_view_type colors = Kokkos::create_mirror_view (d_colors);
-    row_host_view_type h_xadj = Kokkos::create_mirror_view (this->xadj);
-    nonzero_index_host_view_type h_adj = Kokkos::create_mirror_view (this->adj);
+    color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
+    row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
+    nnz_lno_host_view_t h_adj = Kokkos::create_mirror_view (this->adj);
     Kokkos::deep_copy (h_xadj, this->xadj);
     Kokkos::deep_copy (h_adj, this->adj);
     MyExecSpace::fence();
@@ -538,51 +512,51 @@ public:
 
     Kokkos::Impl::Timer timer;
 
-    std::vector <nonzero_index_type> row_cs(this->nv);
-    std::vector <nonzero_index_type> col_d1_max_cs(num_cols);
-    std::vector <color_type> col_d1_forbid_colors(num_cols);
-    std::vector <nonzero_index_type> col_d1forbid_cs(num_cols);
+    std::vector <nnz_lno_t> row_cs(this->nv);
+    std::vector <nnz_lno_t> col_d1_max_cs(num_cols);
+    std::vector <color_t> col_d1_forbid_colors(num_cols);
+    std::vector <nnz_lno_t> col_d1forbid_cs(num_cols);
 
-    for (nonzero_index_type i = 0; i < this->nv; ++i) {
+    for (nnz_lno_t i = 0; i < this->nv; ++i) {
       colors(i) = row_cs[i] = 0;
     }
 
-    for (nonzero_index_type i = 0; i < num_cols; ++i) {
+    for (nnz_lno_t i = 0; i < num_cols; ++i) {
       col_d1_max_cs[i] = col_d1_forbid_colors[i] =  col_d1forbid_cs[i] = 0;
     }
 
-    color_type max_color = 0;
+    color_t max_color = 0;
     //traverse vertices greedily
 
     //size_t howmany = 0;
-    for (nonzero_index_type i = 0; i < this->nv; ++i){
+    for (nnz_lno_t i = 0; i < this->nv; ++i){
 
       //std::cout << "i:" << i << std::endl;
-      row_index_type colbegin = h_xadj(i);
-      nonzero_index_type row_size = h_xadj(i + 1) - colbegin;
+      size_type colbegin = h_xadj(i);
+      nnz_lno_t row_size = h_xadj(i + 1) - colbegin;
 
-      nonzero_index_type my_row_cs = row_cs[i];
+      nnz_lno_t my_row_cs = row_cs[i];
       //nonzero_index_type my_max_ncs = col_d1_max_cs[i];
 
       //now find maximum d1 cs
-      for (nonzero_index_type jj = 0; jj < row_size; ++jj){
+      for (nnz_lno_t jj = 0; jj < row_size; ++jj){
         //howmany++;
-        row_index_type j = jj +  colbegin;
-        nonzero_index_type col = h_adj(j);
+        size_type j = jj +  colbegin;
+        nnz_lno_t col = h_adj(j);
         if (col >= num_cols) continue;
         if (col_d1forbid_cs[col] > my_row_cs) my_row_cs = col_d1forbid_cs[col];
       }
 
       while (true){
-        color_type my_d2_forbidden = 0;
+        color_t my_d2_forbidden = 0;
 
-        for (nonzero_index_type jj = 0; jj < row_size; ++jj){
+        for (nnz_lno_t jj = 0; jj < row_size; ++jj){
 
 
           //howmany++;
-          row_index_type j = jj +  colbegin;
+          size_type j = jj +  colbegin;
 
-          nonzero_index_type col = h_adj(j);
+          nnz_lno_t col = h_adj(j);
 
           //std::cout << "\ti:" << i << " neighbor:" << jj << " col:" << col << std::endl;
           if (col >= num_cols) continue;
@@ -598,11 +572,11 @@ public:
           }
           else if (my_row_cs > col_d1forbid_cs[col] && my_row_cs <= col_d1_max_cs[col]){
             //howmany++;
-            row_index_type row_begin = h_c_xadj(col);
-            nonzero_index_type col_size = h_c_xadj(col + 1) - row_begin;
-            for (nonzero_index_type jj2 = 0; jj2 < col_size; ++jj2){
-              row_index_type j2 = jj2 +  row_begin;
-              nonzero_index_type d2_row = h_c_adj(j2);
+            size_type row_begin = h_c_xadj(col);
+            nnz_lno_t col_size = h_c_xadj(col + 1) - row_begin;
+            for (nnz_lno_t jj2 = 0; jj2 < col_size; ++jj2){
+              size_type j2 = jj2 +  row_begin;
+              nnz_lno_t d2_row = h_c_adj(j2);
               if (d2_row >= this->nv || d2_row == i) continue;
               if (my_row_cs == row_cs[d2_row]){
                 my_d2_forbidden = my_d2_forbidden | colors(d2_row);
@@ -614,7 +588,7 @@ public:
           }
         }
 
-        color_type avaliable_colors = ~my_d2_forbidden;
+        color_t avaliable_colors = ~my_d2_forbidden;
         if (avaliable_colors == 0) {
           ++my_row_cs;
         }
@@ -626,10 +600,10 @@ public:
           //std::cout << "\ti:" << i << " found color cs:" << my_row_cs << " colors:" << colors(i) << std::endl;
 
 
-          for (nonzero_index_type jj = 0; jj < row_size; ++jj){
+          for (nnz_lno_t jj = 0; jj < row_size; ++jj){
             //howmany++;
-            row_index_type j = jj +  colbegin;
-            nonzero_index_type col = h_adj(j);
+            size_type j = jj +  colbegin;
+            nnz_lno_t col = h_adj(j);
             if (col >= num_cols) continue;
             //std::cout << "\ti:" << i << " sending color to neighbor:" << jj << " col:" << col << std::endl;
 
@@ -637,20 +611,20 @@ public:
             if (my_row_cs == col_d1forbid_cs[col]){
               col_d1_forbid_colors[col] = col_d1_forbid_colors[col] | colors(i);
               if (~col_d1_forbid_colors[col] == 0){
-                nonzero_index_type col_d1_cs = my_row_cs + 1;
-                color_type col_d1_forbidden = 0;
+                nnz_lno_t col_d1_cs = my_row_cs + 1;
+                color_t col_d1_forbidden = 0;
 
                 if (col_d1_cs <= col_d1_max_cs[col]){
-                  row_index_type row_begin2 = h_c_xadj(col);
-                  nonzero_index_type col_size2 = h_c_xadj(col + 1) - row_begin2;
+                  size_type row_begin2 = h_c_xadj(col);
+                  nnz_lno_t col_size2 = h_c_xadj(col + 1) - row_begin2;
 
                   while (true){
                     col_d1_forbidden = 0;
                     //std::cout << "\ti:" << i << " creating forbid for col:" << col << " in cs:" << col_d1_cs << std::endl;
-                    for (nonzero_index_type jj = 0; jj < col_size2; ++jj){
+                    for (nnz_lno_t jj = 0; jj < col_size2; ++jj){
                       //howmany++;
-                      row_index_type j = jj +  row_begin2;
-                      nonzero_index_type d2_row = h_c_adj(j);
+                      size_type j = jj +  row_begin2;
+                      nnz_lno_t d2_row = h_c_adj(j);
                       if (d2_row >= this->nv) continue;
                       if (row_cs[d2_row] == col_d1_cs) col_d1_forbidden = col_d1_forbidden | colors(d2_row);
                       if (~col_d1_forbidden == 0){
@@ -683,10 +657,10 @@ public:
 
     //std::cout << "howmany:" << howmany << std::endl;
 
-    int color_size = sizeof (color_type) * 8;
+    int color_size = sizeof (color_t) * 8;
 
-    for (nonzero_index_type ii = 0; ii < this->nv; ++ii){
-      color_type val = colors(ii);
+    for (nnz_lno_t ii = 0; ii < this->nv; ++ii){
+      color_t val = colors(ii);
       if (val){
         //find the position in the bit.
         int i = 1;
@@ -723,53 +697,39 @@ public:
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
   typedef typename HandleType::color_view_t color_view_type;
 
-  typedef typename in_lno_row_view_t::non_const_value_type row_index_type;
-  typedef typename in_lno_row_view_t::array_layout row_view_array_layout;
-  typedef typename in_lno_row_view_t::device_type row_view_device_type;
-  typedef typename in_lno_row_view_t::memory_traits row_view_memory_traits;
-  typedef typename in_lno_row_view_t::HostMirror row_host_view_type; //Host view type
-  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
-  typedef typename in_lno_nnz_view_t::non_const_value_type nonzero_index_type;
-  typedef typename in_lno_nnz_view_t::array_layout nonzero_index_view_array_layout;
-  typedef typename in_lno_nnz_view_t::device_type nonzero_index_view_device_type;
-  typedef typename in_lno_nnz_view_t::memory_traits nonzero_index_view_memory_traits;
-  typedef typename in_lno_nnz_view_t::HostMirror nonzero_index_host_view_type; //Host view type
-  //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
+  typedef typename HandleType::size_type size_type;
+  typedef typename HandleType::row_lno_view_device_t row_lno_view_device_t;
 
-  typedef typename color_view_type::non_const_value_type color_type;
-  typedef typename color_view_type::array_layout color_view_array_layout;
-  typedef typename color_view_type::device_type color_view_device_type;
-  typedef typename color_view_type::memory_traits color_view_memory_traits;
-  typedef typename color_view_type::HostMirror color_host_view_type; //Host view type
+  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+
+  typedef typename HandleType::color_t color_t;
+  typedef typename HandleType::color_host_view_t color_host_view_t; //Host view type
 
   typedef typename HandleType::HandleExecSpace MyExecSpace;
   typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
   typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
 
-  typedef typename Kokkos::View<row_index_type, row_view_device_type> single_dim_index_view_type;
+  typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
   //typedef typename Kokkos::View<row_index_type, Kokkos::MemoryUnmanaged> um_array_type;
   typedef typename single_dim_index_view_type::HostMirror single_dim_index_host_view_type; //Host view type
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-  typedef typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_view_t row_lno_persistent_work_view_t;
+  typedef typename HandleType::size_type_temp_work_view_t size_type_temp_work_view_t;
+  typedef typename HandleType::size_type_persistent_work_view_t size_type_persistent_work_view_t;
+
+
+  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
 
 
 
-  typedef typename in_lno_row_view_t::const_data_type const_row_data_type;
-  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_data_type;
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
+  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
 
 
-
-  typedef typename in_lno_nnz_view_t::const_data_type const_nonzero_index_data_type;
-  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nonzero_index_data_type;
-  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
-
+  typedef typename lno_nnz_view_t_::const_type const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
 
 
 protected:
@@ -784,7 +744,7 @@ protected:
   char _conflictlist; //0 for no conflictlist, 1 for atomic, 2 for pps
 
   double _pps_ratio; //the minimum number of reduction on the size of the conflictlist to create a new conflictlist
-  row_index_type _min_vertex_cut_off; //minimum number of vertices to reduce the conflictlist further.
+  nnz_lno_t _min_vertex_cut_off; //minimum number of vertices to reduce the conflictlist further.
   bool _edge_filtering; //if true, edge-filtering is applied by swaps on adjacency array.
   int _chunkSize; //the size of the minimum work unit assigned to threads. Changes the convergence on GPUs
   char _use_color_set; //the VB algorithm type.
@@ -805,7 +765,7 @@ public:
    *    including parameters.
    */
   GraphColor_VB(
-      row_index_type nv_, row_index_type ne_,
+      nnz_lno_t nv_, size_type ne_,
       const_lno_row_view_t row_map, const_lno_nnz_view_t entries,
       HandleType *coloring_handle):
     GraphColor<HandleType,lno_row_view_t_,lno_nnz_view_t_>(nv_, ne_, row_map, entries, coloring_handle),
@@ -887,41 +847,41 @@ public:
     }
 
     //if color set algorithm is used, we need one more array to represent the range.
-    row_lno_temp_work_view_t vertex_color_set;
+    nnz_lno_temp_work_view_t vertex_color_set;
     if (this->_use_color_set == 1){
-      vertex_color_set = row_lno_temp_work_view_t("colorset", this->nv);
+      vertex_color_set = nnz_lno_temp_work_view_t("colorset", this->nv);
     }
 
     //the conflictlist
-    row_lno_temp_work_view_t current_vertexList =
-        row_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
+    nnz_lno_temp_work_view_t current_vertexList =
+        nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
 
     //init vertexList sequentially.
-    Kokkos::parallel_for(my_exec_space(0, this->nv), functorInitList<row_lno_temp_work_view_t> (current_vertexList));
+    Kokkos::parallel_for(my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t> (current_vertexList));
 
 
     // the next iteration's conflict list
-    row_lno_temp_work_view_t next_iteration_recolorList;
+    nnz_lno_temp_work_view_t next_iteration_recolorList;
     // the size of the current conflictlist
 
     //the size of the next iteration's conflictlist
     single_dim_index_view_type next_iteration_recolorListLength;
     //if parallel prefix sum is selected instead of atomic operations,
     //we need one more work array to do the prefix sum.
-    row_lno_temp_work_view_t pps_work_view;
+    nnz_lno_temp_work_view_t pps_work_view;
 
     // if a conflictlist is used
     if (this->_conflictlist > 0){
       // Vertices to recolor. Will swap with vertexList.
-      next_iteration_recolorList = row_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
+      next_iteration_recolorList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
       next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
       if (this->_conflictlist == 2) {
-        pps_work_view = row_lno_temp_work_view_t("pps_view", this->nv);
+        pps_work_view = nnz_lno_temp_work_view_t("pps_view", this->nv);
       }
     }
 
-    row_index_type numUncolored = this->nv;
-    row_index_type current_vertexListLength = this->nv;
+    nnz_lno_t numUncolored = this->nv;
+    nnz_lno_t current_vertexListLength = this->nv;
 
 
     double t, total=0.0;
@@ -997,7 +957,7 @@ public:
       if (this->_serialConflictResolution) break; // Break after first iteration.
       if (this->_conflictlist && swap_work_arrays && (iter + 1< this->_max_num_iterations)){
         // Swap recolorList and vertexList
-        row_lno_temp_work_view_t temp = current_vertexList;
+        nnz_lno_temp_work_view_t temp = current_vertexList;
         current_vertexList = next_iteration_recolorList;
         next_iteration_recolorList = temp;
         current_vertexListLength = numUncolored;
@@ -1046,11 +1006,11 @@ private:
       const_lno_row_view_t xadj_,
       const_lno_nnz_view_t adj_,
       color_view_type vertex_colors_,
-      row_lno_temp_work_view_t vertex_color_set,
-      row_lno_temp_work_view_t current_vertexList_,
-      row_index_type current_vertexListLength_) {
+      nnz_lno_temp_work_view_t vertex_color_set,
+      nnz_lno_temp_work_view_t current_vertexList_,
+      nnz_lno_t current_vertexListLength_) {
 
-    row_index_type chunkSize_ = this->_chunkSize; // Process chunkSize vertices in one chunk
+    nnz_lno_t chunkSize_ = this->_chunkSize; // Process chunkSize vertices in one chunk
 
     if (current_vertexListLength_ < 100*chunkSize_) chunkSize_ = 1;
 
@@ -1101,11 +1061,11 @@ private:
       const_lno_row_view_t xadj_,
       non_const_lno_nnz_view_t adj_,
       color_view_type vertex_colors_,
-      row_lno_temp_work_view_t vertex_color_set,
-      row_lno_temp_work_view_t current_vertexList_,
-      row_index_type current_vertexListLength_) {
+      nnz_lno_temp_work_view_t vertex_color_set,
+      nnz_lno_temp_work_view_t current_vertexList_,
+      nnz_lno_t current_vertexListLength_) {
 
-    row_index_type chunkSize_ = this->_chunkSize; // Process chunkSize vertices in one chunk
+    nnz_lno_t chunkSize_ = this->_chunkSize; // Process chunkSize vertices in one chunk
 
     if (current_vertexListLength_ < 100*chunkSize_) chunkSize_ = 1;
 
@@ -1158,20 +1118,20 @@ private:
    *  \param next_iteration_recolorListLength_: size of current conflictlist
    *  \param pps_work_view: size of current conflictlist
    */
-  row_index_type findConflicts(
+  nnz_lno_t findConflicts(
       bool &swap_work_arrays,
       const_lno_row_view_t xadj_,
       const_lno_nnz_view_t adj_,
       color_view_type vertex_colors_,
-      row_lno_temp_work_view_t vertex_color_set_,
-      row_lno_temp_work_view_t current_vertexList_,
-      row_index_type current_vertexListLength_,
-      row_lno_temp_work_view_t next_iteration_recolorList_,
+      nnz_lno_temp_work_view_t vertex_color_set_,
+      nnz_lno_temp_work_view_t current_vertexList_,
+      nnz_lno_t current_vertexListLength_,
+      nnz_lno_temp_work_view_t next_iteration_recolorList_,
       single_dim_index_view_type next_iteration_recolorListLength_,
-      row_lno_temp_work_view_t pps_work_view) {
+      nnz_lno_temp_work_view_t pps_work_view) {
 
     swap_work_arrays = true;
-    row_index_type numUncolored = 0;
+    nnz_lno_t numUncolored = 0;
     if (this->_conflictlist == 0){
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         functorFindConflicts_No_Conflist conf( this->nv, xadj_, adj_, vertex_colors_);
@@ -1208,11 +1168,11 @@ private:
         MyExecSpace::fence();
 
         Kokkos::parallel_scan (my_exec_space(0, current_vertexListLength_),
-            parallel_prefix_sum<row_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
+            parallel_prefix_sum<nnz_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
 
         MyExecSpace::fence();
         Kokkos::parallel_for (my_exec_space(0, current_vertexListLength_),
-            create_new_work_array<row_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
+            create_new_work_array<nnz_lno_temp_work_view_t>(current_vertexList_, next_iteration_recolorList_, pps_work_view));
       }
       else {
         swap_work_arrays = false;
@@ -1248,24 +1208,24 @@ private:
    *  \param current_vertexListLength_: size of current conflictlist
    */
   void  resolveConflicts(
-      row_index_type nv,
+      nnz_lno_t nv,
       const_lno_row_view_t xadj_,
       const_lno_nnz_view_t adj_,
       color_view_type vertex_colors_,
-      row_lno_temp_work_view_t current_vertexList_,
-      row_index_type current_vertexListLength_) {
+      nnz_lno_temp_work_view_t current_vertexList_,
+      size_type current_vertexListLength_) {
 
-    color_type *forbidden = new color_type[nv];
-    row_index_type i=0;
-    row_index_type end = nv;
-    typename row_lno_temp_work_view_t::HostMirror h_recolor_list;
+    color_t *forbidden = new color_t[nv];
+    nnz_lno_t i=0;
+    nnz_lno_t end = nv;
+    typename nnz_lno_temp_work_view_t::HostMirror h_recolor_list;
 
     if (this->_conflictlist){
       end = current_vertexListLength_;
       h_recolor_list = Kokkos::create_mirror_view (current_vertexList_);
       Kokkos::deep_copy (h_recolor_list, current_vertexList_);
     }
-    color_host_view_type h_colors = Kokkos::create_mirror_view (vertex_colors_);
+    color_host_view_t h_colors = Kokkos::create_mirror_view (vertex_colors_);
     typename const_lno_row_view_t::HostMirror h_idx = Kokkos::create_mirror_view (xadj_);
     typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (adj_);
 
@@ -1274,7 +1234,7 @@ private:
     Kokkos::deep_copy (h_idx, xadj_);
     Kokkos::deep_copy (h_adj, adj_);
 
-    for (row_index_type k=0; k <end; k++){
+    for (nnz_lno_t k=0; k <end; k++){
       if (this->_conflictlist){
         i = h_recolor_list(k);
       }
@@ -1283,7 +1243,7 @@ private:
         i = k;
       }
       if (h_colors(i) > 0) continue;
-      for (row_index_type j=h_idx(i); j<h_idx(i+1); j++){
+      for (size_type j=h_idx(i); j<h_idx(i+1); j++){
         if (h_adj(j) == i) continue; // Skip self-loops
         forbidden[h_colors(h_adj(j))] = i;
       }
@@ -1303,30 +1263,30 @@ public:
    * Functor for VBBIT algorithms speculative coloring with edge filtering.
    */
   struct functorGreedyColor_IMPLOG_EF {
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _idx; //rowmap
     non_const_lno_nnz_view_t _adj; //entries
     color_view_type _colors; // vertex colors
-    row_lno_temp_work_view_t _vertexList; // conflictlist
-    row_index_type _vertexListLength;
-    row_index_type _chunkSize;
+    nnz_lno_temp_work_view_t _vertexList; // conflictlist
+    nnz_lno_t _vertexListLength;
+    nnz_lno_t _chunkSize;
 
     functorGreedyColor_IMPLOG_EF(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         non_const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t vertexList,
-        row_index_type vertexListLength,
-        row_index_type chunkSize) :nv(nv_), _idx(xadj), _adj(adj), _colors(colors),
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_t vertexListLength,
+        nnz_lno_t chunkSize) :nv(nv_), _idx(xadj), _adj(adj), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii) const {
-      row_index_type i = 0;
+    void operator()(const nnz_lno_t ii) const {
+      nnz_lno_t i = 0;
 
       //outer loop is on chunks, a thread is assigned as many vertex as the chunksize
-      for (row_index_type ichunk=0; ichunk<_chunkSize; ichunk++){
+      for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength){
           i = _vertexList(ii*_chunkSize +ichunk);
         }
@@ -1336,12 +1296,12 @@ public:
 
         if (_colors(i) > 0) continue; // Already colored this vertex
 
-        row_index_type my_xadj_end = _idx(i+1);
-        row_index_type xadjbegin = _idx(i);
+        size_type my_xadj_end = _idx(i+1);
+        size_type xadjbegin = _idx(i);
 
         // Do multiple passes if array is too small.
-        row_index_type degree = my_xadj_end-xadjbegin; // My degree
-        row_index_type offset = 0;
+        color_t degree = my_xadj_end-xadjbegin; // My degree
+        color_t offset = 0;
 
         //we parse the neigborlist multiple times,
         //each time we look for a certain range of colors.
@@ -1352,12 +1312,12 @@ public:
           ban_type forbidden = 0;
 
           // Check nbors, fill forbidden array.
-          for (row_index_type j=xadjbegin; j<my_xadj_end; ++j){
-            row_index_type n  = _adj(j);
+          for (size_type j=xadjbegin; j<my_xadj_end; ++j){
+            nnz_lno_t n  = _adj(j);
             if (n == i || n >= nv) continue; // Skip self-loops
-            color_type c = _colors(n);
+            color_t c = _colors(n);
 
-            color_type color_offset = c-offset;
+            color_t color_offset = c-offset;
             //if color is within the current range, or if its color is in a previously traversed range
             if (c && color_offset <= VBBIT_COLORING_FORBIDDEN_SIZE){
               //apply edge filtering, place it to front of the adjacency list,
@@ -1390,7 +1350,7 @@ public:
             //if there is an available color, choose the first color,
             //using 2s complement.
             ban_type my_new_color = forbidden & (-forbidden);
-            color_type val = 1;
+            color_t val = 1;
             //convert it back to decimal color.
             while ((my_new_color & 1) == 0) {
               ++val;
@@ -1409,29 +1369,29 @@ public:
    */
   struct functorGreedyColor_IMPLOG {
 
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _idx;
     const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _vertexList;
-    row_index_type _vertexListLength;
-    row_index_type _chunkSize;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_t _vertexListLength;
+    nnz_lno_t _chunkSize;
 
     functorGreedyColor_IMPLOG(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t vertexList,
-        row_index_type vertexListLength,
-        row_index_type chunkSize) : nv(nv_),
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_t vertexListLength,
+        nnz_lno_t chunkSize) : nv(nv_),
           _idx(xadj), _adj(adj), _colors(colors),
           _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii) const {
-      row_index_type i = 0;
-      for (row_index_type ichunk=0; ichunk<_chunkSize; ichunk++){
+    void operator()(const nnz_lno_t ii) const {
+      nnz_lno_t i = 0;
+      for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
           i = _vertexList(ii*_chunkSize +ichunk);
         else
@@ -1439,22 +1399,22 @@ public:
 
         if (_colors(i) > 0) continue; // Already colored this vertex
 
-        row_index_type my_xadj_end = _idx(i+1);
-        row_index_type xadjbegin = _idx(i);
+        size_type my_xadj_end = _idx(i+1);
+        size_type xadjbegin = _idx(i);
         // Do multiple passes if array is too small.
-        row_index_type degree = my_xadj_end - xadjbegin; // My degree
-        row_index_type offset = 0;
+        color_t degree = my_xadj_end - xadjbegin; // My degree
+        color_t offset = 0;
 
         for (; (offset <= degree + VBBIT_COLORING_FORBIDDEN_SIZE); offset += VBBIT_COLORING_FORBIDDEN_SIZE){
 
           ban_type forbidden = 0; // Forbidden colors
 
           // Check nbors, fill forbidden array.
-          for (row_index_type j=xadjbegin; j<my_xadj_end; ++j){
-            row_index_type n  = _adj(j);
+          for (size_type j=xadjbegin; j<my_xadj_end; ++j){
+            nnz_lno_t n  = _adj(j);
             if (n == i || n >= nv) continue; // Skip self-loops
-            color_type c = _colors(n);
-            color_type color_offset = c-offset;
+            color_t c = _colors(n);
+            color_t color_offset = c-offset;
             //if color is in the current range
             //convert it to binary and add it to forbidden
             if (color_offset <= VBBIT_COLORING_FORBIDDEN_SIZE && c > offset){
@@ -1473,7 +1433,7 @@ public:
           if (forbidden){
             ban_type my_new_color = forbidden & (-forbidden);
 
-            color_type val = 1;
+            color_t val = 1;
 
             while ((my_new_color & 1) == 0) {
               ++val;
@@ -1493,55 +1453,55 @@ public:
    */
   struct functorGreedyColor_IMP_EF {
 
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _xadj;
     non_const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _color_set ;
-    row_lno_temp_work_view_t _vertexList;
-    row_index_type _vertexListLength;
-    row_index_type _chunkSize;
+    nnz_lno_temp_work_view_t _color_set ;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_t _vertexListLength;
+    nnz_lno_t _chunkSize;
 
     functorGreedyColor_IMP_EF(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         non_const_lno_nnz_view_t adj,
-        color_view_type colors, row_lno_temp_work_view_t color_set,
-        row_lno_temp_work_view_t vertexList,
-        row_index_type vertexListLength,
-        row_index_type chunkSize): nv(nv_),
+        color_view_type colors, nnz_lno_temp_work_view_t color_set,
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_t vertexListLength,
+        nnz_lno_t chunkSize): nv(nv_),
           _xadj(xadj), _adj(adj),
           _colors(colors), _color_set(color_set),
           _vertexList(vertexList), _vertexListLength(vertexListLength),
           _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
-      row_index_type i = 0;
-      for (row_index_type ichunk=0; ichunk<_chunkSize; ichunk++){
+    void operator()(const nnz_lno_t &ii) const {
+      nnz_lno_t i = 0;
+      for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
           i = _vertexList(ii*_chunkSize +ichunk);
         else
           continue;
 
         if (_colors(i) > 0) continue; // Already colored this vertex
-        row_index_type xadj_end = _xadj(i+1);
-        row_index_type xadj_begin = _xadj(i);
+        size_type xadj_end = _xadj(i+1);
+        size_type xadj_begin = _xadj(i);
 
         //my color set starts from zero, but if we are leaving vertices
         //that cannot be colored in this iteration, we retrieve it from their previous color_sets.
-        row_index_type my_color_set = 0;
+        nnz_lno_t my_color_set = 0;
         while (1){
-          color_type ban_colors = 0;
+          color_t ban_colors = 0;
 
-          for (row_index_type j = xadj_begin; j < xadj_end && ~ban_colors; ++j){
-            row_index_type n = _adj(j);
+          for (size_type j = xadj_begin; j < xadj_end && ~ban_colors; ++j){
+            nnz_lno_t n = _adj(j);
             if (n == i|| n >= nv) continue; // Skip self-loops
 
-            row_index_type neighbor_color_set = _color_set(n);
+            nnz_lno_t neighbor_color_set = _color_set(n);
             //only if the neigbor has the same color set
             if (neighbor_color_set <= my_color_set ){
-              color_type ncolor = _colors(n);
+              color_t ncolor = _colors(n);
               if (ncolor){
                 if(j > xadj_begin){
                   _adj(j) = _adj(xadj_begin);
@@ -1557,7 +1517,7 @@ public:
 
           ban_colors = ~(ban_colors);
           if (ban_colors){
-            color_type my_color = ban_colors & (-ban_colors);
+            color_t my_color = ban_colors & (-ban_colors);
             _color_set(i) = my_color_set;
             _colors(i) = my_color;
             break;
@@ -1575,25 +1535,25 @@ public:
    */
   struct functorGreedyColor_IMP {
 
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _xadj;
     const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _color_set ;
-    row_lno_temp_work_view_t _vertexList;
-    row_index_type _vertexListLength;
-    row_index_type _chunkSize;
+    nnz_lno_temp_work_view_t _color_set ;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_t _vertexListLength;
+    nnz_lno_t _chunkSize;
 
 
     functorGreedyColor_IMP(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t color_set,
-        row_lno_temp_work_view_t vertexList,
-        row_index_type vertexListLength,
-        row_index_type chunkSize
+        nnz_lno_temp_work_view_t color_set,
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_t vertexListLength,
+        nnz_lno_t chunkSize
     ) : nv (nv_),
       _xadj(xadj), _adj(adj),
       _colors(colors), _color_set(color_set),
@@ -1601,26 +1561,26 @@ public:
       _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
-      row_index_type i = 0;
-      for (row_index_type ichunk=0; ichunk<_chunkSize; ichunk++){
+    void operator()(const nnz_lno_t &ii) const {
+      nnz_lno_t i = 0;
+      for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
           i = _vertexList(ii*_chunkSize +ichunk);
         else
           continue;
 
         if (_colors(i) > 0) continue; // Already colored this vertex
-        row_index_type xadj_end = _xadj(i+1);
-        row_index_type xadj_begin = _xadj(i);
+        size_type xadj_end = _xadj(i+1);
+        size_type xadj_begin = _xadj(i);
 
         //my color set starts from zero, but if we are leaving vertices
         //that cannot be colored in this iteration, we retrieve it from their previous color_sets.
-        row_index_type my_color_set =  0;
+        nnz_lno_t my_color_set =  0;
         //idx degree = xadj_end - xadj_begin;
         for (; ;){
-          color_type ban_colors = 0;
-          for (row_index_type j = xadj_begin; j < xadj_end ;++j){
-            row_index_type n = _adj(j);
+          color_t ban_colors = 0;
+          for (size_type j = xadj_begin; j < xadj_end ;++j){
+            nnz_lno_t n = _adj(j);
             if (n == i|| n >= nv) continue; // Skip self-loops
             if ( my_color_set == _color_set(n)){
               ban_colors = ban_colors | _colors(n);
@@ -1633,7 +1593,7 @@ public:
           ban_colors = ~(ban_colors);
 
           if (ban_colors){
-            color_type my_color = ban_colors & (-ban_colors);
+            color_t my_color = ban_colors & (-ban_colors);
             _color_set(i) = my_color_set;
             _colors(i) = my_color;
             break;
@@ -1650,28 +1610,28 @@ public:
    * Functor for VB algorithm speculative coloring with edge filtering.
    */
   struct functorGreedyColor_EF {
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _idx;
     non_const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _vertexList;
-    row_index_type _vertexListLength;
-    row_index_type _chunkSize;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_t _vertexListLength;
+    nnz_lno_t _chunkSize;
 
     functorGreedyColor_EF(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         non_const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t vertexList,
-        row_index_type vertexListLength,
-        row_index_type chunkSize
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_t vertexListLength,
+        nnz_lno_t chunkSize
     ) : nv (nv_),
       _idx(xadj), _adj(adj), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii) const {
+    void operator()(const nnz_lno_t ii) const {
       // Color vertex i with smallest available color.
       //
       // Each thread colors a chunk of vertices to prevent all
@@ -1681,8 +1641,8 @@ public:
       // TODO: With chunks, the forbidden array should be char/int
       //       and reused for all vertices in the chunk.
       //
-      row_index_type i = 0;
-      for (row_index_type ichunk=0; ichunk<_chunkSize; ichunk++){
+      nnz_lno_t i = 0;
+      for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
           i = _vertexList(ii*_chunkSize +ichunk);
         else
@@ -1697,10 +1657,10 @@ public:
         bool forbidden[VB_COLORING_FORBIDDEN_SIZE]; // Forbidden colors
 
         // Do multiple passes if array is too small.
-        row_index_type degree = _idx(i+1)-_idx(i); // My degree
-        row_index_type my_xadj_end = _idx(i+1);
-        row_index_type offset = 0;
-        row_index_type xadjbegin = _idx(i);
+        color_t degree = _idx(i+1)-_idx(i); // My degree
+        size_type my_xadj_end = _idx(i+1);
+        color_t offset = 0;
+        size_type xadjbegin = _idx(i);
 
         for (; (offset <= degree + VB_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_COLORING_FORBIDDEN_SIZE){
           // initialize
@@ -1710,12 +1670,12 @@ public:
           if (offset == 0) forbidden[0] = true; // by convention, start at 1
 
           // Check nbors, fill forbidden array.
-          for (row_index_type j=xadjbegin; j<my_xadj_end; ++j){
-            row_index_type n  = _adj(j);
+          for (size_type j=xadjbegin; j<my_xadj_end; ++j){
+            nnz_lno_t n  = _adj(j);
             if (n == i|| n >= nv) {
               continue; // Skip self-loops
             }
-            color_type c= _colors(n);
+            color_t c= _colors(n);
             // Removed option to leave potentially conflicted vertices uncolored.
             //if (c== -1){ // Nbor is being colored at same time
             //  _colors[i] = 0; // Neutral color, skip and recolor later
@@ -1756,28 +1716,28 @@ public:
    * Functor for VB algorithm speculative coloring without edge filtering.
    */
   struct functorGreedyColor {
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _idx;
     const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _vertexList;
-    row_index_type _vertexListLength;
-    row_index_type _chunkSize;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_t _vertexListLength;
+    nnz_lno_t _chunkSize;
 
     functorGreedyColor(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t vertexList,
-        row_index_type vertexListLength,
-        row_index_type chunkSize
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_t vertexListLength,
+        nnz_lno_t chunkSize
     ) : nv (nv_),
       _idx(xadj), _adj(adj), _colors(colors),
       _vertexList(vertexList), _vertexListLength(vertexListLength), _chunkSize(chunkSize){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii) const {
+    void operator()(const nnz_lno_t ii) const {
       // Color vertex i with smallest available color.
       //
       // Each thread colors a chunk of vertices to prevent all
@@ -1787,8 +1747,8 @@ public:
       // TODO: With chunks, the forbidden array should be char/int
       //       and reused for all vertices in the chunk.
       //
-      row_index_type i = 0;
-      for (row_index_type ichunk=0; ichunk<_chunkSize; ichunk++){
+      nnz_lno_t i = 0;
+      for (nnz_lno_t ichunk=0; ichunk<_chunkSize; ichunk++){
         if (ii*_chunkSize +ichunk < _vertexListLength)
           i = _vertexList(ii*_chunkSize +ichunk);
         else
@@ -1803,8 +1763,8 @@ public:
             bool forbidden[VB_COLORING_FORBIDDEN_SIZE]; // Forbidden colors
 
         // Do multiple passes if array is too small.
-        row_index_type degree = _idx(i+1)-_idx(i); // My degree
-        row_index_type offset = 0;
+        color_t degree = _idx(i+1)-_idx(i); // My degree
+        color_t offset = 0;
         for (; (offset <= degree + VB_COLORING_FORBIDDEN_SIZE) && (!foundColor); offset += VB_COLORING_FORBIDDEN_SIZE){
           // initialize
           for (int j=0; j< VB_COLORING_FORBIDDEN_SIZE; j++){
@@ -1813,9 +1773,9 @@ public:
           if (offset == 0) forbidden[0] = true; // by convention, start at 1
 
           // Check nbors, fill forbidden array.
-          for (row_index_type j=_idx(i); j<_idx(i+1); j++){
+          for (size_type j=_idx(i); j<_idx(i+1); j++){
             if (_adj(j) == i|| _adj(j)  >= nv) continue; // Skip self-loops
-            color_type c= _colors(_adj(j));
+            color_t c= _colors(_adj(j));
             // Removed option to leave potentially conflicted vertices uncolored.
             //if (c== -1){ // Nbor is being colored at same time
             //  _colors[i] = 0; // Neutral color, skip and recolor later
@@ -1850,13 +1810,13 @@ public:
    */
   struct functorFindConflicts_No_Conflist {
 
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _idx;
     const_lno_nnz_view_t _adj;
     color_view_type _colors;
 
     functorFindConflicts_No_Conflist(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         const_lno_nnz_view_t adj,
         color_view_type colors) : nv (nv_),
@@ -1865,16 +1825,16 @@ public:
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii, row_index_type &numConflicts) const {
+    void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
 
-      color_type my_color = _colors(ii);
-      row_index_type xadjend = _idx(ii+1);
-      row_index_type j=_idx(ii);
+      color_t my_color = _colors(ii);
+      size_type xadjend = _idx(ii+1);
+      size_type j=_idx(ii);
 #ifdef DEGREECOMP
       idx myDegree = xadjend - j;
 #endif
       for (; j< xadjend; j++){
-        row_index_type neighbor = _adj(j);
+        nnz_lno_t neighbor = _adj(j);
 
         if (
 #ifndef DEGREECOMP
@@ -1900,41 +1860,41 @@ public:
    * Finds conflicts by marking the work vertices to be used later for creation of new worklist with PPS
    */
   struct functorFindConflicts_PPS {
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _idx;
     const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _vertexList;
-    row_lno_temp_work_view_t _recolorList;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_temp_work_view_t _recolorList;
 
 
 
     functorFindConflicts_PPS(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t vertexList,
-        row_lno_temp_work_view_t recolorList) :
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_temp_work_view_t recolorList) :
           nv (nv_),
           _idx(xadj), _adj(adj), _colors(colors),
           _vertexList(vertexList),
           _recolorList(recolorList){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii, row_index_type &numConflicts) const {
-      row_index_type i = _vertexList(ii);
-      color_type my_color = _colors(i);
+    void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
+      nnz_lno_t i = _vertexList(ii);
+      color_t my_color = _colors(i);
       _recolorList(i) = 0;
       // check vertex i conflicts
 
-      row_index_type xadjend = _idx(i+1);
-      row_index_type j=_idx(i);
+      size_type xadjend = _idx(i+1);
+      size_type j=_idx(i);
 #ifdef DEGREECOMP
       idx myDegree = xadjend - j;
 #endif
       for (; j<xadjend; j++){
-        row_index_type neighbor = _adj(j);
+        nnz_lno_t neighbor = _adj(j);
         if (
 #ifndef DEGREECOMP
             i < neighbor && neighbor < nv &&
@@ -1959,22 +1919,22 @@ public:
    * Finds conflicts and creates new worklist using atomic operations.
    */
   struct functorFindConflicts_Atomic {
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _idx;
     const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _vertexList;
-    row_lno_temp_work_view_t _recolorList;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_temp_work_view_t _recolorList;
     single_dim_index_view_type _recolorListLength;
 
 
     functorFindConflicts_Atomic(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t vertexList,
-        row_lno_temp_work_view_t recolorList,
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_temp_work_view_t recolorList,
         single_dim_index_view_type recolorListLength
     ) : nv (nv_),
       _idx(xadj), _adj(adj), _colors(colors),
@@ -1983,19 +1943,19 @@ public:
       _recolorListLength(recolorListLength){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii, row_index_type &numConflicts) const {
+    void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
 
-      row_index_type i = _vertexList(ii);
-      color_type my_color = _colors(i);
+      nnz_lno_t i = _vertexList(ii);
+      color_t my_color = _colors(i);
 
-      row_index_type xadjend = _idx(i+1);
-      row_index_type j=_idx(i);
+      size_type xadjend = _idx(i+1);
+      size_type j=_idx(i);
 #ifdef DEGREECOMP
       idx myDegree = xadjend - j;
 #endif
 
       for (; j < xadjend; j++){
-        row_index_type neighbor = _adj(j);
+        nnz_lno_t neighbor = _adj(j);
         if (
 #ifndef DEGREECOMP
             i < neighbor && neighbor < nv &&
@@ -2008,7 +1968,7 @@ public:
         ) {
           _colors(i) = 0; // Uncolor vertex i
           // Atomically add vertex i to recolorList
-          const row_index_type k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
+          const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
           _recolorList(k) = i;
           numConflicts += 1;
           break; // Once i is uncolored and marked conflict
@@ -2023,41 +1983,41 @@ public:
    */
   struct functorFindConflicts_No_Conflist_IMP {
 
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _xadj;
     const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _color_sets;
+    nnz_lno_temp_work_view_t _color_sets;
 
 
     functorFindConflicts_No_Conflist_IMP(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t color_sets
+        nnz_lno_temp_work_view_t color_sets
     ) : nv (nv_),
       _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii, row_index_type &numConflicts) const {
-      color_type my_color = _colors(ii);
+    void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
+      color_t my_color = _colors(ii);
       if (my_color == 0){
         // this should only happen when one_color_set_per_iteration is set to true.
         numConflicts++;
       }
       else {
-        row_index_type my_color_set = _color_sets(ii);
-        row_index_type my_xadj_end = _xadj(ii+1);
+        nnz_lno_t my_color_set = _color_sets(ii);
+        size_type my_xadj_end = _xadj(ii+1);
         // check vertex i conflicts
 
-        row_index_type j=_xadj(ii);
+        size_type j=_xadj(ii);
 #ifdef DEGREECOMP
         idx myDegree = my_xadj_end - j;
 #endif
 
         for (; j<my_xadj_end; j++){
-          row_index_type neighbor = _adj(j);
+          nnz_lno_t neighbor = _adj(j);
           if (
 #ifndef DEGREECOMP
               ii < neighbor && neighbor < nv &&
@@ -2084,47 +2044,47 @@ public:
    * VBCS: Finds conflicts by marking the work vertices to be used later for creation of new worklist with PPS
    */
   struct functorFindConflicts_PPS_IMP {
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _xadj;
     const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _color_sets;
-    row_lno_temp_work_view_t _vertexList;
-    row_lno_temp_work_view_t _recolorList;
+    nnz_lno_temp_work_view_t _color_sets;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_temp_work_view_t _recolorList;
 
     functorFindConflicts_PPS_IMP(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t color_sets,
-        row_lno_temp_work_view_t vertexList,
-        row_lno_temp_work_view_t recolorList
+        nnz_lno_temp_work_view_t color_sets,
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_temp_work_view_t recolorList
     ) : nv (nv_),
       _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets),
       _vertexList(vertexList),
       _recolorList(recolorList){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii, row_index_type &numConflicts) const {
-      row_index_type i = _vertexList(ii);
+    void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
+      nnz_lno_t i = _vertexList(ii);
       _recolorList(i) = 0;
-      color_type my_color = _colors(i);
+      color_t my_color = _colors(i);
       if (my_color == 0){
         _recolorList(i) = 1;
         numConflicts++;
       }
       else {
-        row_index_type my_color_set = _color_sets(i);
-        row_index_type my_xadj_end = _xadj(i+1);
+        nnz_lno_t my_color_set = _color_sets(i);
+        size_type my_xadj_end = _xadj(i+1);
         // check vertex i conflicts
 
-        row_index_type j=_xadj(i);
+        size_type j=_xadj(i);
 #ifdef DEGREECOMP
         idx myDegree = my_xadj_end - j;
 #endif
         for (; j<my_xadj_end; j++){
-          row_index_type neighbor = _adj(j);
+          nnz_lno_t neighbor = _adj(j);
           if (
 #ifndef DEGREECOMP
               i < neighbor && neighbor < nv &&
@@ -2152,24 +2112,24 @@ public:
    */
   struct functorFindConflicts_Atomic_IMP {
 
-    row_index_type nv;
+    nnz_lno_t nv;
     const_lno_row_view_t _xadj;
     const_lno_nnz_view_t _adj;
     color_view_type _colors;
-    row_lno_temp_work_view_t _color_sets;
-    row_lno_temp_work_view_t _vertexList;
-    row_lno_temp_work_view_t _recolorList;
+    nnz_lno_temp_work_view_t _color_sets;
+    nnz_lno_temp_work_view_t _vertexList;
+    nnz_lno_temp_work_view_t _recolorList;
     single_dim_index_view_type _recolorListLength;
 
 
     functorFindConflicts_Atomic_IMP(
-        row_index_type nv_,
+        nnz_lno_t nv_,
         const_lno_row_view_t xadj,
         const_lno_nnz_view_t adj,
         color_view_type colors,
-        row_lno_temp_work_view_t color_sets,
-        row_lno_temp_work_view_t vertexList,
-        row_lno_temp_work_view_t recolorList,
+        nnz_lno_temp_work_view_t color_sets,
+        nnz_lno_temp_work_view_t vertexList,
+        nnz_lno_temp_work_view_t recolorList,
         single_dim_index_view_type recolorListLength
     ) : nv (nv_),
       _xadj(xadj), _adj(adj), _colors(colors), _color_sets(color_sets),
@@ -2178,26 +2138,26 @@ public:
       _recolorListLength(recolorListLength){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii, row_index_type &numConflicts) const {
-      row_index_type i = _vertexList(ii);
-      color_type my_color = _colors(i);
+    void operator()(const nnz_lno_t ii, nnz_lno_t &numConflicts) const {
+      nnz_lno_t i = _vertexList(ii);
+      color_t my_color = _colors(i);
       if (my_color == 0){
         // this should only happen when one_color_set_per_iteration is set to true.
-        const row_index_type k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
+        const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
         _recolorList(k) = i;
         numConflicts++;
       }
       else {
-        row_index_type my_color_set = _color_sets(i);
-        row_index_type my_xadj_end = _xadj(i+1);
+        nnz_lno_t my_color_set = _color_sets(i);
+        size_type my_xadj_end = _xadj(i+1);
         // check vertex i conflicts
 
-        row_index_type j=_xadj(i);
+        size_type j=_xadj(i);
 #ifdef DEGREECOMP
         idx myDegree = my_xadj_end - j;
 #endif
         for (; j< my_xadj_end; j++){
-          row_index_type neighbor = _adj(j);
+          nnz_lno_t neighbor = _adj(j);
           if (
 #ifndef DEGREECOMP
               i < neighbor && neighbor < nv &&
@@ -2211,7 +2171,7 @@ public:
             _colors(i) = 0; // Uncolor vertex i
             _color_sets(i) = 0;
             // Atomically add vertex i to recolorList
-            const row_index_type k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
+            const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), 1);
             _recolorList(k) = i;
             numConflicts++;
             break; // Once i is uncolored and marked conflict
@@ -2230,7 +2190,7 @@ public:
     view_type _vertexList;
     functorInitList (view_type vertexList) : _vertexList(vertexList) { }
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type i) const {
+    void operator()(const nnz_lno_t i) const {
       // Natural order
       _vertexList(i) = i;
     }
@@ -2297,24 +2257,24 @@ public:
    */
   struct set_final_colors{
     color_view_type kokcol;
-    row_lno_temp_work_view_t kokcolset; //the colors that are represented with bits, and the colors set that the color is in.
-    color_type color_size;
+    nnz_lno_temp_work_view_t kokcolset; //the colors that are represented with bits, and the colors set that the color is in.
+    color_t color_size;
 
     /** \brief functor constructor.
      * \param kokcol_  the colors of the vertices. Represented with bits.
      * \param kokcolset_  the color set of the vertices. kokcolors_ and color_set_ together
      *      is used to represent the colors e.g. color_set_(v) * (numbits_in_idx-1) + set_bit_position_in_kokcolors_(v)
      */
-    set_final_colors(color_view_type kokcol_, row_lno_temp_work_view_t kokcolset_
-    ): kokcol(kokcol_),kokcolset(kokcolset_), color_size ( sizeof(color_type) * 8){}
+    set_final_colors(color_view_type kokcol_, nnz_lno_temp_work_view_t kokcolset_
+    ): kokcol(kokcol_),kokcolset(kokcolset_), color_size ( sizeof(color_t) * 8){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
+    void operator()(const nnz_lno_t &ii) const {
 
-      color_type val = kokcol(ii);
+      color_t val = kokcol(ii);
       if (val){
         //find the position in the bit.
-        row_index_type i = 1;
+        nnz_lno_t i = 1;
         while ((val & 1) == 0) {
           ++i;
           val = val >> 1;
@@ -2345,25 +2305,16 @@ public:
   typedef in_nonzero_index_view_type_ in_nonzero_index_view_type;
   typedef typename HandleType::color_view_t color_view_type;
 
-  typedef typename in_row_index_view_type::non_const_value_type row_index_type;
-  typedef typename in_row_index_view_type::array_layout row_view_array_layout;
-  typedef typename in_row_index_view_type::device_type row_view_device_type;
-  typedef typename in_row_index_view_type::memory_traits row_view_memory_traits;
-  typedef typename in_row_index_view_type::HostMirror row_host_view_type; //Host view type
-  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
 
-  typedef typename in_nonzero_index_view_type::non_const_value_type nonzero_index_type;
-  typedef typename in_nonzero_index_view_type::array_layout nonzero_index_view_array_layout;
-  typedef typename in_nonzero_index_view_type::device_type nonzero_index_view_device_type;
-  typedef typename in_nonzero_index_view_type::memory_traits nonzero_index_view_memory_traits;
-  typedef typename in_nonzero_index_view_type::HostMirror nonzero_index_host_view_type; //Host view type
-  //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
+  typedef typename HandleType::size_type size_type;
+  typedef typename HandleType::row_lno_view_device_t row_lno_view_device_t;
 
-  typedef typename color_view_type::non_const_value_type color_type;
-  typedef typename color_view_type::array_layout color_view_array_layout;
-  typedef typename color_view_type::device_type color_view_device_type;
-  typedef typename color_view_type::memory_traits color_view_memory_traits;
-  typedef typename color_view_type::HostMirror color_host_view_type; //Host view type
+
+  typedef typename HandleType::nnz_lno_t nnz_lno_t;
+
+
+  typedef typename HandleType::color_t color_t;
+  typedef typename HandleType::color_host_view_t color_host_view_t; //Host view type
 
 
 
@@ -2372,30 +2323,27 @@ public:
   typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
   typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
 
-  typedef typename Kokkos::View<row_index_type, row_view_device_type> single_dim_index_view_type;
+  typedef typename Kokkos::View<nnz_lno_t, row_lno_view_device_t> single_dim_index_view_type;
 
   typedef typename single_dim_index_view_type::HostMirror single_dim_index_host_view_type; //Host view type
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-  typedef typename HandleType::row_lno_temp_work_view_t row_index_temp_work_view_type;
-  typedef typename HandleType::row_lno_persistent_work_view_t row_index_persistent_work_view_type;
+  typedef typename HandleType::size_type_temp_work_view_t size_type_temp_work_view_t;
+  typedef typename HandleType::size_type_persistent_work_view_t size_type_persistent_work_view_t;
 
-  typedef typename Kokkos::View<color_type *, color_view_array_layout, MyTempMemorySpace> color_temp_work_view_type;
+  typedef typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
+  typedef typename HandleType::nnz_lno_persistent_work_view_t nnz_lno_persistent_work_view_t;
+
+  typedef typename Kokkos::View<color_t *, MyTempMemorySpace> color_temp_work_view_type;
 
   typedef Kokkos::View<char *, MyTempMemorySpace> char_temp_work_view_type;
   typedef typename char_temp_work_view_type::HostMirror char_temp_work_host_view_type; //Host view type
 
 
-  typedef typename in_row_index_view_type::const_data_type const_row_data_type;
-  typedef typename in_row_index_view_type::non_const_data_type non_const_row_data_type;
-  typedef typename in_row_index_view_type::const_type const_lno_row_view_t;
-  typedef typename in_row_index_view_type::non_const_type non_const_row_index_view_type;
 
-
-  typedef typename in_nonzero_index_view_type::const_data_type const_nonzero_index_data_type;
-  typedef typename in_nonzero_index_view_type::non_const_data_type non_const_nonzero_index_data_type;
+  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
   typedef typename in_nonzero_index_view_type::const_type const_nonzero_index_view_type;
-  typedef typename in_nonzero_index_view_type::non_const_type non_const_nonzero_index_view_type;
+
 public:
 
   /**
@@ -2405,8 +2353,8 @@ public:
    * \param xadj_ the xadj array of the graph. Its size is nv_ +1
    * \param adj_ adjacency array of the graph. Its size is ne_
    */
-  GraphColor_EB(row_index_type nv_,
-                row_index_type ne_,
+  GraphColor_EB(nnz_lno_t nv_,
+                size_type ne_,
                 const_lno_row_view_t row_map,
                 const_nonzero_index_view_type entries,
                 HandleType *coloring_handle):
@@ -2429,9 +2377,9 @@ public:
 
 
     //get EB parameters
-    color_type numInitialColors = this->cp->get_eb_num_initial_colors();
+    color_t numInitialColors = this->cp->get_eb_num_initial_colors();
     double pps_cutoff = this->cp->get_min_reduction_for_conflictlist();
-    row_index_type ps_min = this->cp->get_min_elements_for_conflictlist();
+    size_type ps_min = this->cp->get_min_elements_for_conflictlist();
     bool use_pps = (this->cp->get_conflict_list_type() == COLORING_PPS);
 
     bool tictoc = this->cp->get_tictoc();
@@ -2446,30 +2394,30 @@ public:
           << std::endl;
     }
 
-    row_index_type numEdges = 0;
-    row_index_persistent_work_view_type kok_src, kok_dst;
+    size_type numEdges = 0;
+    nnz_lno_persistent_work_view_t kok_src, kok_dst;
 
 
     this->cp->get_lower_diagonal_edge_list (this->nv, this->ne, this->xadj, this->adj, numEdges, kok_src, kok_dst);
-    row_index_type num_work_edges = numEdges;
+    size_type num_work_edges = numEdges;
 
     //allocate memory for vertex ban colors, and tentative bans
     color_temp_work_view_type color_ban (Kokkos::ViewAllocateWithoutInitializing("color_ban"), this->nv);
     color_temp_work_view_type tentative_color_ban(Kokkos::ViewAllocateWithoutInitializing("tentative_color_ban"), this->nv);//views are initialized with zero
     //allocate memory for vertex color set shifts.
-    row_index_temp_work_view_type color_set ("color_set", this->nv); //initialized with zero.
+    nnz_lno_temp_work_view_t color_set ("color_set", this->nv); //initialized with zero.
     //initialize colors, color bans
     Kokkos::parallel_for (my_exec_space (0, this->nv) , init_colors (kok_colors, color_ban, numInitialColors));
     //std::cout << "nv:" << this->nv << " init_colors" << std::endl;
 
     //worklist
-    row_index_temp_work_view_type edge_conflict_indices
+    size_type_temp_work_view_t edge_conflict_indices
     (Kokkos::ViewAllocateWithoutInitializing("edge_conflict_indices"), num_work_edges);
     //next iterations conflict list
-    row_index_temp_work_view_type new_edge_conflict_indices
+    size_type_temp_work_view_t new_edge_conflict_indices
     (Kokkos::ViewAllocateWithoutInitializing("new_edge_conflict_indices"), num_work_edges);
 
-    row_index_temp_work_view_type
+    size_type_temp_work_view_t
     pps(Kokkos::ViewAllocateWithoutInitializing("prefix_sum"), num_work_edges);
 
     char_temp_work_view_type edge_conflict_marker
@@ -2491,7 +2439,7 @@ public:
     }
     double mc_time = 0, cnt_time = 0, ban_time = 0, expand_ban_time = 0, color_time = 0, pps_time = 0;
 
-    row_index_type i = 0;
+    size_type i = 0;
 
 
     if (tictoc){
@@ -2526,7 +2474,7 @@ public:
       }
 
 
-      row_index_type num_conflict_reduction = 0;
+      size_type num_conflict_reduction = 0;
 
       //count conflicts, and mark the edges that does not need to be processed.
 
@@ -2594,7 +2542,7 @@ public:
         }
 
         //swap old and new worklist
-        row_index_temp_work_view_type tmp = new_edge_conflict_indices;
+        size_type_temp_work_view_t tmp = new_edge_conflict_indices;
         new_edge_conflict_indices =  edge_conflict_indices;
         edge_conflict_indices = tmp;
         num_work_edges -= num_conflict_reduction;
@@ -2679,23 +2627,23 @@ public:
 
     color_view_type kokcolors;
     color_temp_work_view_type color_ban; //colors
-    color_type hash; //the number of colors to be assigned initially.
+    color_t hash; //the number of colors to be assigned initially.
 
     //the value to initialize the color_ban_. We avoid using the first bit representing the sign.
     //Therefore if idx is int, it can represent 32-1 colors. Use color_set to represent more.
-    color_type color_ban_init_val;
+    color_t color_ban_init_val;
 
 
-    init_colors (color_view_type colors,color_temp_work_view_type color_ban_,color_type hash_):
+    init_colors (color_view_type colors,color_temp_work_view_type color_ban_,color_t hash_):
       kokcolors(colors), color_ban(color_ban_), hash(hash_){
-      color_type tmp = 1;
-      color_ban_init_val = tmp <<( sizeof(color_type) * 8 -1);
+      color_t tmp = 1;
+      color_ban_init_val = tmp <<( sizeof(color_t) * 8 -1);
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
+    void operator()(const size_type &ii) const {
       //set colors based on their indices.
-      color_type tmp1 = 1;
+      color_t tmp1 = 1;
       kokcolors(ii) = tmp1 << (ii % hash);
       color_ban(ii) = color_ban_init_val;
     }
@@ -2705,17 +2653,17 @@ public:
   /*! \brief Functor to initialize the worklist
      */
   struct init_work_arrays{
-    row_index_temp_work_view_type _edge_conflict_indices;
+    size_type_temp_work_view_t _edge_conflict_indices;
     char_temp_work_view_type _edge_conflict_marker;
 
     init_work_arrays (
-        row_index_temp_work_view_type edge_conflict_indices,
+        size_type_temp_work_view_t edge_conflict_indices,
         char_temp_work_view_type edge_conflict_marker):
           _edge_conflict_indices(edge_conflict_indices),
           _edge_conflict_marker(edge_conflict_marker){};
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
+    void operator()(const size_type &ii) const {
       _edge_conflict_indices(ii)= ii; //every edge needs to be worked on initially.
       _edge_conflict_marker(ii) = 1; //every edge is a conflict initially.
     }
@@ -2727,12 +2675,12 @@ public:
    */
   struct halfedge_mark_conflicts {
     //edge list, source and destinations of the edge list.
-    row_index_persistent_work_view_type srcs, dsts;
+    nnz_lno_persistent_work_view_t srcs, dsts;
     color_view_type kokcolors;
 
-    row_index_temp_work_view_type color_set; //the colors that are represented with bits, and the colors set that the color is in.
+    nnz_lno_temp_work_view_t color_set; //the colors that are represented with bits, and the colors set that the color is in.
     color_temp_work_view_type color_ban, tentative_color_ban; //color ban for each vertex represented with bit, as well as tentative color ban.
-    row_index_temp_work_view_type edge_conf_indices;
+    size_type_temp_work_view_t edge_conf_indices;
 
 
     //      idx color_ban_init_val;  //the value to initialize the color_ban_. We avoid using the first bit representing the sign.
@@ -2751,28 +2699,28 @@ public:
      * \param edge_conf_indices_ : The worklist for the edges.
      */
     halfedge_mark_conflicts (
-        row_index_persistent_work_view_type srcs_,
-        row_index_persistent_work_view_type dsts_,
+        nnz_lno_persistent_work_view_t srcs_,
+        nnz_lno_persistent_work_view_t dsts_,
         color_view_type kokcolors_,
-        row_index_temp_work_view_type color_set_,
+        nnz_lno_temp_work_view_t color_set_,
         color_temp_work_view_type color_ban_,
         color_temp_work_view_type tentative_color_ban_,
-        row_index_temp_work_view_type edge_conf_indices_):
+        size_type_temp_work_view_t edge_conf_indices_):
       srcs(srcs_), dsts (dsts_),
       kokcolors(kokcolors_), color_set(color_set_),
       color_ban(color_ban_), tentative_color_ban(tentative_color_ban_),
       edge_conf_indices(edge_conf_indices_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
-      row_index_type work_index = edge_conf_indices(ii);
+    void operator()(const size_type &ii) const {
+      size_type work_index = edge_conf_indices(ii);
       //traverse edges,
-      row_index_type src_id = srcs(work_index);
-      row_index_type dst_id = dsts(work_index);
+      nnz_lno_t src_id = srcs(work_index);
+      nnz_lno_t dst_id = dsts(work_index);
 
 
-      color_type source_color = kokcolors(src_id);
-      color_type dst_color = kokcolors(dst_id);
+      color_t source_color = kokcolors(src_id);
+      color_t dst_color = kokcolors(dst_id);
 
       //if the source and destionation have the same color, e.g. same color and same color_set.
       //then we have a conflict.
@@ -2794,19 +2742,19 @@ public:
    * remove those that are not needed to be looked further
    */
   struct halfedge_conflict_count{
-    row_index_persistent_work_view_type _kok_src;
-    row_index_persistent_work_view_type _kok_dst;
+    nnz_lno_persistent_work_view_t _kok_src;
+    nnz_lno_persistent_work_view_t _kok_dst;
     color_view_type _kok_colors;
-    row_index_temp_work_view_type _color_set; //the colors that are represented with bits, and the colors set that the color is in.
-    row_index_temp_work_view_type _edge_conflict_indices;
+    nnz_lno_temp_work_view_t _color_set; //the colors that are represented with bits, and the colors set that the color is in.
+    size_type_temp_work_view_t _edge_conflict_indices;
     char_temp_work_view_type _edge_conflict_marker;
 
     halfedge_conflict_count(
-        row_index_persistent_work_view_type kok_src,
-        row_index_persistent_work_view_type kok_dst,
+        nnz_lno_persistent_work_view_t kok_src,
+        nnz_lno_persistent_work_view_t kok_dst,
         color_view_type kok_colors,
-        row_index_temp_work_view_type color_set,
-        row_index_temp_work_view_type edge_conflict_indices,
+        nnz_lno_temp_work_view_t color_set,
+        size_type_temp_work_view_t edge_conflict_indices,
         char_temp_work_view_type edge_conflict_marker):
           _kok_src( kok_src),
           _kok_dst( kok_dst),
@@ -2816,19 +2764,19 @@ public:
           _edge_conflict_marker( edge_conflict_marker){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii, row_index_type &sum) const {
+    void operator()(const size_type &ii, size_type &sum) const {
 
-      row_index_type w = _edge_conflict_indices(ii);
+      size_type w = _edge_conflict_indices(ii);
 
       if (_edge_conflict_marker(w) == 0){
         sum += 1;
       }
       else{
-        row_index_type d = this->_kok_dst(w);
-        row_index_type s = this->_kok_src(w);
+        nnz_lno_t d = this->_kok_dst(w);
+        nnz_lno_t s = this->_kok_src(w);
 
-        color_type dc = _kok_colors(d);
-        color_type sc = _kok_colors(s);
+        color_t dc = _kok_colors(d);
+        color_t sc = _kok_colors(s);
 
         if ( (dc && sc) || //if both colored
             (sc && (_color_set(d) > _color_set(s))) || //if source is colored, and destination color set is larger than source
@@ -2848,23 +2796,23 @@ public:
    * on the next conflictlist is calculated.
    */
   struct parallel_prefix_sum{
-    row_index_temp_work_view_type _edge_conflict_indices;
+    size_type_temp_work_view_t _edge_conflict_indices;
     char_temp_work_view_type _edge_conflict_marker;
-    row_index_temp_work_view_type _pps_view;
+    size_type_temp_work_view_t _pps_view;
 
     parallel_prefix_sum(
-        row_index_temp_work_view_type edge_conflict_indices,
+        size_type_temp_work_view_t edge_conflict_indices,
         char_temp_work_view_type edge_conflict_marker,
-        row_index_temp_work_view_type pps_view):
+        size_type_temp_work_view_t pps_view):
           _edge_conflict_indices(edge_conflict_indices),
           _edge_conflict_marker(edge_conflict_marker),
           _pps_view(pps_view){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii, size_t& update, const bool final) const {
-      row_index_type w = _edge_conflict_indices(ii);
+    void operator()(const size_type ii, size_t& update, const bool final) const {
+      size_type w = _edge_conflict_indices(ii);
       if (final) {
-        _pps_view(w) = row_index_type (update);
+        _pps_view(w) =  size_type(update);
       }
       update += _edge_conflict_marker(w);
     }
@@ -2874,26 +2822,26 @@ public:
    * \brief Functor to create the new work array.
    */
   struct create_new_work_array{
-    row_index_temp_work_view_type _edge_conflict_indices;
+    size_type_temp_work_view_t _edge_conflict_indices;
     char_temp_work_view_type _edge_conflict_marker;
-    row_index_temp_work_view_type _pps_view;
-    row_index_temp_work_view_type _new_edge_conflict_indices;
+    size_type_temp_work_view_t _pps_view;
+    size_type_temp_work_view_t _new_edge_conflict_indices;
 
     create_new_work_array(
-        row_index_temp_work_view_type edge_conflict_indices,
+        size_type_temp_work_view_t edge_conflict_indices,
         char_temp_work_view_type edge_conflict_marker,
-        row_index_temp_work_view_type pps_view,
-        row_index_temp_work_view_type new_edge_conflict_indices):
+        size_type_temp_work_view_t pps_view,
+        size_type_temp_work_view_t new_edge_conflict_indices):
           _edge_conflict_indices(edge_conflict_indices),
           _edge_conflict_marker(edge_conflict_marker),
           _pps_view(pps_view),
           _new_edge_conflict_indices(new_edge_conflict_indices){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii) const {
-      row_index_type w = _edge_conflict_indices(ii);
+    void operator()(const size_type ii) const {
+      size_type w = _edge_conflict_indices(ii);
       if(_edge_conflict_marker(w)){
-        row_index_type future_index = _pps_view(w);
+        size_type future_index = _pps_view(w);
         _new_edge_conflict_indices(future_index) = w;
       }
     }
@@ -2904,25 +2852,25 @@ public:
    */
   struct atomic_create_new_work_array{
     single_dim_index_view_type _new_index;
-    row_index_temp_work_view_type _edge_conflict_indices;
+    size_type_temp_work_view_t _edge_conflict_indices;
     char_temp_work_view_type _edge_conflict_marker;
-    row_index_temp_work_view_type _new_edge_conflict_indices;
+    size_type_temp_work_view_t _new_edge_conflict_indices;
 
     atomic_create_new_work_array(
         single_dim_index_view_type new_index,
-        row_index_temp_work_view_type edge_conflict_indices,
+        size_type_temp_work_view_t edge_conflict_indices,
         char_temp_work_view_type edge_conflict_marker,
-        row_index_temp_work_view_type new_edge_conflict_indices):
+        size_type_temp_work_view_t new_edge_conflict_indices):
           _new_index(new_index),
           _edge_conflict_indices(edge_conflict_indices),
           _edge_conflict_marker(edge_conflict_marker),
           _new_edge_conflict_indices(new_edge_conflict_indices){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type ii) const {
-      row_index_type w = _edge_conflict_indices(ii);
+    void operator()(const size_type ii) const {
+      size_type w = _edge_conflict_indices(ii);
       if(_edge_conflict_marker(w)){
-        const row_index_type future_index = Kokkos::atomic_fetch_add( &_new_index(), 1);
+        const size_type future_index = Kokkos::atomic_fetch_add( &_new_index(), 1);
         _new_edge_conflict_indices(future_index) = w;
       }
     }
@@ -2936,11 +2884,11 @@ public:
    * and the other part is not colored.
    */
   struct halfedge_ban_colors {
-    row_index_persistent_work_view_type srcs, dsts;  //edge list, source and destinations of the edge list.
+    nnz_lno_persistent_work_view_t srcs, dsts;  //edge list, source and destinations of the edge list.
     color_view_type kokcolors;
-    row_index_temp_work_view_type color_set; //the colors that are represented with bits, and the colors set that the color is in.
+    nnz_lno_temp_work_view_t color_set; //the colors that are represented with bits, and the colors set that the color is in.
     color_temp_work_view_type color_ban; //color ban for each vertex represented with bit
-    row_index_temp_work_view_type conflict_indices;
+    size_type_temp_work_view_t conflict_indices;
     char_temp_work_view_type edge_conflict_marker;
 
     /** \brief Functor constructor.
@@ -2953,35 +2901,35 @@ public:
      *                   color_ban_ only includes the colors of the neighbors that have been colored correctly.
      */
     halfedge_ban_colors (
-        row_index_persistent_work_view_type srcs_, row_index_persistent_work_view_type dsts_,
-        color_view_type kokcolors_, row_index_temp_work_view_type  color_set_,
+        nnz_lno_persistent_work_view_t srcs_, nnz_lno_persistent_work_view_t dsts_,
+        color_view_type kokcolors_, nnz_lno_temp_work_view_t  color_set_,
         color_temp_work_view_type color_ban_,
-        row_index_temp_work_view_type conflict_indices_, char_temp_work_view_type edge_conflict_marker_):
+        size_type_temp_work_view_t conflict_indices_, char_temp_work_view_type edge_conflict_marker_):
           srcs(srcs_), dsts (dsts_),
           kokcolors(kokcolors_), color_set(color_set_),
           color_ban(color_ban_),
           conflict_indices(conflict_indices_), edge_conflict_marker(edge_conflict_marker_){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
-      row_index_type work_index = conflict_indices(ii);
-      row_index_type dst_id = dsts(work_index);
-      color_type dst_col = kokcolors(dst_id);
-      row_index_type src_id = srcs(work_index);
-      color_type src_col = kokcolors(src_id);
+    void operator()(const size_type &ii) const {
+      size_type work_index = conflict_indices(ii);
+      nnz_lno_t dst_id = dsts(work_index);
+      color_t dst_col = kokcolors(dst_id);
+      nnz_lno_t src_id = srcs(work_index);
+      color_t src_col = kokcolors(src_id);
 
       //check destionation color.
       //continue only if it is not colored
       if ((!dst_col  && src_col) || (!src_col  && dst_col)){
         //check src color, send its color to ban colors only if it is colored.
-        row_index_type dest_col_set = color_set (dst_id);
-        row_index_type src_col_set = color_set (src_id);
+        nnz_lno_t dest_col_set = color_set (dst_id);
+        nnz_lno_t src_col_set = color_set (src_id);
         //check if they are in the same color set.
         //if they are not, we do not ban the color, as it represents a different color.
         if (src_col_set == dest_col_set){
           //atomic or, as no threads owns 'dst' (neither src)
-          row_index_type uncolored_vertex = dst_col? src_id: dst_id;
-          Kokkos::atomic_fetch_or<color_type>(&(color_ban(uncolored_vertex)), src_col | dst_col);
+          nnz_lno_t uncolored_vertex = dst_col? src_id: dst_id;
+          Kokkos::atomic_fetch_or<color_t>(&(color_ban(uncolored_vertex)), src_col | dst_col);
           edge_conflict_marker(work_index) = 0;
         }
       }
@@ -2994,12 +2942,12 @@ public:
    * to other end.
    */
   struct halfedge_expand_ban_for_unmatched_neighbors{
-    row_index_persistent_work_view_type srcs, dsts; //edge list, source and destinations of the edge list.
+    nnz_lno_persistent_work_view_t srcs, dsts; //edge list, source and destinations of the edge list.
     color_view_type kokcolors;
-    row_index_temp_work_view_type color_set; //the colors that are represented with bits, and the colors set that the color is in.
+    nnz_lno_temp_work_view_t color_set; //the colors that are represented with bits, and the colors set that the color is in.
     color_temp_work_view_type color_ban, tentative_color_ban; //color ban for each vertex represented with bit, as well as tentative color ban.
-    color_type first_digit;
-    row_index_temp_work_view_type conflict_indices;
+    color_t first_digit;
+    size_type_temp_work_view_t conflict_indices;
 
 
     /** \brief functor constructor.
@@ -3014,37 +2962,37 @@ public:
      *                              it is tentative, because coloring might have conflicts.
      */
     halfedge_expand_ban_for_unmatched_neighbors (
-        row_index_persistent_work_view_type srcs_, row_index_persistent_work_view_type dsts_,
-        color_view_type kokcolors_, row_index_temp_work_view_type  color_set_ ,
+        nnz_lno_persistent_work_view_t srcs_, nnz_lno_persistent_work_view_t dsts_,
+        color_view_type kokcolors_, nnz_lno_temp_work_view_t  color_set_ ,
         color_temp_work_view_type color_ban_, color_temp_work_view_type tentative_color_ban_,
-        row_index_temp_work_view_type conflict_indices_):
+        size_type_temp_work_view_t conflict_indices_):
           srcs(srcs_), dsts (dsts_),
           kokcolors(kokcolors_), color_set(color_set_),
           color_ban(color_ban_), tentative_color_ban(tentative_color_ban_),
           conflict_indices(conflict_indices_){
-      color_type tmp = 1;
-      first_digit = tmp <<( sizeof(color_type) * 8 -1);
+      color_t tmp = 1;
+      first_digit = tmp <<( sizeof(color_t) * 8 -1);
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
-      row_index_type work_index = conflict_indices(ii);
-      row_index_type dst_id = dsts(work_index);
-      color_type dst_col = kokcolors(dst_id);
+    void operator()(const size_type &ii) const {
+      size_type work_index = conflict_indices(ii);
+      nnz_lno_t dst_id = dsts(work_index);
+      color_t dst_col = kokcolors(dst_id);
 
       //if the destionation is colored already, we have nothing to do.
       //otherwise, if destionation is uncolored, or if its color < 0 (it has been tentatively colored)
       //then we need to check the source.
       if (dst_col == 0 || (dst_col & first_digit) ){
-        row_index_type src_id = srcs(work_index);
-        color_type src_col = kokcolors(src_id);
+        nnz_lno_t src_id = srcs(work_index);
+        color_t src_col = kokcolors(src_id);
         //if source is colored, again we have nothing to do.
         //if it is tentatively colored or uncolored, then we have work to do.
         if (src_col == 0 || (src_col & first_digit)){
           //check their colors sets, if they are on different color sets,
           //we dont need to care about the prohibted colors on each other -- at least in this iteration.
-          row_index_type dest_col_set = color_set (dst_id);
-          row_index_type src_col_set = color_set (src_id);
+          nnz_lno_t dest_col_set = color_set (dst_id);
+          nnz_lno_t src_col_set = color_set (src_id);
 
           if (src_col_set == dest_col_set){
             if ((dst_col & first_digit)  && (src_col & first_digit)){
@@ -3054,12 +3002,12 @@ public:
 
               if (src_col == dst_col && dest_col_set == src_col_set){
                 //idx smaller_index = (src_id > dst_id) ? src_id : dst_id;
-                row_index_type smaller_index = dst_id; //TODO which one is better? this seems to be not much changing
+                nnz_lno_t smaller_index = dst_id; //TODO which one is better? this seems to be not much changing
                 //idx smaller_index = src_id;
                 //then both have been colored tentavitely. propoagate the color of src to dst.
-                Kokkos::atomic_fetch_or<color_type>(&(tentative_color_ban(smaller_index)), -src_col);
-                row_index_type banned_colors = ~(color_ban(smaller_index) | tentative_color_ban(smaller_index));
-                row_index_type larger_col = banned_colors & (-banned_colors);
+                Kokkos::atomic_fetch_or<color_t>(&(tentative_color_ban(smaller_index)), -src_col);
+                nnz_lno_t banned_colors = ~(color_ban(smaller_index) | tentative_color_ban(smaller_index));
+                nnz_lno_t larger_col = banned_colors & (-banned_colors);
                 kokcolors(smaller_index) = -(larger_col);
               }
             }
@@ -3068,21 +3016,21 @@ public:
               //then we send the color information to dst's tentative_ban.
 
               //Kokkos::atomic_fetch_or<color_type>(&(color_ban(dst_id)), -src_col);
-              Kokkos::atomic_fetch_or<color_type>(&(tentative_color_ban(dst_id)), -src_col);
+              Kokkos::atomic_fetch_or<color_t>(&(tentative_color_ban(dst_id)), -src_col);
             }
             else if (dst_col != 0){
               //if it is dst tentatively colors, but src is not colored,
               //then we send the dst color info to src's tentative_ban
 
               //Kokkos::atomic_fetch_or<color_type>(&(color_ban(src_id)), -dst_col);
-              Kokkos::atomic_fetch_or<color_type>(&(tentative_color_ban(src_id)), -dst_col);
+              Kokkos::atomic_fetch_or<color_t>(&(tentative_color_ban(src_id)), -dst_col);
             }
             else {
               //idx smaller_index = src_id < dst_id > 0 ? src_id: dst_id;
               //idx larger_index = src_id < dst_id > 0 ? dst_id : src_id;
 #ifndef TOOHIGHQUALITY
-              row_index_type smaller_index = src_id;
-              row_index_type larger_index = dst_id;
+              nnz_lno_t smaller_index = src_id;
+              nnz_lno_t larger_index = dst_id;
 #endif
 #ifdef TOOHIGHQUALITY
               row_index_type smaller_index = dst_id;
@@ -3093,13 +3041,13 @@ public:
               //if both ends are uncolored, tentatively color the the source if its index is smaller than dst.
               //make an 'bitwise or' of color_ban and tentative_color_ban to get the all prohibited colors.
               //we need to find the right most zero here. it is easier to find right most 1, so we do a not of the result color ban.
-              color_type banned_colors = ~(color_ban(smaller_index) | tentative_color_ban(smaller_index));
+              color_t banned_colors = ~(color_ban(smaller_index) | tentative_color_ban(smaller_index));
               //the 'bitwise and' of banned_colors with two's complement result in only the rightmost 1 to be set, which is our color.
               src_col = banned_colors & (-banned_colors);
               //set it to minus of the color, as it is tentative coloring.
               kokcolors(smaller_index) = -(src_col);
               //send the color information to dst's tentative color ban.
-              Kokkos::atomic_fetch_or<color_type>(&(tentative_color_ban(larger_index)), src_col);
+              Kokkos::atomic_fetch_or<color_t>(&(tentative_color_ban(larger_index)), src_col);
               //Kokkos::atomic_fetch_or<color_type>(&(color_ban(dst_id)), src_col);
             }
           }
@@ -3117,9 +3065,9 @@ public:
    */
   struct choose_colors {
     color_view_type kokcolors;
-    row_index_temp_work_view_type color_set; //the colors that are represented with bits, and the colors set that the color is in.
+    nnz_lno_temp_work_view_t color_set; //the colors that are represented with bits, and the colors set that the color is in.
     color_temp_work_view_type color_ban, tentative_color_ban;  //color ban for each vertex represented with bit, as well as tentative color ban.
-    color_type color_ban_init_val;  //the value to initialize the color_ban_. We avoid using the first bit representing the sign.
+    color_t color_ban_init_val;  //the value to initialize the color_ban_. We avoid using the first bit representing the sign.
     //Therefore if idx is int, it can represent 32-1 colors. Use color_set to represent more
 
     /** \brief functor constructor.
@@ -3131,25 +3079,25 @@ public:
      * \param tentative_color_ban_ :bit reprensentation of the neighbor vertex colors, that have been colored in the current iteration.
      *                              it is tentative, because coloring might have conflicts.
      */
-    choose_colors ( color_view_type kokcolors_, row_index_temp_work_view_type  color_set_,
+    choose_colors ( color_view_type kokcolors_, nnz_lno_temp_work_view_t  color_set_,
         color_temp_work_view_type color_ban_,  color_temp_work_view_type tentative_color_ban_):
           kokcolors(kokcolors_), color_set(color_set_),
           color_ban(color_ban_), tentative_color_ban(tentative_color_ban_){
       //color_ban should always have 1 at the first bit, so that that color is not allowed.
-      color_type tmp = 1;
-      color_ban_init_val = tmp <<( sizeof(color_type) * 8 -1);
+      color_t tmp = 1;
+      color_ban_init_val = tmp <<( sizeof(color_t) * 8 -1);
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
+    void operator()(const nnz_lno_t &ii) const {
       //if the vertex is uncolored, we will choose a new color for the vertex.
       if (kokcolors[ii] == 0){
-        color_type certain_info = color_ban(ii);
+        color_t certain_info = color_ban(ii);
         //get the banned_color_set by taking 'bitwise or' or color ban and tentative_color_ban
-        color_type banned_colors = ~(certain_info | tentative_color_ban(ii));
+        color_t banned_colors = ~(certain_info | tentative_color_ban(ii));
         //my color is the first non set bit in the banned_colors. We perform a not operation,
         //and make a 'bitwise and' with its 2's complement to find the first zero bit.
-        color_type my_color = banned_colors & (-banned_colors);
+        color_t my_color = banned_colors & (-banned_colors);
         if (my_color == 0){
 #ifdef EBCOLORING_HIGHER_QUALITY
           //if my color is zero, that is all the available colors in this set has been taken by the neighbors
@@ -3187,20 +3135,20 @@ public:
    */
   struct set_final_colors{
     color_view_type kokcol;
-    row_index_temp_work_view_type kokcolset; //the colors that are represented with bits, and the colors set that the color is in.
-    color_type color_size;
+    nnz_lno_temp_work_view_t kokcolset; //the colors that are represented with bits, and the colors set that the color is in.
+    color_t color_size;
 
     /** \brief functor constructor.
      * \param kokcol_  the colors of the vertices. Represented with bits.
      * \param kokcolset_  the color set of the vertices. kokcolors_ and color_set_ together
      *      is used to represent the colors e.g. color_set_(v) * (numbits_in_idx-1) + set_bit_position_in_kokcolors_(v)
      */
-    set_final_colors(color_view_type kokcol_, row_index_temp_work_view_type  kokcolset_): kokcol(kokcol_),kokcolset(kokcolset_), color_size ( sizeof(color_type) * 8 -1){}
+    set_final_colors(color_view_type kokcol_, nnz_lno_temp_work_view_t  kokcolset_): kokcol(kokcol_),kokcolset(kokcolset_), color_size ( sizeof(color_t) * 8 -1){}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const row_index_type &ii) const {
-      row_index_type i = 0;
-      color_type val = kokcol(ii);
+    void operator()(const nnz_lno_t &ii) const {
+      nnz_lno_t i = 0;
+      color_t val = kokcol(ii);
       //if check below is necessary.
       // this happens when a vertices all neighbors are colored,
       //so the information from all neighbors are taken, no edge to be processed by this vertex.
