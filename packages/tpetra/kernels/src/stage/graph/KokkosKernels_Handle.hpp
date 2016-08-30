@@ -196,7 +196,7 @@ private:
   GraphColoringHandleType *gcHandle;
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
-  nnz_lno_t team_work_size;
+  int team_work_size;
   size_t shared_memory_size;
   int suggested_team_size;
   KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space;
@@ -220,7 +220,7 @@ public:
     this->destroy_spgemm_handle();
   }
 
-  nnz_lno_t get_team_work_size(int team_size, int concurrency, nnz_lno_t overall_work_size){
+  int get_team_work_size(int team_size, int concurrency, nnz_lno_t overall_work_size){
     if (this->team_work_size != -1){
       return this->team_work_size;
     }
@@ -244,7 +244,7 @@ public:
     return this->use_dynamic_scheduling;
   }
 
-  void set_team_work_size(nnz_lno_t team_work_size_){
+  void set_team_work_size(int team_work_size_){
     this->team_work_size = team_work_size_;
   }
 

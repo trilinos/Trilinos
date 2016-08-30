@@ -281,7 +281,7 @@ public:
     }
 
     //std::cout << "coloring now" << std::endl;
-    color_t max_color = 0;
+    //color_t max_color = 0;
     //traverse vertices greedily
     for (nnz_lno_t i = 0; i < this->nv; ++i){
 
@@ -525,7 +525,7 @@ public:
       col_d1_max_cs[i] = col_d1_forbid_colors[i] =  col_d1forbid_cs[i] = 0;
     }
 
-    color_t max_color = 0;
+    //color_t max_color = 0;
     //traverse vertices greedily
 
     //size_t howmany = 0;
