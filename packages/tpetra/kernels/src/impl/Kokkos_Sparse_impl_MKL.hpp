@@ -46,11 +46,8 @@
 
 #include "TpetraKernels_config.h"
 #include "Kokkos_Sparse_CrsMatrix.hpp"
-#if 0
-#  include "Kokkos_Sparse_impl_assignOrCopyIntegers.hpp"
-#else
-#  include "Kokkos_Sparse_impl_copyIntegers.hpp"
-#endif // 0
+#include "Kokkos_Sparse_impl_copyIntegers.hpp"
+
 #ifdef HAVE_TPETRAKERNELS_MKL
 #  include "mkl_spblas.h"
 #endif // HAVE_TPETRAKERNELS_MKL
@@ -473,22 +470,42 @@ public:
       numCols = A.numCols ();
     }
 
-#if 0
     // It may be that the type of the matrix's row offsets is not the
     // same as MKL_INT.  In that case, attempt to copy from the given
     // type into MKL_INT.  Throw on overflow.
     //
-    // assignOrCopyIntegers will attempt to reuse output storage if it
-    // has already been allocated.  However, it will always copy the
-    // data, unless you tell it to "reuse the graph."  This means that
-    // it won't copy if the output allocation already exists.
-    assignOrCopyIntegers (ptrBeg_, A.graph.row_map, reuseGraph);
-#else
-    if (ptrBeg_.dimension_0 () != A.graph.row_map.dimension_0 ()) {
-      ptrBeg_ = decltype (ptrBeg_) ("ptr", A.graph.row_map.dimension_0 ());
+    // This code will attempt to reuse output storage if it has
+    // already been allocated.  However, it will always copy the data,
+    // unless you tell it to "reuse the graph."  This means that it
+    // won't copy if the output allocation already exists.
+    {
+      constexpr bool sameOffsetType =
+        std::is_same<MKL_INT, typename std::decay<decltype (A.graph.row_map[0]) >::type>::value;
+      decltype (ptrBeg_) ptrBegEmpty;
+      // If the offset types are the same, attempt to assign the input
+      // array of row offsets to ptrBeg_.  Otherwise, "assign" an
+      // empty array.
+      decltype (ptrBeg_) tmpPtrBeg =
+        Kokkos::Impl::if_c<sameOffsetType,
+        decltype (A.graph.row_map),
+        decltype (ptrBeg_) >::select (A.graph.row_map, ptrBegEmpty);
+      if (tmpPtrBeg.dimension_0 () == A.graph.row_map.dimension_0 ()) {
+        ptrBeg_nc_ = decltype (ptrBeg_nc_) (); // clear out existing storage
+        ptrBeg_ = tmpPtrBeg; // done
+      }
+      else {
+        if (ptrBeg_nc_.dimension_0 () != A.graph.row_map.dimension_0 ()) {
+          ptrBeg_nc_ = decltype (ptrBeg_nc_) ("ptr", A.graph.row_map.dimension_0 ());
+          copyIntegers (ptrBeg_nc_, A.graph.row_map);
+          ptrBeg_ = ptrBeg_nc_;
+        }
+        else if (! reuseGraph) {
+          copyIntegers (ptrBeg_nc_, A.graph.row_map);
+          ptrBeg_ = ptrBeg_nc_;
+        }
+      }
     }
-    copyIntegers (ptrBeg_, A.graph.row_map);
-#endif //0
+
     if (A.graph.row_map.dimension_0 () != 0) {
       Kokkos::pair<MKL_INT, MKL_INT> range (1, A.graph.row_map.dimension_0 ());
       // NOTE (mfh 26 Aug 2016) ptrBeg should really have length
@@ -508,17 +525,33 @@ public:
     MKL_INT* rowBegRaw = const_cast<MKL_INT*> (ptrBeg_.ptr_on_device ());
     MKL_INT* rowEndRaw = const_cast<MKL_INT*> (ptrEnd_.ptr_on_device ());
 
-#if 0
-    assignOrCopyIntegers (colInd_, A.graph.entries, reuseGraph);
-#else
-    // It may be that the type of the matrix's column indices is not
-    // the same as MKL_INT.  In that case, attempt to copy from the
-    // given type into MKL_INT.  Throw on overflow.
-    if (colInd_.dimension_0 () != A.graph.entries.dimension_0 ()) {
-      colInd_ = decltype (colInd_) ("ind", A.graph.entries.dimension_0 ());
+    {
+      constexpr bool sameOrdinalType =
+        std::is_same<MKL_INT, typename std::decay<decltype (A.graph.entries[0]) >::type>::value;
+      decltype (colInd_) colIndEmpty;
+      // If the column index ("ordinal") types are the same, attempt
+      // to assign the input array of column indices to colInd_.
+      // Otherwise, "assign" an empty array.
+      decltype (colInd_) tmpColInd =
+        Kokkos::Impl::if_c<sameOrdinalType,
+        decltype (A.graph.entries),
+        decltype (colInd_) >::select (A.graph.entries, colIndEmpty);
+      if (tmpColInd.dimension_0 () == A.graph.entries.dimension_0 ()) {
+        colInd_nc_ = decltype (colInd_nc_) (); // clear out existing storage
+        colInd_ = tmpColInd; // done
+      }
+      else {
+        if (colInd_nc_.dimension_0 () != A.graph.entries.dimension_0 ()) {
+          colInd_nc_ = decltype (colInd_nc_) ("ind", A.graph.entries.dimension_0 ());
+          copyIntegers (colInd_nc_, A.graph.entries);
+          colInd_ = colInd_nc_;
+        }
+        else if (! reuseGraph) {
+          copyIntegers (colInd_nc_, A.graph.entries);
+          colInd_ = colInd_nc_;
+        }
+      }
     }
-    copyIntegers (colInd_, A.graph.entries);
-#endif // 0
 
     MKL_INT* colIndRaw = const_cast<MKL_INT*> (colInd_.ptr_on_device ());
     value_type* valRaw = const_cast<value_type*> (A.values.ptr_on_device ());
@@ -572,29 +605,27 @@ private:
   status_type status_;
 
   //! Offsets of row starts; may be a deep copy if MKL_INT != ordinal_type.
-#if 0
   ::Kokkos::View<const MKL_INT*,
                  typename MatrixType::row_map_type::array_layout,
                  typename MatrixType::row_map_type::device_type> ptrBeg_;
-#else
+  //! Nonconst version of ptrBeg_; only used if row offsets not MKL_INT.
   ::Kokkos::View<MKL_INT*,
                  typename MatrixType::row_map_type::array_layout,
-                 typename MatrixType::row_map_type::device_type> ptrBeg_;
-#endif // 0
+                 typename MatrixType::row_map_type::device_type> ptrBeg_nc_;
+
   //! Offsets of row ends; may be a deep copy if MKL_INT != ordinal_type.
   ::Kokkos::View<const MKL_INT*,
                  typename MatrixType::row_map_type::array_layout,
                  typename MatrixType::row_map_type::device_type> ptrEnd_;
+
   //! Column indices; may be a deep copy if MKL_INT != ordinal_type.
-#if 0
   ::Kokkos::View<const MKL_INT*,
                  typename MatrixType::StaticCrsGraphType::entries_type::array_layout,
                  typename MatrixType::StaticCrsGraphType::entries_type::device_type> colInd_;
-#else
+  //! Nonconst version of colInd_; only used if column indices not MKL_INT.
   ::Kokkos::View<MKL_INT*,
                  typename MatrixType::StaticCrsGraphType::entries_type::array_layout,
-                 typename MatrixType::StaticCrsGraphType::entries_type::device_type> colInd_;
-#endif // 0
+                 typename MatrixType::StaticCrsGraphType::entries_type::device_type> colInd_nc_;
 
   /// \brief Forbid copy construction syntactically.
   ///
