@@ -549,7 +549,8 @@ public:
   */
   void computeIntegral(const Teuchos::RCP<Intrepid::FieldContainer<Real> > & integral,
                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & f1,
-                       const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & f2) const {
+                       const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & f2,
+                       const bool sumInto = false) const {
     Intrepid::FieldContainer<Real> f2Weighted(*f2);
     Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(f2Weighted,              // multiply with weighted measure
                                                                *cellWeightedMeasure_,
@@ -557,7 +558,8 @@ public:
     Intrepid::FunctionSpaceTools::integrate<Real>(*integral,                            // compute norm squared of local error
                                                   *f1,
                                                   f2Weighted,
-                                                  Intrepid::COMP_CPP);
+                                                  Intrepid::COMP_CPP,
+                                                  sumInto);
   }
 
   /** \brief Computes the degrees of freedom on a side.

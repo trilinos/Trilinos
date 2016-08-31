@@ -315,7 +315,24 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::NotImplemented(">>> Hessian_11 not implemented.");
+    //throw Exception::NotImplemented(">>> Hessian_11 not implemented.");
+    // Apply Dirichlet conditions
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff_dbc
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(*l_coeff));
+    for (int j=0; j<n_bc_sub_segments_[0]; ++j) {
+      int numCells = numCells_bc_[0][j];
+      if (numCells) {
+        std::vector<int> fidx = local_dofs_on_sides_[sideIds_[0][j]];
+        int numBdryDofs = fidx.size();
+        for (int k = 0; k < numCells; ++k) {
+          int cidx = bc_cell_local_id_[0][j][k];
+          for (int l = 0; l < numBdryDofs; ++l) {
+            (*l_coeff_dbc)(cidx,fidx[l]) = static_cast<Real>(0);
+          }
+        }
+      }
+    }
+
     // Initialize Jacobian
     hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, lfs_, lfs_));
     // Evaluate state at cubature points
@@ -329,11 +346,11 @@ public:
     // Evaluate multiplier at cubature points
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valL_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
-    fe_vol_->evaluateValue(valL_eval, l_coeff);
+    fe_vol_->evaluateValue(valL_eval, l_coeff_dbc);
     // Evaluate gradient of multiplier at cubature points
     Teuchos::RCP<Intrepid::FieldContainer<Real> > gradL_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_, spaceDim_));
-    fe_vol_->evaluateGradient(gradL_eval, l_coeff);
+    fe_vol_->evaluateGradient(gradL_eval, l_coeff_dbc);
     // Compute first derivative of conductivity KAPPA(U)
     Teuchos::RCP< Intrepid::FieldContainer<Real > > gradK_cub
       = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCells_vol_, numCubPerCell_));
@@ -396,7 +413,7 @@ public:
             fe_bc_[fe_bc_idx_[i]][j]->evaluateValue(valU_eval_bc, bc_u_coeff);
             // Evaluate multiplier on boundary
             Teuchos::RCP<Intrepid::FieldContainer<Real > > bc_l_coeff
-              = get_boundary_coeff(*l_coeff, i, j);
+              = get_boundary_coeff(*l_coeff_dbc, i, j);
             Teuchos::RCP<Intrepid::FieldContainer<Real > > valL_eval_bc
               = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, numCubPerSide_));
             fe_bc_[fe_bc_idx_[i]][j]->evaluateValue(valL_eval_bc, bc_l_coeff);
@@ -427,23 +444,6 @@ public:
                   (*hess)(cidx,l,m) += robinHess(k,l,m);
                 }
               }
-            }
-          }
-        }
-      }
-    }
-    // Apply Dirichlet conditions
-    for (int j=0; j<n_bc_sub_segments_[0]; ++j) {
-      int numCells = numCells_bc_[0][j];
-      if (numCells) {
-        std::vector<int> fidx = local_dofs_on_sides_[sideIds_[0][j]];
-        int numBdryDofs = fidx.size();
-        for (int k = 0; k < numCells; ++k) {
-          int cidx = bc_cell_local_id_[0][j][k];
-          for (int l = 0; l < numBdryDofs; ++l) {
-            // Modify the local Hessian matrix
-            for(int n=0; n<lfs_; ++n) {
-              (*hess)(cidx, fidx[l], n) = static_cast<Real>(0);
             }
           }
         }

@@ -397,18 +397,18 @@ public:
                 const Teuchos::RCP<ROL::StdVector<Real> >                    &vec2 ) 
     : vec1_(vec1), vec2_(vec2), isDualInitialized_(false) {
 
-    dual_vec1_ = Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone());
-    dual_vec2_ = Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(vec2_->clone());
+    dual_vec1_ = Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->dual().clone());
+    dual_vec2_ = Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(vec2_->dual().clone());
   }
 
   PDE_OptVector(const Teuchos::RCP<ROL::TpetraMultiVector<Real,LO,GO,Node> > &vec)
     : vec1_(vec), vec2_(Teuchos::null), dual_vec2_(Teuchos::null), isDualInitialized_(false) {
-    dual_vec1_ = Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone());
+    dual_vec1_ = Teuchos::rcp_dynamic_cast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->dual().clone());
   }
 
   PDE_OptVector(const Teuchos::RCP<ROL::StdVector<Real> > &vec)
     : vec1_(Teuchos::null), vec2_(vec), dual_vec1_(Teuchos::null), isDualInitialized_(false) {
-    dual_vec2_ = Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(vec2_->clone());
+    dual_vec2_ = Teuchos::rcp_dynamic_cast<ROL::StdVector<Real> >(vec2_->dual().clone());
   }
 
   void set( const ROL::Vector<Real> &x ) {
