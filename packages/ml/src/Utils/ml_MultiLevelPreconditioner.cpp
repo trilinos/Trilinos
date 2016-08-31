@@ -562,8 +562,10 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
 
   // grab diagonal and detect Dirichlets
 
+  double dirDropTol = List_.get("ML advanced Dirichlet: threshold",1.0e-5);
+
   MLextractDiag(rowPtr,   cols, vals, theDiag, epetraFramework);
-  MLfindDirichlets(rowPtr,cols, vals, theDiag, 1.e-5, dirOrNot, epetraFramework);
+  MLfindDirichlets(rowPtr,cols, vals, theDiag, dirDropTol, dirOrNot, epetraFramework);
 
   // if the rhs and solution are provided, remove column entries 
   // associated with Dirichlet rows. Here, we overwrite the original 
@@ -597,8 +599,9 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
    MLfillNodalMaps(amalgRowMap, amalgColMap, myLocalNodeIds,
         nDofs,  epetraFramework,  nLocalNodes, nLocalPlusGhostNodes);
 
+   double amalgDropTol = List_.get("variable DOF  amalgamation: threshold",1.8e-9);
    MLvariableDofAmalg(nDofs+nGhost, rowPtr, cols, vals, nNodes,maxDofPerNode,
-                    map, theDiag, 1.80e-9, amalgRowPtr, amalgCols,
+                    map, theDiag, amalgDropTol, amalgRowPtr, amalgCols,
                     epetraFramework, myLocalNodeIds);
 
    theDiag.resize(0);   // free space
@@ -968,8 +971,10 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
   MLVec<double> vals(vtemp,vtemp   + rtemp[nDofs]);
 
   // grab diagonal and detect Dirichlets
+  //
+  double dirDropTol = List_.get("ML advanced Dirichlet: threshold",1.0e-5);
   MLextractDiag(rowPtr,   cols, vals, theDiag, epetraFramework);
-  MLfindDirichlets(rowPtr,cols, vals, theDiag, 1.e-5, dirOrNot, epetraFramework);
+  MLfindDirichlets(rowPtr,cols, vals, theDiag, dirDropTol, dirOrNot, epetraFramework);
 
   // if the rhs and solution are provided, remove column entries 
   // associated with Dirichlet rows. Here, we overwrite the original 
