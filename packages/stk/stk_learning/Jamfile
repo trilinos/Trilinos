@@ -65,6 +65,7 @@ alias install-targets
     stk_learning_kokkos_utest
     stk_learning_game_of_life_utest
     stk_learning_mesh_builder_utest
+    stk_learning_imbalance_utest
 #    stk_learning_sphere_utest
 ;
 
@@ -195,6 +196,16 @@ lib stk_learning_mesh_builder
     # builds only and will not be present for developer builds.
         <file>$(stk_learning-root)/lib/libstk_learning_mesh_builder.a
     ]
+  ;
+
+exe stk_learning_imbalance_utest
+  :
+    [ glob $(stk_learning-root)/LoadImbalanceTimer/*.cpp ]
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+  :
+    <tag>@sierra-exec-tag
   ;
 
 exe stk_learning_mesh_builder_utest

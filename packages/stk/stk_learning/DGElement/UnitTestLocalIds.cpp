@@ -172,16 +172,27 @@ TEST_F(LocalIds, using_local_ids)
 }
 
 typedef stk::PairIter<const stk::mesh::Entity*> Entities;
-Entities get_nodes(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
+
+class BulkDataHelper
 {
-    return Entities(bulkData.begin_nodes(element), bulkData.end_nodes(element));
-}
+public:
+    BulkDataHelper(const stk::mesh::BulkData& bulkData) : m_bulkData(bulkData)
+    {}
+
+    Entities get_nodes(stk::mesh::Entity element) const
+    {
+        return Entities(m_bulkData.begin_nodes(element), m_bulkData.end_nodes(element));
+    }
+private:
+    const stk::mesh::BulkData& m_bulkData;
+};
 
 TEST_F(LocalIds, using_entities)
 {
     if (get_parallel_size() == 1)
     {
         setup_mesh("generated:2x2x2", stk::mesh::BulkData::AUTO_AURA);
+        BulkDataHelper bulkDataHelper(get_bulk());
 
         typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
         CoordFieldType *coords = get_meta().get_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates");
@@ -193,7 +204,7 @@ TEST_F(LocalIds, using_entities)
             const stk::mesh::Bucket& bucket = *elemBuckets[i];
             for(size_t j=0;j<bucket.size();++j)
             {
-                Entities nodes = get_nodes(get_bulk(), bucket[j]);
+                Entities nodes = bulkDataHelper.get_nodes(bucket[j]);
                 for(unsigned k=0;k<nodes.size();++k)
                 {
                     double *node_data = stk::mesh::field_data(*coords, nodes[k]);
