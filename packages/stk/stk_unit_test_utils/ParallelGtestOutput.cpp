@@ -74,10 +74,11 @@ private:
     {
         if(mProcId == 0)
         {
-            printf("*** Starting test %s.%s from %s\n",
+            printf("*** Starting test %s.%s from %s:%d\n",
                    test_info.test_case_name(),
                    test_info.name(),
-                   get_filename_for_print(test_info.file()));
+                   get_filename_for_print(test_info.file()),
+                   test_info.line());
         }
     }
 
