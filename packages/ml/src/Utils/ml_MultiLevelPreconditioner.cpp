@@ -622,11 +622,17 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
    for (int i = 0; i < nNodes; i++) ghostedXXX[i] = XXX[i];
    nodalComm(ghostedXXX, myLocalNodeIds, epetraFramework);
 
-   if (YYY != NULL) {
+   int localDim=1, globalDim;
+
+   if (YYY != NULL) localDim = 2;
+   if (ZZZ != NULL) localDim = 3;
+   RowMatrix.Comm().MaxAll(&localDim,&globalDim,1);
+
+   if (globalDim > 1) {
       for (int i = 0; i < nNodes; i++) ghostedYYY[i] = YYY[i];
       nodalComm(ghostedYYY, myLocalNodeIds, epetraFramework);
    }
-   if (ZZZ != NULL) {
+   if (globalDim > 2) {
       for (int i = 0; i < nNodes; i++) ghostedZZZ[i] = ZZZ[i];
       nodalComm(ghostedZZZ, myLocalNodeIds, epetraFramework);
    }
