@@ -1788,6 +1788,13 @@ transpose(Tensor<T, N> const & A)
   Tensor<T, N>
   B = A;
 
+#if defined (__GNUC__) & (__GNUC__ == 4)
+  for (Index i = 0; i < dimension; ++i) {
+    for (Index j = i + 1; j < dimension; ++j) {
+      std::swap(B(i, j), B(j, i));
+    }
+  }
+#else
   switch (dimension) {
 
   default:
@@ -1812,6 +1819,7 @@ transpose(Tensor<T, N> const & A)
     break;
 
   }
+#endif
 
   return B;
 }
