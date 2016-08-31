@@ -58,13 +58,9 @@ namespace Impl {
 namespace Mkl {
 
 #ifndef HAVE_TPETRAKERNELS_MKL
-// Fall-back typedefs, so this file builds even if MKL is not enabled.
-struct matrix_descr {
-  sparse_matrix_type_t type;
-  sparse_fill_mode_t mode;
-  sparse_diag_type_t diag;
-};
 typedef int MKL_INT;
+typedef int sparse_diag_type_t;
+typedef int sparse_fill_mode_t;
 typedef int sparse_index_base_t;
 typedef int sparse_layout_t;
 typedef int sparse_matrix_t;
@@ -72,6 +68,13 @@ typedef int sparse_matrix_type_t;
 typedef int sparse_memory_usage_t;
 typedef int sparse_operation_t;
 typedef int sparse_status_t;
+
+// Fall-back typedefs, so this file builds even if MKL is not enabled.
+struct matrix_descr {
+  sparse_matrix_type_t type;
+  sparse_fill_mode_t mode;
+  sparse_diag_type_t diag;
+};
 #endif // NOT HAVE_TPETRAKERNELS_MKL
 
 /// \brief Does MKL support operations with sparse matrices whose

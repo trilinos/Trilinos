@@ -51,7 +51,8 @@ namespace { // (anonymous)
 
 using Teuchos::TypeNameTraits;
 using std::endl;
-typedef ::Kokkos::View<int*, Kokkos::DefaultExecutionSpace>::HostMirror::device_type host_device_type;
+typedef ::Kokkos::View<int*>::HostMirror::execution_space host_execution_space;
+typedef ::Kokkos::Device<host_execution_space, Kokkos::HostSpace> host_device_type;
 
 template<class ScalarType, class LocalOrdinalType, class OffsetType>
 struct TestMklSparseMatrixHandle {
