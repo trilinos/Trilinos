@@ -392,7 +392,13 @@ void EvaluatePartition<Adapter>::sharedConstructor(
   } else {
     problemComm = comm;
   }
-  RCP<Environment> env = rcp(new Environment(*p, problemComm));
+  RCP<Environment> env;
+
+  try{
+    env = rcp(new Environment(*p, problemComm));
+  }
+  Z2_FORWARD_EXCEPTIONS
+
   env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
   env->timerStart(MACRO_TIMERS, "Computing metrics");
 
