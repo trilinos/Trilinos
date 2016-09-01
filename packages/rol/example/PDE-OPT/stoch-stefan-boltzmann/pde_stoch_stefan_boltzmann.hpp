@@ -84,7 +84,7 @@ private:
   Real engTemp_;
   Real airTemp_;
   Real advMag_;
-
+  Real SBscale_;
 
 public:
 
@@ -93,6 +93,8 @@ public:
     engTemp_ = parlist.sublist("Problem").get("Engine: Ambient Temperature",450.0);
     airTemp_ = parlist.sublist("Problem").get("Air: Ambient Temperature",293.0);
     advMag_  = parlist.sublist("Problem").get("Advection Magnitude",6.3);
+    bool useSB = parlist.sublist("Problem").get("Use Stefan-Boltzmann",true);
+    SBscale_ = (useSB) ? static_cast<Real>(1) : static_cast<Real>(0);
     // Finite element fields.
     int basisOrder = parlist.sublist("Problem").get("Basis Order",1);
     if (basisOrder == 1) {
@@ -790,12 +792,12 @@ private:
     // c3 is the thermal convectivity of water (5) and oil (40)
     Real c1(0), c2(0), c3(0), sig(5.67e-8);
     if ( sideset == 2 ) {
-      c1 = sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[9]);
+      c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[9]);
       c2 = airTemp_             + static_cast<Real>(0.1*airTemp_) * param[10];
       c3 = static_cast<Real>(5) + static_cast<Real>(0.5)          * param[11];
     }
     else if ( sideset == 4 || sideset == 5 ) {
-      c1 = sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[12]);
+      c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[12]);
       c2 = engTemp_              + static_cast<Real>(0.1*engTemp_) * param[13];
       c3 = static_cast<Real>(40) + static_cast<Real>(2)            * param[14];
     }

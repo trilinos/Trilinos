@@ -135,6 +135,7 @@ int main(int argc, char *argv[]) {
     PDE_Constraint<RealT> pdeCon(pde,meshMgr,serial_comm,*parlist,*outStream);
     Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(&pdeCon,false);
+    con->setSolveParameters(*parlist);
     pdeCon.getAssembler()->printMeshData(*outStream);
 
     /*************************************************************************/
