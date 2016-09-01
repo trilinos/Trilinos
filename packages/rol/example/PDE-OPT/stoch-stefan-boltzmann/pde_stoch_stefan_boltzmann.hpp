@@ -164,11 +164,11 @@ public:
 
 
 
-    // APPLY NEUMANN CONDITIONS: Sideset 1, 6
+    // APPLY NEUMANN CONDITIONS: Sideset 1, 3, 6
     // ---> Nothing to do
     int numLocalSideIds(0);
-    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 2, 3, 5
-    std::vector<int> sidesets = {2, 3, 5};
+    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 2, 4, 5
+    std::vector<int> sidesets = {2, 4, 5};
     for (int i = 0; i < 3; ++i) {
       numLocalSideIds = bdryCellLocIds_[sidesets[i]].size();
       const int numCubPerSide = bdryCub_->getNumPoints();
@@ -201,24 +201,8 @@ public:
         }
       }
     }
-    // APPLY DIRICHLET CONDITIONS: Sideset 4
-    int sideset = 4;
-    numLocalSideIds = bdryCellLocIds_[sideset].size();
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > ud;
-    computeDirichlet(ud,sideset);
-    for (int j = 0; j < numLocalSideIds; ++j) {
-      int numCellsSide = bdryCellLocIds_[sideset][j].size();
-      int numBdryDofs = fidx_[j].size();
-      for (int k = 0; k < numCellsSide; ++k) {
-        int cidx = bdryCellLocIds_[sideset][j][k];
-        for (int l = 0; l < numBdryDofs; ++l) {
-          (*res)(cidx,fidx_[j][l])
-            = (*u_coeff)(cidx,fidx_[j][l]) - (*ud[j])(k,fidx_[j][l]);
-        }
-      }
-    }
     // APPLY DIRICHLET CONTROLS: Sideset 0
-    sideset = 0;
+    int sideset = 0;
     numLocalSideIds = bdryCellLocIds_[sideset].size();
     for (int j = 0; j < numLocalSideIds; ++j) {
       int numCellsSide = bdryCellLocIds_[sideset][j].size();
@@ -300,40 +284,40 @@ public:
                                                   V_gradN,
                                                   Intrepid::COMP_CPP, true);
 
-    // APPLY NEUMANN CONDITIONS: Sideset 1, 6
+    // APPLY NEUMANN CONDITIONS: Sideset 1, 3, 6
     // ---> Nothing to do
     int numLocalSideIds(0);
-    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 2, 3, 5
-    std::vector<int> sideset = {2, 3, 5};
+    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 2, 4, 5
+    std::vector<int> sidesets = {2, 4, 5};
     for (int i = 0; i < 3; ++i) {
-      numLocalSideIds = bdryCellLocIds_[sideset[i]].size();
+      numLocalSideIds = bdryCellLocIds_[sidesets[i]].size();
       const int numCubPerSide = bdryCub_->getNumPoints();
       for (int j = 0; j < numLocalSideIds; ++j) {
-        int numCellsSide = bdryCellLocIds_[sideset[i]][j].size();
+        int numCellsSide = bdryCellLocIds_[sidesets[i]][j].size();
         if (numCellsSide) {
           // Get U coefficients on Stefan-Boltzmann boundary
           Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
-            = getBoundaryCoeff(*u_coeff, sideset[i], j);
+            = getBoundaryCoeff(*u_coeff, sidesets[i], j);
           // Evaluate U on FE basis
           Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
             = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-          fe_bdry_[sideset[i]][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
+          fe_bdry_[sidesets[i]][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
           // Compute Stefan-Boltzmann residual
           Teuchos::RCP< Intrepid::FieldContainer<Real> > sb_derivU
             = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-          computeStefanBoltzmann(sb_derivU,valU_eval_bdry,sideset[i],j,1);
+          computeStefanBoltzmann(sb_derivU,valU_eval_bdry,sidesets[i],j,1);
           Intrepid::FieldContainer<Real> sb_derivU_N(numCellsSide, f, numCubPerSide);
           Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(sb_derivU_N,
                                                                       *sb_derivU,
-                                                                      *(fe_bdry_[sideset[i]][j]->N()));
+                                                                      *(fe_bdry_[sidesets[i]][j]->N()));
           Intrepid::FieldContainer<Real> sbJac(numCellsSide, f, f);
           Intrepid::FunctionSpaceTools::integrate<Real>(sbJac,
                                                         sb_derivU_N,
-                                                        *(fe_bdry_[sideset[i]][j]->NdetJ()),
+                                                        *(fe_bdry_[sidesets[i]][j]->NdetJ()),
                                                         Intrepid::COMP_CPP, false);
           // Add Stefan-Boltzmann residual to volume residual
           for (int k = 0; k < numCellsSide; ++k) {
-            int cidx = bdryCellLocIds_[sideset[i]][j][k];
+            int cidx = bdryCellLocIds_[sidesets[i]][j][k];
             for (int l = 0; l < f; ++l) { 
               for (int m = 0; m < f; ++m) { 
                 (*jac)(cidx,l,m) += sbJac(k,l,m);
@@ -343,21 +327,19 @@ public:
         }
       }
     }
-    // APPLY DIRICHLET CONDITIONS: Sideset 0, 4
-    std::vector<int> sidesets = {4, 0};
-    for (int i = 0; i < 2; ++i) {
-      int numLocalSideIds = bdryCellLocIds_[sidesets[i]].size();
-      for (int j = 0; j < numLocalSideIds; ++j) {
-        int numCellsSide = bdryCellLocIds_[sidesets[i]][j].size();
-        int numBdryDofs = fidx_[j].size();
-        for (int k = 0; k < numCellsSide; ++k) {
-          int cidx = bdryCellLocIds_[sidesets[i]][j][k];
-          for (int l = 0; l < numBdryDofs; ++l) {
-            for (int m = 0; m < f; ++m) {
-              (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
-            }
-            (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
+    // APPLY DIRICHLET CONDITIONS: Sideset 0
+    int sideset = 0;
+    numLocalSideIds = bdryCellLocIds_[sideset].size();
+    for (int j = 0; j < numLocalSideIds; ++j) {
+      int numCellsSide = bdryCellLocIds_[sideset][j].size();
+      int numBdryDofs = fidx_[j].size();
+      for (int k = 0; k < numCellsSide; ++k) {
+        int cidx = bdryCellLocIds_[sideset][j][k];
+        for (int l = 0; l < numBdryDofs; ++l) {
+          for (int m = 0; m < f; ++m) {
+            (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
           }
+          (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
         }
       }
     }
@@ -402,17 +384,15 @@ public:
     // APPLY DIRICHLET CONDITIONS TO LAGRANGE MULTIPLIERS: Sideset 0, 4
     Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff_dbc
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(*l_coeff));
-    std::vector<int> sidesets = {4, 0};
-    for (int i = 0; i < 2; ++i) {
-      int numLocalSideIds = bdryCellLocIds_[sidesets[i]].size();
-      for (int j = 0; j < numLocalSideIds; ++j) {
-        int numCellsSide = bdryCellLocIds_[sidesets[i]][j].size();
-        int numBdryDofs = fidx_[j].size();
-        for (int k = 0; k < numCellsSide; ++k) {
-          int cidx = bdryCellLocIds_[sidesets[i]][j][k];
-          for (int l = 0; l < numBdryDofs; ++l) {
-            (*l_coeff_dbc)(cidx,fidx_[j][l]) = static_cast<Real>(0);
-          }
+    int sideset = 0;
+    int numLocalSideIds = bdryCellLocIds_[sideset].size();
+    for (int j = 0; j < numLocalSideIds; ++j) {
+      int numCellsSide = bdryCellLocIds_[sideset][j].size();
+      int numBdryDofs = fidx_[j].size();
+      for (int k = 0; k < numCellsSide; ++k) {
+        int cidx = bdryCellLocIds_[sideset][j][k];
+        for (int l = 0; l < numBdryDofs; ++l) {
+          (*l_coeff_dbc)(cidx,fidx_[j][l]) = static_cast<Real>(0);
         }
       }
     }
@@ -478,32 +458,32 @@ public:
                                                   d2_kappa_gradU_gradL_N,
                                                   *(fe_vol_->NdetJ()),
                                                   Intrepid::COMP_CPP, true);
-    // APPLY NEUMANN CONDITIONS: Sideset 1, 6
+    // APPLY NEUMANN CONDITIONS: Sideset 1, 3, 6
     // ---> Nothing to do
-    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 2, 3, 5
-    std::vector<int> sideset = {2, 3, 5};
+    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 2, 4, 5
+    std::vector<int> sidesets = {2, 4, 5};
     for (int i = 0; i < 3; ++i) {
-      int numLocalSideIds = bdryCellLocIds_[sideset[i]].size();
+      int numLocalSideIds = bdryCellLocIds_[sidesets[i]].size();
       const int numCubPerSide = bdryCub_->getNumPoints();
       for (int j = 0; j < numLocalSideIds; ++j) {
-        int numCellsSide = bdryCellLocIds_[sideset[i]][j].size();
+        int numCellsSide = bdryCellLocIds_[sidesets[i]][j].size();
         if (numCellsSide) {
           // Get U coefficients on Stefan-Boltzmann boundary
           Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
-            = getBoundaryCoeff(*u_coeff, sideset[i], j);
+            = getBoundaryCoeff(*u_coeff, sidesets[i], j);
           Teuchos::RCP<Intrepid::FieldContainer<Real > > l_coeff_bdry
-            = getBoundaryCoeff(*l_coeff_dbc, sideset[i], j);
+            = getBoundaryCoeff(*l_coeff_dbc, sidesets[i], j);
           // Evaluate U on FE basis
           Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
             = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-          fe_bdry_[sideset[i]][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
+          fe_bdry_[sidesets[i]][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
           Teuchos::RCP<Intrepid::FieldContainer<Real > > valL_eval_bdry
             = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-          fe_bdry_[sideset[i]][j]->evaluateValue(valL_eval_bdry, l_coeff_bdry);
+          fe_bdry_[sidesets[i]][j]->evaluateValue(valL_eval_bdry, l_coeff_bdry);
           // Compute Stefan-Boltzmann residual
           Teuchos::RCP< Intrepid::FieldContainer<Real> > sb_derivU
             = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-          computeStefanBoltzmann(sb_derivU,valU_eval_bdry,sideset[i],j,2);
+          computeStefanBoltzmann(sb_derivU,valU_eval_bdry,sidesets[i],j,2);
           Intrepid::FieldContainer<Real> sb_derivU_L(numCellsSide, numCubPerSide);
           Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(sb_derivU_L,
                                                                      *sb_derivU,
@@ -511,15 +491,15 @@ public:
           Intrepid::FieldContainer<Real> sb_derivU_L_N(numCellsSide, f, numCubPerSide);
           Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(sb_derivU_L_N,
                                                                       sb_derivU_L,
-                                                                      *(fe_bdry_[sideset[i]][j]->N()));
+                                                                      *(fe_bdry_[sidesets[i]][j]->N()));
           Intrepid::FieldContainer<Real> sbHess(numCellsSide, f, f);
           Intrepid::FunctionSpaceTools::integrate<Real>(sbHess,
                                                         sb_derivU_L_N,
-                                                        *(fe_bdry_[sideset[i]][j]->NdetJ()),
+                                                        *(fe_bdry_[sidesets[i]][j]->NdetJ()),
                                                         Intrepid::COMP_CPP, false);
           // Add Stefan-Boltzmann residual to volume residual
           for (int k = 0; k < numCellsSide; ++k) {
-            int cidx = bdryCellLocIds_[sideset[i]][j][k];
+            int cidx = bdryCellLocIds_[sidesets[i]][j][k];
             for (int l = 0; l < f; ++l) { 
               for (int m = 0; m < f; ++m) { 
                 (*hess)(cidx,l,m) += sbHess(k,l,m);
@@ -644,24 +624,29 @@ private:
   Real evaluateRHS(const std::vector<Real> &x) const {
     return static_cast<Real>(0);
   }
-  
-  Real evaluateDirichlet(const std::vector<Real> & coords, int locSideId) const {
-    const std::vector<Real> param = PDE<Real>::getParameter();
-    return static_cast<Real>(400) + static_cast<Real>(50)*param[6];
-  } 
 
-  Real evaluateStefanBoltzmann(const Real u, const std::vector<Real> &x, const int locSideId,
+  Real evaluateStefanBoltzmann(const Real u, const std::vector<Real> &x,
+                               const int locSideId, const int sideset,
                                const int deriv = 0) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
-    const Real c1 = 0 * (static_cast<Real>(1.e-8) + static_cast<Real>(5.e-7)*param[7]);
-    const Real c2 = static_cast<Real>(293) + static_cast<Real>(50)*param[8];
+    Real c1(0), c2(0), c3(0);
+    if ( sideset == 2 ) {
+      c1 = static_cast<Real>(1.e-8) + static_cast<Real>(5.e-7) * param[6];
+      c2 = static_cast<Real>(293)   + static_cast<Real>(5)     * param[7];
+      c3 = static_cast<Real>(5)     + static_cast<Real>(0.5)   * param[8];
+    }
+    else if ( sideset == 4 || sideset == 5 ) {
+      c1 = static_cast<Real>(1.e-8) + static_cast<Real>(5.e-7) * param[9];
+      c2 = static_cast<Real>(450)   + static_cast<Real>(50)    * param[10];
+      c3 = static_cast<Real>(5)     + static_cast<Real>(0.5)   * param[11];
+    }
     if ( deriv == 1 ) {
-      return c1 * static_cast<Real>(4) * std::pow(u,3);
+      return c1 * static_cast<Real>(4) * std::pow(u,3) + c3;
     }
     if ( deriv == 2 ) {
       return c1 * static_cast<Real>(4) * static_cast<Real>(3) * std::pow(u,2);
     }
-    return c1 * (std::pow(u,4) - std::pow(c2,4));
+    return c1 * (std::pow(u,4) - std::pow(c2,4)) + c3 * (u - c2);
   }
  
   /***************************************************************************/
@@ -709,33 +694,6 @@ private:
     }
   }
 
-  void computeDirichlet(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > &ud,
-                        const int sideSet) const {
-    // Compute Dirichlet values at DOFs
-    int d = basisPtr_->getBaseCellTopology().getDimension();
-    int numLocSides = bdryCellLocIds_[sideSet].size();
-    ud.resize(numLocSides);
-    for (int j=0; j<numLocSides; ++j) {
-      int c = bdryCellLocIds_[sideSet][j].size();
-      int f = basisPtr_->getCardinality();
-      ud[j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > coords =
-        Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
-      if (c > 0) {
-        fe_vol_->computeDofCoords(coords, bdryCellNodes_[sideSet][j]);
-      }
-      for (int k=0; k<c; ++k) {
-        for (int l=0; l<f; ++l) {
-          std::vector<Real> dofpoint(d);
-          for (int m=0; m<d; ++m) {
-            dofpoint[m] = (*coords)(k, l, m);
-          }
-          (*ud[j])(k, l) = evaluateDirichlet(dofpoint, j);
-        }
-      }
-    }
-  }
-
   void computeStefanBoltzmann(Teuchos::RCP<Intrepid::FieldContainer<Real> > &sb,
                               const Teuchos::RCP<Intrepid::FieldContainer<Real> > &u,
                               const int sideset,
@@ -750,7 +708,7 @@ private:
         for (int k = 0; k < d; ++k) {
           pt[k] = (*fe_bdry_[sideset][locSideId]->cubPts())(i,j,k);
         }
-        (*sb)(i,j) = evaluateStefanBoltzmann((*u)(i,j),pt,locSideId,deriv);
+        (*sb)(i,j) = evaluateStefanBoltzmann((*u)(i,j),pt,sideset,locSideId,deriv);
       }
     }
   }

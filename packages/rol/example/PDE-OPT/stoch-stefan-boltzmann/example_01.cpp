@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Problem dimensions
-    const int stochDim = 9;
+    const int stochDim = 12;
     const RealT one(1); 
 
     /*************************************************************************/
@@ -127,7 +127,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr
-      = Teuchos::rcp(new StochasticStefanBoltzmannMeshManager<RealT>(*parlist));
+      = Teuchos::rcp(new MeshManager_BackwardFacingStepChannel<RealT>(*parlist));
+    //  = Teuchos::rcp(new StochasticStefanBoltzmannMeshManager<RealT>(*parlist));
     // Initialize PDE describing advection-diffusion equation
     Teuchos::RCP<StochasticStefanBoltzmannPDE<RealT> > pde
       = Teuchos::rcp(new StochasticStefanBoltzmannPDE<RealT>(*parlist));
