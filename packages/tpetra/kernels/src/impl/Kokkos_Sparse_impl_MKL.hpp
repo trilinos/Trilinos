@@ -52,6 +52,7 @@
 #  include "mkl_spblas.h"
 #endif // HAVE_TPETRAKERNELS_MKL
 
+#include <cstring> // memcpy
 
 namespace KokkosSparse {
 namespace Impl {
@@ -176,9 +177,36 @@ struct RawTplMatrixHandle {
   /// complex.  However, the two types must always be bitwise
   /// equivalent.
   typedef ValueType internal_value_type;
+  //! Type of MKL's "raw" sparse matrix handle.
   typedef sparse_matrix_t handle_type;
+  //! Return value indicating success or failure of an MKL operation.
   typedef sparse_status_t status_type;
 
+  //! Convert single value from value_type to internal_value_type.
+  static internal_value_type convertToInternalValue (const value_type& in) {
+    return static_cast<internal_value_type> (in);
+  }
+
+  //! Convert single value from interval_value_type to value_type.
+  static value_type convertFromInternalValue (const internal_value_type& in) {
+    return static_cast<value_type> (in);
+  }
+
+  /// \brief Create "raw" MKL sparse matrix handle
+  ///
+  /// \param handle [in/out] On input: Nonnull handle.  On output:
+  ///   Initialized handle, if return value indicates success.
+  /// \param indexing [in] The index base.
+  /// \param numRows [in] Number of rows in the matrix.
+  /// \param numCols [in] Number of columns in the matrix.
+  /// \param rowBeg [in] Array of offsets for the start of each row.
+  /// \param rowEnd [in] Array of offsets for the end of each row.
+  /// \param colInd [in] Array of column indices.
+  /// \param values [in] Array of matrix values.
+  ///
+  /// \return Status indicating success or failure.  This method
+  ///   succeeded if and only if its return value equals that of
+  ///   tplStatusSuccessful() (see above).
   static status_type
   create (handle_type* /* handle */, // output argument
           sparse_index_base_t /* indexing */,
@@ -193,20 +221,55 @@ struct RawTplMatrixHandle {
     return tplStatusNotSupported ();
   }
 
+  //! Destroy "raw" MKL sparse matrix handle.
   static status_type destroy (handle_type /* handle */) {
     // This ValueType is not supported.  Exploit existing return value.
     return tplStatusNotSupported ();
   }
 };
 
-//! Full specialization of RawTplMatrixHandle for ValueType = double.
+/// \brief Full specialization of RawTplMatrixHandle (operations on a
+///   "raw" MKL sparse matrix handle) for ValueType = double.
 template<>
 struct RawTplMatrixHandle<double> {
+  //! Type of the entries of the sparse matrix, as Trilinos stores them.
   typedef double value_type;
+  /// \brief Type of the entries of the sparse matrix, as MKL stores them.
+  ///
+  /// This may differ from value_type, especially if value_type is
+  /// complex.  However, the two types must always be bitwise
+  /// equivalent.
   typedef double internal_value_type;
+  //! Type of MKL's "raw" sparse matrix handle.
   typedef sparse_matrix_t handle_type;
+  //! Return value indicating success or failure of an MKL operation.
   typedef sparse_status_t status_type;
 
+  //! Convert single value from value_type to internal_value_type.
+  static internal_value_type convertToInternalValue (const value_type& in) {
+    return in;
+  }
+
+  //! Convert single value from interval_value_type to value_type.
+  static value_type convertFromInternalValue (const internal_value_type& in) {
+    return in;
+  }
+
+  /// \brief Create "raw" MKL sparse matrix handle
+  ///
+  /// \param handle [in/out] On input: Nonnull handle.  On output:
+  ///   Initialized handle, if return value indicates success.
+  /// \param indexing [in] The index base.
+  /// \param numRows [in] Number of rows in the matrix.
+  /// \param numCols [in] Number of columns in the matrix.
+  /// \param rowBeg [in] Array of offsets for the start of each row.
+  /// \param rowEnd [in] Array of offsets for the end of each row.
+  /// \param colInd [in] Array of column indices.
+  /// \param values [in] Array of matrix values.
+  ///
+  /// \return Status indicating success or failure.  This method
+  ///   succeeded if and only if its return value equals that of
+  ///   tplStatusSuccessful() (see above).
   static status_type
   create (handle_type* handle, // output argument
           sparse_index_base_t indexing,
@@ -225,6 +288,7 @@ struct RawTplMatrixHandle<double> {
 #endif // HAVE_TPETRAKERNELS_MKL
   }
 
+  //! Destroy "raw" MKL sparse matrix handle.
   static status_type destroy (handle_type handle) {
 #ifdef HAVE_TPETRAKERNELS_MKL
     return mkl_sparse_destroy (handle);
@@ -241,6 +305,16 @@ struct RawTplMatrixHandle<float> {
   typedef float internal_value_type;
   typedef sparse_matrix_t handle_type;
   typedef sparse_status_t status_type;
+
+  //! Convert single value from value_type to internal_value_type.
+  static internal_value_type convertToInternalValue (const value_type& in) {
+    return in;
+  }
+
+  //! Convert single value from interval_value_type to value_type.
+  static value_type convertFromInternalValue (const internal_value_type& in) {
+    return in;
+  }
 
   static status_type
   create (handle_type* handle, // output argument
@@ -281,6 +355,23 @@ struct RawTplMatrixHandle< ::Kokkos::complex<double> > {
   typedef sparse_matrix_t handle_type;
   typedef sparse_status_t status_type;
 
+  //! Convert single value from value_type to internal_value_type.
+  static internal_value_type convertToInternalValue (const value_type& in) {
+    internal_value_type out;
+    // Even though the two values are bitwise identical, we can't add
+    // a constructor to internal_value_type, since we don't own the
+    // type (MKL does).  Thus, we have to memcpy.
+    memcpy (&out, &in, sizeof (internal_value_type));
+    return out;
+  }
+
+  //! Convert single value from interval_value_type to value_type.
+  static value_type convertFromInternalValue (const internal_value_type& in) {
+    value_type out;
+    memcpy (&out, &in, sizeof (value_type));
+    return out;
+  }
+
   static status_type
   create (handle_type* handle, // output argument
           sparse_index_base_t indexing,
@@ -320,6 +411,23 @@ struct RawTplMatrixHandle< ::Kokkos::complex<float> > {
 #endif // HAVE_TPETRAKERNELS_MKL
   typedef sparse_matrix_t handle_type;
   typedef sparse_status_t status_type;
+
+  //! Convert single value from value_type to internal_value_type.
+  static internal_value_type convertToInternalValue (const value_type& in) {
+    internal_value_type out;
+    // Even though the two values are bitwise identical, we can't add
+    // a constructor to internal_value_type, since we don't own the
+    // type (MKL does).  Thus, we have to memcpy.
+    memcpy (&out, &in, sizeof (internal_value_type));
+    return out;
+  }
+
+  //! Convert single value from interval_value_type to value_type.
+  static value_type convertFromInternalValue (const internal_value_type& in) {
+    value_type out;
+    memcpy (&out, &in, sizeof (value_type));
+    return out;
+  }
 
   static status_type
   create (handle_type* handle, // output argument

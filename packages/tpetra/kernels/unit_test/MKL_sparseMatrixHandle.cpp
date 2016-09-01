@@ -187,24 +187,102 @@ testAllScalars (bool& success,
     out << "Test ScalarType=double" << endl;
     Teuchos::OSTab tab0 (out);
     testMklSparseMatrixHandleOneCase<scalar_type, LocalOrdinalType, OffsetType> (success, out, numRows, numCols);
+
+    out << "Test conversion between our value_type and internal_value_type" << endl;
+
+    typedef Kokkos::Details::ArithTraits<scalar_type>::val_type value_type;
+    typedef ::KokkosSparse::Impl::Mkl::RawTplMatrixHandle<value_type> converter_type;
+    static_assert (std::is_same<converter_type::value_type, value_type>::value,
+                   "RawTplMatrixHandle<double>::value_type != double");
+#ifdef HAVE_TPETRAKERNELS_MKL
+    static_assert (std::is_same<converter_type::internal_value_type, double>::value,
+                   "RawTplMatrixHandle<double>::interval_value_type != double");
+#endif // HAVE_TPETRAKERNELS_MKL
+
+    const value_type x_our (3.0);
+    const auto x_mkl = converter_type::convertToInternalValue (x_our);
+    static_assert (std::is_same<std::decay<decltype (x_mkl) >::type, converter_type::internal_value_type>::value,
+                   "RawTplMatrixHandle<double>::convertToInternalValue returns the wrong type");
+    const auto x_back = converter_type::convertFromInternalValue (x_mkl);
+    static_assert (std::is_same<std::decay<decltype (x_back) >::type, converter_type::value_type>::value,
+                   "RawTplMatrixHandle<double>::convertFromInternalValue returns the wrong type");
+    TEST_EQUALITY( x_back, x_our );
   }
   {
     typedef float scalar_type;
     out << "Test ScalarType=float" << endl;
     Teuchos::OSTab tab0 (out);
     testMklSparseMatrixHandleOneCase<scalar_type, LocalOrdinalType, OffsetType> (success, out, numRows, numCols);
+
+    typedef Kokkos::Details::ArithTraits<scalar_type>::val_type value_type;
+    typedef ::KokkosSparse::Impl::Mkl::RawTplMatrixHandle<value_type> converter_type;
+    static_assert (std::is_same<converter_type::value_type, value_type>::value,
+                   "RawTplMatrixHandle<float>::value_type != float");
+#ifdef HAVE_TPETRAKERNELS_MKL
+    static_assert (std::is_same<converter_type::internal_value_type, float>::value,
+                   "RawTplMatrixHandle<float>::interval_value_type != float");
+#endif // HAVE_TPETRAKERNELS_MKL
+
+    const value_type x_our (3.0);
+    const auto x_mkl = converter_type::convertToInternalValue (x_our);
+    static_assert (std::is_same<std::decay<decltype (x_mkl) >::type, converter_type::internal_value_type>::value,
+                   "RawTplMatrixHandle<float>::convertToInternalValue returns the wrong type");
+    const auto x_back = converter_type::convertFromInternalValue (x_mkl);
+    static_assert (std::is_same<std::decay<decltype (x_back) >::type, converter_type::value_type>::value,
+                   "RawTplMatrixHandle<float>::convertFromInternalValue returns the wrong type");
+    TEST_EQUALITY( x_back, x_our );
   }
   {
     typedef std::complex<double> scalar_type;
     out << "Test ScalarType=std::complex<double>" << endl;
     Teuchos::OSTab tab0 (out);
     testMklSparseMatrixHandleOneCase<scalar_type, LocalOrdinalType, OffsetType> (success, out, numRows, numCols);
+
+    out << "Test conversion between our value_type and internal_value_type" << endl;
+
+    typedef Kokkos::Details::ArithTraits<scalar_type>::val_type value_type;
+    typedef ::KokkosSparse::Impl::Mkl::RawTplMatrixHandle<value_type> converter_type;
+    static_assert (std::is_same<converter_type::value_type, value_type>::value,
+                   "RawTplMatrixHandle<Kokkos::complex<double> >::value_type != Kokkos::complex<double>");
+#ifdef HAVE_TPETRAKERNELS_MKL
+    static_assert (std::is_same<converter_type::internal_value_type, MKL_Complex16>::value,
+                   "RawTplMatrixHandle<Kokkos::complex<double> >::interval_value_type != MKL_Complex16");
+#endif // HAVE_TPETRAKERNELS_MKL
+
+    const value_type x_our (3.0, -4.0);
+    const auto x_mkl = converter_type::convertToInternalValue (x_our);
+    static_assert (std::is_same<std::decay<decltype (x_mkl) >::type, converter_type::internal_value_type>::value,
+                   "RawTplMatrixHandle<Kokkos::complex<double> >::convertToInternalValue returns the wrong type");
+    const auto x_back = converter_type::convertFromInternalValue (x_mkl);
+    static_assert (std::is_same<std::decay<decltype (x_back) >::type, converter_type::value_type>::value,
+                   "RawTplMatrixHandle<Kokkos::complex<double> >::convertFromInternalValue returns the wrong type");
+    TEST_EQUALITY( x_back, x_our );
   }
   {
     typedef std::complex<float> scalar_type;
     out << "Test ScalarType=std::complex<float>" << endl;
     Teuchos::OSTab tab0 (out);
     testMklSparseMatrixHandleOneCase<scalar_type, LocalOrdinalType, OffsetType> (success, out, numRows, numCols);
+
+    out << "Test conversion between our value_type and internal_value_type" << endl;
+
+    typedef Kokkos::Details::ArithTraits<scalar_type>::val_type value_type;
+    typedef ::KokkosSparse::Impl::Mkl::RawTplMatrixHandle<value_type> converter_type;
+    static_assert (std::is_same<converter_type::value_type, value_type>::value,
+                   "RawTplMatrixHandle<Kokkos::complex<float> >::value_type != Kokkos::complex<float>");
+#ifdef HAVE_TPETRAKERNELS_MKL
+    static_assert (std::is_same<converter_type::internal_value_type, MKL_Complex8>::value,
+                   "RawTplMatrixHandle<Kokkos::complex<float> >::interval_value_type != MKL_Complex8");
+#endif // HAVE_TPETRAKERNELS_MKL
+
+    const value_type x_our (3.0, -4.0);
+    const auto x_mkl = converter_type::convertToInternalValue (x_our);
+    static_assert (std::is_same<std::decay<decltype (x_mkl) >::type, converter_type::internal_value_type>::value,
+                   "RawTplMatrixHandle<Kokkos::complex<float> >::convertToInternalValue returns the wrong type");
+    const auto x_back = converter_type::convertFromInternalValue (x_mkl);
+    static_assert (std::is_same<std::decay<decltype (x_back) >::type, converter_type::value_type>::value,
+                   "RawTplMatrixHandle<Kokkos::complex<float> >::convertFromInternalValue returns the wrong type");
+    TEST_EQUALITY( x_back, x_our );
   }
 }
 
