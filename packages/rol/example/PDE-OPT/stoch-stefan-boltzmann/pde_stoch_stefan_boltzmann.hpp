@@ -598,7 +598,7 @@ private:
       const std::vector<Real> param = PDE<Real>::getParameter();
       const Real c1 = static_cast<Real>(8.9e-5) + static_cast<Real>(1.e-6)*param[1];
       const Real c2 = static_cast<Real>(1.0e-4) + static_cast<Real>(1.e-5)*param[2];
-      const Real c3 = static_cast<Real>(8.2e-3) + static_cast<Real>(3.e-2)*param[3];
+      const Real c3 = static_cast<Real>(8.2e-3) + static_cast<Real>(3.e-4)*param[3];
       if ( deriv > 0 ) {
         return c2 * std::pow(-c3,deriv) * std::exp(-c3 * u);
       }
@@ -630,19 +630,19 @@ private:
   }
 
   Real evaluateStefanBoltzmann(const Real u, const std::vector<Real> &x,
-                               const int locSideId, const int sideset,
+                               const int sideset, const int locSideId,
                                const int deriv = 0) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
     Real c1(0), c2(0), c3(0);
     if ( sideset == 2 ) {
-      c1 = static_cast<Real>(1.e-8) + static_cast<Real>(5.e-7) * param[6];
-      c2 = airTemp_                 + static_cast<Real>(5)     * param[7];
-      c3 = static_cast<Real>(5)     + static_cast<Real>(0.5)   * param[8];
+      c1 = static_cast<Real>(1.0e-8) + static_cast<Real>(5.e-9)        * param[6];
+      c2 = airTemp_                  + static_cast<Real>(0.1*airTemp_) * param[7];
+      c3 = static_cast<Real>(1.4e-6) + static_cast<Real>(2.e-7)        * param[8];
     }
     else if ( sideset == 4 || sideset == 5 ) {
-      c1 = static_cast<Real>(1.e-8) + static_cast<Real>(5.e-7) * param[9];
-      c2 = engTemp_                 + static_cast<Real>(50)    * param[10];
-      c3 = static_cast<Real>(5)     + static_cast<Real>(0.5)   * param[11];
+      c1 = static_cast<Real>(1.0e-8) + static_cast<Real>(5.e-9)        * param[9];
+      c2 = engTemp_                  + static_cast<Real>(0.1*engTemp_) * param[10];
+      c3 = static_cast<Real>(1.0e-4) + static_cast<Real>(1.e-5)        * param[11];
     }
     if ( deriv == 1 ) {
       return c1 * static_cast<Real>(4) * std::pow(u,3) + c3;
