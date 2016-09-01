@@ -52,24 +52,37 @@
 #include "pde_stoch_stefan_boltzmann.hpp"
 
 template <class Real>
-class QoI_AverageTemperature : public QoI<Real> {
+class QoI_StateCost : public QoI<Real> {
 private:
   const Teuchos::RCP<FE<Real> > fe_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > weight_;
   Real xmid_;
-  Real vol_;
+  Real T_;
 
   Real weightFunc(const std::vector<Real> & x) const {
-    return ((x[1] < xmid_) ? static_cast<Real>(0) : static_cast<Real>(1))/vol_;
+    return ((x[1] < xmid_) ? static_cast<Real>(0) : static_cast<Real>(1));
+  }
+
+  Real cost(const Real u, const int deriv = 0) const {
+    if ( u > T_ ) {
+      if ( deriv == 0 ) {
+        return static_cast<Real>(0.5)*(u-T_)*(u-T_);
+      }
+      if ( deriv == 1 ) {
+        return (u-T_);
+      }
+      if ( deriv == 2 ) {
+        return static_cast<Real>(1);
+      }
+    }
+    return static_cast<Real>(0);
   }
 
 public:
-  QoI_AverageTemperature(const Teuchos::RCP<FE<Real> > &fe,
-                         Teuchos::ParameterList &parlist) : fe_(fe) {
-    xmid_       = parlist.sublist("Geometry").get<Real>("Step height");
-    Real width  = parlist.sublist("Geometry").get<Real>("Channel width");
-    Real height = parlist.sublist("Geometry").get<Real>("Channel height");
-    vol_ = width * (height-xmid_);
+  QoI_StateCost(const Teuchos::RCP<FE<Real> > &fe,
+                Teuchos::ParameterList &parlist) : fe_(fe) {
+    xmid_ = parlist.sublist("Geometry").get<Real>("Step height");
+    T_    = parlist.sublist("Problem").get("Desired engine temperature",373.0);
     int c = fe_->cubPts()->dimension(0);
     int p = fe_->cubPts()->dimension(1);
     int d = fe_->cubPts()->dimension(2);
@@ -95,11 +108,19 @@ public:
     // Initialize output val
     val = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
     // Evaluate state on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     fe_->evaluateValue(valU_eval, u_coeff);
+    // Compute cost
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > costU
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        (*costU)(i,j) = cost((*valU_eval)(i,j),0);
+      }
+    }
     // Compute squared L2-norm of diff
-    fe_->computeIntegral(val,valU_eval,weight_);
+    fe_->computeIntegral(val,costU,weight_);
     return static_cast<Real>(0);
   }
 
@@ -110,11 +131,29 @@ public:
     // Get relevant dimensions
     const int c = fe_->gradN()->dimension(0);
     const int f = fe_->gradN()->dimension(1);
+    const int p = fe_->gradN()->dimension(2);
     // Initialize output grad
     grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    // Evaluate state on FE basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe_->evaluateValue(valU_eval, u_coeff);
+    // Compute cost
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > costU
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        (*costU)(i,j) = cost((*valU_eval)(i,j),1);
+      }
+    }
+    // Multiply cost and weight
+    Intrepid::FieldContainer<Real> WcostU(c, p);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostU,
+                                                               *weight_,
+                                                               *costU);
     // Compute gradient of squared L2-norm of diff
     Intrepid::FunctionSpaceTools::integrate<Real>(*grad,
-                                                  *weight_,
+                                                  WcostU,
                                                   *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, false);
   }
@@ -123,7 +162,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_AverageTemperature::gradient_2 is zero.");
+    throw Exception::Zero(">>> QoI_StateCost::gradient_2 is zero.");
   }
 
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -131,7 +170,43 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_AverageTemperature::HessVec_12 is zero.");
+    // Get relevant dimensions
+    const int c = fe_->gradN()->dimension(0);
+    const int f = fe_->gradN()->dimension(1);
+    const int p = fe_->gradN()->dimension(2);
+    // Initialize output grad
+    hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    // Evaluate state on FE basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe_->evaluateValue(valU_eval, u_coeff);
+    // Evaluate direction on FE basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valV_eval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe_->evaluateValue(valV_eval, v_coeff);
+    // Compute cost
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > costU
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        (*costU)(i,j) = cost((*valU_eval)(i,j),2);
+      }
+    }
+    // Multiply cost and weight
+    Intrepid::FieldContainer<Real> WcostU(c, p);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostU,
+                                                               *weight_,
+                                                               *costU);
+    // Multiply weighted cost and direction
+    Intrepid::FieldContainer<Real> WcostUV(c, p);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostUV,
+                                                               WcostU,
+                                                               *valV_eval);
+    // Compute gradient of squared L2-norm of diff
+    Intrepid::FunctionSpaceTools::integrate<Real>(*hess,
+                                                  WcostUV,
+                                                  *(fe_->NdetJ()),
+                                                  Intrepid::COMP_CPP, false);
   }
 
   void HessVec_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -139,7 +214,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_AverageTemperature::HessVec_12 is zero.");
+    throw Exception::Zero(">>> QoI_StateCost::HessVec_12 is zero.");
   }
 
   void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -147,7 +222,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_AverageTemperature::HessVec_21 is zero.");
+    throw Exception::Zero(">>> QoI_StateCost::HessVec_21 is zero.");
   }
 
   void HessVec_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -155,18 +230,53 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_AverageTemperature::HessVec_22 is zero.");
+    throw Exception::Zero(">>> QoI_StateCost::HessVec_22 is zero.");
   }
 
 }; // QoI_L2Tracking
 
 template <class Real>
-class QoI_ControlPenalty : public QoI<Real> {
+class QoI_ControlCost : public QoI<Real> {
 private:
   const Teuchos::RCP<FE<Real> > fe_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > weight_;
+  Real T_;
+
+  Real weightFunc(const std::vector<Real> & x) const {
+    return static_cast<Real>(1);
+  }
+
+  Real cost(const Real z, const int deriv = 0) const {
+    if ( deriv == 0 ) {
+      return static_cast<Real>(0.5)*(z-T_)*(z-T_);
+    }
+    if ( deriv == 1 ) {
+      return (z-T_);
+    }
+    if ( deriv == 2 ) {
+      return static_cast<Real>(1);
+    }
+    return static_cast<Real>(0);
+  }
 
 public:
-  QoI_ControlPenalty(const Teuchos::RCP<FE<Real> > &fe) : fe_(fe) {}
+  QoI_ControlCost(const Teuchos::RCP<FE<Real> > &fe,
+                     Teuchos::ParameterList &parlist) : fe_(fe) {
+    T_ = parlist.sublist("Problem").get("Desired control temperature",293.0);
+    int c = fe_->cubPts()->dimension(0);
+    int p = fe_->cubPts()->dimension(1);
+    int d = fe_->cubPts()->dimension(2);
+    std::vector<Real> pt(d);
+    weight_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p));
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        for (int k = 0; k < d; ++k) {
+          pt[k] = (*fe_->cubPts())(i,j,k);
+        }
+        (*weight_)(i,j) = weightFunc(pt);
+      }
+    }
+  }
 
   Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -175,23 +285,22 @@ public:
     // Get relevant dimensions
     const int c = fe_->gradN()->dimension(0);
     const int p = fe_->gradN()->dimension(2);
-    const int d = fe_->gradN()->dimension(3);
     // Initialize output val
     val = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
     // Evaluate control on FE basis
     Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     fe_->evaluateValue(valZ_eval, z_coeff);
-    // Evaluate control gradient on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradZ_eval
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    fe_->evaluateGradient(gradZ_eval, z_coeff);
-    // Compute L2 penalty
-    fe_->computeIntegral(val,valZ_eval,valZ_eval,false);
-    // Add H10 penalty
-    fe_->computeIntegral(val,gradZ_eval,gradZ_eval,true);
-    // Scale by 0.5
-    Intrepid::RealSpaceTools<Real>::scale(*val,static_cast<Real>(0.5));
+    // Compute cost
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > costZ
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        (*costZ)(i,j) = cost((*valZ_eval)(i,j),0);
+      }
+    }
+    // Compute squared L2-norm of diff
+    fe_->computeIntegral(val,costZ,weight_);
     return static_cast<Real>(0);
   }
 
@@ -199,7 +308,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_ControlPenalty::gradient_1 is zero.");
+    throw Exception::Zero(">>> QoI_ControlCost::gradient_1 is zero.");
   }
 
   void gradient_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
@@ -210,27 +319,30 @@ public:
     const int c = fe_->gradN()->dimension(0);
     const int f = fe_->gradN()->dimension(1);
     const int p = fe_->gradN()->dimension(2);
-    const int d = fe_->gradN()->dimension(3);
     // Initialize output grad
     grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-    // Evaluate control on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    // Evaluate state on FE basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     fe_->evaluateValue(valZ_eval, z_coeff);
-    // Evaluate control on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradZ_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    fe_->evaluateGradient(gradZ_eval, z_coeff);
-    // Assemble L2-term derivative
+    // Compute cost
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > costZ
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        (*costZ)(i,j) = cost((*valZ_eval)(i,j),1);
+      }
+    }
+    // Multiply cost and weight
+    Intrepid::FieldContainer<Real> WcostZ(c, p);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostZ,
+                                                               *weight_,
+                                                               *costZ);
+    // Compute gradient of squared L2-norm of diff
     Intrepid::FunctionSpaceTools::integrate<Real>(*grad,
-                                                  *valZ_eval,
+                                                  WcostZ,
                                                   *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, false);
-    // Add H10-term derivative
-    Intrepid::FunctionSpaceTools::integrate<Real>(*grad,
-                                                  *gradZ_eval,
-                                                  *(fe_->gradNdetJ()),
-                                                  Intrepid::COMP_CPP, true);
   }
 
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -238,7 +350,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_ControlPenalty::HessVec_11 is zero.");
+    throw Exception::Zero(">>> QoI_ControlCost::HessVec_11 is zero.");
   }
 
   void HessVec_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -246,7 +358,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_ControlPenalty::HessVec_12 is zero.");
+    throw Exception::Zero(">>> QoI_ControlCost::HessVec_12 is zero.");
   }
 
   void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -254,7 +366,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_ControlPenalty::HessVec_21 is zero.");
+    throw Exception::Zero(">>> QoI_ControlCost::HessVec_21 is zero.");
   }
 
   void HessVec_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -266,27 +378,39 @@ public:
     const int c = fe_->gradN()->dimension(0);
     const int f = fe_->gradN()->dimension(1);
     const int p = fe_->gradN()->dimension(2);
-    const int d = fe_->gradN()->dimension(3);
-    // Initialize hessian container
+    // Initialize output grad
     hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    // Evaluate state on FE basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe_->evaluateValue(valZ_eval, z_coeff);
     // Evaluate direction on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valV_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valV_eval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     fe_->evaluateValue(valV_eval, v_coeff);
-    // Evaluate gradient of direction on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradV_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    fe_->evaluateGradient(gradV_eval, v_coeff);
-    // Assemble L2-term hessian times a vector
+    // Compute cost
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > costZ
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        (*costZ)(i,j) = cost((*valZ_eval)(i,j),2);
+      }
+    }
+    // Multiply cost and weight
+    Intrepid::FieldContainer<Real> WcostZ(c, p);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostZ,
+                                                               *weight_,
+                                                               *costZ);
+    // Multiply weighted cost and direction
+    Intrepid::FieldContainer<Real> WcostZV(c, p);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostZV,
+                                                               WcostZ,
+                                                               *valV_eval);
+    // Compute gradient of squared L2-norm of diff
     Intrepid::FunctionSpaceTools::integrate<Real>(*hess,
-                                                  *valV_eval,
+                                                  WcostZV,
                                                   *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, false);
-    // Add H10-term hessian times a vector
-    Intrepid::FunctionSpaceTools::integrate<Real>(*hess,
-                                                  *gradV_eval,
-                                                  *(fe_->gradNdetJ()),
-                                                  Intrepid::COMP_CPP, true);
   }
 
 }; // QoI_L2Penalty
@@ -294,21 +418,22 @@ public:
 template <class Real>
 class StochasticStefanBoltzmannStdObjective : public ROL::ParametrizedStdObjective<Real> {
 private:
-  Real alpha_;
+  Real alpha0_;
+  Real alpha1_;
 
 public:
   StochasticStefanBoltzmannStdObjective(Teuchos::ParameterList &parlist) {
-    alpha_ = parlist.sublist("Problem").get("Control Penalty",1.e-4);
+    alpha0_ = parlist.sublist("Problem").get("State Cost",1.0);
+    alpha1_ = parlist.sublist("Problem").get("Control Cost",1.0);
   }
 
   Real value(const std::vector<Real> &x, Real &tol) {
-    return x[0] + alpha_*x[1];
+    return alpha0_*x[0] + alpha1_*x[1];
   }
 
   void gradient(std::vector<Real> &g, const std::vector<Real> &x, Real &tol) {
-    const Real one(1);
-    g[0] = one;
-    g[1] = alpha_;
+    g[0] = alpha0_;
+    g[1] = alpha1_;
   }
 
   void hessVec(std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol) {

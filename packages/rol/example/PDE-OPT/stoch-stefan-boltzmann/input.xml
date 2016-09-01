@@ -1,8 +1,12 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Control Cost"                type="double"  value="1e0"   />
     <Parameter name="Is problem nonsmooth?"       type="bool"    value="false" />
+    <!-- OBJECTIVE FUNCTION -->
+    <Parameter name="Desired engine temperature"  type="double"  value="373.0" />
+    <Parameter name="State Cost"                  type="double"  value="1e0"   />
+    <Parameter name="Desired control temperature" type="double"  value="293.0" />
+    <Parameter name="Control Cost"                type="double"  value="1e0"   />
     <!-- PDE COEFFICIENTS -->
     <Parameter name="Engine: Ambient Temperature" type="double"  value="450.0" />
     <Parameter name="Air: Ambient Temperature"    type="double"  value="293.0" />
