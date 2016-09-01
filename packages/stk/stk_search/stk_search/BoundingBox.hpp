@@ -1,3 +1,4 @@
+
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -199,17 +200,17 @@ inline bool intersects(Sphere<T> const& a, Sphere<T> const& b)
 }
 
 // intersects: Sphere,Box
-template <typename T>
-inline bool intersects(Sphere<T> const& a, Box<T> const& b)
+template <typename T1, typename T2>
+inline bool intersects(Sphere<T1> const& a, Box<T2> const& b)
 {
-  Point<T> const& ac = a.center();
-  Point<T> const& bmin = b.min_corner();
-  Point<T> const& bmax = b.max_corner();
+  Point<T1> const& ac   = a.center();
+  Point<T2> const& bmin = b.min_corner();
+  Point<T2> const& bmax = b.max_corner();
 
-  const T r2 = a.radius() * a.radius();
+  const T1 r2 = a.radius() * a.radius();
 
   // check that the nearest point in the bounding box is within the sphere
-  T dmin = 0;
+  T1 dmin = 0;
   for( int i = 0; i < 3; ++i ) {
     if( ac[i] < bmin[i] ) dmin += (ac[i]-bmin[i])*(ac[i]-bmin[i]);
     else if( ac[i] > bmax[i] ) dmin += (ac[i]-bmax[i])*(ac[i]-bmax[i]);
@@ -218,8 +219,8 @@ inline bool intersects(Sphere<T> const& a, Box<T> const& b)
 }
 
 // intersects: Box,Sphere
-template <typename T>
-inline bool intersects(Box<T> const& a, Sphere<T> const& b)
+template <typename T1, typename T2>
+inline bool intersects(Box<T1> const& a, Sphere<T2> const& b)
 { return intersects(b,a); }
 
 // intersects: Box,Box
