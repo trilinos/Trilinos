@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Problem dimensions
-    const int stochDim = 12;
+    const int stochDim = 16;
     const RealT one(1); 
 
     /*************************************************************************/

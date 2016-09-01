@@ -10,6 +10,7 @@
     <!-- PDE COEFFICIENTS -->
     <Parameter name="Engine: Ambient Temperature" type="double"  value="450.0" />
     <Parameter name="Air: Ambient Temperature"    type="double"  value="293.0" />
+    <Parameter name="Advection Magnitude"         type="double"  value="6.3"   />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Statistic Initial Guess"     type="double"  value="5.0"   />
     <Parameter name="Number of Samples"           type="int"     value="4"     />

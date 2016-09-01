@@ -83,6 +83,7 @@ private:
   Real xmid_;
   Real engTemp_;
   Real airTemp_;
+  Real advMag_;
 
 
 public:
@@ -91,6 +92,7 @@ public:
     xmid_ = parlist.sublist("Geometry").get<Real>("Step height");
     engTemp_ = parlist.sublist("Problem").get("Engine: Ambient Temperature",450.0);
     airTemp_ = parlist.sublist("Problem").get("Air: Ambient Temperature",293.0);
+    advMag_  = parlist.sublist("Problem").get("Advection Magnitude",6.3);
     // Finite element fields.
     int basisOrder = parlist.sublist("Problem").get("Basis Order",1);
     if (basisOrder == 1) {
@@ -205,20 +207,59 @@ public:
         }
       }
     }
-    // APPLY DIRICHLET CONTROLS: Sideset 0
+    // APPLY ROBIN CONTROLS: Sideset 0
     int sideset = 0;
     numLocalSideIds = bdryCellLocIds_[sideset].size();
+    const int numCubPerSide = bdryCub_->getNumPoints();
     for (int j = 0; j < numLocalSideIds; ++j) {
       int numCellsSide = bdryCellLocIds_[sideset][j].size();
-      int numBdryDofs = fidx_[j].size();
-      for (int k = 0; k < numCellsSide; ++k) {
-        int cidx = bdryCellLocIds_[sideset][j][k];
-        for (int l = 0; l < numBdryDofs; ++l) {
-          (*res)(cidx,fidx_[j][l])
-            = (*u_coeff)(cidx,fidx_[j][l]) - (*z_coeff)(cidx,fidx_[j][l]);
+      if (numCellsSide) {
+        // Get U coefficients on Robin boundary
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
+          = getBoundaryCoeff(*u_coeff, sideset, j);
+        // Get Z coefficients on Robin boundary
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
+          = getBoundaryCoeff(*z_coeff, sideset, j);
+        // Evaluate U on FE basis
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
+          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        fe_bdry_[sideset][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
+        // Evaluate Z on FE basis
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry
+          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        fe_bdry_[sideset][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
+        // Compute Stefan-Boltzmann residual
+        Teuchos::RCP< Intrepid::FieldContainer<Real> > robinVal
+          = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        computeRobin(robinVal,valU_eval_bdry,valZ_eval_bdry,sideset,j,0);
+        Intrepid::FieldContainer<Real> robinRes(numCellsSide, f);
+        Intrepid::FunctionSpaceTools::integrate<Real>(robinRes,
+                                                      *robinVal,
+                                                      *(fe_bdry_[sideset][j]->NdetJ()),
+                                                      Intrepid::COMP_CPP, false);
+        // Add Stefan-Boltzmann residual to volume residual
+        for (int k = 0; k < numCellsSide; ++k) {
+          int cidx = bdryCellLocIds_[sideset][j][k];
+          for (int l = 0; l < f; ++l) { 
+            (*res)(cidx,l) += robinRes(k,l);
+          }
         }
       }
     }
+//    // APPLY DIRICHLET CONTROLS: Sideset 0
+//    int sideset = 0;
+//    numLocalSideIds = bdryCellLocIds_[sideset].size();
+//    for (int j = 0; j < numLocalSideIds; ++j) {
+//      int numCellsSide = bdryCellLocIds_[sideset][j].size();
+//      int numBdryDofs = fidx_[j].size();
+//      for (int k = 0; k < numCellsSide; ++k) {
+//        int cidx = bdryCellLocIds_[sideset][j][k];
+//        for (int l = 0; l < numBdryDofs; ++l) {
+//          (*res)(cidx,fidx_[j][l])
+//            = (*u_coeff)(cidx,fidx_[j][l]) - (*z_coeff)(cidx,fidx_[j][l]);
+//        }
+//      }
+//    }
   }
   
   void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
@@ -331,22 +372,67 @@ public:
         }
       }
     }
-    // APPLY DIRICHLET CONDITIONS: Sideset 0
+    // APPLY ROBIN CONTROL: Sideset 0
     int sideset = 0;
     numLocalSideIds = bdryCellLocIds_[sideset].size();
+    const int numCubPerSide = bdryCub_->getNumPoints();
     for (int j = 0; j < numLocalSideIds; ++j) {
       int numCellsSide = bdryCellLocIds_[sideset][j].size();
-      int numBdryDofs = fidx_[j].size();
-      for (int k = 0; k < numCellsSide; ++k) {
-        int cidx = bdryCellLocIds_[sideset][j][k];
-        for (int l = 0; l < numBdryDofs; ++l) {
-          for (int m = 0; m < f; ++m) {
-            (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+      if (numCellsSide) {
+        // Get U coefficients on Robin boundary
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
+          = getBoundaryCoeff(*u_coeff, sideset, j);
+        // Get Z coefficients on Robin boundary
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
+          = getBoundaryCoeff(*z_coeff, sideset, j);
+        // Evaluate U on FE basis
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
+          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        fe_bdry_[sideset][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
+        // Evaluate Z on FE basis
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry
+          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        fe_bdry_[sideset][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
+        // Compute Stefan-Boltzmann residual
+        Teuchos::RCP< Intrepid::FieldContainer<Real> > robinVal
+          = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        computeRobin(robinVal,valU_eval_bdry,valZ_eval_bdry,sideset,j,1,1);
+        Intrepid::FieldContainer<Real> robinVal_N(numCellsSide, f, numCubPerSide);
+        Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(robinVal_N,
+                                                                    *robinVal,
+                                                                    *(fe_bdry_[sideset][j]->N()));
+        Intrepid::FieldContainer<Real> robinJac(numCellsSide, f, f);
+        Intrepid::FunctionSpaceTools::integrate<Real>(robinJac,
+                                                      robinVal_N,
+                                                      *(fe_bdry_[sideset][j]->NdetJ()),
+                                                      Intrepid::COMP_CPP, false);
+        // Add Stefan-Boltzmann residual to volume residual
+        for (int k = 0; k < numCellsSide; ++k) {
+          int cidx = bdryCellLocIds_[sideset][j][k];
+          for (int l = 0; l < f; ++l) { 
+            for (int m = 0; m < f; ++m) { 
+              (*jac)(cidx,l,m) += robinJac(k,l,m);
+            }
           }
-          (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
         }
       }
     }
+//    // APPLY DIRICHLET CONDITIONS: Sideset 0
+//    int sideset = 0;
+//    numLocalSideIds = bdryCellLocIds_[sideset].size();
+//    for (int j = 0; j < numLocalSideIds; ++j) {
+//      int numCellsSide = bdryCellLocIds_[sideset][j].size();
+//      int numBdryDofs = fidx_[j].size();
+//      for (int k = 0; k < numCellsSide; ++k) {
+//        int cidx = bdryCellLocIds_[sideset][j][k];
+//        for (int l = 0; l < numBdryDofs; ++l) {
+//          for (int m = 0; m < f; ++m) {
+//            (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+//          }
+//          (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
+//        }
+//      }
+//    }
   }
   
   void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
@@ -358,19 +444,64 @@ public:
     int f = fe_vol_->gradN()->dimension(1);
     // INITILAIZE JACOBIAN
     jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    // APPLY DIRICHLET CONTROLS: Sideset 0
+    // APPLY ROBIN CONTROL: Sideset 0
     int sideset = 0;
     int numLocalSideIds = bdryCellLocIds_[sideset].size();
+    const int numCubPerSide = bdryCub_->getNumPoints();
     for (int j = 0; j < numLocalSideIds; ++j) {
       int numCellsSide = bdryCellLocIds_[sideset][j].size();
-      int numBdryDofs = fidx_[j].size();
-      for (int k = 0; k < numCellsSide; ++k) {
-        int cidx = bdryCellLocIds_[sideset][j][k];
-        for (int l = 0; l < numBdryDofs; ++l) {
-          (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+      if (numCellsSide) {
+        // Get U coefficients on Robin boundary
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
+          = getBoundaryCoeff(*u_coeff, sideset, j);
+        // Get Z coefficients on Robin boundary
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
+          = getBoundaryCoeff(*z_coeff, sideset, j);
+        // Evaluate U on FE basis
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
+          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        fe_bdry_[sideset][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
+        // Evaluate Z on FE basis
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry
+          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        fe_bdry_[sideset][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
+        // Compute Stefan-Boltzmann residual
+        Teuchos::RCP< Intrepid::FieldContainer<Real> > robinVal
+          = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        computeRobin(robinVal,valU_eval_bdry,valZ_eval_bdry,sideset,j,1,2);
+        Intrepid::FieldContainer<Real> robinVal_N(numCellsSide, f, numCubPerSide);
+        Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(robinVal_N,
+                                                                    *robinVal,
+                                                                    *(fe_bdry_[sideset][j]->N()));
+        Intrepid::FieldContainer<Real> robinJac(numCellsSide, f, f);
+        Intrepid::FunctionSpaceTools::integrate<Real>(robinJac,
+                                                      robinVal_N,
+                                                      *(fe_bdry_[sideset][j]->NdetJ()),
+                                                      Intrepid::COMP_CPP, false);
+        // Add Stefan-Boltzmann residual to volume residual
+        for (int k = 0; k < numCellsSide; ++k) {
+          int cidx = bdryCellLocIds_[sideset][j][k];
+          for (int l = 0; l < f; ++l) { 
+            for (int m = 0; m < f; ++m) { 
+              (*jac)(cidx,l,m) += robinJac(k,l,m);
+            }
+          }
         }
       }
     }
+//    // APPLY DIRICHLET CONTROLS: Sideset 0
+//    int sideset = 0;
+//    int numLocalSideIds = bdryCellLocIds_[sideset].size();
+//    for (int j = 0; j < numLocalSideIds; ++j) {
+//      int numCellsSide = bdryCellLocIds_[sideset][j].size();
+//      int numBdryDofs = fidx_[j].size();
+//      for (int k = 0; k < numCellsSide; ++k) {
+//        int cidx = bdryCellLocIds_[sideset][j][k];
+//        for (int l = 0; l < numBdryDofs; ++l) {
+//          (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+//        }
+//      }
+//    }
   }
 
   void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -385,21 +516,21 @@ public:
     int d = fe_vol_->gradN()->dimension(3);
     // INITILAIZE JACOBIAN
     hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    // APPLY DIRICHLET CONDITIONS TO LAGRANGE MULTIPLIERS: Sideset 0, 4
     Teuchos::RCP<Intrepid::FieldContainer<Real> > l_coeff_dbc
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(*l_coeff));
-    int sideset = 0;
-    int numLocalSideIds = bdryCellLocIds_[sideset].size();
-    for (int j = 0; j < numLocalSideIds; ++j) {
-      int numCellsSide = bdryCellLocIds_[sideset][j].size();
-      int numBdryDofs = fidx_[j].size();
-      for (int k = 0; k < numCellsSide; ++k) {
-        int cidx = bdryCellLocIds_[sideset][j][k];
-        for (int l = 0; l < numBdryDofs; ++l) {
-          (*l_coeff_dbc)(cidx,fidx_[j][l]) = static_cast<Real>(0);
-        }
-      }
-    }
+//    // APPLY DIRICHLET CONDITIONS TO LAGRANGE MULTIPLIERS: Sideset 0
+//    int sideset = 0;
+//    int numLocalSideIds = bdryCellLocIds_[sideset].size();
+//    for (int j = 0; j < numLocalSideIds; ++j) {
+//      int numCellsSide = bdryCellLocIds_[sideset][j].size();
+//      int numBdryDofs = fidx_[j].size();
+//      for (int k = 0; k < numCellsSide; ++k) {
+//        int cidx = bdryCellLocIds_[sideset][j][k];
+//        for (int l = 0; l < numBdryDofs; ++l) {
+//          (*l_coeff_dbc)(cidx,fidx_[j][l]) = static_cast<Real>(0);
+//        }
+//      }
+//    }
     // EVALUATE STATE ON FE BASIS
     Teuchos::RCP<Intrepid::FieldContainer<Real> > U_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
@@ -513,6 +644,8 @@ public:
         }
       }
     }
+    // APPLY ROBIN CONTROL: Sideset 0
+    // --> Nothing to do
   }
 
   void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -545,8 +678,9 @@ public:
   }
 
   void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
-    riesz = fe_vol_->stiffMat();
-    Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+//    riesz = fe_vol_->stiffMat();
+//    Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+    riesz = fe_vol_->massMat();
   }
  
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields(void) {
@@ -587,22 +721,39 @@ private:
   /************** EVALUATE PDE COEFFICIENTS AT DOF COORDINATES ***************/
   /***************************************************************************/
   Real evaluateDiffusivity(const Real u, const std::vector<Real> & x, const int deriv = 0) const {
+    const std::vector<Real> param = PDE<Real>::getParameter();
     if ( x[1] < xmid_ ) {
-      const std::vector<Real> param = PDE<Real>::getParameter();
-      if ( deriv > 0 ) {
+      // Water Thermal Conductivity: 0.5818 at 280K and 0.6797 at 370K
+      const Real c0 = static_cast<Real>(0.23)   + static_cast<Real>(0.02)  * param[0];
+      const Real c1 = static_cast<Real>(1.2e-3) + static_cast<Real>(1.e-4) * param[1];
+      if ( deriv == 1 ) {
+        return c1;
+      }
+      if ( deriv > 1 ) {
         return static_cast<Real>(0);
       }
-      return static_cast<Real>(1.43e-6) + static_cast<Real>(2.e-7)*param[0];
+      return c0 + c1 * u;
     }
     else {
-      const std::vector<Real> param = PDE<Real>::getParameter();
-      const Real c1 = static_cast<Real>(8.9e-5) + static_cast<Real>(1.e-6)*param[1];
-      const Real c2 = static_cast<Real>(1.0e-4) + static_cast<Real>(1.e-5)*param[2];
-      const Real c3 = static_cast<Real>(8.2e-3) + static_cast<Real>(3.e-4)*param[3];
-      if ( deriv > 0 ) {
-        return c2 * std::pow(-c3,deriv) * std::exp(-c3 * u);
+      // Aluminum Thermal Conductivity: 236 at 273K and 240 at 400K
+      const Real c0 = static_cast<Real>(155)      + static_cast<Real>(2)      * param[2];
+      const Real c1 = static_cast<Real>(0.59)     + static_cast<Real>(0.02)   * param[3];
+      const Real c2 = static_cast<Real>(-1.4e-3)  + static_cast<Real>(2.e-5)  * param[4];
+      const Real c3 = static_cast<Real>(1.3e-6)   + static_cast<Real>(2.e-7)  * param[5];
+      const Real c4 = static_cast<Real>(-4.8e-10) + static_cast<Real>(2.e-12) * param[6];
+      if ( deriv == 1 ) {
+        Real u2 = u*u, u3 = u2*u;
+        return c1 + static_cast<Real>(2)*c2*u
+                  + static_cast<Real>(3)*c3*u2
+                  + static_cast<Real>(4)*c4*u3;
       }
-      return c2 * std::exp(-c3 * u) + c1;
+      if ( deriv == 2 ) {
+        Real u2 = u*u;
+        return static_cast<Real>(2)*c2 + static_cast<Real>(6)*c3*u
+                                       + static_cast<Real>(12)*c4*u2;
+      }
+      Real u2 = u*u, u3 = u2*u, u4 = u3*u;
+      return c0 + c1*u + c2*u2 + c3*u3 + c4*u4;
     }
   }
 
@@ -610,11 +761,11 @@ private:
     if ( x[1] < xmid_ ) {
       const std::vector<Real> param = PDE<Real>::getParameter();
       const Real quarter(0.25), half(0.5);
-      const Real x1  = xmid_ * (quarter * param[4] + half);
+      const Real x1  = xmid_ * (quarter * param[7] + half);
       const Real det = (xmid_ - x1) * x1;
       const Real a   = static_cast<Real>(-1) / det;
       const Real b   = xmid_ / det;
-      const Real m   = static_cast<Real>(1.e-6) + static_cast<Real>(1.e-7)*param[5];
+      const Real m   = advMag_ + static_cast<Real>(5)*param[8];
       const Real mag = m * (a * std::pow(x[1],2) + b * x[1]);
       adv[0] = -mag;
       adv[1] = static_cast<Real>(0);
@@ -633,16 +784,20 @@ private:
                                const int sideset, const int locSideId,
                                const int deriv = 0) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
-    Real c1(0), c2(0), c3(0);
+    // sig is the Stefan-Boltzmann constant
+    // c1 is sig times the emissivity [0.5,1.5]
+    // c2 is the ambient temperature away from the aluminum
+    // c3 is the thermal convectivity of water (5) and oil (40)
+    Real c1(0), c2(0), c3(0), sig(5.67e-8);
     if ( sideset == 2 ) {
-      c1 = static_cast<Real>(1.0e-8) + static_cast<Real>(5.e-9)        * param[6];
-      c2 = airTemp_                  + static_cast<Real>(0.1*airTemp_) * param[7];
-      c3 = static_cast<Real>(1.4e-6) + static_cast<Real>(2.e-7)        * param[8];
+      c1 = sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[9]);
+      c2 = airTemp_             + static_cast<Real>(0.1*airTemp_) * param[10];
+      c3 = static_cast<Real>(5) + static_cast<Real>(0.5)          * param[11];
     }
     else if ( sideset == 4 || sideset == 5 ) {
-      c1 = static_cast<Real>(1.0e-8) + static_cast<Real>(5.e-9)        * param[9];
-      c2 = engTemp_                  + static_cast<Real>(0.1*engTemp_) * param[10];
-      c3 = static_cast<Real>(1.0e-4) + static_cast<Real>(1.e-5)        * param[11];
+      c1 = sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[12]);
+      c2 = engTemp_              + static_cast<Real>(0.1*engTemp_) * param[13];
+      c3 = static_cast<Real>(40) + static_cast<Real>(2)            * param[14];
     }
     if ( deriv == 1 ) {
       return c1 * static_cast<Real>(4) * std::pow(u,3) + c3;
@@ -651,6 +806,21 @@ private:
       return c1 * static_cast<Real>(4) * static_cast<Real>(3) * std::pow(u,2);
     }
     return c1 * (std::pow(u,4) - std::pow(c2,4)) + c3 * (u - c2);
+  }
+
+  Real evaluateRobin(const Real u, const Real z, const std::vector<Real> &x,
+                     const int sideset, const int locSideId,
+                     const int deriv = 0, const int component = 1) const {
+    const std::vector<Real> param = PDE<Real>::getParameter();
+    // c is the thermal convectivity of water (440)
+    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[15];
+    if ( deriv == 1 ) {
+      return (component==1) ? c : -c;
+    }
+    if ( deriv > 1 ) {
+      return static_cast<Real>(0);
+    }
+    return c * (u - z);
   }
  
   /***************************************************************************/
@@ -713,6 +883,27 @@ private:
           pt[k] = (*fe_bdry_[sideset][locSideId]->cubPts())(i,j,k);
         }
         (*sb)(i,j) = evaluateStefanBoltzmann((*u)(i,j),pt,sideset,locSideId,deriv);
+      }
+    }
+  }
+
+  void computeRobin(Teuchos::RCP<Intrepid::FieldContainer<Real> > &robin,
+                    const Teuchos::RCP<Intrepid::FieldContainer<Real> > &u,
+                    const Teuchos::RCP<Intrepid::FieldContainer<Real> > &z,
+                    const int sideset,
+                    const int locSideId,
+                    const int deriv = 0,
+                    const int component = 1) const {
+    const int c = u->dimension(0);
+    const int p = u->dimension(1);
+    const int d = fe_vol_->gradN()->dimension(3);
+    std::vector<Real> pt(d);
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        for (int k = 0; k < d; ++k) {
+          pt[k] = (*fe_bdry_[sideset][locSideId]->cubPts())(i,j,k);
+        }
+        (*robin)(i,j) = evaluateRobin((*u)(i,j),(*z)(i,j),pt,sideset,locSideId,deriv,component);
       }
     }
   }
