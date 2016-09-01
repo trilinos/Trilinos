@@ -79,16 +79,20 @@ private:
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
   std::vector<std::vector<int> > fidx_;
 
-  const Real xmid_;
   const Real scale_;
+  Real xmid_;
+  Real engTemp_;
+  Real airTemp_;
 
 
 public:
 
-  StochasticStefanBoltzmannPDE(Teuchos::ParameterList &parlist, const Real xmid = 0.5)
-    : xmid_(xmid), scale_(1) {
+  StochasticStefanBoltzmannPDE(Teuchos::ParameterList &parlist) : scale_(1) {
+    xmid_ = parlist.sublist("Geometry").get<Real>("Step height");
+    engTemp_ = parlist.sublist("Problem").get("Engine: Ambient Temperature",450.0);
+    airTemp_ = parlist.sublist("Problem").get("Air: Ambient Temperature",293.0);
     // Finite element fields.
-    int basisOrder = parlist.sublist("PDE Poisson").get("Basis Order",1);
+    int basisOrder = parlist.sublist("Problem").get("Basis Order",1);
     if (basisOrder == 1) {
       basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
     }
@@ -99,12 +103,12 @@ public:
     // Quadrature rules.
     shards::CellTopology cellType = basisPtr_->getBaseCellTopology();        // get the cell type from any basis
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                       // create cubature factory
-    int cubDegree = parlist.sublist("PDE Poisson").get("Volume Cubature Degree",2); // set cubature degree, e.g., 2
+    int cubDegree = parlist.sublist("Problem").get("Volume Cubature Degree",2); // set cubature degree, e.g., 2
     cellCub_ = cubFactory.create(cellType, cubDegree);                       // create default cubature
 
     int d = cellType.getDimension();
     shards::CellTopology bdryCellType = cellType.getCellTopologyData(d-1, 0);
-    int bdryCubDegree = parlist.sublist("PDE Poisson").get("Boundary Cubature Degree",2); // set cubature degree, e.g., 2
+    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",2); // set cubature degree, e.g., 2
     bdryCub_ = cubFactory.create(bdryCellType, bdryCubDegree);
   }
   
@@ -632,12 +636,12 @@ private:
     Real c1(0), c2(0), c3(0);
     if ( sideset == 2 ) {
       c1 = static_cast<Real>(1.e-8) + static_cast<Real>(5.e-7) * param[6];
-      c2 = static_cast<Real>(293)   + static_cast<Real>(5)     * param[7];
+      c2 = airTemp_                 + static_cast<Real>(5)     * param[7];
       c3 = static_cast<Real>(5)     + static_cast<Real>(0.5)   * param[8];
     }
     else if ( sideset == 4 || sideset == 5 ) {
       c1 = static_cast<Real>(1.e-8) + static_cast<Real>(5.e-7) * param[9];
-      c2 = static_cast<Real>(450)   + static_cast<Real>(50)    * param[10];
+      c2 = engTemp_                 + static_cast<Real>(50)    * param[10];
       c3 = static_cast<Real>(5)     + static_cast<Real>(0.5)   * param[11];
     }
     if ( deriv == 1 ) {

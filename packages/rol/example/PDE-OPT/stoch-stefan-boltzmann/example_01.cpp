@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
-    qoi_vec[0] = Teuchos::rcp(new QoI_AverageTemperature<RealT>(pde->getFE()));
+    qoi_vec[0] = Teuchos::rcp(new QoI_AverageTemperature<RealT>(pde->getFE(),*parlist));
     qoi_vec[1] = Teuchos::rcp(new QoI_ControlPenalty<RealT>(pde->getFE()));
     Teuchos::RCP<StochasticStefanBoltzmannStdObjective<RealT> > std_obj
       = Teuchos::rcp(new StochasticStefanBoltzmannStdObjective<RealT>(*parlist));

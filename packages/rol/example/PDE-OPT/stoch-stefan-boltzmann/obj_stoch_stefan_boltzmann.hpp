@@ -65,8 +65,11 @@ private:
 
 public:
   QoI_AverageTemperature(const Teuchos::RCP<FE<Real> > &fe,
-                         const Real xmid = 0.5) : fe_(fe), xmid_(xmid) {
-    vol_ = (static_cast<Real>(1)-xmid_);
+                         Teuchos::ParameterList &parlist) : fe_(fe) {
+    xmid_       = parlist.sublist("Geometry").get<Real>("Step height");
+    Real width  = parlist.sublist("Geometry").get<Real>("Channel width");
+    Real height = parlist.sublist("Geometry").get<Real>("Channel height");
+    vol_ = width * (height-xmid_);
     int c = fe_->cubPts()->dimension(0);
     int p = fe_->cubPts()->dimension(1);
     int d = fe_->cubPts()->dimension(2);
