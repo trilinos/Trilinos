@@ -45,7 +45,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Demo Integrator").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      integratorBasic<double>(pl, model);
+      Tempus::integratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();

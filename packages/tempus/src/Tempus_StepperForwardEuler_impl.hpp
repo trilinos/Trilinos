@@ -2,6 +2,7 @@
 #define TEMPUS_STEPPERFORWARDEULER_IMPL_HPP
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 namespace Tempus {
 

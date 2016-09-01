@@ -6,7 +6,7 @@
 //Thrya
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_VectorBase.hpp"
-
+#include "Thyra_VectorStdOps.hpp"
 
 namespace Tempus {
 

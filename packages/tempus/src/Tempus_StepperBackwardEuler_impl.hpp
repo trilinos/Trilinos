@@ -2,8 +2,9 @@
 #define TEMPUS_STEPPERBACKWARDEULER_IMPL_HPP
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
-
+#include "NOX_Thyra.H"
 
 namespace Tempus {
 

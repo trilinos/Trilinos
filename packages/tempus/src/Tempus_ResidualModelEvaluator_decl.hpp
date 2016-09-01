@@ -1,5 +1,5 @@
-#ifndef TEMPUS_RESIDUALMODELEVALUATOR_HPP
-#define TEMPUS_RESIDUALMODELEVALUATOR_HPP
+#ifndef TEMPUS_RESIDUALMODELEVALUATOR_DECL_HPP
+#define TEMPUS_RESIDUALMODELEVALUATOR_DECL_HPP
 
 #include <functional>
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
@@ -88,7 +88,5 @@ private:
 };
 
 } // namespace Tempus
-
-#include "Tempus_ResidualModelEvaluator_impl.hpp"
 
 #endif // TEMPUS_RESIDUALMODELEVALUATOR_HPP

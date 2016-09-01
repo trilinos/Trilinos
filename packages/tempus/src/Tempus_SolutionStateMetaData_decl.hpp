@@ -1,5 +1,5 @@
-#ifndef TEMPUS_SOLUTIONSTATEMETADATA_HPP
-#define TEMPUS_SOLUTIONSTATEMETADATA_HPP
+#ifndef TEMPUS_SOLUTIONSTATEMETADATA_DECL_HPP
+#define TEMPUS_SOLUTIONSTATEMETADATA_DECL_HPP
 
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
@@ -83,7 +83,5 @@ public:
 
 };
 } // namespace Tempus
-
-#include "Tempus_SolutionStateMetaData_impl.hpp"
 
 #endif // TEMPUS_SOLUTIONSTATEMETADATA_HPP

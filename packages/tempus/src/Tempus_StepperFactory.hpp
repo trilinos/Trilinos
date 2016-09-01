@@ -18,7 +18,7 @@ static std::string BackwardEuler_name  = "Backward Euler";
 static std::string StepperType_name    = "Stepper Type";
 static std::string StepperType_default = ForwardEuler_name;
 
-Teuchos::Array<std::string> StepperType_names = Teuchos::tuple<std::string>(
+static Teuchos::Array<std::string> StepperType_names = Teuchos::tuple<std::string>(
   ForwardEuler_name,
   BackwardEuler_name);
 
@@ -31,7 +31,7 @@ StepperValidator = Teuchos::rcp(
       BACKWARD_EULER),
     StepperType_name));
 
-
+inline
 const std::string toString(const StepperType s)
 {
   switch(s) {
@@ -45,7 +45,7 @@ const std::string toString(const StepperType s)
   return 0; // Should never get here!
 }
 
-
+inline
 const StepperType fromString(const std::string ss)
 {
   if (ss == ForwardEuler_name)

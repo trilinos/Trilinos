@@ -1,5 +1,5 @@
-#ifndef TEMPUS_SOLUTIONSTATE_HPP
-#define TEMPUS_SOLUTIONSTATE_HPP
+#ifndef TEMPUS_SOLUTIONSTATE_DECL_HPP
+#define TEMPUS_SOLUTIONSTATE_DECL_HPP
 
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
@@ -7,6 +7,7 @@
 // Thrya
 #include "Thyra_VectorBase.hpp"
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_StepperState.hpp"
 
@@ -64,6 +65,7 @@ public:
     const int    nConsecutiveFailures,
     const Status solutionStatus,
     const bool   output,
+    const bool   outputScreen,
     const bool   isRestartable,
     const bool   isInterpolated,
     const Scalar accuracy,
@@ -171,7 +173,5 @@ public:
 
 };
 } // namespace Tempus
-
-#include "Tempus_SolutionState_impl.hpp"
 
 #endif // TEMPUS_SOLUTIONSTATE_HPP

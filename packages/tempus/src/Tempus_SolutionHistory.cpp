@@ -1,15 +1,16 @@
-#include "Tempus_config.hpp"
+#include "Tempus_ExplicitTemplateInstantiation.hpp"
+
+#ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_SolutionHistory_impl.hpp"
 
-#ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
-
 namespace Tempus {
 
-template class SolutionHistory<double>;
+  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SolutionHistory)
 
-template RCP<SolutionHistory<double> >
-SolutionHistory(RCP<ParameterList> pList_ = Teuchos::null);
+  // Non-member ctor
+  template Teuchos::RCP<SolutionHistory<double> >
+  solutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList_);
 
 } // namespace Tempus
 

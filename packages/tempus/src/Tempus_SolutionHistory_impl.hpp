@@ -136,9 +136,8 @@ void SolutionHistory<Scalar>::removeState(
   const Teuchos::RCP<SolutionState<Scalar> >& state_)
 {
   if (history_->size() != 0) {
-    typename Teuchos::Array<SolutionState<Scalar> >::reverse_iterator
-      state_it = history_->rbegin();
-    for (state_it; state_it < history_->rend(); state_it++) {
+    auto state_it = history_->rbegin();
+    for ( ; state_it < history_->rend(); state_it++) {
       if (state_->getTime() == (*state_it)->getTime()) break;
     }
 
@@ -147,7 +146,12 @@ void SolutionHistory<Scalar>::removeState(
       // << state_it->describe()
       );
 
-    history_->erase(state_it);
+    // This is incorrect code. Teuchos::Array does not have an erase
+    // for a reverse iterator. Adding an exception for now. Need to
+    // remove Teuchos::Array and just use std::vector.
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                               "Tempus::SolutionHistory::removeState() - not implemented yet!");
+    //history_->erase(state_it);
   }
   return;
 }
@@ -172,18 +176,17 @@ SolutionHistory<Scalar>::findState(const Scalar time) const
     "        time = "<< time <<"\n");
 
   const Scalar relTol = 1.0e-14;
-  typename Teuchos::Array<SolutionState<Scalar> >::iterator
-    state_it = history_->begin();
+  auto state_it = history_->begin();
   // Linear search
-  for (state_it; state_it < history_->end(); ++state_it) {
-    if (abs((state_it.getTime()-time)/state_it.getTime()) < relTol) break;
+  for ( ; state_it < history_->end(); ++state_it) {
+    if (abs((*state_it)->getTime()-time)/((*state_it)->getTime()) < relTol) break;
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(state_it == history_->end(), std::logic_error,
     "Error - SolutionHistory::findState()!\n"
     "        Did not find a SolutionState with time = " <<time<< std::endl);
 
-  return history_[state_it];
+  return *state_it;
 }
 
 
@@ -407,6 +410,14 @@ SolutionHistory<Scalar>::unsetParameterList()
   return(temp_plist);
 }
 
+// Nonmember constructor.
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory(
+  Teuchos::RCP<Teuchos::ParameterList> pList)
+{
+  Teuchos::RCP<SolutionHistory<Scalar> > sh=rcp(new SolutionHistory<Scalar>(pList));
+  return sh;
+}
 
 //template<class Scalar>
 //void SolutionHistory<Scalar>::setInterpolator(

@@ -1,6 +1,7 @@
 #ifndef TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
 #define TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
 
+#include "Tempus_config.hpp"
 
 namespace Tempus {
 

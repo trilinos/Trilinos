@@ -38,6 +38,7 @@ SolutionState<Scalar>::SolutionState(
   const int    nConsecutiveFailures,
   const Status solutionStatus,
   const bool   output,
+  const bool   outputScreen,
   const bool   isInterpolated,
   const bool   isRestartable,
   const Scalar accuracy,
@@ -50,10 +51,21 @@ SolutionState<Scalar>::SolutionState(
     xdotdot_     (xdotdot),
     stepperState_(stepperState)
 {
-  metaData_ = Teuchos::rcp(new SolutionStateMetaData<Scalar> (time,
-      dt, iStep, errorAbs, errorRel, order, nFailures,
-      nConsecutiveFailures, solutionStatus, output,
-      isRestartable, isInterpolated, accuracy));
+  metaData_ = 
+    Teuchos::rcp(new SolutionStateMetaData<Scalar> (time,
+                                                    iStep,
+                                                    dt,
+                                                    errorAbs,
+                                                    errorRel,
+                                                    order,
+                                                    nFailures,
+                                                    nConsecutiveFailures,
+                                                    solutionStatus,
+                                                    output,
+                                                    outputScreen,
+                                                    isRestartable,
+                                                    isInterpolated,
+                                                    accuracy));
 }
 
 template<class Scalar>
@@ -108,61 +120,61 @@ copy(Teuchos::RCP<SolutionState<Scalar> > ss)
 template<class Scalar>
 bool SolutionState<Scalar>::operator< (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time < ss->metaData_->time);
+  return (this->metaData_->time_ < ss.metaData_->time_);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator<= (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time <= ss.metaData_->time);
+  return (this->metaData_->time_ <= ss.metaData_->time_);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator< (const Scalar& t) const
 {
-  return (this->metaData_->time < t);
+  return (this->metaData_->time_ < t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator<= (const Scalar& t) const
 {
-  return (this->metaData_->time <= t);
+  return (this->metaData_->time_ <= t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator> (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time > ss.metaData_->time);
+  return (this->metaData_->time_ > ss.metaData_->time_);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator>= (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time >= ss.metaData_->time);
+  return (this->metaData_->time_ >= ss.metaData_->time_);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator> (const Scalar& t) const
 {
-  return (this->metaData_->time > t);
+  return (this->metaData_->time_ > t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator>= (const Scalar& t) const
 {
-  return (this->metaData_->time >= t);
+  return (this->metaData_->time_ >= t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator== (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time == ss.metaData_->time);
+  return (this->metaData_->time_ == ss.metaData_->time_);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator== (const Scalar& t) const
 {
-  return (this->metaData_->time == t);
+  return (this->metaData_->time_ == t);
 }
 
 template<class Scalar>

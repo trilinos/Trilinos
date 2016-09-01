@@ -1,5 +1,5 @@
-#ifndef TEMPUS_INTEGRATORBASIC_HPP
-#define TEMPUS_INTEGRATORBASIC_HPP
+#ifndef TEMPUS_INTEGRATORBASIC_DECL_HPP
+#define TEMPUS_INTEGRATORBASIC_DECL_HPP
 
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
@@ -63,10 +63,10 @@ public:
       {return solutionHistory_->getCurrentState()->getX();}
     /// Get current the time derivative of the solution, xdot
     Teuchos::RCP<Thyra::VectorBase<double> > getXdot() const
-      {return solutionHistory_->getCurrentState()->getXdot();}
+      {return solutionHistory_->getCurrentState()->getXDot();}
     /// Get current the second time derivative of the solution, xdotdot
     Teuchos::RCP<Thyra::VectorBase<double> > getXdotdot() const
-      {return solutionHistory_->getCurrentState()->getXdotdot();}
+      {return solutionHistory_->getCurrentState()->getXDotDot();}
 
     /// Get SolutionHistory
     Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
@@ -112,21 +112,14 @@ protected:
    */
   Status integratorStatus_;
 };
-} // namespace Tempus
-
-#include "Tempus_IntegratorBasic_impl.hpp"
 
 /// Non-member constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
-  const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> >& ob=Teuchos::null)
-{
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model, ob));
-  return(integrator);
-}
+  const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> >& ob=Teuchos::null);
 
+} // namespace Tempus
 
 #endif // TEMPUS_INTEGRATORBASIC_HPP

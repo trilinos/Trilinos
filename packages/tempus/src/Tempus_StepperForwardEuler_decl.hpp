@@ -1,6 +1,7 @@
-#ifndef TEMPUS_STEPPERFORWARDEULER_HPP
-#define TEMPUS_STEPPERFORWARDEULER_HPP
+#ifndef TEMPUS_STEPPERFORWARDEULER_DECL_HPP
+#define TEMPUS_STEPPERFORWARDEULER_DECL_HPP
 
+#include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 
 namespace Tempus {
@@ -59,7 +60,5 @@ protected:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
 };
 } // namespace Tempus
-
-#include "Tempus_StepperForwardEuler_impl.hpp"
 
 #endif // TEMPUS_STEPPERFORWARDEULER_HPP

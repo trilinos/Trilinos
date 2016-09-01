@@ -34,7 +34,7 @@ namespace {
   static std::string outputScreenIndexList_default = "";
   static std::string outputScreenTimeInterval_name     =
     "Screen Output Time Interval";
-  static double      outputScreenTimeInterval_default  = 100.0;
+  //static double      outputScreenTimeInterval_default  = 100.0;
   static std::string outputScreenIndexInterval_name    =
     "Screen Output Index Interval";
   static int         outputScreenIndexInterval_default = 100;
@@ -545,6 +545,17 @@ IntegratorBasic<Scalar>::unsetParameterList()
   return(temp_param_list);
 }
 
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                     pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> >& ob)
+{
+  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model, ob));
+  return(integrator);
+}
 
 } // namespace Tempus
 #endif // TEMPUS_INTEGRATORBASIC_IMPL_HPP

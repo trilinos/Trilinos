@@ -1,11 +1,12 @@
-#ifndef TEMPUS_TIMESTEPCONTROL_HPP
-#define TEMPUS_TIMESTEPCONTROL_HPP
+#ifndef TEMPUS_TIMESTEPCONTROL_DECL_HPP
+#define TEMPUS_TIMESTEPCONTROL_DECL_HPP
 
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_Types.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
@@ -95,7 +96,5 @@ public:
   Teuchos::RCP<Teuchos::ParameterList> pList_;
 };
 } // namespace Tempus
-
-#include "Tempus_TimeStepControl_impl.hpp"
 
 #endif // TEMPUS_TIMESTEPCONTROL_HPP

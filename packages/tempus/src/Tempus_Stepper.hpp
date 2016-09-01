@@ -9,6 +9,7 @@
 // Thyra
 #include "Thyra_ModelEvaluator.hpp"
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 

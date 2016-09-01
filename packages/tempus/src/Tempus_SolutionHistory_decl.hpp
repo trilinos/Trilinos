@@ -1,5 +1,5 @@
-#ifndef TEMPUS_SOLUTIONHISTORY_HPP
-#define TEMPUS_SOLUTIONHISTORY_HPP
+#ifndef TEMPUS_SOLUTIONHISTORY_DECL_HPP
+#define TEMPUS_SOLUTIONHISTORY_DECL_HPP
 
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
@@ -7,6 +7,7 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_Array.hpp"
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_SolutionState.hpp"
 
 
@@ -167,21 +168,15 @@ protected:
   Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
 };
 
-
 /** \brief Nonmember constructor.
  *
  * \relates SolutionHistory.
  */
 template<class Scalar>
-Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory(
-  Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null )
-{
-  Teuchos::RCP<SolutionHistory<Scalar> > sh=rcp(new SolutionHistory<Scalar>(pList));
-  return sh;
-}
+Teuchos::RCP<SolutionHistory<Scalar> > 
+solutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+
 
 } // namespace Tempus
-
-#include "Tempus_SolutionHistory_impl.hpp"
 
 #endif // TEMPUS_SOLUTIONHISTORY_HPP
