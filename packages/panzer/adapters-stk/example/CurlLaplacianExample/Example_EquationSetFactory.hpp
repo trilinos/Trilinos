@@ -54,7 +54,7 @@ namespace Example {
 
 // A macro that defines a class to make construction of the equation sets easier
 //   - The equation set is constructed over a list of automatic differention types
-PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("CurlLaplacian", CurlLaplacianEquationSet, CurlLaplacianEquationSet)
+PANZER_DECLARE_EQSET_TEMPLATE_BUILDER(CurlLaplacianEquationSet, CurlLaplacianEquationSet)
 
 // A user written factory that creates each equation set.  The key member here
 // is buildEquationSet
@@ -74,7 +74,7 @@ public:
       bool found = false; // this is used by PANZER_BUILD_EQSET_OBJECTS
          
       // macro checks if(ies.name=="CurlLaplacian") then an EquationSet_Energy object is constructed
-      PANZER_BUILD_EQSET_OBJECTS("CurlLaplacian", CurlLaplacianEquationSet, CurlLaplacianEquationSet)
+      PANZER_BUILD_EQSET_OBJECTS("CurlLaplacian", CurlLaplacianEquationSet)
          
       // make sure your equation set has been found
       if(!found) {

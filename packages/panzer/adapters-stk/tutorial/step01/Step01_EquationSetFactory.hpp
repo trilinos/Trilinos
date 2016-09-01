@@ -52,7 +52,7 @@
 
 namespace user_app {
 
-  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("Projection", user_app::EquationSet_Projection,
+  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER(user_app::EquationSet_Projection,
 					EquationSet_Projection)
 
   class EquationSetFactory : public panzer::EquationSetFactory {
@@ -71,7 +71,7 @@ namespace user_app {
       
       bool found = false;
       
-      PANZER_BUILD_EQSET_OBJECTS("Projection", user_app::EquationSet_Projection,
+      PANZER_BUILD_EQSET_OBJECTS("Projection",
 				 EquationSet_Projection)
       
       if (!found) {
