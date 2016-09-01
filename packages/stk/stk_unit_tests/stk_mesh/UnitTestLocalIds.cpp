@@ -14,6 +14,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
 #include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp"
 
 class LocalIds : public stk::unit_test_util::MeshFixture
 {
@@ -22,44 +23,13 @@ protected:
     virtual ~LocalIds() {}
 };
 
-class BulkDataLocalIds
-{
-public:
-    BulkDataLocalIds(stk::mesh::BulkData& bulkData)
-    {
-        initialize(bulkData);
-    }
-
-    void set_local_id(stk::mesh::Entity entity, unsigned local_index)
-    {
-        m_entityToLocalId[entity.local_offset()] = local_index;
-    }
-
-    unsigned get_local_id(stk::mesh::Entity entity) const
-    {
-        return m_entityToLocalId[entity.local_offset()];
-    }
-
-    void reset(stk::mesh::BulkData& bulkData)
-    {
-        initialize(bulkData);
-    }
-
-    void initialize(stk::mesh::BulkData& bulkData)
-    {
-        m_entityToLocalId.clear();
-        m_entityToLocalId.resize(bulkData.get_size_of_entity_index_space(), 0);
-    }
-
-private:
-    std::vector<unsigned> m_entityToLocalId;           // size num local entities
-};
 
 class LocalIdBulkData
 {
 public:
-    LocalIdBulkData(stk::mesh::BulkData& bulkData) : m_bulkData(bulkData), bulkDataLocalIds(bulkData)
+    LocalIdBulkData(stk::mesh::BulkData& bulkData) : m_bulkData(bulkData), bulkDataLocalIdMapper()
     {
+        bulkDataLocalIdMapper.set_size(bulkData);
         m_localIdToElement.resize(num_elements());
         fillIds(stk::topology::ELEM_RANK, m_localIdToElement);
         m_localIdToNode.resize(num_nodes());
@@ -98,7 +68,7 @@ public:
 
     void reset_local_ids()
     {
-        bulkDataLocalIds.reset(m_bulkData);
+        bulkDataLocalIdMapper.set_size(m_bulkData);
         fillIds(stk::topology::ELEM_RANK, m_localIdToElement);
         fillIds(stk::topology::NODE_RANK, m_localIdToNode);
     }
@@ -107,7 +77,7 @@ private:
 
     unsigned get_local_id(stk::mesh::Entity entity) const
     {
-        return bulkDataLocalIds.get_local_id(entity);
+        return bulkDataLocalIdMapper.entity_to_local(entity);
     }
 
     void fillIds(stk::mesh::EntityRank rank, std::vector<stk::mesh::Entity>& localIdToEntity)
@@ -120,7 +90,7 @@ private:
             for(size_t j=0;j<bucket.size();++j)
             {
                 localIdToEntity[counter] = bucket[j];
-                bulkDataLocalIds.set_local_id(bucket[j], counter);
+                bulkDataLocalIdMapper.add_new_entity_with_local_id(bucket[j], counter);
                 counter++;
             }
         }
@@ -137,7 +107,7 @@ private:
     std::vector<stk::mesh::Entity> m_localIdToElement; // size num local elements
     std::vector<stk::mesh::Entity> m_localIdToNode;    // size num local nodes
     CoordFieldType *m_coords = nullptr;
-    BulkDataLocalIds bulkDataLocalIds;
+    stk::mesh::impl::LocalIdMapper bulkDataLocalIdMapper;
 };
 
 std::vector<std::vector<double> > gold_x_coordinates =
