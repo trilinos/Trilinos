@@ -78,7 +78,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
   computePredictor(solutionHistory);
   if (workingState->stepperState_->stepperStatus_ == Status::FAILED) return;
 
-  typedef Thyra::ModelEvaluatorBase MEB;
+  //typedef Thyra::ModelEvaluatorBase MEB;
   const Scalar time = workingState->getTime();
   const Scalar dt   = workingState->getTimeStep();
 

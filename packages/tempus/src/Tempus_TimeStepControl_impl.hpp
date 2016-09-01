@@ -285,7 +285,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   if (it != outputIndices_.end()) output = true;
 
   if (!output) {
-    for (int i=0; i < outputTimes_.size(); ++i) {
+    for (size_t i=0; i < outputTimes_.size(); ++i) {
       if (time < outputTimes_[i] && outputTimes_[i] <= time + dt) {
         output = true;
         if (stepType_ == VARIABLE_STEP_SIZE) dt = outputTimes_[i] - time;
