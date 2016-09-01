@@ -88,28 +88,46 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
-    MeshManager_Rectangle<RealT> meshmgr(*parlist);
-    //MeshManager_BackwardFacingStepChannel<RealT> meshmgr(*parlist);
+    //MeshManager_Rectangle<RealT> meshmgr(*parlist);
+    MeshManager_BackwardFacingStepChannel<RealT> meshmgr(*parlist);
     Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
+    Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > sideSetsPtr = meshmgr.getSideSets(); 
+
     Intrepid::FieldContainer<RealT> &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
     Intrepid::FieldContainer<int>   &cellToEdgeMap = *cellToEdgeMapPtr;
+    std::vector<std::vector<Intrepid::FieldContainer<int> > >  &sideSets = *sideSetsPtr;
     *outStream << "Number of nodes = " << meshmgr.getNumNodes() << std::endl << nodes;
     *outStream << "Number of cells = " << meshmgr.getNumCells() << std::endl << cellToNodeMap;
     *outStream << "Number of edges = " << meshmgr.getNumEdges() << std::endl << cellToEdgeMap;
-    // Print mesh to file.
+    // Print mesh info to file.
     std::ofstream meshfile;
-    meshfile.open("mesh.txt");
+    meshfile.open("cells.txt");
     for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
-      meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,3), 0) << "  " << nodes(cellToNodeMap(i,3), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
+      meshfile << cellToNodeMap(i,0) << "  "
+               << cellToNodeMap(i,1) << "  "
+               << cellToNodeMap(i,2) << "  "
+               << cellToNodeMap(i,3) << std::endl;
+    }
+    meshfile.close();
+    meshfile.open("nodes.txt");
+    for (int i=0; i<nodes.dimension(0); ++i) {
+      meshfile << nodes(i,0) << "  "
+               << nodes(i,1) << std::endl;
+    }
+    meshfile.close();
+    meshfile.open("sideset.txt");
+    for (int i=0; i<static_cast<int>(sideSets.size()); ++i) {
+      for (int j=0; j<static_cast<int>(sideSets[i].size()); ++j) {
+        if (sideSets[i][j].rank() > 0) {
+          for (int k=0; k<sideSets[i][j].dimension(0); ++k) {
+            meshfile << sideSets[i][j](k) << std::endl;
+          }
+        }
+        meshfile << std::endl << std::endl;
+      }
     }
     meshfile.close();
 

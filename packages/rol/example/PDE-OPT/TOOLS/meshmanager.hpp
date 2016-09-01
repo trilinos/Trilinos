@@ -159,6 +159,8 @@ private:
   Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
   Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
 
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+
 public:
 
   MeshManager_BackwardFacingStepChannel(Teuchos::ParameterList &parlist) {
@@ -170,6 +172,12 @@ public:
     observeW_ = parlist.sublist("Geometry").get("Observation width", 3.0);
     // Mesh data.
     ref_   = parlist.sublist("Geometry").get(      "Refinement level", 1);
+    /*nx1_   = parlist.sublist("Geometry").get( "Observation region NX", 3*2*ref_);
+    ny1_   = parlist.sublist("Geometry").get( "Observation region NY", 1*ref_);
+    nx2_   = parlist.sublist("Geometry").get("Laminar flow region NX", 4*2*ref_);
+    ny2_   = ny1_;
+    nx3_   = parlist.sublist("Geometry").get(      "Inflow region NX", 1*2*ref_);
+    ny3_   = parlist.sublist("Geometry").get(      "Inflow region NY", 1*ref_);*/
     nx1_   = parlist.sublist("Geometry").get( "Observation region NX", 4*ref_);
     ny1_   = parlist.sublist("Geometry").get( "Observation region NY", 5*ref_);
     nx2_   = parlist.sublist("Geometry").get("Laminar flow region NX", 2*ref_);
@@ -187,6 +195,7 @@ public:
     computeNodes(); 
     computeCellToNodeMap(); 
     computeCellToEdgeMap();
+    computeSideSets();
   }
 
 
@@ -202,6 +211,13 @@ public:
 
   Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
+  }
+
+
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+      std::ostream & outStream = std::cout,
+      const bool verbose = false) const {
+    return meshSideSets_;
   }
 
 
@@ -358,6 +374,51 @@ private:
     computeCellToNodeMap();
     computeCellToEdgeMap();
   } // setRefinementLevel
+
+
+  virtual void computeSideSets() {
+
+    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(7));
+    int numSides = 4;
+    (*meshSideSets_)[0].resize(numSides); // bottom
+    (*meshSideSets_)[1].resize(numSides); // right lower
+    (*meshSideSets_)[2].resize(numSides); // right upper
+    (*meshSideSets_)[3].resize(numSides); // top
+    (*meshSideSets_)[4].resize(numSides); // left upper
+    (*meshSideSets_)[5].resize(numSides); // middle
+    (*meshSideSets_)[6].resize(numSides); // left lower
+    (*meshSideSets_)[0][0].resize(nx1_+nx2_);
+    (*meshSideSets_)[1][1].resize(ny2_);
+    (*meshSideSets_)[2][1].resize(ny5_);
+    (*meshSideSets_)[3][2].resize(nx3_+nx4_+nx5_);
+    (*meshSideSets_)[4][3].resize(ny3_);
+    (*meshSideSets_)[5][0].resize(nx3_);
+    (*meshSideSets_)[6][3].resize(ny1_);
+
+    for (int i=0; i<nx1_+nx2_; ++i) {
+      (*meshSideSets_)[0][0](i) = i;
+    }
+    for (int i=0; i<ny2_; ++i) {
+      (*meshSideSets_)[1][1](i) = (i+1)*(nx1_+nx2_) - 1;
+    }
+    int offset = nx1_*ny1_+nx2_*ny2_;
+    for (int i=0; i<ny5_; ++i) {
+      (*meshSideSets_)[2][1](i) = offset + (i+1)*(nx3_+nx4_+nx5_) - 1;
+    }
+    for (int i=0; i<nx3_+nx4_+nx5_; ++i) {
+      (*meshSideSets_)[3][2](i) = offset + (ny3_-1)*(nx3_+nx4_+nx5_) + i;
+    }
+    for (int i=0; i<ny3_; ++i) {
+      (*meshSideSets_)[4][3](i) = offset + i*(nx3_+nx4_+nx5_);
+    }
+    for (int i=0; i<nx3_; ++i) {
+      (*meshSideSets_)[5][0](i) = offset + i;
+    }
+    for (int i=0; i<ny1_; ++i) {
+      (*meshSideSets_)[6][3](i) = i*(nx1_+nx2_);
+    }
+
+  } // computeSideSets
 
 }; // MeshManager_BackwardFacingStepChannel
 
