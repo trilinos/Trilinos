@@ -1,5 +1,125 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 12.8 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 12.8 general release contains 58 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL, RTOp, Rythmos, Sacado,
+SEACAS, Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos,
+ThreadPool, Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra,
+Zoltan, Zoltan2.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+Domi
+
+  - Added replicated boundaries
+    - A replicated boundary exists only on a periodic domain, and is
+      simply a convention that the end points are the same points. For
+      example, a left end coordinate that represents 0 degrees and a
+      right end coordinate that represents 360 degrees. Domi now
+      supports either convention, and it affects communication.
+    - Added additional tests for periodic domains
+
+  - Enhancements
+    - New MDVector constructor that takes a parent MDVector and an array
+      of Slices
+    - MDMap support for axis maps
+    - MDMap getMDComm() method
+
+PyTrilinos
+
+  - General
+    - Improved formatting in example scripts
+
+  - Domi
+    - Update MDMap constructor for replicated boundaries
+    - Fixed ETI bugs
+
+  - NOX/LOCA
+    - Fixed memory leak by updating NOX typemaps
+
+  - Tpetra
+    - Fix difficult-to-wrap Map class by using %inline
+
+Tpetra
+
+  - Stop creating Node instances explicitly!
+
+    Hi users!  Please don't create Node instances explicitly any more.
+    Tpetra::Map creates one for you, if you really need one.  You really
+    don't need Node instances: Map's constructors and nonmember
+    "constructors" don't need them any more, nor do Tpetra's Matrix Market
+    readers.
+
+    Creating Node instances explicitly causes issues with Kokkos
+    initialization.  Node will go away eventually, in favor of Kokkos
+    execution spaces and memory spaces.
+
+  - Lots of bug fixes, especially for CUDA
+
+  - Computing offsets in CrsGraph and CrsMatrix is now thread parallel
+
+    CrsGraph's and CrsMatrix's fillComplete method computes row offsets,
+    if they have not yet been computed.  This is now thread parallel.  It
+    uses Kokkos::parallel_scan.
+
+  - More BlockCrsMatrix kernels are thread parallel
+
+  - Interface changes to KokkosSparse::CrsMatrix (the "local" matrix)
+
+    - The replaceValues and sumIntoValues methods now take "is_sorted" and
+      "force_atomic" arguments.  These methods now use binary search
+      (falling back to linear search for short rows) for the sorted case.
+
+    - Row views in KokkosSparse::CrsMatrix are no longer templated.  They
+      now use the ordinal type, rather than the offset type, for indexing.
+      This suffices as long as there are not enough duplicate entries in a
+      row to exceed ordinal_type.  This has the beneficial side effect of
+      reducing the number of local sparse matrix-vector multiply kernel
+      instantiations.
+
+  - Got rid of LittleBlock and LittleVector (for Block* classes)
+
+    Instead, use the little_block_type, const_little_block_type,
+    little_vec_type, and const_little_vec_type typedefs in BlockCrsMatrix
+    and other related classes.  Underlying data layout has NOT changed
+    (yet), but constructors HAVE changed.  This is technically a
+    non-backwards-compatible interface change, but all these classes are
+    in an Experimental namespace anyway.
+
+  - Got rid of KokkosClassic::DefaultArithmetic
+
+    Stokhos was using this, so we had left it in place in previous
+    releases for backwards compatibility.  Now that no other packages
+    depend on it, we have gotten rid of it for good.  Its functionality
+    has been replaced by various functions in TpetraKernels.
+
+    The original idea behind DefaultArithmetic, as suggested in the name,
+    was that users could swap out this "default" implementation of
+    multivector operations with their own implementations.  This is
+    generally less useful than swapping out the implementation of sparse
+    matrix kernels (like sparse matrix-vector multiply or sparse
+    triangular solve).  As a result, Tpetra never had an implementation
+    (since at least January 2010) of multivector operations other than
+    DefaultArithmetic.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 12.6 Release Notes                                         #
 #                                                                             #
 ###############################################################################
