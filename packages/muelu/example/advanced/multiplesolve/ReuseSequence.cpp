@@ -578,7 +578,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   for (size_t t = 1; t < numSteps; t++) {
     out << thinSeparator << std::endl;
     for (size_t k = 0; k < reuseTypes.size(); k++)
-      printf("step #%zu reuse \"%20s\": setup = %5.2le, solve = %5.2le [%3d], total = %5.2le\n", t, reuseNames[k].c_str(),
+      printf("step #%d reuse \"%20s\": setup = %5.2le, solve = %5.2le [%3d], total = %5.2le\n", static_cast<int>(t), reuseNames[k].c_str(),
              setup_time[k*numSteps+t].count(), solve_time[k*numSteps+t].count(), num_its[k*numSteps+t],
              setup_time[k*numSteps+t].count() + solve_time[k*numSteps+t].count());
   }
