@@ -56,33 +56,54 @@ class QoI_StateCost : public QoI<Real> {
 private:
   const Teuchos::RCP<FE<Real> > fe_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > weight_;
-  Real xmid_;
   Real T_;
+  Real rate_;
+  bool exp_;
+  Real xmid_;
+  Real vol_;
 
   Real weightFunc(const std::vector<Real> & x) const {
     return ((x[1] < xmid_) ? static_cast<Real>(0) : static_cast<Real>(1));
   }
 
   Real cost(const Real u, const int deriv = 0) const {
-    if ( u > T_ ) {
-      if ( deriv == 0 ) {
-        return static_cast<Real>(0.5)*(u-T_)*(u-T_);
-      }
+    if ( exp_ ) {
       if ( deriv == 1 ) {
-        return (u-T_);
+        return std::exp(rate_ * (u - T_)) / vol_;
       }
       if ( deriv == 2 ) {
-        return static_cast<Real>(1);
+        return rate_ * std::exp(rate_ * (u - T_)) / vol_;
       }
+      return (std::exp(rate_ * (u - T_)) - static_cast<Real>(1)) / (rate_ * vol_);
     }
-    return static_cast<Real>(0);
+    else {    
+      if ( u > T_ ) {
+        if ( deriv == 0 ) {
+          return static_cast<Real>(0.5)*(u-T_)*(u-T_)/vol_;
+        }
+        if ( deriv == 1 ) {
+          return (u-T_)/vol_;
+        }
+        if ( deriv == 2 ) {
+          return static_cast<Real>(1)/vol_;
+        }
+      }
+      return static_cast<Real>(0);
+    }
   }
 
 public:
   QoI_StateCost(const Teuchos::RCP<FE<Real> > &fe,
                 Teuchos::ParameterList &parlist) : fe_(fe) {
-    xmid_ = parlist.sublist("Geometry").get<Real>("Step height");
     T_    = parlist.sublist("Problem").get("Desired engine temperature",373.0);
+    exp_  = parlist.sublist("Problem").get("Use exponential engine cost model",false);
+    rate_ = parlist.sublist("Problem").get("Exponential engine cost rate",1.0);
+    
+    xmid_ = parlist.sublist("Geometry").get("Step height",0.5);
+    Real height = parlist.sublist("Geometry").get("Channel height",1.0);
+    Real width  = parlist.sublist("Geometry").get("Channel width",8.0);
+    vol_ = (height - xmid_) * width;
+
     int c = fe_->cubPts()->dimension(0);
     int p = fe_->cubPts()->dimension(1);
     int d = fe_->cubPts()->dimension(2);
@@ -243,6 +264,7 @@ private:
   const std::vector<std::vector<int> > bdryCellLocIds_;
   std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > weight_;
   Real T_;
+  Real area_;
 
   Real weightFunc(const std::vector<Real> & x) const {
     return static_cast<Real>(1);
@@ -250,13 +272,13 @@ private:
 
   Real cost(const Real z, const int deriv = 0) const {
     if ( deriv == 0 ) {
-      return static_cast<Real>(0.5)*(z-T_)*(z-T_);
+      return static_cast<Real>(0.5)*(z-T_)*(z-T_)/area_;
     }
     if ( deriv == 1 ) {
-      return (z-T_);
+      return (z-T_)/area_;
     }
     if ( deriv == 2 ) {
-      return static_cast<Real>(1);
+      return static_cast<Real>(1)/area_;
     }
     return static_cast<Real>(0);
   }
@@ -285,6 +307,9 @@ public:
                   Teuchos::ParameterList &parlist)
     : fe_vol_(fe_vol), fe_bdry_(fe_bdry), bdryCellLocIds_(bdryCellLocIds) {
     T_ = parlist.sublist("Problem").get("Desired control temperature",293.0);
+    Real w1 = parlist.sublist("Geometry").get("Channel width",8.0);
+    Real w2 = parlist.sublist("Geometry").get("Step width",1.0);
+    area_ = w1 - w2;
     const int numLocSides = bdryCellLocIds_.size();
     const int d = fe_vol_->gradN()->dimension(3);
     std::vector<Real> pt(d);
