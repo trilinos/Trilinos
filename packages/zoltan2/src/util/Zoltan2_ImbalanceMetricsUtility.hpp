@@ -123,20 +123,28 @@ template <typename scalar_t, typename lno_t, typename part_t>
   typedef ImbalanceMetrics<scalar_t> mv_t;
   typedef typename ArrayRCP<RCP<BaseClassMetrics<scalar_t> > >::size_type array_size_type;
   metrics.resize( metrics.size() + numMetrics );
-  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ) {
+  for(array_size_type n = metrics.size()-numMetrics; n < metrics.size(); ++n) {
     mv_t * newMetric = new mv_t;									// allocate the new memory
 
     // moved this here because we now allocate the polymorphic classes
-    // we should probably reorganize these functions so all data setup is done on the derived classes
-    // then as a last step we can insert them into the general array of MetricBase types
+    // we should probably reorganize these functions so all data 
+    // setup is done on the derived classes
+    // then as a last step we can insert them into the general array of 
+    // MetricBase types
     if (vwgtDim > 1) {
       newMetric->setNorm(multiCriteriaNorm(mcNorm));
     }
 
-    env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);		// check errors
-    metrics[n] = rcp( newMetric ); 				// create the new members
+    env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);	// check errors
+    metrics[n] = rcp( newMetric ); 		// create the new members
   }
-  array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
+  array_size_type next = metrics.size() - numMetrics; // MDM - this is most 
+                                                      // likely temporary to 
+                                                      // preserve the format 
+                                                      // here - we are now 
+                                                      // filling a larger array
+                                                      // so we may not have 
+                                                      // started at 0
 
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.
@@ -259,7 +267,10 @@ template <typename scalar_t, typename lno_t, typename part_t>
 
   obj = sumBuf;                     // # of objects
   scalar_t min=0, max=0, sum=0;
-  next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
+  next = metrics.size() - numMetrics; // MDM - this is most likely temporary 
+                                      // to preserve the format here - we are 
+                                      // now filling a larger array so we may 
+                                      // not have started at 0
 
 
   ArrayView<scalar_t> objVec(obj, nparts);
@@ -534,7 +545,11 @@ template <typename Adapter>
 /*! \brief Print out header info for imbalance metrics.
  */
 template <typename scalar_t, typename part_t>
-void printImbalanceMetricsHeader(std::ostream &os, part_t targetNumParts, part_t numParts, part_t numNonemptyParts)
+void printImbalanceMetricsHeader(
+  std::ostream &os, 
+  part_t targetNumParts, 
+  part_t numParts, 
+  part_t numNonemptyParts)
 {
   os << "Imbalance Metrics: (" << numParts << " parts)";
   if (numNonemptyParts < numParts) {
@@ -550,9 +565,15 @@ void printImbalanceMetricsHeader(std::ostream &os, part_t targetNumParts, part_t
 /*! \brief Print out list of imbalance metrics.
  */
 template <typename scalar_t, typename part_t>
-void printImbalanceMetrics(std::ostream &os, part_t targetNumParts, part_t numParts, part_t numNonemptyParts, const ArrayView<RCP<BaseClassMetrics<scalar_t>>> &infoList)
+void printImbalanceMetrics(
+  std::ostream &os, 
+  part_t targetNumParts, 
+  part_t numParts, 
+  part_t numNonemptyParts, 
+  const ArrayView<RCP<BaseClassMetrics<scalar_t>>> &infoList)
 {
-  printImbalanceMetricsHeader<scalar_t, part_t>(os, targetNumParts, numParts, numNonemptyParts);
+  printImbalanceMetricsHeader<scalar_t, part_t>(os, targetNumParts, 
+                                                numParts, numNonemptyParts);
   for (int i=0; i < infoList.size(); i++) {
     if (infoList[i]->getName() != METRICS_UNSET_STRING) {
       infoList[i]->printLine(os);
@@ -564,9 +585,15 @@ void printImbalanceMetrics(std::ostream &os, part_t targetNumParts, part_t numPa
 /*! \brief Print out header and a single imbalance metric.
  */
 template <typename scalar_t, typename part_t>
-void printImbalanceMetrics(std::ostream &os, part_t targetNumParts, part_t numParts, part_t numNonemptyParts, RCP<BaseClassMetrics<scalar_t>> metricValue)
+void printImbalanceMetrics(
+  std::ostream &os, 
+  part_t targetNumParts, 
+  part_t numParts, 
+  part_t numNonemptyParts, 
+  RCP<BaseClassMetrics<scalar_t>> metricValue)
 {
-  printImbalanceMetricsHeader<scalar_t, part_t>(os, targetNumParts, numParts, numNonemptyParts);
+  printImbalanceMetricsHeader<scalar_t, part_t>(os, targetNumParts,
+                                                numParts, numNonemptyParts);
   metricValue->printLine(os);
 }
 
