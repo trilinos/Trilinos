@@ -46,6 +46,8 @@
 
 #include "TpetraKernels_config.h"
 #include "Kokkos_Core.hpp"
+#include <sstream>
+#include <stdexcept>
 
 namespace KokkosSparse {
 namespace Impl {
@@ -326,13 +328,14 @@ struct CopyIntegersImpl<OutputViewType, InputViewType,
     Kokkos::parallel_reduce (dst.dimension_0 (),
                              functor_type (dst, src),
                              overflow);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (overflow == 1, std::runtime_error, "copyIntegers: One or more values in "
-       "src underflowed on cast into dst.");
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (overflow == 2, std::runtime_error, "copyIntegers: One or more values in "
-       "src overflowed on cast into dst.  Some values may also have "
-       "underflowed.");
+    if (overflow == 1) {
+      throw std::runtime_error ("copyIntegers: One or more values in src underflowed on cast into dst.");
+    }
+    else if (overflow == 2) {
+      throw std::runtime_error ("copyIntegers: One or more values in src "
+                                "overflowed on cast into dst.  Some values "
+                                "may also have underflowed.");
+    }
   }
 };
 
@@ -392,13 +395,15 @@ struct CopyIntegersImpl<OutputViewType, InputViewType,
     Kokkos::parallel_reduce (dst.dimension_0 (),
                              functor_type (dst, outputSpaceCopy),
                              overflow);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (overflow == 1, std::runtime_error, "copyIntegers: One or more values in "
-       "src underflowed on cast into dst.");
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (overflow == 2, std::runtime_error, "copyIntegers: One or more values in "
+    if (overflow == 1) {
+      throw std::runtime_error ("copyIntegers: One or more values in "
+                                "src underflowed on cast into dst.");
+    }
+    else if (overflow == 2) {
+      throw std::runtime_error ("copyIntegers: One or more values in "
        "src overflowed on cast into dst.  Some values may also have "
        "underflowed.");
+    }
   }
 };
 
@@ -432,11 +437,12 @@ copyIntegers (const OutputViewType& dst, const InputViewType& src)
   static_assert (std::is_integral<typename std::decay<decltype (src(0)) >::type>::value,
                  "The entries of src must be built-in integers.");
 
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (dst.dimension_0 () != src.dimension_0 (), std::invalid_argument,
-     "copyIntegers: dst.dimension_0() = " << dst.dimension_0 ()
-     << " != src.dimension_0() = " << src.dimension_0 () << ".");
-
+  if (dst.dimension_0 () != src.dimension_0 ()) {
+    std::ostringstream os;
+    os << "copyIntegers: dst.dimension_0() = " << dst.dimension_0 ()
+       << " != src.dimension_0() = " << src.dimension_0 () << ".";
+    throw std::invalid_argument (os.str ());
+  }
   CopyIntegersImpl<OutputViewType, InputViewType>::run (dst, src);
 }
 
