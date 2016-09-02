@@ -2307,7 +2307,7 @@ namespace {
     Teuchos::Array<magnitude_type> normDelta(1);
     resultVec2->norm2(normDelta);
     Teuchos::Array<magnitude_type> relativeError(1);
-    relativeError[0] = std::abs(normDelta[0] / normVec1[0]);
+    relativeError[0] = STS::magnitude(normDelta[0] / normVec1[0]);
 
     std::ostringstream normStr;
     normStr << "||CSR*xrand|| = " << normVec1[0] << ", ||CSR*xrand - BCSR*xrand|| / ||CSR*xrand|| = " << relativeError[0];
