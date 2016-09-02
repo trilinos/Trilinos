@@ -83,6 +83,7 @@ private:
   Real xmid_;
   Real engTemp_;
   Real airTemp_;
+  Real H2OTemp_;
   Real advMag_;
   Real SBscale_;
 
@@ -92,6 +93,7 @@ public:
     xmid_ = parlist.sublist("Geometry").get<Real>("Step height");
     engTemp_ = parlist.sublist("Problem").get("Engine: Ambient Temperature",450.0);
     airTemp_ = parlist.sublist("Problem").get("Air: Ambient Temperature",293.0);
+    H2OTemp_ = parlist.sublist("Problem").get("Water: Ambient Temperature",303.0);
     advMag_  = parlist.sublist("Problem").get("Advection Magnitude",6.3);
     bool useSB = parlist.sublist("Problem").get("Use Stefan-Boltzmann",true);
     SBscale_ = (useSB) ? static_cast<Real>(1) : static_cast<Real>(0);
@@ -172,12 +174,12 @@ public:
 
 
 
-    // APPLY NEUMANN CONDITIONS: Sideset 1, 3, 6
+    // APPLY NEUMANN CONDITIONS: Sideset 3, 6
     // ---> Nothing to do
     int numLocalSideIds(0);
-    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 2, 4, 5
-    std::vector<int> sidesets = {2, 4, 5};
-    for (int i = 0; i < 3; ++i) {
+    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 1, 2, 4, 5
+    std::vector<int> sidesets = {1, 2, 4, 5};
+    for (int i = 0; i < 4; ++i) {
       numLocalSideIds = bdryCellLocIds_[sidesets[i]].size();
       const int numCubPerSide = bdryCub_->getNumPoints();
       for (int j = 0; j < numLocalSideIds; ++j) {
@@ -331,12 +333,12 @@ public:
                                                   V_gradN,
                                                   Intrepid::COMP_CPP, true);
 
-    // APPLY NEUMANN CONDITIONS: Sideset 1, 3, 6
+    // APPLY NEUMANN CONDITIONS: Sideset 3, 6
     // ---> Nothing to do
     int numLocalSideIds(0);
-    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 2, 4, 5
-    std::vector<int> sidesets = {2, 4, 5};
-    for (int i = 0; i < 3; ++i) {
+    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 1, 2, 4, 5
+    std::vector<int> sidesets = {1, 2, 4, 5};
+    for (int i = 0; i < 4; ++i) {
       numLocalSideIds = bdryCellLocIds_[sidesets[i]].size();
       const int numCubPerSide = bdryCub_->getNumPoints();
       for (int j = 0; j < numLocalSideIds; ++j) {
@@ -595,11 +597,11 @@ public:
                                                   d2_kappa_gradU_gradL_N,
                                                   *(fe_vol_->NdetJ()),
                                                   Intrepid::COMP_CPP, true);
-    // APPLY NEUMANN CONDITIONS: Sideset 1, 3, 6
+    // APPLY NEUMANN CONDITIONS: Sideset 3, 6
     // ---> Nothing to do
-    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 2, 4, 5
-    std::vector<int> sidesets = {2, 4, 5};
-    for (int i = 0; i < 3; ++i) {
+    // APPLY STEFAN-BOLTZMANN CONDITIONS: Sideset 1, 2, 4, 5
+    std::vector<int> sidesets = {1, 2, 4, 5};
+    for (int i = 0; i < 4; ++i) {
       int numLocalSideIds = bdryCellLocIds_[sidesets[i]].size();
       const int numCubPerSide = bdryCub_->getNumPoints();
       for (int j = 0; j < numLocalSideIds; ++j) {
@@ -682,6 +684,7 @@ public:
   void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
 //    riesz = fe_vol_->stiffMat();
 //    Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+    throw Exception::NotImplemented(">>> (StochasticStefanBoltzmannPDE::RieszMap2): Not implemented.");
     riesz = fe_vol_->massMat();
   }
  
@@ -713,8 +716,16 @@ public:
     }
   }
 
-  const Teuchos::RCP<FE<Real> > getFE(void) const {
+  const Teuchos::RCP<FE<Real> > getVolFE(void) const {
     return fe_vol_;
+  }
+
+  const std::vector<Teuchos::RCP<FE<Real> > > getBdryFE(const int sideset) const {
+    return fe_bdry_[sideset];
+  }
+
+  const std::vector<std::vector<int> > getBdryCellLocIds(const int sideset) const {
+    return bdryCellLocIds_[sideset];
   }
  
 private:
@@ -789,17 +800,22 @@ private:
     // sig is the Stefan-Boltzmann constant
     // c1 is sig times the emissivity [0.5,1.5]
     // c2 is the ambient temperature away from the aluminum
-    // c3 is the thermal convectivity of water (5) and oil (40)
+    // c3 is the thermal convectivity of air (5), oil (40), and water (440)
     Real c1(0), c2(0), c3(0), sig(5.67e-8);
     if ( sideset == 2 ) {
       c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[9]);
-      c2 = airTemp_             + static_cast<Real>(0.1*airTemp_) * param[10];
-      c3 = static_cast<Real>(5) + static_cast<Real>(0.5)          * param[11];
+      c2 = airTemp_             + static_cast<Real>(0.01*airTemp_) * param[10];
+      c3 = static_cast<Real>(5) + static_cast<Real>(0.5)           * param[11];
     }
     else if ( sideset == 4 || sideset == 5 ) {
       c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[12]);
-      c2 = engTemp_              + static_cast<Real>(0.1*engTemp_) * param[13];
-      c3 = static_cast<Real>(40) + static_cast<Real>(2)            * param[14];
+      c2 = engTemp_              + static_cast<Real>(0.01*engTemp_) * param[13];
+      c3 = static_cast<Real>(40) + static_cast<Real>(2)             * param[14];
+    }
+    else if ( sideset == 1 ) {
+      c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[15]);
+      c2 = H2OTemp_               + static_cast<Real>(0.01*H2OTemp_) * param[16];
+      c3 = static_cast<Real>(440) + static_cast<Real>(20)            * param[17];
     }
     if ( deriv == 1 ) {
       return c1 * static_cast<Real>(4) * std::pow(u,3) + c3;
@@ -815,7 +831,7 @@ private:
                      const int deriv = 0, const int component = 1) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
     // c is the thermal convectivity of water (440)
-    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[15];
+    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[18];
     if ( deriv == 1 ) {
       return (component==1) ? c : -c;
     }

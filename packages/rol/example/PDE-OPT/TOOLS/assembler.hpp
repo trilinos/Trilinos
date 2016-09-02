@@ -2062,11 +2062,11 @@ public:
     }
     catch ( Exception::NotImplemented & eni ) {
       isSolverR1Constructed_ = true;
-      throw Exception::NotImplemented(">>> (Assembler::assemblePDERieszMap1): Riesz map not implemented!");
+      //throw Exception::NotImplemented(">>> (Assembler::assemblePDERieszMap1): Riesz map not implemented!");
     }
     catch ( Exception::Zero & ez ) {
       isSolverR1Constructed_ = true;
-      throw Exception::Zero(">>> (Assembler::assemblePDERieszMap1): Riesz map is zero!");
+      //throw Exception::Zero(">>> (Assembler::assemblePDERieszMap1): Riesz map is zero!");
     }
   }
 
@@ -2136,11 +2136,11 @@ public:
     }
     catch ( Exception::NotImplemented & eni ) {
       isSolverR2Constructed_ = true;
-      throw Exception::NotImplemented(">>> (Assembler::assemblePDERieszMap2): Riesz map not implemented!");
+      //throw Exception::NotImplemented(">>> (Assembler::assemblePDERieszMap2): Riesz map not implemented!");
     }
     catch ( Exception::Zero & ez ) {
       isSolverR2Constructed_ = true;
-      throw Exception::Zero(">>> (Assembler::assemblePDERieszMap2): Riesz map is zero!");
+      //throw Exception::Zero(">>> (Assembler::assemblePDERieszMap2): Riesz map is zero!");
     }
   }
 

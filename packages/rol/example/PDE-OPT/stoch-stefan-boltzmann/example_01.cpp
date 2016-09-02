@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Problem dimensions
-    const int stochDim = 16;
+    const int stochDim = 19;
     const RealT one(1); 
 
     /*************************************************************************/
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> >  z_rcp = pdeCon.getAssembler()->createControlVector();
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = pdeCon.getAssembler()->createControlVector();
     Teuchos::RCP<Tpetra::MultiVector<> > yz_rcp = pdeCon.getAssembler()->createControlVector();
-    z_rcp->randomize();  z_rcp->putScalar(static_cast<RealT>(290));
+    z_rcp->randomize();  z_rcp->putScalar(static_cast<RealT>(280));
     dz_rcp->randomize(); //dz_rcp->putScalar(static_cast<RealT>(0));
     yz_rcp->randomize(); //yz_rcp->putScalar(static_cast<RealT>(0));
     Teuchos::RCP<ROL::TpetraMultiVector<RealT> > zpde
@@ -182,8 +182,9 @@ int main(int argc, char *argv[]) {
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
-    qoi_vec[0] = Teuchos::rcp(new QoI_StateCost<RealT>(pde->getFE(),*parlist));
-    qoi_vec[1] = Teuchos::rcp(new QoI_ControlCost<RealT>(pde->getFE(),*parlist));
+    qoi_vec[0] = Teuchos::rcp(new QoI_StateCost<RealT>(pde->getVolFE(),*parlist));
+    qoi_vec[1] = Teuchos::rcp(new QoI_ControlCost<RealT>(
+      pde->getVolFE(),pde->getBdryFE(0),pde->getBdryCellLocIds(0),*parlist));
     Teuchos::RCP<StochasticStefanBoltzmannStdObjective<RealT> > std_obj
       = Teuchos::rcp(new StochasticStefanBoltzmannStdObjective<RealT>(*parlist));
     Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
@@ -251,7 +252,7 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
-    zp->zero();
+    //zp->zero();
     std::clock_t timer = std::clock();
     algo.run(opt,true,*outStream);
     *outStream << "Optimization time: "

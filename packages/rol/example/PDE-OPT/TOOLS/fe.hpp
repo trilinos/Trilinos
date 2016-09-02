@@ -555,7 +555,7 @@ public:
     Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(f2Weighted,              // multiply with weighted measure
                                                                *cellWeightedMeasure_,
                                                                *f2);
-    Intrepid::FunctionSpaceTools::integrate<Real>(*integral,                            // compute norm squared of local error
+    Intrepid::FunctionSpaceTools::integrate<Real>(*integral,                            // compute integral of f1*f2
                                                   *f1,
                                                   f2Weighted,
                                                   Intrepid::COMP_CPP,

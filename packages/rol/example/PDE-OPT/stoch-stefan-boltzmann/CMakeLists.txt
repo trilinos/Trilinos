@@ -23,6 +23,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     StochasticStefanBoltzmannDataCopy
     SOURCE_FILES
       input.xml
+      input_app.xml
       SROMinput.xml
       plotresults.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
