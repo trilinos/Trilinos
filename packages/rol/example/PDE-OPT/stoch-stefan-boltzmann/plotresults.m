@@ -4,7 +4,7 @@ nodes = load('nodes.txt');  %% load node coordinates
 
 data_obj = importdata('mean_state.txt', ' ', 2);  %% we need to skip the first two lines
 state = data_obj.data;
-subplot(1,2,1)
+figure(1)
 trisurf(adj, nodes(:,1), nodes(:,2), state);
 shading interp;
 view(0,90)
@@ -13,9 +13,7 @@ axis tight
 
 data_obj = importdata('control.txt', ' ', 2);  %% we need to skip the first two lines
 control = data_obj.data;
-subplot(1,2,2)
-trisurf(adj, nodes(:,1), nodes(:,2), control);
-shading interp;
-view(0,90)
-axis equal
-axis tight
+figure(2)
+ind = find(nodes(:,2)==0);
+plot(nodes(ind,1),control(ind),'b','linewidth',3)
+axis square
