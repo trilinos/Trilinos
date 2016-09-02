@@ -778,7 +778,7 @@ private:
       const Real det = (xmid_ - x1) * x1;
       const Real a   = static_cast<Real>(-1) / det;
       const Real b   = xmid_ / det;
-      const Real m   = advMag_ + static_cast<Real>(5)*param[8];
+      const Real m   = advMag_ + static_cast<Real>(0.1)*advMag_*param[8];
       const Real mag = m * (a * std::pow(x[1],2) + b * x[1]);
       adv[0] = -mag;
       adv[1] = static_cast<Real>(0);
@@ -804,18 +804,18 @@ private:
     Real c1(0), c2(0), c3(0), sig(5.67e-8);
     if ( sideset == 2 ) {
       c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[9]);
-      c2 = airTemp_             + static_cast<Real>(0.01*airTemp_) * param[10];
+      c2 = airTemp_             + static_cast<Real>(0.02*airTemp_) * param[10];
       c3 = static_cast<Real>(5) + static_cast<Real>(0.5)           * param[11];
     }
     else if ( sideset == 4 || sideset == 5 ) {
       c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[12]);
-      c2 = engTemp_              + static_cast<Real>(0.01*engTemp_) * param[13];
-      c3 = static_cast<Real>(40) + static_cast<Real>(2)             * param[14];
+      c2 = engTemp_ + static_cast<Real>(0.05)*engTemp_ * (param[13] + static_cast<Real>(1));
+      c3 = static_cast<Real>(40) + static_cast<Real>(2) * param[14];
     }
     else if ( sideset == 1 ) {
       c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[15]);
-      c2 = H2OTemp_               + static_cast<Real>(0.01*H2OTemp_) * param[16];
-      c3 = static_cast<Real>(440) + static_cast<Real>(20)            * param[17];
+      c2 = H2OTemp_ + static_cast<Real>(0.05)*H2OTemp_ * (param[16] + static_cast<Real>(1));
+      c3 = static_cast<Real>(440) + static_cast<Real>(20) * param[17];
     }
     if ( deriv == 1 ) {
       return c1 * static_cast<Real>(4) * std::pow(u,3) + c3;
