@@ -53,6 +53,7 @@
 #endif // HAVE_TPETRAKERNELS_MKL
 
 #include <cstring> // memcpy
+#include <sstream>
 
 namespace KokkosSparse {
 namespace Impl {
@@ -77,6 +78,37 @@ struct matrix_descr {
   sparse_diag_type_t diag;
 };
 #endif // NOT HAVE_TPETRAKERNELS_MKL
+
+//! Human-readable string representation of MKL's "index base" enum.
+std::string
+sparseIndexBaseToString (const sparse_index_base_t base);
+
+//! Human-readable string representation of MKL's "sparse operation" enum.
+std::string
+sparseOperationToString (const sparse_operation_t op);
+
+//! Human-readable string representation of MKL's "sparse matrix type" enum.
+std::string
+sparseMatrixTypeToString (const sparse_matrix_type_t type);
+
+//! Human-readable string representation of MKL's "sparse fill mode" enum.
+std::string
+sparseFillModeToString (const sparse_fill_mode_t mode);
+
+//! Human-readable string representation of MKL's "sparse diagonal type" enum.
+std::string
+sparseDiagTypeToString (const sparse_diag_type_t diag);
+
+//! Human-readable string representation of MKL's "matrix descriptor" struct.
+std::string
+matrixDescriptorToString (const matrix_descr& descr,
+                          const std::string inputIndent = "",
+                          const bool oneLine = false,
+                          const bool printHeader = true);
+
+//! Human-readable string representation of MKL's "sparse layout" enum.
+std::string
+sparseLayoutToString (const sparse_layout_t layout);
 
 /// \brief Does MKL support operations with sparse matrices whose
 ///   entries have type ValueType?
