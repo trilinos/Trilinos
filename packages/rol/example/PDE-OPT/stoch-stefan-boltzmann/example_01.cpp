@@ -275,15 +275,16 @@ int main(int argc, char *argv[]) {
     name_samp << "samples_" << bman->batchID() << ".txt";
     std::ofstream file_samp;
     file_samp.open(name_samp.str());
+    file_samp << std::scientific << std::setprecision(15);
     for (int i = 0; i < sampler->numMySamples(); ++i) {
       sample = sampler->getMyPoint(i);
       con->setParameter(sample);
       con->solve(*rp,*dup,*zp,tol);
       up->axpy(sampler->getMyWeight(i),*dup);
       for (int j = 0; j < stochDim; ++j) {
-        file_samp << sample[j] << "  ";
+        file_samp << std::setw(25) << std::left << sample[j];
       }
-      file_samp << "\n";
+      file_samp << std::endl;
     }
     file_samp.close();
     bman_Eu->sumAll(*up,*pp);
@@ -297,14 +298,15 @@ int main(int argc, char *argv[]) {
     name << "obj_samples_" << bman->batchID() << ".txt";
     std::ofstream file;
     file.open(name.str());
+    file << std::scientific << std::setprecision(15);
     for (int i = 0; i < sampler_dist->numMySamples(); ++i) {
       sample = sampler_dist->getMyPoint(i);
       objReduced->setParameter(sample);
       val = objReduced->value(*zp,tol);
       for (int j = 0; j < stochDim; ++j) {
-        file << sample[j] << "  ";
+        file << std::setw(25) << std::left << sample[j];
       }
-      file << val << "\n";
+      file << std::setw(25) << std::left << val << std::endl;
     }
     file.close();
     *outStream << "Output time: "
