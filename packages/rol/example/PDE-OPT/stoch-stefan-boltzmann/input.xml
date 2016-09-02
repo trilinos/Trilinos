@@ -1,31 +1,34 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Is problem nonsmooth?"             type="bool"    value="false" />
+    <Parameter name="Is problem nonsmooth?"               type="bool"    value="false" />
     <!-- OBJECTIVE FUNCTION -->
-    <Parameter name="Desired engine temperature"        type="double"  value="373.0" />
-    <Parameter name="Use exponential engine cost model" type="bool"    value="false" />
-    <Parameter name="Exponential engine cost rate"      type="double"  value="1.0"   />
-    <Parameter name="State Cost"                        type="double"  value="1e0"   />
-    <Parameter name="Desired control temperature"       type="double"  value="293.0" />
-    <Parameter name="Control Cost"                      type="double"  value="1e0"   />
+    <Parameter name="Desired engine temperature"          type="double"  value="373.0" />
+    <Parameter name="Use exponential engine cost model"   type="bool"    value="false" />
+    <Parameter name="Exponential engine cost rate"        type="double"  value="0.1"   />
+    <Parameter name="State Cost"                          type="double"  value="1e0"   />
+    <Parameter name="Desired control temperature"         type="double"  value="293.0" />
+    <Parameter name="Use exponential control cost model"  type="bool"    value="false" />
+    <Parameter name="Exponential lower control cost rate" type="double"  value="0.1"   />
+    <Parameter name="Exponential upper control cost rate" type="double"  value="0.01"  />
+    <Parameter name="Control Cost"                        type="double"  value="1e0"   />
     <!-- PDE COEFFICIENTS -->
-    <Parameter name="Engine: Ambient Temperature"       type="double"  value="450.0" />
-    <Parameter name="Air: Ambient Temperature"          type="double"  value="293.0" />
-    <Parameter name="Water: Ambient Temperature"        type="double"  value="303.0" />
-    <Parameter name="Advection Magnitude"               type="double"  value="6.3"   />
-    <Parameter name="Use Stefan-Boltzmann"              type="bool"    value="true"  />
+    <Parameter name="Engine: Ambient Temperature"         type="double"  value="450.0" />
+    <Parameter name="Air: Ambient Temperature"            type="double"  value="293.0" />
+    <Parameter name="Water: Ambient Temperature"          type="double"  value="303.0" />
+    <Parameter name="Advection Magnitude"                 type="double"  value="6.3"   />
+    <Parameter name="Use Stefan-Boltzmann"                type="bool"    value="true"  />
     <!-- STOCHASTIC INFORMATION -->
-    <Parameter name="Statistic Initial Guess"           type="double"  value="5.0"   />
-    <Parameter name="Number of Samples"                 type="int"     value="4"     />
+    <Parameter name="Statistic Initial Guess"             type="double"  value="5.0"   />
+    <Parameter name="Number of Samples"                   type="int"     value="4"     />
     <!-- OUTPUT -->
-    <Parameter name="Check Derivatives"                 type="bool"    value="false" />
-    <Parameter name="Print Mean Value State"            type="bool"    value="false" />
-    <Parameter name="Number of Output Samples"          type="int"     value="4"     />
+    <Parameter name="Check Derivatives"                   type="bool"    value="false" />
+    <Parameter name="Print Mean Value State"              type="bool"    value="false" />
+    <Parameter name="Number of Output Samples"            type="int"     value="4"     />
     <!-- FINITE ELEMENT INFORMATION -->
-    <Parameter name="Basis Order"                       type="int"     value="1"     />
-    <Parameter name="Volume Cubature Degree"            type="int"     value="2"     />
-    <Parameter name="Boundary Cubature Degree"          type="int"     value="4"     />
+    <Parameter name="Basis Order"                         type="int"     value="1"     />
+    <Parameter name="Volume Cubature Degree"              type="int"     value="2"     />
+    <Parameter name="Boundary Cubature Degree"            type="int"     value="4"     />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->

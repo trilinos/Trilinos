@@ -264,6 +264,9 @@ private:
   const std::vector<std::vector<int> > bdryCellLocIds_;
   std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > weight_;
   Real T_;
+  bool exp_;
+  Real rate1_;
+  Real rate2_;
   Real area_;
 
   Real weightFunc(const std::vector<Real> & x) const {
@@ -271,16 +274,29 @@ private:
   }
 
   Real cost(const Real z, const int deriv = 0) const {
-    if ( deriv == 0 ) {
-      return static_cast<Real>(0.5)*(z-T_)*(z-T_)/area_;
+    if ( exp_ ) {
+      if ( deriv == 1 ) {
+        return (std::exp(rate1_ * (z - T_)) - std::exp(rate2_ * (T_ - z))) / area_;
+      }
+      if ( deriv == 2 ) {
+        return (rate1_ * std::exp(rate1_ * (z - T_))
+              + rate2_ * std::exp(rate2_ * (T_ - z))) / area_;
+      }
+      return (std::exp(rate1_ * (z - T_)) - static_cast<Real>(1)) / (rate1_ * area_)
+            +(std::exp(rate2_ * (T_ - z)) - static_cast<Real>(1)) / (rate2_ * area_);
     }
-    if ( deriv == 1 ) {
-      return (z-T_)/area_;
+    else {
+      if ( deriv == 0 ) {
+        return static_cast<Real>(0.5)*(z-T_)*(z-T_)/area_;
+      }
+      if ( deriv == 1 ) {
+        return (z-T_)/area_;
+      }
+      if ( deriv == 2 ) {
+        return static_cast<Real>(1)/area_;
+      }
+      return static_cast<Real>(0);
     }
-    if ( deriv == 2 ) {
-      return static_cast<Real>(1)/area_;
-    }
-    return static_cast<Real>(0);
   }
 
   Teuchos::RCP<Intrepid::FieldContainer<Real> > getBoundaryCoeff(
@@ -306,7 +322,10 @@ public:
                   const std::vector<std::vector<int> > &bdryCellLocIds,
                   Teuchos::ParameterList &parlist)
     : fe_vol_(fe_vol), fe_bdry_(fe_bdry), bdryCellLocIds_(bdryCellLocIds) {
-    T_ = parlist.sublist("Problem").get("Desired control temperature",293.0);
+    T_     = parlist.sublist("Problem").get("Desired control temperature",293.0);
+    exp_   = parlist.sublist("Problem").get("Use exponential control cost model",false);
+    rate1_ = parlist.sublist("Problem").get("Exponential upper control cost rate",1.0);
+    rate2_ = parlist.sublist("Problem").get("Exponential lower control cost rate",1.0);
     Real w1 = parlist.sublist("Geometry").get("Channel width",8.0);
     Real w2 = parlist.sublist("Geometry").get("Step width",1.0);
     area_ = w1 - w2;

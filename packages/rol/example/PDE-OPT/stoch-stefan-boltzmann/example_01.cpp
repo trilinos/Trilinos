@@ -290,12 +290,16 @@ int main(int argc, char *argv[]) {
     bman_Eu->sumAll(*up,*pp);
     pdeCon.getAssembler()->outputTpetraVector(p_rcp,"mean_state.txt");
     // Build objective function distribution
-    RealT val(0);
+    RealT val1(0), val2(0);
     int nsamp_dist = parlist->sublist("Problem").get("Number of Output Samples",100);
     Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > stateCost
       = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[0],pdeCon.getAssembler()));
     Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > redStateCost
       = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(stateCost, con, up, pp, true, false));
+    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > ctrlCost
+      = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[1],pdeCon.getAssembler()));
+    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > redCtrlCost
+      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(ctrlCost, con, up, pp, true, false));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler_dist
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp_dist,bounds,bman));
     std::stringstream name;
@@ -306,11 +310,14 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < sampler_dist->numMySamples(); ++i) {
       sample = sampler_dist->getMyPoint(i);
       redStateCost->setParameter(sample);
-      val = redStateCost->value(*zp,tol);
+      val1 = redStateCost->value(*zp,tol);
+      redCtrlCost->setParameter(sample);
+      val2 = redCtrlCost->value(*zp,tol);
       for (int j = 0; j < stochDim; ++j) {
         file << std::setw(25) << std::left << sample[j];
       }
-      file << std::setw(25) << std::left << val << std::endl;
+      file << std::setw(25) << std::left << val1;
+      file << std::setw(25) << std::left << val2 << std::endl;
     }
     file.close();
     *outStream << "Output time: "
