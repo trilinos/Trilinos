@@ -55,7 +55,7 @@
 
 namespace EpetraExt {
 
-// Provide a "resize" operation for double*'s. 
+// Provide a "resize" operation for double*'s.
 inline void resize_doubles(int nold,int nnew,double*& d){
   if(nnew > nold){
     double *tmp = new double[nnew];
@@ -80,7 +80,7 @@ RowMatrix_Transpose::
 }
 
 //=========================================================================
-  Epetra_CrsMatrix* EpetraExt::RowMatrix_Transpose::CreateTransposeLocal(OriginalTypeRef orig) 
+  Epetra_CrsMatrix* EpetraExt::RowMatrix_Transpose::CreateTransposeLocal(OriginalTypeRef orig)
 {
 #ifdef ENABLE_TRANSPOSE_TIMINGS
   Teuchos::Time myTime("global");
@@ -102,7 +102,7 @@ RowMatrix_Transpose::
   Epetra_CrsMatrix *TempTransA1 = new Epetra_CrsMatrix(Copy, TransMap,orig.RowMatrixRowMap(),0);
   Epetra_IntSerialDenseVector & TransRowptr = TempTransA1->ExpertExtractIndexOffset();
   Epetra_IntSerialDenseVector & TransColind = TempTransA1->ExpertExtractIndices();
-  double *&                     TransVals   = TempTransA1->ExpertExtractValues();  
+  double *&                     TransVals   = TempTransA1->ExpertExtractValues();
   NumMyRows_ = orig.NumMyRows();
   NumMyCols_ = orig.NumMyCols();
 
@@ -133,7 +133,7 @@ RowMatrix_Transpose::
 
     for (i=0; i<NumMyRows_; i++)
     {
-      err = orig.ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_); 
+      err = orig.ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_);
       if (err != 0) {
         std::cerr << "ExtractMyRowCopy failed."<<std::endl;
         throw err;
@@ -198,7 +198,7 @@ RowMatrix_Transpose::
 #ifdef ENABLE_TRANSPOSE_TIMINGS
   mtime->stop();
 #endif
- 
+
   return TempTransA1;
 }
 
@@ -224,14 +224,14 @@ operator()( OriginalTypeRef orig )
   // This routine will work for any RowMatrix object, but will attempt cast the matrix to a CrsMatrix if
   // possible (because we can then use a View of the matrix and graph, which is much cheaper).
 
-  // First get the local indices to count how many nonzeros will be in the 
+  // First get the local indices to count how many nonzeros will be in the
   // transpose graph on each processor
-  Epetra_CrsMatrix * TempTransA1 = CreateTransposeLocal(orig);  
+  Epetra_CrsMatrix * TempTransA1 = CreateTransposeLocal(orig);
 
   if(!TempTransA1->Exporter()) {
     // Short Circuit: There is no need to make another matrix since TransposeRowMap_== TransMap
     newObj_ = TransposeMatrix_ = TempTransA1;
-    return *newObj_;    
+    return *newObj_;
   }
 
 #ifdef ENABLE_TRANSPOSE_TIMINGS
@@ -244,7 +244,7 @@ operator()( OriginalTypeRef orig )
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
-  TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TempTransA1->Exporter(),0,TransposeRowMap_);
+  TransposeMatrix_ = new Epetra_CrsMatrix(*TempTransA1,*TempTransA1->Exporter(),NULL,0,TransposeRowMap_);
 
 #ifdef ENABLE_TRANSPOSE_TIMINGS
   mtime->stop();
@@ -258,10 +258,10 @@ operator()( OriginalTypeRef orig )
 //=========================================================================
 bool EpetraExt::RowMatrix_Transpose::fwd()
 {
-  Epetra_CrsMatrix * TempTransA1 = CreateTransposeLocal(*origObj_);  
+  Epetra_CrsMatrix * TempTransA1 = CreateTransposeLocal(*origObj_);
   const Epetra_Export * TransposeExporter=0;
   bool DeleteExporter = false;
-  
+
   if(TempTransA1->Exporter()) TransposeExporter = TempTransA1->Exporter();
   else {
     DeleteExporter=true;
