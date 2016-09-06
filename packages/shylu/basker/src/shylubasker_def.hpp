@@ -385,11 +385,8 @@ namespace BaskerNS
 	//printf("btf_order done \n");
       }
 
-
-
     //printf("\n\n+++++++++++++++BREAKER BREAKER++++++++\n\n");
 
-    
 
     if(symb_flag == BASKER_TRUE)
       {
@@ -425,8 +422,6 @@ namespace BaskerNS
     //printf("\nTEST ALM\n");
     //ALM(0)(0).info();
     //printf("\n");
-
-    
 
     return 0;
 	
