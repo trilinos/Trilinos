@@ -394,7 +394,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
 {
   const int p_size = mesh.parallel_size();
 
-  CommAll comm( mesh.parallel() );
+  CommSparse comm( mesh.parallel() );
 
   std::vector<int> procs ;
 
@@ -415,7 +415,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
       }
     }
     if (phase == 0) { // allocation phase
-      comm.allocate_buffers( p_size / 4 , 0 );
+      comm.allocate_buffers();
     }
     else { // communication phase
       comm.communicate();

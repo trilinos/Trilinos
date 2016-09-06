@@ -36,6 +36,7 @@
 #include <gtest/gtest.h>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/perf_util.hpp>
 
@@ -237,7 +238,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 {
 
 
-  stk::CommAll comm(mesh.parallel());
+  stk::CommSparse comm(mesh.parallel());
 
   for (size_t i = 0; i < nodes.size(); ++i) {
     stk::mesh::Entity node = nodes[i];
@@ -255,7 +256,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
     }
   }
 
-  comm.allocate_buffers( mesh.parallel_size()/4 );
+  comm.allocate_buffers();
 
   for (size_t i = 0; i < nodes.size(); ++i) {
     stk::mesh::Entity node = nodes[i];

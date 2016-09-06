@@ -57,7 +57,6 @@
 #include "stk_topology/topology.tcc"    // for topology::num_nodes
 #include "stk_topology/topology_type.tcc"  // for topology::topology_type
 
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 #include <stk_mesh/base/CreateEdges.hpp>
 

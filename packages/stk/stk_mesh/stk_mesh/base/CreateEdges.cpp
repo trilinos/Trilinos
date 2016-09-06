@@ -45,7 +45,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll
 #include <vector>                       // for vector, etc
 #include <unordered_map>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
