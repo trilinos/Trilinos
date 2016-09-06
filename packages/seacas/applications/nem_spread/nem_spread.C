@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
     }
   }
   double g_end_t = second() - g_start_t;
-  printf("The average run time was: %.2fs\n", g_end_t);
+  printf("The average run time was: %.4fs\n", g_end_t);
 
   ex_close(exoid);
   add_to_log(argv[0], g_end_t);

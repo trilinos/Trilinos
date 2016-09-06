@@ -42,7 +42,7 @@
 #include <string>
 #include <vector>
 
-#define ELB_VERSION "4.15"
+#define ELB_VERSION "4.16"
 #define UTIL_NAME "nem_slice"
 #define ELB_FALSE 0
 #define ELB_TRUE 1
@@ -243,7 +243,7 @@ struct Sphere_Info
 template <typename INT> struct Graph_Description
 {
   size_t                        nadj;
-  size_t                        max_nsur;
+  int                           max_nsur;
   std::vector<INT>              adj;
   std::vector<INT>              start;
   std::vector<std::vector<INT>> sur_elem;

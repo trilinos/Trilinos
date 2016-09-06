@@ -32,25 +32,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include <sys/resource.h>
-#include <sys/time.h>
 
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
+#include <chrono>
 double second()
-
 {
-  double time; /* elapsed time in seconds */
-
-  struct rusage rusage;
-
-  getrusage(RUSAGE_SELF, &rusage);
-
-  time = ((rusage.ru_utime.tv_sec + rusage.ru_stime.tv_sec) +
-          1.0e-6 * (rusage.ru_utime.tv_usec + rusage.ru_stime.tv_usec));
-
-  return time;
-
-} /* second */
+  static auto                   start = std::chrono::high_resolution_clock::now();
+  auto                          now   = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> diff  = now - start;
+  return diff.count();
+}

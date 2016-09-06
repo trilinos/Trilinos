@@ -45,6 +45,7 @@
 #include "elb_format.h" // for ST_ZU
 #include "elb_graph.h"
 #include "elb_util.h" // for in_list, find_inter
+#include <iostream>
 #include <cassert>    // for assert
 #include <cstddef>    // for size_t
 #include <cstdio>     // for sprintf, printf, nullptr
@@ -91,7 +92,7 @@ int generate_graph(Problem_Description *problem, Mesh_Description<INT> *mesh,
     return 0;
   }
   double time2 = get_time();
-  printf("Time to find surrounding elements: %fs\n", time2 - time1);
+  std::cerr << "Time to find surrounding elements: " << time2 - time1 << "\n";
 
   /* Find the adjacency, if required */
   if (problem->alloc_graph == ELB_TRUE) {
@@ -100,7 +101,7 @@ int generate_graph(Problem_Description *problem, Mesh_Description<INT> *mesh,
       return 0;
     }
     time1 = get_time();
-    printf("Time to find the adjacency: %fs\n", time1 - time2);
+    std::cerr << "Time to find the adjacency: " << time1 - time2 << "\n";
   }
   return 1;
 }
@@ -118,8 +119,67 @@ namespace {
   template <typename INT>
   int find_surnd_elems(Mesh_Description<INT> *mesh, Graph_Description<INT> *graph)
   {
-    graph->sur_elem.resize(mesh->num_nodes);
+    std::vector<int> surround_count(mesh->num_nodes);
+    std::vector<size_t> last_element(mesh->num_nodes);
+    
+    size_t sur_elem_total_size = 0;
+    /* Find the count of surrounding elements for each node in the mesh */
+    // The hope is that this code will speed up the entire routine even
+    // though we are iterating the complete connectivity array twice.
+    for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
+      int nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
+      for (int ncnt = 0; ncnt < nnodes; ncnt++) {
+        INT node = mesh->connect[ecnt][ncnt];
+	assert(node < (INT)mesh->num_nodes);
+        /*
+         * in the case of degenerate elements, where a node can be
+         * entered into the connect table twice, need to check to
+         * make sure that this element is not already listed as
+         * surrounding this node
+         */
+        if (last_element[node] != ecnt+1) {
+	  last_element[node] = ecnt+1;
+	  surround_count[node]++;
+	  sur_elem_total_size++;
+        }
+      }
+    } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
 
+    size_t v_size = sizeof(std::vector<INT>);
+    size_t vv_size = sizeof(std::vector<std::vector<INT>>);
+    size_t total = vv_size + mesh->num_nodes * v_size + sur_elem_total_size * sizeof(INT);
+    std::cerr << "\ttotal size of reverse connectivity array: " << sur_elem_total_size << " entries ("
+	      << total << " bytes).\n";
+    last_element.resize(0); last_element.shrink_to_fit();
+
+    // Attempt to reserve an array with this size...
+    double time1 = get_time();
+    {
+      char *block = (char*)malloc(total);
+      if (block == nullptr) {
+	std::ostringstream errmsg;
+	errmsg << "fatal: Could not allocate memory for reverse-connectivity array (find_surnd_elems) of size "
+	       <<  total << "bytes.\n";
+	Gen_Error(0, errmsg.str().c_str());
+      }
+      free(block);
+    }
+    
+    graph->sur_elem.resize(mesh->num_nodes);
+    for (size_t ncnt=0; ncnt < mesh->num_nodes; ncnt++) {
+      if (surround_count[ncnt] == 0) {
+	std::cerr << "WARNING: Node = " << ncnt+1 << " has no elements\n";
+      }
+      else {
+	graph->sur_elem[ncnt].reserve(surround_count[ncnt]);
+	graph->max_nsur = surround_count[ncnt] > graph->max_nsur ? surround_count[ncnt] : graph->max_nsur;
+      }
+    }
+    double time2 = get_time();
+
+    std::cerr << "\tmemory allocated...(" << time2 - time1 << " seconds)\n"
+	      << "\tmax of " << graph->max_nsur << " elements per node\n";
+    
     /* Find the surrounding elements for each node in the mesh */
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
       int nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
@@ -133,23 +193,18 @@ namespace {
          * surrounding this node
          */
         if (graph->sur_elem[node].empty() ||
-            ecnt != (size_t)graph->sur_elem[node][graph->sur_elem[node].size() - 1]) {
+            ecnt != (size_t)graph->sur_elem[node].back()) {
           /* Add the element to the list */
           graph->sur_elem[node].push_back(ecnt);
         }
       }
     } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
 
+#ifndef NDEBUG
     for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
-      if (graph->sur_elem[ncnt].empty()) {
-        printf("WARNING: Node = " ST_ZU " has no elements\n", ncnt + 1);
-      }
-      else {
-        size_t nsur = graph->sur_elem[ncnt].size();
-        if (nsur > graph->max_nsur)
-          graph->max_nsur = nsur;
-      }
+      assert(graph->sur_elem[ncnt].size() == (size_t)surround_count[ncnt]);
     }
+#endif
     return 1;
   }
 

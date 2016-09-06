@@ -42,6 +42,7 @@
 #include <cstdio>  // for printf, nullptr, fprintf, etc
 #include <cstdlib> // for free, exit, malloc
 #include <cstring> // for strcmp
+#include <stdexcept>
 #include <iostream>
 
 #include "add_to_log.h" // for add_to_log
@@ -124,6 +125,7 @@ int main(int argc, char *argv[])
 
   /* check if the user just wants to know the version (or forcing 64-bit mode)*/
   bool int64com = false;
+  bool int32com = false;
   int  int64db  = 0;
 
   for (int cnt = 0; cnt < argc; cnt++) {
@@ -133,6 +135,10 @@ int main(int argc, char *argv[])
     }
     if (strcmp(argv[cnt], "-64") == 0) {
       int64com = true;
+    }
+
+    if (strcmp(argv[cnt], "-32") == 0) {
+      int32com = true;
     }
   }
 
@@ -161,8 +167,14 @@ int main(int argc, char *argv[])
   }
 
   int status;
-  if (int64db || int64com) {
-    std::cerr << "Using 64-bit integer mode for decomposition...\n";
+  if (int32com && int64db) {
+    std::cerr << "Forcing 32-bit integer mode for decomposition even though database is 64-bit.\n";
+    status = internal_main(argc, argv, int(0));
+  }
+  else if (int64db || int64com) {
+    std::cerr << "Using 64-bit integer mode for decomposition...\n"
+	      << "NOTE: Only 'linear' and 'scattered' methods are supported for 64-bit models\n";
+    
     status = internal_main(argc, argv, int64_t(0));
   }
   else {
@@ -363,15 +375,20 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   printf("Time to generate graph: %fs\n", time2 - time1);
 
   /* Generate load balance */
-  time1 = get_time();
-  if (!generate_loadbal(&machine, &problem, &mesh, &lb, &solver, &graph, &weight, &sphere, argc,
-                        argv)) {
-    Gen_Error(0, "fatal: could not generate load balance");
-    error_report();
-    exit(1);
+  try {
+    time1 = get_time();
+    if (!generate_loadbal(&machine, &problem, &mesh, &lb, &solver, &graph, &weight, &sphere, argc,
+			  argv)) {
+      Gen_Error(0, "fatal: could not generate load balance");
+      error_report();
+      exit(1);
+    }
+    time2 = get_time();
+    printf("Time to generate load balance: %fs\n", time2 - time1);
   }
-  time2 = get_time();
-  printf("Time to generate load balance: %fs\n", time2 - time1);
+  catch (const std::exception &e) {
+    std::cerr << "NEM_SLICE: Exception in generate_loadbal: " << e.what();
+  }
 
   /* free up memory */
   if (sphere.adjust)

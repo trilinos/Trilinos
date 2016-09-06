@@ -447,7 +447,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   read_elem_blk_ids(mesh_exoid, max_name_length);
 
-  printf("\tTime to read element block IDs: %.2f\n", second() - start_time);
+  printf("\tTime to read element block IDs: %.4f\n", second() - start_time);
 
   /*
    * Process the Node Set IDs and associated information related to node sets
@@ -458,7 +458,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     start_time = second();
     read_node_set_ids(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets, max_name_length);
 
-    printf("\tTime to read node set IDs: %.2f\n", second() - start_time);
+    printf("\tTime to read node set IDs: %.4f\n", second() - start_time);
   }
 
   /*
@@ -468,7 +468,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   if (globals.Num_Side_Set > 0) {
     start_time = second();
     read_side_set_ids(mesh_exoid, num_elem_in_ssets, num_df_in_ssets, max_name_length);
-    printf("\tTime to read side set IDs: %.2f\n", second() - start_time);
+    printf("\tTime to read side set IDs: %.4f\n", second() - start_time);
   }
 
   /*
@@ -481,7 +481,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   extract_elem_blk();
 
-  printf("\tTime to extract element block information: %.2f\n", second() - start_time);
+  printf("\tTime to extract element block information: %.4f\n", second() - start_time);
 
   /*
    * Read the mesh information from the exodus file and broadcast it to the
@@ -510,7 +510,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   read_coord(mesh_exoid, max_name_length);
 
-  printf("\tTime to read nodal coordinates: %.2f\n", second() - start_time);
+  printf("\tTime to read nodal coordinates: %.4f\n", second() - start_time);
 
   /*
    * Read the element connectivity and attributes information.  Broadcast it
@@ -518,25 +518,25 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
    */
   start_time = second();
   read_elem_blk(mesh_exoid);
-  printf("\tTime to read element blocks: %.2f\n", second() - start_time);
+  printf("\tTime to read element blocks: %.4f\n", second() - start_time);
 
   /* Read the node sets and sort */
   if (globals.Num_Node_Set > 0) {
     start_time = second();
     read_node_sets(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets);
-    printf("\tTime to read node sets: %.2f\n", second() - start_time);
+    printf("\tTime to read node sets: %.4f\n", second() - start_time);
   }
 
   /* Assign the element types. */
   if (globals.Num_Side_Set > 0) {
     start_time = second();
     create_elem_types(); /* globals.Elem_Type only used in sideset read */
-    printf("\tTime to categorize element types: %.2f\n", second() - start_time);
+    printf("\tTime to categorize element types: %.4f\n", second() - start_time);
 
     /* Read the side sets and sort */
     start_time = second();
     read_side_sets(mesh_exoid, num_elem_in_ssets, num_df_in_ssets);
-    printf("\tTime to read side sets: %.2f\n", second() - start_time);
+    printf("\tTime to read side sets: %.4f\n", second() - start_time);
   }
 
   /* Close the EXODUS  mesh file */
