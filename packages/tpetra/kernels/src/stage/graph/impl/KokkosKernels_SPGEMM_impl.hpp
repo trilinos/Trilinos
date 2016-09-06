@@ -2062,9 +2062,17 @@ public:
           nnz_lno_t c_rows = sets[set_ind];
           sets[set_ind] = 0;
 
+          /*
           for (; c_rows; num_el++) {
             c_rows &= c_rows - 1; // clear the least significant bit set
           }
+          */
+
+          nnz_lno_t num_el2 = 0;
+          for (; c_rows; num_el2++) {
+            c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
+          }
+          num_el += num_el2;
         }
         rowmapC(row_index) = num_el;
         //printf("row_index:%d numel:%d\n", row_index, num_el);
@@ -2145,16 +2153,29 @@ public:
         }
 
 
-
-
         nnz_lno_t num_el = 0;
         for (nnz_lno_t ii = 0; ii < used_hash_size; ++ii){
           nnz_lno_t c_rows = hm2.values[ii];
 
-          for (; c_rows; num_el++) {
-            c_rows &= c_rows - 1; // clear the least significant bit set
+
+          nnz_lno_t num_el2 = 0;
+          for (; c_rows; num_el2++) {
+            c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
+          }
+          num_el += num_el2;
+
+          /*
+          if (row_index == 0)
+            std::cout << " row_index:" << row_index << " ii:" << ii << " c_rows:" << c_rows << std::endl;
+          if (row_index == 0)
+            std::cout << " row_index:" << row_index << " num_el:" << num_el << std::endl;
+          for (; c_rows; ++num_el) {
+            c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
           }
 
+          if (row_index == 0)
+            std::cout << " row_index:" << row_index << " num_el:" << num_el << std::endl;
+            */
         }
         for (int i = 0; i < globally_used_hash_count; ++i){
           nnz_lno_t dirty_hash = globally_used_hash_indices[i];
@@ -2162,6 +2183,10 @@ public:
         }
 
         rowmapC(row_index) = num_el;
+        /*
+        if (row_index == 0)
+        std::cout << " row_index:" << row_index << " num_el:" << num_el << std::endl;
+        */
       }
       );
 
