@@ -778,7 +778,7 @@ private:
       const Real det = (xmid_ - x1) * x1;
       const Real a   = static_cast<Real>(-1) / det;
       const Real b   = xmid_ / det;
-      const Real m   = advMag_ + static_cast<Real>(0.1)*advMag_*param[8];
+      const Real m   = advMag_ + static_cast<Real>(0.5)*advMag_*param[8];
       const Real mag = m * (a * std::pow(x[1],2) + b * x[1]);
       adv[0] = -mag;
       adv[1] = static_cast<Real>(0);
@@ -809,7 +809,7 @@ private:
     }
     else if ( sideset == 4 || sideset == 5 ) {
       c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[12]);
-      c2 = engTemp_ + static_cast<Real>(0.05)*engTemp_ * (param[13] + static_cast<Real>(1));
+      c2 = engTemp_ + static_cast<Real>(0.1)*engTemp_ * param[13];
       c3 = static_cast<Real>(40) + static_cast<Real>(2) * param[14];
     }
     else if ( sideset == 1 ) {
