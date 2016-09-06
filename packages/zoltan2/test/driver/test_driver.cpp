@@ -219,16 +219,15 @@ bool run(const UserInputForTests &uinput,
   comparison_source->timers["adapter construction time"]->start();
 
   // a pointer to a basic type
-  AdapterWithOptionalCoordinateAdapter adapters = AdapterForTests::getAdapterForInput(
+  AdapterWithOptionalCoordinateAdapter adapters = 
+                     AdapterForTests::getAdapterForInput(
                                         const_cast<UserInputForTests*>(&uinput),
                                         adapterPlist,comm); 
   comparison_source->timers["adapter construction time"]->stop();
 
   if(adapters.mainAdapter == nullptr)
   {
-    if(rank == 0) {
-      cout << "Get adapter for input failed" << endl;
-    }
+    cout << "Get adapter for input failed on rank " << rank << endl;
     return false;
   }
   RCP<basic_id_t> iaRCP = rcp(reinterpret_cast<basic_id_t *>
@@ -271,10 +270,7 @@ bool run(const UserInputForTests &uinput,
 #endif
 
   if (problem == nullptr) {
-    if (rank == 0) {
-      std::cerr << "Input adapter type: " << adapter_name 
-                << ", is unavailable, or misspelled." << std::endl;
-    }
+    std::cerr << "Problem construction failed" << std::endl;
     return false;
   }
   else if(rank == 0) {
@@ -382,10 +378,8 @@ bool run(const UserInputForTests &uinput,
      // Note the MetricAnalyzer only cares about the data found in the 
      // "Metrics" sublist
       bSuccess = false;
-      if (rank == 0) {
-	std::cout << "MetricAnalyzer::analyzeMetrics() "
-                  << "returned false and the test is FAILED." << std::endl;
-      }
+      std::cout << "MetricAnalyzer::analyzeMetrics() "
+                << "returned false and the test is FAILED." << std::endl;
     }
     if(rank == 0) {
       cout << msgResults.str();
