@@ -42,7 +42,6 @@
 
 #include <Geom_Specialized_Searches.h>
 
-#include <gtkTraitsForStkSearch.hpp>
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/OctTreeOps.hpp>
 
