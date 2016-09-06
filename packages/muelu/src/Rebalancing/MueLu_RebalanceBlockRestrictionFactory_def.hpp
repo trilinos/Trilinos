@@ -68,6 +68,7 @@
 #include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 
@@ -76,6 +77,12 @@ namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("repartition: use subcommunicators");
+#undef  SET_VALID_ENTRY
+
+  //validParamList->set< RCP<const FactoryBase> >("repartition: use subcommunicators", Teuchos::null, "test");
 
   validParamList->set< RCP<const FactoryBase> >("R", Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
 
@@ -104,7 +111,8 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
-  //const Teuchos::ParameterList & pL = GetParameterList();
+
+
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
@@ -259,9 +267,10 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
       RCP<MultiVector> permutedNullspace = MultiVectorFactory::Build(rebalanceImporter->getTargetMap(), nullspace->getNumVectors());
       permutedNullspace->doImport(*nullspace, *rebalanceImporter, Xpetra::INSERT);
 
-      // TODO think about this
-      //if (pL.get<bool>("repartition: use subcommunicators") == true) // TODO either useSubcomm is enabled everywhere or nowhere
-      //permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
+      // TODO subcomm enabled everywhere or nowhere
+      const ParameterList& pL = GetParameterList();
+      if (pL.get<bool>("repartition: use subcommunicators") == true)
+        permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
 
       coarseLevel.Set<RCP<MultiVector> >("Nullspace", permutedNullspace, (*it)->GetFactory("Nullspace").get());
 
