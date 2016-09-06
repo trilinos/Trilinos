@@ -33,6 +33,7 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
+#include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
@@ -52,50 +53,29 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 
+class CommunicateFieldDataHowTo : public stk::unit_test_util::MeshFixture {};
+
 //BEGIN
-TEST(CommunicateFieldData, CommunicateMultipleGhostings)
+TEST_F(CommunicateFieldDataHowTo, CommunicateMultipleGhostings)
 {
-  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    auto& temperatureField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "temperature");
 
-  const std::string fileName = "generated:8x8x8";
-  stk::io::StkMeshIoBroker meshReader(communicator);
-  meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
-  meshReader.create_input_mesh();
+    double initialTemperatureValue = 25.0;
+    stk::mesh::put_field_on_entire_mesh_with_initial_value(temperatureField, &initialTemperatureValue);
 
-  stk::mesh::MetaData& meta = meshReader.meta_data();
-  typedef stk::mesh::Field<double> ScalarField;
-  ScalarField& temperatureField = meta.declare_field<ScalarField>(stk::topology::NODE_RANK, "temperature");
+    setup_mesh("generated:8x8x8", stk::mesh::BulkData::AUTO_AURA);
 
-  double initialTemperatureValue = 25.0;
-  stk::mesh::put_field_on_entire_mesh_with_initial_value(temperatureField, &initialTemperatureValue);
+    const stk::mesh::BucketVector& notOwnedBuckets = get_bulk().get_buckets(stk::topology::NODE_RANK,
+                                                                            !get_meta().locally_owned_part());
 
-  meshReader.populate_bulk_data();
+    for(const stk::mesh::Bucket *bucket : notOwnedBuckets)
+        for(stk::mesh::Entity node : *bucket)
+            *stk::mesh::field_data(temperatureField, node) = -1.2345;
 
-  stk::mesh::BulkData& bulk = meshReader.bulk_data();
+    stk::mesh::communicate_field_data(get_bulk(), {&temperatureField});
 
-  stk::mesh::Selector select_not_owned = !meta.locally_owned_part();
-  const stk::mesh::BucketVector& buckets_not_owned = bulk.get_buckets(stk::topology::NODE_RANK,select_not_owned);
-
-  for(size_t i=0; i<buckets_not_owned.size(); ++i) {
-    stk::mesh::Bucket& bucket = *buckets_not_owned[i];
-    for(size_t j=0; j<bucket.size(); ++j) {
-        stk::mesh::Entity node = bucket[j];
-        double* data = stk::mesh::field_data(temperatureField, node);
-        double garbage = -1.2345;
-        *data = garbage;
-    }
-  }
-
-  std::vector<const stk::mesh::FieldBase*> fields(1, &temperatureField);
-  stk::mesh::communicate_field_data(bulk, fields);
-
-  for(size_t i=0; i<buckets_not_owned.size(); ++i) {
-      stk::mesh::Bucket& bucket = *buckets_not_owned[i];
-      for(size_t j=0; j<bucket.size(); ++j) {
-          stk::mesh::Entity node = bucket[j];
-          double* data = stk::mesh::field_data(temperatureField, node);
-          EXPECT_EQ(initialTemperatureValue, *data);
-      }
-  }
+    for(const stk::mesh::Bucket *bucket : notOwnedBuckets)
+        for(stk::mesh::Entity node : *bucket)
+            EXPECT_EQ(initialTemperatureValue, *stk::mesh::field_data(temperatureField, node));
 }
 //END
