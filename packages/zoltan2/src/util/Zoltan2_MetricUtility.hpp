@@ -188,7 +188,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
 }
 
 /*! \brief Compute the imbalance
- *  \param numParts the number of parts supplied, which is the
+ *  \param numExistingParts the max Part ID + 1, which is the
  *             length of the \c vals array.
  *  \param targetNumParts the number of parts desired, which is the
  *             length of the \c psizes array if it is defined.
@@ -198,7 +198,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
  *        If part sizes are uniform, \c psizes should be NULL.
  *  \param sumVals is the sum of the values in the \c vals list.
  *  \param vals  <tt> vals[p] </tt> is the amount in part \c p, for \c p
- *          ranging from zero to one less than \c numParts.
+ *          ranging from zero to one less than \c numExistingParts.
  *  \param min  on return, min will be the minimum (best)
  *           imbalance of all the parts.
  *  \param max  on return, max will be the maximum imbalance of all the parts.
@@ -218,24 +218,30 @@ template <typename scalar_t, typename lno_t, typename part_t>
  */
 
 template <typename scalar_t, typename part_t>
-  void computeImbalances(part_t numParts, part_t targetNumParts,
-    const scalar_t *psizes, scalar_t sumVals , const scalar_t *vals,
-    scalar_t &min, scalar_t &max, scalar_t &avg)
+void computeImbalances(
+  part_t numExistingParts,  // Max Part ID + 1
+  part_t targetNumParts,    // comm.size() or requested global # parts from soln
+  const scalar_t *psizes,
+  scalar_t sumVals,
+  const scalar_t *vals,
+  scalar_t &min,
+  scalar_t &max,
+  scalar_t &avg)
 {
   min = sumVals;
   max = avg = 0;
 
-  if (sumVals <= 0 || targetNumParts < 1 || numParts < 1)
+  if (sumVals <= 0 || targetNumParts < 1 || numExistingParts < 1)
     return;
 
-  if (targetNumParts==1 || numParts==1){
+  if (targetNumParts==1) {
     min = max = avg = 0;  // 0 imbalance
     return;
   }
 
   if (!psizes){
     scalar_t target = sumVals / targetNumParts;
-    for (part_t p=0; p < numParts; p++){
+    for (part_t p=0; p < numExistingParts; p++){
       scalar_t diff = vals[p] - target;
       scalar_t adiff = (diff >= 0 ? diff : -diff);
       scalar_t tmp = diff / target;
@@ -244,7 +250,7 @@ template <typename scalar_t, typename part_t>
       if (tmp > max) max = tmp;
       if (tmp < min) min = tmp;
     }
-    part_t emptyParts = targetNumParts - numParts;
+    part_t emptyParts = targetNumParts - numExistingParts;
     if (emptyParts > 0){
       if (max < 1.0)
         max = 1.0;       // target divided by target
@@ -254,7 +260,7 @@ template <typename scalar_t, typename part_t>
   else{
     for (part_t p=0; p < targetNumParts; p++){
       if (psizes[p] > 0){
-        if (p < numParts){
+        if (p < numExistingParts){
           scalar_t target = sumVals * psizes[p];
           scalar_t diff = vals[p] - target;
           scalar_t adiff = (diff >= 0 ? diff : -diff);
@@ -278,7 +284,7 @@ template <typename scalar_t, typename part_t>
 
 /*! \brief Compute the imbalance in the case of multiple part sizes.
  *
- *  \param numParts the number of parts supplied, which is the
+ *  \param numExistingParts the max Part ID + 1, which is the
  *             length of the \c vals array.
  *  \param targetNumParts the number of parts desired, which is the
  *             length of the \c psizes array if it is defined.
@@ -290,7 +296,7 @@ template <typename scalar_t, typename part_t>
  *         index should sum to one.
  *  \param sumVals is the sum of the values in the \c vals list.
  *  \param vals  <tt> vals[p] </tt> is the amount in part \c p, for \c p
- *          ranging from zero to one less than \c numParts.
+ *          ranging from zero to one less than \c numExistingParts.
  *  \param min  on return, min will be the minimum (best) imbalance
  *          of all the parts.
  *  \param max  on return, max will be the maximum imbalance of all the parts.
@@ -310,18 +316,24 @@ template <typename scalar_t, typename part_t>
  */
 
 template <typename scalar_t, typename part_t>
- void computeImbalances(part_t numParts, part_t targetNumParts,
-   int numSizes, ArrayView<ArrayRCP<scalar_t> > psizes,
-   scalar_t sumVals , const scalar_t *vals,
-   scalar_t &min, scalar_t &max, scalar_t &avg)
+void computeImbalances(
+  part_t numExistingParts,
+  part_t targetNumParts,
+  int numSizes,
+  ArrayView<ArrayRCP<scalar_t> > psizes,
+  scalar_t sumVals,
+  const scalar_t *vals,
+  scalar_t &min,
+  scalar_t &max,
+  scalar_t &avg)
 {
   min = sumVals;
   max = avg = 0;
 
-  if (sumVals <= 0 || targetNumParts < 1 || numParts < 1)
+  if (sumVals <= 0 || targetNumParts < 1 || numExistingParts < 1)
     return;
 
-  if (targetNumParts==1 && numParts==1){
+  if (targetNumParts==1) {
     min = max = avg = 0;  // 0 imbalance
     return;
   }
@@ -335,7 +347,7 @@ template <typename scalar_t, typename part_t>
   }
 
   if (allUniformParts){
-    computeImbalances<scalar_t, part_t>(numParts, targetNumParts, NULL,
+    computeImbalances<scalar_t, part_t>(numExistingParts, targetNumParts, NULL,
       sumVals, vals, min, max, avg);
     return;
   }
@@ -346,7 +358,7 @@ template <typename scalar_t, typename part_t>
     sizeVec[i] = uniformSize;
   }
 
-  for (part_t p=0; p < numParts; p++){
+  for (part_t p=0; p < numExistingParts; p++){
 
     // If we have objects in parts that should have 0 objects,
     // we don't compute an imbalance.  It means that other
@@ -397,14 +409,14 @@ template <typename scalar_t, typename part_t>
 
   part_t numEmptyParts = 0;
 
-  for (part_t p=numParts; p < targetNumParts; p++){
+  for (part_t p=numExistingParts; p < targetNumParts; p++){
     bool nonEmptyPart = false;
     for (int i=0; !nonEmptyPart && i < numSizes; i++)
       if (psizes[i].size() > 0 && psizes[i][p] > 0.0)
         nonEmptyPart = true;
 
     if (nonEmptyPart){
-      // The partitioning has no objects for this part, which
+      // The partition has no objects for this part, which
       // is supposed to be non-empty.
       numEmptyParts++;
     }

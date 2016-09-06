@@ -61,10 +61,11 @@ namespace Zoltan2{
  *   \param part   \c part[i] is the part ID for local object \c i
  *   \param vwgts  \c vwgts[w] is the StridedData object
  *       representing weight index \c w. The number of weights
- *       (which must be at least one  TODO  WHY?) is taken to be \c vwgts.size().
- *   \param mcNorm the multiCriteria norm, to be used if the number of weights is
+ *       (which must be at least one  TODO WHY?) is taken to be \c vwgts.size().
+ *   \param mcNorm the multiCriteria norm to be used if the number of weights is
  *             greater than one.
- *   \param numParts  on return this is the global number of parts.
+ *   \param targetNumParts  input:  number of requested parts
+ *   \param numExistingParts  on return this is the maximum part ID + 1.
  *   \param numNonemptyParts  on return this is the number of those
  *          parts that are non-empty.
  *   \param metrics on return points to a list of named MetricValues objects
@@ -77,21 +78,21 @@ namespace Zoltan2{
  *     weights were given, we have "object count", then "normed weight",
  *     then the individual weights "weight 0", "weight 1", and so on.
  *   \param globalSums If weights are uniform, the globalSums is the
- *      \c numParts totals of global number of objects in each part.
+ *      \c numExistingParts totals of global number of objects in each part.
  *     Suppose the number of weights is \c W.  If
- *     W is 1, then on return this is an array of length \c 2*numParts .
- *     The first \c numParts entries are the count of objects in each part,
- *     and the second is the total weight in each part.
+ *     W is 1, then on return this is an array of length \c 2*numExistingParts .
+ *     The first \c numExistingParts entries are the count of objects in each 
+ *     part and the second is the total weight in each part.
  *     If \c W is greater than one, then the length of this array is
- *     \c (2+W)*numParts .
- *     The first \c numParts entries are the count of objects in each part.
- *     The next \c numParts entries are the sum of the normed weights in
+ *     \c (2+W)*numExistingParts .
+ *     The first \c numExistingParts entries are the count of objects in each 
+ *     part.
+ *     The next \c numExistingParts entries are the sum of the normed weights in
  *     each part.
  *     The final entries are the sum of the individual weights in each part,
  *     by weight index by part number.  The array is allocated here.
  *
- *
-() must be called by all processes in \c comm.
+ * () must be called by all processes in \c comm.
  * The imbalance metrics are not yet set in the MetricValues objects,
  * because they require part size information.
  */
@@ -104,7 +105,8 @@ template <typename scalar_t, typename lno_t, typename part_t>
     int vwgtDim,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
-    part_t &numParts,
+    part_t targetNumParts,
+    part_t &numExistingParts,
     part_t &numNonemptyParts,
     ArrayRCP<RCP<BaseClassMetrics<scalar_t> > > &metrics,
     ArrayRCP<scalar_t> &globalSums)
@@ -113,7 +115,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
   //////////////////////////////////////////////////////////
   // Initialize return values
 
-  numParts = numNonemptyParts = 0;
+  numExistingParts = numNonemptyParts = 0;
 
   int numMetrics = 1;                       // "object count"
   if (vwgtDim) numMetrics++;                // "normed weight" or "weight 0"
@@ -168,9 +170,10 @@ template <typename scalar_t, typename lno_t, typename part_t>
     "inconsistent number of vertex weights",
     globalNum[0] == localNum[0], DEBUG_MODE_ASSERTION, comm);
 
-  part_t nparts = globalNum[1] + 1;
+  part_t maxPartPlusOne = globalNum[1] + 1;  // Range of possible part IDs:
+                                             // [0,maxPartPlusOne)
 
-  part_t globalSumSize = nparts * numMetrics;
+  part_t globalSumSize = maxPartPlusOne * numMetrics;
   scalar_t * sumBuf = new scalar_t [globalSumSize];
   env->localMemoryAssertion(__FILE__, __LINE__, globalSumSize, sumBuf);
   globalSums = arcp(sumBuf, 0, globalSumSize);
@@ -189,9 +192,9 @@ template <typename scalar_t, typename lno_t, typename part_t>
 
   if (numMetrics > 1){
 
-    scalar_t *wgt = localBuf + nparts; // single normed weight or weight 0
+    scalar_t *wgt = localBuf+maxPartPlusOne; // single normed weight or weight 0
     try{
-      normedPartWeights<scalar_t, lno_t, part_t>(env, nparts,
+      normedPartWeights<scalar_t, lno_t, part_t>(env, maxPartPlusOne,
         part, vwgts, mcNorm, wgt);
     }
     Z2_FORWARD_EXCEPTIONS
@@ -199,11 +202,11 @@ template <typename scalar_t, typename lno_t, typename part_t>
     // This code assumes the solution has the part ordered the
     // same way as the user input.  (Bug 5891 is resolved.)
     if (vwgtDim > 1){
-      wgt += nparts;         // individual weights
+      wgt += maxPartPlusOne;         // individual weights
       for (int vdim = 0; vdim < vwgtDim; vdim++){
         for (lno_t i=0; i < localNumObj; i++)
           wgt[part[i]] += vwgts[vdim][i];
-        wgt += nparts;
+        wgt += maxPartPlusOne;
       }
     }
   }
@@ -215,10 +218,10 @@ template <typename scalar_t, typename lno_t, typename part_t>
   next++;
 
   if (numMetrics > 1){
-    scalar_t *wgt = localBuf + nparts; // single normed weight or weight 0
+    scalar_t *wgt = localBuf+maxPartPlusOne; // single normed weight or weight 0
     scalar_t total = 0.0;
 
-    for (int p=0; p < nparts; p++){
+    for (int p=0; p < maxPartPlusOne; p++){
       total += wgt[p];
     }
 
@@ -233,9 +236,9 @@ template <typename scalar_t, typename lno_t, typename part_t>
 
     if (vwgtDim > 1){
       for (int vdim = 0; vdim < vwgtDim; vdim++){
-        wgt += nparts;
+        wgt += maxPartPlusOne;
         total = 0.0;
-        for (int p=0; p < nparts; p++){
+        for (int p=0; p < maxPartPlusOne; p++){
           total += wgt[p];
         }
 
@@ -248,7 +251,6 @@ template <typename scalar_t, typename lno_t, typename part_t>
         next++;
       }
     }
-
   }
 
   //////////////////////////////////////////////////////////
@@ -273,37 +275,40 @@ template <typename scalar_t, typename lno_t, typename part_t>
                                       // not have started at 0
 
 
-  ArrayView<scalar_t> objVec(obj, nparts);
+  ArrayView<scalar_t> objVec(obj, maxPartPlusOne);
   getStridedStats<scalar_t>(objVec, 1, 0, min, max, sum);
+  if (maxPartPlusOne < targetNumParts)
+    min = scalar_t(0);  // Some of the target parts are empty
 
   metrics[next]->setMetricValue("global minimum", min);
   metrics[next]->setMetricValue("global maximum", max);
   metrics[next]->setMetricValue("global sum", sum);
-  metrics[next]->setMetricValue("global average", sum / nparts);
   next++;
 
   if (numMetrics > 1){
-    scalar_t *wgt = sumBuf + nparts;        // single normed weight or weight 0
+    scalar_t *wgt = sumBuf + maxPartPlusOne; // single normed weight or weight 0
 
-    ArrayView<scalar_t> normedWVec(wgt, nparts);
+    ArrayView<scalar_t> normedWVec(wgt, maxPartPlusOne);
     getStridedStats<scalar_t>(normedWVec, 1, 0, min, max, sum);
+    if (maxPartPlusOne < targetNumParts)
+      min = scalar_t(0);  // Some of the target parts are empty
 
     metrics[next]->setMetricValue("global minimum", min);
     metrics[next]->setMetricValue("global maximum", max);
     metrics[next]->setMetricValue("global sum", sum);
-    metrics[next]->setMetricValue("global average", sum / nparts);
     next++;
 
     if (vwgtDim > 1){
       for (int vdim=0; vdim < vwgtDim; vdim++){
-        wgt += nparts;       // individual weights
-        ArrayView<scalar_t> fromVec(wgt, nparts);
+        wgt += maxPartPlusOne;       // individual weights
+        ArrayView<scalar_t> fromVec(wgt, maxPartPlusOne);
         getStridedStats<scalar_t>(fromVec, 1, 0, min, max, sum);
+        if (maxPartPlusOne < targetNumParts)
+          min = scalar_t(0);  // Some of the target parts are empty
 
         metrics[next]->setMetricValue("global minimum", min);
         metrics[next]->setMetricValue("global maximum", max);
         metrics[next]->setMetricValue("global sum", sum);
-        metrics[next]->setMetricValue("global average", sum / nparts);
         next++;
       }
     }
@@ -312,17 +317,17 @@ template <typename scalar_t, typename lno_t, typename part_t>
   //////////////////////////////////////////////////////////
   // How many parts do we actually have.
 
-  numParts = nparts;
+  numExistingParts = maxPartPlusOne;
   obj = sumBuf;               // # of objects
 
   /*for (part_t p=nparts-1; p > 0; p--){
     if (obj[p] > 0) break;
-    numParts--;
+    numExistingParts--;
     }*/
 
-  numNonemptyParts = numParts;
+  numNonemptyParts = numExistingParts;
 
-  for (part_t p=0; p < numParts; p++)
+  for (part_t p=0; p < numExistingParts; p++)
     if (obj[p] == 0) numNonemptyParts--;
 
   env->debug(DETAILED_STATUS, "Exiting globalSumsByPart");
@@ -338,7 +343,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
  *   \param graphModel the graph model.
- *   \param numParts on return is the global number of parts in the solution
+ *   \param numExistingParts on return is the max Part ID + 1.
  *   \param numNonemptyParts on return is the global number of parts to which
  *                                objects are assigned.
  *   \param metrics on return points to a list of named MetricValues objects
@@ -359,7 +364,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
  */
 
 template <typename Adapter>
-  void objectMetrics(
+  void imbalanceMetrics(
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     multiCriteriaNorm mcNorm,
@@ -367,7 +372,7 @@ template <typename Adapter>
     const PartitioningSolution<Adapter> *solution,
     const ArrayView<const typename Adapter::part_t> &partArray,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
-    typename Adapter::part_t &numParts,
+    typename Adapter::part_t &numExistingParts,
     typename Adapter::part_t &numNonemptyParts,
     ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > > &metrics)
 {
@@ -455,7 +460,7 @@ template <typename Adapter>
     for (int dim=0; dim < numCriteria; dim++){
       if (solution->criteriaHasUniformPartSizes(dim) != true){
         psizes = new scalar_t [targetNumParts];
-        env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);
+        env->localMemoryAssertion(__FILE__, __LINE__, targetNumParts, psizes);
         for (part_t i=0; i < targetNumParts; i++){
           psizes[i] = solution->getCriteriaPartSize(dim, i);
         }
@@ -474,7 +479,7 @@ template <typename Adapter>
   try{
     globalSumsByPart<scalar_t, lno_t, part_t>(env, comm,
       partArray, nWeights, weights.view(0, numCriteria), mcNorm,
-      numParts, numNonemptyParts, metrics, globalSums);
+      targetNumParts, numExistingParts, numNonemptyParts, metrics, globalSums);
   }
   Z2_FORWARD_EXCEPTIONS
 
@@ -493,9 +498,11 @@ template <typename Adapter>
   if (partSizes[0].size() > 0)
     psizes = partSizes[0].getRawPtr();
 
-  computeImbalances<scalar_t, part_t>(numParts, targetNumParts, psizes,
-      metrics[index]->getMetricValue("global sum"), objCount,
-      min, max, avg);
+  scalar_t gsum = metrics[index]->getMetricValue("global sum");
+  computeImbalances<scalar_t, part_t>(numExistingParts, targetNumParts, psizes,
+      gsum, objCount, min, max, avg);
+
+  metrics[index]->setMetricValue("global average", gsum / targetNumParts);
 
   metrics[index]->setMetricValue("maximum imbalance", 1.0 + max);
   metrics[index]->setMetricValue("average imbalance", avg);
@@ -503,14 +510,15 @@ template <typename Adapter>
   ///////////////////////////////////////////////////////////////////////////
   // Compute imbalances for the normed weight sum.
 
-  scalar_t *wgts = globalSums.getRawPtr() + numParts;
+  scalar_t *wgts = globalSums.getRawPtr() + numExistingParts;
 
   if (addedMetricsCount > 1){
     ++index;
-    computeImbalances<scalar_t, part_t>(numParts, targetNumParts,
-      numCriteria, partSizes.view(0, numCriteria),
-      metrics[index]->getMetricValue("global sum"), wgts,
-      min, max, avg);
+    gsum = metrics[index]->getMetricValue("global sum");
+    computeImbalances<scalar_t, part_t>(numExistingParts, targetNumParts,
+      numCriteria, partSizes.view(0, numCriteria), gsum, wgts, min, max, avg);
+
+    metrics[index]->setMetricValue("global average", gsum / targetNumParts);
 
     metrics[index]->setMetricValue("maximum imbalance", 1.0 + max);
     metrics[index]->setMetricValue("average imbalance", avg);
@@ -523,14 +531,17 @@ template <typename Adapter>
       ++index;
 
       for (int vdim=0; vdim < numCriteria; vdim++){
-        wgts += numParts;
+        wgts += numExistingParts;
         psizes = NULL;
 
         if (partSizes[vdim].size() > 0)
            psizes = partSizes[vdim].getRawPtr();
 
-        computeImbalances<scalar_t, part_t>(numParts, targetNumParts, psizes,
-          metrics[index]->getMetricValue("global sum"), wgts, min, max, avg);
+        gsum = metrics[index]->getMetricValue("global sum");
+        computeImbalances<scalar_t, part_t>(numExistingParts, targetNumParts, 
+                                            psizes, gsum, wgts, min, max, avg);
+
+        metrics[index]->setMetricValue("global average", gsum / targetNumParts);
 
         metrics[index]->setMetricValue("maximum imbalance", 1.0 + max);
         metrics[index]->setMetricValue("average imbalance", avg);
@@ -548,15 +559,15 @@ template <typename scalar_t, typename part_t>
 void printImbalanceMetricsHeader(
   std::ostream &os, 
   part_t targetNumParts, 
-  part_t numParts, 
+  part_t numExistingParts, 
   part_t numNonemptyParts)
 {
-  os << "Imbalance Metrics: (" << numParts << " parts)";
-  if (numNonemptyParts < numParts) {
+  os << "Imbalance Metrics: (" << numExistingParts << " existing parts)";
+  if (numNonemptyParts < numExistingParts) {
     os << " (" << numNonemptyParts << " of which are non-empty)";
   }
   os << std::endl;
-  if (targetNumParts != numParts) {
+  if (targetNumParts != numExistingParts) {
     os << "Target number of parts is " << targetNumParts << std::endl;
   }
   ImbalanceMetrics<scalar_t>::printHeader(os);
@@ -568,12 +579,13 @@ template <typename scalar_t, typename part_t>
 void printImbalanceMetrics(
   std::ostream &os, 
   part_t targetNumParts, 
-  part_t numParts, 
+  part_t numExistingParts, 
   part_t numNonemptyParts, 
   const ArrayView<RCP<BaseClassMetrics<scalar_t>>> &infoList)
 {
   printImbalanceMetricsHeader<scalar_t, part_t>(os, targetNumParts, 
-                                                numParts, numNonemptyParts);
+                                                numExistingParts,
+                                                numNonemptyParts);
   for (int i=0; i < infoList.size(); i++) {
     if (infoList[i]->getName() != METRICS_UNSET_STRING) {
       infoList[i]->printLine(os);
@@ -588,12 +600,13 @@ template <typename scalar_t, typename part_t>
 void printImbalanceMetrics(
   std::ostream &os, 
   part_t targetNumParts, 
-  part_t numParts, 
+  part_t numExistingParts, 
   part_t numNonemptyParts, 
   RCP<BaseClassMetrics<scalar_t>> metricValue)
 {
   printImbalanceMetricsHeader<scalar_t, part_t>(os, targetNumParts,
-                                                numParts, numNonemptyParts);
+                                                numExistingParts,
+                                                numNonemptyParts);
   metricValue->printLine(os);
 }
 

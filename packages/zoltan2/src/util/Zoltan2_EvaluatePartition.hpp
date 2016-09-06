@@ -509,9 +509,9 @@ void EvaluatePartition<Adapter>::sharedConstructor(
     rcp(dynamic_cast<const base_adapter_t *>(ia), false);
 
   try{
-    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, partArray, 
-                           graphModel,
-			   numGlobalParts_, numNonEmpty_, metricsBase_);
+    imbalanceMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, partArray, 
+                              graphModel,
+                              numGlobalParts_, numNonEmpty_, metricsBase_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
