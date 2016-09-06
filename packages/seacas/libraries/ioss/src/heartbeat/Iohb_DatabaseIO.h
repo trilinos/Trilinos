@@ -50,17 +50,18 @@ namespace Ioss {
   class EdgeSet;
   class ElementBlock;
   class ElementSet;
+  class EntityBlock;
   class FaceBlock;
   class FaceSet;
   class Field;
+  class GroupingEntity;
   class NodeBlock;
   class NodeSet;
   class PropertyManager;
   class Region;
   class SideBlock;
   class SideSet;
-  class GroupingEntity;
-  class EntityBlock;
+  class StructuredBlock;
 }
 
 /** \brief A namespace for the heartbeat database format.
@@ -121,6 +122,8 @@ namespace Iohb {
                                size_t data_size) const;
     int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const;
+    int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+			       void *data, size_t data_size) const {return -1;}
     int64_t get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
                                size_t data_size) const;
     int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
@@ -160,6 +163,8 @@ namespace Iohb {
                                size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const;
+    int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+			       void *data, size_t data_size) const {return -1;}
 
     time_t timeLastFlush;
 

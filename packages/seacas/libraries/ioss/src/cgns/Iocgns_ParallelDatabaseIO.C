@@ -4,7 +4,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists
 
-// Copyright(C) 2015
+// Copyright(C) 2015, 2016
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
@@ -41,7 +41,6 @@
 #include <assert.h>
 #include <cgns/Iocgns_ParallelDatabaseIO.h>
 #include <cgns/Iocgns_Utils.h>
-#include <cgnslib.h>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -50,6 +49,13 @@
 #include <sys/select.h>
 #include <time.h>
 #include <vector>
+
+#include <cgnsconfig.h>
+#if CG_BUILD_PARALLEL
+#include <pcgnslib.h>
+#else
+#include <cgnslib.h>
+#endif
 
 #if !defined(CGNSLIB_H)
 #error "Could not include cgnslib.h"
@@ -64,6 +70,8 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
+#include "Ioss_StructuredBlock.h"
+#include "Ioss_TerminalColor.h"
 
 #include "Ioss_Field.h"
 #include "Ioss_IOFactory.h"
@@ -74,13 +82,45 @@
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
 
+#define VAL(x) std::cerr << Ioss::trmclr::blue << #x << " = " << x << "\n" << Ioss::trmclr::normal
+
+namespace {
+  CG_ZoneType_t check_zone_type(int cgnsFilePtr)
+  {
+    // ========================================================================
+    // Get the number of zones (element blocks) in the mesh...
+    int base      = 1;
+    int num_zones = 0;
+    cg_nzones(cgnsFilePtr, base, &num_zones);
+
+    CG_ZoneType_t common_zone_type = CG_ZoneTypeNull;
+
+    for (cgsize_t zone = 1; zone <= num_zones; zone++) {
+      CG_ZoneType_t zone_type;
+      cg_zone_type(cgnsFilePtr, base, zone, &zone_type);
+
+      if (common_zone_type == CG_ZoneTypeNull) {
+        common_zone_type = zone_type;
+      }
+
+      if (common_zone_type != zone_type) {
+        std::ostringstream errmsg;
+        errmsg << "ERROR: CGNS: Zone " << zone << " is not the same zone type as previous zones."
+               << " This is currently not allowed or supported (hybrid mesh).";
+        IOSS_ERROR(errmsg);
+      }
+    }
+    return common_zone_type;
+  }
+}
+
 namespace Iocgns {
 
   ParallelDatabaseIO::ParallelDatabaseIO(Ioss::Region *region, const std::string &filename,
                                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                                          const Ioss::PropertyManager &props)
       : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), cgnsFilePtr(-1),
-        nodeCount(0), elementCount(0)
+        nodeCount(0), elementCount(0), m_zoneType(CG_ZoneTypeNull)
   {
     dbState = Ioss::STATE_UNKNOWN;
 
@@ -90,7 +130,14 @@ namespace Iocgns {
       IOSS_ERROR(errmsg);
     }
 
-    std::cout << "CGNS ParallelDatabaseIO using " << CG_SIZEOF_SIZE << "-bit integers.\n";
+    if (myProcessor == 0) {
+      std::cout << "CGNS ParallelDatabaseIO using " << CG_SIZEOF_SIZE << "-bit integers.\n"
+#if CG_BUILD_PARALLEL
+                << "                        using the parallel CGNS library and API.\n";
+#else
+                << "                        using the serial CGNS library and API.\n";
+#endif
+    }
     if (CG_SIZEOF_SIZE == 64) {
       set_int_byte_size_api(Ioss::USE_INT64_API);
     }
@@ -103,7 +150,13 @@ namespace Iocgns {
   {
     if (cgnsFilePtr < 0) {
       if (is_input()) {
+#if CG_BUILD_PARALLEL
+        cgp_mpi_comm(util().communicator());
+        cgp_pio_mode(CGP_COLLECTIVE);
+        int ierr = cgp_open(get_filename().c_str(), CG_MODE_READ, &cgnsFilePtr);
+#else
         int ierr = cg_open(get_filename().c_str(), CG_MODE_READ, &cgnsFilePtr);
+#endif
         if (ierr != CG_OK) {
           // NOTE: Code will not continue past this call...
           std::ostringstream errmsg;
@@ -118,7 +171,11 @@ namespace Iocgns {
   void ParallelDatabaseIO::closeDatabase() const
   {
     if (cgnsFilePtr != -1) {
+#if CG_BUILD_PARALLEL
+      cgp_close(cgnsFilePtr);
+#else
       cg_close(cgnsFilePtr);
+#endif
     }
     cgnsFilePtr = -1;
   }
@@ -160,6 +217,8 @@ namespace Iocgns {
       IOSS_ERROR(errmsg);
     }
 
+    m_zoneType = check_zone_type(cgnsFilePtr);
+
     if (int_byte_size_api() == 8) {
       decomp = std::unique_ptr<DecompositionDataBase>(
           new DecompositionData<int64_t>(properties, util().communicator()));
@@ -169,8 +228,18 @@ namespace Iocgns {
           new DecompositionData<int>(properties, util().communicator()));
     }
     assert(decomp != nullptr);
-    decomp->decompose_model(cgnsFilePtr);
+    decomp->decompose_model(cgnsFilePtr, m_zoneType);
 
+    if (m_zoneType == CG_Structured) {
+      handle_structured_blocks();
+    }
+    else if (m_zoneType == CG_Unstructured) {
+      handle_unstructured_blocks();
+    }
+  }
+
+  void ParallelDatabaseIO::handle_unstructured_blocks()
+  {
     get_region()->property_add(
         Ioss::Property("global_node_count", (int64_t)decomp->global_node_count()));
     get_region()->property_add(
@@ -182,32 +251,15 @@ namespace Iocgns {
     // ========================================================================
     // Get the number of families in the mesh...
     // Will treat these as sidesets if they are of the type "FamilyBC_t"
-    cgsize_t base         = 1;
-    cgsize_t num_families = 0;
-    cg_nfamilies(cgnsFilePtr, base, &num_families);
-    for (cgsize_t family = 1; family <= num_families; family++) {
-      char     name[33];
-      cgsize_t num_bc  = 0;
-      cgsize_t num_geo = 0;
-      cg_family_read(cgnsFilePtr, base, family, name, &num_bc, &num_geo);
-#if defined(DEBUG_OUTPUT)
-      std::cout << "Family " << family << " named " << name << " has " << num_bc << " BC, and "
-                << num_geo << " geometry references\n";
-#endif
-      if (num_bc > 0) {
-        // Create a sideset...
-        std::string    ss_name(name);
-        Ioss::SideSet *ss = new Ioss::SideSet(this, ss_name);
-        get_region()->add(ss);
-      }
-    }
+    Utils::add_sidesets(cgnsFilePtr, this);
 
     // ========================================================================
     // Get the number of zones (element blocks) in the mesh...
-    int i = 0;
-    for (auto &block : decomp->el_blocks) {
+    int base = 1;
+    int i    = 0;
+    for (auto &block : decomp->m_elementBlocks) {
       std::string element_topo = block.topologyType;
-#if defined(DEBUG_OUTPUT)
+#if defined(IOSS_DEBUG_OUTPUT)
       std::cout << "Added block " << block.name() << ":, IOSS topology = '" << element_topo
                 << "' with " << block.ioss_count() << " elements\n";
 #endif
@@ -222,20 +274,20 @@ namespace Iocgns {
     // ========================================================================
     // Have sidesets, now create sideblocks for each sideset...
     int id = 0;
-    for (auto &sset : decomp->side_sets) {
+    for (auto &sset : decomp->m_sideSets) {
       // See if there is an Ioss::SideSet with a matching name...
       Ioss::SideSet *ioss_sset = get_region()->get_sideset(sset.name());
       if (ioss_sset != NULL) {
-        auto        zone = decomp->zones_[sset.zone()];
+        auto        zone = decomp->m_zones[sset.zone()];
         std::string block_name(zone.m_name);
         block_name += "/";
         block_name += sset.name();
         std::string face_topo = sset.topologyType;
-#if defined(DEBUG_OUTPUT)
+#if defined(IOSS_DEBUG_OUTPUT)
         std::cout << "Processor " << myProcessor << ": Added sideblock " << block_name
                   << " of topo " << face_topo << " with " << sset.ioss_count() << " faces\n";
 #endif
-        const auto &block = decomp->el_blocks[sset.parentBlockIndex];
+        const auto &block = decomp->m_elementBlocks[sset.parentBlockIndex];
 
         std::string      parent_topo = block.topologyType;
         Ioss::SideBlock *sblk =
@@ -250,7 +302,7 @@ namespace Iocgns {
         }
         ioss_sset->add(sblk);
       }
-      id++; // Really just index into side_sets list.
+      id++; // Really just index into m_sideSets list.
     }
 
     Ioss::NodeBlock *nblock =
@@ -263,6 +315,112 @@ namespace Iocgns {
         new Ioss::CommSet(this, "commset_node", "node", decomp->get_commset_node_size());
     commset->property_add(Ioss::Property("id", 1));
     get_region()->add(commset);
+  }
+
+  // TODO: See if code can be used for parallel node resolution...
+  size_t ParallelDatabaseIO::finalize_structured_blocks()
+  {
+    const auto &blocks = get_region()->get_structured_blocks();
+
+    // If there are any Structured blocks, need to iterate them and their 1-to-1 connections
+    // and update the donor_zone id for zones that had not yet been processed at the time of
+    // definition...
+    for (auto &block : blocks) {
+      for (auto &conn : block->m_zoneConnectivity) {
+        if (conn.m_donorZone < 0) {
+          auto donor_iter = m_zoneNameMap.find(conn.m_donorName);
+          assert(donor_iter != m_zoneNameMap.end());
+          conn.m_donorZone = (*donor_iter).second;
+        }
+      }
+    }
+
+    size_t num_nodes = Utils::resolve_nodes(*get_region(), myProcessor);
+    return num_nodes;
+  }
+
+  void ParallelDatabaseIO::handle_structured_blocks()
+  {
+    int base = 1;
+
+    Utils::add_sidesets(cgnsFilePtr, this);
+
+    char     basename[33];
+    cgsize_t cell_dimension = 0;
+    cgsize_t phys_dimension = 0;
+    cg_base_read(cgnsFilePtr, base, basename, &cell_dimension, &phys_dimension);
+
+    // Iterate all structured blocks and set the intervals to zero
+    // if the m_proc field does not match current processor...
+    const auto &zones = decomp->m_structuredZones;
+
+    size_t node_offset        = 0;
+    size_t cell_offset        = 0;
+    size_t global_node_offset = 0;
+    size_t global_cell_offset = 0;
+
+    for (auto &zone : zones) {
+      if (zone->m_adam == zone) {
+        // This is a "root" zone from the undecomposed mesh...
+        // Now see if there are any non-empty blocks with
+        // this m_adam on this processor.  If exists, then create
+        // a StructuredBlock; otherwise, create an empty block.
+        auto block_name = zone->m_name;
+
+        Ioss::StructuredBlock *block = nullptr;
+        Ioss::IJK_t            zeros{{0, 0, 0}};
+        for (auto &pzone : zones) {
+          if (pzone->m_proc == myProcessor && pzone->m_adam == zone) {
+            // Create a non-empty structured block on this processor...
+            block = new Ioss::StructuredBlock(this, block_name, phys_dimension, pzone->m_ordinal,
+                                              pzone->m_offset, pzone->m_adam->m_ordinal);
+
+            for (auto &zgc : pzone->m_zoneConnectivity) {
+              block->m_zoneConnectivity.push_back(zgc);
+            }
+            break;
+          }
+        }
+        if (block == nullptr) {
+          // There is no block on this processor corresponding to the m_adam
+          // block.  Create an empty block...
+          block = new Ioss::StructuredBlock(this, block_name, phys_dimension, zeros, zeros,
+                                            zone->m_adam->m_ordinal);
+        }
+        assert(block != nullptr);
+        get_region()->add(block);
+
+        block->property_add(Ioss::Property("base", base));
+        block->property_add(Ioss::Property("zone", zone->m_adam->m_zone));
+
+        block->set_node_offset(node_offset);
+        block->set_cell_offset(cell_offset);
+        node_offset += block->get_property("node_count").get_int();
+        cell_offset += block->get_property("cell_count").get_int();
+
+        block->set_node_global_offset(global_node_offset);
+        block->set_cell_global_offset(global_cell_offset);
+        global_node_offset += block->get_property("global_node_count").get_int();
+        ;
+        global_cell_offset += block->get_property("global_cell_count").get_int();
+        ;
+      }
+    }
+
+    // ========================================================================
+    // Iterate each StructuredBlock, get its zone. For that zone, get the number of
+    // boundary conditions and then iterate those and create sideblocks in the
+    // corresponding sideset.
+    const auto &sbs = get_region()->get_structured_blocks();
+    for (const auto &block : sbs) {
+      // Handle boundary conditions...
+      Utils::add_structured_boundary_conditions(cgnsFilePtr, block);
+    }
+
+    size_t node_count = finalize_structured_blocks();
+    auto * nblock     = new Ioss::NodeBlock(this, "nodeblock_1", node_count, phys_dimension);
+    nblock->property_add(Ioss::Property("base", base));
+    get_region()->add(nblock);
   }
 
   bool ParallelDatabaseIO::begin(Ioss::State /* state */) { return true; }
@@ -282,24 +440,30 @@ namespace Iocgns {
 
   const Ioss::Map &ParallelDatabaseIO::get_map(entity_type type) const
   {
-    switch (type) {
-    case entity_type::NODE: {
-      size_t offset = decomp->decomp_node_offset();
-      size_t count  = decomp->decomp_node_count();
-      return get_map(nodeMap, nodeCount, offset, count, entity_type::NODE);
-    }
-    case entity_type::ELEM: {
-      size_t offset = decomp->decomp_elem_offset();
-      size_t count  = decomp->decomp_elem_count();
-      return get_map(elemMap, elementCount, offset, count, entity_type::ELEM);
-    }
+    if (m_zoneType == CG_Unstructured) {
+      switch (type) {
+      case entity_type::NODE: {
+        size_t offset = decomp->decomp_node_offset();
+        size_t count  = decomp->decomp_node_count();
+        return get_map(nodeMap, nodeCount, offset, count, entity_type::NODE);
+      }
+      case entity_type::ELEM: {
+        size_t offset = decomp->decomp_elem_offset();
+        size_t count  = decomp->decomp_elem_count();
+        return get_map(elemMap, elementCount, offset, count, entity_type::ELEM);
+      }
 
-    default:
-      std::ostringstream errmsg;
-      errmsg << "INTERNAL ERROR: Invalid map type. "
-             << "Something is wrong in the Iocgns::ParallelDatabaseIO::get_map() function. "
-             << "Please report.\n";
-      IOSS_ERROR(errmsg);
+      default:
+        std::ostringstream errmsg;
+        errmsg << "INTERNAL ERROR: Invalid map type. "
+               << "Something is wrong in the Iocgns::ParallelDatabaseIO::get_map() function. "
+               << "Please report.\n";
+        IOSS_ERROR(errmsg);
+      }
+    }
+    else {
+      std::cerr << "NodeCount = " << nodeCount << "\n";
+      assert(1 == 0);
     }
   }
 
@@ -453,6 +617,186 @@ namespace Iocgns {
     return -1;
   }
 
+  int64_t ParallelDatabaseIO::get_field_internal(const Ioss::StructuredBlock *sb,
+                                                 const Ioss::Field &field, void *data,
+                                                 size_t data_size) const
+  {
+    cgsize_t num_to_get = field.verify(data_size);
+
+    Ioss::Field::RoleType role = field.get_role();
+    cgsize_t              base = sb->get_property("base").get_int();
+    cgsize_t              zone = sb->get_property("zone").get_int();
+
+    cgsize_t rmin[3] = {0, 0, 0};
+    cgsize_t rmax[3] = {0, 0, 0};
+
+    if (role == Ioss::Field::MESH) {
+      bool cell_field = true;
+      if (field.get_name() == "mesh_model_coordinates" ||
+          field.get_name() == "mesh_model_coordinates_x" ||
+          field.get_name() == "mesh_model_coordinates_y" ||
+          field.get_name() == "mesh_model_coordinates_z" || field.get_name() == "cell_node_ids") {
+        cell_field = false;
+      }
+
+      if (cell_field) {
+        assert(num_to_get == sb->get_property("cell_count").get_int());
+        if (num_to_get > 0) {
+          rmin[0] = sb->get_property("offset_i").get_int() + 1;
+          rmin[1] = sb->get_property("offset_j").get_int() + 1;
+          rmin[2] = sb->get_property("offset_k").get_int() + 1;
+
+          rmax[0] = rmin[0] + sb->get_property("ni").get_int() - 1;
+          rmax[1] = rmin[1] + sb->get_property("nj").get_int() - 1;
+          rmax[2] = rmin[2] + sb->get_property("nk").get_int() - 1;
+        }
+      }
+      else {
+        // cell nodal field.
+        assert(num_to_get == sb->get_property("node_count").get_int());
+        if (num_to_get > 0) {
+          rmin[0] = sb->get_property("offset_i").get_int() + 1;
+          rmin[1] = sb->get_property("offset_j").get_int() + 1;
+          rmin[2] = sb->get_property("offset_k").get_int() + 1;
+
+          rmax[0] = rmin[0] + sb->get_property("ni").get_int();
+          rmax[1] = rmin[1] + sb->get_property("nj").get_int();
+          rmax[2] = rmin[2] + sb->get_property("nk").get_int();
+        }
+      }
+
+      assert(num_to_get == 0 ||
+             num_to_get ==
+                 (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
+      double *rdata = static_cast<double *>(data);
+
+      if (field.get_name() == "mesh_model_coordinates_x") {
+        int ierr =
+#if CG_BUILD_PARALLEL
+            cgp_coord_read_data(cgnsFilePtr, base, zone, 1, rmin, rmax, rdata);
+#else
+            cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, rmin, rmax, rdata);
+#endif
+        if (ierr < 0) {
+          Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+        }
+      }
+
+      else if (field.get_name() == "mesh_model_coordinates_y") {
+        int ierr =
+#if CG_BUILD_PARALLEL
+            cgp_coord_read_data(cgnsFilePtr, base, zone, 2, rmin, rmax, rdata);
+#else
+            cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, rmin, rmax, rdata);
+#endif
+        if (ierr < 0) {
+          Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+        }
+      }
+
+      else if (field.get_name() == "mesh_model_coordinates_z") {
+        int ierr =
+#if CG_BUILD_PARALLEL
+            cgp_coord_read_data(cgnsFilePtr, base, zone, 3, rmin, rmax, rdata);
+#else
+            cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, rmin, rmax, rdata);
+#endif
+        if (ierr < 0) {
+          Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+        }
+      }
+
+      else if (field.get_name() == "mesh_model_coordinates") {
+        char     basename[33];
+        cgsize_t cell_dimension = 0;
+        cgsize_t phys_dimension = 0;
+        cg_base_read(cgnsFilePtr, base, basename, &cell_dimension, &phys_dimension);
+
+        // Data required by upper classes store x0, y0, z0, ... xn,
+        // yn, zn. Data stored in cgns file is x0, ..., xn, y0,
+        // ..., yn, z0, ..., zn so we have to allocate some scratch
+        // memory to read in the data and then map into supplied
+        // 'data'
+        std::vector<double> coord(num_to_get);
+#if CG_BUILD_PARALLEL
+        int ierr = cgp_coord_read_data(cgnsFilePtr, base, zone, 1, rmin, rmax, TOPTR(coord));
+#else
+        int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, rmin, rmax,
+                                 TOPTR(coord));
+#endif
+        if (ierr < 0) {
+          Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+        }
+
+        // Map to global coordinate position...
+        for (cgsize_t i = 0; i < num_to_get; i++) {
+          rdata[phys_dimension * i + 0] = coord[i];
+        }
+
+        if (phys_dimension >= 2) {
+#if CG_BUILD_PARALLEL
+          ierr = cgp_coord_read_data(cgnsFilePtr, base, zone, 2, rmin, rmax, TOPTR(coord));
+#else
+          ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, rmin, rmax,
+                               TOPTR(coord));
+#endif
+          if (ierr < 0) {
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+          }
+
+          // Map to global coordinate position...
+          for (cgsize_t i = 0; i < num_to_get; i++) {
+            rdata[phys_dimension * i + 1] = coord[i];
+          }
+        }
+
+        if (phys_dimension == 3) {
+#if CG_BUILD_PARALLEL
+          ierr = cgp_coord_read_data(cgnsFilePtr, base, zone, 3, rmin, rmax, TOPTR(coord));
+#else
+          ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, rmin, rmax,
+                               TOPTR(coord));
+#endif
+          if (ierr < 0) {
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+          }
+
+          // Map to global coordinate position...
+          for (cgsize_t i = 0; i < num_to_get; i++) {
+            rdata[phys_dimension * i + 2] = coord[i];
+          }
+        }
+      }
+      else if (field.get_name() == "cell_node_ids") {
+        if (field.get_type() == Ioss::Field::INT64) {
+          int64_t *idata = static_cast<int64_t *>(data);
+          sb->get_cell_node_ids(idata, true);
+        }
+        else {
+          assert(field.get_type() == Ioss::Field::INT32);
+          int *idata = static_cast<int *>(data);
+          sb->get_cell_node_ids(idata, true);
+        }
+      }
+      else if (field.get_name() == "cell_ids") {
+        if (field.get_type() == Ioss::Field::INT64) {
+          int64_t *idata = static_cast<int64_t *>(data);
+          sb->get_cell_ids(idata, true);
+        }
+        else {
+          assert(field.get_type() == Ioss::Field::INT32);
+          int *idata = static_cast<int *>(data);
+          sb->get_cell_ids(idata, true);
+        }
+      }
+      else {
+        num_to_get = Ioss::Utils::field_warning(sb, field, "input");
+      }
+      return num_to_get;
+    }
+    return -1;
+  }
+
   int64_t ParallelDatabaseIO::get_field_internal(const Ioss::ElementBlock *eb,
                                                  const Ioss::Field &field, void *data,
                                                  size_t data_size) const
@@ -521,7 +865,7 @@ namespace Iocgns {
                                                  size_t data_size) const
   {
     int  id   = sb->get_property("id").get_int();
-    auto sset = decomp->side_sets[id];
+    auto sset = decomp->m_sideSets[id];
 
     ssize_t num_to_get = field.verify(data_size);
     if (num_to_get > 0) {
@@ -606,6 +950,12 @@ namespace Iocgns {
   }
 
   int64_t ParallelDatabaseIO::put_field_internal(const Ioss::ElementBlock * /* eb */,
+                                                 const Ioss::Field & /* field */, void * /* data */,
+                                                 size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int64_t ParallelDatabaseIO::put_field_internal(const Ioss::StructuredBlock * /* sb */,
                                                  const Ioss::Field & /* field */, void * /* data */,
                                                  size_t /* data_size */) const
   {

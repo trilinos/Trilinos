@@ -151,10 +151,10 @@ namespace Ioss {
     size_t global_elem_count() const { return m_globalElementCount; }
     size_t ioss_node_count() const { return nodeGTL.size(); }
     size_t ioss_elem_count() const { return localElementMap.size() + importElementMap.size(); }
-    size_t file_node_count() const { return nodeCount; }
-    size_t file_elem_count() const { return elementCount; }
-    size_t file_node_offset() const { return nodeOffset; }
-    size_t file_elem_offset() const { return elementOffset; }
+    size_t file_node_count() const { return m_nodeCount; }
+    size_t file_elem_count() const { return m_elementCount; }
+    size_t file_node_offset() const { return m_nodeOffset; }
+    size_t file_elem_offset() const { return m_elementOffset; }
 
     bool needs_centroids() const;
 
@@ -254,26 +254,26 @@ namespace Ioss {
     // Values for the file decomposition
     int    m_spatialDimension;
     size_t m_globalElementCount;
-    size_t elementCount;
-    size_t elementOffset;
-    size_t importPreLocalElemIndex;
+    size_t m_elementCount;
+    size_t m_elementOffset;
+    size_t m_importPreLocalElemIndex;
 
     size_t m_globalNodeCount;
-    size_t nodeCount;
-    size_t nodeOffset;
-    size_t importPreLocalNodeIndex;
+    size_t m_nodeCount;
+    size_t m_nodeOffset;
+    size_t m_importPreLocalNodeIndex;
 
     std::vector<double> m_centroids;
     std::vector<INT>    m_pointer;   // Index into adjacency, processor list for each element...
     std::vector<INT>    m_adjacency; // Size is sum of element connectivity sizes
 
-    std::vector<INT> nodeCommMap; // node/processor pair of the
+    std::vector<INT> m_nodeCommMap; // node/processor pair of the
     // nodes I communicate with.  Stored node#,proc,node#,proc, ...
 
     // The global element at index 'I' (0-based) is on block B in the
     // file decomposition.
-    // if fileBlockIndex[B] <= I && fileBlockIndex[B+1] < I
-    std::vector<size_t> fileBlockIndex;
+    // if m_fileBlockIndex[B] <= I && m_fileBlockIndex[B+1] < I
+    std::vector<size_t> m_fileBlockIndex;
 
   private:
     // This processor "manages" the elements on the exodus mesh file from
@@ -289,7 +289,7 @@ namespace Ioss {
     // local_element_map[i] contains the location in 'file' data for
     // the 'ioss' data at location 'i+import_pre_local_elem_index'
     //
-    // local_element_map[i]+elementOffset is the 0-based global index
+    // local_element_map[i]+m_elementOffset is the 0-based global index
     //
     // The indices in 'import_element_map' map the data received via
     // mpi communication from other processors into 'ioss' data.

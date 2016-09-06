@@ -133,16 +133,16 @@ namespace Ioss {
       };
     };
 
-    Style black(Ioss::trmclr::Foreground::BLACK);
-    Style red(Ioss::trmclr::Foreground::RED);
-    Style green(Ioss::trmclr::Foreground::GREEN);
-    Style yellow(Ioss::trmclr::Foreground::YELLOW);
-    Style blue(Ioss::trmclr::Foreground::BLUE);
-    Style magenta(Ioss::trmclr::Foreground::MAGENTA);
-    Style cyan(Ioss::trmclr::Foreground::CYAN);
-    Style normal(Ioss::trmclr::Attribute::DEFAULT);
+    static Style black(Ioss::trmclr::Foreground::BLACK);
+    static Style red(Ioss::trmclr::Foreground::RED);
+    static Style green(Ioss::trmclr::Foreground::GREEN);
+    static Style yellow(Ioss::trmclr::Foreground::YELLOW);
+    static Style blue(Ioss::trmclr::Foreground::BLUE);
+    static Style magenta(Ioss::trmclr::Foreground::MAGENTA);
+    static Style cyan(Ioss::trmclr::Foreground::CYAN);
+    static Style normal(Ioss::trmclr::Attribute::DEFAULT);
 
-    std::ostream &operator<<(std::ostream &os, const Style &style)
+    inline std::ostream &operator<<(std::ostream &os, const Style &style)
     {
       const uint32_t base    = 1 << STYLE_SHIFT;
       uint32_t       encoded = style / base;

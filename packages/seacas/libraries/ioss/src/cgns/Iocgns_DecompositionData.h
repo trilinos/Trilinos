@@ -48,6 +48,8 @@
 #include <Ioss_Decomposition.h>
 #include <Ioss_Field.h>
 #include <Ioss_PropertyManager.h>
+#include <Ioss_StructuredBlock.h>
+#include <cgns/Iocgns_StructuredZoneData.h>
 
 #include <cgnslib.h>
 
@@ -80,13 +82,13 @@ namespace Iocgns {
   class DecompositionDataBase
   {
   public:
-    DecompositionDataBase(MPI_Comm comm) : comm_(comm), myProcessor(0), processorCount(0) {}
+    DecompositionDataBase(MPI_Comm comm) {}
 
     virtual ~DecompositionDataBase() {}
-    virtual void decompose_model(int filePtr) = 0;
-    virtual size_t ioss_node_count() const    = 0;
-    virtual size_t ioss_elem_count() const    = 0;
-    virtual int    int_size() const           = 0;
+    virtual void decompose_model(int filePtr, CG_ZoneType_t common_zone_type) = 0;
+    virtual size_t ioss_node_count() const = 0;
+    virtual size_t ioss_elem_count() const = 0;
+    virtual int    int_size() const        = 0;
 
     virtual int    spatial_dimension() const = 0;
     virtual size_t global_node_count() const = 0;
@@ -118,18 +120,16 @@ namespace Iocgns {
     void get_sideset_element_side(int filePtr, const Ioss::SetDecompositionData &sset,
                                   void *data) const;
 
-    MPI_Comm comm_;
-    int      myProcessor;
-    int      processorCount;
+    std::vector<ZoneData>                     m_zones;
+    std::vector<Ioss::BlockDecompositionData> m_elementBlocks;
+    std::vector<Ioss::SetDecompositionData>   m_sideSets;
 
-    std::vector<ZoneData>                     zones_;
-    std::vector<Ioss::BlockDecompositionData> el_blocks;
-    std::vector<Ioss::SetDecompositionData>   node_sets;
-    std::vector<Ioss::SetDecompositionData>   side_sets;
+    std::vector<Ioss::StructuredBlock *>      m_structuredBlocks;
+    std::vector<Iocgns::StructuredZoneData *> m_structuredZones;
 
     // Maps nodes shared between zones.
     // TODO: Currently each processor has same map; need to figure out how to reduce size
-    std::unordered_map<cgsize_t, cgsize_t> zone_shared_map;
+    std::unordered_map<cgsize_t, cgsize_t> m_zoneSharedMap;
   };
 
   template <typename INT> class DecompositionData : public DecompositionDataBase
@@ -140,7 +140,7 @@ namespace Iocgns {
 
     int int_size() const { return sizeof(INT); }
 
-    void decompose_model(int filePtr);
+    void decompose_model(int filePtr, CG_ZoneType_t common_zone_type);
 
     int spatial_dimension() const { return m_decomposition.m_spatialDimension; }
 
@@ -184,12 +184,15 @@ namespace Iocgns {
 
     void get_block_connectivity(int filePtr, INT *data, int blk_seq) const;
 
-    size_t get_commset_node_size() const { return m_decomposition.nodeCommMap.size() / 2; }
+    size_t get_commset_node_size() const { return m_decomposition.m_nodeCommMap.size() / 2; }
 
     void get_sideset_element_side(int filePtr, const Ioss::SetDecompositionData &sset,
                                   INT *data) const;
 
   private:
+    void decompose_structured(int filePtr);
+    void decompose_unstructured(int filePtr);
+
     void get_sideset_data(int filePtr);
     void generate_zone_shared_nodes(int filePtr, INT min_node, INT max_node);
 
@@ -225,7 +228,7 @@ namespace Iocgns {
 
     void get_element_block_communication()
     {
-      m_decomposition.get_element_block_communication(el_blocks);
+      m_decomposition.get_element_block_communication(m_elementBlocks);
     }
 
     void generate_adjacency_list(int fileId, Ioss::Decomposition<INT> &decomposition);
@@ -238,6 +241,8 @@ namespace Iocgns {
 
     void get_file_node_coordinates(int filePtr, int direction, double *ioss_data) const;
     void get_node_coordinates(int filePtr, double *ioss_data, const Ioss::Field &field) const;
+
+    double m_loadBalanceThreshold;
 
   public:
     Ioss::Decomposition<INT> m_decomposition;

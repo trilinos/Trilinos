@@ -96,6 +96,7 @@ alias install-targets
     io_info
     shell_to_hex
     cth_pressure_map
+    struc-to-unstruc
     Utst_ioel
     Utst_superelement
     Utst_database_io
@@ -154,6 +155,7 @@ alias install-targets
     io_info
     shell_to_hex
     cth_pressure_map
+    struc-to-unstruc
     Utst_ioel
     Utst_superelement
     Utst_database_io
@@ -335,6 +337,7 @@ install install-user-bin
     io_info
     shell_to_hex
     cth_pressure_map
+    struc-to-unstruc
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
     $(seacas-root)/scripts/fastq
@@ -389,6 +392,7 @@ install install-user-bin
     io_info
     shell_to_hex
     cth_pressure_map
+    struc-to-unstruc
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
     $(seacas-root)/scripts/fastq
@@ -1850,6 +1854,17 @@ exe cth_pressure_map
   :
     $(seacas-root)/libraries/ioss/src/main/cth_pressure_map.C
     $(seacas-root)/libraries/ioss/src/main/vector3d.C
+    ioinit
+    ioss
+    iotr
+    ioxf
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+exe struc-to-unstruc
+  :
+    $(seacas-root)/libraries/ioss/src/main/struc-to-unstruc.C
     ioinit
     ioss
     iotr

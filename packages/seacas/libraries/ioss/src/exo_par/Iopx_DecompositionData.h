@@ -164,7 +164,7 @@ namespace Iopx {
 
     void get_block_connectivity(int filePtr, INT *data, int64_t id, size_t blk_seq,
                                 size_t nnpe) const;
-    size_t get_commset_node_size() const { return m_decomposition.nodeCommMap.size() / 2; }
+    size_t get_commset_node_size() const { return m_decomposition.m_nodeCommMap.size() / 2; }
 
     int get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, size_t attr_count,
                  double *attrib) const;

@@ -67,6 +67,7 @@
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_State.h"
+#include "Ioss_StructuredBlock.h"
 
 namespace {
   const std::string id_str() { return std::string("id"); }
@@ -165,6 +166,7 @@ namespace Ioss {
     properties.add(Property(this, "edge_block_count", Property::INTEGER));
     properties.add(Property(this, "face_block_count", Property::INTEGER));
     properties.add(Property(this, "element_block_count", Property::INTEGER));
+    properties.add(Property(this, "structured_block_count", Property::INTEGER));
     properties.add(Property(this, "side_set_count", Property::INTEGER));
     properties.add(Property(this, "node_set_count", Property::INTEGER));
     properties.add(Property(this, "edge_set_count", Property::INTEGER));
@@ -261,6 +263,8 @@ namespace Ioss {
          << get_property("face_block_count").get_int() << "\n";
     strm << " Number of element blocks         =" << std::setw(12)
          << get_property("element_block_count").get_int() << "\n";
+    strm << " Number of structured blocks      =" << std::setw(12)
+         << get_property("structured_block_count").get_int() << "\n";
     strm << " Number of node sets              =" << std::setw(12)
          << get_property("node_set_count").get_int() << "\n";
     strm << " Number of edge sets              =" << std::setw(12)
@@ -288,6 +292,16 @@ namespace Ioss {
         }
         uniqify(names);
         strm << " Number of element variables      =" << std::setw(12) << names.size() << "\n";
+      }
+
+      {
+        const Ioss::StructuredBlockContainer &blocks = get_structured_blocks();
+        Ioss::NameList                        names;
+        for (auto block : blocks) {
+          block->field_describe(Ioss::Field::TRANSIENT, &names);
+        }
+        uniqify(names);
+        strm << " Number of structured block vars  =" << std::setw(12) << names.size() << "\n";
       }
 
       {
@@ -691,6 +705,26 @@ namespace Ioss {
    *  \param[in] node_block The node block to add
    *  \returns True if successful.
    */
+  bool Region::add(StructuredBlock *structured_block)
+  {
+    check_for_duplicate_names(this, structured_block);
+
+    // Check that region is in correct state for adding entities
+    if (get_state() == STATE_DEFINE_MODEL) {
+      structuredBlocks.push_back(structured_block);
+      // Add name as alias to itself to simplify later uses...
+      add_alias(structured_block);
+
+      return true;
+    }
+    return false;
+  }
+
+  /** \brief Add a node block to the region.
+   *
+   *  \param[in] node_block The node block to add
+   *  \returns True if successful.
+   */
   bool Region::add(NodeBlock *node_block)
   {
     check_for_duplicate_names(this, node_block);
@@ -1007,6 +1041,12 @@ namespace Ioss {
    */
   const ElementBlockContainer &Region::get_element_blocks() const { return elementBlocks; }
 
+  /** \brief Get all the region's StructuredBlock objects.
+   *
+   *  \returns A vector of all the region's StructuredBlock objects.
+   */
+  const StructuredBlockContainer &Region::get_structured_blocks() const { return structuredBlocks; }
+
   /** \brief Get all the region's SideSet objects.
    *
    *  \returns A vector of all the region's SideSet objects.
@@ -1187,6 +1227,9 @@ namespace Ioss {
     if (io_type == ELEMENTBLOCK) {
       return get_element_block(my_name);
     }
+    if (io_type == STRUCTUREDBLOCK) {
+      return get_structured_block(my_name);
+    }
     if (io_type == FACEBLOCK) {
       return get_face_block(my_name);
     }
@@ -1234,6 +1277,10 @@ namespace Ioss {
       return entity;
     }
     entity = get_element_block(my_name);
+    if (entity != nullptr) {
+      return entity;
+    }
+    entity = get_structured_block(my_name);
     if (entity != nullptr) {
       return entity;
     }
@@ -1351,6 +1398,26 @@ namespace Ioss {
     for (auto eb : elementBlocks) {
       if (db_hash == eb->hash() && eb->name() == db_name) {
         ge = eb;
+        break;
+      }
+    }
+    return ge;
+  }
+
+  /** \brief Get the structured block with the given name.
+   *
+   *  \param[in] my_name The name of the structured block to get.
+   *  \returns The structured block, or nullptr if not found.
+   */
+  StructuredBlock *Region::get_structured_block(const std::string &my_name) const
+  {
+    const std::string db_name = get_alias(my_name);
+    unsigned int      db_hash = Ioss::Utils::hash(db_name);
+
+    StructuredBlock *ge = nullptr;
+    for (auto sb : structuredBlocks) {
+      if (db_hash == sb->hash() && sb->name() == db_name) {
+        ge = sb;
         break;
       }
     }
@@ -1550,6 +1617,12 @@ namespace Ioss {
       }
       return true;
     }
+    else if (((io_type & STRUCTUREDBLOCK) != 0u) && get_structured_block(my_name) != nullptr) {
+      if (my_type != nullptr) {
+        *my_type = "STRUCTURED_BLOCK";
+      }
+      return true;
+    }
     else if (((io_type & SIDESET) != 0u) && get_sideset(my_name) != nullptr) {
       if (my_type != nullptr) {
         *my_type = "SURFACE";
@@ -1614,6 +1687,27 @@ namespace Ioss {
     return nullptr;
   }
 
+  /** \brief Get the structured block containing a specified global-offset-node.
+   *
+   *  \param[in] global_offset The offset of cell-nodes for all blocks; 0-based.
+   *  \returns The structured block, or nullptr if no structured block contains this
+   *           node (local_id <= 0 or greater than number of cell-nodes in database)
+   */
+  StructuredBlock *Region::get_structured_block(size_t global_offset) const
+  {
+    for (auto sb : structuredBlocks) {
+      if (sb->contains(global_offset)) {
+        return sb;
+      }
+    }
+    // Should not reach this point...
+    std::ostringstream errmsg;
+    errmsg << "ERROR: In Ioss::Region::get_structured_block, an invalid global_offset of "
+           << global_offset << " is specified.";
+    IOSS_ERROR(errmsg);
+    return nullptr;
+  }
+
   /** \brief Get an implicit property -- These are calcuated from data stored
    *         in the grouping entity instead of having an explicit value assigned.
    *
@@ -1646,6 +1740,10 @@ namespace Ioss {
 
     if (my_name == "element_block_count") {
       return Property(my_name, static_cast<int>(elementBlocks.size()));
+    }
+
+    if (my_name == "structured_block_count") {
+      return Property(my_name, static_cast<int>(structuredBlocks.size()));
     }
 
     if (my_name == "side_set_count") {
@@ -1688,6 +1786,14 @@ namespace Ioss {
       int64_t count = 0;
       for (auto eb : elementBlocks) {
         count += eb->get_property("entity_count").get_int();
+      }
+      return Property(my_name, count);
+    }
+
+    if (my_name == "cell_count") {
+      int64_t count = 0;
+      for (auto eb : structuredBlocks) {
+        count += eb->get_property("cell_count").get_int();
       }
       return Property(my_name, count);
     }

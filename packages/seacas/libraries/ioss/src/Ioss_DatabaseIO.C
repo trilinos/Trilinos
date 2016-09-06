@@ -39,6 +39,7 @@
 #include <Ioss_NodeBlock.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_Region.h>
+#include <Ioss_StructuredBlock.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
 #include <cassert>
@@ -674,6 +675,34 @@ namespace Ioss {
       }
     }
     return elementBlockBoundingBoxes[eb->name()];
+  }
+
+  AxisAlignedBoundingBox DatabaseIO::get_bounding_box(const Ioss::StructuredBlock *sb) const
+  {
+    ssize_t ndim = sb->get_property("component_degree").get_int();
+
+    std::pair<double, double> xx;
+    std::pair<double, double> yy;
+    std::pair<double, double> zz;
+
+    std::vector<double> coordinates;
+    sb->get_field_data("mesh_model_coordinates_x", coordinates);
+    auto x = std::minmax_element(coordinates.begin(), coordinates.end());
+    xx     = std::make_pair(*(x.first), *(x.second));
+
+    if (ndim > 1) {
+      sb->get_field_data("mesh_model_coordinates_y", coordinates);
+      auto y = std::minmax_element(coordinates.begin(), coordinates.end());
+      yy     = std::make_pair(*(y.first), *(y.second));
+    }
+
+    if (ndim > 2) {
+      sb->get_field_data("mesh_model_coordinates_z", coordinates);
+      auto z = std::minmax_element(coordinates.begin(), coordinates.end());
+      zz     = std::make_pair(*(z.first), *(z.second));
+    }
+
+    return AxisAlignedBoundingBox(xx.first, yy.first, zz.first, xx.second, yy.second, zz.second);
   }
 } // namespace Ioss
 

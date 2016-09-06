@@ -1138,7 +1138,7 @@ namespace Iogn {
           for (size_t i = 0, k = 0; i < numY; i++) {
             for (size_t j = 0; j < numX; j++, k++) {
               size_t base = (m * xp1yp1) + k + i + 1;
-              ;
+
               connect[cnt++] = base;
               connect[cnt++] = base + 1;
               connect[cnt++] = base + numX + 2;

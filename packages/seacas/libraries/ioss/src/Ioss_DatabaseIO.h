@@ -50,48 +50,21 @@
 #include <vector>                 // for vector
 namespace Ioss {
   class CommSet;
-}
-namespace Ioss {
   class EdgeBlock;
-}
-namespace Ioss {
   class EdgeSet;
-}
-namespace Ioss {
   class ElementBlock;
-}
-namespace Ioss {
   class ElementSet;
-}
-namespace Ioss {
   class ElementTopology;
-}
-namespace Ioss {
   class FaceBlock;
-}
-namespace Ioss {
   class FaceSet;
-}
-namespace Ioss {
   class Field;
-}
-namespace Ioss {
   class GroupingEntity;
-}
-namespace Ioss {
   class NodeBlock;
-}
-namespace Ioss {
   class NodeSet;
-}
-namespace Ioss {
   class Region;
-}
-namespace Ioss {
   class SideBlock;
-}
-namespace Ioss {
   class SideSet;
+  class StructuredBlock;
 }
 
 namespace Ioss {
@@ -353,6 +326,7 @@ namespace Ioss {
     }
 
     AxisAlignedBoundingBox get_bounding_box(const Ioss::ElementBlock *eb) const;
+    AxisAlignedBoundingBox get_bounding_box(const Ioss::StructuredBlock *sb) const;
 
     int          int_byte_size_api() const; //! Returns 4 or 8
     virtual void set_int_byte_size_api(Ioss::DataSize size) const;
@@ -416,7 +390,9 @@ namespace Ioss {
      *
      *  \returns The processor that this mesh database is on.
      */
-    int parallel_rank() const { return myProcessor; }
+    int  parallel_rank() const { return myProcessor; }
+    int  parallel_size() const { return util().parallel_size(); }
+    bool is_parallel() const { return isParallel; }
 
   protected:
     DatabaseIO(Region *region, std::string filename, Ioss::DatabaseUsage db_usage,
@@ -557,6 +533,11 @@ namespace Ioss {
                                        size_t data_size) const = 0;
     virtual int64_t get_field_internal(const CommSet *cs, const Field &field, void *data,
                                        size_t data_size) const = 0;
+    virtual int64_t get_field_internal(const StructuredBlock *sb, const Field &field, void *data,
+                                       size_t data_size) const
+    {
+      return 0;
+    }
 
     virtual int64_t put_field_internal(const Region *reg, const Field &field, void *data,
                                        size_t data_size) const = 0;
@@ -582,10 +563,15 @@ namespace Ioss {
                                        size_t data_size) const = 0;
     virtual int64_t put_field_internal(const CommSet *cs, const Field &field, void *data,
                                        size_t data_size) const = 0;
+    virtual int64_t put_field_internal(const StructuredBlock *sb, const Field &field, void *data,
+                                       size_t data_size) const
+    {
+      return 0;
+    }
 
-    DatabaseIO();                              // Do not implement
-    DatabaseIO(const DatabaseIO &);            // Do not implement
-    DatabaseIO &operator=(const DatabaseIO &); // Do not implement
+    DatabaseIO()                   = delete;
+    DatabaseIO(const DatabaseIO &) = delete;
+    DatabaseIO &operator=(const DatabaseIO &) = delete;
 
     mutable std::map<std::string, AxisAlignedBoundingBox> elementBlockBoundingBoxes;
 

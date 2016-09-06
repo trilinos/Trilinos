@@ -73,6 +73,7 @@
 #include "Ioss_Region.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
+#include "Ioss_StructuredBlock.h"
 #include "Ioss_VariableType.h"
 
 #include <cassert>

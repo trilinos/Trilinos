@@ -33,7 +33,8 @@
 #ifndef IOSS_code_types_h
 #define IOSS_code_types_h
 
-#include <stdint.h>
+#include <array>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -41,6 +42,7 @@ namespace Ioss {
   using IntVector   = std::vector<int>;
   using Int64Vector = std::vector<int64_t>;
   using NameList    = std::vector<std::string>;
+  using IJK_t       = std::array<int, 3>;
 }
 
 #if defined(PARALLEL_AWARE_EXODUS)

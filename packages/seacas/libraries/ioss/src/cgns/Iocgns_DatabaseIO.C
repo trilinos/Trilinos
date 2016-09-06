@@ -65,6 +65,7 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
+#include "Ioss_StructuredBlock.h"
 
 #include "Ioss_Field.h"
 #include "Ioss_IOFactory.h"
@@ -130,6 +131,274 @@ namespace Iocgns {
 
   int64_t DatabaseIO::element_global_to_local(int64_t global) const { return global; }
 
+  void DatabaseIO::create_structured_block(cgsize_t base, cgsize_t zone, size_t &num_node,
+                                           size_t &num_cell)
+  {
+    cgsize_t size[9];
+    char     zone_name[33];
+    cg_zone_read(cgnsFilePtr, base, zone, zone_name, size);
+    m_zoneNameMap[zone_name] = zone;
+
+    assert(size[0] - 1 == size[3]);
+    assert(size[1] - 1 == size[4]);
+    assert(size[2] - 1 == size[5]);
+
+    assert(size[6] == 0);
+    assert(size[7] == 0);
+    assert(size[8] == 0);
+
+    cgsize_t index_dim = 0;
+    cg_index_dim(cgnsFilePtr, base, zone, &index_dim);
+    // An Ioss::StructuredBlock corresponds to a CG_Structured zone...
+    Ioss::StructuredBlock *block =
+        new Ioss::StructuredBlock(this, zone_name, index_dim, size[3], size[4], size[5]);
+
+    block->property_add(Ioss::Property("base", base));
+    block->property_add(Ioss::Property("zone", zone));
+    get_region()->add(block);
+
+    block->set_node_offset(num_node);
+    block->set_cell_offset(num_cell);
+    block->set_node_global_offset(num_node);
+    block->set_cell_global_offset(num_cell);
+    num_node += block->get_property("node_count").get_int();
+    num_cell += block->get_property("cell_count").get_int();
+
+    // Handle zone-grid-connectivity...
+    int nconn = 0;
+    cg_n1to1(cgnsFilePtr, base, zone, &nconn);
+    for (int i = 0; i < nconn; i++) {
+      char connectname[33];
+      char donorname[33];
+      std::array<cgsize_t, 6> range;
+      std::array<cgsize_t, 6> donor_range;
+      Ioss::IJK_t transform;
+
+      cg_1to1_read(cgnsFilePtr, base, zone, i + 1, connectname, donorname, range.data(),
+                   donor_range.data(), transform.data());
+
+      // Get number of nodes shared with other "previous" zones...
+      // A "previous" zone will have a lower zone number this this zone...
+      int  donor_zone = -1;
+      auto donor_iter = m_zoneNameMap.find(donorname);
+      if (donor_iter != m_zoneNameMap.end()) {
+        donor_zone = (*donor_iter).second;
+      }
+      Ioss::IJK_t range_beg{{range[0], range[1], range[2]}};
+      Ioss::IJK_t range_end{{range[3], range[4], range[5]}};
+      Ioss::IJK_t donor_beg{{donor_range[0], donor_range[1], donor_range[2]}};
+      Ioss::IJK_t donor_end{{donor_range[3], donor_range[4], donor_range[5]}};
+
+      bool owns_nodes = zone < donor_zone || donor_zone == -1;
+      block->m_zoneConnectivity.emplace_back(connectname, zone, donorname, donor_zone, transform,
+                                             range_beg, range_end, donor_beg, donor_end,
+                                             owns_nodes);
+      block->m_zoneConnectivity.back().m_donorProcessor = 0;
+    }
+
+    // Handle boundary conditions...
+    Utils::add_structured_boundary_conditions(cgnsFilePtr, block);
+  }
+
+  size_t DatabaseIO::finalize_structured_blocks()
+  {
+    const auto &blocks = get_region()->get_structured_blocks();
+
+    // If there are any Structured blocks, need to iterate them and their 1-to-1 connections
+    // and update the donor_zone id for zones that had not yet been processed at the time of
+    // definition...
+    for (auto &block : blocks) {
+      for (auto &conn : block->m_zoneConnectivity) {
+        if (conn.m_donorZone < 0) {
+          auto donor_iter = m_zoneNameMap.find(conn.m_donorName);
+          assert(donor_iter != m_zoneNameMap.end());
+          conn.m_donorZone = (*donor_iter).second;
+        }
+      }
+    }
+
+    size_t num_nodes = Utils::resolve_nodes(*get_region(), myProcessor);
+    return num_nodes;
+  }
+
+  void DatabaseIO::create_unstructured_block(cgsize_t base, cgsize_t zone, size_t &num_node,
+                                             size_t &num_elem)
+  {
+    cgsize_t size[9];
+    char     zone_name[33];
+    cg_zone_read(cgnsFilePtr, base, zone, zone_name, size);
+    m_zoneNameMap[zone_name] = zone;
+
+    cgsize_t total_block_nodes = size[0];
+    m_blockLocalNodeMap[zone].resize(total_block_nodes, -1);
+
+    // Determine number of "shared" nodes (shared with other zones)
+    if (zone > 1) { // Donor zone is always lower numbered, so zone 1 has no donor zone.
+      int nconn = 0;
+      cg_nconns(cgnsFilePtr, base, zone, &nconn);
+      cgsize_t num_shared = 0;
+      for (int i = 0; i < nconn; i++) {
+        char                      connectname[33];
+        CG_GridLocation_t         location;
+        CG_GridConnectivityType_t connect_type;
+        CG_PointSetType_t         ptset_type;
+        cgsize_t                  npnts = 0;
+        char                      donorname[33];
+        CG_ZoneType_t             donor_zonetype;
+        CG_PointSetType_t         donor_ptset_type;
+        CG_DataType_t             donor_datatype;
+        cgsize_t                  ndata_donor;
+
+        cg_conn_info(cgnsFilePtr, base, zone, i + 1, connectname, &location, &connect_type,
+                     &ptset_type, &npnts, donorname, &donor_zonetype, &donor_ptset_type,
+                     &donor_datatype, &ndata_donor);
+
+        if (connect_type != CG_Abutting1to1 || ptset_type != CG_PointList ||
+            donor_ptset_type != CG_PointListDonor) {
+          std::ostringstream errmsg;
+          errmsg << "ERROR: CGNS: Zone " << zone
+                 << " adjacency data is not correct type. Require Abutting1to1 and PointList."
+                 << connect_type << "\t" << ptset_type << "\t" << donor_ptset_type;
+          IOSS_ERROR(errmsg);
+        }
+
+        // Verify data consistency...
+        if (npnts != ndata_donor) {
+          std::ostringstream errmsg;
+          errmsg << "ERROR: CGNS: Zone " << zone << " point count (" << npnts
+                 << ") does not match donor point count (" << ndata_donor << ").";
+          IOSS_ERROR(errmsg);
+        }
+
+        // Get number of nodes shared with other "previous" zones...
+        // A "previous" zone will have a lower zone number this this zone...
+        auto donor_iter = m_zoneNameMap.find(donorname);
+        if (donor_iter != m_zoneNameMap.end() && (*donor_iter).second < zone) {
+          num_shared += npnts;
+#if defined(IOSS_DEBUG_OUTPUT)
+          std::cout << "Zone " << zone << " shares " << npnts << " nodes with " << donorname
+                    << "\n";
+#endif
+          std::vector<cgsize_t> points(npnts);
+          std::vector<cgsize_t> donors(npnts);
+
+          cg_conn_read(cgnsFilePtr, base, zone, i + 1, TOPTR(points), donor_datatype,
+                       TOPTR(donors));
+
+          // Fill in entries in m_blockLocalNodeMap for the shared nodes...
+          auto &donor_map = m_blockLocalNodeMap[(*donor_iter).second];
+          auto &block_map = m_blockLocalNodeMap[zone];
+          for (int j = 0; j < npnts; j++) {
+            cgsize_t point       = points[j];
+            cgsize_t donor       = donors[j];
+            block_map[point - 1] = donor_map[donor - 1];
+          }
+        }
+      }
+    }
+
+    auto & block_map = m_blockLocalNodeMap[zone];
+    size_t offset    = num_node;
+    for (cgsize_t i = 0; i < total_block_nodes; i++) {
+      if (block_map[i] == -1) {
+        block_map[i] = offset++;
+      }
+    }
+    num_node = offset;
+
+    cgsize_t total_elements = size[1];
+    m_zoneOffset[zone]      = num_elem;
+    num_elem += total_elements;
+
+    // NOTE: A Zone will have a single set of nodes, but can have
+    //       multiple sections each with their own element type...
+    //       Keep treating sections as element blocks until we
+    //       have handled 'size[1]' number of elements; the remaining
+    //       sections are then the boundary faces (?)
+    cgsize_t num_sections = 0;
+    cg_nsections(cgnsFilePtr, base, zone, &num_sections);
+
+    // ========================================================================
+    // Read the sections and create an element block for the ones that
+    // define elements.  Some define boundary conditions...
+    Ioss::ElementBlock *eblock = nullptr;
+
+    for (cgsize_t is = 1; is <= num_sections; is++) {
+      char             section_name[33];
+      CG_ElementType_t e_type;
+      cgsize_t         el_start    = 0;
+      cgsize_t         el_end      = 0;
+      cgsize_t         num_bndry   = 0;
+      cgsize_t         parent_flag = 0;
+
+      // Get the type of elements in this section...
+      cg_section_read(cgnsFilePtr, base, zone, is, section_name, &e_type, &el_start, &el_end,
+                      &num_bndry, &parent_flag);
+
+      cgsize_t num_entity = el_end - el_start + 1;
+
+      if (parent_flag == 0 && total_elements > 0) {
+        total_elements -= num_entity;
+        std::string element_topo = Utils::map_cgns_to_topology_type(e_type);
+#if defined(IOSS_DEBUG_OUTPUT)
+        std::cout << "Added block " << zone_name << ": CGNS topology = '"
+                  << cg_ElementTypeName(e_type) << "', IOSS topology = '" << element_topo
+                  << "' with " << num_entity << " elements\n";
+#endif
+        eblock = new Ioss::ElementBlock(this, zone_name, element_topo, num_entity);
+        eblock->property_add(Ioss::Property("base", base));
+        eblock->property_add(Ioss::Property("zone", zone));
+        eblock->property_add(Ioss::Property("section", is));
+
+        assert(is == 1); // For now, assume each zone has only a single element block.
+        bool added = get_region()->add(eblock);
+        if (!added) {
+          delete eblock;
+          eblock = nullptr;
+        }
+      }
+      else {
+        // This is a boundary-condition -- sideset (?)
+        // See if there is an existing sideset with this name...
+        Ioss::SideSet *sset = get_region()->get_sideset(section_name);
+
+#if 0
+	// NOTE: This if block is assuming that all BC (sidesets) are listed
+	//       as Family nodes.  While iterating zones, only create a BC
+	//       if this already exists as a sideset from the family nodes.
+	if (sset == nullptr) {
+	  sset = new Ioss::SideSet(this, section_name);
+	  bool added = get_region()->add(sset);
+	  if(!added) {
+	    std::cerr << "ERROR: Could not add sideset " << section_name << "\n";
+	    delete sset;
+	    sset = nullptr;
+	  }
+	}
+#endif
+        if (sset != nullptr) {
+          std::string block_name(zone_name);
+          block_name += "/";
+          block_name += section_name;
+          std::string face_topo = Utils::map_cgns_to_topology_type(e_type);
+#if defined(IOSS_DEBUG_OUTPUT)
+          std::cout << "Added sideset " << block_name << " of topo " << face_topo << " with "
+                    << num_entity << " faces\n";
+#endif
+          std::string parent_topo = eblock == nullptr ? "unknown" : eblock->topology()->name();
+          auto sblk = new Ioss::SideBlock(this, block_name, face_topo, parent_topo, num_entity);
+          sblk->property_add(Ioss::Property("base", base));
+          sblk->property_add(Ioss::Property("zone", zone));
+          sblk->property_add(Ioss::Property("section", is));
+          if (eblock != nullptr) {
+            sblk->set_parent_element_block(eblock);
+          }
+          sset->add(sblk);
+        }
+      }
+    }
+  }
+
   void DatabaseIO::read_meta_data()
   {
     openDatabase();
@@ -147,224 +416,63 @@ namespace Iocgns {
     // ========================================================================
     // Get the number of families in the mesh...
     // Will treat these as sidesets if they are of the type "FamilyBC_t"
-    cgsize_t base         = 1;
-    cgsize_t num_families = 0;
-    cg_nfamilies(cgnsFilePtr, base, &num_families);
-    for (cgsize_t family = 1; family <= num_families; family++) {
-      char     name[33];
-      cgsize_t num_bc  = 0;
-      cgsize_t num_geo = 0;
-      cg_family_read(cgnsFilePtr, base, family, name, &num_bc, &num_geo);
-#if defined(DEBUG_OUTPUT)
-      std::cout << "Family " << family << " named " << name << " has " << num_bc << " BC, and "
-                << num_geo << " geometry references\n";
-#endif
-      if (num_bc > 0) {
-        // Create a sideset...
-        std::string ss_name(name);
-        auto        ss = new Ioss::SideSet(this, ss_name);
-        get_region()->add(ss);
-      }
-    }
+    Utils::add_sidesets(cgnsFilePtr, this);
 
     // ========================================================================
     // Get the number of zones (element blocks) in the mesh...
     int num_zones = 0;
+    int base      = 1;
     cg_nzones(cgnsFilePtr, base, &num_zones);
     m_blockLocalNodeMap.resize(num_zones + 1); // Let's use 1-based zones...
     m_zoneOffset.resize(num_zones + 1);        // Let's use 1-based zones...
 
     // ========================================================================
-    cgsize_t num_node = 0;
-    cgsize_t num_elem = 0;
+    size_t        num_node         = 0;
+    size_t        num_elem         = 0;
+    size_t        num_cell         = 0;
+    CG_ZoneType_t common_zone_type = CG_ZoneTypeNull;
+
     for (cgsize_t zone = 1; zone <= num_zones; zone++) {
       CG_ZoneType_t zone_type;
       cg_zone_type(cgnsFilePtr, base, zone, &zone_type);
 
-      // See if all zones are "Unstructured" which is all we currently support...
-      if (zone_type != CG_Unstructured) {
+      if (common_zone_type == CG_ZoneTypeNull) {
+        common_zone_type = zone_type;
+      }
+
+      if (common_zone_type != zone_type) {
         std::ostringstream errmsg;
-        errmsg << "ERROR: CGNS: Zone " << zone
-               << " is not of type Unstructured which is the only type currently supported";
+        errmsg << "ERROR: CGNS: Zone " << zone << " is not the same zone type as previous zones."
+               << " This is currently not allowed or supported (hybrid mesh).";
         IOSS_ERROR(errmsg);
       }
+
+      if (zone_type == CG_Structured) {
+        create_structured_block(base, zone, num_node, num_cell);
+      }
+
+      else if (zone_type == CG_Unstructured) {
+        create_unstructured_block(base, zone, num_node, num_elem);
+      }
       else {
-        cgsize_t size[3];
-        char     zone_name[33];
-        cg_zone_read(cgnsFilePtr, base, zone, zone_name, size);
-        m_zoneNameMap[zone_name] = zone;
-
-        cgsize_t total_block_nodes = size[0];
-        m_blockLocalNodeMap[zone].resize(total_block_nodes, -1);
-
-        // Determine number of "shared" nodes (shared with other zones)
-        if (zone > 1) { // Donor zone is always lower numbered, so zone 1 has no donor zone.
-          int nconn = 0;
-          cg_nconns(cgnsFilePtr, base, zone, &nconn);
-          cgsize_t num_shared = 0;
-          for (int i = 0; i < nconn; i++) {
-            char                      connectname[33];
-            CG_GridLocation_t         location;
-            CG_GridConnectivityType_t connect_type;
-            CG_PointSetType_t         ptset_type;
-            cgsize_t                  npnts = 0;
-            char                      donorname[33];
-            CG_ZoneType_t             donor_zonetype;
-            CG_PointSetType_t         donor_ptset_type;
-            CG_DataType_t             donor_datatype;
-            cgsize_t                  ndata_donor;
-
-            cg_conn_info(cgnsFilePtr, base, zone, i + 1, connectname, &location, &connect_type,
-                         &ptset_type, &npnts, donorname, &donor_zonetype, &donor_ptset_type,
-                         &donor_datatype, &ndata_donor);
-
-            if (connect_type != CG_Abutting1to1 || ptset_type != CG_PointList ||
-                donor_ptset_type != CG_PointListDonor) {
-              std::ostringstream errmsg;
-              errmsg << "ERROR: CGNS: Zone " << zone
-                     << " adjacency data is not correct type. Require Abutting1to1 and PointList."
-                     << connect_type << "\t" << ptset_type << "\t" << donor_ptset_type;
-              IOSS_ERROR(errmsg);
-            }
-
-            // Verify data consistency...
-            if (npnts != ndata_donor) {
-              std::ostringstream errmsg;
-              errmsg << "ERROR: CGNS: Zone " << zone << " point count (" << npnts
-                     << ") does not match donor point count (" << ndata_donor << ").";
-              IOSS_ERROR(errmsg);
-            }
-
-            // Get number of nodes shared with other "previous" zones...
-            // A "previous" zone will have a lower zone number this this zone...
-            auto donor_iter = m_zoneNameMap.find(donorname);
-            if (donor_iter != m_zoneNameMap.end() && (*donor_iter).second < zone) {
-              num_shared += npnts;
-#if defined(DEBUG_OUTPUT)
-              std::cout << "Zone " << zone << " shares " << npnts << " nodes with " << donorname
-                        << "\n";
-#endif
-              std::vector<cgsize_t> points(npnts);
-              std::vector<cgsize_t> donors(npnts);
-
-              cg_conn_read(cgnsFilePtr, base, zone, i + 1, TOPTR(points), donor_datatype,
-                           TOPTR(donors));
-
-              // Fill in entries in m_blockLocalNodeMap for the shared nodes...
-              auto &donor_map = m_blockLocalNodeMap[(*donor_iter).second];
-              auto &block_map = m_blockLocalNodeMap[zone];
-              for (int j = 0; j < npnts; j++) {
-                cgsize_t point       = points[j];
-                cgsize_t donor       = donors[j];
-                block_map[point - 1] = donor_map[donor - 1];
-              }
-            }
-          }
-        }
-
-        auto & block_map = m_blockLocalNodeMap[zone];
-        size_t offset    = num_node;
-        for (cgsize_t i = 0; i < total_block_nodes; i++) {
-          if (block_map[i] == -1) {
-            block_map[i] = offset++;
-          }
-        }
-        num_node = offset;
-
-        cgsize_t total_elements = size[1];
-        m_zoneOffset[zone]      = num_elem;
-        num_elem += total_elements;
-
-        // NOTE: A Zone will have a single set of nodes, but can have
-        //       multiple sections each with their own element type...
-        //       Keep treating sections as element blocks until we
-        //       have handled 'size[1]' number of elements; the remaining
-        //       sections are then the boundary faces (?)
-        cgsize_t num_sections = 0;
-        cg_nsections(cgnsFilePtr, base, zone, &num_sections);
-
-        // ========================================================================
-        // Read the sections and create an element block for the ones that
-        // define elements.  Some define boundary conditions...
-        Ioss::ElementBlock *eblock = nullptr;
-
-        for (cgsize_t is = 1; is <= num_sections; is++) {
-          char             section_name[33];
-          CG_ElementType_t e_type;
-          cgsize_t         el_start    = 0;
-          cgsize_t         el_end      = 0;
-          cgsize_t         num_bndry   = 0;
-          cgsize_t         parent_flag = 0;
-
-          // Get the type of elements in this section...
-          cg_section_read(cgnsFilePtr, base, zone, is, section_name, &e_type, &el_start, &el_end,
-                          &num_bndry, &parent_flag);
-
-          cgsize_t num_entity = el_end - el_start + 1;
-
-          if (parent_flag == 0 && total_elements > 0) {
-            total_elements -= num_entity;
-            std::string element_topo = Utils::map_cgns_to_topology_type(e_type);
-#if defined(DEBUG_OUTPUT)
-            std::cout << "Added block " << zone_name << ": CGNS topology = '"
-                      << cg_ElementTypeName(e_type) << "', IOSS topology = '" << element_topo
-                      << "' with " << num_entity << " elements\n";
-#endif
-            eblock = new Ioss::ElementBlock(this, zone_name, element_topo, num_entity);
-            eblock->property_add(Ioss::Property("base", base));
-            eblock->property_add(Ioss::Property("zone", zone));
-            eblock->property_add(Ioss::Property("section", is));
-
-            assert(is == 1); // For now, assume each zone has only a single element block.
-            bool added = get_region()->add(eblock);
-            if (!added) {
-              delete eblock;
-              eblock = nullptr;
-            }
-          }
-          else {
-            // This is a boundary-condition -- sideset (?)
-            // See if there is an existing sideset with this name...
-            Ioss::SideSet *sset = get_region()->get_sideset(section_name);
-
-#if 0
-	    // NOTE: This if block is assuming that all BC (sidesets) are listed
-	    //       as Family nodes.  While iterating zones, only create a BC
-	    //       if this already exists as a sideset from the family nodes.
-	    if (sset == nullptr) {
-	      sset = new Ioss::SideSet(this, section_name);
-	      bool added = get_region()->add(sset);
-	      if(!added) {
-		std::cerr << "ERROR: Could not add sideset " << section_name << "\n";
-		delete sset;
-		sset = nullptr;
-	      }
-	    }
-#endif
-            if (sset != nullptr) {
-              std::string block_name(zone_name);
-              block_name += "/";
-              block_name += section_name;
-              std::string face_topo = Utils::map_cgns_to_topology_type(e_type);
-#if defined(DEBUG_OUTPUT)
-              std::cout << "Added sideset " << block_name << " of topo " << face_topo << " with "
-                        << num_entity << " faces\n";
-#endif
-              std::string parent_topo = eblock == nullptr ? "unknown" : eblock->topology()->name();
-              auto sblk = new Ioss::SideBlock(this, block_name, face_topo, parent_topo, num_entity);
-              sblk->property_add(Ioss::Property("base", base));
-              sblk->property_add(Ioss::Property("zone", zone));
-              sblk->property_add(Ioss::Property("section", is));
-              if (eblock != nullptr) {
-                sblk->set_parent_element_block(eblock);
-              }
-              sset->add(sblk);
-            }
-          }
-        }
+        std::ostringstream errmsg;
+        errmsg << "ERROR: CGNS: Zone " << zone << " is not of type Unstructured or Structured "
+                                                  "which are the only types currently supported";
+        IOSS_ERROR(errmsg);
       }
     }
-    Ioss::NodeBlock *nblock = new Ioss::NodeBlock(this, "nodeblock_1", num_node, 3);
+
+    if (common_zone_type == CG_Structured) {
+      num_node = finalize_structured_blocks();
+    }
+
+    char     basename[33];
+    cgsize_t cell_dimension = 0;
+    cgsize_t phys_dimension = 0;
+    cg_base_read(cgnsFilePtr, base, basename, &cell_dimension, &phys_dimension);
+    std::cerr << "Physical dimension = " << phys_dimension << "\n";
+
+    Ioss::NodeBlock *nblock = new Ioss::NodeBlock(this, "nodeblock_1", num_node, phys_dimension);
     nblock->property_add(Ioss::Property("base", base));
     get_region()->add(nblock);
   }
@@ -411,7 +519,7 @@ namespace Iocgns {
           int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, &first,
                                    &num_coord, TOPTR(coord));
           if (ierr < 0) {
-            Utils::cgns_error(cgnsFilePtr, __FILE__, __LINE__, myProcessor);
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
           }
 
           // Map to global coordinate position...
@@ -431,7 +539,7 @@ namespace Iocgns {
           int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, &first,
                                    &num_coord, TOPTR(coord));
           if (ierr < 0) {
-            Utils::cgns_error(cgnsFilePtr, __FILE__, __LINE__, myProcessor);
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
           }
 
           // Map to global coordinate position...
@@ -451,7 +559,7 @@ namespace Iocgns {
           int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, &first,
                                    &num_coord, TOPTR(coord));
           if (ierr < 0) {
-            Utils::cgns_error(cgnsFilePtr, __FILE__, __LINE__, myProcessor);
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
           }
 
           // Map to global coordinate position...
@@ -481,7 +589,7 @@ namespace Iocgns {
           int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, &first,
                                    &num_coord, TOPTR(coord));
           if (ierr < 0) {
-            Utils::cgns_error(cgnsFilePtr, __FILE__, __LINE__, myProcessor);
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
           }
 
           // Map to global coordinate position...
@@ -492,7 +600,7 @@ namespace Iocgns {
           ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, &first,
                                &num_coord, TOPTR(coord));
           if (ierr < 0) {
-            Utils::cgns_error(cgnsFilePtr, __FILE__, __LINE__, myProcessor);
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
           }
 
           // Map to global coordinate position...
@@ -503,7 +611,7 @@ namespace Iocgns {
           ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, &first,
                                &num_coord, TOPTR(coord));
           if (ierr < 0) {
-            Utils::cgns_error(cgnsFilePtr, __FILE__, __LINE__, myProcessor);
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
           }
 
           // Map to global coordinate position...
@@ -571,7 +679,7 @@ namespace Iocgns {
           if (my_element_count > 0) {
             int ierr = cg_elements_read(cgnsFilePtr, base, zone, sect, idata, nullptr);
             if (ierr < 0) {
-              Utils::cgns_error(cgnsFilePtr, __FILE__, __LINE__, myProcessor);
+              Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
             }
           }
 
@@ -588,7 +696,7 @@ namespace Iocgns {
             int ierr = cg_elements_read(cgnsFilePtr, base, zone, sect,
                                         reinterpret_cast<cgsize_t *>(data), nullptr);
             if (ierr < 0) {
-              Utils::cgns_error(cgnsFilePtr, __FILE__, __LINE__, myProcessor);
+              Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
             }
           }
         }
@@ -631,6 +739,160 @@ namespace Iocgns {
       }
     }
     return num_to_get;
+  }
+
+  int64_t DatabaseIO::get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                                         void *data, size_t data_size) const
+  {
+    Ioss::Field::RoleType role = field.get_role();
+    cgsize_t              base = sb->get_property("base").get_int();
+    cgsize_t              zone = sb->get_property("zone").get_int();
+
+    cgsize_t num_to_get = field.verify(data_size);
+
+    cgsize_t rmin[3];
+    cgsize_t rmax[3];
+
+    if (role == Ioss::Field::MESH) {
+      bool cell_field = true;
+      if (field.get_name() == "mesh_model_coordinates" ||
+          field.get_name() == "mesh_model_coordinates_x" ||
+          field.get_name() == "mesh_model_coordinates_y" ||
+          field.get_name() == "mesh_model_coordinates_z" || field.get_name() == "cell_node_ids") {
+        cell_field = false;
+      }
+
+      if (cell_field) {
+        assert(num_to_get == sb->get_property("cell_count").get_int());
+        if (num_to_get > 0) {
+          rmin[0] = sb->get_property("offset_i").get_int() + 1;
+          rmin[1] = sb->get_property("offset_j").get_int() + 1;
+          rmin[2] = sb->get_property("offset_k").get_int() + 1;
+
+          rmax[0] = rmin[0] + sb->get_property("ni").get_int() - 1;
+          rmax[1] = rmin[1] + sb->get_property("nj").get_int() - 1;
+          rmax[2] = rmin[2] + sb->get_property("nk").get_int() - 1;
+        }
+      }
+      else {
+        // cell nodal field.
+        assert(num_to_get == sb->get_property("node_count").get_int());
+        if (num_to_get > 0) {
+          rmin[0] = sb->get_property("offset_i").get_int() + 1;
+          rmin[1] = sb->get_property("offset_j").get_int() + 1;
+          rmin[2] = sb->get_property("offset_k").get_int() + 1;
+
+          rmax[0] = rmin[0] + sb->get_property("ni").get_int();
+          rmax[1] = rmin[1] + sb->get_property("nj").get_int();
+          rmax[2] = rmin[2] + sb->get_property("nk").get_int();
+        }
+      }
+
+      assert(num_to_get ==
+             (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
+      double *rdata = static_cast<double *>(data);
+
+      if (field.get_name() == "mesh_model_coordinates_x") {
+        int ierr =
+            cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, rmin, rmax, rdata);
+        if (ierr < 0) {
+          Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+        }
+      }
+
+      else if (field.get_name() == "mesh_model_coordinates_y") {
+        int ierr =
+            cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, rmin, rmax, rdata);
+        if (ierr < 0) {
+          Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+        }
+      }
+
+      else if (field.get_name() == "mesh_model_coordinates_z") {
+        int ierr =
+            cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, rmin, rmax, rdata);
+        if (ierr < 0) {
+          Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+        }
+      }
+
+      else if (field.get_name() == "mesh_model_coordinates") {
+        char     basename[33];
+        cgsize_t cell_dimension = 0;
+        cgsize_t phys_dimension = 0;
+        cg_base_read(cgnsFilePtr, base, basename, &cell_dimension, &phys_dimension);
+
+        // Data required by upper classes store x0, y0, z0, ... xn,
+        // yn, zn. Data stored in cgns file is x0, ..., xn, y0,
+        // ..., yn, z0, ..., zn so we have to allocate some scratch
+        // memory to read in the data and then map into supplied
+        // 'data'
+        std::vector<double> coord(num_to_get);
+        int ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateX", CG_RealDouble, rmin, rmax,
+                                 TOPTR(coord));
+        if (ierr < 0) {
+          Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+        }
+
+        // Map to global coordinate position...
+        for (cgsize_t i = 0; i < num_to_get; i++) {
+          rdata[phys_dimension * i + 0] = coord[i];
+        }
+
+        if (phys_dimension >= 2) {
+          ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateY", CG_RealDouble, rmin, rmax,
+                               TOPTR(coord));
+          if (ierr < 0) {
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+          }
+
+          // Map to global coordinate position...
+          for (cgsize_t i = 0; i < num_to_get; i++) {
+            rdata[phys_dimension * i + 1] = coord[i];
+          }
+        }
+
+        if (phys_dimension == 3) {
+          ierr = cg_coord_read(cgnsFilePtr, base, zone, "CoordinateZ", CG_RealDouble, rmin, rmax,
+                               TOPTR(coord));
+          if (ierr < 0) {
+            Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+          }
+
+          // Map to global coordinate position...
+          for (cgsize_t i = 0; i < num_to_get; i++) {
+            rdata[phys_dimension * i + 2] = coord[i];
+          }
+        }
+      }
+      else if (field.get_name() == "cell_node_ids") {
+        if (field.get_type() == Ioss::Field::INT64) {
+          int64_t *idata = static_cast<int64_t *>(data);
+          sb->get_cell_node_ids(idata, true);
+        }
+        else {
+          assert(field.get_type() == Ioss::Field::INT32);
+          int *idata = static_cast<int *>(data);
+          sb->get_cell_node_ids(idata, true);
+        }
+      }
+      else if (field.get_name() == "cell_ids") {
+        if (field.get_type() == Ioss::Field::INT64) {
+          int64_t *idata = static_cast<int64_t *>(data);
+          sb->get_cell_ids(idata, true);
+        }
+        else {
+          assert(field.get_type() == Ioss::Field::INT32);
+          int *idata = static_cast<int *>(data);
+          sb->get_cell_ids(idata, true);
+        }
+      }
+      else {
+        num_to_get = Ioss::Utils::field_warning(sb, field, "input");
+      }
+      return num_to_get;
+    }
+    return -1;
   }
 
   int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet * /* ns */,
@@ -692,7 +954,7 @@ namespace Iocgns {
 
         int ierr = cg_elements_read(cgnsFilePtr, base, zone, sect, TOPTR(elements), TOPTR(parent));
         if (ierr < 0) {
-          Utils::cgns_error(cgnsFilePtr, __FILE__, __LINE__, myProcessor);
+          Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
         }
 
         size_t offset = m_zoneOffset[zone];
@@ -739,6 +1001,13 @@ namespace Iocgns {
   }
 
   int64_t DatabaseIO::put_field_internal(const Ioss::Region * /*region*/,
+                                         const Ioss::Field & /*field*/, void * /*data*/,
+                                         size_t /*data_size*/) const
+  {
+    return -1;
+  }
+
+  int64_t DatabaseIO::put_field_internal(const Ioss::StructuredBlock * /*sb*/,
                                          const Ioss::Field & /*field*/, void * /*data*/,
                                          size_t /*data_size*/) const
   {
