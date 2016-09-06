@@ -865,7 +865,7 @@ public:
       case KokkosKernels::Experimental::Util::Exec_SERIAL:
         return 0;
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_HAVE_OPENMP )
       case KokkosKernels::Experimental::Util::Exec_OMP:
         return Kokkos::OpenMP::hardware_thread_id();
 #endif
@@ -1545,7 +1545,7 @@ public:
       case KokkosKernels::Experimental::Util::Exec_SERIAL:
         return 0;
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_HAVE_OPENMP )
       case KokkosKernels::Experimental::Util::Exec_OMP:
         return Kokkos::OpenMP::hardware_thread_id();
 #endif
@@ -1988,7 +1988,7 @@ public:
       case KokkosKernels::Experimental::Util::Exec_SERIAL:
         return 0;
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_HAVE_OPENMP )
       case KokkosKernels::Experimental::Util::Exec_OMP:
         return Kokkos::OpenMP::hardware_thread_id();
 #endif
@@ -2068,7 +2068,7 @@ public:
           }
           */
 
-          nnz_lno_t num_el2 = 0;
+          nnz_lno_t num_el2 = 0; 
           for (; c_rows; num_el2++) {
             c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
           }
@@ -2142,7 +2142,6 @@ public:
             nnz_lno_t b_set = entriesSetsB[adjind];
             nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
-
             //int insertion =
             hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
                 hash,b_set_ind,b_set,
@@ -2157,6 +2156,10 @@ public:
         for (nnz_lno_t ii = 0; ii < used_hash_size; ++ii){
           nnz_lno_t c_rows = hm2.values[ii];
 
+          /*
+          if (row_index == 0)
+            std::cout << " 1row_index:" << row_index << " ii:" << ii << " c_rows:" << c_rows << std::endl;
+          */
 
           nnz_lno_t num_el2 = 0;
           for (; c_rows; num_el2++) {
@@ -2166,16 +2169,18 @@ public:
 
           /*
           if (row_index == 0)
-            std::cout << " row_index:" << row_index << " ii:" << ii << " c_rows:" << c_rows << std::endl;
-          if (row_index == 0)
-            std::cout << " row_index:" << row_index << " num_el:" << num_el << std::endl;
+            std::cout << " 2row_index:" << row_index << " num_el:" << num_el << std::endl;
+
+          */
+	  /*
           for (; c_rows; ++num_el) {
             c_rows = c_rows & (c_rows - 1); // clear the least significant bit set
           }
-
+          */
+	  /*
           if (row_index == 0)
-            std::cout << " row_index:" << row_index << " num_el:" << num_el << std::endl;
-            */
+            std::cout << " 3row_index:" << row_index << " num_el:" << num_el << std::endl;
+          */
         }
         for (int i = 0; i < globally_used_hash_count; ++i){
           nnz_lno_t dirty_hash = globally_used_hash_indices[i];
@@ -2496,7 +2501,7 @@ public:
       case KokkosKernels::Experimental::Util::Exec_SERIAL:
         return 0;
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_HAVE_OPENMP )
       case KokkosKernels::Experimental::Util::Exec_OMP:
         return Kokkos::OpenMP::hardware_thread_id();
 #endif
@@ -2918,6 +2923,8 @@ public:
       chunksize = maxNumRoughNonzeros * 2;
       pool_init_val = 0;
     }
+    
+    
 
     StructureC<a_row_view_t, a_nnz_view_t, b_oldrow_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
       sc(
