@@ -304,7 +304,7 @@ int ex_put_partial_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
     }
   }
 
-  if (nodeconn && num_nodes_per_entry > 0 || num_ent == 0) {
+  if ((nodeconn && num_nodes_per_entry > 0) || num_ent == 0) {
     size_t start[2], count[2];
 
     start[0] = start_num - 1;
