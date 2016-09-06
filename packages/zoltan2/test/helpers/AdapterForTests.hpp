@@ -103,25 +103,6 @@ struct AdapterWithOptionalCoordinateAdapter
 class AdapterForTests{
 public:
 
-// BDD Now defined in Zoltan2_Typedefs.h  
-  //typedef UserInputForTests::tcrsMatrix_t tcrsMatrix_t;
-  //typedef UserInputForTests::tcrsGraph_t tcrsGraph_t;
-  //typedef UserInputForTests::tVector_t tVector_t;
-  //typedef UserInputForTests::tMVector_t tMVector_t;
-  //
-  //typedef UserInputForTests::xcrsMatrix_t xcrsMatrix_t;
-  //typedef UserInputForTests::xcrsGraph_t xcrsGraph_t;
-  //typedef UserInputForTests::xVector_t xVector_t;
-  //typedef UserInputForTests::xMVector_t xMVector_t;
-  
-//  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
-//  typedef Zoltan2::BaseAdapter<userTypes_t> base_adapter_t;
-//  typedef Zoltan2::BasicIdentifierAdapter<userTypes_t> basic_id_t;
-//  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> xpetra_mv_adapter;
-//  typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t> xcrsGraph_adapter;
-//  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t, tMVector_t> xcrsMatrix_adapter;
-//  typedef Zoltan2::BasicVectorAdapter<tMVector_t> basic_vector_adapter;
-
 #ifdef HAVE_ZOLTAN2_PAMGEN
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> pamgen_adapter_t;
 #else
@@ -255,9 +236,11 @@ AdapterWithOptionalCoordinateAdapter AdapterForTests::getAdapterForInput(
     std::cerr << "Input adapter unspecified" << std::endl;
     return adapters;
   }
+
   
   // pick method for chosen adapter
   string adapter_name = pList.get<string>("input adapter");
+
   if(adapter_name == "BasicIdentifier")
     adapters.mainAdapter = AdapterForTests::getBasicIdentiferAdapterForInput(uinput, pList, comm);
   else if(adapter_name == "XpetraMultiVector")
@@ -271,7 +254,8 @@ AdapterWithOptionalCoordinateAdapter AdapterForTests::getAdapterForInput(
   else if(adapter_name == "PamgenMesh")
     adapters.mainAdapter = getPamgenMeshAdapterForInput(uinput,pList, comm);
   else
-    std::cerr << "Input adapter type: " + adapter_name + ", is unavailable, or misspelled." << std::endl;
+    std::cerr << "Input adapter type: " << adapter_name 
+              << ", is unavailable, or misspelled." << std::endl;
   
   return adapters;
 }
@@ -399,8 +383,11 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicIdentiferAda
   }
 #endif
   
-  if(localCount == 0) return nullptr;
-  return reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>( new Zoltan2_TestingFramework::basic_id_t(zlno_t(localCount),globalIds,weights,weightStrides));
+  return reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>( 
+                          new Zoltan2_TestingFramework::basic_id_t(
+                                                        zlno_t(localCount),
+                                                        globalIds,
+                                                        weights,weightStrides));
 }
 
 
@@ -801,7 +788,7 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicVectorAdapte
   const RCP<const Comm<int> > &comm)
 {
   
-  Zoltan2_TestingFramework::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
+  Zoltan2_TestingFramework::basic_vector_adapter *ia = nullptr; 
 
   if(!pList.isParameter("data type"))
   {
@@ -856,23 +843,28 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicVectorAdapte
       size_t dim = coords.size(); //BDD add NULL for constructor call
       size_t push_null = 3-dim;
       for (size_t i = 0; i < push_null; i ++) coords.push_back(NULL);
-      ia = new Zoltan2_TestingFramework::basic_vector_adapter(zlno_t(localCount),
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(
+                                                     zlno_t(localCount),
                                                      globalIds,
-                                                     coords[0],coords[1],coords[2],
+                                                     coords[0],
+                                                     coords[1],coords[2],
                                                      stride, stride, stride);
     } else if (weights.size() == 1) {
       size_t dim = coords.size(); //BDD add NULL for constructor call
       size_t push_null = 3-dim;
       for (size_t i = 0; i < push_null; i ++) coords.push_back(NULL);
-      ia = new Zoltan2_TestingFramework::basic_vector_adapter(zlno_t(localCount),
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(
+                                                     zlno_t(localCount),
                                                      globalIds,
-                                                     coords[0],coords[1],coords[2],
+                                                     coords[0],
+                                                     coords[1],coords[2],
                                                      stride, stride, stride,
                                                      true,
                                                      weights[0],
                                                      weightStrides[0]);
     } else { // More than one weight per ID
-      ia = new Zoltan2_TestingFramework::basic_vector_adapter(zlno_t(localCount),
+      ia = new Zoltan2_TestingFramework::basic_vector_adapter(
+                                                     zlno_t(localCount),
                                                      globalIds,
                                                      coords, entry_strides,
                                                      weights, weightStrides);
@@ -1012,10 +1004,6 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getBasicVectorAdapte
   
 #endif
   
-  if(localCount == 0){
-    if(ia != nullptr) delete ia;
-    return nullptr;
-  }
   return reinterpret_cast<Zoltan2_TestingFramework::base_adapter_t *>(ia);
   
 }
