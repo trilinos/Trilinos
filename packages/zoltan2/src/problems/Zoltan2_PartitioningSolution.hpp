@@ -1260,82 +1260,84 @@ template <typename Adapter>
     env_->localMemoryAssertion(__FILE__, __LINE__, len, procs);
     procs_ = arcp<int>(procs, 0, len);
 
-    part_t *parts = partList.getRawPtr();
-
-    if (procDist_.size() > 0){    // parts are not split across procs
-
-      int procId;
-      for (size_t i=0; i < len; i++){
-        partToProcsMap(parts[i], procs[i], procId);
-      }
-    }
-    else{  // harder - we need to split the parts across multiple procs
-
-      lno_t *partCounter = new lno_t [nGlobalPartsSolution_];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalPartsSolution_,
-        partCounter);
-
-      int numProcs = comm_->getSize();
-
-      //MD NOTE: there was no initialization for partCounter.
-      //I added the line below, correct me if I am wrong.
-      memset(partCounter, 0, sizeof(lno_t) * nGlobalPartsSolution_);
-
-      for (typename ArrayRCP<part_t>::size_type i=0; i < partList.size(); i++)
-        partCounter[parts[i]]++;
-
-      lno_t *procCounter = new lno_t [numProcs];
-      env_->localMemoryAssertion(__FILE__, __LINE__, numProcs, procCounter);
-
-      int proc1;
-      int proc2 = partDist_[0];
-
-      for (part_t part=1; part < nGlobalParts_; part++){
-        proc1 = proc2;
-        proc2 = partDist_[part+1];
-        int numprocs = proc2 - proc1;
-
-        double dNum = partCounter[part];
-        double dProcs = numprocs;
-
-        //cout << "dNum:" << dNum << " dProcs:" << dProcs << endl;
-        double each = floor(dNum/dProcs);
-        double extra = fmod(dNum,dProcs);
-
-        for (int proc=proc1, i=0; proc<proc2; proc++, i++){
-          if (i < extra)
-            procCounter[proc] = lno_t(each) + 1;
-          else
-            procCounter[proc] = lno_t(each);
+    if (len > 0) {
+      part_t *parts = partList.getRawPtr();
+  
+      if (procDist_.size() > 0){    // parts are not split across procs
+  
+        int procId;
+        for (size_t i=0; i < len; i++){
+          partToProcsMap(parts[i], procs[i], procId);
         }
       }
-
-      delete [] partCounter;
-
-      for (typename ArrayRCP<part_t>::size_type i=0; i < partList.size(); i++){
-        if (partList[i] >= nGlobalParts_){
-          // Solution has more parts that targeted.  These
-          // objects just remain on this process.
-          procs[i] = comm_->getRank();
-          continue;
-        }
-        part_t partNum = parts[i];
-        proc1 = partDist_[partNum];
-        proc2 = partDist_[partNum + 1];
-
-        int proc;
-        for (proc=proc1; proc < proc2; proc++){
-          if (procCounter[proc] > 0){
-            procs[i] = proc;
-            procCounter[proc]--;
-            break;
+      else{  // harder - we need to split the parts across multiple procs
+  
+        lno_t *partCounter = new lno_t [nGlobalPartsSolution_];
+        env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalPartsSolution_,
+          partCounter);
+  
+        int numProcs = comm_->getSize();
+  
+        //MD NOTE: there was no initialization for partCounter.
+        //I added the line below, correct me if I am wrong.
+        memset(partCounter, 0, sizeof(lno_t) * nGlobalPartsSolution_);
+  
+        for (typename ArrayRCP<part_t>::size_type i=0; i < partList.size(); i++)
+          partCounter[parts[i]]++;
+  
+        lno_t *procCounter = new lno_t [numProcs];
+        env_->localMemoryAssertion(__FILE__, __LINE__, numProcs, procCounter);
+  
+        int proc1;
+        int proc2 = partDist_[0];
+  
+        for (part_t part=1; part < nGlobalParts_; part++){
+          proc1 = proc2;
+          proc2 = partDist_[part+1];
+          int numprocs = proc2 - proc1;
+  
+          double dNum = partCounter[part];
+          double dProcs = numprocs;
+  
+          //cout << "dNum:" << dNum << " dProcs:" << dProcs << endl;
+          double each = floor(dNum/dProcs);
+          double extra = fmod(dNum,dProcs);
+  
+          for (int proc=proc1, i=0; proc<proc2; proc++, i++){
+            if (i < extra)
+              procCounter[proc] = lno_t(each) + 1;
+            else
+              procCounter[proc] = lno_t(each);
           }
         }
-        env_->localBugAssertion(__FILE__, __LINE__, "part to proc",
-          proc < proc2, COMPLEX_ASSERTION);
+  
+        delete [] partCounter;
+  
+        for (typename ArrayRCP<part_t>::size_type i=0; i < partList.size(); i++){
+          if (partList[i] >= nGlobalParts_){
+            // Solution has more parts that targeted.  These
+            // objects just remain on this process.
+            procs[i] = comm_->getRank();
+            continue;
+          }
+          part_t partNum = parts[i];
+          proc1 = partDist_[partNum];
+          proc2 = partDist_[partNum + 1];
+  
+          int proc;
+          for (proc=proc1; proc < proc2; proc++){
+            if (procCounter[proc] > 0){
+              procs[i] = proc;
+              procCounter[proc]--;
+              break;
+            }
+          }
+          env_->localBugAssertion(__FILE__, __LINE__, "part to proc",
+            proc < proc2, COMPLEX_ASSERTION);
+        }
+  
+        delete [] procCounter;
       }
-
-      delete [] procCounter;
     }
   }
 
