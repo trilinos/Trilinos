@@ -444,8 +444,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
     int coarseLevel  = LevelID_[NumLevels_-1];
     int currentLevel = LevelID_[level];
 
-    int local[2];
-    int global[2];
+    long int local[2];
+    long int global[2];
     local[0] = ml_->Amat[currentLevel].invec_leng;
     local[1] = ml_->Amat[currentLevel].N_nonzeros;
 
