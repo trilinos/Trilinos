@@ -42,53 +42,23 @@
 #include <stddef.h>          // for size_t
 #include <stdint.h>          // for int64_t
 #include <string>            // for string
-namespace Iohb {
-  class Layout;
-}
-namespace Ioss {
-  class CommSet;
-}
-namespace Ioss {
-  class EdgeBlock;
-}
-namespace Ioss {
-  class EdgeSet;
-}
-namespace Ioss {
-  class ElementBlock;
-}
-namespace Ioss {
-  class ElementSet;
-}
-namespace Ioss {
-  class FaceBlock;
-}
-namespace Ioss {
-  class FaceSet;
-}
-namespace Ioss {
-  class Field;
-}
-namespace Ioss {
-  class NodeBlock;
-}
-namespace Ioss {
-  class NodeSet;
-}
-namespace Ioss {
-  class PropertyManager;
-}
-namespace Ioss {
-  class Region;
-}
-namespace Ioss {
-  class SideBlock;
-}
-namespace Ioss {
-  class SideSet;
-}
+#include <time.h>
 
 namespace Ioss {
+  class CommSet;
+  class EdgeBlock;
+  class EdgeSet;
+  class ElementBlock;
+  class ElementSet;
+  class FaceBlock;
+  class FaceSet;
+  class Field;
+  class NodeBlock;
+  class NodeSet;
+  class PropertyManager;
+  class Region;
+  class SideBlock;
+  class SideSet;
   class GroupingEntity;
   class EntityBlock;
 }
@@ -96,9 +66,7 @@ namespace Ioss {
 /** \brief A namespace for the heartbeat database format.
  */
 namespace Iohb {
-}
-
-namespace Iohb {
+  class Layout;
 
   enum Format { DEFAULT = 0, SPYHIS = 1 };
 
@@ -192,6 +160,8 @@ namespace Iohb {
                                size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const;
+
+    time_t timeLastFlush;
 
     std::ostream *logStream;
     Layout *      layout_;

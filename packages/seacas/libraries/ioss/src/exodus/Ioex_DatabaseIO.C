@@ -131,6 +131,7 @@ namespace Ioex {
       isParallel = false;
     }
 
+    timeLastFlush = time(nullptr);
     dbState = Ioss::STATE_UNKNOWN;
 
     // Set exodusII warning level.
