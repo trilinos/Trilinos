@@ -41,45 +41,45 @@
 namespace stk { namespace mesh { class Part; } }
 
 namespace {
+
+void declare_element_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem1, stk::mesh::Entity elem2)
+{
+    for(unsigned node_ord = 0; node_ord < 4; ++node_ord)
+    {
+        stk::mesh::Entity new_node = mesh.declare_entity(stk::topology::NODE_RANK, node_ord + 100 * mesh.identifier(elem1));
+        mesh.declare_relation(elem1, new_node, node_ord);
+    }
+
+    for(unsigned node_ord = 0; node_ord < 8; ++node_ord)
+    {
+        stk::mesh::Entity new_node2 = mesh.declare_entity(stk::topology::NODE_RANK, node_ord + 100 * mesh.identifier(elem2));
+        mesh.declare_relation(elem2, new_node2, node_ord);
+    }
+}
+
 //-BEGIN
 TEST(stkMeshHowTo, setAndGetTopology)
 {
     const unsigned spatialDimension = 3;
     stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
+    stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tet part", stk::topology::TET_4);
 
-    //There are two methods of attaching topology to a part:
-
-    //method 1: declare a part with a specified topology
-    stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
-
-    stk::mesh::Part &hexPart = metaData.declare_part("hexElementPart");
-    //method 2: set a topology on an existing part:
+    stk::mesh::Part &hexPart = metaData.declare_part("existing part with currently unknown topology");
+    // . . . then later assigned
     stk::mesh::set_topology(hexPart, stk::topology::HEX_8);
 
     metaData.commit();
-    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
-    mesh.modification_begin();
+    stk::mesh::BulkData bulkData(metaData, MPI_COMM_WORLD);
+
+    bulkData.modification_begin();
     stk::mesh::EntityId elem1Id = 1, elem2Id = 2;
-    stk::mesh::Entity elem1=mesh.declare_entity(stk::topology::ELEMENT_RANK, elem1Id, tetPart);
-    stk::mesh::Entity elem2=mesh.declare_entity(stk::topology::ELEMENT_RANK, elem2Id, hexPart);
+    stk::mesh::Entity elem1 = bulkData.declare_entity(stk::topology::ELEMENT_RANK, elem1Id, tetPart);
+    stk::mesh::Entity elem2 = bulkData.declare_entity(stk::topology::ELEMENT_RANK, elem2Id, hexPart);
+    declare_element_nodes(bulkData, elem1, elem2);
+    bulkData.modification_end();
 
-    //No common nodes between elements - so topologically disconnected elem1 and elem2
-    for(unsigned node_ord = 0 ; node_ord < 4; ++node_ord)
-    {
-      stk::mesh::Entity new_node = mesh.declare_entity(stk::topology::NODE_RANK, node_ord+100*elem1Id);
-      mesh.declare_relation( elem1 , new_node , node_ord);
-    }
-
-    for(unsigned node_ord = 0 ; node_ord < 8; ++node_ord)
-    {
-      stk::mesh::Entity new_node2 = mesh.declare_entity(stk::topology::NODE_RANK, node_ord+100*elem2Id);
-      mesh.declare_relation( elem2 , new_node2 , node_ord);
-    }
-
-    mesh.modification_end();
-
-    stk::topology elem1_topology = mesh.bucket(elem1).topology();
-    stk::topology elem2_topology = mesh.bucket(elem2).topology();
+    stk::topology elem1_topology = bulkData.bucket(elem1).topology();
+    stk::topology elem2_topology = bulkData.bucket(elem2).topology();
 
     EXPECT_EQ(stk::topology::TET_4, elem1_topology);
     EXPECT_EQ(stk::topology::HEX_8, elem2_topology);

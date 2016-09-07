@@ -45,34 +45,33 @@ namespace stk { namespace mesh { class BulkData; } }
 
 namespace
 {
-//-BEGIN    
-  TEST(StkMeshHowTo, UsingStkIO)
-  {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    const std::string fileName = "generated:8x8x8";
-    //The 'generated:' syntax in fileName causes a hex mesh to be generated in memory.
-    //If an exodus file-name is used instead, then the mesh is read from file. The code
-    //below remains the same in either case.
-
-    // Use STK IO to populate a STK Mesh
-    stk::io::StkMeshIoBroker meshReader(communicator);
-    meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
-    // Create MetaData in STK IO
-    meshReader.create_input_mesh();
-    // Create BulkData in STK IO
-    meshReader.populate_bulk_data();
-
-    // Get the STK Mesh (BulkData and MetaData) from STK IO
-    stk::mesh::MetaData &stkMeshMetaData = meshReader.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = meshReader.bulk_data();
-
-    // Test if the STK Mesh has 512 elements. Other examples will discuss details below.
-    stk::mesh::Selector allEntities = stkMeshMetaData.universal_part();
+void verify_total_element_count(size_t expectedNumElems, const stk::mesh::BulkData &bulkData)
+{
+    stk::mesh::Selector allEntities = bulkData.mesh_meta_data().universal_part();
     std::vector<unsigned> entityCounts;
-    stk::mesh::count_entities(allEntities, stkMeshBulkData, entityCounts);
+    stk::mesh::count_entities(allEntities, bulkData, entityCounts);
     EXPECT_EQ(512u, entityCounts[stk::topology::ELEMENT_RANK]);
-    unlink(fileName.c_str());
-  }
+}
+
+//-BEGIN    
+TEST(StkMeshHowTo, UsingStkIO)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(communicator) == 1)
+    {
+        stk::io::StkMeshIoBroker meshReader(communicator);
+        const std::string hexMesh_8x8x8 = "generated:8x8x8";
+        meshReader.add_mesh_database(hexMesh_8x8x8, stk::io::READ_MESH);
+        meshReader.create_input_mesh();
+        meshReader.populate_bulk_data();
+
+        stk::mesh::BulkData &bulkData = meshReader.bulk_data();
+
+        size_t expectedNumElems = 512;
+        verify_total_element_count(expectedNumElems, bulkData);
+
+        unlink(hexMesh_8x8x8.c_str());
+    }
+}
 //-END
 }
