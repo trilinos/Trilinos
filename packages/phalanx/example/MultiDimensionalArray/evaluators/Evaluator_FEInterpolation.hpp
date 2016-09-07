@@ -62,7 +62,7 @@
 template<typename EvalT, typename Traits>
 class FEInterpolation :
 #ifdef PHX_ENABLE_KOKKOS_AMT
-  public PHX_example::TaskBase<Traits,FEInterpolation<EvalT,Traits>>,
+  public PHX::TaskBase<Traits,FEInterpolation<EvalT,Traits>>,
 #else
   public PHX::EvaluatorWithBaseImpl<Traits>,
 #endif

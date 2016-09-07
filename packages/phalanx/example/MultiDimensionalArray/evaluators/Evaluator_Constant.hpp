@@ -58,7 +58,7 @@
 template<typename EvalT, typename Traits>
 class Constant : 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-  public PHX_example::TaskBase<Traits,Constant<EvalT,Traits>>,
+  public PHX::TaskBase<Traits,Constant<EvalT,Traits>>,
 #else
   public PHX::EvaluatorWithBaseImpl<Traits>,
 #endif

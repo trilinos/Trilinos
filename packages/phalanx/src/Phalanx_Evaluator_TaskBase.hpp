@@ -5,9 +5,12 @@
 
 #include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
+// #include "Teuchos_TypeNameTraits.hpp"
+// #include <typeinfo>
 
-namespace PHX_example {
+namespace PHX {
 
+  
   //! Generic task wrapper to use a PHX::Evaluator with Kokkos AMT
   template<typename Space,typename Functor>
   struct TaskWrap {
@@ -22,6 +25,11 @@ namespace PHX_example {
     
     void operator() (typename policy_type::member_type & member)
     {
+      // std::cout << "In functor: "
+      //           << Teuchos::demangleName(typeid(*this).name())
+      //           << "\n  team_rank = " << member.team_rank()
+      //           << ", team_size = " << member.team_size()
+      //           << std::endl;
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member,work_size),functor);
     }
   };
@@ -37,18 +45,18 @@ namespace PHX_example {
 	       typename Traits::EvalData ) override
     {
       if (dependent_futures.size() == 0)
-        return policy.host_spawn(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam);
+        return policy.host_spawn(PHX::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam);
       else if (dependent_futures.size() == 1)
-        return policy.host_spawn(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,dependent_futures[0]);
+        return policy.host_spawn(PHX::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,dependent_futures[0]);
 
       auto aggregate_future = policy.when_all(dependent_futures.size(),dependent_futures.data());
-      return policy.host_spawn(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,aggregate_future);
+      return policy.host_spawn(PHX::TaskWrap<PHX::Device::execution_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,aggregate_future);
     }
 
     //! Returns the size of the task functor in bytes
     unsigned taskSize() const override
     {
-      return sizeof(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>);
+      return sizeof(PHX::TaskWrap<PHX::Device::execution_space,Derived>);
     }
   };
 

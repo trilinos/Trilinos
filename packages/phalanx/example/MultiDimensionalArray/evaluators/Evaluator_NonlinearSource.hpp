@@ -57,7 +57,7 @@
 template<typename EvalT, typename Traits>
 class NonlinearSource :
 #ifdef PHX_ENABLE_KOKKOS_AMT
-  public PHX_example::TaskBase<Traits,NonlinearSource<EvalT,Traits>>,
+  public PHX::TaskBase<Traits,NonlinearSource<EvalT,Traits>>,
 #else
   public PHX::EvaluatorWithBaseImpl<Traits>,
 #endif

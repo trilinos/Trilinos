@@ -57,7 +57,7 @@
 template<typename EvalT, typename Traits>
 class Fourier : 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-  public PHX_example::TaskBase<Traits,Fourier<EvalT,Traits>>,
+  public PHX::TaskBase<Traits,Fourier<EvalT,Traits>>,
 #else
   public PHX::EvaluatorWithBaseImpl<Traits>,
 #endif

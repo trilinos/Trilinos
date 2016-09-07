@@ -126,7 +126,7 @@ createTask(Kokkos::TaskPolicy<PHX::Device::execution_space>& policy,
   phi = cell_it->getBasisFunctions();
   grad_phi = cell_it->getBasisFunctionGradients();
   auto dep_future = policy.when_all(dependent_futures.size(),dependent_futures.data());
-  return policy.host_spawn(PHX_example::TaskWrap<PHX::Device::execution_space,FEInterpolation<EvalT, Traits>>(work_size,*this),Kokkos::TaskTeam,dep_future);
+  return policy.host_spawn(PHX::TaskWrap<PHX::Device::execution_space,FEInterpolation<EvalT, Traits>>(work_size,*this),Kokkos::TaskTeam,dep_future);
 }
 #endif
 

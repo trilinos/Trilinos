@@ -346,6 +346,8 @@ namespace phalanx_test {
     
   public:
     typedef PHX::Device execution_space;
+
+    struct DataParallelTag {};
     
     InitializeView(Kokkos::View<Scalar**,Device> &v,double k)
       : view_(v), k_(k) {}
@@ -358,11 +360,24 @@ namespace phalanx_test {
 	view_(i,ip) = k_;
       }
     }
+
+    // Test we can reuse same functor for data parallel team (non-task
+    // based) kokkos
+    void operator() (const DataParallelTag,const Kokkos::TeamPolicy<PHX::Device::execution_space>::member_type & team) const
+    {
+      const int cell = team.league_rank();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,view_.extent_int(1)), [&] (const int& ip) {
+          view_(cell,ip) = k_;
+        });
+    }
+
   };
 
   // Task wrapper
   template<class Space,class Functor>
   struct TaskWrap {
+
+    struct DataParallelTag {};
     
     typedef void value_type;
     typedef Kokkos::TaskPolicy<Space> policy_type;
@@ -380,7 +395,7 @@ namespace phalanx_test {
     
     void operator() (typename policy_type::member_type & member)
     {
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,work_size),functor);
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,work_size),functor);
     }
   };
 
@@ -403,9 +418,12 @@ namespace phalanx_test {
     Kokkos::deep_copy(T,2.0);
     Kokkos::deep_copy(rho,0.0);
     Kokkos::fence();
-    
+
+    // Initialize: Single level parallel over cells
     Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(P,3.0));
-    Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(T,4.0));
+    // Initialize: Team parallel over cells and qp
+    Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space,typename InitializeView<double,execution_space>::DataParallelTag>(num_cells,num_ip,1),
+                         InitializeView<double,execution_space>(T,4.0));
     PHX::Device::fence();
     Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
     PHX::Device::fence();
@@ -417,7 +435,7 @@ namespace phalanx_test {
     double tol = std::numeric_limits<double>::epsilon() * 100.0;
     for (int i=0; i< num_cells; i++)
       for (int j=0; j< num_ip; j++)
-	TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
+        TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
     
     // ***
     // Now repeat above with task graph

@@ -68,17 +68,28 @@ postRegistrationSetup(typename Traits::SetupData d,
 //**********************************************************************
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
-void Density<EvalT, Traits>:: operator () (const int i) const
+void Density<EvalT, Traits>:: operator () (const DensityTag, const int i) const
 {
   for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.dimension_1()); ip++)
     density(i,ip) =  temp(i,ip) * temp(i,ip);  
+}
+
+//**********************************************************************
+template<typename EvalT, typename Traits>
+KOKKOS_INLINE_FUNCTION
+void Density<EvalT, Traits>:: operator () (const DensityTag, typename Kokkos::TeamPolicy<>::member_type & team) const
+{
+  for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.dimension_1()); ip++)
+    density(0,ip) =  temp(0,ip) * temp(0,ip);
 }
 
 //*********************************************************************
 template<typename EvalT, typename Traits>
 void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 {
-  Kokkos::parallel_for(d.num_cells, *this);
+  typedef Kokkos::TeamPolicy<DensityTag> team_policy ;
+  team_policy policy(d.num_cells,2);
+  Kokkos::parallel_for(policy, *this);
 }
 
 //**********************************************************************
