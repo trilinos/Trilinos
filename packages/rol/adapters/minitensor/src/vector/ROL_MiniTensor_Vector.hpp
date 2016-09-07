@@ -42,7 +42,7 @@
 #if !defined(ROL_MiniTensor_Vector_hpp)
 #define ROL_MiniTensor_Vector_hpp
 
-#include <Intrepid2_MiniTensor.h>
+#include "Intrepid2_MiniTensor.h"
 #include "ROL_Vector.hpp"
 
 namespace ROL {
