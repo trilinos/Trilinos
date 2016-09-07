@@ -53,8 +53,6 @@
 #pragma clang system_header
 #endif
 
-#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-
 namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
@@ -250,6 +248,5 @@ namespace Intrepid2 {
   }
   }
 }
-#endif
 
 #endif

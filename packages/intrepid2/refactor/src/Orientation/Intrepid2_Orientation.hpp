@@ -48,8 +48,6 @@
 #ifndef __INTREPID2_ORIENTATION_HPP__
 #define __INTREPID2_ORIENTATION_HPP__
 
-#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
-
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
@@ -59,11 +57,13 @@
 namespace Intrepid2 {
 
   // Orientation encoding and decoding
+  // - use input and output as pointer arrays which assumes that input/output
+  //   are located on the stack and contiguous.
   class Orientation {
   public:
     template<typename NodeType>
     static void getElementNodeMap(NodeType *subCellVerts,
-                                  ordinal_type &numVertex,
+                                  ordinal_type &numVerts,
                                   const shards::CellTopology cellTopo,
                                   const NodeType elemNodes[],
                                   const ordinal_type subCellDim,
@@ -72,7 +72,7 @@ namespace Intrepid2 {
     // orientation is always computed on the right-handed coordinates
     template<typename NodeType>
     static ordinal_type getOrientation(const NodeType subCellVerts[],
-                                       const ordinal_type numVertex);
+                                       const ordinal_type numVerts);
 
     template<typename NodeType>
     static Orientation getOrientation(const shards::CellTopology cellTopo,
@@ -108,7 +108,5 @@ namespace Intrepid2 {
 
 // include templated function definitions
 #include "Intrepid2_OrientationDef.hpp"
-
-#endif
 
 #endif
