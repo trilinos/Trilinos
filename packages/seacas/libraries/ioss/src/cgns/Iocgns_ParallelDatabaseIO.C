@@ -160,7 +160,8 @@ namespace Iocgns {
         if (ierr != CG_OK) {
           // NOTE: Code will not continue past this call...
           std::ostringstream errmsg;
-          errmsg << "ERROR: Problem opening file '" << get_filename() << "' for read access.";
+          errmsg << "ERROR: Problem opening file '" << get_filename() << "' for read access. "
+		 << "CGNS Error: '" << cg_get_error() << "'";
           IOSS_ERROR(errmsg);
         }
       }
