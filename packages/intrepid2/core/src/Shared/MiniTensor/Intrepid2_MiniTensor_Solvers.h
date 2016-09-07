@@ -65,8 +65,8 @@ public:
   }
 
   ///
-  /// By default use merit function 0.5 dot(gradient, gradient)
-  /// as the target to optimize if only the gradient is provided.
+  /// By default use merit function 0.5 dot(residual,residual)
+  /// as the target to optimize if only the residual is provided.
   ///
   template<typename T, Index N>
   T
@@ -78,6 +78,13 @@ public:
   template<typename T, Index N>
   Vector<T, N>
   gradient(FunctionDerived & f, Vector<T, N> const & x);
+
+  ///
+  /// Defined explicitly.
+  ///
+  template<typename T, Index N>
+  Vector<T, N>
+  residual(FunctionDerived & f, Vector<T, N> const & x);
 
   ///
   /// By default compute Hessian with AD from gradient().

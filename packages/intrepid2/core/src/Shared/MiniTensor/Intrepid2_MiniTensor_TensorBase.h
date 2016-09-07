@@ -59,6 +59,7 @@ enum ComponentValue {
   ZEROS,
   ONES,
   SEQUENCE,
+  RANDOM,
   RANDOM_UNIFORM,
   RANDOM_NORMAL,
   NANS

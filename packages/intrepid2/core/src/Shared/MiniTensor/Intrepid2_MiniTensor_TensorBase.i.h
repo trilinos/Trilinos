@@ -409,6 +409,14 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     }
     break;
 
+  case RANDOM:
+    for (Index i = 0; i < number_components; ++i) {
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Teuchos::ScalarTraits<S>::zero());
+      entry = random<T>();
+    }
+    break;
+
   case RANDOM_UNIFORM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];

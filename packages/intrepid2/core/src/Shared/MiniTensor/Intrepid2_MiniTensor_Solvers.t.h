@@ -52,7 +52,7 @@ Function_Base<FunctionDerived, S>::
 value(FunctionDerived & f, Vector<T, N> const & x)
 {
   Vector<T, N> const
-  r = f.gradient(x);
+  r = residual(f, x);
 
   return 0.5 * dot(r, r);
 }
@@ -89,6 +89,18 @@ gradient(FunctionDerived & f, Vector<T, N> const & x)
   }
 
   return gradient;
+}
+
+//
+//
+//
+template<typename FunctionDerived, typename S>
+template<typename T, Index N>
+Vector<T, N>
+Function_Base<FunctionDerived, S>::
+residual(FunctionDerived & f, Vector<T, N> const & x)
+{
+  return f.gradient(x);
 }
 
 //

@@ -39,29 +39,26 @@
 // ************************************************************************
 // @HEADER
 
-#if defined(ENABLE_ROL)
-#if !defined(Intrepid2_MiniTensor_ROL_Vector_h)
-#define Intrepid2_MiniTensor_ROL_Vector_h
+#if !defined(ROL_MiniTensor_Vector_hpp)
+#define ROL_MiniTensor_Vector_hpp
 
 #include <Intrepid2_MiniTensor.h>
 #include "ROL_Vector.hpp"
 
-namespace ROL
-{
+namespace ROL {
 
-template <typename T, Index N>
+template <typename T, Intrepid2::Index N>
 class MiniTensorVector : public Vector<T> {
-
-  using uint = Intrepid2::Index;
-
-private:
-
-  Intrepid2::Vector<T, N>
-  vector_;
 
 public:
 
   MiniTensorVector(Intrepid2::Vector<T, N> & v) : vector_(v)
+  {
+    return;
+  }
+
+  virtual
+  ~MiniTensorVector()
   {
     return;
   }
@@ -94,7 +91,7 @@ public:
     auto const
     dim = xval.get_dimension();
 
-    for (auto const i = 0; i < dim; ++i) {
+    for (auto i{0}; i < dim; ++i) {
       vector_(i) += xval(i);
     }
   }
@@ -115,7 +112,7 @@ public:
 
     assert(vector_.get_dimension() == dim);
 
-    for (auto const i = 0; i < dim); ++i) {
+    for (auto i{0}; i < dim; ++i) {
       vector_(i) += alpha * xval(i);
     }
   }
@@ -126,7 +123,7 @@ public:
     auto const
     dim = vector_.get_dimension();
 
-    for (auto const i = 0; i < dim); ++i) {
+    for (auto i{0}; i < dim; ++i) {
       vector_(i) *= alpha;
     }
   }
@@ -183,15 +180,13 @@ public:
     auto const
     dim = vector_.get_dimension();
 
-    auto
-    p_mt_vector = Teuchos::rcp(new Intrepid2::Vector<T, N>(dim));
+    auto &&
+    mt_vector = Intrepid2::Vector<T, N>(dim, Intrepid2::ZEROS);
 
-    p_mt_vector->fill(Intrepid2::ZEROS);
-
-    (*p_mt_vector)(i) = 1.0;
+    mt_vector(i) = 1.0;
 
     Teuchos::RCP<MiniTensorVector>
-    e = Teuchos::rcp(new MiniTensorVector(*p_mt_vector));
+    e = Teuchos::rcp(new MiniTensorVector(mt_vector));
 
     return e;
   }
@@ -199,14 +194,14 @@ public:
   int
   dimension() const
   {
-    return static_cast<int>(vector_->get_dimension());
+    return static_cast<int>(vector_.get_dimension());
   }
 
   void
   applyUnary(Elementwise::UnaryFunction<T> const & f)
   {
     auto const
-    dim  = vector_->get_dimension();
+    dim  = vector_.get_dimension();
 
     for(auto i{0}; i < dim; ++i) {
       vector_(i) = f.apply(vector_(i));
@@ -223,7 +218,7 @@ public:
     xval = ex.getVector();
 
     auto const
-    dim  = vector_->get_dimension();
+    dim  = vector_.get_dimension();
 
     for(auto i{0}; i < dim; ++i) {
       vector_(i) = f.apply(vector_(i), xval(i));
@@ -231,13 +226,13 @@ public:
   }
 
   T
-  reduce(Elementwise::ReductionOp<T> & r ) const
+  reduce(Elementwise::ReductionOp<T> & r) const
   {
     T
     result = r.initialValue();
 
     auto const
-    dim  = vector_->get_dimension();
+    dim = vector_.get_dimension();
 
     for(auto i{0}; i < dim; ++i) {
       r.reduce(vector_(i), result);
@@ -246,10 +241,12 @@ public:
     return result;
   }
 
+private:
+
+  Intrepid2::Vector<T, N>
+  vector_;
 }; // class MiniTensorVector
-}
 
-#include "Intrepid2_MiniTensor_ROL_Vector.t.h"
+} // namespace ROL
 
-#endif // Intrepid2_MiniTensor_ROL_Vector_h
-#endif // ENABLE_ROL
+#endif // ROL_MiniTensor_Vector_hpp
