@@ -176,12 +176,13 @@ namespace {
     }
   }
 
-  size_t proc_with_minimum_work(const std::vector<size_t> &work)
+  ssize_t proc_with_minimum_work(const std::vector<size_t> &work,
+				ssize_t exclude_proc = -1)
   {
-    size_t min_work = work[0];
-    size_t min_proc = 0;
-    for (size_t i = 1; i < work.size(); i++) {
-      if (work[i] < min_work) {
+    size_t min_work = std::numeric_limits<size_t>::max();
+    ssize_t min_proc = -1;
+    for (size_t i = 0; i < work.size(); i++) {
+      if (work[i] < min_work && i != exclude_proc) {
         min_work = work[i];
         min_proc = i;
         if (min_work == 0) {
@@ -308,6 +309,19 @@ namespace Iocgns {
         if (zone->is_active()) {
           // Assign zone to processor with minimum work...
           size_t proc  = proc_with_minimum_work(work_vector);
+
+	  // See if any other zone on this processor has the same adam zone...
+	  // TODO: Currently only do one "re-search".  Need to do something
+	  // better to make sure; or be able to handle this condition correctly.
+	  for (auto &pzone : m_structuredZones) {
+	    if (pzone->is_active() && pzone->m_proc == proc) {
+	      if (pzone->m_adam == zone->m_adam) {
+		proc  = proc_with_minimum_work(work_vector, proc);
+		break;
+	      }
+	    }
+	  }
+
           zone->m_proc = proc;
           work_vector[proc] += zone->work();
 #if defined(IOSS_DEBUG_OUTPUT)
@@ -749,46 +763,43 @@ namespace Iocgns {
       offset += block.file_count();
       size_t b_end = b_start + block.file_count();
 
-      if (b_start < p_end && p_start < b_end) {
-        // Some of this blocks elements are on this processor...
-        size_t overlap       = std::min(b_end, p_end) - std::max(b_start, p_start);
-        block.fileCount      = overlap;
-        size_t element_nodes = block.nodesPerEntity;
-        int    zone          = block.zone_;
-        int    section       = block.section_;
+      ssize_t overlap       = std::min(b_end, p_end) - std::max(b_start, p_start);
+      overlap = std::max(overlap, (ssize_t)0);
+      block.fileCount      = overlap;
+      size_t element_nodes = block.nodesPerEntity;
+      int    zone          = block.zone_;
+      int    section       = block.section_;
 
-        // Get the connectivity (raw) for this portion of elements...
-        std::vector<cgsize_t> connectivity(overlap * element_nodes);
-        INT                   blk_start = std::max(b_start, p_start) - b_start + 1;
-        INT                   blk_end   = blk_start + overlap - 1;
+      // Get the connectivity (raw) for this portion of elements...
+      std::vector<cgsize_t> connectivity(overlap * element_nodes);
+      INT                   blk_start = std::max(b_start, p_start) - b_start + 1;
+      INT                   blk_end   = blk_start + overlap - 1;
+      blk_start = blk_start < 0 ? 0 : blk_start;
+      blk_end   = blk_end   < 0 ? 0 : blk_end;
 #if IOSS_DEBUG_OUTPUT
-        OUTPUT << "Processor " << m_decomposition.m_processor << " has " << overlap
-               << " elements on element block " << block.name() << "\t(" << blk_start << " to "
-               << blk_end << ")\n";
+      OUTPUT << "Processor " << m_decomposition.m_processor << " has " << overlap
+	     << " elements on element block " << block.name() << "\t(" << blk_start << " to "
+	     << blk_end << ")\n";
 #endif
-        block.fileSectionOffset = blk_start;
+      block.fileSectionOffset = blk_start;
 #if CG_BUILD_PARALLEL
-        cgp_elements_read_data(filePtr, base, zone, section, blk_start, blk_end,
-                               TOPTR(connectivity));
+      cgp_elements_read_data(filePtr, base, zone, section, blk_start, blk_end,
+			     TOPTR(connectivity));
 #else
-        cg_elements_partial_read(filePtr, base, zone, section, blk_start, blk_end,
-                                 TOPTR(connectivity), nullptr);
+      cg_elements_partial_read(filePtr, base, zone, section, blk_start, blk_end,
+			       TOPTR(connectivity), nullptr);
 #endif
-        size_t el          = 0;
-        INT    zone_offset = block.zoneNodeOffset;
+      size_t el          = 0;
+      INT    zone_offset = block.zoneNodeOffset;
 
-        for (size_t elem = 0; elem < overlap; elem++) {
-          decomposition.m_pointer.push_back(decomposition.m_adjacency.size());
-          for (size_t k = 0; k < element_nodes; k++) {
-            INT node = connectivity[el++] - 1 + zone_offset; // 0-based node
-            decomposition.m_adjacency.push_back(node);
-          }
-        }
-        sum += overlap * element_nodes;
+      for (size_t elem = 0; elem < overlap; elem++) {
+	decomposition.m_pointer.push_back(decomposition.m_adjacency.size());
+	for (size_t k = 0; k < element_nodes; k++) {
+	  INT node = connectivity[el++] - 1 + zone_offset; // 0-based node
+	  decomposition.m_adjacency.push_back(node);
+	}
       }
-      else {
-        block.fileCount = 0;
-      }
+      sum += overlap * element_nodes;
     }
     decomposition.m_pointer.push_back(decomposition.m_adjacency.size());
   }
@@ -823,8 +834,11 @@ namespace Iocgns {
       // processor simultaneously.
       std::vector<cgsize_t> elemlist(elemlist_size);
 
+#if 0
       // Read the elemlists on root processor.
+      // Cannot do this -- hangs in hdf5
       if (m_decomposition.m_processor == root) {
+#endif
         size_t offset = 0;
         for (auto &sset : m_sideSets) {
 
@@ -853,11 +867,14 @@ namespace Iocgns {
           }
         }
         assert(offset == elemlist_size);
+#if 0
       }
 
+      // Cannot do this -- hangs in hdf5
       // Broadcast this data to all other processors...
       MPI_Bcast(TOPTR(elemlist), sizeof(cgsize_t) * elemlist.size(), MPI_BYTE, root,
-                m_decomposition.m_comm);
+		m_decomposition.m_comm);
+#endif
 
       // Each processor now has a complete list of all elems in all
       // sidesets.
@@ -928,33 +945,40 @@ namespace Iocgns {
     for (int zone = 1; zone <= num_zones; zone++) {
       end += m_zones[zone].m_nodeCount;
 
-      if (end > node_offset && beg <= node_offset + node_count) {
         cgsize_t start  = std::max(node_offset, beg);
         cgsize_t finish = std::min(end, node_offset + node_count);
-        if (finish > start) {
-          cgsize_t count = finish - start;
+	cgsize_t count  = (finish > start) ? finish - start : 0;
 
           // Now adjust start for 1-based node numbering and the start of this zone...
           start  = start - beg + 1;
           finish = finish - beg;
+	  if (count == 0) {
+	    start = 0;
+	    finish = 0;
+	  }
 #if defined(IOSS_DEBUG_OUTPUT)
           OUTPUT << m_decomposition.m_processor << ": reading " << count << " nodes from zone "
                  << zone << " starting at " << start << " with an offset of " << offset
                  << " ending at " << finish << "\n";
 #endif
 #if CG_BUILD_PARALLEL
+	  double *coords = nullptr;
+	  if (count > 0) {
+	    coords = &data[offset];
+	  }
           int ierr = cgp_coord_read_data(filePtr, base, zone, direction + 1, &start, &finish,
-                                         &data[offset]);
+                                         coords);
 #else
-          int ierr = cg_coord_read(filePtr, base, zone, coord_name[direction].c_str(),
-                                   CG_RealDouble, &start, &finish, &data[offset]);
+	  int ierr = 0;
+	  if (count > 0) {
+	    ierr = cg_coord_read(filePtr, base, zone, coord_name[direction].c_str(),
+				     CG_RealDouble, &start, &finish, &data[offset]);
+	  }
 #endif
           if (ierr < 0) {
             Utils::cgns_error(filePtr, __FILE__, __func__, __LINE__, m_decomposition.m_processor);
           }
           offset += count;
-        }
-      }
       beg = end;
     }
   }
@@ -1019,7 +1043,10 @@ namespace Iocgns {
                                                         INT *ioss_data) const
   {
     std::vector<INT> element_side;
+#if 0
+    // Cannot do this due to parallel read -- hangs in hdf5
     if (m_decomposition.m_processor == sset.root_) {
+#endif
       int base = 1;
 
       int                   nodes_per_face = 4; // FIXME: sb->topology()->number_nodes();
@@ -1051,7 +1078,9 @@ namespace Iocgns {
         element_side.push_back(parent[0 * sset.file_count() + i] + zone_element_id_offset);
         element_side.push_back(parent[2 * sset.file_count() + i]);
       }
+#if 0
     }
+#endif
     // The above was all on root processor for this side set, now need to send data to other
     // processors that own any of the elements in the sideset.
     communicate_set_data(TOPTR(element_side), ioss_data, sset, 2);
