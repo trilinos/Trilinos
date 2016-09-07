@@ -41,46 +41,49 @@
 #include <string>                       // for string
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector
+#include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
+#include "stkMeshTestUtils.hpp"
+
 namespace stk { namespace mesh { class Part; } }
 
 namespace
 {
+
+void verify_elem_is_owned_on_p0_and_valid_as_aura_on_p1(const stk::mesh::BulkData &bulkData, stk::mesh::Entity elem)
+{
+    EXPECT_TRUE(bulkData.is_valid(elem));
+    EXPECT_EQ(0, bulkData.parallel_owner_rank(elem));
+}
+
+void verify_elem_is_now_owned_on_p1(const stk::mesh::BulkData &bulkData, stk::mesh::EntityId elemId)
+{
+    stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
+    EXPECT_TRUE(bulkData.is_valid(elem));
+    EXPECT_EQ(1, bulkData.parallel_owner_rank(elem));
+}
+
 //BEGIN
 TEST(StkMeshHowTo, changeEntityOwner)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 2) { return; }
-    stk::io::StkMeshIoBroker meshReader(communicator);
-    const std::string generatedMeshSpecification = "generated:2x2x4"; // syntax creates a 2x2x4 'bar' of hex-8 elements
-    meshReader.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    meshReader.create_input_mesh();
-    meshReader.populate_bulk_data();
+    if (stk::parallel_machine_size(communicator) == 2)
+    {
+        stk::mesh::MetaData metaData;
+        stk::mesh::BulkData bulkData(metaData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
 
-    stk::mesh::BulkData &stkMeshBulkData = meshReader.bulk_data();
+        stk::mesh::EntityId elem2Id = 2;
+        stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, elem2Id);
+        verify_elem_is_owned_on_p0_and_valid_as_aura_on_p1(bulkData, elem2);
 
-    int myProc = stkMeshBulkData.parallel_rank();
-    int otherProc = 1;
-    if (myProc == 1) otherProc = 0;
+        std::vector<std::pair<stk::mesh::Entity, int> > elemProcPairs;
+        if (bulkData.parallel_rank() == 0)
+          elemProcPairs.push_back(std::make_pair(elem2, testUtils::get_other_proc(bulkData.parallel_rank())));
 
-    //element 5 should be on proc 0, but next to the proc-boundary with proc 1
-    stk::mesh::EntityId id = 5;
-    stk::mesh::Entity elem5 = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, id);
-    //element 5 should be valid on both proc 0 (owner) and proc 1 (as aura/ghost)
-    EXPECT_TRUE(stkMeshBulkData.is_valid(elem5));
-    EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(elem5));
+        bulkData.change_entity_owner(elemProcPairs);
 
-    std::vector<std::pair<stk::mesh::Entity, int> > elemProcPairs;
-    if (myProc == 0) {
-      elemProcPairs.push_back(std::make_pair(elem5, otherProc));
+        verify_elem_is_now_owned_on_p1(bulkData, elem2Id);
     }
-
-    stkMeshBulkData.change_entity_owner(elemProcPairs);
-
-    //now we have moved ownership of elem5 from proc 0 to proc 1. It should still be
-    //valid on both procs but should now be owned on proc 1.
-    elem5 = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, id);
-    EXPECT_TRUE(stkMeshBulkData.is_valid(elem5));
-    EXPECT_EQ(1, stkMeshBulkData.parallel_owner_rank(elem5));
 }
 //END
 }

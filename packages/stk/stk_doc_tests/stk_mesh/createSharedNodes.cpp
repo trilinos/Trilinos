@@ -38,16 +38,9 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityId
 #include "stk_mesh/base/Comm.hpp"      // for comm_mesh_counts
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stkMeshTestUtils.hpp"
 
 namespace {
-
-int get_other_proc(int myproc)
-{
-    int otherproc = 1;
-    if (myproc == 1)
-        otherproc = 0;
-    return otherproc;
-}
 
 void verify_global_node_count(size_t expectedTotalNumNodes, const stk::mesh::BulkData &mesh)
 {
@@ -84,34 +77,34 @@ TEST(stkMeshHowTo, createSharedNodes)
     stk::mesh::Part &triPart = metaData.declare_part_with_topology("tri_part", stk::topology::TRIANGLE_3_2D);
     metaData.commit();
 
-    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
-    if (mesh.parallel_size() == 2)
+    stk::mesh::BulkData bulkData(metaData, MPI_COMM_WORLD);
+    if (bulkData.parallel_size() == 2)
     {
-        mesh.modification_begin();
+        bulkData.modification_begin();
 
         const unsigned nodesPerElem = 3;
         stk::mesh::EntityIdVector elemIds = {1, 2};//one elemId for each proc
         std::vector<stk::mesh::EntityIdVector> elemNodeIds = { {1, 3, 2}, {4, 2, 3} };
-        const int myproc = mesh.parallel_rank();
+        const int myproc = bulkData.parallel_rank();
 
-        stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEM_RANK, elemIds[myproc], triPart);
+        stk::mesh::Entity elem = bulkData.declare_entity(stk::topology::ELEM_RANK, elemIds[myproc], triPart);
         stk::mesh::EntityVector elemNodes(nodesPerElem);
-        elemNodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[myproc][0]);
-        elemNodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[myproc][1]);
-        elemNodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, elemNodeIds[myproc][2]);
+        elemNodes[0] = bulkData.declare_entity(stk::topology::NODE_RANK, elemNodeIds[myproc][0]);
+        elemNodes[1] = bulkData.declare_entity(stk::topology::NODE_RANK, elemNodeIds[myproc][1]);
+        elemNodes[2] = bulkData.declare_entity(stk::topology::NODE_RANK, elemNodeIds[myproc][2]);
 
-        mesh.declare_relation(elem, elemNodes[0], 0);
-        mesh.declare_relation(elem, elemNodes[1], 1);
-        mesh.declare_relation(elem, elemNodes[2], 2);
+        bulkData.declare_relation(elem, elemNodes[0], 0);
+        bulkData.declare_relation(elem, elemNodes[1], 1);
+        bulkData.declare_relation(elem, elemNodes[2], 2);
 
-        int otherproc = get_other_proc(myproc);
-        mesh.add_node_sharing(elemNodes[1], otherproc);
-        mesh.add_node_sharing(elemNodes[2], otherproc);
+        int otherproc = testUtils::get_other_proc(myproc);
+        bulkData.add_node_sharing(elemNodes[1], otherproc);
+        bulkData.add_node_sharing(elemNodes[2], otherproc);
 
-        mesh.modification_end();
+        bulkData.modification_end();
 
         const size_t expectedTotalNumNodes = 4;
-        verify_global_node_count(expectedTotalNumNodes, mesh);
+        verify_global_node_count(expectedTotalNumNodes, bulkData);
     }
 }
 //END
@@ -123,27 +116,27 @@ TEST(stkMeshHowTo, createIndependentSharedNodes)
     stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
     metaData.commit();
 
-    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
-    if (mesh.parallel_size() == 2)
+    stk::mesh::BulkData bulkData(metaData, MPI_COMM_WORLD);
+    if (bulkData.parallel_size() == 2)
     {
-        mesh.modification_begin();
+        bulkData.modification_begin();
 
         const unsigned nodesPerProc = 3;
         std::vector<stk::mesh::EntityIdVector> nodeIds = { {1, 3, 2}, {4, 2, 3} };
-        const int myproc = mesh.parallel_rank();
+        const int myproc = bulkData.parallel_rank();
         stk::mesh::EntityVector nodes(nodesPerProc);
-        nodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][0]);
-        nodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][1]);
-        nodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][2]);
+        nodes[0] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][0]);
+        nodes[1] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][1]);
+        nodes[2] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][2]);
 
-        int otherproc = get_other_proc(myproc);
-        mesh.add_node_sharing(nodes[1], otherproc);
-        mesh.add_node_sharing(nodes[2], otherproc);
+        int otherproc = testUtils::get_other_proc(myproc);
+        bulkData.add_node_sharing(nodes[1], otherproc);
+        bulkData.add_node_sharing(nodes[2], otherproc);
 
-        mesh.modification_end();
+        bulkData.modification_end();
 
         const size_t expectedTotalNumNodes = 4;
-        verify_global_node_count(expectedTotalNumNodes, mesh);
+        verify_global_node_count(expectedTotalNumNodes, bulkData);
     }
 }
 //ENDINDEP
@@ -156,56 +149,53 @@ TEST(stkMeshHowTo, createIndependentSharedNodesThenAddDependence)
     stk::mesh::Part &triPart = metaData.declare_part_with_topology("triPart", stk::topology::TRIANGLE_3_2D);
     metaData.commit();
 
-    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
-    if(mesh.parallel_size() == 2)
+    stk::mesh::BulkData bulkData(metaData, MPI_COMM_WORLD);
+    if(bulkData.parallel_size() == 2)
     {
-        mesh.modification_begin();
+        bulkData.modification_begin();
 
         const unsigned nodesPerProc = 3;
         std::vector<stk::mesh::EntityIdVector> nodeIds = { {1, 3, 2}, {4, 2, 3}};
-        const int myproc = mesh.parallel_rank();
+        const int myproc = bulkData.parallel_rank();
 
         stk::mesh::EntityVector nodes(nodesPerProc);
-        nodes[0] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][0]);
-        nodes[1] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][1]);
-        nodes[2] = mesh.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][2]);
+        nodes[0] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][0]);
+        nodes[1] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][1]);
+        nodes[2] = bulkData.declare_entity(stk::topology::NODE_RANK, nodeIds[myproc][2]);
 
-        int otherproc = get_other_proc(myproc);
-        mesh.add_node_sharing(nodes[1], otherproc);
-        mesh.add_node_sharing(nodes[2], otherproc);
+        int otherproc = testUtils::get_other_proc(myproc);
+        bulkData.add_node_sharing(nodes[1], otherproc);
+        bulkData.add_node_sharing(nodes[2], otherproc);
 
         const size_t expectedNumNodesPriorToModEnd = 6;
-        verify_global_node_count(expectedNumNodesPriorToModEnd, mesh);
+        verify_global_node_count(expectedNumNodesPriorToModEnd, bulkData);
 
-        mesh.modification_end();
+        bulkData.modification_end();
 
         const size_t expectedNumNodesAfterModEnd = 4; // nodes 2 and 3 are shared
-        verify_global_node_count(expectedNumNodesAfterModEnd, mesh);
+        verify_global_node_count(expectedNumNodesAfterModEnd, bulkData);
 
         const unsigned elemsPerProc = 1;
         stk::mesh::EntityId elemIds[][elemsPerProc] = { {1}, {2}};
 
-        mesh.modification_begin();
-        stk::mesh::Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, elemIds[myproc][0], triPart);
-        mesh.declare_relation(elem, nodes[0], 0);
-        mesh.declare_relation(elem, nodes[1], 1);
-        mesh.declare_relation(elem, nodes[2], 2);
-        EXPECT_NO_THROW(mesh.modification_end());
+        bulkData.modification_begin();
+        stk::mesh::Entity elem = bulkData.declare_entity(stk::topology::ELEMENT_RANK, elemIds[myproc][0], triPart);
+        bulkData.declare_relation(elem, nodes[0], 0);
+        bulkData.declare_relation(elem, nodes[1], 1);
+        bulkData.declare_relation(elem, nodes[2], 2);
+        EXPECT_NO_THROW(bulkData.modification_end());
 
-        mesh.modification_begin();
-        mesh.destroy_entity(elem);
-        mesh.modification_end();
+        bulkData.modification_begin();
+        bulkData.destroy_entity(elem);
+        bulkData.modification_end();
 
         if(myproc == 0)
-            verify_nodes_1_and_2_are_no_longer_shared(mesh, nodes);
+            verify_nodes_1_and_2_are_no_longer_shared(bulkData, nodes);
 
         else  // myproc == 1
-            verify_nodes_1_and_2_are_removed(mesh, nodes);
+            verify_nodes_1_and_2_are_removed(bulkData, nodes);
     }
 }
 
-
-
 //END_INDEP_DEP
-
 }
