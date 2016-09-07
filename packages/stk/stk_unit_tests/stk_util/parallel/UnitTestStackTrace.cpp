@@ -2,10 +2,12 @@
 #include "stk_util/parallel/DebugTool.hpp"
 
 
+#if defined(__GNUC__) && !defined(__ICC) && !defined(NDEBUG)
 std::string knownFunction()
 {
     return getStackTrace();
 }
+#endif
 
 TEST(getStackTrace, testStackTrace)
 {

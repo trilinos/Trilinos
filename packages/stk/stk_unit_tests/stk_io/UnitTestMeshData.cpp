@@ -155,8 +155,7 @@ TEST( StkMeshIoBroker, testModifyTopology )
             stk::mesh::Entity element1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
             stk::mesh::Entity element2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
 
-            stk::mesh::PartVector add_parts;
-            add_parts.push_back(&inactive_part);
+            stk::mesh::PartVector add_parts = { &inactive_part };
             mesh.change_entity_parts(element2, add_parts);
 
             const int elem1_side_ordinal = 5;

@@ -304,9 +304,7 @@ template <typename DataType>
 void testTwoGlobals(const std::string &outputFileName, const std::vector<std::string> &globalVarNames)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
-    std::vector<DataType> globalVarValues;
-    globalVarValues.push_back(13);
-    globalVarValues.push_back(14);
+    std::vector<DataType> globalVarValues = {13, 14};
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
 	const std::string exodusFileName = "generated:1x1x8";
@@ -337,25 +335,19 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
 
 TEST(GlobalVariablesTest, TwoGlobalIntegers)
 {
-    std::vector<std::string> globalVarNames;
-    globalVarNames.push_back("testGlobal");
-    globalVarNames.push_back("testGlobal2");
+    std::vector<std::string> globalVarNames = {"testGlobal", "testGlobal2"};
     testTwoGlobals<int>("TwoGlobalIntegers.exo", globalVarNames);
 }
 
 TEST(GlobalVariablesTest, TwoGlobalDoubles)
 {
-    std::vector<std::string> globalVarNames;
-    globalVarNames.push_back("testGlobal");
-    globalVarNames.push_back("testGlobal2");
+    std::vector<std::string> globalVarNames = {"testGlobal", "testGlobal2"};
     testTwoGlobals<double>("TwoGlobalDoubles.exo", globalVarNames);
 }
 
 TEST(GlobalVariablesTest, TwoGlobalDoublesSameName)
 {
-    std::vector<std::string> globalVarNames;
-    globalVarNames.push_back("testGlobal");
-    globalVarNames.push_back("testGlobal");
+    std::vector<std::string> globalVarNames = {"testGlobal", "testGlobal"};
     EXPECT_ANY_THROW(testTwoGlobals<double>("TwoGlobalDoublesSameName.exo", globalVarNames));
     unlink("TwoGlobalDoublesSameName.exo");
 }

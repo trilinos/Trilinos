@@ -58,17 +58,10 @@ namespace
     params.set_param("PI", 3.14159);  // Double 
     params.set_param("Answer", 42);   // Integer
 
-    std::vector<double> my_vector;
-    my_vector.push_back(2.78);
-    my_vector.push_back(5.30);
-    my_vector.push_back(6.21);
+    std::vector<double> my_vector = { 2.78, 5.30, 6.21 };
     params.set_param("doubles", my_vector); // Vector of doubles...
     
-    std::vector<int> ages;
-    ages.push_back(55);
-    ages.push_back(49);
-    ages.push_back(21);
-    ages.push_back(19);
+    std::vector<int> ages = { 55, 49, 21, 19};
     params.set_param("Ages", ages);   // Vector of integers...
 
     {
