@@ -107,26 +107,26 @@ namespace Intrepid2 {
         //   j = iter / stride;
 
         // current implementation subview overhead exists
-        {
-          auto mat = Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL());
-          _detArray(i, j) = Serial::det(mat);
-        }
+        // {
+        //   auto mat = Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL());
+        //   _detArray(i, j) = Serial::det(mat);
+        // }
 
         // direct access (base is 8 rank)
-        // {
-        //   const auto dim = _inMats.dimension(2);
-        //   const auto val = ( dim == 3 ? ( _inMats(i,j,0,0) * _inMats(i,j,1,1) * _inMats(i,j,2,2) +
-        //                                   _inMats(i,j,1,0) * _inMats(i,j,2,1) * _inMats(i,j,0,2) +
-        //                                   _inMats(i,j,2,0) * _inMats(i,j,0,1) * _inMats(i,j,1,2) -
-        //                                   _inMats(i,j,2,0) * _inMats(i,j,1,1) * _inMats(i,j,0,2) -
-        //                                   _inMats(i,j,0,0) * _inMats(i,j,2,1) * _inMats(i,j,1,2) -
-        //                                   _inMats(i,j,1,0) * _inMats(i,j,0,1) * _inMats(i,j,2,2) ) :
-        //                      dim == 2 ? ( _inMats(i,j,0,0) * _inMats(i,j,1,1) -
-        //                                   _inMats(i,j,0,1) * _inMats(i,j,1,0) ) :
-        //                      /**/       ( _inMats(i,j,0,0) ) );
+        {
+          const auto dim = _inMats.dimension(2);
+          const auto val = ( dim == 3 ? ( _inMats(i,j,0,0) * _inMats(i,j,1,1) * _inMats(i,j,2,2) +
+                                          _inMats(i,j,1,0) * _inMats(i,j,2,1) * _inMats(i,j,0,2) +
+                                          _inMats(i,j,2,0) * _inMats(i,j,0,1) * _inMats(i,j,1,2) -
+                                          _inMats(i,j,2,0) * _inMats(i,j,1,1) * _inMats(i,j,0,2) -
+                                          _inMats(i,j,0,0) * _inMats(i,j,2,1) * _inMats(i,j,1,2) -
+                                          _inMats(i,j,1,0) * _inMats(i,j,0,1) * _inMats(i,j,2,2) ) :
+                             dim == 2 ? ( _inMats(i,j,0,0) * _inMats(i,j,1,1) -
+                                          _inMats(i,j,0,1) * _inMats(i,j,1,0) ) :
+                             /**/       ( _inMats(i,j,0,0) ) );
           
-        //   _detArray(i, j) = val;
-        // }
+          _detArray(i, j) = val;
+        }
 
       }
     };
