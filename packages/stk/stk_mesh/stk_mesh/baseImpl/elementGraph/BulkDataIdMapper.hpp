@@ -46,16 +46,11 @@ public:
         entityToLocalId.resize(bulk.get_size_of_entity_index_space(), INVALID_LOCAL_ID);
         if(bulk.mesh_meta_data().entity_rank_count() >= rank)
         {
-            const stk::mesh::BucketVector & elemBuckets = bulk.get_buckets(rank, bulk.mesh_meta_data().locally_owned_part());
-            LocalIDType localId = 0;
-            for(size_t i=0; i<elemBuckets.size(); ++i)
+            stk::mesh::EntityVector entities;
+            stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(rank), entities);
+            for(size_t i=0; i<entities.size(); ++i)
             {
-                const stk::mesh::Bucket& bucket = *elemBuckets[i];
-                for(size_t j=0; j<bucket.size(); ++j)
-                {
-                    add_new_entity_with_local_id(bucket[j], localId);
-                    localId++;
-                }
+                add_new_entity_with_local_id(entities[i], i);
             }
         }
     }
