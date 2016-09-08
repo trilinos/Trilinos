@@ -169,15 +169,6 @@ ProductRegistry::getProductAttributeMap(
 }
 
 
-const std::string &
-ProductRegistry::getProductAttribute(
-  const std::string &	name,
-  const std::string &	attribute) const
-{
-  return m_productMap[name][attribute];
-}
-
-
 std::string &
 ProductRegistry::getProductAttribute(
   const std::string &	name,
@@ -187,22 +178,14 @@ ProductRegistry::getProductAttribute(
 }
 
 
-void
-ProductRegistry::setProductAttribute(
-  const std::string &	name,
-  const std::string &	attribute,
-  const std::string &	value)
-{
-  m_productMap[name][attribute] = value;
-}
-
 const std::string &
 ProductRegistry::executable_date()
 {
   static std::string executable_date;
 
-  if (executable_date.empty())
+  if (executable_date.empty()) {
     executable_date = stk::ProductRegistry::instance().getProductAttribute(stk::EnvData::instance().m_productName, stk::ProductRegistry::BUILD_TIME);
+  }
 
   return executable_date;
 }
@@ -227,13 +210,6 @@ product_registry_add_tpl(
   const char *		qualifier )
 {
   stk::ProductRegistry::instance().addTPL(name ? name : "<unknown>", version ? version : "", qualifier ? qualifier : "");
-}
-
-
-size_t
-product_registry_size()
-{
-  return stk::ProductRegistry::instance().productMap_size();
 }
 
 } // extern "C"

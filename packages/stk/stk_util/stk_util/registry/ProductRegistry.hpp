@@ -226,39 +226,7 @@ public:
    *				product's attribute.
    *
    */
-  const std::string &getProductAttribute(const std::string &name, const std::string &attribute) const;
-
-  /**
-   * @brief Member function <b>getAttribute</b> returns the
-   * attribute for the named product.
-   *
-   * @param name		a <b>std::string</b> const reference to the product's
-   *				name.
-   *
-   * @param attribute		a <b>std::string</b> const reference to the product's
-   *				attribute keyword.
-   *
-   * @return			a <b>std::string</b> const reference to the value of
-   *				product's attribute.
-   *
-   */
   std::string &getProductAttribute(const std::string &name, const std::string &attribute);
-
-  /**
-   * @brief Member function <b>setAttribute</b> sets the
-   * attribute for the named poduct to the specified value.
-   *
-   * @param name		a <b>std::string</b> const reference to the product's
-   *				name.
-   *
-   * @param attribute		a <b>std::string</b> const reference to the product's
-   *				attribute keyword.
-   *
-   * @param value		a <b>std::string</b> const reference to the value of
-   *				product's attribute.
-   *
-   */
-  void setProductAttribute(const std::string &name, const std::string &attribute, const std::string &value);
 
 public:
   static const std::string	NAME;				///< Product's name attribute

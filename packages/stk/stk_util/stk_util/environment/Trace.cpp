@@ -259,20 +259,6 @@ Tracespec::getFunctionClass() const
 
 
 std::string
-Tracespec::getFunctionShortClass() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return class_name;
-}
-
-
-std::string
 Tracespec::getFunctionName() const
 {
   std::string namespace_name;
@@ -283,20 +269,6 @@ Tracespec::getFunctionName() const
   get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
 
   return namespace_name + "::" + class_name + "::" + function_name;
-}
-
-
-std::string
-Tracespec::getFunctionShortName() const
-{
-  std::string namespace_name;
-  std::string class_name;
-  std::string function_name;
-  std::vector<std::string> arglist;
-
-  get_function_spec_parts(m_functionSpec, namespace_name, class_name, function_name, arglist);
-
-  return function_name;
 }
 
 
