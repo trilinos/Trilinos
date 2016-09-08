@@ -29,10 +29,10 @@ TRIBITS_ADD_LIBRARY(
   )
 
 TRIBITS_ADD_EXECUTABLE(
-  struc-to-unstruc
+  struc_to_unstruc
   NOEXEPREFIX
   NOEXESUFFIX
-  SOURCES struc-to-unstruc.C
+  SOURCES struc_to_unstruc.C
   )
 TRIBITS_ADD_EXECUTABLE(
   cth_pressure_map
@@ -74,7 +74,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 
 install_executable(cth_pressure_map)
-install_executable(struc-to-unstruc)
+install_executable(struc_to_unstruc)
 install_executable(io_shell)
 install_executable(shell_to_hex)
 install_executable(io_info)
