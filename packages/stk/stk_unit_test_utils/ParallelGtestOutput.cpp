@@ -64,10 +64,10 @@ private:
     int mNumFails;
     MPI_Comm m_comm;
 
-    const char* get_filename_for_print(const char* filepath)
+    std::string get_filename_for_print(const char* filepath)
     {
         std::string filename = filepath;
-        return filename.substr(filename.find_last_of("/") + 1).c_str();
+        return filename.substr(filename.find_last_of("/") + 1);
     }
 
     virtual void OnTestStart(const ::testing::TestInfo& test_info)
@@ -77,7 +77,7 @@ private:
             printf("*** Starting test %s.%s from %s:%d\n",
                    test_info.test_case_name(),
                    test_info.name(),
-                   get_filename_for_print(test_info.file()),
+                   get_filename_for_print(test_info.file()).c_str(),
                    test_info.line());
         }
     }
