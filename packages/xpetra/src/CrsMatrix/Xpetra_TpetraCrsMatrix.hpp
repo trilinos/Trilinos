@@ -157,6 +157,46 @@ namespace Xpetra {
 
     }
 
+    //! Constructor for a fused import
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
+                    const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
+    {
+      typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MyTpetraCrsMatrix;
+      XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, *sourceMatrix, tSourceMatrix, "Xpetra::TpetraCrsMatrix constructor only accepts Xpetra::TpetraCrsMatrix as the input argument.");//TODO: remove and use toTpetra()
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v = tSourceMatrix.getTpetra_CrsMatrix();
+
+      RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myDomainMap = domainMap!=Teuchos::null ? toTpetra(domainMap) : Teuchos::null;
+      RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myRangeMap  = rangeMap!=Teuchos::null  ? toTpetra(rangeMap)  : Teuchos::null;
+
+      mtx_=Tpetra::importAndFillCompleteCrsMatrix<MyTpetraCrsMatrix>(tSourceMatrix.getTpetra_CrsMatrix(),toTpetra(RowImporter),toTpetra(*DomainImporter),myDomainMap,myRangeMap,params);
+      bool restrictComm=false;
+      if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
+      if(restrictComm && mtx_->getRowMap().is_null()) mtx_=Teuchos::null;
+    }
+
+    //! Constructor for a fused export
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Export<LocalOrdinal,GlobalOrdinal,Node> & RowExporter,
+                    const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
+    {
+      typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MyTpetraCrsMatrix;
+      XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, *sourceMatrix, tSourceMatrix, "Xpetra::TpetraCrsMatrix constructor only accepts Xpetra::TpetraCrsMatrix as the input argument.");//TODO: remove and use toTpetra()
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v = tSourceMatrix.getTpetra_CrsMatrix();
+
+      RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myDomainMap = domainMap!=Teuchos::null ? toTpetra(domainMap) : Teuchos::null;
+      RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > myRangeMap  = rangeMap!=Teuchos::null  ? toTpetra(rangeMap)  : Teuchos::null;
+
+      mtx_=Tpetra::exportAndFillCompleteCrsMatrix<MyTpetraCrsMatrix>(tSourceMatrix.getTpetra_CrsMatrix(),toTpetra(RowExporter),toTpetra(*DomainExporter),myDomainMap,myRangeMap,params);
+    }
+
+
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
     ///
@@ -595,6 +635,28 @@ namespace Xpetra {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
+    //! Constructor for a fused import
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
+                    const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
+    {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
+
+    //! Constructor for a fused export
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Export<LocalOrdinal,GlobalOrdinal,Node> & RowExporter,
+                    const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
+    {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
+    }
+
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
     ///
@@ -941,6 +1003,28 @@ namespace Xpetra {
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
+
+    //! Constructor for a fused import
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
+                    const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
+    {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
+    }
+
+    //! Constructor for a fused export
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Export<LocalOrdinal,GlobalOrdinal,Node> & RowExporter,
+                    const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
+    {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 

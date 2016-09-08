@@ -113,6 +113,24 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
       "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
+  EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+      const Import<LocalOrdinal,GlobalOrdinal,Node> &RowImporter,
+      const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  }
+  EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+      const Export<LocalOrdinal,GlobalOrdinal,Node> &RowExporter,
+      const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  }
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
   EpetraCrsMatrixT (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
@@ -337,6 +355,56 @@ public:
     mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tExporter.getEpetra_Export(),myDomainMap,myRangeMap,restrictComm));
   }
 
+  EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+      const Import<LocalOrdinal,GlobalOrdinal,Node> &RowImporter,
+      const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) :
+        isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+  , isInitializedLocalMatrix_(false)
+#endif
+  {
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal XPETRA_COMMA Node>, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraCrsMatrixT as an input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, RowImporter, tImporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraImportT as an input argument.");
+    XPETRA_RCP_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, DomainImporter, tdImporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraImportT as an input argument.");
+
+    const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra<GlobalOrdinal,Node>(domainMap): 0;
+    const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra<GlobalOrdinal,Node>(rangeMap) : 0;
+
+    // Follows the Tpetra parameters
+    bool restrictComm=false;
+    if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
+    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tImporter.getEpetra_Import(),tdImporter->getEpetra_Import().get(),myDomainMap,myRangeMap,restrictComm));
+    if(restrictComm && mtx_->NumMyRows()==0)
+      mtx_=Teuchos::null;
+  }
+
+  EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+      const Export<LocalOrdinal,GlobalOrdinal,Node> &RowExporter,
+      const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) :
+        isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+  , isInitializedLocalMatrix_(false)
+#endif
+  {
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal XPETRA_COMMA Node>, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraCrsMatrixT as an input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, RowExporter, tExporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraExportT as an input argument.");
+    XPETRA_RCP_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, DomainExporter, tdExporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraExportT as an input argument.");
+
+    const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra<GlobalOrdinal,Node>(domainMap): 0;
+    const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra<GlobalOrdinal,Node>(rangeMap) : 0;
+
+    // Follows the Tpetra parameters
+    bool restrictComm=false;
+    if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
+
+    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tExporter.getEpetra_Export(),tdExporter->getEpetra_Export().get(),myDomainMap,myRangeMap,restrictComm));
+  }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
   /// \brief Constructor specifying column Map and a local matrix,
@@ -1284,6 +1352,56 @@ public:
     mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tExporter.getEpetra_Export(),myDomainMap,myRangeMap,restrictComm));
   }
 
+  EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+      const Import<LocalOrdinal,GlobalOrdinal,Node> &RowImporter,
+      const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) :
+        isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+  , isInitializedLocalMatrix_(false)
+#endif
+  {
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal XPETRA_COMMA Node>, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraCrsMatrixT as an input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, RowImporter, tImporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraImportT as an input argument.");
+    XPETRA_RCP_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, DomainImporter, tdImporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraImportT as an input argument.");
+
+    const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra<GlobalOrdinal,Node>(domainMap): 0;
+    const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra<GlobalOrdinal,Node>(rangeMap) : 0;
+
+    // Follows the Tpetra parameters
+    bool restrictComm=false;
+    if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
+    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tImporter.getEpetra_Import(),tdImporter->getEpetra_Import().get(),myDomainMap,myRangeMap,restrictComm));
+    if(restrictComm && mtx_->NumMyRows()==0)
+      mtx_=Teuchos::null;
+  }
+
+  EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+      const Export<LocalOrdinal,GlobalOrdinal,Node> &RowExporter,
+      const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) :
+        isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+  , isInitializedLocalMatrix_(false)
+#endif
+  {
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal XPETRA_COMMA Node>, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraCrsMatrixT as an input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, RowExporter, tExporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraExportT as an input argument.");
+    XPETRA_RCP_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal XPETRA_COMMA Node>, DomainExporter, tdExporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraExportT as an input argument.");
+
+    const Epetra_Map* myDomainMap = (domainMap!=Teuchos::null)? &toEpetra<GlobalOrdinal,Node>(domainMap): 0;
+    const Epetra_Map* myRangeMap  = (rangeMap !=Teuchos::null)? &toEpetra<GlobalOrdinal,Node>(rangeMap) : 0;
+
+    // Follows the Tpetra parameters
+    bool restrictComm=false;
+    if(!params.is_null()) restrictComm = params->get("Restrict Communicator",restrictComm);
+
+    mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(*tSourceMatrix.getEpetra_CrsMatrix(),*tExporter.getEpetra_Export(),tdExporter->getEpetra_Export().get(),myDomainMap,myRangeMap,restrictComm));
+  }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
   /// \brief Constructor specifying column Map and a local matrix,
