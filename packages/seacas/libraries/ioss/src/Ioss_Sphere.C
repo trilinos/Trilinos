@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Sphere registerThis; }
 
   protected:
-    St_Sphere() : ElementVariableType("sphere", 1) {}
+    St_Sphere() : ElementVariableType(Ioss::Sphere::name, 1) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -67,18 +67,18 @@ void Ioss::Sphere::factory()
   Ioss::St_Sphere::factory();
 }
 
-Ioss::Sphere::Sphere() : Ioss::ElementTopology("sphere", "Particle")
+Ioss::Sphere::Sphere() : Ioss::ElementTopology(Ioss::Sphere::name, "Particle")
 {
-  Ioss::ElementTopology::alias("sphere", "sphere1");
-  Ioss::ElementTopology::alias("sphere", "particle");
-  Ioss::ElementTopology::alias("sphere", "particles");
-  Ioss::ElementTopology::alias("sphere", "sphere-mass");
-  Ioss::ElementTopology::alias("sphere", "Particle_1_3D");
-  Ioss::ElementTopology::alias("sphere", "Particle_1_2D");
-  Ioss::ElementTopology::alias("sphere", "circle");
-  Ioss::ElementTopology::alias("sphere", "circle1");
-  Ioss::ElementTopology::alias("sphere", "point");
-  Ioss::ElementTopology::alias("sphere", "point1");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "sphere1");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "particle");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "particles");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "sphere-mass");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "Particle_1_3D");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "Particle_1_2D");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "circle");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "circle1");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "point");
+  Ioss::ElementTopology::alias(Ioss::Sphere::name, "point1");
 }
 
 Ioss::Sphere::~Sphere() = default;

@@ -43,6 +43,8 @@ namespace Ioss {
   {
 
   public:
+    static constexpr auto name = "node";
+    
     static void factory();
     ~Node() override;
 

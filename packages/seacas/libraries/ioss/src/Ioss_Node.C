@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Node registerThis; }
 
   protected:
-    St_Node() : ElementVariableType("node", 1) {}
+    St_Node() : ElementVariableType(Ioss::Node::name, 1) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -68,10 +68,10 @@ void Ioss::Node::factory()
   Ioss::St_Node::factory();
 }
 
-Ioss::Node::Node() : Ioss::ElementTopology("node", "Node_0_3D")
+Ioss::Node::Node() : Ioss::ElementTopology(Ioss::Node::name, "Node_0_3D")
 {
-  Ioss::ElementTopology::alias("node", "Node_0_2D");
-  Ioss::ElementTopology::alias("node", "NODE");
+  Ioss::ElementTopology::alias(Ioss::Node::name, "Node_0_2D");
+  Ioss::ElementTopology::alias(Ioss::Node::name, "NODE");
 }
 
 Ioss::Node::~Node() = default;

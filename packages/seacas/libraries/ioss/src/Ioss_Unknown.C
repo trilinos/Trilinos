@@ -44,7 +44,7 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Unknown() : ElementVariableType("unknown", 0) {}
+    St_Unknown() : ElementVariableType(Ioss::Unknown::name, 0) {}
   };
 } // namespace Ioss
 void Ioss::St_Unknown::factory() { static Ioss::St_Unknown registerThis; }
@@ -67,9 +67,9 @@ void Ioss::Unknown::factory()
   Ioss::St_Unknown::factory();
 }
 
-Ioss::Unknown::Unknown() : Ioss::ElementTopology("unknown", "unknown")
+Ioss::Unknown::Unknown() : Ioss::ElementTopology(Ioss::Unknown::name, Ioss::Unknown::name)
 {
-  Ioss::ElementTopology::alias("unknown", "invalid_topology");
+  Ioss::ElementTopology::alias(Ioss::Unknown::name, "invalid_topology");
 }
 
 Ioss::Unknown::~Unknown() = default;
@@ -126,7 +126,7 @@ Ioss::ElementTopology *Ioss::Unknown::face_type(int face_number) const
   // face_number is 1-based.
 
   assert(face_number >= 0 && face_number <= number_faces());
-  return Ioss::ElementTopology::factory("unknown");
+  return Ioss::ElementTopology::factory(Ioss::Unknown::name);
 }
 
 Ioss::ElementTopology *Ioss::Unknown::edge_type(int edge_number) const
@@ -136,5 +136,5 @@ Ioss::ElementTopology *Ioss::Unknown::edge_type(int edge_number) const
   // edge_number is 1-based.
 
   assert(edge_number >= 0 && edge_number <= number_edges());
-  return Ioss::ElementTopology::factory("unknown");
+  return Ioss::ElementTopology::factory(Ioss::Unknown::name);
 }

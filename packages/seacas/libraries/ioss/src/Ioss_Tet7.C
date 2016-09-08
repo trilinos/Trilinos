@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Tet7 registerThis; }
 
   protected:
-    St_Tet7() : ElementVariableType("tetra7", 7) {}
+    St_Tet7() : ElementVariableType(Ioss::Tet7::name, 7) {}
   };
 } // namespace Ioss
 
@@ -98,10 +98,10 @@ void Ioss::Tet7::factory()
   Ioss::St_Tet7::factory();
 }
 
-Ioss::Tet7::Tet7() : Ioss::ElementTopology("tetra7", "Tetrahedron_7")
+Ioss::Tet7::Tet7() : Ioss::ElementTopology(Ioss::Tet7::name, "Tetrahedron_7")
 {
-  Ioss::ElementTopology::alias("tetra7", "tet7");
-  Ioss::ElementTopology::alias("tetra7", "Solid_Tet_7_3D");
+  Ioss::ElementTopology::alias(Ioss::Tet7::name, "tet7");
+  Ioss::ElementTopology::alias(Ioss::Tet7::name, "Solid_Tet_7_3D");
 }
 
 Ioss::Tet7::~Tet7() = default;

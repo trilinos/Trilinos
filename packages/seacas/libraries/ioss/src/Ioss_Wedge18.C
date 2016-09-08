@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Wedge18() : ElementVariableType("wedge18", 18) {}
+    St_Wedge18() : ElementVariableType(Ioss::Wedge18::name, 18) {}
   };
 } // namespace Ioss
 void Ioss::St_Wedge18::factory() { static Ioss::St_Wedge18 registerThis; }
@@ -95,9 +95,9 @@ void Ioss::Wedge18::factory()
   Ioss::St_Wedge18::factory();
 }
 
-Ioss::Wedge18::Wedge18() : Ioss::ElementTopology("wedge18", "Wedge_18")
+Ioss::Wedge18::Wedge18() : Ioss::ElementTopology(Ioss::Wedge18::name, "Wedge_18")
 {
-  Ioss::ElementTopology::alias("wedge18", "Solid_Wedge_18_3D");
+  Ioss::ElementTopology::alias(Ioss::Wedge18::name, "Solid_Wedge_18_3D");
 }
 
 Ioss::Wedge18::~Wedge18() = default;

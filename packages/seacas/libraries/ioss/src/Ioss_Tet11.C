@@ -45,7 +45,7 @@ namespace Ioss {
     static void factory() { static St_Tet11 registerThis; }
 
   protected:
-    St_Tet11() : ElementVariableType("tetra11", 11) {}
+    St_Tet11() : ElementVariableType(Ioss::Tet11::name, 11) {}
   };
 } // namespace Ioss
 
@@ -93,10 +93,10 @@ void Ioss::Tet11::factory()
 }
 
 // A tet10 with a center node.
-Ioss::Tet11::Tet11() : Ioss::ElementTopology("tetra11", "Tetrahedron_11")
+Ioss::Tet11::Tet11() : Ioss::ElementTopology(Ioss::Tet11::name, "Tetrahedron_11")
 {
-  Ioss::ElementTopology::alias("tetra11", "tet11");
-  Ioss::ElementTopology::alias("tetra11", "Solid_Tet_11_3D");
+  Ioss::ElementTopology::alias(Ioss::Tet11::name, "tet11");
+  Ioss::ElementTopology::alias(Ioss::Tet11::name, "Solid_Tet_11_3D");
 }
 
 Ioss::Tet11::~Tet11() = default;

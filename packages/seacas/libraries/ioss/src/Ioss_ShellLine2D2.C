@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_ShellLine2D2 registerThis; }
 
   protected:
-    St_ShellLine2D2() : ElementVariableType("shellline2d2", 2) {}
+    St_ShellLine2D2() : ElementVariableType(Ioss::ShellLine2D2::name, 2) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -68,10 +68,10 @@ void Ioss::ShellLine2D2::factory()
   Ioss::St_ShellLine2D2::factory();
 }
 
-Ioss::ShellLine2D2::ShellLine2D2() : Ioss::ElementTopology("shellline2d2", "ShellLine_2")
+Ioss::ShellLine2D2::ShellLine2D2() : Ioss::ElementTopology(Ioss::ShellLine2D2::name, "ShellLine_2")
 {
-  Ioss::ElementTopology::alias("shellline2d2", "Shell_Line_2_2D");
-  Ioss::ElementTopology::alias("shellline2d2", "SHELL_LINE_2");
+  Ioss::ElementTopology::alias(Ioss::ShellLine2D2::name, "Shell_Line_2_2D");
+  Ioss::ElementTopology::alias(Ioss::ShellLine2D2::name, "SHELL_LINE_2");
 }
 
 Ioss::ShellLine2D2::~ShellLine2D2() = default;

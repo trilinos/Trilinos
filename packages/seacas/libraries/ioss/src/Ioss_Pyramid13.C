@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Pyramid13() : ElementVariableType("pyramid13", 13) {}
+    St_Pyramid13() : ElementVariableType(Ioss::Pyramid13::name, 13) {}
   };
 } // namespace Ioss
 
@@ -100,10 +100,10 @@ void Ioss::Pyramid13::factory()
   Ioss::St_Pyramid13::factory();
 }
 
-Ioss::Pyramid13::Pyramid13() : Ioss::ElementTopology("pyramid13", "Pyramid_13")
+Ioss::Pyramid13::Pyramid13() : Ioss::ElementTopology(Ioss::Pyramid13::name, "Pyramid_13")
 {
-  Ioss::ElementTopology::alias("pyramid13", "Solid_Pyramid_13_3D");
-  Ioss::ElementTopology::alias("pyramid13", "pyra13");
+  Ioss::ElementTopology::alias(Ioss::Pyramid13::name, "Solid_Pyramid_13_3D");
+  Ioss::ElementTopology::alias(Ioss::Pyramid13::name, "pyra13");
 }
 
 Ioss::Pyramid13::~Pyramid13() = default;

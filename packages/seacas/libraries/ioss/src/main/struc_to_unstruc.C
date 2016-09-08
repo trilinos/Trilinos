@@ -34,6 +34,7 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_CodeTypes.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_Hex8.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_SurfaceSplit.h>
@@ -413,7 +414,7 @@ namespace {
     size_t total_entities = 0;
     for (auto iblock : blocks) {
       std::string name = iblock->name();
-      std::string type  = "hex8";
+      std::string type  = Ioss::Hex8::name;
       size_t      count = iblock->get_property("cell_count").get_int();
       auto block = new Ioss::ElementBlock(output_region.get_database(), name, type, count);
       output_region.add(block);

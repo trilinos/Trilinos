@@ -45,7 +45,7 @@ namespace Ioss {
     static void factory() { static St_Tet8 registerThis; }
 
   protected:
-    St_Tet8() : ElementVariableType("tetra8", 8) {}
+    St_Tet8() : ElementVariableType(Ioss::Tet8::name, 8) {}
   };
 } // namespace Ioss
 
@@ -92,10 +92,10 @@ void Ioss::Tet8::factory()
   Ioss::St_Tet8::factory();
 }
 
-Ioss::Tet8::Tet8() : Ioss::ElementTopology("tetra8", "Tetrahedron_8")
+Ioss::Tet8::Tet8() : Ioss::ElementTopology(Ioss::Tet8::name, "Tetrahedron_8")
 {
-  Ioss::ElementTopology::alias("tetra8", "tet8");
-  Ioss::ElementTopology::alias("tetra8", "Solid_Tet_8_3D");
+  Ioss::ElementTopology::alias(Ioss::Tet8::name, "tet8");
+  Ioss::ElementTopology::alias(Ioss::Tet8::name, "Solid_Tet_8_3D");
 }
 
 Ioss::Tet8::~Tet8() = default;

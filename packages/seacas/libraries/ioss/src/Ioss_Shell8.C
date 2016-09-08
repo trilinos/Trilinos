@@ -45,7 +45,7 @@ namespace Ioss {
     static void factory() { static St_Shell8 registerThis; }
 
   protected:
-    St_Shell8() : ElementVariableType("shell8", 8) {}
+    St_Shell8() : ElementVariableType(Ioss::Shell8::name, 8) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -91,10 +91,10 @@ void Ioss::Shell8::factory()
   Ioss::St_Shell8::factory();
 }
 
-Ioss::Shell8::Shell8() : Ioss::ElementTopology("shell8", "ShellQuadrilateral_8")
+Ioss::Shell8::Shell8() : Ioss::ElementTopology(Ioss::Shell8::name, "ShellQuadrilateral_8")
 {
-  Ioss::ElementTopology::alias("shell8", "Shell_Quad_8_3D");
-  Ioss::ElementTopology::alias("shell8", "SHELL_QUADRILATERAL_8");
+  Ioss::ElementTopology::alias(Ioss::Shell8::name, "Shell_Quad_8_3D");
+  Ioss::ElementTopology::alias(Ioss::Shell8::name, "SHELL_QUADRILATERAL_8");
 }
 
 Ioss::Shell8::~Shell8() = default;

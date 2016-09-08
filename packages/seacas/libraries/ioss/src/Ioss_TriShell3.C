@@ -45,7 +45,7 @@ namespace Ioss {
     static void factory() { static St_TriShell3 registerThis; }
 
   protected:
-    St_TriShell3() : ElementVariableType("trishell3", 3) {}
+    St_TriShell3() : ElementVariableType(Ioss::TriShell3::name, 3) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -91,12 +91,12 @@ void Ioss::TriShell3::factory()
   Ioss::St_TriShell3::factory();
 }
 
-Ioss::TriShell3::TriShell3() : Ioss::ElementTopology("trishell3", "ShellTriangle_3")
+Ioss::TriShell3::TriShell3() : Ioss::ElementTopology(Ioss::TriShell3::name, "ShellTriangle_3")
 {
-  Ioss::ElementTopology::alias("trishell3", "trishell");
-  Ioss::ElementTopology::alias("trishell3", "Shell_Tri_3_3D");
-  Ioss::ElementTopology::alias("trishell3", "SHELL_TRIANGLE_3");
-  Ioss::ElementTopology::alias("trishell3", "shell3");
+  Ioss::ElementTopology::alias(Ioss::TriShell3::name, "trishell");
+  Ioss::ElementTopology::alias(Ioss::TriShell3::name, "Shell_Tri_3_3D");
+  Ioss::ElementTopology::alias(Ioss::TriShell3::name, "SHELL_TRIANGLE_3");
+  Ioss::ElementTopology::alias(Ioss::TriShell3::name, "shell3");
 }
 
 Ioss::TriShell3::~TriShell3() = default;

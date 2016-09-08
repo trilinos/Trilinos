@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Bar3 registerThis; }
 
   protected:
-    St_Bar3() : ElementVariableType("bar3", 3) {}
+    St_Bar3() : ElementVariableType(Ioss::Bar3::name, 3) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -68,15 +68,15 @@ void Ioss::Bar3::factory()
   Ioss::St_Bar3::factory();
 }
 
-Ioss::Bar3::Bar3() : Ioss::ElementTopology("bar3", "Beam_3")
+Ioss::Bar3::Bar3() : Ioss::ElementTopology(Ioss::Bar3::name, "Beam_3")
 {
-  Ioss::ElementTopology::alias("bar3", "Rod_3_3D");
-  Ioss::ElementTopology::alias("bar3", "rod3");
-  Ioss::ElementTopology::alias("bar3", "rod3d3");
-  Ioss::ElementTopology::alias("bar3", "truss3");
-  Ioss::ElementTopology::alias("bar3", "beam3");
-  Ioss::ElementTopology::alias("bar3", "Rod_3_2D");
-  Ioss::ElementTopology::alias("bar3", "rod2d3");
+  Ioss::ElementTopology::alias(Ioss::Bar3::name, "Rod_3_3D");
+  Ioss::ElementTopology::alias(Ioss::Bar3::name, "rod3");
+  Ioss::ElementTopology::alias(Ioss::Bar3::name, "rod3d3");
+  Ioss::ElementTopology::alias(Ioss::Bar3::name, "truss3");
+  Ioss::ElementTopology::alias(Ioss::Bar3::name, "beam3");
+  Ioss::ElementTopology::alias(Ioss::Bar3::name, "Rod_3_2D");
+  Ioss::ElementTopology::alias(Ioss::Bar3::name, "rod2d3");
 }
 
 Ioss::Bar3::~Bar3() = default;

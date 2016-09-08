@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory() { static St_Bar2 registerThis; }
 
   protected:
-    St_Bar2() : ElementVariableType("bar2", 2) {}
+    St_Bar2() : ElementVariableType(Ioss::Bar2::name, 2) {}
   };
 } // namespace Ioss
 // ========================================================================
@@ -68,24 +68,24 @@ void Ioss::Bar2::factory()
   Ioss::St_Bar2::factory();
 }
 
-Ioss::Bar2::Bar2() : Ioss::ElementTopology("bar2", "Beam_2")
+Ioss::Bar2::Bar2() : Ioss::ElementTopology(Ioss::Bar2::name, "Beam_2")
 {
-  Ioss::ElementTopology::alias("bar2", "Rod_2_3D");
-  Ioss::ElementTopology::alias("bar2", "rod2");
-  Ioss::ElementTopology::alias("bar2", "rod");
-  Ioss::ElementTopology::alias("bar2", "beam2");
-  Ioss::ElementTopology::alias("bar2", "bar");
-  Ioss::ElementTopology::alias("bar2", "truss");
-  Ioss::ElementTopology::alias("bar2", "truss2");
-  Ioss::ElementTopology::alias("bar2", "beam");
-  Ioss::ElementTopology::alias("bar2", "rod3d2");
-  Ioss::ElementTopology::alias("bar2", "Rod_2_2D");
-  Ioss::ElementTopology::alias("bar2", "rod2d2");
-  Ioss::ElementTopology::alias("bar2", "beam-r");
-  Ioss::ElementTopology::alias("bar2", "beam-r2");
-  Ioss::ElementTopology::alias("bar2", "line");
-  Ioss::ElementTopology::alias("bar2", "line2");
-  Ioss::ElementTopology::alias("bar2", "BEAM_2");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "Rod_2_3D");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "rod2");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "rod");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "beam2");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "bar");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "truss");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "truss2");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "beam");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "rod3d2");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "Rod_2_2D");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "rod2d2");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "beam-r");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "beam-r2");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "line");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "line2");
+  Ioss::ElementTopology::alias(Ioss::Bar2::name, "BEAM_2");
 }
 
 Ioss::Bar2::~Bar2() = default;

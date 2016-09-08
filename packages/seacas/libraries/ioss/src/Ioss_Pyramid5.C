@@ -46,7 +46,7 @@ namespace Ioss {
     static void factory();
 
   protected:
-    St_Pyramid5() : ElementVariableType("pyramid5", 5) {}
+    St_Pyramid5() : ElementVariableType(Ioss::Pyramid5::name, 5) {}
   };
 } // namespace Ioss
 
@@ -96,11 +96,11 @@ void Ioss::Pyramid5::factory()
   Ioss::St_Pyramid5::factory();
 }
 
-Ioss::Pyramid5::Pyramid5() : Ioss::ElementTopology("pyramid5", "Pyramid_5")
+Ioss::Pyramid5::Pyramid5() : Ioss::ElementTopology(Ioss::Pyramid5::name, "Pyramid_5")
 {
-  Ioss::ElementTopology::alias("pyramid5", "pyramid");
-  Ioss::ElementTopology::alias("pyramid5", "Solid_Pyramid_5_3D");
-  Ioss::ElementTopology::alias("pyramid5", "pyra5");
+  Ioss::ElementTopology::alias(Ioss::Pyramid5::name, "pyramid");
+  Ioss::ElementTopology::alias(Ioss::Pyramid5::name, "Solid_Pyramid_5_3D");
+  Ioss::ElementTopology::alias(Ioss::Pyramid5::name, "pyra5");
 }
 
 Ioss::Pyramid5::~Pyramid5() = default;
