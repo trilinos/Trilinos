@@ -674,6 +674,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //! Returns true if map has constant element size.
   bool  ConstantElementSize() const {return(BlockMapData_->ConstantElementSize_);};
 
+  //! Returns true if maps share same block map data underneath. This is a very
+  //! cheap check whether two maps are identical.
+  bool SameBlockMapDataAs(const Epetra_BlockMap & Map) const;
+
   //! Returns true if \e this and Map are identical maps
   bool SameAs(const Epetra_BlockMap & Map) const;
 
