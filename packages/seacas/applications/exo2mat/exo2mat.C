@@ -84,7 +84,7 @@ mat_t *mat_file = nullptr; /* file for binary .mat output */
 bool   debug    = false;
 
 static const char *qainfo[] = {
-    "exo2mat", "2016/06/27", "4.00",
+    "exo2mat", "2016/09/08", "4.01",
 };
 
 std::string time_stamp(const std::string &format)
@@ -727,6 +727,10 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         num_sideset_sides[i] = n1;
         num_sideset_dfac[i]  = n2;
         ex_get_side_set_node_list_len(exo_file, ids[i], &num_sideset_nodes[i]);
+        if (n2 != num_sideset_nodes[i]) {
+          std::cerr << "WARNING: Number of sideset nodes does not match number of distribution factors"
+                    << " for sideset with id = " << ids[i] << ".\n";
+        }
 
         /* element and side list for side sets (dgriffi) */
         ex_get_set(exo_file, EX_SIDE_SET, ids[i], &elem_list[side_off], &side_list[side_off]);
@@ -769,6 +773,7 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
           ex_get_side_set_dist_fact(exo_file, ids[i], &ssdfac[df_off]);
         }
         else {
+          n2 = num_sideset_dfac[i];
           for (int j = 0; j < n2; j++) {
             ssdfac[j] = 1.0;
           }
