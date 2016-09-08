@@ -539,6 +539,119 @@ public:
 }; // QoI_L2Penalty
 
 template <class Real>
+class QoI_AdvectionCost : public QoI<Real> {
+public:
+  QoI_AdvectionCost(void) {}
+
+  Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
+             const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+             const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    const int size = z_param->size();
+    Real sum(0);
+    for (int i = 0; i < size; ++i) {
+      sum += std::pow((*z_param)[i], 2);
+    }
+    val = Teuchos::null;
+    return static_cast<Real>(0.5)*sum;
+  }
+
+  void gradient_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::gradient_1 is zero.");
+  }
+
+  void gradient_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::gradient_2 is zero.");
+  }
+
+  std::vector<Real> gradient_3(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & grad,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    return *z_param;
+  }
+
+  void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::HessVec_11 is zero.");
+  }
+
+  void HessVec_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::HessVec_12 is zero.");
+  }
+
+  void HessVec_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const std::vector<Real> > & v_param,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::HessVec_13 is zero.");
+  }
+
+  void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::HessVec_21 is zero.");
+  }
+
+  void HessVec_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::HessVec_22 is zero.");
+  }
+
+  void HessVec_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const std::vector<Real> > & v_param,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::HessVec_23 is zero.");
+  }
+
+  std::vector<Real> HessVec_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::HessVec_31 is zero.");
+  }
+
+  std::vector<Real> HessVec_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & v_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> QoI_AdvectionCost::HessVec_32 is zero.");
+  }
+
+  std::vector<Real> HessVec_33(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const std::vector<Real> > & v_param,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    return *v_param;
+  }
+
+}; // QoI_Advection_Cost
+
+template <class Real>
 class StochasticStefanBoltzmannStdObjective : public ROL::ParametrizedStdObjective<Real> {
 private:
   Real alpha0_;

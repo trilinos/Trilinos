@@ -20,11 +20,11 @@
     <Parameter name="Use Stefan-Boltzmann"                type="bool"    value="true"  />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Statistic Initial Guess"             type="double"  value="5.0"   />
-    <Parameter name="Number of Samples"                   type="int"     value="4"     />
+    <Parameter name="Number of Samples"                   type="int"     value="1"     />
     <!-- OUTPUT -->
-    <Parameter name="Check Derivatives"                   type="bool"    value="false" />
+    <Parameter name="Check Derivatives"                   type="bool"    value="true"  />
     <Parameter name="Print Mean Value State"              type="bool"    value="false" />
-    <Parameter name="Number of Output Samples"            type="int"     value="4"     />
+    <Parameter name="Number of Output Samples"            type="int"     value="1"     />
     <!-- FINITE ELEMENT INFORMATION -->
     <Parameter name="Basis Order"                         type="int"     value="1"     />
     <Parameter name="Volume Cubature Degree"              type="int"     value="2"     />
@@ -45,15 +45,15 @@
     <Parameter name="Inflow region NX"       type="int"     value="20"   />
     <Parameter name="Inflow region NY"       type="int"     value="20"   />
     -->
-    <Parameter name="Refinement level"       type="int"     value="1"    />
+    <Parameter name="Refinement level"       type="int"     value="8"    />
     <Parameter name="Partition type"         type="int"     value="1"    />
   </ParameterList>
 
   <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
   <ParameterList name="SimOpt">
     <ParameterList name="Solve">
-      <Parameter name="Residual Tolerance"            type="double"  value="1.e-10" />
-      <Parameter name="Iteration Limit"               type="int"     value="500"    />
+      <Parameter name="Residual Tolerance"            type="double"  value="1.e-8" />
+      <Parameter name="Iteration Limit"               type="int"     value="20"    />
       <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
       <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
       <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />

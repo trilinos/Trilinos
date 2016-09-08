@@ -141,7 +141,7 @@ public:
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
     Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    computeCoefficients(V,rhs);
+    computeCoefficients(V,rhs,z_param);
     // COMPUTE DIFFUSIVITY
     Teuchos::RCP<Intrepid::FieldContainer<Real> > kappa
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
@@ -221,20 +221,25 @@ public:
         // Get U coefficients on Robin boundary
         Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
           = getBoundaryCoeff(*u_coeff, sideset, j);
-        // Get Z coefficients on Robin boundary
-        Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
-          = getBoundaryCoeff(*z_coeff, sideset, j);
         // Evaluate U on FE basis
         Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
         fe_bdry_[sideset][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
-        // Evaluate Z on FE basis
-        Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        fe_bdry_[sideset][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
         // Compute Stefan-Boltzmann residual
         Teuchos::RCP< Intrepid::FieldContainer<Real> > robinVal
           = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry;
+        if (z_coeff != Teuchos::null) {
+          // Get Z coefficients on Robin boundary
+          Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
+            = getBoundaryCoeff(*z_coeff, sideset, j);
+          // Evaluate Z on FE basis
+          valZ_eval_bdry = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          fe_bdry_[sideset][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
+        }
+        else {
+          valZ_eval_bdry = Teuchos::null;
+        }
         computeRobin(robinVal,valU_eval_bdry,valZ_eval_bdry,sideset,j,0);
         Intrepid::FieldContainer<Real> robinRes(numCellsSide, f);
         Intrepid::FunctionSpaceTools::integrate<Real>(robinRes,
@@ -289,7 +294,7 @@ public:
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
     Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    computeCoefficients(V,rhs);
+    computeCoefficients(V,rhs,z_param);
     // COMPUTE DIFFUSIVITY
     Teuchos::RCP<Intrepid::FieldContainer<Real> > kappa
       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
@@ -386,20 +391,25 @@ public:
         // Get U coefficients on Robin boundary
         Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
           = getBoundaryCoeff(*u_coeff, sideset, j);
-        // Get Z coefficients on Robin boundary
-        Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
-          = getBoundaryCoeff(*z_coeff, sideset, j);
         // Evaluate U on FE basis
         Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
         fe_bdry_[sideset][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
-        // Evaluate Z on FE basis
-        Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        fe_bdry_[sideset][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
         // Compute Stefan-Boltzmann residual
         Teuchos::RCP< Intrepid::FieldContainer<Real> > robinVal
           = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+        Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry;
+        if (z_coeff != Teuchos::null) {
+          // Get Z coefficients on Robin boundary
+          Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
+            = getBoundaryCoeff(*z_coeff, sideset, j);
+          // Evaluate Z on FE basis
+          valZ_eval_bdry = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          fe_bdry_[sideset][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
+        }
+        else {
+          valZ_eval_bdry = Teuchos::null;
+        }
         computeRobin(robinVal,valU_eval_bdry,valZ_eval_bdry,sideset,j,1,1);
         Intrepid::FieldContainer<Real> robinVal_N(numCellsSide, f, numCubPerSide);
         Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(robinVal_N,
@@ -443,55 +453,60 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    // GET DIMENSIONS
-    int c = fe_vol_->gradN()->dimension(0);
-    int f = fe_vol_->gradN()->dimension(1);
-    // INITILAIZE JACOBIAN
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    // APPLY ROBIN CONTROL: Sideset 0
-    int sideset = 0;
-    int numLocalSideIds = bdryCellLocIds_[sideset].size();
-    const int numCubPerSide = bdryCub_->getNumPoints();
-    for (int j = 0; j < numLocalSideIds; ++j) {
-      int numCellsSide = bdryCellLocIds_[sideset][j].size();
-      if (numCellsSide) {
-        // Get U coefficients on Robin boundary
-        Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
-          = getBoundaryCoeff(*u_coeff, sideset, j);
-        // Get Z coefficients on Robin boundary
-        Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
-          = getBoundaryCoeff(*z_coeff, sideset, j);
-        // Evaluate U on FE basis
-        Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        fe_bdry_[sideset][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
-        // Evaluate Z on FE basis
-        Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        fe_bdry_[sideset][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
-        // Compute Stefan-Boltzmann residual
-        Teuchos::RCP< Intrepid::FieldContainer<Real> > robinVal
-          = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        computeRobin(robinVal,valU_eval_bdry,valZ_eval_bdry,sideset,j,1,2);
-        Intrepid::FieldContainer<Real> robinVal_N(numCellsSide, f, numCubPerSide);
-        Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(robinVal_N,
-                                                                    *robinVal,
-                                                                    *(fe_bdry_[sideset][j]->N()));
-        Intrepid::FieldContainer<Real> robinJac(numCellsSide, f, f);
-        Intrepid::FunctionSpaceTools::integrate<Real>(robinJac,
-                                                      robinVal_N,
-                                                      *(fe_bdry_[sideset][j]->NdetJ()),
-                                                      Intrepid::COMP_CPP, false);
-        // Add Stefan-Boltzmann residual to volume residual
-        for (int k = 0; k < numCellsSide; ++k) {
-          int cidx = bdryCellLocIds_[sideset][j][k];
-          for (int l = 0; l < f; ++l) { 
-            for (int m = 0; m < f; ++m) { 
-              (*jac)(cidx,l,m) += robinJac(k,l,m);
+    if (z_coeff != Teuchos::null) {
+      // GET DIMENSIONS
+      int c = fe_vol_->gradN()->dimension(0);
+      int f = fe_vol_->gradN()->dimension(1);
+      // INITILAIZE JACOBIAN
+      jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+      // APPLY ROBIN CONTROL: Sideset 0
+      int sideset = 0;
+      int numLocalSideIds = bdryCellLocIds_[sideset].size();
+      const int numCubPerSide = bdryCub_->getNumPoints();
+      for (int j = 0; j < numLocalSideIds; ++j) {
+        int numCellsSide = bdryCellLocIds_[sideset][j].size();
+        if (numCellsSide) {
+          // Get U coefficients on Robin boundary
+          Teuchos::RCP<Intrepid::FieldContainer<Real > > u_coeff_bdry
+            = getBoundaryCoeff(*u_coeff, sideset, j);
+          // Get Z coefficients on Robin boundary
+          Teuchos::RCP<Intrepid::FieldContainer<Real > > z_coeff_bdry
+            = getBoundaryCoeff(*z_coeff, sideset, j);
+          // Evaluate U on FE basis
+          Teuchos::RCP<Intrepid::FieldContainer<Real > > valU_eval_bdry
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          fe_bdry_[sideset][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
+          // Evaluate Z on FE basis
+          Teuchos::RCP<Intrepid::FieldContainer<Real > > valZ_eval_bdry
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          fe_bdry_[sideset][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
+          // Compute Stefan-Boltzmann residual
+          Teuchos::RCP< Intrepid::FieldContainer<Real> > robinVal
+            = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          computeRobin(robinVal,valU_eval_bdry,valZ_eval_bdry,sideset,j,1,2);
+          Intrepid::FieldContainer<Real> robinVal_N(numCellsSide, f, numCubPerSide);
+          Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(robinVal_N,
+                                                                      *robinVal,
+                                                                      *(fe_bdry_[sideset][j]->N()));
+          Intrepid::FieldContainer<Real> robinJac(numCellsSide, f, f);
+          Intrepid::FunctionSpaceTools::integrate<Real>(robinJac,
+                                                        robinVal_N,
+                                                        *(fe_bdry_[sideset][j]->NdetJ()),
+                                                        Intrepid::COMP_CPP, false);
+          // Add Stefan-Boltzmann residual to volume residual
+          for (int k = 0; k < numCellsSide; ++k) {
+            int cidx = bdryCellLocIds_[sideset][j][k];
+            for (int l = 0; l < f; ++l) { 
+              for (int m = 0; m < f; ++m) { 
+                (*jac)(cidx,l,m) += robinJac(k,l,m);
+              }
             }
           }
         }
       }
+    }
+    else{
+      throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Jacobian_2): Jacobian_2 is zero.");
     }
 //    // APPLY DIRICHLET CONTROLS: Sideset 0
 //    int sideset = 0;
@@ -506,6 +521,49 @@ public:
 //        }
 //      }
 //    }
+  }
+
+  void Jacobian_3(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & jac,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    if (z_param != Teuchos::null) {
+      // GET DIMENSIONS
+      int c = fe_vol_->gradN()->dimension(0);
+      int f = fe_vol_->gradN()->dimension(1);
+      int p = fe_vol_->gradN()->dimension(2);
+      int d = fe_vol_->gradN()->dimension(3);
+      // INITIALIZE RESIDUAL
+      jac.resize(z_param->size(), Teuchos::null);
+      jac[0] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+      // EVALUATE STATE ON FE BASIS
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > U_eval =
+        Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      fe_vol_->evaluateValue(U_eval, u_coeff);
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
+        Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      fe_vol_->evaluateGradient(gradU_eval, u_coeff);
+      Teuchos::RCP<std::vector<Real> > one = Teuchos::rcp(new std::vector<Real>(z_param->size(), 1)); 
+      // COMPUTE CONSTANT PDE COEFFICIENTS
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > V
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      computeCoefficients(V,rhs,one);
+      // MULTIPLY V . grad(U)
+      Intrepid::FieldContainer<Real> V_gradU(c, p);
+      Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(V_gradU,
+                                                              *V,
+                                                              *gradU_eval);
+      // INTEGRATE (V . grad(U)) * N
+      Intrepid::FunctionSpaceTools::integrate<Real>(*jac[0],
+                                                    V_gradU,
+                                                    *(fe_vol_->NdetJ()),
+                                                    Intrepid::COMP_CPP, true);
+    }
+    else{
+      throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Jacobian_3): Jacobian_3 is zero.");
+    }
   }
 
   void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -676,6 +734,46 @@ public:
     throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_22): Hessian is zero.");
   }
 
+  void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_13): Hessian_13 is zero.");
+  }
+
+  void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_23): Hessian_23 is zero.");
+  }
+
+  void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_31): Hessian_31 is zero.");
+  }
+
+  void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_32): Hessian_32 is zero.");
+  }
+
+  void Hessian_33(std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > & hess,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_33): Hessian_33 is zero.");
+  }
+
   void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
     riesz = fe_vol_->stiffMat();
     Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
@@ -770,7 +868,7 @@ private:
     }
   }
 
-  void evaluateVelocity(std::vector<Real> &adv, const std::vector<Real> &x) const {
+  void evaluateVelocity(std::vector<Real> &adv, const std::vector<Real> &x, const std::vector<Real> &z_param) const {
     if ( x[1] < xmid_ ) {
       const std::vector<Real> param = PDE<Real>::getParameter();
       const Real quarter(0.25), half(0.5);
@@ -778,7 +876,8 @@ private:
       const Real det = (xmid_ - x1) * x1;
       const Real a   = static_cast<Real>(-1) / det;
       const Real b   = xmid_ / det;
-      const Real m   = advMag_ + static_cast<Real>(0.5)*advMag_*param[8];
+      //const Real m   = advMag_ + static_cast<Real>(0.5)*advMag_*param[8];
+      const Real m   = z_param[0];
       const Real mag = m * (a * std::pow(x[1],2) + b * x[1]);
       adv[0] = -mag;
       adv[1] = static_cast<Real>(0);
@@ -840,6 +939,21 @@ private:
     }
     return c * (u - z);
   }
+
+  Real evaluateRobin(const Real u, const std::vector<Real> &x,
+                     const int sideset, const int locSideId,
+                     const int deriv = 0, const int component = 1) const {
+    const std::vector<Real> param = PDE<Real>::getParameter();
+    // c is the thermal convectivity of water (440)
+    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[18];
+    if ( deriv == 1 ) {
+      return (component==1) ? c : static_cast<Real>(0);
+    }
+    if ( deriv > 1 ) {
+      return static_cast<Real>(0);
+    }
+    return c * (u - static_cast<Real>(293));
+  }
  
   /***************************************************************************/
   /************** COMPUTE PDE COEFFICIENTS AT DOFS ***************************/
@@ -864,7 +978,8 @@ private:
   }
 
   void computeCoefficients(Teuchos::RCP<Intrepid::FieldContainer<Real> > &V,
-                           Teuchos::RCP<Intrepid::FieldContainer<Real> > &rhs) const {
+                           Teuchos::RCP<Intrepid::FieldContainer<Real> > &rhs,
+                           const Teuchos::RCP<const std::vector<Real> > &z_param = Teuchos::null) const {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int p = fe_vol_->gradN()->dimension(2);
@@ -876,7 +991,13 @@ private:
           pt[k] = (*fe_vol_->cubPts())(i,j,k);
         }
         // Compute advection velocity field V
-        evaluateVelocity(adv,pt);
+        if (z_param != Teuchos::null) { 
+          evaluateVelocity(adv,pt,*z_param);
+        }
+        else {
+          std::vector<Real> param = {advMag_};
+          evaluateVelocity(adv,pt,param);
+        }
         for (int k = 0; k < d; ++k) {
           (*V)(i,j,k) = scale_*adv[k];
         }
@@ -921,7 +1042,12 @@ private:
         for (int k = 0; k < d; ++k) {
           pt[k] = (*fe_bdry_[sideset][locSideId]->cubPts())(i,j,k);
         }
-        (*robin)(i,j) = evaluateRobin((*u)(i,j),(*z)(i,j),pt,sideset,locSideId,deriv,component);
+        if (z != Teuchos::null) {
+          (*robin)(i,j) = evaluateRobin((*u)(i,j),(*z)(i,j),pt,sideset,locSideId,deriv,component);
+        }
+        else {
+          (*robin)(i,j) = evaluateRobin((*u)(i,j),pt,sideset,locSideId,deriv,component);
+        }
       }
     }
   }

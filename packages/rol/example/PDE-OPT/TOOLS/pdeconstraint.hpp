@@ -89,7 +89,7 @@ public:
 
   void setParameter(const std::vector<Real> &param) {
     ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
-    computeJ1_  = true; computeJ2_  = true;
+    computeJ1_  = true; computeJ2_  = true; computeJ3_  = true;
     computeH11_ = true; computeH12_ = true; computeH13_ = true;
     computeH21_ = true; computeH22_ = true; computeH23_ = true;
     computeH31_ = true; computeH32_ = true; computeH33_ = true;
@@ -108,6 +108,7 @@ public:
   using ROL::EqualityConstraint_SimOpt<Real>::update_2;
   void update_2(const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
     computeJ2_ = (flag ? true : computeJ2_);
+    computeJ3_ = (flag ? true : computeJ3_);
   }
 
   using ROL::EqualityConstraint_SimOpt<Real>::update;
