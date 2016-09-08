@@ -806,7 +806,6 @@ namespace Iocgns {
 
   template <typename INT> void DecompositionData<INT>::get_sideset_data(int filePtr)
   {
-    int root = 0; // Root processor that reads all sideset bulk data (nodelists)
     int base = 1; // Only single base supported so far.
 
     // Get total length of sideset elemlists...
@@ -834,12 +833,13 @@ namespace Iocgns {
       // processor simultaneously.
       std::vector<cgsize_t> elemlist(elemlist_size);
 
-#if 0
+      size_t offset = 0;
+#if !CG_BUILD_PARALLEL
       // Read the elemlists on root processor.
-      // Cannot do this -- hangs in hdf5
+      // If CG_BUILD_PARALLEL, then all processors must call the cg_elements_read
+      int root = 0; // Root processor that reads all sideset bulk data (nodelists)
       if (m_decomposition.m_processor == root) {
 #endif
-        size_t offset = 0;
         for (auto &sset : m_sideSets) {
 
           // TODO? Possibly rewrite using cgi_read_int_data so can skip reading element connectivity
@@ -867,10 +867,9 @@ namespace Iocgns {
           }
         }
         assert(offset == elemlist_size);
-#if 0
+#if !CG_BUILD_PARALLEL
       }
 
-      // Cannot do this -- hangs in hdf5
       // Broadcast this data to all other processors...
       MPI_Bcast(TOPTR(elemlist), sizeof(cgsize_t) * elemlist.size(), MPI_BYTE, root,
 		m_decomposition.m_comm);
@@ -881,7 +880,7 @@ namespace Iocgns {
       // Determine which of these are owned by the current
       // processor...
       {
-        size_t offset = 0;
+        offset = 0;
         for (auto &sset : m_sideSets) {
           size_t ss_beg = offset;
           size_t ss_end = ss_beg + sset.file_count();
@@ -1043,7 +1042,7 @@ namespace Iocgns {
                                                         INT *ioss_data) const
   {
     std::vector<INT> element_side;
-#if 0
+#if !CG_BUILD_PARALLEL
     // Cannot do this due to parallel read -- hangs in hdf5
     if (m_decomposition.m_processor == sset.root_) {
 #endif
@@ -1078,7 +1077,7 @@ namespace Iocgns {
         element_side.push_back(parent[0 * sset.file_count() + i] + zone_element_id_offset);
         element_side.push_back(parent[2 * sset.file_count() + i]);
       }
-#if 0
+#if !CG_BUILD_PARALLEL
     }
 #endif
     // The above was all on root processor for this side set, now need to send data to other
