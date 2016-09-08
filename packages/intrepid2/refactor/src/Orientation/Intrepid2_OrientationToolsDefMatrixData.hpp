@@ -58,7 +58,7 @@ namespace Intrepid2 {
   template<typename SpT>
   void
   OrientationTools<SpT>::
-  initQuadrilateral(Kokkos::View<CoeffMatrixType***,SpT> MatrixData,
+  initQuadrilateral(Kokkos::View<double****,Kokkos::LayoutStride,SpT> matData,
                     const EFunctionSpace space,
                     const ordinal_type order) {
 
@@ -70,50 +70,12 @@ namespace Intrepid2 {
       const ordinal_type numEdge = 4, numOrt = 2;
       for (auto edgeId=0;edgeId<numEdge;++edgeId)
         for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-          const auto C = Impl::OrientationTools::getEdgeCoeffMatrix_HGRAD(lineBasis, cellBasis, edgeId, edgeOrt);
-          MatrixData(0, edgeId, edgeOrt) = Kokkos::create_mirror_view(typename SpT::memory_space(), C);
-          Kokkos::deep_copy(MatrixData(0, edgdId, edgeOrt), C);
-        }
-      break;
-    }            
-    case FUNCTION_SPACE_HCURL:
-    case FUNCTION_SPACE_HDIV: {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                    ">>> ERROR (Intrepid::OrientationTools::initQuadrilateral): " \
-                                    "Not yet implemented.");
-      break;
-    }
-    case FUNCTION_SPACE_HVOL: {
-      // do nothing
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                    ">>> ERROR (Intrepid::OrientationTools::initQuadrilateral): " \
-                                    "Invalid function space.");
-      break;
-    }
-    }
-  }
-
-  template<typename SpT>
-  void
-  OrientationTools<SpT>::
-  initTriangle(Kokkos::View<CoeffMatrixType***,SpT> MatrixData,
-               const EFunctionSpace space,
-               const ordinal_type order) {
-    
-    switch (space) {
-    case FUNCTION_SPACE_HGRAD: {
-      Basis_HGRAD_LINE_Cn_FEM<SpT> lineBasis(order);
-      Basis_HGRAD_TRI_Cn_FEM <SpT> cellBasis(order);
-      
-      const ordinal_type numEdge = 3, numOrt = 2;
-      for (auto edgeId=0;edgeId<numEdge;++edgeId)
-        for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-          const auto C = Impl::OrientationTools::getEdgeCoeffMatrix_HGRAD(lineBasis, cellBasis, edgeId, edgeOrt);
-          MatrixData(0, edgeId, edgeOrt) = Kokkos::create_mirror_view(typename SpT::memory_space(), C);
-          Kokkos::deep_copy(MatrixData(0, edgdId, edgeOrt), C);
+          auto mat = Kokkos::subview(matData, 
+                                     edgeId, edgeOrt,
+                                     Kokkos::ALL(), Kokkos::ALL());
+          Impl::OrientationTools::getEdgeCoeffMatrix_HGRAD(mat,
+                                                           lineBasis, cellBasis, 
+                                                           edgeId, edgeOrt);
         }
       break;
     }            
@@ -141,34 +103,25 @@ namespace Intrepid2 {
   void OrientationTools<SpT>::initialize(const shards::CellTopology cellTopo,
                                          const EFunctionSpace space,
                                          const ordinal_type order) {
+    typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
     const auto key = cellTopo.getBaseCellTopologyData()->key;
     switch (key) {
-    case shards::Triangle<>::key : {
-      if (!trigMatrixData.span())
-        trigMatrixData = Kokkos::View<CoeffMatrixType*****,SpT>("trigMatrixData", 
-                                                                3,  // # of function space
-                                                                Parameters::MaxOrder, // # of orders
-                                                                1,  // # of subcell dims
-                                                                3,  // # of edges
-                                                                2); // # of orts
-      auto MatrixData = Kokkos::subview(trigMatrixData, 
-                                        space, order - 1, 
-                                        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()); 
-      initTriangle(MatrixData, space, order);
-      break;
-    }
     case shards::Quadrilateral<>::key : {
-      if (!quadMatrixData.span())
-        quadMatrixData = Kokkos::View<CoeffMatrixType*****,SpT>("quadMatrixData", 
-                                                                3,  // # of function space
-                                                                Parameters::MaxOrder, // # of orders
-                                                                1,  // # of subcell dims
-                                                                4,  // # of edges
-                                                                2); // # of orts
-      auto MatrixData = Kokkos::subview(quadMatrixData, 
-                                        space, order - 1, 
-                                        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()); 
-      initQuadrilateral(MatrixData, space, order);
+      if (!quadEdgeData.span())
+        quadEdgeData = MatrixDataViewType("quadEdgeData", 
+                                          3,  // # of function space
+                                          Parameters::MaxOrder, // # of orders
+                                          4,  // # of edges
+                                          2,  // # of orts
+                                          Parameters::MaxOrder - 1,  // matrix row dimension
+                                          Parameters::MaxOrder - 1); // matrix col dimension
+
+      auto matData = Kokkos::subview(quadEdgeData, 
+                                     static_cast<ordinal_type>(space), order - 1, 
+                                     Kokkos::ALL(), Kokkos::ALL(), 
+                                     Kokkos::ALL(), Kokkos::ALL());
+
+      initQuadrilateral(matData, space, order);
       break;
     }
     }
@@ -176,15 +129,52 @@ namespace Intrepid2 {
 
   template<typename SpT>
   void OrientationTools<SpT>::finalize() {
-    const Kokkos::View<CoeffMatrix***,ExecSpaceType> null;
-    quadMatrixData = null;
-    trigMatrixData = null;
+    quadEdgeData = MatrixDataViewType();
   }
-
 }
 
 #endif
 
+  // template<typename SpT>
+  // void
+  // OrientationTools<SpT>::
+  // initTriangle(Kokkos::View<CoeffMatrixType***,SpT> MatrixData,
+  //              const EFunctionSpace space,
+  //              const ordinal_type order) {
+    
+  //   switch (space) {
+  //   case FUNCTION_SPACE_HGRAD: {
+  //     Basis_HGRAD_LINE_Cn_FEM<SpT> lineBasis(order);
+  //     Basis_HGRAD_TRI_Cn_FEM <SpT> cellBasis(order);
+      
+  //     const ordinal_type numEdge = 3, numOrt = 2;
+  //     for (auto edgeId=0;edgeId<numEdge;++edgeId)
+  //       for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
+  //         const auto C = Impl::OrientationTools::getEdgeCoeffMatrix_HGRAD(lineBasis, cellBasis, edgeId, edgeOrt);
+  //         MatrixData(0, edgeId, edgeOrt) = Kokkos::create_mirror_view(typename SpT::memory_space(), C);
+  //         Kokkos::deep_copy(MatrixData(0, edgdId, edgeOrt), C);
+  //       }
+  //     break;
+  //   }            
+  //   case FUNCTION_SPACE_HCURL:
+  //   case FUNCTION_SPACE_HDIV: {
+  //     INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+  //                                   ">>> ERROR (Intrepid::OrientationTools::initQuadrilateral): " \
+  //                                   "Not yet implemented.");
+  //     break;
+  //   }
+  //   case FUNCTION_SPACE_HVOL: {
+  //     // do nothing
+  //     break;
+  //   }
+  //   default: {
+  //     INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+  //                                   ">>> ERROR (Intrepid::OrientationTools::initQuadrilateral): " \
+  //                                   "Invalid function space.");
+  //     break;
+  //   }
+  //   }
+  // }
 
 
 

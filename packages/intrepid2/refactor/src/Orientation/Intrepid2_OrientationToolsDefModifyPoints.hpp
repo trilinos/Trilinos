@@ -53,7 +53,6 @@
 #pragma clang system_header
 #endif
 
-//#include "Teuchos_LAPACK.hpp"
 namespace Intrepid2 {
 
   namespace Impl {
@@ -63,7 +62,7 @@ namespace Intrepid2 {
     //
     //
     template<typename VT>
-    inline
+    KOKKOS_INLINE_FUNCTION
     void
     OrientationTools::
     getModifiedLinePoint(VT &ot,
@@ -86,7 +85,7 @@ namespace Intrepid2 {
     }
     
     template<typename VT>
-    inline
+    KOKKOS_INLINE_FUNCTION
     void
     OrientationTools::
     getModifiedTrianglePoint(VT &ot0,
@@ -128,7 +127,7 @@ namespace Intrepid2 {
     }
 
     template<typename VT>
-    inline
+    KOKKOS_INLINE_FUNCTION
     void
     OrientationTools::
     getModifiedQuadrilateralPoint(VT &ot0,

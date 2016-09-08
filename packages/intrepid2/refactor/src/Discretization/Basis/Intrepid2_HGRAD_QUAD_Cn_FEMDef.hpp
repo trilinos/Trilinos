@@ -322,8 +322,8 @@ namespace Intrepid2 {
 
       const ordinal_type vert[2][2] = { {0,1}, {3,2} }; //[y][x]
 
-      const ordinal_type edge_x[2] = {1,3}; 
-      const ordinal_type edge_y[2] = {0,2}; 
+      const ordinal_type edge_x[2] = {0,2}; 
+      const ordinal_type edge_y[2] = {3,1}; 
       {
         ordinal_type idx = 0;
         for (auto j=0;j<cardLine;++j) { // y      
