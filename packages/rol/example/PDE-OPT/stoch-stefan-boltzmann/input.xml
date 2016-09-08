@@ -20,11 +20,11 @@
     <Parameter name="Use Stefan-Boltzmann"                type="bool"    value="true"  />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Statistic Initial Guess"             type="double"  value="5.0"   />
-    <Parameter name="Number of Samples"                   type="int"     value="1"     />
+    <Parameter name="Number of Samples"                   type="int"     value="4"     />
     <!-- OUTPUT -->
     <Parameter name="Check Derivatives"                   type="bool"    value="true"  />
     <Parameter name="Print Mean Value State"              type="bool"    value="false" />
-    <Parameter name="Number of Output Samples"            type="int"     value="1"     />
+    <Parameter name="Number of Output Samples"            type="int"     value="4"     />
     <!-- FINITE ELEMENT INFORMATION -->
     <Parameter name="Basis Order"                         type="int"     value="1"     />
     <Parameter name="Volume Cubature Degree"              type="int"     value="2"     />
