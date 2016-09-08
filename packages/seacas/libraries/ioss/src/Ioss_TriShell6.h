@@ -45,7 +45,7 @@ namespace Ioss {
 
   public:
     static constexpr auto name = "trishell6";
-    
+
     static void factory();
     ~TriShell6() override;
 

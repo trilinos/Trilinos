@@ -176,10 +176,9 @@ namespace {
     }
   }
 
-  ssize_t proc_with_minimum_work(const std::vector<size_t> &work,
-				ssize_t exclude_proc = -1)
+  ssize_t proc_with_minimum_work(const std::vector<size_t> &work, ssize_t exclude_proc = -1)
   {
-    size_t min_work = std::numeric_limits<size_t>::max();
+    size_t  min_work = std::numeric_limits<size_t>::max();
     ssize_t min_proc = -1;
     for (ssize_t i = 0; i < (ssize_t)work.size(); i++) {
       if (work[i] < min_work && i != exclude_proc) {
@@ -308,19 +307,19 @@ namespace Iocgns {
         zone->m_proc = -1;
         if (zone->is_active()) {
           // Assign zone to processor with minimum work...
-          ssize_t proc  = proc_with_minimum_work(work_vector);
+          ssize_t proc = proc_with_minimum_work(work_vector);
 
-	  // See if any other zone on this processor has the same adam zone...
-	  // TODO: Currently only do one "re-search".  Need to do something
-	  // better to make sure; or be able to handle this condition correctly.
-	  for (auto &pzone : m_structuredZones) {
-	    if (pzone->is_active() && pzone->m_proc == proc) {
-	      if (pzone->m_adam == zone->m_adam) {
-		proc  = proc_with_minimum_work(work_vector, proc);
-		break;
-	      }
-	    }
-	  }
+          // See if any other zone on this processor has the same adam zone...
+          // TODO: Currently only do one "re-search".  Need to do something
+          // better to make sure; or be able to handle this condition correctly.
+          for (auto &pzone : m_structuredZones) {
+            if (pzone->is_active() && pzone->m_proc == proc) {
+              if (pzone->m_adam == zone->m_adam) {
+                proc = proc_with_minimum_work(work_vector, proc);
+                break;
+              }
+            }
+          }
 
           zone->m_proc = proc;
           work_vector[proc] += zone->work();
@@ -763,8 +762,8 @@ namespace Iocgns {
       offset += block.file_count();
       size_t b_end = b_start + block.file_count();
 
-      ssize_t overlap       = std::min(b_end, p_end) - std::max(b_start, p_start);
-      overlap = std::max(overlap, (ssize_t)0);
+      ssize_t overlap      = std::min(b_end, p_end) - std::max(b_start, p_start);
+      overlap              = std::max(overlap, (ssize_t)0);
       block.fileCount      = overlap;
       size_t element_nodes = block.nodesPerEntity;
       int    zone          = block.zone_;
@@ -774,30 +773,29 @@ namespace Iocgns {
       std::vector<cgsize_t> connectivity(overlap * element_nodes);
       INT                   blk_start = std::max(b_start, p_start) - b_start + 1;
       INT                   blk_end   = blk_start + overlap - 1;
-      blk_start = blk_start < 0 ? 0 : blk_start;
-      blk_end   = blk_end   < 0 ? 0 : blk_end;
+      blk_start                       = blk_start < 0 ? 0 : blk_start;
+      blk_end                         = blk_end < 0 ? 0 : blk_end;
 #if IOSS_DEBUG_OUTPUT
       OUTPUT << "Processor " << m_decomposition.m_processor << " has " << overlap
-	     << " elements on element block " << block.name() << "\t(" << blk_start << " to "
-	     << blk_end << ")\n";
+             << " elements on element block " << block.name() << "\t(" << blk_start << " to "
+             << blk_end << ")\n";
 #endif
       block.fileSectionOffset = blk_start;
 #if CG_BUILD_PARALLEL
-      cgp_elements_read_data(filePtr, base, zone, section, blk_start, blk_end,
-			     TOPTR(connectivity));
+      cgp_elements_read_data(filePtr, base, zone, section, blk_start, blk_end, TOPTR(connectivity));
 #else
       cg_elements_partial_read(filePtr, base, zone, section, blk_start, blk_end,
-			       TOPTR(connectivity), nullptr);
+                               TOPTR(connectivity), nullptr);
 #endif
       size_t el          = 0;
       INT    zone_offset = block.zoneNodeOffset;
 
       for (ssize_t elem = 0; elem < overlap; elem++) {
-	decomposition.m_pointer.push_back(decomposition.m_adjacency.size());
-	for (size_t k = 0; k < element_nodes; k++) {
-	  INT node = connectivity[el++] - 1 + zone_offset; // 0-based node
-	  decomposition.m_adjacency.push_back(node);
-	}
+        decomposition.m_pointer.push_back(decomposition.m_adjacency.size());
+        for (size_t k = 0; k < element_nodes; k++) {
+          INT node = connectivity[el++] - 1 + zone_offset; // 0-based node
+          decomposition.m_adjacency.push_back(node);
+        }
       }
       sum += overlap * element_nodes;
     }
@@ -872,7 +870,7 @@ namespace Iocgns {
 
       // Broadcast this data to all other processors...
       MPI_Bcast(TOPTR(elemlist), sizeof(cgsize_t) * elemlist.size(), MPI_BYTE, root,
-		m_decomposition.m_comm);
+                m_decomposition.m_comm);
 #endif
 
       // Each processor now has a complete list of all elems in all
@@ -944,40 +942,39 @@ namespace Iocgns {
     for (int zone = 1; zone <= num_zones; zone++) {
       end += m_zones[zone].m_nodeCount;
 
-        cgsize_t start  = std::max(node_offset, beg);
-        cgsize_t finish = std::min(end, node_offset + node_count);
-	cgsize_t count  = (finish > start) ? finish - start : 0;
+      cgsize_t start  = std::max(node_offset, beg);
+      cgsize_t finish = std::min(end, node_offset + node_count);
+      cgsize_t count  = (finish > start) ? finish - start : 0;
 
-          // Now adjust start for 1-based node numbering and the start of this zone...
-          start  = start - beg + 1;
-          finish = finish - beg;
-	  if (count == 0) {
-	    start = 0;
-	    finish = 0;
-	  }
+      // Now adjust start for 1-based node numbering and the start of this zone...
+      start  = start - beg + 1;
+      finish = finish - beg;
+      if (count == 0) {
+        start  = 0;
+        finish = 0;
+      }
 #if defined(IOSS_DEBUG_OUTPUT)
-          OUTPUT << m_decomposition.m_processor << ": reading " << count << " nodes from zone "
-                 << zone << " starting at " << start << " with an offset of " << offset
-                 << " ending at " << finish << "\n";
+      OUTPUT << m_decomposition.m_processor << ": reading " << count << " nodes from zone " << zone
+             << " starting at " << start << " with an offset of " << offset << " ending at "
+             << finish << "\n";
 #endif
 #if CG_BUILD_PARALLEL
-	  double *coords = nullptr;
-	  if (count > 0) {
-	    coords = &data[offset];
-	  }
-          int ierr = cgp_coord_read_data(filePtr, base, zone, direction + 1, &start, &finish,
-                                         coords);
+      double *coords = nullptr;
+      if (count > 0) {
+        coords = &data[offset];
+      }
+      int ierr = cgp_coord_read_data(filePtr, base, zone, direction + 1, &start, &finish, coords);
 #else
-	  int ierr = 0;
-	  if (count > 0) {
-	    ierr = cg_coord_read(filePtr, base, zone, coord_name[direction].c_str(),
-				     CG_RealDouble, &start, &finish, &data[offset]);
-	  }
+      int ierr = 0;
+      if (count > 0) {
+        ierr = cg_coord_read(filePtr, base, zone, coord_name[direction].c_str(), CG_RealDouble,
+                             &start, &finish, &data[offset]);
+      }
 #endif
-          if (ierr < 0) {
-            Utils::cgns_error(filePtr, __FILE__, __func__, __LINE__, m_decomposition.m_processor);
-          }
-          offset += count;
+      if (ierr < 0) {
+        Utils::cgns_error(filePtr, __FILE__, __func__, __LINE__, m_decomposition.m_processor);
+      }
+      offset += count;
       beg = end;
     }
   }

@@ -44,7 +44,7 @@ namespace Ioss {
 
   public:
     static constexpr auto name = "sphere";
-    
+
     static void factory();
     ~Sphere() override;
 

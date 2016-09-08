@@ -45,7 +45,7 @@ namespace Ioss {
 
   public:
     static constexpr auto name = "tri4a";
-    
+
     static void factory();
     ~Tri4a() override;
 

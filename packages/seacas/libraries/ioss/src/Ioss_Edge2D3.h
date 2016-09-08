@@ -44,7 +44,7 @@ namespace Ioss {
 
   public:
     static constexpr auto name = "edge2d3";
-    
+
     static void factory();
     ~Edge2D3() override;
 

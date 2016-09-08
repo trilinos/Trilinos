@@ -266,7 +266,7 @@ namespace Iopx {
         sum += overlap * element_nodes;
       }
       decomposition.m_fileBlockIndex[b + 1] = decomposition.m_fileBlockIndex[b] + ebs[b].num_entry;
-      el_blocks[b].topologyType           = ebs[b].topology;
+      el_blocks[b].topologyType             = ebs[b].topology;
       if (ebs[b].num_entry == 0 && (std::strcmp(ebs[b].topology, "nullptr") == 0))
         el_blocks[b].topologyType = "sphere";
 

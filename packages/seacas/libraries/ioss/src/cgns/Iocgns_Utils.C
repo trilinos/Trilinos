@@ -130,7 +130,6 @@ void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *functio
   IOSS_ERROR(errmsg);
 }
 
-
 std::string Iocgns::Utils::map_cgns_to_topology_type(CG_ElementType_t type)
 {
   std::string topology = "unknown";
@@ -245,7 +244,8 @@ size_t Iocgns::Utils::resolve_nodes(Ioss::Region &region, int my_processor)
                   size_t block_local_offset =
                       block->get_block_local_node_offset(index[0], index[1], index[2]);
                   block->m_globalIdMap.emplace_back(block_local_offset, owner_global_offset + 1);
-                  //		  std::cerr << "GLOBAL: " << block->name() << " " << global_offset << "
+                  //		  std::cerr << "GLOBAL: " << block->name() << " " << global_offset <<
+                  //"
                   //" << owner_global_offset+1 << "\n";
                 }
                 else {

@@ -47,7 +47,7 @@ namespace Ioss {
 
     static void factory();
     ~Hex8() override;
-    
+
     ElementShape shape() const override { return ElementShape::HEX; }
     int          spatial_dimension() const override;
     int          parametric_dimension() const override;

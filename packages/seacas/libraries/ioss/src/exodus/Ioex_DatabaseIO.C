@@ -132,7 +132,7 @@ namespace Ioex {
     }
 
     timeLastFlush = time(nullptr);
-    dbState = Ioss::STATE_UNKNOWN;
+    dbState       = Ioss::STATE_UNKNOWN;
 
     // Set exodusII warning level.
     if (util().get_environment("EX_DEBUG", isParallel)) {

@@ -117,7 +117,10 @@ namespace Iofx {
     int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
                                size_t data_size) const;
     int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-			       void *data, size_t data_size) const {return -1;}
+                               void *data, size_t data_size) const
+    {
+      return -1;
+    }
 
     int64_t get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
                                size_t data_size) const;
@@ -160,7 +163,10 @@ namespace Iofx {
                                size_t data_size) const;
 
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-			       void *data, size_t data_size) const {return -1;}
+                               void *data, size_t data_size) const
+    {
+      return -1;
+    }
     int64_t put_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet *ns,
                                     const Ioss::Field &field, void *data, size_t data_size) const;
     int64_t get_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet *ns,

@@ -359,7 +359,7 @@ namespace Ioss {
               << std::chrono::duration<double, std::milli>(difff).count() << " ms\t"
               << faces_.size() / std::chrono::duration<double>(difff).count() << " faces/second.\n";
 #ifdef HAVE_MPI
-    auto diffp = endp - endf;
+    auto   diffp      = endp - endf;
     size_t proc_count = region_.get_database()->util().parallel_size();
 
     if (proc_count > 1) {

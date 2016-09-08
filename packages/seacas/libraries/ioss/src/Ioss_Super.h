@@ -50,7 +50,7 @@ namespace Ioss {
 
   public:
     static constexpr auto name = "super";
-    
+
     static void factory();
     ~Super() override;
     Super(const std::string &my_name, int node_count);

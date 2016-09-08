@@ -44,7 +44,7 @@ namespace Ioss {
 
   public:
     static constexpr auto name = "shellline2d3";
-    
+
     static void factory();
     ~ShellLine2D3() override;
 

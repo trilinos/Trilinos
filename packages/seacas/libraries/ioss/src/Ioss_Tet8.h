@@ -44,7 +44,7 @@ namespace Ioss {
 
   public:
     static constexpr auto name = "tetra8";
-    
+
     static void factory();
     ~Tet8() override;
 

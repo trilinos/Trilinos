@@ -121,8 +121,9 @@ namespace Ioss {
       node_count = cell_count == 0 ? 0 : (int64_t)(m_ni + 1) * (m_nj + 1) * (m_nk + 1);
 
       global_cell_count = (int64_t)m_niGlobal * m_njGlobal * m_nkGlobal;
-      global_node_count =
-          global_cell_count == 0 ? 0 : (int64_t)(m_niGlobal + 1) * (m_njGlobal + 1) * (m_nkGlobal + 1);
+      global_node_count = global_cell_count == 0
+                              ? 0
+                              : (int64_t)(m_niGlobal + 1) * (m_njGlobal + 1) * (m_nkGlobal + 1);
     }
 
     properties.add(Property("component_degree", index_dim));

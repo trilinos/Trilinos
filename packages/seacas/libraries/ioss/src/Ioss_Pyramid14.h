@@ -44,7 +44,7 @@ namespace Ioss {
 
   public:
     static constexpr auto name = "pyramid14";
-    
+
     static void factory();
     ~Pyramid14() override;
 
