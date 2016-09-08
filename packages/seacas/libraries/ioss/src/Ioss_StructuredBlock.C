@@ -110,14 +110,14 @@ namespace Ioss {
       global_node_count = global_cell_count == 0 ? 0 : (m_niGlobal + 1);
     }
     else if (index_dim == 2) {
-      cell_count = m_ni * m_nj;
+      cell_count = (int64_t)m_ni * m_nj;
       node_count = cell_count == 0 ? 0 : (int64_t)(m_ni + 1) * (m_nj + 1);
 
-      global_cell_count = m_niGlobal * m_njGlobal;
+      global_cell_count = (int64_t)m_niGlobal * m_njGlobal;
       global_node_count = global_cell_count == 0 ? 0 : (int64_t)(m_niGlobal + 1) * (m_njGlobal + 1);
     }
     else if (index_dim == 3) {
-      cell_count = m_ni * m_nj * m_nk;
+      cell_count = (int64_t)m_ni * m_nj * m_nk;
       node_count = cell_count == 0 ? 0 : (int64_t)(m_ni + 1) * (m_nj + 1) * (m_nk + 1);
 
       global_cell_count = (int64_t)m_niGlobal * m_njGlobal * m_nkGlobal;
