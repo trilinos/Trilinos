@@ -45,32 +45,24 @@ namespace stk { namespace mesh { class BulkData; } }
 
 namespace
 {
-void verify_total_element_count(size_t expectedNumElems, const stk::mesh::BulkData &bulkData)
-{
-    stk::mesh::Selector allEntities = bulkData.mesh_meta_data().universal_part();
-    std::vector<unsigned> entityCounts;
-    stk::mesh::count_entities(allEntities, bulkData, entityCounts);
-    EXPECT_EQ(512u, entityCounts[stk::topology::ELEMENT_RANK]);
-}
-
 //-BEGIN    
-TEST(StkMeshHowTo, UsingStkIO)
+TEST(StkMeshHowTo, UseStkIO)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     if(stk::parallel_machine_size(communicator) == 1)
     {
-        stk::io::StkMeshIoBroker meshReader(communicator);
-        const std::string hexMesh_8x8x8 = "generated:8x8x8";
-        meshReader.add_mesh_database(hexMesh_8x8x8, stk::io::READ_MESH);
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulk(meta, communicator);
+
+        stk::io::StkMeshIoBroker meshReader;
+        meshReader.set_bulk_data(bulk);
+        meshReader.add_mesh_database("generated:8x8x8", stk::io::READ_MESH);
         meshReader.create_input_mesh();
+        meshReader.add_all_mesh_fields_as_input_fields();
         meshReader.populate_bulk_data();
 
-        stk::mesh::BulkData &bulkData = meshReader.bulk_data();
-
-        size_t expectedNumElems = 512;
-        verify_total_element_count(expectedNumElems, bulkData);
-
-        unlink(hexMesh_8x8x8.c_str());
+        unsigned numElems = stk::mesh::count_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::ELEM_RANK));
+        EXPECT_EQ(512u, numElems);
     }
 }
 //-END
