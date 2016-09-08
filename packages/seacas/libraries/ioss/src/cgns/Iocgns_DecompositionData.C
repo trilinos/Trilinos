@@ -181,7 +181,7 @@ namespace {
   {
     size_t min_work = std::numeric_limits<size_t>::max();
     ssize_t min_proc = -1;
-    for (size_t i = 0; i < work.size(); i++) {
+    for (ssize_t i = 0; i < (ssize_t)work.size(); i++) {
       if (work[i] < min_work && i != exclude_proc) {
         min_work = work[i];
         min_proc = i;
@@ -308,7 +308,7 @@ namespace Iocgns {
         zone->m_proc = -1;
         if (zone->is_active()) {
           // Assign zone to processor with minimum work...
-          size_t proc  = proc_with_minimum_work(work_vector);
+          ssize_t proc  = proc_with_minimum_work(work_vector);
 
 	  // See if any other zone on this processor has the same adam zone...
 	  // TODO: Currently only do one "re-search".  Need to do something
@@ -792,7 +792,7 @@ namespace Iocgns {
       size_t el          = 0;
       INT    zone_offset = block.zoneNodeOffset;
 
-      for (size_t elem = 0; elem < overlap; elem++) {
+      for (ssize_t elem = 0; elem < overlap; elem++) {
 	decomposition.m_pointer.push_back(decomposition.m_adjacency.size());
 	for (size_t k = 0; k < element_nodes; k++) {
 	  INT node = connectivity[el++] - 1 + zone_offset; // 0-based node
