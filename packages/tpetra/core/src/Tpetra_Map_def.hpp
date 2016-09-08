@@ -1198,7 +1198,12 @@ namespace Tpetra {
     // contiguous Map, since it results in unnecessary storage that
     // persists for the lifetime of the Map.)
 
-    if (getNodeNumElements () != map.getNodeNumElements ()) {
+    if (this == &map) {
+      // Pointer equality on one process always implies pointer
+      // equality on all processes, since Map is immutable.
+      return true;
+    }
+    else if (getNodeNumElements () != map.getNodeNumElements ()) {
       return false;
     }
     else if (getMinGlobalIndex () != map.getMinGlobalIndex () ||
