@@ -706,6 +706,15 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
 }
 
 //==============================================================================
+bool Epetra_BlockMap::SameBlockMapDataAs(const Epetra_BlockMap & Map) const {
+
+  // Quickest test: See if both maps share an inner data class
+  if (this->BlockMapData_ == Map.BlockMapData_)
+    return(true);
+  return false;
+}
+
+//==============================================================================
 bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const {
 
   // Quickest test: See if both maps share an inner data class
