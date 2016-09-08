@@ -181,12 +181,14 @@ namespace MueLu {
 
       validParamList->set< RCP<const FactoryBase> >   ("A",             Teuchos::null, "Factory of the matrix A");
       validParamList->set< RCP<const FactoryBase> >   ("Coordinates",   Teuchos::null, "Factory of the coordinates");
+      validParamList->set< RCP<const FactoryBase> >   ("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
       validParamList->set< RCP<const ParameterList> > ("ParameterList", Teuchos::null, "Zoltan2 parameters");
 
       return validParamList;
     };
     void DeclareInput(Level& currentLevel) const {
       Input(currentLevel, "A");
+      Input(currentLevel, "number of partitions");
       Input(currentLevel, "Coordinates");
     };
     void Build(Level& currentLevel) const {
