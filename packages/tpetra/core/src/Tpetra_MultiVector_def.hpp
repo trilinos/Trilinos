@@ -1018,8 +1018,18 @@ namespace Tpetra {
     typedef typename Kokkos::DualView<IST*, device_type>::t_dev::execution_space
       dev_execution_space;
 
-    const bool debug = false;
-    if (debug) {
+    // TODO (mfh 09 Sep 2016): The pack and unpack functions now have
+    // the option to check indices.  We do so in a debug build.  At
+    // some point, it would make sense to shift this to a run-time
+    // option, controlled by environment variable.
+#ifdef HAVE_TPETRA_DEBUG
+    constexpr bool debugCheckIndices = true;
+#else
+    constexpr bool debugCheckIndices = false;
+#endif // HAVE_TPETRA_DEBUG
+
+    const bool printDebugOutput = false;
+    if (printDebugOutput) {
       std::cerr << "$$$ MV::packAndPrepareNew" << std::endl;
     }
     // We've already called checkSizes(), so this cast must succeed.
@@ -1073,7 +1083,7 @@ namespace Tpetra {
     // If we have no exports, there is nothing to do.  Make sure this
     // goes _after_ setting constantNumPackets correctly.
     if (exportLIDs.dimension_0 () == 0) {
-      if (debug) {
+      if (printDebugOutput) {
         std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
       }
       return;
@@ -1094,14 +1104,14 @@ namespace Tpetra {
     // needs to know how to index into that data.  Kokkos is good at
     // decoupling storage intent from data layout choice.
 
-    if (debug) {
+    if (printDebugOutput) {
       std::cerr << "$$$ MV::packAndPrepareNew realloc" << std::endl;
     }
 
     const size_t numExportLIDs = exportLIDs.dimension_0 ();
     const size_t newExportsSize = numCols * numExportLIDs;
     if (static_cast<size_t> (exports.dimension_0 ()) != newExportsSize) {
-      if (debug) {
+      if (printDebugOutput) {
         std::ostringstream os;
         const int myRank = this->getMap ()->getComm ()->getRank ();
         os << "$$$ MV::packAndPrepareNew (Proc " << myRank << ") realloc "
@@ -1140,63 +1150,69 @@ namespace Tpetra {
       // them constant stride (by making whichVectors_ have length 0).
       if (sourceMV.isConstantStride ()) {
         using KokkosRefactor::Details::pack_array_single_column;
-        if (debug) {
+        if (printDebugOutput) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 const stride" << std::endl;
         }
         if (packOnHost) {
           pack_array_single_column (exports.template view<host_memory_space> (),
                                     create_const_view (src_host),
                                     exportLIDs.template view<host_memory_space> (),
-                                    0);
+                                    0,
+                                    debugCheckIndices);
         }
         else { // pack on device
           pack_array_single_column (exports.template view<dev_memory_space> (),
                                     create_const_view (src_dev),
                                     exportLIDs.template view<dev_memory_space> (),
-                                    0);
+                                    0,
+                                    debugCheckIndices);
         }
       }
       else {
         using KokkosRefactor::Details::pack_array_single_column;
-        if (debug) {
+        if (printDebugOutput) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 nonconst stride" << std::endl;
         }
         if (packOnHost) {
           pack_array_single_column (exports.template view<host_memory_space> (),
                                     create_const_view (src_host),
                                     exportLIDs.template view<host_memory_space> (),
-                                    sourceMV.whichVectors_[0]);
+                                    sourceMV.whichVectors_[0],
+                                    debugCheckIndices);
         }
         else { // pack on device
           pack_array_single_column (exports.template view<dev_memory_space> (),
                                     create_const_view (src_dev),
                                     exportLIDs.template view<dev_memory_space> (),
-                                    sourceMV.whichVectors_[0]);
+                                    sourceMV.whichVectors_[0],
+                                    debugCheckIndices);
         }
       }
     }
     else { // the source MultiVector has multiple columns
       if (sourceMV.isConstantStride ()) {
         using KokkosRefactor::Details::pack_array_multi_column;
-        if (debug) {
+        if (printDebugOutput) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 const stride" << std::endl;
         }
         if (packOnHost) {
           pack_array_multi_column (exports.template view<host_memory_space> (),
                                    create_const_view (src_host),
                                    exportLIDs.template view<host_memory_space> (),
-                                   numCols);
+                                   numCols,
+                                   debugCheckIndices);
         }
         else { // pack on device
           pack_array_multi_column (exports.template view<dev_memory_space> (),
                                    create_const_view (src_dev),
                                    exportLIDs.template view<dev_memory_space> (),
-                                   numCols);
+                                   numCols,
+                                   debugCheckIndices);
         }
       }
       else {
         using KokkosRefactor::Details::pack_array_multi_column_variable_stride;
-        if (debug) {
+        if (printDebugOutput) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 nonconst stride" << std::endl;
         }
         if (packOnHost) {
@@ -1204,19 +1220,21 @@ namespace Tpetra {
                                                    create_const_view (src_host),
                                                    exportLIDs.template view<host_memory_space> (),
                                                    getKokkosViewDeepCopy<host_execution_space> (sourceMV.whichVectors_ ()),
-                                                   numCols);
+                                                   numCols,
+                                                   debugCheckIndices);
         }
         else { // pack on device
           pack_array_multi_column_variable_stride (exports.template view<dev_memory_space> (),
                                                    create_const_view (src_dev),
                                                    exportLIDs.template view<dev_memory_space> (),
                                                    getKokkosViewDeepCopy<dev_execution_space> (sourceMV.whichVectors_ ()),
-                                                   numCols);
+                                                   numCols,
+                                                   debugCheckIndices);
         }
       }
     }
 
-    if (debug) {
+    if (printDebugOutput) {
       std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
     }
   }
@@ -1243,6 +1261,16 @@ namespace Tpetra {
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
     const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
+    // TODO (mfh 09 Sep 2016): The pack and unpack functions now have
+    // the option to check indices.  We do so in a debug build.  At
+    // some point, it would make sense to shift this to a run-time
+    // option, controlled by environment variable.
+#ifdef HAVE_TPETRA_DEBUG
+    constexpr bool debugCheckIndices = true;
+#else
+    constexpr bool debugCheckIndices = false;
+#endif // HAVE_TPETRA_DEBUG
+
     // If we have no imports, there is nothing to do
     if (importLIDs.dimension_0 () == 0) {
       return;
@@ -1259,13 +1287,14 @@ namespace Tpetra {
       << " * " << importLIDs.dimension_0 () << " = "
       << numVecs * importLIDs.dimension_0 () << ".");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      constantNumPackets == static_cast<size_t> (0), std::runtime_error,
-      ": constantNumPackets input argument must be nonzero.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (constantNumPackets == static_cast<size_t> (0), std::runtime_error,
+       "constantNumPackets input argument must be nonzero.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (numVecs) != static_cast<size_t> (constantNumPackets),
-      std::runtime_error, ": constantNumPackets must equal numVecs.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (numVecs) !=
+       static_cast<size_t> (constantNumPackets),
+       std::runtime_error, "constantNumPackets must equal numVecs.");
 #endif // HAVE_TPETRA_DEBUG
 
     // mfh 12 Apr 2016: Decide where to unpack based on the memory
@@ -1340,11 +1369,12 @@ namespace Tpetra {
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
-                                       numVecs);
+                                       numVecs, debugCheckIndices);
+
           }
           else { // unpack on device
             unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
-                                       numVecs);
+                                       numVecs, debugCheckIndices);
           }
         }
         else { // not constant stride
@@ -1352,13 +1382,15 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (X_h, imports_h,
                                                        importLIDs_h,
                                                        whichVecs_h, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
         }
       }
@@ -1367,10 +1399,12 @@ namespace Tpetra {
 
         if (isConstantStride ()) {
           if (unpackOnHost) {
-            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op, numVecs);
+            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
+                                       numVecs, debugCheckIndices);
           }
           else { // unpack on device
-            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op, numVecs);
+            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
+                                       numVecs, debugCheckIndices);
           }
         }
         else { // not constant stride
@@ -1378,13 +1412,15 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (X_h, imports_h,
                                                        importLIDs_h,
                                                        whichVecs_h, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
         }
       }
@@ -1394,11 +1430,11 @@ namespace Tpetra {
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
-                                       numVecs);
+                                       numVecs, debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
-                                       numVecs);
+                                       numVecs, debugCheckIndices);
           }
         }
         else {
@@ -1406,21 +1442,23 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (X_h, imports_h,
                                                        importLIDs_h,
                                                        whichVecs_h, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d, op,
-                                                       numVecs);
+                                                       numVecs,
+                                                       debugCheckIndices);
           }
         }
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX,
-          std::invalid_argument, ": Invalid CombineMode: " << CM << ".  Valid "
-          "CombineMode values are ADD, REPLACE, INSERT, and ABSMAX.");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX,
+           std::invalid_argument, "Invalid CombineMode: " << CM << ".  Valid "
+           "CombineMode values are ADD, REPLACE, INSERT, and ABSMAX.");
       }
     }
   }
