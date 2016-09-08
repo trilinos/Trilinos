@@ -60,7 +60,7 @@ namespace Intrepid2 {
   // - use input and output as pointer arrays which assumes that input/output
   //   are located on the stack and contiguous.
   class Orientation {
-  public:
+  private:
     template<typename NodeType>
     static void getElementNodeMap(NodeType *subCellVerts,
                                   ordinal_type &numVerts,
@@ -74,6 +74,8 @@ namespace Intrepid2 {
     static ordinal_type getOrientation(const NodeType subCellVerts[],
                                        const ordinal_type numVerts);
 
+
+  public:
     template<typename NodeType>
     static Orientation getOrientation(const shards::CellTopology cellTopo,
                                       const NodeType elemNodes[]);
