@@ -5,6 +5,48 @@
 
 Rapid Optimization Library (ROL)
 
+RELEASE TAG: Trilinos 12.8
+------------
+Released as part of Trilinos 12.8, September 2016.
+(4th public release)
+
+
+NEW FEATURES:
+-------------
+
+Methods:
+  x  New phi-divergence capabilities for distributionally-robust optimization.
+  x  NonlinearLeastSquaresObjective functionality enables the solution of
+     nonlinear equations through the EqualityConstraint object.
+
+Infrastructure:
+  x  Composite bound constraint (ROL_BoundConstraint_Partitioned).
+  x  Composite equality constraint (ROL_EqualityConstraint_Partitioned)
+  x  Merit function for interior point methods.
+  x  Adapter for Teuchos::SerialDenseVector.
+  x  L1, Lp, Linf norms for interior point methods.
+  x  Allow user-defined bracketing objects.
+  x  Line searches can take user-defined scalar minimizers.
+  x  Ability to supply ScalarMinimizationLineSearch with custom
+     ScalarFunction.
+  x  New application development and interface tools for PDE-constrained
+     optimization in PDE-OPT.
+  x  New PDE-OPT examples: stochastic Stefan-Boltzmann, stochastic
+     advection-diffusion, etc.
+  x  Adaptive sparse grid capabilities with TriKota.
+
+BUG FIXES:
+----------
+  x  None.
+
+********************************
+*
+*
+*
+********************************
+
+Rapid Optimization Library (ROL)
+
 RELEASE TAG: Trilinos 12.6
 ------------
 Released as part of Trilinos 12.6, January 2016.
