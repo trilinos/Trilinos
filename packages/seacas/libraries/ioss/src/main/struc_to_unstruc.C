@@ -340,7 +340,7 @@ namespace {
 	assert(parent != nullptr);
 	assert(parent->type() == Ioss::STRUCTUREDBLOCK);
 	auto sb_parent = dynamic_cast<const Ioss::StructuredBlock*>(parent);
-	assert(sb_parent != nullptr);
+	Ioss::Utils::check_dynamic_cast(sb_parent);
 
 	// Find this sideblock on the parent block...
 	auto &bc_name = fb->name();
