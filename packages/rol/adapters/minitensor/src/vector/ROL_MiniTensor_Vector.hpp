@@ -91,7 +91,7 @@ public:
     auto const
     dim = xval.get_dimension();
 
-    for (auto i{0}; i < dim; ++i) {
+    for (Intrepid2::Index i{0}; i < dim; ++i) {
       vector_(i) += xval(i);
     }
   }
@@ -112,7 +112,7 @@ public:
 
     assert(vector_.get_dimension() == dim);
 
-    for (auto i{0}; i < dim; ++i) {
+    for (Intrepid2::Index i{0}; i < dim; ++i) {
       vector_(i) += alpha * xval(i);
     }
   }
@@ -123,7 +123,7 @@ public:
     auto const
     dim = vector_.get_dimension();
 
-    for (auto i{0}; i < dim; ++i) {
+    for (Intrepid2::Index i{0}; i < dim; ++i) {
       vector_(i) *= alpha;
     }
   }
@@ -203,7 +203,7 @@ public:
     auto const
     dim  = vector_.get_dimension();
 
-    for(auto i{0}; i < dim; ++i) {
+    for(Intrepid2::Index i{0}; i < dim; ++i) {
       vector_(i) = f.apply(vector_(i));
     }
   }
@@ -220,7 +220,7 @@ public:
     auto const
     dim  = vector_.get_dimension();
 
-    for(auto i{0}; i < dim; ++i) {
+    for(Intrepid2::Index i{0}; i < dim; ++i) {
       vector_(i) = f.apply(vector_(i), xval(i));
     }
   }
@@ -234,7 +234,7 @@ public:
     auto const
     dim = vector_.get_dimension();
 
-    for(auto i{0}; i < dim; ++i) {
+    for(Intrepid2::Index i{0}; i < dim; ++i) {
       r.reduce(vector_(i), result);
     }
 

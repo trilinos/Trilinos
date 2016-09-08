@@ -64,7 +64,7 @@ IF (ROL_ENABLE_TriKota)
   ADD_SUBDIRECTORY(adapters/trikota)
 ENDIF()
 
-IF (ROL_ENABLE_Intrepid2)
+IF (ROL_ENABLE_Boost AND ROL_ENABLE_Intrepid2)
   ADD_SUBDIRECTORY(adapters/minitensor)
 ENDIF()
 
