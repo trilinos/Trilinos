@@ -110,15 +110,6 @@ TRIBITS_EXCLUDE_FILES(
   src/Amesos_Component.h
   src/Amesos_Merikos.h
   src/Amesos_BTF.h
-  src/SuiteSparse/CAMD/Source/amesos_camd_1.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_aat.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_control.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_defaults.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_dump.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_info.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_order.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
-  src/SuiteSparse/CAMD/Source/amesos_camd_valid.c
   src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_amd.c
   src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_analyze.c
   src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_colamd.c
