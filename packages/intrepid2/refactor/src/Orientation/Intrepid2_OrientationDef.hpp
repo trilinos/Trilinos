@@ -76,7 +76,7 @@ namespace Intrepid2 {
     }
     default: {
       numVerts = cellTopo.getVertexCount(subCellDim, subCellOrd);
-      for (ordinal_type i=0;i<numVerts;++i)
+      for (auto i=0;i<numVerts;++i)
         subCellVerts[i] = elemNodes[cellTopo.getNodeMap(subCellDim, subCellOrd, i)];
       break;
     }
@@ -108,7 +108,7 @@ namespace Intrepid2 {
                                 "Invalid subCellVerts, same vertex ids are repeated");
 #endif
       ordinal_type rotation = 0; // find smallest vertex id
-      for (ordinal_type i=1;i<3;++i)
+      for (auto i=1;i<3;++i)
         rotation = ( subCellVerts[i] < subCellVerts[rotation] ? i : rotation );
 
       const ordinal_type axes[][2] = { {1,2}, {2,0}, {0,1} };
@@ -129,7 +129,7 @@ namespace Intrepid2 {
                                 "Invalid subCellVerts, same vertex ids are repeated");
 #endif
       ordinal_type rotation = 0; // find smallest vertex id
-      for (ordinal_type i=1;i<4;++i)
+      for (auto i=1;i<4;++i)
         rotation = ( subCellVerts[i] < subCellVerts[rotation] ? i : rotation );
 
       const ordinal_type axes[][2] = { {1,3}, {2,0}, {3,1}, {0,2} };
@@ -157,7 +157,7 @@ namespace Intrepid2 {
     const ordinal_type nedge = cellTopo.getEdgeCount();
     if (nedge > 0) {
       ordinal_type orts[12], vertsSubCell[2], nvertSubCell;
-      for (ordinal_type i=0;i<nedge;++i) {
+      for (auto i=0;i<nedge;++i) {
         Orientation::getElementNodeMap(vertsSubCell,
                                        nvertSubCell,
                                        cellTopo,
@@ -170,7 +170,7 @@ namespace Intrepid2 {
     const ordinal_type nface = cellTopo.getFaceCount();
     if (nface > 0) {
       ordinal_type orts[6], vertsSubCell[4], nvertSubCell;
-      for (ordinal_type i=0;i<nface;++i) {
+      for (auto i=0;i<nface;++i) {
         Orientation::getElementNodeMap(vertsSubCell,
                                        nvertSubCell,
                                        cellTopo,
@@ -202,7 +202,7 @@ namespace Intrepid2 {
                               "Invalid numEdge (3--12)");
 #endif
     _edgeOrt = 0;
-    for (ordinal_type i=0;i<numEdge;++i)
+    for (auto i=0;i<numEdge;++i)
       _edgeOrt |= (edgeOrt[i] & 1) << i;
   }
 
@@ -211,10 +211,10 @@ namespace Intrepid2 {
   Orientation::getEdgeOrientation(ordinal_type *edgeOrt, const ordinal_type numEdge) const {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_ABORT( !( 3 <= numEdge && numEdge <= 12 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): " \
-                                "Invalid numEdge (3--12)");
+                              ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): " \
+                              "Invalid numEdge (3--12)");
 #endif
-    for (ordinal_type i=0;i<numEdge;++i)
+    for (auto i=0;i<numEdge;++i)
       edgeOrt[i] = (_edgeOrt & (1 << i)) >> i;
   }
 
@@ -223,11 +223,11 @@ namespace Intrepid2 {
   Orientation::setFaceOrientation(const ordinal_type numFace, const ordinal_type faceOrt[]) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_ABORT( !( 4 <= numFace && numFace <= 6 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
-                                "Invalid numFace (4--6)");
+                              ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
+                              "Invalid numFace (4--6)");
 #endif
     _faceOrt = 0;
-    for (ordinal_type i=0;i<numFace;++i) {
+    for (auto i=0;i<numFace;++i) {
       const ordinal_type s = i*3;
       _faceOrt |= (faceOrt[i] & 7) << s;
     }
@@ -238,15 +238,15 @@ namespace Intrepid2 {
   Orientation::getFaceOrientation(ordinal_type *faceOrt, const ordinal_type numFace) const {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_ABORT( !( 4 <= numFace && numFace <= 6 ), std::invalid_argument,
-                                ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
-                                "Invalid numFace (4--6)");
+                              ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
+                              "Invalid numFace (4--6)");
 #endif
-    for (ordinal_type i=0;i<numFace;++i) {
+    for (auto i=0;i<numFace;++i) {
       const ordinal_type s = i*3;
       faceOrt[i] = (_faceOrt & (7 << s)) >> s;
     }
   }
-  }
 }
+
 
 #endif

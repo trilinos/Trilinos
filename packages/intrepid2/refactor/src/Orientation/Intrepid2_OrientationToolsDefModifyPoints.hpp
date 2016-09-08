@@ -88,14 +88,15 @@ namespace Intrepid2 {
     template<typename VT>
     inline
     void
-    OrientationTools::getModifiedTrianglePoint(VT &ot0,
-                                               VT &ot1,
-                                               const VT pt0,
-                                               const VT pt1,
-                                               const int ort) {
+    OrientationTools::
+    getModifiedTrianglePoint(VT &ot0,
+                             VT &ot1,
+                             const VT pt0,
+                             const VT pt1,
+                             const int ort) {
       const VT lambda[3] = { 1.0 - pt0 - pt1,
-                                 pt0,
-                                 pt1 };
+                             pt0,
+                             pt1 };
       
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_ABORT( !( 0.0 <= lambda[0] && lambda[0] <= 1.0 ), 
@@ -129,11 +130,12 @@ namespace Intrepid2 {
     template<typename VT>
     inline
     void
-    OrientationTools::getModifiedQuadrilateralPoint(VT &ot0,
-                                                    VT &ot1,
-                                                    const VT pt0,
-                                                    const VT pt1,
-                                                    const int ort) {
+    OrientationTools::
+    getModifiedQuadrilateralPoint(VT &ot0,
+                                  VT &ot1,
+                                  const VT pt0,
+                                  const VT pt1,
+                                  const int ort) {
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_ABORT( !( -1.0 <= pt0 && pt0 <= 1.0 ), 
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedQuadrilateralPoint): " \
@@ -145,7 +147,7 @@ namespace Intrepid2 {
 #endif
       
       const VT lambda[2][2] = { { pt0, -pt0 },
-                                    { pt1, -pt1 } };
+                                { pt1, -pt1 } };
       
       switch (ort) {
       case 0: ot0 = lambda[0][0]; ot1 = lambda[1][0]; break;

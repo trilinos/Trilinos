@@ -64,6 +64,11 @@ namespace Intrepid2 {
     class OrientationTools {
     public:
 
+      // -----------------------------------------------------------------------------
+      // Point modification
+      //
+      //
+
       /** \brief  Computes modified point for line segment.
           
           \param  ot       [out] - modified point value
@@ -126,6 +131,11 @@ namespace Intrepid2 {
                              const refPointViewType refPoints,
                              const shards::CellTopology cellTopo,
                              const ordinal_type cellOrt = 0);
+
+      // -----------------------------------------------------------------------------
+      // Coefficient Matrix
+      //
+      //
       
       /** \brief  Compute coefficient matrix by collocating point values
           
@@ -182,104 +192,66 @@ namespace Intrepid2 {
                                         const ordinal_type faceOrt);
     };
   }
-  
   template<typename ExecSpaceType>
   class OrientationTools {
   private:
+    inline
+    static void initQuadrilateral(Kokkos::View<CoeffMatrixType***,SpT> MatrixData,
+                                  const EFunctionSpace space,
+                                  const ordinal_type order);
+    
+    inline
+    static void initTriangle(Kokkos::View<CoeffMatrixType***,SpT> MatrixData,
+                             const EFunctionSpace space,
+                             const ordinal_type order);
+       
+  public:
     typedef typename
     Kokkos::Impl::is_space<ExecSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+  
+    // function space, subcell dim, subcell ordinal
+    typedef Kokkos::View<double**,ExecSpaceType> CoeffMatrixType;
+    static Kokkos::View<CoeffMatrixType*****,ExecSpaceType> quadMatrixData, trigMatrixData;
 
-    class CoeffMatrix {
-    private:
-      ordinal_type _m, _n;
+    inline 
+    static void initialize(const shards::CellTopology cellTopo, 
+                           const EFunctionSpace space,
+                           const ordinal_type order);
 
-      Kokkos::View<size_type*,ExecSpaceType> _ap;      //!< pointers to column index and values
-      Kokkos::View<ordinal_type*,ExecSpaceType> _aj;   //!< column index compressed format
-      Kokkos::View<double*,ExecSpaceType> _ax;         //!< values
+    inline 
+    static void finalize();
+    
+    // // all edges and faces should apply this coeff matrix
+    // template<class ArrayType>
+    // static void applyCoeffMatrix(ArrayType &         outValues,
+    //                              const ArrayType &   refValues,
+    //                              const CoeffMatrix & C,
+    //                              const unsigned int  offset,
+    //                              const unsigned int  numDofs);
 
-      inline 
-      void createInternalArrays(const ordinal_type m,
-                                const ordinal_type n,
-                                const size_type nnz) {
-        _m = m;
-        _n = n;
-        
-        _ap = Kokkos::View<size_type*,   SpT>("OrientationTools::CoeffMatrix::RowPtrArray", m+1);
-        _aj = Kokkos::View<ordinal_type*,SpT>("OrientationTools::CoeffMatrix::ColsArray",   nnz);
-        _ax = Kokkos::View<double*,      SpT>("OrientationTools::CoeffMAtrix::ValuesArray", nnz);
-      }
-
-    public:
-      KOKKOS_INLINE_FUNCTION
-      CoeffMatrix()
-        : _m(0), _n(0), _ap(), _aj(), _ax() { }
-      
-      KOKKOS_INLINE_FUNCTION
-      CoeffMatrix(const CoeffMatrix &b) = default;
-
-      KOKKOS_INLINE_FUNCTION
-      ordinal_type NumRows() const { 
-        return _m; 
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      ordinal_type NumCols() const { 
-        return _n; 
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      size_type RowPtr(const ordinal_type i) const { 
-        return _ap(i); 
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      Kokkos::View<ordinal_type*,ExecSpaceType> ColsInRow(const ordinal_type i) const {
-        return Kokkos::subview(_aj, Kokkos::pair<ordinal_type,ordinal_type>(_ap(i), _ap(i+1)));
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      Kokkos::View<double*,ExecSpaceType> ValuesInRow(const ordinal_type i) const {
-        return Kokkos::subview(_ax, Kokkos::pair<ordinal_type,ordinal_type>(_ap(i), _ap(i+1)));
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      ordinal_type NumNonZerosInRow(const ordinal_type i) const {
-        return (_ap(i+1) - _ap(i));
-      }
-    };
-
-
-    // all edges and faces should apply this coeff matrix
-    template<class ArrayType>
-    static void applyCoeffMatrix(ArrayType &         outValues,
-                                 const ArrayType &   refValues,
-                                 const CoeffMatrix & C,
-                                 const unsigned int  offset,
-                                 const unsigned int  numDofs);
-
-    // vertex and interior DOFs only
-    template<class ArrayType>
-    static void copyBasisValues(ArrayType &         outValues,
-                                const ArrayType &   refValues,
-                                const unsigned int  offRows, const unsigned int  numRows,
-                                const unsigned int  offCols, const unsigned int  numCols);
+    // // vertex and interior DOFs only
+    // template<class ArrayType>
+    // static void copyBasisValues(ArrayType &         outValues,
+    //                             const ArrayType &   refValues,
+    //                             const unsigned int  offRows, const unsigned int  numRows,
+    //                             const unsigned int  offCols, const unsigned int  numCols);
 
   public:
     
-    template<class ArrayType>
-    static bool isLeftHandedCell(const ArrayType & pts);
+    // template<class ArrayType>
+    // static bool isLeftHandedCell(const ArrayType & pts);
     
 
-    template<class ArrayType>
-    static void getModifiedBasisFunctions(ArrayType &                        outValues,
-                                          const ArrayType &                  refValues,
-                                          const BasisSet<Scalar,ArrayType> & basis,
-                                          const Orientation                  ort);
+    // template<class ArrayType>
+    // static void getModifiedBasisFunctions(ArrayType &                        outValues,
+    //                                       const ArrayType &                  refValues,
+    //                                       const BasisSet<Scalar,ArrayType> & basis,
+    //                                       const Orientation                  ort);
 
 
-    static bool verbose;
-    static bool reverse;
-    static std::ostream* verboseStreamPtr;
+    // static bool verbose;
+    // static bool reverse;
+    // static std::ostream* verboseStreamPtr;
   };
 
 }
@@ -287,5 +259,70 @@ namespace Intrepid2 {
 // include templated function definitions
 #include "Intrepid2_OrientationToolsDefModifyPoints.hpp"
 #include "Intrepid2_OrientationToolsDefCoeffMatrix.hpp"
+#include "Intrepid2_OrientationToolsDefMatrixData.hpp"
 
 #endif
+
+
+
+
+
+  //   class CoeffMatrix {
+  //   private:
+  //     ordinal_type _m, _n;
+
+  //     Kokkos::View<size_type*,ExecSpaceType> _ap;      //!< pointers to column index and values
+  //     Kokkos::View<ordinal_type*,ExecSpaceType> _aj;   //!< column index compressed format
+  //     Kokkos::View<double*,ExecSpaceType> _ax;         //!< values
+
+  //     inline 
+  //     void createInternalArrays(const ordinal_type m,
+  //                               const ordinal_type n,
+  //                               const size_type nnz) {
+  //       _m = m;
+  //       _n = n;
+        
+  //       _ap = Kokkos::View<size_type*,   SpT>("OrientationTools::CoeffMatrix::RowPtrArray", m+1);
+  //       _aj = Kokkos::View<ordinal_type*,SpT>("OrientationTools::CoeffMatrix::ColsArray",   nnz);
+  //       _ax = Kokkos::View<double*,      SpT>("OrientationTools::CoeffMAtrix::ValuesArray", nnz);
+  //     }
+
+  //   public:
+  //     KOKKOS_INLINE_FUNCTION
+  //     CoeffMatrix()
+  //       : _m(0), _n(0), _ap(), _aj(), _ax() { }
+      
+  //     KOKKOS_INLINE_FUNCTION
+  //     CoeffMatrix(const CoeffMatrix &b) = default;
+
+  //     KOKKOS_INLINE_FUNCTION
+  //     ordinal_type NumRows() const { 
+  //       return _m; 
+  //     }
+
+  //     KOKKOS_INLINE_FUNCTION
+  //     ordinal_type NumCols() const { 
+  //       return _n; 
+  //     }
+
+  //     KOKKOS_INLINE_FUNCTION
+  //     size_type RowPtr(const ordinal_type i) const { 
+  //       return _ap(i); 
+  //     }
+
+  //     KOKKOS_INLINE_FUNCTION
+  //     Kokkos::View<ordinal_type*,ExecSpaceType> ColsInRow(const ordinal_type i) const {
+  //       return Kokkos::subview(_aj, Kokkos::pair<ordinal_type,ordinal_type>(_ap(i), _ap(i+1)));
+  //     }
+
+  //     KOKKOS_INLINE_FUNCTION
+  //     Kokkos::View<double*,ExecSpaceType> ValuesInRow(const ordinal_type i) const {
+  //       return Kokkos::subview(_ax, Kokkos::pair<ordinal_type,ordinal_type>(_ap(i), _ap(i+1)));
+  //     }
+
+  //     KOKKOS_INLINE_FUNCTION
+  //     ordinal_type NumNonZerosInRow(const ordinal_type i) const {
+  //       return (_ap(i+1) - _ap(i));
+  //     }
+  //   };
+
