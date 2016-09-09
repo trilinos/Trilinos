@@ -76,7 +76,6 @@
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_AdditiveSchwarz.hpp>
 
-#include <Ifpack2_Experimental_RBILUK.hpp>
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
 #include <Tpetra_Experimental_BlockCrsMatrix.hpp>

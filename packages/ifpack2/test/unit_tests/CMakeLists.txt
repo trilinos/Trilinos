@@ -37,7 +37,6 @@ Ifpack2_UnitTestOverlappingRowMatrix.cpp
 Ifpack2_UnitTestParameters.cpp
 Ifpack2_UnitTestPartitioning.cpp
 Ifpack2_UnitTestRelaxation.cpp
-Ifpack2_UnitTestRBILUK.cpp
 Ifpack2_UnitTestRILUK.cpp
 Ifpack2_UnitTestTemplate.cpp
 Ifpack2_UnitTestTriDiSolver.cpp
@@ -55,6 +54,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     COMM serial mpi
   )
 
+# mfh 09 Sep 2016: Separate this test into its own executable,
+# so that we can more easily diagnose any issues with it.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  RBILUK
+  SOURCES 
+    Ifpack2_UnitTestRBILUK.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
 
 #TRIBITS_ADD_EXECUTABLE(
 #    Distributed_SGS
@@ -182,5 +192,3 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
     STANDARD_PASS_OUTPUT
     )
 ENDIF ()
-
-
