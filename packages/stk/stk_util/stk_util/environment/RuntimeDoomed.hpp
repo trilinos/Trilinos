@@ -79,13 +79,6 @@ void reset_doomed_count();
 void set_max_doomed_count(unsigned int max_messages);
 
 /**
- * @brief Function <b>set_max_messages</b> sets the maximum number of doomed
- * and doomed messages displayed before the message is thrown as a RuntimeError exception.
- *
- */
-unsigned get_max_doomed_count();
-
-/**
  * @brief Function <b>report_symmetric_doomed</b> sends a doomed message to the reporter.
  *
  * Since the issue causing the doomed error may occur thousands of times during a run, it is

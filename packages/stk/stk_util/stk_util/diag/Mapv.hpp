@@ -134,10 +134,6 @@ iterators invalidated are those referring to the deleted node.
 #include <iterator>
 #include <functional>
 
-#ifdef SIERRA_IA64_OPTIMIZER_FIX
-#pragma optimize("", off)
-#endif
-
 namespace sierra {
 
 // class MyType : public MapvNode<MyKey> { ... };
@@ -531,35 +527,6 @@ private:
   static value_type * cast( nType * n )
     { return static_cast<value_type*>(n); }
 
-// WORKAROUND: 4/7/2010 -- This works for our SGI Itanium Intel compiler on sasg1132 
-#ifdef SIERRA_IA64_OPTIMIZER_FIX
-   Derived_Type * lb( const key_type & k ) const
-     {
-      volatile pType y = nEnd();  // [DGB] -- Altix intel-10.1 optimizer hack
-      volatile pType x = nRoot(); // [DGB] -- Altix intel-10.1 optimizer hack
-      while ( x ) {
-        bool go_right = key_less(key(x), k);
-        
-        if (go_right) {
-          x = x->right;
-        }
-        else {
-          y = x;
-          x = x->left;
-        }
-      }      
-      return cast(y);
-    }
-
-  Derived_Type * ub( const key_type & k ) const
-    {
-      pType y = nEnd();
-      pType x = nRoot();
-      while ( x ) x = key_less(k,key(x)) ? ( y = x )->left : x->right ;
-      return cast(y);
-    }
-
-#else
   Derived_Type * lb( const key_type & k ) const
     {
       pType y = nEnd();
@@ -575,7 +542,6 @@ private:
       while ( x ) x = key_less(k,key(x)) ? ( y = x )->left : x->right ;
       return cast(y);
     }
-#endif // SIERRA_IA64_OPTIMIZER_FIX
 
   Derived_Type * f( const key_type & k ) const
     {
@@ -762,9 +728,6 @@ class Mapv_no_delete
 // ---------------------------------------------------------------------
 
 }
-#ifdef SIERRA_IA64_OPTIMIZER_FIX
-#pragma optimize("", on)
-#endif
 
 #undef mapv_assert
 
