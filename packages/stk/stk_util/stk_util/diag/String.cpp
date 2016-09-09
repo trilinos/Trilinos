@@ -149,9 +149,11 @@ char * StringData::mem( const char * cs , size_t n )
   if ( to_allocated && ( ! is_allocated || large.siz <= n ) ) {
     const size_t n_total = n + 1 ;
     new_alloc = n_total % inc ? n_total + inc - n_total % inc : n_total ;
+#if defined(SIERRA_DEBUG)
     if ( new_alloc == 0 || new_alloc - 1 < n ) {
       throw std::runtime_error("FAILED MEMORY ALLOCATION SIZING in sierra::String");
     }
+#endif
   }
 
   char * dst = nullptr ;

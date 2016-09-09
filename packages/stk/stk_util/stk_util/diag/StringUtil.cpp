@@ -49,20 +49,6 @@
 
 namespace sierra {
 
-std::istream &
-getline(
-  std::istream &		is,
-  sierra::String &		s,
-  char				eol)
-{
-  std::string std_string;
-
-  getline(is, std_string, eol);
-  s = std_string.c_str();
-  return is;
-}
-
-
 int
 case_strcmp(
   const char *		c1,
@@ -166,18 +152,6 @@ to_string(
   os << std::setprecision(precision) << r;
   return std::string(os.str());
 }
-
-
-std::string
-to_string(
-  const float &		r,
-  int			precision)
-{
-  std::ostringstream os;
-  os << std::setprecision(precision) << r;
-  return std::string(os.str());
-}
-
 
 
 std::ostream &

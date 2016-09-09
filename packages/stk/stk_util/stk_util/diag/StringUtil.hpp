@@ -860,44 +860,6 @@ struct hash_nocase<String>
   size_t operator()(const String & __s) const { return hash_string_nocase(__s.c_str()); }
 };
 
-// /**
-//  * @brief Class specialization <b>hash_nocase</b> for <b>std::string</b>.
-//  *
-//  */
-// template<>
-// struct hash_nocase<const std::string>
-// {
-//   /**
-//    * @brief Member function <b>operator()</b> returns the hash value of the
-//    * specified string.
-//    *
-//    * @param __s		a <b>std::string</b> const reference to the string to hash.
-//    *
-//    * @return		a <b>size_t</b> value of the hash value of the specified
-//    *			string.
-//    */
-//   size_t operator()(const std::string & __s) const { return hash_string_nocase(__s.c_str()); }
-// };
-
-// /**
-//  * @brief Class specialization <b>hash_nocase</b> for <b>std::string</b>.
-//  *
-//  */
-// template<>
-// struct hash_nocase<const String>
-// {
-//   /**
-//    * @brief Member function <b>operator()</b> returns the hash value of the
-//    * specified string.
-//    *
-//    * @param __s		a <b>std::string</const reference to the string to hash.
-//    *
-//    * @return		a <b>size_t</b> value of the hash value of the specified
-//    *			string.
-//    */
-//   size_t operator()(const String & __s) const { return hash_string_nocase(__s.c_str()); }
-// };
-
 ///
 /// @}
 ///
