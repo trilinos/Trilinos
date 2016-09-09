@@ -3215,7 +3215,6 @@ namespace Tpetra {
   }
 
 
-  // TODO: in the future, globalAssemble() should use import/export functionality
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
