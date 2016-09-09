@@ -754,6 +754,84 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
                            beg);
 }
 
+namespace panzer {
+namespace impl {
+/* Associate two sets of local side IDs into lists. Each list L has the property
+ * that every local side id in that list is the same, and this holds for each
+ * local side ID set. The smallest set of lists is found. The motivation for
+ * this procedure is to find a 1-1 workset pairing in advance. See the comment
+ * re: Intrepid2 in buildBCWorkset for more.
+ *   The return value is an RCP to a map. Only the map's values are of interest
+ * in practice. Each value is a list L. The map's key is a pair (side ID a, side
+ * ID b) that gives rise to the list. We return a pointer to a map so that the
+ * caller does not have to deal with the map type; auto suffices.
+ */
+Teuchos::RCP< std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t> > >
+associateCellsBySideIds(const std::vector<std::size_t>& sia /* local_side_ids_a */,
+                        const std::vector<std::size_t>& sib /* local_side_ids_b */)
+{
+  TEUCHOS_ASSERT(sia.size() == sib.size());
+
+  auto sip2i_p = Teuchos::rcp(new std::map< std::pair<std::size_t, std::size_t>, std::vector<std::size_t> >);
+  auto& sip2i = *sip2i_p;
+
+  for (std::size_t i = 0; i < sia.size(); ++i)
+    sip2i[std::make_pair(sia[i], sib[i])].push_back(i);
+
+  return sip2i_p;
+}
+
+template<typename ArrayT>
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+buildBCWorksetForUniqueSideId(const panzer::PhysicsBlock& pb_a,
+                              const std::vector<std::size_t>& local_cell_ids_a,
+                              const std::vector<std::size_t>& local_side_ids_a,
+                              const ArrayT& vertex_coordinates_a,
+                              const panzer::PhysicsBlock& pb_b,
+                              const std::vector<std::size_t>& local_cell_ids_b,
+                              const std::vector<std::size_t>& local_side_ids_b,
+                              const ArrayT& vertex_coordinates_b,
+                              const WorksetNeeds& needs_b)
+{
+  TEUCHOS_ASSERT(local_cell_ids_a.size() == local_cell_ids_b.size());
+  // Get a and b workset maps separately, but don't populate b's arrays.
+  const Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+    mwa = buildBCWorkset(pb_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a),
+    mwb = buildBCWorkset(needs_b, pb_b.elementBlockID(), local_cell_ids_b, local_side_ids_b,
+                         vertex_coordinates_b, false /* populate_value_arrays */);
+  TEUCHOS_ASSERT(mwa->size() == 1 && mwb->size() == 1);
+  for (std::map<unsigned,panzer::Workset>::iterator ait = mwa->begin(), bit = mwb->begin();
+       ait != mwa->end(); ++ait, ++bit) {
+    TEUCHOS_ASSERT(Teuchos::as<std::size_t>(ait->second.num_cells) == local_cell_ids_a.size() &&
+                   Teuchos::as<std::size_t>(bit->second.num_cells) == local_cell_ids_b.size());
+    panzer::Workset& wa = ait->second;
+    // Copy b's details(0) to a's details(1).
+    wa.other = Teuchos::rcp(new panzer::WorksetDetails(bit->second.details(0)));
+    // Populate details(1) arrays so that IP are in order corresponding to details(0).
+    populateValueArrays(wa.num_cells, true, needs_b, wa.details(1), Teuchos::rcpFromRef(wa.details(0)));
+  }
+  // Now mwa has everything we need.
+  return mwa;   
+}
+
+// Set s = a(idxs). No error checking.
+template <typename T>
+void subset(const std::vector<T>& a, const std::vector<std::size_t>& idxs, std::vector<T>& s)
+{
+  s.resize(idxs.size());
+  for (std::size_t i = 0; i < idxs.size(); ++i)
+    s[i] = a[idxs[i]];
+}
+
+template <typename Scalar, typename D1, typename D2, typename D3,
+          template <typename,typename,typename,typename> class ArrayType>
+PHX::MDField<Scalar,D1,D2,D3>
+subset(const ArrayType<Scalar,D1,D2,D3>& a, const std::vector<std::size_t>& idxs)
+{
+}
+} // namespace impl
+} // namespace panzer
+
 template<typename ArrayT>
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 panzer::buildBCWorkset(const panzer::PhysicsBlock& pb_a,
@@ -776,24 +854,53 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock& pb_a,
     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= pb_b.getBases();
     for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
         b_itr != bases.end(); ++b_itr)
-    needs_b.bases.push_back(b_itr->second);
+      needs_b.bases.push_back(b_itr->second);
   }
-  // Get a and b workset maps separately, but don't populate b's arrays.
-  const Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-    mwa = buildBCWorkset(pb_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a),
-    mwb = buildBCWorkset(needs_b, pb_b.elementBlockID(), local_cell_ids_b, local_side_ids_b,
-                         vertex_coordinates_b, false /* populate_value_arrays */);
-  TEUCHOS_ASSERT(mwa->size() == mwb->size());
-  for (std::map<unsigned,panzer::Workset>::iterator ait = mwa->begin(), bit = mwb->begin();
-       ait != mwa->end(); ++ait, ++bit) {
-    panzer::Workset& wa = ait->second;
-    // Copy b's details(0) to a's details(1).
-    wa.other = Teuchos::rcp(new panzer::WorksetDetails(bit->second.details(0)));
-    // Populate details(1) arrays so that IP are in order corresponding to details(0).
-    populateValueArrays(wa.num_cells, true, needs_b, wa.details(1), Teuchos::rcpFromRef(wa.details(0)));
+  // Since Intrepid2 requires all side IDs in a workset to be the same (see
+  // Intrepid2 comment above), we break the element list into pieces such that
+  // each piece contains elements on each side of the interface L_a and L_b and
+  // all elemnets L_a have the same side ID, and the same for L_b.
+  auto side_id_associations = impl::associateCellsBySideIds(local_side_ids_a, local_side_ids_b);
+  if (side_id_associations->size() == 1) {
+    // Common case of one workset on each side; optimize for it.
+    return impl::buildBCWorksetForUniqueSideId(pb_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a,
+                                               pb_b, local_cell_ids_b, local_side_ids_b, vertex_coordinates_b,
+                                               needs_b);
+  } else {
+    // The interface has elements having a mix of side IDs, so deal with each
+    // pair in turn.
+    Teuchos::RCP<std::map<unsigned,panzer::Workset> > mwa = Teuchos::rcp(new std::map<unsigned,panzer::Workset>);
+    std::vector<std::size_t> lci_a, lci_b, lsi_a, lsi_b;
+    panzer::MDFieldArrayFactory mdArrayFactory("", true);
+    const int d1 = Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(1)),
+      d2 = Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(2));
+    for (auto it : *side_id_associations) {
+      const auto& idxs = it.second;
+      impl::subset(local_cell_ids_a, idxs, lci_a);
+      impl::subset(local_side_ids_a, idxs, lsi_a);
+      impl::subset(local_cell_ids_b, idxs, lci_b);
+      impl::subset(local_side_ids_b, idxs, lsi_b);
+      auto vc_a = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("vc_a", idxs.size(), d1, d2);
+      auto vc_b = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("vc_b", idxs.size(), d1, d2);
+      for (std::size_t i = 0; i < idxs.size(); ++i) {
+        const auto ii = idxs[i];
+        for (int j = 0; j < d1; ++j)
+          for (int k = 0; k < d2; ++k) {
+            vc_a(i, j, k) = vertex_coordinates_a(ii, j, k);
+            vc_b(i, j, k) = vertex_coordinates_b(ii, j, k);
+          }
+      }
+      auto mwa_it = impl::buildBCWorksetForUniqueSideId(pb_a, lci_a, lsi_a, vc_a, pb_b, lci_b, lsi_b, vc_b, needs_b);
+      TEUCHOS_ASSERT(mwa_it->size() == 1);
+      // Form a unique key that encodes the pair (side ID a, side ID b). We
+      // abuse the key here in the sense that it is everywhere else understood
+      // to correspond to the side ID of the elements in the workset.
+      //   1000 is a number substantially larger than is needed for any element.
+      const std::size_t key = lsi_a[0] * 1000 + lsi_b[0];
+      (*mwa)[key] = mwa_it->begin()->second;
+    }
+    return mwa;
   }
-  // Now mwa has everything we need.
-  return mwa;
 }
 
 #endif
