@@ -962,7 +962,7 @@ template <class T> class MLVec {
     // different constructors & destructors
 
     MLVec();              
-    MLVec(int size);
+    MLVec(int mysize);
     MLVec(T *startptr, T *endptr, bool okToChangePtr = false, free_s freeType = neither);
     ~MLVec();
 
@@ -998,20 +998,20 @@ template <class T> MLVec<T>::MLVec() {
 }
 
 // Create an vector without any data but allocate space
-template <class T> MLVec<T>::MLVec(int size) {
+template <class T> MLVec<T>::MLVec(int mysize) {
 
-  TEUCHOS_TEST_FOR_EXCEPTION(size < 0,std::logic_error,
-  "MLVec error, cannot create a negative size (= " << size << ") vector\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(mysize < 0,std::logic_error,
+  "MLVec error, cannot create a negative size (= " << mysize << ") vector\n");
 
-  data_          = NULL;        size_          = size;
+  data_          = NULL;        size_          = mysize;
   okToChangePtr_ = true;        getPtrInvoked_ = false;
   freeType_      = neither;
 
-  if (size > 0) {
-     data_ = (T *) ML_allocate(sizeof(T)*size); 
+  if (size_ > 0) {
+     data_ = (T *) ML_allocate(sizeof(T)*size_); 
 
      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL,std::logic_error,
-     "MLVec error, not enough space for vector of size " << size << "\n");
+     "MLVec error, not enough space for vector of size " << size_ << "\n");
 
      freeType_ = useFree;
   }
