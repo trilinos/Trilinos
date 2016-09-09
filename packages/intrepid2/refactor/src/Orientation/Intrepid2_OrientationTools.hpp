@@ -243,34 +243,17 @@ namespace Intrepid2 {
     getOrientation(/**/  Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
                    const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
                    const shards::CellTopology cellTopo);
-    
-    
-    // // all edges and faces should apply this coeff matrix
-    // template<class ArrayType>
-    // static void applyCoeffMatrix(ArrayType &         outValues,
-    //                              const ArrayType &   refValues,
-    //                              const CoeffMatrix & C,
-    //                              const unsigned int  offset,
-    //                              const unsigned int  numDofs);
-
-    // // vertex and interior DOFs only
-    // template<class ArrayType>
-    // static void copyBasisValues(ArrayType &         outValues,
-    //                             const ArrayType &   refValues,
-    //                             const unsigned int  offRows, const unsigned int  numRows,
-    //                             const unsigned int  offCols, const unsigned int  numCols);
-
-
-    // template<class ArrayType>
-    // static void getModifiedBasisFunctions(ArrayType &                        outValues,
-    //                                       const ArrayType &                  refValues,
-    //                                       const BasisSet<Scalar,ArrayType> & basis,
-    //                                       const Orientation                  ort);
-
-
-    // static bool verbose;
-    // static bool reverse;
-    // static std::ostream* verboseStreamPtr;
+        
+    template<typename outValueValueType, class ...outValueProperties,
+             typename refValueValueType, class ...refValueProperties,
+             typename elemOrtValueType,  class ...elemOrtProperties,
+             typename quadBasisType>
+    inline
+    static void 
+    getModifiedHgradBasisQuadrilateral(/**/  Kokkos::DynRankView<outValueValueType,outValueProperties...> outValues,
+                                       const Kokkos::DynRankView<refValueValueType,refValueProperties...> refValues,
+                                       const Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
+                                       const quadBasisType quadBasis);
   };
   
   template<typename T> 
