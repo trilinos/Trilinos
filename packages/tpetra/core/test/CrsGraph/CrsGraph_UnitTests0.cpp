@@ -405,9 +405,11 @@ namespace {
         trigraph.insertGlobalIndices(myrowind,ginds(j,1));
       }
       TEST_EQUALITY( trigraph.getNumEntriesInLocalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
-      // if static graph, attempt to insert one additional entry on my row and verify that an exception is thrown
+      // If StaticProfile, then attempt to insert one additional entry
+      // in my row that is not already in the row, and verify that it
+      // throws an exception.
       if (pftype == StaticProfile) {
-        TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind)), std::runtime_error );
+        TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+2)), std::runtime_error );
       }
       trigraph.fillComplete(params);
       // check that inserting global entries throws (inserting local entries is still allowed)
@@ -456,7 +458,7 @@ namespace {
       Array<GO> colinds(1);
       colinds[0] = grow;
       TEST_NOTHROW( diaggraph.insertGlobalIndices(grow,colinds()) );
-      TEST_THROW( diaggraph.insertGlobalIndices(grow,colinds()), std::runtime_error );
+      TEST_THROW( diaggraph.insertGlobalIndices(grow, Teuchos::tuple<GO> (grow+1)), std::runtime_error );
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
@@ -657,9 +659,9 @@ namespace {
         ddgraph.getGlobalRowView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
         ddgraph.getGlobalRowView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
         if (pftype == StaticProfile) { // no room for more, on any row
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle)), std::runtime_error );
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle)), std::runtime_error );
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle)), std::runtime_error );
+          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle+1)), std::runtime_error );
+          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle+1)), std::runtime_error );
+          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle+1)), std::runtime_error );
         }
         ddgraph.fillComplete(params);
         // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
@@ -717,12 +719,13 @@ namespace {
       params->set ("Optimize Storage", optimizeStorage);
       out << "ProfileType: "
           << (pftype == StaticProfile ? "StaticProfile" : "DynamicProfile")
+          << ", Optimize Storage: " << (optimizeStorage ? "true" : "false")
           << endl;
-      out << "Optimize Storage: " << (optimizeStorage ? "true" : "false");
+      Teuchos::OSTab tab1 (out);
 
       {
         out << "Diagonal graph test" << endl;
-        Teuchos::OSTab tab1 (out);
+        Teuchos::OSTab tab2 (out);
 
         // create a diagonal graph, where the graph entries are
         // contributed by a single off-node contribution, no
@@ -743,10 +746,17 @@ namespace {
         // row, corresponding to the diagonal
         diaggraph.getGlobalRowView (myrowind, myrow_gbl);
         TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO> (myrowind) );
+
         if (pftype == StaticProfile) { // no room for more
-          TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind)),
+          out << "Attempt to insert global column index " << (myrowind+1) << " into"
+            " global row " << myrowind << "; it should throw, because the graph"
+            " is StaticProfile, has an upper bound of one entry per row, and "
+            "already has a different column index " << grow << " in this row."
+              << endl;
+          TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+1)),
                       std::runtime_error );
         }
+
         diaggraph.fillComplete (params);
         // after fillComplete(), there should be a single entry on my
         // row, corresponding to the diagonal
@@ -767,7 +777,7 @@ namespace {
       }
       {
         out << "Next-door-neighbor graph test" << endl;
-        Teuchos::OSTab tab1 (out);
+        Teuchos::OSTab tab2 (out);
 
         // create a next-door-neighbor graph (tridiagonal plus
         // corners), where the graph entries are contributed by single
@@ -797,12 +807,6 @@ namespace {
         ngraph.globalAssemble();
         TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0),
                        ngraph.getNumAllocatedEntriesInLocalRow(0) );
-        if (pftype == StaticProfile) {
-          // Adding another entry under static allocation should fail.
-          TEST_THROW(
-            ngraph.insertGlobalIndices (myRank, tuple<GO> (myRank)),
-            std::runtime_error );
-        }
         out << "Calling fillComplete(params)" << endl;
         ngraph.fillComplete (params);
 
