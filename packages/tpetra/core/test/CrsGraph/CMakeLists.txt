@@ -37,3 +37,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   SOURCE_FILES west0067.rua mhd1280b.cua
 #   EXEDEPS CrsGraph_UnitTests
 #   )
+
+# This test needs at least 3 MPI processes to be meaningful.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue601
+  SOURCES
+    CrsGraph_Issue601.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 3-8
+  STANDARD_PASS_OUTPUT
+  )

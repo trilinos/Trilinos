@@ -3327,7 +3327,10 @@ namespace Tpetra {
     // We just use it as a temporary container for the Export.
 
     // 4. If the original row Map is one to one, then we can Export
-    //    directly from nonlocalGraph into this.
+    //    directly from nonlocalGraph into this.  Otherwise, we have
+    //    to create a temporary graph with a one-to-one row Map,
+    //    Export into that, then Import from the temporary graph into
+    //    *this.
 
     auto origRowMap = this->getRowMap ();
     const bool origRowMapIsOneToOne = origRowMap->isOneToOne ();
@@ -3345,16 +3348,17 @@ namespace Tpetra {
       auto oneToOneRowMap = Tpetra::createOneToOne (origRowMap);
       export_type exportToOneToOne (nonlocalRowMap, oneToOneRowMap);
 
-      // We don't need the graph of nonlocals anymore, so get rid of
-      // it, to keep the memory high-water mark down.
-      nonlocalGraph = Teuchos::null;
-
-      // Create a new graph with the one-to-one row Map.
+      // Create a temporary graph with the one-to-one row Map.
       //
       // TODO (mfh 09 Sep 2016) Estimate the number of entries in each
       // row, to avoid reallocation during the Export operation.
       crs_graph_type oneToOneGraph (oneToOneRowMap, 0);
+      // Export from graph of nonlocals into the temp one-to-one graph.
       oneToOneGraph.doExport (*nonlocalGraph, exportToOneToOne, Tpetra::INSERT);
+
+      // We don't need the graph of nonlocals anymore, so get rid of
+      // it, to keep the memory high-water mark down.
+      nonlocalGraph = Teuchos::null;
 
       // Import from the one-to-one graph to the original graph.
       import_type importToOrig (oneToOneRowMap, origRowMap);
