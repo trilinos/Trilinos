@@ -26,13 +26,24 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #
 
 #
-# function headers
+# vector headers
 #
 
-IF (ROL_ENABLE_Intrepid2)
+IF (ROL_ENABLE_Boost AND ROL_ENABLE_Intrepid2)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
   APPEND_SET(HEADERS
     vector/ROL_MiniTensor_Vector.hpp
+  )
+ENDIF()
+
+#
+# function headers
+#
+
+IF (ROL_ENABLE_Boost AND ROL_ENABLE_Intrepid2)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
+  APPEND_SET(HEADERS
+    function/ROL_MiniTensor_Function.hpp
   )
 ENDIF()
 
