@@ -97,9 +97,7 @@ Writer &operator<<(Writer &dout, const std::type_info &t);
  */
 template <class T, class U>
 Writer &operator<<(Writer & dout, const std::pair<T, U> &pair) {
-//  dout << typeid(pair) << "(" << pair.first << ":" << pair.second << ")";
   dout << "(" << pair.first << ":" << pair.second << ")";
-
   return dout;
 }
 
@@ -462,65 +460,6 @@ dump(
   return dout;
 }
 
-// /**
-//  * @brief Template <b>dump</b> prints the object contained within a
-//  * hash_map to the diagnostic writer.
-//  *
-//  * @param dout    a <b>Writer</b> reference to the diagnostic writer to
-//  *      write the hash_map to.
-//  *
-//  * @param t    a <b>hash_map</b> of objects.
-//  *
-//  * @return    a <b>Writer</b> reference to this object
-//  */
-// template <class Key, class T>
-// Writer &
-// dump(
-//   Writer &      dout,
-//   const hash_map<Key, T> &  t)
-// {
-//   if (dout.shouldPrint()) {
-//     dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-//     for (typename hash_map<Key, T>::const_iterator it = t.begin(); it != t.end(); ++it)
-//       dout <<  "[" << (*it).first << "] " << (*it).second << dendl;
-
-//     dout << pop;
-//   }
-
-//   return dout;
-// }
-
-// /**
-//  * @brief Template <b>dump</b> prints the object pointed to that are
-//  * contained within a hash_map to the diagnostic writer.
-//  *
-//  * @param dout    a <b>Writer</b> reference to the diagnostic writer to
-//  *      write the hash_map to.
-//  *
-//  * @param t    a <b>hash_map</b> of objects.
-//  *
-//  * @return    a <b>Writer</b> reference to this object
-//  */
-// template <class Key, class T>
-// Writer &
-// dump(
-//   Writer &      dout,
-
-//   const hash_map<Key, T *> &  t)
-// {
-//   if (dout.shouldPrint()) {
-//     dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-//     for (typename hash_map<Key, T *>::const_iterator it = t.begin(); it != t.end(); ++it)
-//       dout << "[" << (*it).first << "] " << (*it)->second << dendl;
-
-//     dout << pop;
-//   }
-
-//   return dout;
-// }
-
 
 template <size_t n>
 Writer &operator<<(Writer &dout, const std::bitset<n> &t) {
@@ -740,7 +679,7 @@ operator<<(Writer &dout, const sierra::Array<ElementType, Tag0, Tag1, Tag2, Tag3
   if (dout.shouldPrint()) {
     std::string type = sierra::demangle(typeid(X).name());
     dout << type.substr(0, type.find(", sierra::TypeListEnd")) << ">" << push << dendl;
-    dout.getStream() << array; // ArrayVerbosePrint<X::NumDim>::dump(dout, array.dimension(), array.ptr(), array.stride());
+    dout.getStream() << array;
     dout << pop << dendl;
   }
   return dout;
@@ -764,7 +703,7 @@ operator<<(Writer &dout, const sierra::ArrayContainer<ElementType, Tag0, Tag1, T
   if (dout.shouldPrint()) {
     std::string type = sierra::demangle(typeid(X).name());
     dout << type.substr(0, type.find(", sierra::TypeListEnd")) << ">" << push << dendl;
-    dout.getStream() << array; // ArrayVerbosePrint<X::NumDim>::dump(dout, array.dimension(), array.ptr(), array.stride());
+    dout.getStream() << array;
     dout << pop << dendl;
   }
   return dout;
@@ -779,7 +718,7 @@ operator<<(Writer &dout, const sierra::FArray<ElementType, Dimension> &array)
 
   if (dout.shouldPrint()) {
     dout << sierra::demangle(typeid(X).name()) << push << dendl;
-    dout.getStream() << array; // ArrayVerbosePrint<X::NumDim>::dump(dout, array.dimension(), array.ptr(), array.stride());
+    dout.getStream() << array;
     dout << pop << dendl;
   }
   return dout;
@@ -793,7 +732,7 @@ operator<<(Writer &dout, const sierra::FArrayContainer<ElementType, Dimension> &
 
   if (dout.shouldPrint()) {
     dout << sierra::demangle(typeid(X).name()) << push << dendl;
-    dout.getStream() << array; // ArrayVerbosePrint<X::NumDim>::dump(dout, array.dimension(), array.ptr(), array.stride());
+    dout.getStream() << array;
     dout << pop << dendl;
   }
   return dout;
