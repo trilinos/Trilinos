@@ -822,13 +822,6 @@ void subset(const std::vector<T>& a, const std::vector<std::size_t>& idxs, std::
   for (std::size_t i = 0; i < idxs.size(); ++i)
     s[i] = a[idxs[i]];
 }
-
-template <typename Scalar, typename D1, typename D2, typename D3,
-          template <typename,typename,typename,typename> class ArrayType>
-PHX::MDField<Scalar,D1,D2,D3>
-subset(const ArrayType<Scalar,D1,D2,D3>& a, const std::vector<std::size_t>& idxs)
-{
-}
 } // namespace impl
 } // namespace panzer
 
