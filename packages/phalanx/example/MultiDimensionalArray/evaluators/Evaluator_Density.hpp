@@ -54,7 +54,7 @@
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
 
-struct DensityTag {};
+//struct DensityTag {};
 
 template<typename EvalT, typename Traits>
 class Density :
@@ -75,10 +75,13 @@ public:
   void evaluateFields(typename Traits::EvalData ud);
 
   KOKKOS_INLINE_FUNCTION
-    void operator () (const DensityTag, const int i) const;  
+    void operator () (const int i) const;  
 
-  KOKKOS_INLINE_FUNCTION
-    void operator () (const DensityTag, typename Kokkos::TeamPolicy<>::member_type & team) const;  
+  // KOKKOS_INLINE_FUNCTION
+  //   void operator () (const DensityTag, const int i) const;  
+
+  // KOKKOS_INLINE_FUNCTION
+  //   void operator () (const DensityTag, typename Kokkos::TeamPolicy<>::member_type & team) const;  
   
 private:
   
