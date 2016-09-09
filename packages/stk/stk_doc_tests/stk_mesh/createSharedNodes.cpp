@@ -49,7 +49,7 @@ void verify_global_node_count(size_t expectedTotalNumNodes, const stk::mesh::Bul
     EXPECT_EQ(expectedTotalNumNodes, entity_counts[stk::topology::NODE_RANK]);
 }
 
-void verify_nodes_1_and_2_are_no_longer_shared(const stk::mesh::BulkData &mesh, const stk::mesh::EntityVector &nodes)
+void verify_nodes_2_and_3_are_no_longer_shared(const stk::mesh::BulkData &mesh, const stk::mesh::EntityVector &nodes)
 {
     EXPECT_TRUE(mesh.is_valid(nodes[0]));
     ASSERT_TRUE(mesh.is_valid(nodes[1]));
@@ -58,7 +58,7 @@ void verify_nodes_1_and_2_are_no_longer_shared(const stk::mesh::BulkData &mesh, 
     EXPECT_FALSE(mesh.bucket(nodes[2]).shared());
 }
 
-void verify_nodes_1_and_2_are_removed(const stk::mesh::BulkData &mesh, const stk::mesh::EntityVector &nodes)
+void verify_nodes_2_and_3_are_removed(const stk::mesh::BulkData &mesh, const stk::mesh::EntityVector &nodes)
 {
     EXPECT_TRUE(mesh.is_valid(nodes[0]));
     // These nodes were deleted because the special marking for "independent"
@@ -190,10 +190,10 @@ TEST(stkMeshHowTo, createIndependentSharedNodesThenAddDependence)
         bulkData.modification_end();
 
         if(myproc == 0)
-            verify_nodes_1_and_2_are_no_longer_shared(bulkData, nodes);
+            verify_nodes_2_and_3_are_no_longer_shared(bulkData, nodes);
 
         else  // myproc == 1
-            verify_nodes_1_and_2_are_removed(bulkData, nodes);
+            verify_nodes_2_and_3_are_removed(bulkData, nodes);
     }
 }
 
