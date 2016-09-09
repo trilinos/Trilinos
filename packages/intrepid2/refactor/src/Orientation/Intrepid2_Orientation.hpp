@@ -61,24 +61,25 @@ namespace Intrepid2 {
   //   are located on the stack and contiguous.
   class Orientation {
   private:
-    template<typename NodeType>
-    static void getElementNodeMap(NodeType *subCellVerts,
+    template<typename subCellVertType,
+             typename elemNodeViewType>
+    static void getElementNodeMap(subCellVertType *subCellVerts,
                                   ordinal_type &numVerts,
                                   const shards::CellTopology cellTopo,
-                                  const NodeType elemNodes[],
+                                  const elemNodeViewType elemNodes,
                                   const ordinal_type subCellDim,
                                   const ordinal_type subCellOrd);
     
     // orientation is always computed on the right-handed coordinates
-    template<typename NodeType>
-    static ordinal_type getOrientation(const NodeType subCellVerts[],
+    template<typename subCellVertType>
+    static ordinal_type getOrientation(const subCellVertType subCellVerts[],
                                        const ordinal_type numVerts);
 
 
   public:
-    template<typename NodeType>
+    template<typename elemNodeViewType>
     static Orientation getOrientation(const shards::CellTopology cellTopo,
-                                      const NodeType elemNodes[]);
+                                      const elemNodeViewType elemNodes);
     
   private:
     unsigned int _edgeOrt, _faceOrt;

@@ -75,7 +75,7 @@ namespace Intrepid2 {
     }
     
     template<typename DeviceSpaceType>
-    int Orientation_Test02(const bool verbose) {
+    int Orientation_Test03(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -99,7 +99,7 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|                 Unit Test (OrientationTools, initialize)                    |\n"
+        << "|                 Unit Test (OrientationTools, getOrientation)                |\n"
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
@@ -112,51 +112,69 @@ namespace Intrepid2 {
         {
           *outStream << "\n -- Testing Quadrilateral \n\n";
 
-          // reference permutation is either inorder or inverse order
-          const ordinal_type refCoeff[4][2] = { { 0, 1 },
-                                                { 0, 1 },
-                                                { 1, 0 },
-                                                { 1, 0 } };
+          // 
+          // 9 12 13 16
+          // 4  3 11 15
+          // 5  2  8 14
+          // 1  6  7 10
+          ordinal_type refMesh[9][4] = { { 1, 6, 2, 5 },
+                                         { 6, 7, 8, 2 },
+                                         { 7,10,14, 8 },
+                                         { 5, 2, 3, 4 },
+                                         { 2, 8,11, 3 },
+                                         { 8,14,15,11 },
+                                         { 4, 3,12, 9 },
+                                         { 3,11,13,12 },
+                                         {11,15,16,13 } };
+          
+          const ordinal_type refOrts[9][4] = { { 0,1,0,1 },
+                                            { 0,0,1,0 },
+                                            { 0,0,1,1 },
+                                            { 1,0,0,0 },
+                                            { 0,0,1,1 },
+                                            { 0,0,1,1 },
+                                            { 1,0,1,1 },
+                                            { 0,0,1,1 },
+                                            { 0,0,1,1 } };
 
+          const ordinal_type numCells = 9, numVerts = 4, numEdges = 4;
           const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
 
-          const ordinal_type space = FUNCTION_SPACE_HGRAD;
-          const ordinal_type order = 4;
+          // view to store orientation 
+          Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
 
-          Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType> cellBasis(order);
+          // view to import refMesh from host
+          Kokkos::DynRankView<ordinal_type,Kokkos::LayoutRight,HostSpaceType> 
+            elemNodesHost(&refMesh[0][0], numCells, numVerts);
+          auto elemNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), elemNodesHost);
+          Kokkos::deep_copy(elemNodes, elemNodesHost);
           
-          ots::initialize(cellTopo, FUNCTION_SPACE_HGRAD, order);
-          
-          const auto matData = Kokkos::subview(ots::quadEdgeData, 
-                                               space, order - 1, 
-                                               Kokkos::ALL(), Kokkos::ALL(),
-                                               Kokkos::ALL(), Kokkos::ALL());
-          auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-          Kokkos::deep_copy(matDataHost, matData);
-          
-          const ordinal_type lineDim = 1, numEdge = 4, numOrt = 2;
-          for (auto edgeId=0;edgeId<numEdge;++edgeId) {
-            const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
-            const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
+          ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
-            const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);            
-            for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-              *outStream << "\n edgeId = " << edgeId << " edgeOrt = " << edgeOrt << "\n";
-              const auto mat = Kokkos::subview(matDataHost, edgeId, edgeOrt, range, range);
-              for (auto i=0;i<ndofEdge;++i) {
-                for (auto j=0;j<ndofEdge;++j)
-                  *outStream << std::setw(4) << std::fixed << std::setprecision(1) << mat(i,j);
-                *outStream << "\n";
-                
-                switch (refCoeff[edgeId][edgeOrt]) {
-                case 0: errorFlag += (std::abs(mat(i,i) - 1.0) > tol); break;
-                case 1: errorFlag += (std::abs(mat(i,ndofEdge-i-1) - 1.0) > tol); break;
-                }
+          // for comparison move data to host
+          auto elemOrtsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), elemOrts);
+          
+          for (auto cell=0;cell<numCells;++cell) {
+            // decode edge orientations
+            ordinal_type orts[4];
+            elemOrtsHost(cell).getEdgeOrientation(orts, numEdges);
 
-              }
-            } 
+            int flag = 0;
+            std::stringstream s1, s2;
+            for (auto edgeId=0;edgeId<numEdges;++edgeId) {
+              s1 << orts[edgeId] << "  ";
+              s2 << refOrts[cell][edgeId] << "  ";
+              flag += (orts[edgeId] != refOrts[cell][edgeId]);              
+            }
+            *outStream << " cell id = " << cell 
+                       << "  computed edge ort = " << s1.str() 
+                       << " :: ref edge ort = " << s2.str() 
+                       << " \n";
+            if (flag) {
+              errorFlag += flag;
+              *outStream << "                    ^^^^^^^^^^^^^^ FAILURE\n ";
+            }
           }
-          ots::finalize();
         }
 
       } catch (std::exception err) {

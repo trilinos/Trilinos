@@ -228,6 +228,22 @@ namespace Intrepid2 {
 
     inline 
     static void finalize();
+
+    // if an element is aligned left, it is an error.
+    template<typename ptViewType>
+    KOKKOS_INLINE_FUNCTION
+    static bool 
+    isLeftHandedCell(const ptViewType pts);
+
+    // compute orientations of cells in a workset
+    template<typename elemOrtValueType, class ...elemOrtProperties,
+             typename elemNodeValueType, class ...elemNodeProperties>
+    inline 
+    static void
+    getOrientation(/**/  Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
+                   const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
+                   const shards::CellTopology cellTopo);
+    
     
     // // all edges and faces should apply this coeff matrix
     // template<class ArrayType>
@@ -244,11 +260,6 @@ namespace Intrepid2 {
     //                             const unsigned int  offRows, const unsigned int  numRows,
     //                             const unsigned int  offCols, const unsigned int  numCols);
 
-  public:
-    
-    // template<class ArrayType>
-    // static bool isLeftHandedCell(const ArrayType & pts);
-    
 
     // template<class ArrayType>
     // static void getModifiedBasisFunctions(ArrayType &                        outValues,
@@ -270,6 +281,7 @@ namespace Intrepid2 {
 #include "Intrepid2_OrientationToolsDefModifyPoints.hpp"
 #include "Intrepid2_OrientationToolsDefCoeffMatrix.hpp"
 #include "Intrepid2_OrientationToolsDefMatrixData.hpp"
+#include "Intrepid2_OrientationToolsDefModifyBasis.hpp"
 
 #endif
 

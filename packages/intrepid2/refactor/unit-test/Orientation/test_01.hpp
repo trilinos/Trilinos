@@ -138,7 +138,8 @@ namespace Intrepid2 {
           
           for (auto i=0;i<6;++i) {
             // find orientation
-            const auto ort = Orientation::getOrientation(cellTopo, elemNodes[i]);
+            const auto nodes = Kokkos::View<const ordinal_type[3],HostSpaceType>(elemNodes[i]);
+            const auto ort = Orientation::getOrientation(cellTopo, nodes);
             
             // decode orientation
             ordinal_type edgeOrt[3] = {};
@@ -223,7 +224,8 @@ namespace Intrepid2 {
 
           for (auto i=0;i<24;++i) {
             // find orientation
-            const auto ort = Orientation::getOrientation(cellTopo, elemNodes[i]);
+            const auto nodes = Kokkos::View<const ordinal_type[4],HostSpaceType>(elemNodes[i]);
+            const auto ort = Orientation::getOrientation(cellTopo, nodes);
             
             // decode orientation
             ordinal_type edgeOrt[4] = {};

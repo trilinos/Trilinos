@@ -59,34 +59,35 @@ namespace Intrepid2 {
   // Orientation
   //
   //
-  template<typename NodeType>
+  template<typename subCellVertType,
+           typename elemNodeViewType>
   inline
   void
-  Orientation::getElementNodeMap(NodeType *subCellVerts,
+  Orientation::getElementNodeMap(subCellVertType *subCellVerts,
                                  ordinal_type &numVerts,
                                  const shards::CellTopology cellTopo,
-                                 const NodeType elemNodes[],
+                                 const elemNodeViewType elemNodes,
                                  const ordinal_type subCellDim,
                                  const ordinal_type subCellOrd) {
     switch (subCellDim) {
     case 0: {
       numVerts = 1;
-      subCellVerts[0] = elemNodes[subCellOrd];
+      subCellVerts[0] = elemNodes(subCellOrd);
       break;
     }
     default: {
       numVerts = cellTopo.getVertexCount(subCellDim, subCellOrd);
       for (auto i=0;i<numVerts;++i)
-        subCellVerts[i] = elemNodes[cellTopo.getNodeMap(subCellDim, subCellOrd, i)];
+        subCellVerts[i] = elemNodes(cellTopo.getNodeMap(subCellDim, subCellOrd, i));
       break;
     }
     }
   }
   
-  template<typename NodeType>
+  template<typename subCellVertType>
   inline
   ordinal_type
-  Orientation::getOrientation(const NodeType subCellVerts[],
+  Orientation::getOrientation(const subCellVertType subCellVerts[],
                               const ordinal_type numVerts) {
     ordinal_type ort = 0;
     switch (numVerts) {
@@ -148,11 +149,11 @@ namespace Intrepid2 {
     return ort;
   }
 
-  template<typename NodeType>
+  template<typename elemNodeViewType>
   inline
   Orientation
   Orientation::getOrientation(const shards::CellTopology cellTopo,
-                              const NodeType elemNodes[]) {
+                              const elemNodeViewType elemNodes) {
     Orientation ort;
     const ordinal_type nedge = cellTopo.getEdgeCount();
     if (nedge > 0) {
