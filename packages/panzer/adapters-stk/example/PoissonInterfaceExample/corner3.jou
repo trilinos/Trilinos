@@ -1,0 +1,46 @@
+# Cubit Journal for creating interface.exo
+undo on
+# Create a square for silicon1
+create surface rectangle width 0.05 height 0.10 zplane
+# Move the silicon1 square so the lower left corner is at (0,0)
+move surface 1 x 0.025 y 0.05 include_merged
+# Create a square for silicon2
+create surface rectangle width 0.03 height 0.11 zplane
+# Move the silicon2 square so the lower left corner is at (0,0.025)
+move surface 2 x 0.015 y 0.055 include_merged
+move surface 2 x 0.05
+# Merge the two squares
+imprint all
+merge all
+# Set the mesh size for meshing
+surface 1 2 size 0.005
+# Mesh the two surfaces
+mesh surface 1 2
+# Create a sideset for the anode
+sideset 1 curve 2
+# Create a sideset for the cathode
+sideset 2 curve 8
+# Create a sideside for the interface
+# Note that we are using "with respect to" to get a 1-sided sideset.
+# We don't need to do this for the anode and cathode since they are along the
+# boundary, and there is only one side.
+sideset 3 curve 4 wrt surface 1
+# Create blocks for silicon1 and silicon2
+set duplicate block elements off
+block 1 surface 1
+set duplicate block elements off
+block 2 surface 2
+# Just in case, make sure our element type is QUAD4
+block all element type QUAD4
+# Label the blocks
+block 1 name "silicon1"
+block 2 name "silicon2"
+# Label the sidesets
+sideset 1 name "anode"
+sideset 2 name "cathode"
+sideset 3 name "interface"
+# Export the mesh
+undo group begin
+set large exodus file on
+export mesh "corner3.exo" overwrite
+undo group end
