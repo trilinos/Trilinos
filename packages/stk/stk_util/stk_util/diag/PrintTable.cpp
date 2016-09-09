@@ -53,11 +53,6 @@ PrintTable::Cell & PrintTable::Cell::operator=(const PrintTable::Cell &cell) {
 }
 
 void
-PrintTable::transpose_table() const
-{}
-
-
-void
 PrintTable::calculate_column_widths() const
 {
   ColumnWidthVector	column_width_set;
@@ -155,12 +150,9 @@ std::ostream &
 PrintTable::print(
   std::ostream &	os) const
 {
-  if (m_flags & COMMA_SEPARATED_VALUES)
+  if (m_flags & COMMA_SEPARATED_VALUES) {
     csvPrint(os);
-
-  else {
-    if (m_flags & PRINT_TRANSPOSED)
-      transpose_table();
+  } else {
 
     calculate_column_widths();
 
@@ -300,29 +292,9 @@ diag::Writer &
 PrintTable::verbose_print(
   diag::Writer &	dout) const
 {
-//   const ColumnWidthVector &column_width = calculate_column_widths();
-
-//   for (Table::const_iterator row_it = m_header.begin(); row_it != m_header.end(); ++row_it) {
-//     printRow(os, *row_it);
-//     os << '\n';
-//   }
-
-//   if (m_header.size() > 0)
-//     printHeaderBar(os);
-
-//   for (Table::const_iterator row_it = m_table.begin(); row_it != m_table.end(); ++row_it) {
-//     int i = 0;
-//     for (Row::const_iterator cell_it = (*row_it).begin(); cell_it != (*row_it).end(); ++cell_it, ++i)
-//       if ((*cell_it).m_flags & Cell::SPAN)
-//	dout << (*cell_it).m_string;
-//       else
-//	dout << std::setw(column_width[i]) << (*cell_it).m_string;
-//     dout << dendl;
-//   }
-
   calculate_column_widths();
 
-  dout << m_title << std::endl;
+  dout << m_title << diag::dendl;
 
   for (Table::const_iterator row_it = m_header.begin(); row_it != m_header.end(); ++row_it) {
     dout << "";
