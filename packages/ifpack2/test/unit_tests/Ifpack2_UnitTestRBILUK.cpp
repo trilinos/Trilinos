@@ -95,7 +95,7 @@ namespace { // (anonymous)
   } \
 } while (false)
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestLowerTriangularBlockCrsMatrix, Scalar, LO, GO)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, LowerTriangularBlockCrsMatrix, Scalar, LO, GO)
 {
   using Teuchos::outArg;
   using Teuchos::RCP;
@@ -215,7 +215,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestLowerTriangularBlockCrsMatr
   }
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, UpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type;
@@ -269,7 +269,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestUpperTriangularBlockCrsMatr
   }
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, FullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type;
@@ -323,7 +323,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Sc
   }
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
@@ -393,7 +393,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDro
 
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   typedef Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_block_type;
   typedef Kokkos::View<Scalar*,Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_vec_type;
@@ -569,7 +569,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
     TEST_FLOATING_EQUALITY(exactSolution[i], computeSolution[i], 1e-13);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, DiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   using Teuchos::outArg;
   using Teuchos::RCP;
@@ -741,7 +741,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Sca
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RBILUK, Scalar, LO, GO)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, AdditiveSchwarzSubdomainSolver, Scalar, LO, GO)
 {
   using std::endl;
   using Teuchos::RCP;
@@ -836,12 +836,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RBILUK, Scalar, LO, GO
 
 
 # define UNIT_TEST_GROUP_BLOCK_LGN( Scalar, LocalOrdinal, GlobalOrdinal ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestLowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestBlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, LowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, UpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, BandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, DiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, FullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, AdditiveSchwarzSubdomainSolver, Scalar, LocalOrdinal, GlobalOrdinal)
 
 typedef Tpetra::MultiVector<>::scalar_type scalar_type;
 typedef Tpetra::MultiVector<>::local_ordinal_type local_ordinal_type;

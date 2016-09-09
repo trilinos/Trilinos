@@ -54,17 +54,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     COMM serial mpi
   )
 
-# mfh 09 Sep 2016: Separate this test into its own executable,
-# so that we can more easily diagnose any issues with it.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  RBILUK
-  SOURCES 
-    Ifpack2_UnitTestRBILUK.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ""
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental)
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    RBILUK
+    SOURCES 
+      Ifpack2_UnitTestRBILUK.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ""
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
 
 #TRIBITS_ADD_EXECUTABLE(
 #    Distributed_SGS
