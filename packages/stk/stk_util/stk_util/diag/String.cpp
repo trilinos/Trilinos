@@ -225,21 +225,6 @@ char * StringData::mem( const char * cs , size_t n )
   return dst ;
 }
 
-StringData::~StringData()
-{ mem(nullptr, 0); }
-
-StringData::StringData()
-{ small[ max_len ] = small[ off_len ] = small[ 0 ] = 0 ; }
-
-size_t StringData::len() const
-{ return small[ max_len ] ? large.len : small[ off_len ] ; }
-
-char * StringData::c_str()
-{ return small[ max_len ] ? large.ptr : small ; }
-
-const char * StringData::c_str() const
-{ return small[ max_len ] ? large.ptr : small ; }
-
 } // namespace internal
 
 std::ostream &

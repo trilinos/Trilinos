@@ -285,12 +285,13 @@ union StringData {
 
   char small[ buf_len ];
 
-  StringData();
-  ~StringData();
+   StringData() { small[ max_len ] = small[ off_len ] = small[ 0 ] = 0 ; }
+  ~StringData() { mem(nullptr, 0); }
 
-  size_t len() const ;
-  const char * c_str() const ;
-  char * c_str();
+  size_t len() const { return small[ max_len ] ? large.len : small[ off_len ] ; }
+
+        char * c_str() { return small[ max_len ] ? large.ptr : small ; }
+  const char * c_str() const { return small[ max_len ] ? large.ptr : small ; }
 
   /** Assigns memory and copy contents */
   char * mem( const char *, size_t n );
