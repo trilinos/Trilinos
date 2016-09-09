@@ -7124,6 +7124,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> > & destMat,
                            const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& rowTransfer,
+                           const Teuchos::RCP<const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node> > & domainTransfer,
                            const Teuchos::RCP<const map_type>& domainMap,
                            const Teuchos::RCP<const map_type>& rangeMap,
                            const Teuchos::RCP<Teuchos::ParameterList>& params) const
@@ -7161,6 +7162,38 @@ namespace Tpetra {
       "argument must be either an Import or an Export, and its template "
       "parameters must match the corresponding template parameters of the "
       "CrsMatrix.");
+
+    // Make sure that the input argument domainTransfer is either an
+    // Import or an Export.  Import and Export are the only two
+    // subclasses of Transfer that we defined, but users might
+    // (unwisely, for now at least) decide to implement their own
+    // subclasses.  Exclude this possibility.
+    Teuchos::RCP<const import_type> xferDomainAsImport = Teuchos::rcp_dynamic_cast<const import_type> (domainTransfer);
+    Teuchos::RCP<const export_type> xferDomainAsExport = Teuchos::rcp_dynamic_cast<const export_type> (domainTransfer);
+
+    if(! domainTransfer.is_null()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+         (xferDomainAsImport.is_null() && xferDomainAsExport.is_null()), std::invalid_argument,
+        "Tpetra::CrsMatrix::transferAndFillComplete: The 'domainTransfer' input "
+        "argument must be either an Import or an Export, and its template "
+        "parameters must match the corresponding template parameters of the "
+        "CrsMatrix.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+         ( xferAsImport != NULL || ! xferDomainAsImport.is_null() ) &&
+         (( xferAsImport != NULL &&   xferDomainAsImport.is_null() ) ||
+          ( xferAsImport == NULL && ! xferDomainAsImport.is_null() )), std::invalid_argument,
+         "Tpetra::CrsMatrix::transferAndFillComplete: The 'rowTransfer' and 'domainTransfer' input "
+         "arguments must be of the same type (either Import or Export).");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+         ( xferAsExport != NULL || ! xferDomainAsExport.is_null() ) &&
+         (( xferAsExport != NULL &&   xferDomainAsExport.is_null() ) ||
+          ( xferAsExport == NULL && ! xferDomainAsExport.is_null() )), std::invalid_argument,
+         "Tpetra::CrsMatrix::transferAndFillComplete: The 'rowTransfer' and 'domainTransfer' input "
+         "arguments must be of the same type (either Import or Export).");
+    } // domainTransfer != null
+
 
     // FIXME (mfh 15 May 2014) Wouldn't communication still be needed,
     // if the source Map is not distributed but the target Map is?
@@ -7255,6 +7288,19 @@ namespace Tpetra {
       std::invalid_argument, "Tpetra::CrsMatrix::transferAndFillComplete: "
       "rowTransfer->getTargetMap() must match this->getRowMap() in reverse mode.");
 
+    // checks for domainTransfer
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! xferDomainAsImport.is_null() && ! xferDomainAsImport->getTargetMap()->isSameAs(*domainMap),
+      std::invalid_argument,
+      "Tpetra::CrsMatrix::transferAndFillComplete: The target map of the 'domainTransfer' input "
+      "argument must be the same as the rebalanced domain map 'domainMap'");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! xferDomainAsExport.is_null() && ! xferDomainAsExport->getSourceMap()->isSameAs(*domainMap),
+      std::invalid_argument,
+      "Tpetra::CrsMatrix::transferAndFillComplete: The source map of the 'domainTransfer' input "
+      "argument must be the same as the rebalanced domain map 'domainMap'");
+
     // The basic algorithm here is:
     //
     // 1. Call the moral equivalent of "distor.do" to handle the import.
@@ -7336,8 +7382,10 @@ namespace Tpetra {
     // Get the owning PIDs
     RCP<const import_type> MyImporter = getGraph ()->getImporter ();
 
-    if (! restrictComm && ! MyImporter.is_null () &&
-        BaseDomainMap->isSameAs (*getDomainMap ())) {
+    // check whether domain maps of source matrix and base domain map is the same
+    bool bSameDomainMap = BaseDomainMap->isSameAs (*getDomainMap ());
+
+    if (! restrictComm && ! MyImporter.is_null () && bSameDomainMap ) {
       // Same domain map as source matrix
       //
       // NOTE: This won't work for restrictComm (because the Import
@@ -7346,10 +7394,61 @@ namespace Tpetra {
       // IntVector of the new PIDs).  Might want to add this later.
       Import_Util::getPids (*MyImporter, SourcePids, false);
     }
-    else if (MyImporter.is_null () && BaseDomainMap->isSameAs (*getDomainMap ())) {
+    else if (restrictComm && ! MyImporter.is_null () && bSameDomainMap) {
+      // Same domain map as source matrix (restricted communicator)
+      // We need one import from the domain to the column map
+      IntVectorType SourceDomain_pids(getDomainMap (),true);
+      IntVectorType SourceCol_pids(getColMap());
+      // SourceDomain_pids contains the restricted pids
+      SourceDomain_pids.putScalar(MyPID);
+
+      SourceCol_pids.doImport (SourceDomain_pids, *MyImporter, INSERT);
+      SourcePids.resize (getColMap ()->getNodeNumElements ());
+      SourceCol_pids.get1dCopy (SourcePids ());
+    }
+    else if (MyImporter.is_null () && bSameDomainMap) {
       // Matrix has no off-process entries
       SourcePids.resize (getColMap ()->getNodeNumElements ());
       SourcePids.assign (getColMap ()->getNodeNumElements (), MyPID);
+    }
+    else if ( ! MyImporter.is_null () &&
+              ! domainTransfer.is_null () ) {
+      // general implementation for rectangular matrices with
+      // domain map different than SourceMatrix domain map.
+      // User has to provide a DomainTransfer object. We need
+      // to communications (import/export)
+
+      // TargetDomain_pids lives on the rebalanced new domain map
+      IntVectorType TargetDomain_pids (domainMap);
+      TargetDomain_pids.putScalar (MyPID);
+
+      // SourceDomain_pids lives on the non-rebalanced old domain map
+      IntVectorType SourceDomain_pids (getDomainMap ());
+
+      // SourceCol_pids lives on the non-rebalanced old column map
+      IntVectorType SourceCol_pids (getColMap ());
+
+      if (! reverseMode && ! xferDomainAsImport.is_null() ) {
+        SourceDomain_pids.doExport (TargetDomain_pids, *xferDomainAsImport, INSERT);
+      }
+      else if (reverseMode && ! xferDomainAsExport.is_null() ) {
+        SourceDomain_pids.doExport (TargetDomain_pids, *xferDomainAsExport, INSERT);
+      }
+      else if (! reverseMode && ! xferDomainAsExport.is_null() ) {
+        SourceDomain_pids.doImport (TargetDomain_pids, *xferDomainAsExport, INSERT);
+      }
+      else if (reverseMode && ! xferDomainAsImport.is_null() ) {
+        SourceDomain_pids.doImport (TargetDomain_pids, *xferDomainAsImport, INSERT);
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error, "Tpetra::CrsMatrix::"
+          "transferAndFillComplete: Should never get here!  "
+          "Please report this bug to a Tpetra developer.");
+      }
+      SourceCol_pids.doImport (SourceDomain_pids, *MyImporter, INSERT);
+      SourcePids.resize (getColMap ()->getNodeNumElements ());
+      SourceCol_pids.get1dCopy (SourcePids ());
     }
     else if (BaseDomainMap->isSameAs (*BaseRowMap) &&
              getDomainMap ()->isSameAs (*getRowMap ())) {
@@ -7750,9 +7849,21 @@ namespace Tpetra {
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    transferAndFillComplete (destMatrix, importer, domainMap, rangeMap, params);
+    transferAndFillComplete (destMatrix, importer, Teuchos::null, domainMap, rangeMap, params);
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >& destMatrix,
+                         const import_type& rowImporter,
+                         const import_type& domainImporter,
+                         const Teuchos::RCP<const map_type>& domainMap,
+                         const Teuchos::RCP<const map_type>& rangeMap,
+                         const Teuchos::RCP<Teuchos::ParameterList>& params) const
+  {
+    transferAndFillComplete (destMatrix, rowImporter, Teuchos::rcpFromRef(domainImporter), domainMap, rangeMap, params);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
@@ -7763,7 +7874,20 @@ namespace Tpetra {
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    transferAndFillComplete (destMatrix, exporter, domainMap, rangeMap, params);
+    transferAndFillComplete (destMatrix, exporter, Teuchos::null, domainMap, rangeMap, params);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >& destMatrix,
+                         const export_type& rowExporter,
+                         const export_type& domainExporter,
+                         const Teuchos::RCP<const map_type>& domainMap,
+                         const Teuchos::RCP<const map_type>& rangeMap,
+                         const Teuchos::RCP<Teuchos::ParameterList>& params) const
+  {
+    transferAndFillComplete (destMatrix, rowExporter, Teuchos::rcpFromRef(domainExporter), domainMap, rangeMap, params);
   }
 
 } // namespace Tpetra
