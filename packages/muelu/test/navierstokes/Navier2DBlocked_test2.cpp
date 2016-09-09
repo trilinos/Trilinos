@@ -117,6 +117,7 @@
 #include "MueLu_RebalanceBlockInterpolationFactory.hpp"
 #include "MueLu_RebalanceBlockRestrictionFactory.hpp"
 #include "MueLu_RepartitionInterface.hpp"
+#include "MueLu_CloneRepartitionInterface.hpp"
 #endif
 
 #include <Epetra_LinearProblem.h>
@@ -348,10 +349,19 @@ int main(int argc, char *argv[]) {
     A11Fact->SetFactory("A",MueLu::NoFactory::getRCP());
     A11Fact->SetParameter("block row",Teuchos::ParameterEntry(0));
     A11Fact->SetParameter("block col",Teuchos::ParameterEntry(0));
+    /*A11Fact->SetParameter("Range map: Striding info",Teuchos::ParameterEntry(std::string("{ 2 1 }")));
+    A11Fact->SetParameter("Range map: Strided block id",Teuchos::ParameterEntry(0));
+    A11Fact->SetParameter("Domain map: Striding info",Teuchos::ParameterEntry(std::string("{ 2 1 }")));
+    A11Fact->SetParameter("Domain map: Strided block id",Teuchos::ParameterEntry(0));*/
+
     RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory());
     A22Fact->SetFactory("A",MueLu::NoFactory::getRCP());
     A22Fact->SetParameter("block row",Teuchos::ParameterEntry(1));
     A22Fact->SetParameter("block col",Teuchos::ParameterEntry(1));
+    /*A22Fact->SetParameter("Range map: Striding info",Teuchos::ParameterEntry(std::string("{ 2 1 }")));
+    A22Fact->SetParameter("Range map: Strided block id",Teuchos::ParameterEntry(1));
+    A22Fact->SetParameter("Domain map: Striding info",Teuchos::ParameterEntry(std::string("{ 2 1 }")));
+    A22Fact->SetParameter("Domain map: Strided block id",Teuchos::ParameterEntry(1));*/
 
     /////////////////////////////////////////// define rebalancing factories
     // define sub blocks of the coarse non-rebalanced block matrix Ac
@@ -360,10 +370,19 @@ int main(int argc, char *argv[]) {
     rebA11Fact->SetFactory("A",AcFact);
     rebA11Fact->SetParameter("block row",Teuchos::ParameterEntry(0));
     rebA11Fact->SetParameter("block col",Teuchos::ParameterEntry(0));
+    rebA11Fact->SetParameter("Range map: Striding info",Teuchos::ParameterEntry(std::string("{ 2, 1 }")));
+    rebA11Fact->SetParameter("Range map: Strided block id",Teuchos::ParameterEntry(0));
+    rebA11Fact->SetParameter("Domain map: Striding info",Teuchos::ParameterEntry(std::string("{ 2, 1 }")));
+    rebA11Fact->SetParameter("Domain map: Strided block id",Teuchos::ParameterEntry(0));
+
     RCP<SubBlockAFactory> rebA22Fact = Teuchos::rcp(new SubBlockAFactory());
     rebA22Fact->SetFactory("A",AcFact);
     rebA22Fact->SetParameter("block row",Teuchos::ParameterEntry(1));
     rebA22Fact->SetParameter("block col",Teuchos::ParameterEntry(1));
+    rebA22Fact->SetParameter("Range map: Striding info",Teuchos::ParameterEntry(std::string("{ 2, 1 }")));
+    rebA22Fact->SetParameter("Range map: Strided block id",Teuchos::ParameterEntry(1));
+    rebA22Fact->SetParameter("Domain map: Striding info",Teuchos::ParameterEntry(std::string("{ 2, 1 }")));
+    rebA22Fact->SetParameter("Domain map: Strided block id",Teuchos::ParameterEntry(1));
 
     // define rebalancing factory for coarse block matrix A(1,1)
     RCP<AmalgamationFactory> rebAmalgFact11 = rcp(new AmalgamationFactory());
@@ -385,22 +404,27 @@ int main(int argc, char *argv[]) {
     RepartitionFact->SetFactory("A", rebA11Fact);
     RepartitionFact->SetFactory("number of partitions", RepartitionHeuristicFact);
     RepartitionFact->SetFactory("Partition", repInterface1);
+    RepartitionFact->SetParameter("repartition: print partition distribution", Teuchos::ParameterEntry(true));
+    RepartitionFact->SetParameter("repartition: remap parts", Teuchos::ParameterEntry(true));
 
     // define rebalancing factory for coarse block matrix A(1,1)
     RCP<AmalgamationFactory> rebAmalgFact22 = rcp(new AmalgamationFactory());
     rebAmalgFact22->SetFactory("A", rebA22Fact);
     rebAmalgFact22->setDefaultVerbLevel(Teuchos::VERB_EXTREME);
 
-    RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface2 = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
+    RCP<MueLu::CloneRepartitionInterface<SC, LO, GO, NO> > repInterface2 = rcp(new MueLu::CloneRepartitionInterface<SC, LO, GO, NO>());
     repInterface2->SetFactory("A", rebA22Fact);
     repInterface2->SetFactory("number of partitions", RepartitionHeuristicFact);
-    repInterface2->SetFactory("AmalgamatedPartition", isoInterface1);
+    repInterface2->SetFactory("Partition", repInterface1);
 
     // second repartition factory
     RCP<Factory> RepartitionFact2 = rcp(new RepartitionFactory());
     RepartitionFact2->SetFactory("A", rebA22Fact);
     RepartitionFact2->SetFactory("number of partitions", RepartitionHeuristicFact);
     RepartitionFact2->SetFactory("Partition", repInterface2); // this is not valid
+    RepartitionFact2->SetParameter("repartition: print partition distribution", Teuchos::ParameterEntry(true));
+    RepartitionFact2->SetParameter("repartition: remap parts", Teuchos::ParameterEntry(false)); /* do not remap! */
+
 
     ////////////////////////////////////////// build non-rebalanced matrix blocks
     // build factories for transfer operator P(1,1) and R(1,1)
@@ -473,12 +497,14 @@ int main(int argc, char *argv[]) {
     RCP<FactoryManager> rebM11 = rcp(new FactoryManager());
     rebM11->SetFactory("A", AcFact ); // important: must be a 2x2 block A Factory
     rebM11->SetFactory("Importer", RepartitionFact);
+    rebM11->SetFactory("number of partitions", RepartitionHeuristicFact);
     rebM11->SetFactory("Nullspace", nspFact11);
     //rebM11->SetIgnoreUserData(true);
 
     RCP<FactoryManager> rebM22 = rcp(new FactoryManager());
     rebM22->SetFactory("A", AcFact ); // important: must be a 2x2 block A Factory
     rebM22->SetFactory("Importer", RepartitionFact2); // use dummy repartitioning factory
+    rebM22->SetFactory("number of partitions", RepartitionHeuristicFact);
     rebM22->SetFactory("Nullspace", nspFact22);
 
     // Reordering of the transfer operators
@@ -490,6 +516,7 @@ int main(int argc, char *argv[]) {
     RCP<RebalanceBlockRestrictionFactory> RebalancedBlockRFact = rcp(new RebalanceBlockRestrictionFactory());
     //RebalancedBlockRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
     RebalancedBlockRFact->SetFactory("R", RFact); // non-rebalanced block P operator
+    RebalancedBlockRFact->SetParameter("repartition: use subcommunicators",Teuchos::ParameterEntry(true));
     RebalancedBlockRFact->AddFactoryManager(rebM11);
     RebalancedBlockRFact->AddFactoryManager(rebM22);
 
@@ -501,6 +528,7 @@ int main(int argc, char *argv[]) {
 
     ///////////////////////////////////////// initialize rebalanced coarse block AC factory
     RebalancedAcFact->SetFactory("A", AcFact);   // use non-rebalanced block operator as input
+    RebalancedAcFact->SetParameter("repartition: use subcommunicators",Teuchos::ParameterEntry(true));
     RebalancedAcFact->AddFactoryManager(rebM11);
     RebalancedAcFact->AddFactoryManager(rebM22);
 

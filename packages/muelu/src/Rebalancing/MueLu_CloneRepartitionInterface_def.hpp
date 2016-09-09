@@ -115,6 +115,8 @@ namespace MueLu {
     size_t inLocalLength  = decomposition->getLocalLength();
     size_t outLocalLength = A->getRowMap()->getNodeNumElements();
 
+    // TODO fix me
+    // only for non-strided maps
     size_t numLocalNodes = outLocalLength / blkSize;
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(outLocalLength  % blkSize) != 0, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: inconsistent number of local DOFs (" << outLocalLength << ") and degrees of freedoms ("<<blkSize<<")");
 
