@@ -66,7 +66,7 @@ size_t get_heap_used()
 # if defined(SIERRA_PTMALLOC3_ALLOCATOR) || defined(SIERRA_PTMALLOC2_ALLOCATOR)
   heap_size = malloc_used();
   
-# elif ( defined(__linux__) || defined(REDS) ) && ! defined(__IBMCPP__)
+# elif defined(__linux__) && ! defined(__IBMCPP__)
   static struct mallinfo minfo;
   minfo = mallinfo();
   heap_size = static_cast<unsigned int>(minfo.uordblks) + static_cast<unsigned int>(minfo.hblkhd);

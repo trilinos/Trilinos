@@ -151,7 +151,7 @@ void get_heap_used(size_t &heap_size)
 # if defined(SIERRA_PTMALLOC3_ALLOCATOR) || defined(SIERRA_PTMALLOC2_ALLOCATOR)
   heap_size = malloc_used();
   
-# elif ( defined(__linux__) || defined(REDS) ) && ! defined(__IBMCPP__)
+# elif defined(__linux__) && ! defined(__IBMCPP__)
   static struct mallinfo minfo;
   minfo = mallinfo();
   heap_size = static_cast<unsigned int>(minfo.uordblks) + static_cast<unsigned int>(minfo.hblkhd);
@@ -268,15 +268,7 @@ wall_now()
 double
 cpu_now()
 {
-#if defined(REDS)
-  struct rusage my_rusage;
-
-  getrusage(RUSAGE_SELF, &my_rusage);
-
-  return static_cast<double>(my_rusage.ru_utime.tv_sec) +
-    static_cast<double>(my_rusage.ru_utime.tv_usec)*1.0e-6;
-
-#elif ! defined(__PGI)
+#if ! defined(__PGI)
   struct rusage my_rusage;
 
   getrusage(RUSAGE_SELF, &my_rusage);

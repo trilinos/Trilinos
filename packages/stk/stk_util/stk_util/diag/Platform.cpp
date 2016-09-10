@@ -105,16 +105,6 @@ extern "C" {
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#elif defined(REDS)
-#include <sys/param.h>
-#include <sys/utsname.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
-#include <catamount/catmalloc.h>
-extern void *__heap_start;		///< Magic address of end of instruction/static data
-extern void *__heap_end;		///< Magic address of end of heap
-
 #elif defined(__JVN)
 #include <sys/param.h>
 #include <sys/utsname.h>
@@ -143,38 +133,10 @@ extern void *__heap_end;		///< Magic address of end of heap
 //
 //#define PURIFY_BUILD
 
-#if defined(REDS)
-namespace {
-  size_t get_redstorm_base_available_memory();
-}
-#endif
-
 namespace sierra {
-
-
 namespace Env {
 
-#if defined(REDS)
-// Manipulate standard output buffering
-void
-startup_preparallel_platform()
-{
-  static char redstorm_cout_buf[32678];
-  std::cout.rdbuf()->pubsetbuf(redstorm_cout_buf, sizeof(redstorm_cout_buf));
-
-  static char redstorm_stdout_buf[32678];
-  std::setvbuf(stdout, redstorm_stdout_buf, _IOFBF, sizeof(redstorm_stdout_buf));
-
-  static char redstorm_cerr_buf[32678];
-  std::cerr.rdbuf()->pubsetbuf(redstorm_cerr_buf, sizeof(redstorm_cerr_buf));
-
-  static char redstorm_stderr_buf[32678];
-  std::setvbuf(stderr, redstorm_stderr_buf, _IOFBF, sizeof(redstorm_stderr_buf));
-  
-  get_available_memory();
-}
-
-#elif defined(_AIX)
+#if defined(_AIX)
 // Cleanup AIX locale initialization problems
 void
 startup_preparallel_platform()
@@ -209,23 +171,7 @@ get_heap_info(
 # if defined(SIERRA_PTMALLOC3_ALLOCATOR) || defined(SIERRA_PTMALLOC2_ALLOCATOR)
   heap_size = malloc_used();
   
-# elif 0 // if defined(REDS) // Redstorm now links in gnu's malloc
-  static size_t reds_fragments;
-  static unsigned long reds_total_free;
-  static unsigned long reds_heap_size;
-  static unsigned long reds_largest_free;
-
-  ::heap_info(&reds_fragments, &reds_total_free, &reds_largest_free, &reds_heap_size);
-
-  heap_size = reds_heap_size;
-  largest_free = reds_largest_free;
-
-  slibout.m(Slib::LOG_MEMORY) <<"reds_fragments " << reds_fragments
-			      << ", reds_total_free " << reds_total_free
-			      << ", reds_largest_free " << reds_largest_free
-			      << ", reds_heap_size " << reds_heap_size << Diag::dendl;
-
-# elif ( defined(__linux__) || defined(REDS) ) && ! defined(__IBMCPP__)
+# elif defined(__linux__) && ! defined(__IBMCPP__)
   static struct mallinfo minfo;
   minfo = mallinfo();
   heap_size = static_cast<unsigned int>(minfo.uordblks) + static_cast<unsigned int>(minfo.hblkhd);
@@ -262,7 +208,6 @@ get_heap_info(
 
 size_t get_available_memory()
 {
-#if !defined(REDS)
   // The value returned for _SC_AVPHYS_PAGES is the amount of memory
   // the application can use without hindering any other process
   // (given that no other process increases its memory usage).
@@ -273,17 +218,6 @@ size_t get_available_memory()
 #else
   // _SC_AVPHYS_PAGES does not exist on FreeBSD/Apple
   return 0;
-#endif
-#else
-  // On redstorm, we get an estimate of the available memory at the
-  // time that the application starts up and then we get the currently
-  // available memory by subtracting the used memory from that initial
-  // value. 
-  static size_t initial_memory_size = 0;
-  if (initial_memory_size == 0) {
-    initial_memory_size = get_redstorm_base_available_memory();
-  }
-  return initial_memory_size - get_heap_usage();
 #endif
 }
 
@@ -296,10 +230,8 @@ get_memory_info(
   faults = 0;
 
 #if defined(SIERRA_MEMORY_INFO)
-# if defined(REDS)
-  memory_usage = static_cast<size_t>(__heap_start) + get_heap_usage();
 
-# elif defined(__linux__)
+#if defined(__linux__)
   std::ifstream proc("/proc/self/stat", std::ios_base::in|std::ios_base::binary);
   if (proc) {
 
@@ -355,10 +287,7 @@ hostname()
 std::string
 domainname()
 {
-#if defined(__PUMAGON__) || defined(REDS)
-  return std::string(".sandia.gov");
-
-#elif defined(__sun)
+#if defined(__sun)
   std::string domain(".");
   char buf[255];
 
@@ -368,7 +297,7 @@ domainname()
   }
   return domain;
 
-#else //#elif defined(__linux) || defined(__sgi) || defined(_AIX)
+#else
   std::string domain(".");
   char buf[255];
 
@@ -403,7 +332,7 @@ std::string
 username()
 {
   std::string env_user_name = get_env_user();
-#if defined(REDS) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
   std::string user_name(get_param("username"));
 
   if (user_name.empty()) {
@@ -482,11 +411,7 @@ pid()
 int
 pgrp()
 {
-#if defined(__PUMAGON__) || defined(REDS)
-  return 0;
-#else
   return ::getpgrp();
-#endif
 }
 
 
@@ -585,100 +510,3 @@ append_lock(
 } // namespace Env
 } // namespace sierra
 
-#if defined(REDS) 
-
-#if defined(__GNUC__)
-namespace {
-  size_t get_redstorm_base_available_memory()
-  {
-    return 0;
-  }
-}
-#else
-// Written by Mike Davis
-#include <catamount/data.h>
-namespace {
-
-  void stk_ptr (unsigned long *sp) {
-    asm ("movq	%rsp, (%rdi)");
-  }
-  
-  size_t get_redstorm_base_available_memory()
-  {
-    char *p1;
-    size_t stack_top;
-    size_t avail_mem;
-    size_t heap_base;
-    size_t stack_base;
-    size_t stack_size;
-    size_t unmapped_top = 4 * 1048576;
-    size_t os_foot =    140 * 1048576;
-    size_t avail_heap;
-    
-    /**
-     * Get the current stack pointer,
-     * and use that as an estimate of the stack top
-     */
-    stk_ptr (&stack_top);
-
-    /**
-     * Round stack_top up to the next multiple of 2 MB
-     */
-    stack_top &= ~0x1fffff;
-    stack_top +=  0x200000;
-    
-    /**
-     * Compute the available memory on the node,
-     * as the stack top plus the size of an unmapped region
-     * above the stack.
-     */
-    avail_mem = stack_top + unmapped_top;
-
-    /**
-     * Deduct the size of the OS footprint from available memory
-     */
-    avail_mem -= os_foot;
-
-    /**
-     * Divide the available memory among
-     * the number of processes running on the node
-     */
-    avail_mem /= _my_pcb->upcb_vnm_degree;
-
-    /**
-     * Determine the address of the base of the heap,
-     * estimated to be the address of an allocated test block
-     */
-    p1 = malloc (1);
-    heap_base = p1;
-    free (p1);
-
-    /**
-     * Compute the available heap space as the difference between
-     * the available memory for the process
-     * and the base address of the heap
-     */
-    avail_heap = avail_mem - heap_base;
-
-    /**
-     * Determine the base address of the stack;
-     * the address of the PCB is in a 2 MB page below the stack
-     */
-    stack_base = _my_pcb;
-    stack_base &= ~0x1fffff;
-    stack_base +=  0x400000;
-
-    /**
-     * Deduct the size of the stack
-     * and the size of the unmapped region at the top of the stack
-     * from the available heap
-     */
-    stack_size = stack_top - stack_base;
-    avail_heap -= unmapped_top;
-    avail_heap -= stack_size;
-
-    return avail_heap;
-  }
-}
-#endif
-#endif
