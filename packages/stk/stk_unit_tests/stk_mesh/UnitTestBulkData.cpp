@@ -1830,24 +1830,6 @@ bool is_entity_key_shared(const stk::mesh::BulkData & mesh, stk::mesh::EntityKey
     return !shared_procs.empty();
 }
 
-#if 0
-#ifndef STK_BUILT_IN_SIERRA // DELETE this test between 2015-02-13 and 2015-03-04
-TEST(BulkData, test_entity_comm_map_shared)
-{
-  MPI_Comm communicator = MPI_COMM_WORLD;
-  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  const std::string generatedMeshSpecification = "generated:1x1x4";
-  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-  stkMeshIoBroker.create_input_mesh();
-  stkMeshIoBroker.populate_bulk_data();
-  stk::mesh::BulkData &bulk = stkMeshIoBroker.bulk_data();
-  stk::mesh::Entity node = (*bulk.buckets(stk::topology::NODE_RANK)[0])[0];
-  const stk::mesh::PairIterEntityComm & shared_comm_map = bulk.entity_comm_map_shared(bulk.entity_key(node));
-  EXPECT_TRUE( shared_comm_map.empty() );
-}
-#endif // STK_BUILT_IN_SIERRA
-#endif
-
 void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
     //

@@ -608,17 +608,6 @@ namespace app {
     if (eb != NULL)
       eb->property_add(Ioss::Property(std::string("omitted"), 1));
 
-#if 0
-    // Example for subsetting -- omit "odd" blocks
-    if (entity->type() == Ioss::ELEMENTBLOCK) {
-      int id = entity->get_property("id").get_int();
-      if (id % 2) {
-	entity->property_add(Ioss::Property(std::string("omitted"), 1));
-	std::cout << "Skipping " << entity->type_string() << ": "  << entity->name() << "\n";
-      }
-    }
-#endif
-
     //----------------------------------
     // Process Entity Types. Subsetting is possible.
     stk::mesh::MetaData meta_data( spatial_dimension );

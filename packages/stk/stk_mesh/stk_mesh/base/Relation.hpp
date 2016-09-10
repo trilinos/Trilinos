@@ -303,19 +303,7 @@ void induced_part_membership(const BulkData& mesh,
                              const OrdinalVector & omit ,
                              OrdinalVector & induced_parts);
 
-
 //----------------------------------------------------------------------
-
-#if 0
-/** \brief  Decode and print the relation raw_relation_id */
-std::ostream &
-print_relation( std::ostream & , Relation::raw__attr_type );
-
-/** \brief  Decode and print the relation raw_relation_id and referenced entity key */
-std::ostream &
-print_relation( std::ostream & , const MetaData & ,
-                Relation::raw__attr_type , EntityKey );
-#endif
 
 /** \brief  Print the relation raw_relation_ids and referenced entity's key */
 std::ostream & operator << ( std::ostream & , const Relation & );

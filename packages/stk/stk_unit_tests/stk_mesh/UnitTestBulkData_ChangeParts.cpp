@@ -173,22 +173,6 @@ TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
       ASSERT_TRUE( ! bulk.bucket(node).member( part_owns ) );
     }
 
-#if 0
-    //// DEBUG
-
-    std::cout << "p_rank = " << p_rank << "; i = " << i << std::endl;
-    std::cout << " node of interest " << node << std::endl;
-#ifdef USE_STK_MESH_IMPL_PARTITION
-    std::cout << " its partition " << *node.bucket().getPartition() << std::endl;
-#else
-    std::cout << " its bucket " << node.bucket() << std::endl;
-#endif
-    std::cout << " epart_0 " << *epart_0 << " " << epart_0->mesh_meta_data_ordinal() << std::endl;
-    std::cout << " epart_1 " << *epart_1 << " " << epart_1->mesh_meta_data_ordinal() << std::endl;
-
-    //// GUBED
-#endif
-
     ASSERT_TRUE( bulk.bucket(node).member( part_univ ) );
     ASSERT_TRUE( bulk.bucket(node).member( *epart_0 ) );
     ASSERT_TRUE( bulk.bucket(node).member( *epart_1 ) );
