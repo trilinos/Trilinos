@@ -3364,6 +3364,13 @@ namespace Tpetra {
       this->doImport (oneToOneGraph, importToOrig, Tpetra::INSERT);
     }
 
+    // It's safe now to clear out nonlocals_, since we've already
+    // committed side effects to *this.  The standard idiom for
+    // clearing a Container like std::map, is to swap it with an empty
+    // Container and let the swapped Container fall out of scope.
+    decltype (nonlocals_) newNonlocals;
+    std::swap (nonlocals_, newNonlocals);
+
     checkInternalState ();
   }
 
