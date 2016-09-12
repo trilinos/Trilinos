@@ -303,7 +303,8 @@ public:
     algorithm_names[16] = "forTestingOnly";
     RCP<Teuchos::StringValidator> algorithm_Validator = Teuchos::rcp(
       new Teuchos::StringValidator( algorithm_names ));
-    pl.set("algorithm", "random", "partitioning algorithm");
+    pl.set("algorithm", "random", "partitioning algorithm",
+      algorithm_Validator);
 
     RCP<Teuchos::StringValidator> partitioning_objective_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
@@ -314,28 +315,19 @@ public:
          "minimize_cut_edge_weight", "minimize_neighboring_parts",
          "minimize_boundary_vertices" )));
     pl.set("partitioning_objective", "balance_object_weight",
-      "objective of partitioning (default depends on algorithm)");
-    pl.getEntryRCP("partitioning_objective")->setValidator(
-      partitioning_objective_Validator);
+      "objective of partitioning", partitioning_objective_Validator);
 
-    RCP<Teuchos::AnyNumberParameterEntryValidator> imbalance_tolerance_Validator
+    RCP<Teuchos::AnyNumberParameterEntryValidator> any_Number_Validator
       = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
+
     pl.set("imbalance_tolerance", "1.1", "imbalance tolerance, ratio of "
-      "maximum load over average load (default 1.1)");
-    pl.getEntryRCP("imbalance_tolerance")->setValidator(
-      imbalance_tolerance_Validator);
+      "maximum load over average load", any_Number_Validator);
 
-    RCP<Teuchos::AnyNumberParameterEntryValidator> num_global_parts_Validator
-      = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
     pl.set("num_global_parts", "0", "global number of parts to compute "
-      "(default is number of processes)");
-    pl.getEntryRCP("num_global_parts")->setValidator(num_global_parts_Validator);
+      "(0 means use the number of processes)", any_Number_Validator);
 
-    RCP<Teuchos::AnyNumberParameterEntryValidator> num_local_parts_Validator =
-      Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
     pl.set("num_local_parts", "0", "number of parts to compute for this "
-      "process(default is one)");
-    pl.getEntryRCP("num_local_parts")->setValidator(num_local_parts_Validator);
+      "process (0 means one)", any_Number_Validator);
 
     RCP<Teuchos::StringValidator> partitioning_approach_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
@@ -343,9 +335,7 @@ public:
           "maximize_overlap" )));
     pl.set("partitioning_approach", "partition", "Partition from scratch, "
       "partition incrementally from current partition, of partition from "
-      "scratch but maximize overlap  with the current partition (default is"
-      " \"partition\" from scratch)");
-    pl.getEntryRCP("partitioning_approach")->setValidator(
+      "scratch but maximize overlap  with the current partition",
       partitioning_approach_Validator);
 
     RCP<Teuchos::StringValidator> objects_to_partition_Validator =
@@ -353,10 +343,7 @@ public:
         Teuchos::tuple<std::string>( "matrix_rows", "matrix_columns",
           "matrix_nonzeros", "mesh_elements", "mesh_nodes", "graph_edges",
         "graph_vertices", "coordinates", "identifiers" )));
-    pl.set("objects_to_partition", "graph_vertices", "Objects to be "
-      "partitioned (defaults are \"matrix_rows\" for matrix input, "
-      " \"mesh_nodes\" for mesh input, and \"graph_vertices\" for graph input)");
-    pl.getEntryRCP("objects_to_partition")->setValidator(
+    pl.set("objects_to_partition", "graph_vertices", "Objects to be partitioned",
       objects_to_partition_Validator);
 
     RCP<Teuchos::StringValidator> model_Validator = Teuchos::rcp(
@@ -365,43 +352,23 @@ public:
           "geometry", "ids" )));
     pl.set("model", "graph", "This is a low level parameter. Normally the "
       "library will choose a computational model based on the algorithm or "
-      "objective specified by the user.");
-    pl.getEntryRCP("model")->setValidator(model_Validator);
+      "objective specified by the user.", model_Validator);
 
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-      subset_graph_Validator = Teuchos::rcp(
-        new Teuchos::StringToIntegralParameterEntryValidator<int>(
-          Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false",
-            "no", "0", "off" ),
-      // original did not have this documented - left blank
-      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-      Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-      "no") );
-    pl.set("subset_graph", "no", "If \"yes\", the graph input is to be "
+    pl.set("subset_graph", "false", "If \"true\", the graph input is to be "
       "subsetted.  If a vertex neighbor is not a valid vertex, it will be "
       "omitted from the pList.  Otherwise, an invalid neighbor identifier "
-      "is considered an error.");
-    pl.getEntryRCP("subset_graph")->setValidator(subset_graph_Validator);
+      "is considered an error.", Environment::getTrueFalseValidator());
 
     RCP<Teuchos::StringValidator> symmetrize_input_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(
         Teuchos::tuple<std::string>( "no", "transpose", "bipartite" )));
     pl.set("symmetrize_input", "no", "Symmetrize input prior to pList.  "
       "If \"transpose\", symmetrize A by computing A plus ATranspose.  "
-      "If \"bipartite\", A becomes [[0 A][ATranspose 0]].  ");
-    pl.getEntryRCP("symmetrize_input")->setValidator(symmetrize_input_Validator);
+      "If \"bipartite\", A becomes [[0 A][ATranspose 0]].",
+      symmetrize_input_Validator);
 
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-      remap_parts_Validator = Teuchos::rcp(
-        new Teuchos::StringToIntegralParameterEntryValidator<int>(
-        Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false",
-          "no", "0", "off" ),
-        // original did not have this documented - left this blank
-        Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-        Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ), "no") );
-    pl.set("remap_parts", "no", "remap part numbers to minimize migration "
-      "between old and new partitions");
-    pl.getEntryRCP("remap_parts")->setValidator(remap_parts_Validator);
+    pl.set("remap_parts", "false", "remap part numbers to minimize migration "
+      "between old and new partitions", Environment::getTrueFalseValidator());
 
     Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes
       acceptedTypesNotDouble;
@@ -412,14 +379,12 @@ public:
           acceptedTypesNotDouble) );
 
     pl.set("mapping_type", -1, "Mapping of solution to the processors. -1 No"
-      " Mapping, 0 coordinate mapping.");
-    pl.getEntryRCP("mapping_type")->setValidator(int_or_string_validator);
+      " Mapping, 0 coordinate mapping.", int_or_string_validator);
 
     RCP<Teuchos::EnhancedNumberValidator<int>> ghost_layers_Validator =
       Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(1, 10, 1, 0) );
     pl.set("ghost_layers", 2, "number of layers for ghosting used in "
-      "hypergraph ghost method");
-    pl.getEntryRCP("ghost_layers")->setValidator(ghost_layers_Validator);
+      "hypergraph ghost method", ghost_layers_Validator);
   }
 
 private:

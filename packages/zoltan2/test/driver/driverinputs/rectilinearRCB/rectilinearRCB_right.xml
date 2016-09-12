@@ -20,9 +20,9 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="rcb"/>
-      <Parameter name="rectilinear" type="string" value="1"/>
+      <Parameter name="rectilinear" type="string" value="true"/>
       <Parameter name="num_global_parts" type="string" value="2"/>
-      <Parameter name="compute_metrics" type="string" value="1"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
 
     <ParameterList name="Metrics">

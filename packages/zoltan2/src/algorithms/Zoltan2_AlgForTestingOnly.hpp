@@ -83,8 +83,7 @@ public:
     RCP<Teuchos::EnhancedNumberValidator<int>> forTestingOnlyFlag_Validator =
       Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
     pl.set("forTestingOnlyFlag", 0, "Used only for testing; look at "
-      "Zoltan2_AlgForTestingOnly for interpretations");
-    pl.getEntryRCP("forTestingOnlyFlag")->setValidator(
+      "Zoltan2_AlgForTestingOnly for interpretations",
       forTestingOnlyFlag_Validator);
   }
 

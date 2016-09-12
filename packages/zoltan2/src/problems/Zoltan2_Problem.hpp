@@ -163,80 +163,50 @@ public:
   // Set up validators which are general to all probloems
   static void getDefaultParameters(ParameterList & pl)
   {
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-      compute_metrics_Validator = Teuchos::rcp(
-        new Teuchos::StringToIntegralParameterEntryValidator<int>(
-          Teuchos::tuple<std::string>( "true", "yes", "1", "on",
-            "false", "no", "0", "off" ),
-          Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-         Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-         "no") );
-    pl.set("compute_metrics", "no", "Compute metrics after computing solution");
-    pl.getEntryRCP("compute_metrics")->setValidator(compute_metrics_Validator);
+    pl.set("compute_metrics", "false", "Compute metrics after computing solution",
+      Environment::getTrueFalseValidator());
 
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-      rectilinear_Validator = Teuchos::rcp(
-        new Teuchos::StringToIntegralParameterEntryValidator<int>(
-          Teuchos::tuple<std::string>( "true", "yes", "1", "on",
-            "false", "no", "0", "off" ),
-          // original did not have this documented - left blank
-          Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-          Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-          "no") );
-    pl.set("rectilinear", "no", "If true, then when a cut is made, all of the "
+    pl.set("rectilinear", "false", "If true, then when a cut is made, all of the "
       "dots located on the cut are moved to the same side of the cut. The "
       "resulting regions are then rectilinear. The resulting load balance may "
-      "not be as good as when the group of dots is split by the cut. "
-      "Default is false.");
-    pl.getEntryRCP("rectilinear")->setValidator(rectilinear_Validator);
+      "not be as good as when the group of dots is split by the cut. ",
+      Environment::getTrueFalseValidator());
 
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-      average_cuts_Validator = Teuchos::rcp(
-        new Teuchos::StringToIntegralParameterEntryValidator<int>(
-          Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false",
-            "no", "0", "off" ),
-           // original did not have this documented - left balnk
-          Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-          Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-      "no") );
-    pl.set("average_cuts", "no", "When true, coordinates of RCB cutting planes "
+    pl.set("average_cuts", "false", "When true, coordinates of RCB cutting planes "
       "are computed to be the average of the coordinates of the closest object "
       "on each side of the cut. Otherwise, coordinates of cutting planes may "
-      "equal those of one of the closest objects. Default is false.");
-    pl.getEntryRCP("average_cuts")->setValidator(average_cuts_Validator);
+      "equal those of one of the closest objects.",
+      Environment::getTrueFalseValidator());
 
     // this was an int type
     RCP<Teuchos::EnhancedNumberValidator<int>> bisection_num_test_cuts_Validator
       = Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(1, 250, 1, 0) );
     pl.set("bisection_num_test_cuts", 1, "Experimental: number of test cuts "
-      "to do simultaneously (default is 1)");
-    pl.getEntryRCP("bisection_num_test_cuts")->setValidator(
-      bisection_num_test_cuts_Validator);
+      "to do simultaneously", bisection_num_test_cuts_Validator);
 
     RCP<Teuchos::StringValidator> hypergraph_model_type_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
         Teuchos::tuple<std::string>( "traditional", "ghosting" )));
     pl.set("hypergraph_model_type", "traditional", "construction type when "
-      "creating a hypergraph model");
-    pl.getEntryRCP("hypergraph_model_type")->setValidator(
-      hypergraph_model_type_Validator);
+      "creating a hypergraph model", hypergraph_model_type_Validator);
 
     // these sublists are used for parameters which do not get validated
     pl.sublist("zoltan_parameters");
     pl.sublist("parma_parameters");
 
+    // MDM - Note these were fixed as original setup set wrong defaults
     RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(
         Teuchos::tuple<std::string>( "SerialGreedy" )));
-    pl.set("color_method", "rcm", "coloring algorithm");
-    pl.getEntryRCP("color_method")->setValidator(color_method_Validator);
+    pl.set("color_method", "SerialGreedy", "coloring algorithm",
+     color_method_Validator);
 
     RCP<Teuchos::StringValidator> color_choice_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(
-      Teuchos::tuple<std::string>( "FirstFit", "Random",
-        "RandomFast", "LeastUsed" )));
-    pl.set("color_choice", "amd", "selection criterion for coloring");
-    pl.getEntryRCP("color_choice")->setValidator(color_choice_Validator);
+      Teuchos::tuple<std::string>(
+        "FirstFit", "Random", "RandomFast", "LeastUsed" )));
+    pl.set("color_choice", "FirstFit", "selection criterion for coloring",
+      color_choice_Validator);
   }
 
   /*! \brief Get the current Environment.

@@ -148,8 +148,7 @@ public:
     RCP<Teuchos::StringValidator> mapping_algorithm_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
         Teuchos::tuple<std::string>( "geometric", "default", "block" )));
-    pl.set("mapping_algorithm", "default", "  mapping algorithm");
-    pl.getEntryRCP("mapping_algorithm")->setValidator(
+    pl.set("mapping_algorithm", "default", "mapping algorithm",
       mapping_algorithm_Validator);
   }
 

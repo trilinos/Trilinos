@@ -63,6 +63,7 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
 
 namespace Zoltan2 {
 
@@ -124,6 +125,10 @@ public:
   /*! \brief Collect the paramaters specific to Environment
    */
   static void getDefaultParameters(ParameterList & pl);
+
+  // this exists so it doesn't have to be duplicated in several places in the code
+  static RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+    getTrueFalseValidator();
 
   /*! \brief Provide the Timer object to the Environment.
    *
@@ -601,8 +606,8 @@ private:
   /*! \brief The validated user parameters.
    *
    *  When the constructor calls commitParameters(), some of the
-   *  input parameters are changed. For example, "yes"/"no" types
-   *  of parameters are changed to the integers 0 or 1.  So
+   *  input parameters are changed. For example, "true"/"false" types
+   *  of parameters are changed to the integers 1 or 0.  So
    *  this list of parameters provided to Problems and algorithms
    *  is this validated/converted list.
    */

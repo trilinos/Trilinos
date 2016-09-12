@@ -145,6 +145,17 @@ Environment::~Environment()
     memoryOutputFile_->close();
 }
 
+// provides a generic validator to avoid clutter in the code in several places
+RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+  Environment::getTrueFalseValidator()
+{
+  return Teuchos::rcp(
+    new Teuchos::StringToIntegralParameterEntryValidator<int>(
+      Teuchos::tuple<std::string>("true", "false"),
+      Teuchos::tuple<std::string>( "", "" ),
+      Teuchos::tuple<int>( 1, 0 ), "false") );
+}
+
 void Environment::getDefaultParameters(ParameterList & pl)
 {
   // these  parameters are generic to all environments - timers, debugging, etc
@@ -159,15 +170,14 @@ void Environment::getDefaultParameters(ParameterList & pl)
       Teuchos::tuple<std::string>( "no_assertions", "basic_assertions",
         "complex_assertions", "debug_mode_assertions" ),
       Teuchos::tuple<std::string>( "no assertions will be performed",
-        "typical checks of argument validity (fast, default)",
+        "typical checks of argument validity",
         "additional checks, i.e. is input graph a valid graph)",
         "check for everything including logic errors (slowest)" ),
-    Teuchos::tuple<int>( 0, 1, 2, 3 ),
-      "error_check_level") );
+      Teuchos::tuple<int>( 0, 1, 2, 3 ), "error_check_level") );
   pl.set("error_check_level", "basic_assertions", "the amount of error checking"
     " performed (If the compile flag Z2_OMIT_ALL_ERROR_CHECKING was set, then "
-    "error checking code is not executed at runtime.)");
-  pl.getEntryRCP("error_check_level")->setValidator(error_check_level_Validator);
+    "error checking code is not executed at runtime.)",
+    error_check_level_Validator);
 
   // basic_status
   RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
@@ -176,14 +186,14 @@ void Environment::getDefaultParameters(ParameterList & pl)
         Teuchos::tuple<std::string>( "no_status", "basic_status",
           "detailed_status", "verbose_detailed_status" ),
         Teuchos::tuple<std::string>( "library outputs no status information",
-          "library outputs basic status information (default)",
+          "library outputs basic status information",
           "library outputs detailed information",
           "library outputs very detailed information" ),
         Teuchos::tuple<int>( 0, 1, 2, 3 ),
         "basic_status") );
   pl.set("debug_level", "basic_status", "the amount of status/debugging/warning"
-    " information to print");
-  pl.getEntryRCP("debug_level")->setValidator(debug_level_Validator);
+    " information to print",
+    debug_level_Validator);
 
   // timer_type
   RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
@@ -191,20 +201,20 @@ void Environment::getDefaultParameters(ParameterList & pl)
       Teuchos::StringToIntegralParameterEntryValidator<int>(
         Teuchos::tuple<std::string>( "no_timers", "macro_timers",
           "micro_timers", "both_timers", "test_timers" ),
-      Teuchos::tuple<std::string>( "No timing data will be collected "
-        "(the default).", "Time an algorithm (or other entity) as a whole.",
+      Teuchos::tuple<std::string>( "No timing data will be collected ",
+        "Time an algorithm (or other entity) as a whole.",
         "Time the substeps of an entity.", "Run both MACRO and MICRO timers.",
         "Run timers added to code for testing, removed later" ),
       Teuchos::tuple<int>( 0, 1, 2, 3, 4 ),
       "no_timers") );
   pl.set("timer_type", "no_timers", "  the type of timing information to "
     "collect (If the compile flag Z2_OMIT_ALL_PROFILING was set, then the "
-    "timing code is not executed at runtime.)");
-  pl.getEntryRCP("timer_type")->setValidator(timer_type_Validator);
+    "timing code is not executed at runtime.)",
+    timer_type_Validator);
 
   // debug_output_stream
   RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-    debug_output_stream_Validator = Teuchos::rcp(
+    output_stream_Validator = Teuchos::rcp(
       new Teuchos::StringToIntegralParameterEntryValidator<int>(
         Teuchos::tuple<std::string>( "std::cout", "cout", "stdout",
           "std::cerr", "cerr", "stderr", "/dev/null", "null" ),
@@ -212,104 +222,71 @@ void Environment::getDefaultParameters(ParameterList & pl)
         Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
         Teuchos::tuple<int>( 0, 0, 0, 1, 1, 1, 2, 2 ),
         "cout") );
+
   pl.set("debug_output_stream", "cout",
-    "output stream for debug/status/warning messages (default cout)");
-  pl.getEntryRCP("debug_output_stream")->setValidator(
-    debug_output_stream_Validator);
+    "output stream for debug/status/warning messages",
+    output_stream_Validator);
 
-  // timer_output_stream
-  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-    timer_output_stream_Validator = Teuchos::rcp(
-      new Teuchos::StringToIntegralParameterEntryValidator<int>(
-        Teuchos::tuple<std::string>( "std::cout", "cout", "stdout",
-          "std::cerr", "cerr", "stderr", "/dev/null", "null" ),
-      // original did not have this documented - left this blank
-      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-      Teuchos::tuple<int>( 0, 0, 0, 1, 1, 1, 2, 2 ),
-      "cout") );
   pl.set("timer_output_stream", "cout",
-    "output stream for timing report (default cout)");
-  pl.getEntryRCP("timer_output_stream")->setValidator(
-    timer_output_stream_Validator);
+    "output stream for timing report",
+    output_stream_Validator);
 
-  // memory_output_stream
-  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-    memory_output_stream_Validator = Teuchos::rcp(
-      new Teuchos::StringToIntegralParameterEntryValidator<int>(
-        Teuchos::tuple<std::string>( "std::cout", "cout", "stdout",
-          "std::cerr", "cerr", "stderr", "/dev/null", "null" ),
-      // original did not have this documented - left blank
-      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-      Teuchos::tuple<int>( 0, 0, 0, 1, 1, 1, 2, 2 ),
-      "cout") );
   pl.set("memory_output_stream", "cout",
-    "output stream for memory usage messages (default cout)");
-  pl.getEntryRCP("memory_output_stream")->setValidator(
-    memory_output_stream_Validator);
+    "output stream for memory usage messages",
+    output_stream_Validator);
 
   // validator for file does not have to exist
-  RCP<Teuchos::FileNameValidator> file__not_required_validator =
+  RCP<Teuchos::FileNameValidator> file_not_required_validator =
     Teuchos::rcp( new Teuchos::FileNameValidator(false) );
 
   // debug_output_file
   pl.set("memory_output_file", "/dev/null",
     "name of file to which memory profiling information should "
-    "be written (process rank will be included in file name)");
-  pl.getEntryRCP("memory_output_file")->setValidator(
-    file__not_required_validator);
+    "be written (process rank will be included in file name)",
+    file_not_required_validator);
 
   // timer_output_file
   pl.set("timer_output_file", "/dev/null", "name of file to which "
     "timing information should be written (process rank will be "
-    "included in file name)");
-  pl.getEntryRCP("timer_output_file")->setValidator(
-    file__not_required_validator);
+    "included in file name)", file_not_required_validator);
 
   // debug_output_file
   pl.set("debug_output_file", "/dev/null", "name of file to which debug/status"
-    " messages should be written (process rank will be included in file name)");
-  pl.getEntryRCP("debug_output_file")->setValidator(
-    file__not_required_validator);
+    " messages should be written (process rank will be included in file name)",
+    file_not_required_validator);
+
+  const bool bUnsortedFalse = false; // defined this to clarify the meaning
+  RCP<Zoltan2::IntegerRangeListValidator<int>> procs_Validator =
+    Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(bUnsortedFalse) );
 
   // debug_procs
   pl.set("debug_procs", "0", "list of ranks that output debugging/status "
-    "messages (default \"0\")");
-  const bool bUnsortedFalse = false; // defined this to clarify the meaning
-  RCP<Zoltan2::IntegerRangeListValidator<int>> debug_procs_Validator =
-    Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(bUnsortedFalse) );
-  pl.getEntryRCP("debug_procs")->setValidator(debug_procs_Validator);
+    "messages", procs_Validator);
 
   // memory_procs
-  RCP<Zoltan2::IntegerRangeListValidator<int>> memory_procs_Validator =
-    Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(bUnsortedFalse) );
   pl.set("memory_procs", "0", "list of ranks that do memory profiling "
-    "information (default \"0\")");
-  pl.getEntryRCP("memory_procs")->setValidator(memory_procs_Validator);
+    "information", procs_Validator);
 
   // random_seed
   RCP<Teuchos::AnyNumberParameterEntryValidator> random_seed_Validator =
     Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
-  pl.set("random_seed", "0.5", "random seed");
-  pl.getEntryRCP("random_seed")->setValidator(random_seed_Validator);
+  pl.set("random_seed", "0.5", "random seed", random_seed_Validator);
 
   // speed versus quality
   RCP<Teuchos::StringValidator> speed_versus_quality_Validator =
     Teuchos::rcp( new Teuchos::StringValidator(
     Teuchos::tuple<std::string>( "speed", "balance", "quality" )));
   pl.set("speed_versus_quality", "balance", "When algorithm choices "
-    "exist, opt for speed or solution quality? (Default is a balance "
-    "of speed and quality)");
-  pl.getEntryRCP("speed_versus_quality")->setValidator(
-    speed_versus_quality_Validator);
+    "exist, opt for speed or solution quality? (balance is a balance "
+    "of speed and quality)", speed_versus_quality_Validator);
 
   // memory_versus_speed
   RCP<Teuchos::StringValidator> memory_versus_speed_Validator =
     Teuchos::rcp( new Teuchos::StringValidator(
     Teuchos::tuple<std::string>( "memory", "balance", "speed" )));
   pl.set("memory_versus_speed", "balance", "When algorithm choices exist, "
-    "opt for the use of less memory at the expense of runtime (Default is "
-    "a balance of memory conservation and speed)");
-  pl.getEntryRCP("memory_versus_speed")->setValidator(
+    "opt for the use of less memory at the expense of runtime (balance is "
+    "a balance of memory conservation and speed)",
     memory_versus_speed_Validator);
 
   // topology
@@ -318,22 +295,13 @@ void Environment::getDefaultParameters(ParameterList & pl)
     Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(bUnsortedTrue) );
   pl.set("topology", "", "Topology of node to be used in hierarchical "
     "partitioning \"2,4\"  for dual-socket quad-core \"2,2,6\"  for "
-      "dual-socket, dual-die, six-core \"2,2,3\"  for dual-socket, dualdie, "
-      "six-core but with only three partitions per die");
-  pl.getEntryRCP("topology")->setValidator(topology_Validator);
+    "dual-socket, dual-die, six-core \"2,2,3\"  for dual-socket, dualdie, "
+    "six-core but with only three partitions per die",
+    topology_Validator);
 
   // randomize_input
-  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-    randomize_input_Validator = Teuchos::rcp(
-      new Teuchos::StringToIntegralParameterEntryValidator<int>(
-        Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false",
-          "no", "0", "off" ),
-        // original did not have this documented - left balnk
-        Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-        Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-        "cout") );
-  pl.set("randomize_input", "no", "randomize input prior to partitioning");
-  pl.getEntryRCP("randomize_input")->setValidator(randomize_input_Validator);
+  pl.set("randomize_input", "false", "randomize input prior to partitioning",
+    getTrueFalseValidator());
 }
 
 void Environment::commitParameters()

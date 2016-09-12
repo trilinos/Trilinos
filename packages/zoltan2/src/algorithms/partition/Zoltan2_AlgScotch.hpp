@@ -63,40 +63,26 @@ namespace Zoltan2 {
 // this function called by the two scotch types below
 static inline void getScotchParameters(Teuchos::ParameterList & pl)
 {
-  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-    general_on_off_validator = Teuchos::rcp(
-      new Teuchos::StringToIntegralParameterEntryValidator<int>(
-        Teuchos::tuple<std::string>( "true", "yes", "1", "on",
-          "false", "no", "0", "off" ),
-        // original did not have this documented - left this blank
-        Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-        Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-        "no") );
-
-  pl.set("scotch_verbose", "false", "  verbose output (default false)");
-  pl.getEntryRCP("scotch_verbose")->setValidator(general_on_off_validator);
+  pl.set("scotch_verbose", "false", "  verbose output",
+    Environment::getTrueFalseValidator());
 
   RCP<Teuchos::EnhancedNumberValidator<int>> scotch_level_Validator =
     Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
   pl.set("scotch_level", 0, "scotch ordering - Level of the subgraph in the "
-    "separators tree for the initial graph at the root of the tree  (default 0)");
-  pl.getEntryRCP("scotch_level")->setValidator(scotch_level_Validator);
+    "separators tree for the initial graph at the root of the tree",
+    scotch_level_Validator);
 
   RCP<Teuchos::AnyNumberParameterEntryValidator>
     scotch_imbalance_ratio_Validator = Teuchos::rcp(
       new Teuchos::AnyNumberParameterEntryValidator() );
   pl.set("scotch_imbalance_ratio", "0.2", "scotch ordering - Dissection "
-    "imbalance ratio  (default 0.2)");
-  pl.getEntryRCP("scotch_imbalance_ratio")->setValidator(
-    scotch_imbalance_ratio_Validator);
+    "imbalance ratio", scotch_imbalance_ratio_Validator);
 
   pl.set("scotch_ordering_default", "true", "use default scotch ordering "
-    "strategy (default true)");
-  pl.getEntryRCP("scotch_ordering_default")->setValidator(
-    general_on_off_validator);
+    "strategy", Environment::getTrueFalseValidator());
 
   pl.set("scotch_ordering_strategy", "", "scotch ordering - Dissection "
-    "imbalance ratio (default  )");
+    "imbalance ratio");
 }
 
 } // Zoltan2 namespace

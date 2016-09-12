@@ -84,37 +84,23 @@ public:
     RCP<Teuchos::AnyNumberParameterEntryValidator> pulp_vert_imbalance_Validator
       = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
     pl.set("pulp_vert_imbalance", "1.1", "vertex imbalance tolerance, ratio of "
-      "maximum load over average load (default 1.1)");
-    pl.getEntryRCP("pulp_vert_imbalance")->setValidator(
+      "maximum load over average load",
       pulp_vert_imbalance_Validator);
 
     RCP<Teuchos::AnyNumberParameterEntryValidator> pulp_edge_imbalance_Validator
       = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
     pl.set("pulp_edge_imbalance", "1.1", "edge imbalance tolerance, ratio of "
-      "maximum load over average load (default 1.1)");
-    pl.getEntryRCP("pulp_edge_imbalance")->setValidator(
+      "maximum load over average load",
       pulp_edge_imbalance_Validator);
 
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-      general_on_off_validator = Teuchos::rcp(
-        new Teuchos::StringToIntegralParameterEntryValidator<int>(
-          Teuchos::tuple<std::string>(
-            "true", "yes", "1", "on", "false", "no", "0", "off" ),
-          // original for did not define documentation
-          Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-          Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ), "no") );
-
     pl.set("pulp_lp_init", "false", "perform label propagation-based "
-      "initialization (default false)");
-    pl.getEntryRCP("pulp_lp_init")->setValidator(general_on_off_validator);
+      "initialization", Environment::getTrueFalseValidator());
 
     pl.set("pulp_minimize_maxcut", "false", "perform per-part max cut "
-      "minimization (default false)");
-    pl.getEntryRCP("pulp_minimize_maxcut")->setValidator(
-      general_on_off_validator);
+      "minimization", Environment::getTrueFalseValidator());
 
-    pl.set("pulp_verbose", "false", "verbose output (default false)");
-    pl.getEntryRCP("pulp_verbose")->setValidator(general_on_off_validator);
+    pl.set("pulp_verbose", "false", "verbose output",
+      Environment::getTrueFalseValidator());
   }
 };
 

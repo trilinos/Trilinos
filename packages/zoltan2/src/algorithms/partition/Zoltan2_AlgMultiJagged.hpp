@@ -6372,12 +6372,11 @@ public:
      */
     static void getDefaultParameters(ParameterList & pl)
     {
-      pl.set("mj_parts", "0", "list of parts for multiJagged partitioning "
-        "algorithm. As many as the dimension count.");
       const bool bUnsorted = true; // this clarifies the flag is for unsrorted
       RCP<Zoltan2::IntegerRangeListValidator<int>> mj_parts_Validator =
       Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(bUnsorted) );
-      pl.getEntryRCP("mj_parts")->setValidator(mj_parts_Validator);
+      pl.set("mj_parts", "0", "list of parts for multiJagged partitioning "
+        "algorithm. As many as the dimension count.", mj_parts_Validator);
 
       Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes typesNotDouble;
       typesNotDouble.allowDouble(false);
@@ -6386,38 +6385,29 @@ public:
         Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, typesNotDouble) );
 
       pl.set("mj_concurrent_part_count", 1, "The number of parts whose cut "
-        "coordinates will be calculated concurently.");
-      pl.getEntryRCP("mj_concurrent_part_count")->setValidator(
-      int_or_string_validator);
+        "coordinates will be calculated concurently.", int_or_string_validator);
 
       RCP<Teuchos::AnyNumberParameterEntryValidator>
         mj_minimum_migration_imbalance_Validator = Teuchos::rcp(
           new Teuchos::AnyNumberParameterEntryValidator() );
       pl.set("mj_minimum_migration_imbalance", "1.1",
         "mj_minimum_migration_imbalance, the minimum imbalance of the "
-        "processors to avoid migration (default 1.1)");
-      pl.getEntryRCP("mj_minimum_migration_imbalance")->setValidator(
+        "processors to avoid migration",
         mj_minimum_migration_imbalance_Validator);
 
       pl.set("mj_migration_option", 1, "Migration option, 0 for decision "
         "depending on the imbalance, 1 for forcing migration, 2 for "
-        "avoiding migration");
-      pl.getEntryRCP("mj_migration_option")->setValidator(
-        int_or_string_validator);
+        "avoiding migration", int_or_string_validator);
 
       pl.set("mj_keep_part_boxes", -1, "Keep the part boundaries of the "
-        "geometric partitioning: Truth values - 0 False, Otherwise True.");
-      pl.getEntryRCP("mj_keep_part_boxes")->setValidator(
+        "geometric partitioning: Truth values - 0 False, Otherwise True.",
         int_or_string_validator);
 
       pl.set("mj_enable_rcb", 0, "Use MJ as RCB: Truth values - 0 False, "
-        "Otherwise True.");
-      pl.getEntryRCP("mj_enable_rcb")->setValidator(int_or_string_validator);
+        "Otherwise True.", int_or_string_validator);
 
       pl.set("mj_recursion_depth", -1, "Recursion depth for MJ: Must be "
-        "greater than 0.");
-      pl.getEntryRCP("mj_recursion_depth")->setValidator(
-        int_or_string_validator);
+        "greater than 0.", int_or_string_validator);
     }
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.
