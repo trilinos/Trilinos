@@ -72,47 +72,42 @@ static string fnParams[NUMFN][3]={
 
 // Value value is any integer - a string is invalid
 
-#define NUMANYINT 2 
+#define NUMANYINT 3 
 static string anyIntParams[NUMANYINT][3]={
-  {"bisection_num_test_cuts", "3", "dont_know"},
-  {"parallel_part_calculation_count", "2", "dont_know"}
+  {"num_global_parts", "12", "invalid_value"},
+  {"num_local_parts", "1", "invalid_value"},
+  {"random_seed", "9999", "invalid_value"},
 };
 
 // Value value is a particular string
 
-#define NUMSTR 31
+#define NUMSTR 25
 static string strParams[NUMSTR][3]={
   {"error_check_level", "basic_assertions", "invalid_assertion_request"},
-  {"debug_level", "basic_status", "bogus_status"},
+  {"debug_level", "basic_status", "invalid_status"},
   {"timer_type", "no_timers", "invalid_timers"},
   {"debug_output_stream", "cout", "invalid_stream"},
   {"timer_output_stream", "/dev/null", "invalid_stream"},
   {"memory_output_stream", "cerr", "invalid_stream"},
   {"debug_procs", "all", "not_a_valid_list_of_any_type"},
-  {"pqParts", "2,3,4", "not_a_valid_list_of_any_type"},
+  {"mj_parts", "2,3,4", "not_a_valid_list_of_any_type"},
   {"memory_procs", "2-10", "not_a_valid_list_of_any_type"},
-  {"speed_versus_quality", "balance", "amazing_performance"},
-  {"memory_versus_speed", "memory", "impossible_performance"},
-  {"random_seed", "9.999", "xxx"},
-  {"order_method", "rcm", "rcmNew"},
-  {"order_package", "amd", "amdNew"},
-  {"compute_metrics", "yes", "maybe"},
-  {"topology", "2,3,6", "I_don't_know"},
+  {"speed_versus_quality", "balance", "invalid_option"},
+  {"memory_versus_speed", "memory", "invalid_option"},
+  {"order_method", "rcm", "invalid_method"},
+  {"order_package", "amd", "invalid_package"},
+  {"compute_metrics", "true", "maybe"},
+  {"topology", "2,3,6", "invalid_option"},
   {"randomize_input", "1", "22"},
-  {"partitioning_objective", "balance_object_weight", "get_curry"},
-  {"imbalance_tolerance", "1.1", "intolerant"},
-  {"num_global_parts", "12", "xxx"},
-  {"num_local_parts", "1", "no_idea"},
-  {"partitioning_approach", "repartition", "cut_it_up"},
-  {"objects_to_partition", "graph_vertices", "nothing"},
-  {"model", "graph", "manifold"},
-  {"algorithm", "rcb", "xyz"},
-  {"rectilinear", "yes", "dont_know"},
-  {"average_cuts", "false", "dont_know"},
-  {"symmetrize_input", "transpose", "dont_know"},
-  {"subset_graph", "1", "dont_know"},
-  {"force_binary_search", "true", "dont_know"},
-  {"force_linear_search", "yes", "dont_know"} 
+  {"partitioning_objective", "balance_object_weight", "invalid_objective"},
+  {"partitioning_approach", "repartition", "invalid_approach"},
+  {"objects_to_partition", "graph_vertices", "invalid_objects"},
+  {"model", "graph", "invalid_model"},
+  {"algorithm", "rcb", "invalid_algorithm"},
+  {"rectilinear", "true", "invalid_option"},
+  {"symmetrize_input", "transpose", "invalid_option"},
+  {"subset_graph", "1", "invalid_option"},
+  {"imbalance_tolerance", "1.1", "invalid_option"}
 };
 
 
@@ -137,7 +132,7 @@ int testInvalidValue( Teuchos::ParameterList &pl,
   }
 
   if (!failed){
-    cerr << "Bad parameter was not detected in parameter list." << endl;
+    cerr << "Bad parameter value was not detected in parameter list." << endl;
     return 1;
   }
   return 0;

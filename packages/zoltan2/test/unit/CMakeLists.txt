@@ -60,6 +60,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+# Disabled until the test passes.
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  AllParameters
+#  SOURCES environment/AllParameters.cpp
+#  NUM_MPI_PROCS 1
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   InputTraitsGood
   SOURCES input/InputTraitsGood.cpp
