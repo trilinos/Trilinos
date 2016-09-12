@@ -3976,305 +3976,195 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   globalAssemble ()
   {
-    using Teuchos::arcp;
-    using Teuchos::Array;
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    using Teuchos::CommRequest;
-    using Teuchos::gatherAll;
-    using Teuchos::isend;
-    using Teuchos::ireceive;
-    using Teuchos::null;
+    using Teuchos::Comm;
     using Teuchos::outArg;
     using Teuchos::RCP;
-    using Teuchos::rcpFromRef;
+    using Teuchos::rcp;
     using Teuchos::REDUCE_MAX;
+    using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    using Teuchos::SerialDenseMatrix;
-    using Teuchos::tuple;
-    using Teuchos::waitAll;
-    using std::make_pair;
-    using std::pair;
+    typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> crs_matrix_type;
+    typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef typename Array<GO>::size_type size_type;
-    // nonlocals_ contains the entries stored by previous calls to
-    // insertGlobalValues() for nonowned rows.
-    typedef std::map<GO, pair<Array<GO>, Array<Scalar> > > nonlocals_map_type;
-    typedef typename nonlocals_map_type::const_iterator nonlocals_iter_type;
+    typedef typename Teuchos::Array<GO>::size_type size_type;
+    const char tfecfFuncName[] = "globalAssemble: "; // for exception macro
 
-    const char tfecfFuncName[] = "globalAssemble";
-    const Teuchos::Comm<int>& comm = * (getComm ());
-    const int numImages = comm.getSize ();
-    const int myImageID = comm.getRank ();
+    RCP<const Comm<int> > comm = getComm ();
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! isFillActive (), std::runtime_error, ": requires that fill is active.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! isFillActive (), std::runtime_error, "Fill must be active before "
+       "you may call this method.");
 
-    // Determine (via a global all-reduce) if any processes have
-    // nonlocal entries to share.  This is necessary even if the
-    // matrix has a static graph, because insertGlobalValues allows
-    // nonlocal entries in that case.
-    size_t MyNonlocals = static_cast<size_t> (nonlocals_.size ());
-    size_t MaxGlobalNonlocals = 0;
-    reduceAll<int, size_t> (comm, REDUCE_MAX, MyNonlocals,
-                            outArg (MaxGlobalNonlocals));
-    if (MaxGlobalNonlocals == 0) {
-      return;  // no entries to share
+    const size_t myNumNonlocalRows = nonlocals_.size ();
+
+    // If no processes have nonlocal rows, then we don't have to do
+    // anything.  Checking this is probably cheaper than constructing
+    // the Map of nonlocal rows (see below) and noticing that it has
+    // zero global entries.
+    {
+      const int iHaveNonlocalRows = (myNumNonlocalRows == 0) ? 0 : 1;
+      int someoneHasNonlocalRows = 0;
+      reduceAll<int, int> (*comm, REDUCE_MAX, iHaveNonlocalRows,
+                           outArg (someoneHasNonlocalRows));
+      if (someoneHasNonlocalRows == 0) {
+        return; // no process has nonlocal rows, so nothing to do
+      }
     }
 
-    // FIXME (mfh 14 Dec 2012) The code below reimplements an Export
-    // operation.  It would be better just to use an Export.  See
-    // Comment #34 in discussion of Bug 5782.
-    //
-    // mfh 24 Feb 2014: On the other hand, this is not technically an
-    // Export, since the row Map might not necessarily be one-to-one.
+    // 1. Create a list of the "nonlocal" rows on each process.  this
+    //    requires iterating over nonlocals_, so while we do this,
+    //    deduplicate the entries and get a count for each nonlocal
+    //    row on this process.
+    // 2. Construct a new row Map corresponding to those rows.  This
+    //    Map is likely overlapping.  We know that the Map is not
+    //    empty on all processes, because the above all-reduce and
+    //    return exclude that case.
 
-    // compute a list of NLRs from nonlocals_ and use it to compute:
-    //      IdsAndRows: a vector of (id,row) pairs
-    //          NLR2Id: a map from NLR to the Id that owns it
-    // globalNeighbors: a global graph of connectivity between images:
-    //                  globalNeighbors(i,j) indicates that j sends to i
-    //         sendIDs: a list of all images I send to
-    //         recvIDs: a list of all images I receive from (constructed later)
-    Array<pair<int,GlobalOrdinal> > IdsAndRows;
-    std::map<GlobalOrdinal,int> NLR2Id;
-    SerialDenseMatrix<int,char> globalNeighbors;
-    Array<int> sendIDs, recvIDs;
+    RCP<const map_type> nonlocalRowMap;
+    // Keep this for CrsGraph's constructor, so we can use StaticProfile.
+    Teuchos::ArrayRCP<size_t> numEntPerNonlocalRow (myNumNonlocalRows);
     {
-      // Construct the set of all nonowned rows encountered by this
-      // process in insertGlobalValues() or sumIntoGlobalValues().
-      std::set<GlobalOrdinal> setOfRows;
-      for (nonlocals_iter_type iter = nonlocals_.begin ();
-           iter != nonlocals_.end (); ++iter) {
-        setOfRows.insert (iter->first);
-      }
-      // Copy the resulting set of nonowned rows into an Array.
-      Array<GlobalOrdinal> NLRs (setOfRows.size ());
-      std::copy (setOfRows.begin (), setOfRows.end (), NLRs.begin ());
+      Teuchos::Array<GO> myNonlocalGblRows (myNumNonlocalRows);
+      size_type curPos = 0;
+      for (auto mapIter = nonlocals_.begin (); mapIter != nonlocals_.end ();
+           ++mapIter, ++curPos) {
+        myNonlocalGblRows[curPos] = mapIter->first;
+        // Get the values and column indices by reference, since we
+        // intend to change them in place (that's what "erase" does).
+        Teuchos::Array<GO>& gblCols = (mapIter->second).first;
+        Teuchos::Array<Scalar>& vals = (mapIter->second).second;
 
-      // get a list of ImageIDs for the non-local rows (NLRs)
-      Array<int> NLRIds (NLRs.size ());
+        // Sort both arrays jointly, using the column indices as keys,
+        // then merge them jointly.  "Merge" here adds values
+        // corresponding to the same column indices.  The first 2 args
+        // of merge2 are output arguments that work just like the
+        // return value of std::unique.
+        sort2 (gblCols.begin (), gblCols.end (), vals.begin ());
+        typename Teuchos::Array<GO>::iterator gblCols_newEnd;
+        typename Teuchos::Array<Scalar>::iterator vals_newEnd;
+        merge2 (gblCols_newEnd, vals_newEnd,
+                gblCols.begin (), gblCols.end (),
+                vals.begin (), vals.end ());
+        gblCols.erase (gblCols_newEnd, gblCols.end ());
+        vals.erase (vals_newEnd, vals.end ());
+        numEntPerNonlocalRow[curPos] = gblCols.size ();
+      }
+
+      // Currently, Map requires that its indexBase be the global min
+      // of all its global indices.  Map won't compute this for us, so
+      // we must do it.  If our process has no nonlocal rows, set the
+      // "min" to the max possible GO value.  This ensures that if
+      // some process has at least one nonlocal row, then it will pick
+      // that up as the min.  We know that at least one process has a
+      // nonlocal row, since the all-reduce and return at the top of
+      // this method excluded that case.
+      GO myMinNonlocalGblRow = std::numeric_limits<GO>::max ();
       {
-        const LookupStatus stat =
-          getRowMap ()->getRemoteIndexList (NLRs (), NLRIds ());
-        const int lclerr = (stat == IDNotPresent ? 1 : 0);
-        int gblerr;
-        reduceAll<int, int> (comm, REDUCE_MAX, lclerr, outArg (gblerr));
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          gblerr, std::runtime_error, ": non-local entries correspond to "
-          "invalid rows.");
-      }
-
-      // build up a list of neighbors, as well as a map between NLRs and Ids
-      // localNeighbors[i] != 0 iff I have data to send to image i
-      // put NLRs,Ids into an array of pairs
-      IdsAndRows.reserve (NLRs.size ());
-      Array<char> localNeighbors (numImages, 0);
-      typename Array<GO>::const_iterator nlr;
-      typename Array<int>::const_iterator id;
-      for (nlr = NLRs.begin (), id = NLRIds.begin ();
-           nlr != NLRs.end (); ++nlr, ++id) {
-        NLR2Id[*nlr] = *id;
-        localNeighbors[*id] = 1;
-        IdsAndRows.push_back (make_pair (*id, *nlr));
-      }
-      for (int j = 0; j < numImages; ++j) {
-        if (localNeighbors[j]) {
-          sendIDs.push_back (j);
+        auto iter = std::min_element (myNonlocalGblRows.begin (),
+                                      myNonlocalGblRows.end ());
+        if (iter != myNonlocalGblRows.end ()) {
+          myMinNonlocalGblRow = *iter;
         }
       }
-      // sort IdsAndRows, by Ids first, then rows
-      std::sort (IdsAndRows.begin (), IdsAndRows.end ());
-      // gather from other nodes to form the full graph
+      GO gblMinNonlocalGblRow = 0;
+      reduceAll<int, GO> (*comm, REDUCE_MIN, myMinNonlocalGblRow,
+                          outArg (gblMinNonlocalGblRow));
+      const GO indexBase = gblMinNonlocalGblRow;
+      const global_size_t INV = Teuchos::OrdinalTraits<global_size_t>::invalid ();
+      nonlocalRowMap = rcp (new map_type (INV, myNonlocalGblRows (), indexBase, comm));
+    }
+
+    // 3. Use the values and column indices for each nonlocal row, as
+    //    stored in nonlocals_, to construct a CrsMatrix corresponding
+    //    to nonlocal rows.  We may use StaticProfile, since we have
+    //    exact counts of the number of entries in each nonlocal row.
+
+    RCP<crs_matrix_type> nonlocalMatrix =
+      rcp (new crs_matrix_type (nonlocalRowMap, numEntPerNonlocalRow,
+                                StaticProfile));
+    {
+      size_type curPos = 0;
+      for (auto mapIter = nonlocals_.begin (); mapIter != nonlocals_.end ();
+           ++mapIter, ++curPos) {
+        const GO gblRow = mapIter->first;
+        // Get values & column indices by ref, just to avoid copy.
+        Teuchos::Array<GO>& gblCols = (mapIter->second).first;
+        Teuchos::Array<Scalar>& vals = (mapIter->second).second;
+        const LO numEnt = static_cast<LO> (numEntPerNonlocalRow[curPos]);
+        nonlocalMatrix->insertGlobalValues (gblRow, gblCols (), vals ());
+      }
+    }
+    // There's no need to fill-complete the nonlocals matrix.
+    // We just use it as a temporary container for the Export.
+
+    // 4. If the original row Map is one to one, then we can Export
+    //    directly from nonlocalMatrix into this.  Otherwise, we have
+    //    to create a temporary matrix with a one-to-one row Map,
+    //    Export into that, then Import from the temporary matrix into
+    //    *this.
+
+    auto origRowMap = this->getRowMap ();
+    const bool origRowMapIsOneToOne = origRowMap->isOneToOne ();
+
+    int isLocallyComplete = 1; // true by default
+
+    if (origRowMapIsOneToOne) {
+      export_type exportToOrig (nonlocalRowMap, origRowMap);
+      if (! exportToOrig.isLocallyComplete ()) {
+        isLocallyComplete = 0;
+      }
+      this->doExport (*nonlocalMatrix, exportToOrig, Tpetra::ADD);
+      // We're done at this point!
+    }
+    else {
+      // If you ask a Map whether it is one to one, it does some
+      // communication and stashes intermediate results for later use
+      // by createOneToOne.  Thus, calling createOneToOne doesn't cost
+      // much more then the original cost of calling isOneToOne.
+      auto oneToOneRowMap = Tpetra::createOneToOne (origRowMap);
+      export_type exportToOneToOne (nonlocalRowMap, oneToOneRowMap);
+      if (! exportToOneToOne.isLocallyComplete ()) {
+        isLocallyComplete = 0;
+      }
+
+      // Create a temporary matrix with the one-to-one row Map.
       //
-      // FIXME (mfh 24 Feb 2014) Ugh, this is awful!!!  It's making a
-      // P x P matrix which is the full graph of process connectivity.
-      // Neither Export nor Import does this!  It would probably be
-      // more efficient to do the following:
-      //
-      //   1. Form the one-to-one version of the row Map, tgtMap
-      //   2. Form the (possibly overlapping) Map srcMap, with the
-      //      global row indices which are the keys of nonlocals_ on
-      //      each process
-      //   3. Construct an Export from srcMap to tgtMap
-      //   4. Execute the Export with Tpetra::ADD
-      globalNeighbors.shapeUninitialized (numImages, numImages);
-      gatherAll (comm, numImages, localNeighbors.getRawPtr (),
-                 numImages*numImages, globalNeighbors.values ());
-      // globalNeighbors at this point contains (on all images) the
-      // connectivity between the images.
-      // globalNeighbors(i,j) != 0 means that j sends to i/that i receives from j
+      // TODO (mfh 09 Sep 2016, 12 Sep 2016) Estimate # entries in
+      // each row, to avoid reallocation during the Export operation.
+      crs_matrix_type oneToOneMatrix (oneToOneRowMap, 0);
+      // Export from matrix of nonlocals into the temp one-to-one matrix.
+      oneToOneMatrix.doExport (*nonlocalMatrix, exportToOneToOne, Tpetra::ADD);
+
+      // We don't need the matrix of nonlocals anymore, so get rid of
+      // it, to keep the memory high-water mark down.
+      nonlocalMatrix = Teuchos::null;
+
+      // Import from the one-to-one matrix to the original matrix.
+      import_type importToOrig (oneToOneRowMap, origRowMap);
+      this->doImport (oneToOneMatrix, importToOrig, Tpetra::ADD);
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////
-    // FIGURE OUT WHO IS SENDING TO WHOM AND HOW MUCH
-    // DO THIS IN THE PROCESS OF PACKING ALL OUTGOING DATA ACCORDING TO DESTINATION ID
-    //////////////////////////////////////////////////////////////////////////////////////
+    // It's safe now to clear out nonlocals_, since we've already
+    // committed side effects to *this.  The standard idiom for
+    // clearing a Container like std::map, is to swap it with an empty
+    // Container and let the swapped Container fall out of scope.
+    decltype (nonlocals_) newNonlocals;
+    std::swap (nonlocals_, newNonlocals);
 
-    // loop over all columns to know from which images I can expect to receive something
-    for (int j=0; j<numImages; ++j) {
-      if (globalNeighbors (myImageID, j)) {
-        recvIDs.push_back (j);
-      }
-    }
-    const size_t numRecvs = recvIDs.size ();
+    // FIXME (mfh 12 Sep 2016) I don't like this all-reduce, and I
+    // don't like throwing an exception here.  A local return value
+    // would likely be more useful to users.  However, if users find
+    // themselves exercising nonlocal inserts often, then they are
+    // probably novice users who need the help.  See Gibhub Issues
+    // #603 and #601 (esp. the latter) for discussion.
 
-    // we know how many we're sending to already
-    // form a contiguous list of all data to be sent
-    // track the number of entries for each ID
-    Array<Details::CrsIJV<GlobalOrdinal, Scalar> > IJVSendBuffer;
-    Array<size_t> sendSizes (sendIDs.size(), 0);
-    size_t numSends = 0;
-    for (typename Array<pair<int, GlobalOrdinal> >::const_iterator IdAndRow = IdsAndRows.begin();
-         IdAndRow != IdsAndRows.end(); ++IdAndRow)
-    {
-      const int id = IdAndRow->first;
-      const GO row = IdAndRow->second;
-
-      // have we advanced to a new send?
-      if (sendIDs[numSends] != id) {
-        numSends++;
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          sendIDs[numSends] != id, std::logic_error,
-          ": internal logic error. Contact Tpetra team.");
-      }
-
-      // copy data for row into contiguous storage
-      pair<Array<GO>, Array<Scalar> >& nonlocalsRow = nonlocals_[row];
-      ArrayView<const GO> nonlocalsRow_colInds = nonlocalsRow.first ();
-      ArrayView<const Scalar> nonlocalsRow_values = nonlocalsRow.second ();
-      const size_type numNonlocalsRow = nonlocalsRow_colInds.size ();
-
-      for (size_type k = 0; k < numNonlocalsRow; ++k) {
-        const Scalar val = nonlocalsRow_values[k];
-        const GO col = nonlocalsRow_colInds[k];
-        IJVSendBuffer.push_back (Details::CrsIJV<GO, Scalar> (row, col, val));
-        sendSizes[numSends]++;
-      }
-    }
-    if (IdsAndRows.size () > 0) {
-      numSends++; // one last increment, to make it a count instead of an index
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_type> (numSends) != sendIDs.size(),
-      std::logic_error, ": internal logic error. Contact Tpetra team.");
-
-    // don't need this data anymore
-    // clear it before we start allocating a bunch of new memory
-    nonlocals_.clear ();
-
-    //////////////////////////////////////////////////////////////////////////////////////
-    // TRANSMIT SIZE INFO BETWEEN SENDERS AND RECEIVERS
-    //////////////////////////////////////////////////////////////////////////////////////
-    // perform non-blocking sends: send sizes to our recipients
-    Array<RCP<CommRequest<int> > > sendRequests;
-    for (size_t s = 0; s < numSends ; ++s) {
-      // we'll fake the memory management, because all communication will be local to this method and the scope of our data
-      sendRequests.push_back (isend<int, size_t> (comm, rcpFromRef (sendSizes[s]), sendIDs[s]));
-    }
-    // perform non-blocking receives: receive sizes from our senders
-    Array<RCP<CommRequest<int> > > recvRequests;
-    Array<size_t> recvSizes (numRecvs);
-    for (size_t r = 0; r < numRecvs; ++r) {
-      // we'll fake the memory management, because all communication
-      // will be local to this method and the scope of our data
-      recvRequests.push_back (ireceive<int, size_t> (comm, rcpFromRef (recvSizes[r]), recvIDs[r]));
-    }
-    // wait on all
-    if (! sendRequests.empty ()) {
-      waitAll (comm, sendRequests ());
-    }
-    if (! recvRequests.empty ()) {
-      waitAll (comm, recvRequests ());
-    }
-    comm.barrier ();
-    sendRequests.clear ();
-    recvRequests.clear ();
-
-    ////////////////////////////////////////////////////////////////////////////////////
-    // NOW SEND/RECEIVE ALL ROW DATA
-    ////////////////////////////////////////////////////////////////////////////////////
-    // from the size info, build the ArrayViews into IJVSendBuffer
-    Array<ArrayView<Details::CrsIJV<GO, Scalar> > > sendBuffers (numSends, null);
-    {
-      size_t cur = 0;
-      for (size_t s=0; s<numSends; ++s) {
-        sendBuffers[s] = IJVSendBuffer (cur, sendSizes[s]);
-        cur += sendSizes[s];
-      }
-    }
-    // perform non-blocking sends
-    for (size_t s = 0; s < numSends; ++s) {
-      // we'll fake the memory management, because all communication
-      // will be local to this method and the scope of our data
-      ArrayRCP<Details::CrsIJV<GO, Scalar> > tmparcp =
-        arcp (sendBuffers[s].getRawPtr (), 0, sendBuffers[s].size (), false);
-      sendRequests.push_back (isend<int, Details::CrsIJV<GlobalOrdinal,Scalar> > (comm, tmparcp, sendIDs[s]));
-    }
-    // calculate amount of storage needed for receives
-    // setup pointers for the receives as well
-    size_t totalRecvSize = std::accumulate (recvSizes.begin (), recvSizes.end (), 0);
-    Array<Details::CrsIJV<GO, Scalar> > IJVRecvBuffer (totalRecvSize);
-    // from the size info, build the ArrayViews into IJVRecvBuffer
-    Array<ArrayView<Details::CrsIJV<GO, Scalar> > > recvBuffers (numRecvs, null);
-    {
-      size_t cur = 0;
-      for (size_t r = 0; r < numRecvs; ++r) {
-        recvBuffers[r] = IJVRecvBuffer (cur, recvSizes[r]);
-        cur += recvSizes[r];
-      }
-    }
-    // perform non-blocking recvs
-    for (size_t r = 0; r < numRecvs ; ++r) {
-      // we'll fake the memory management, because all communication
-      // will be local to this method and the scope of our data
-      ArrayRCP<Details::CrsIJV<GO, Scalar> > tmparcp =
-        arcp (recvBuffers[r].getRawPtr (), 0, recvBuffers[r].size (), false);
-      recvRequests.push_back (ireceive (comm, tmparcp, recvIDs[r]));
-    }
-    // perform waits
-    if (! sendRequests.empty ()) {
-      waitAll (comm, sendRequests ());
-    }
-    if (! recvRequests.empty ()) {
-      waitAll (comm, recvRequests ());
-    }
-    comm.barrier ();
-    sendRequests.clear ();
-    recvRequests.clear ();
-
-    ////////////////////////////////////////////////////////////////////////////////////
-    // NOW PROCESS THE RECEIVED ROW DATA
-    ////////////////////////////////////////////////////////////////////////////////////
-    // TODO: instead of adding one entry at a time, add one row at a time.
-    //       this requires resorting; they arrived sorted by sending node, so that entries could be non-contiguous if we received
-    //       multiple entries for a particular row from different processors.
-    //       it also requires restoring the data, which may make it not worth the trouble.
-
-    typedef typename Array<Details::CrsIJV<GO, Scalar> >::const_iterator ijv_iter_type;
-    if (this->isStaticGraph ()) {
-      for (ijv_iter_type ijv = IJVRecvBuffer.begin ();
-           ijv != IJVRecvBuffer.end (); ++ijv) {
-        sumIntoGlobalValues (ijv->i, tuple (ijv->j), tuple (ijv->v));
-      }
-    }
-    else { // Dynamic graph; can use insertGlobalValues ()
-      for (ijv_iter_type ijv = IJVRecvBuffer.begin ();
-           ijv != IJVRecvBuffer.end (); ++ijv) {
-        try {
-          insertGlobalValues (ijv->i, tuple (ijv->j), tuple (ijv->v));
-        }
-        catch (std::runtime_error &e) {
-          std::ostringstream outmsg;
-          outmsg << e.what() << std::endl
-                 << "caught in globalAssemble() in " << __FILE__ << ":" << __LINE__
-                 << std::endl ;
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, outmsg.str());
-        }
-      }
-    }
-
-    // WHEW! THAT WAS TIRING!
+    int isGloballyComplete = 0; // output argument of reduceAll
+    reduceAll<int, int> (*comm, REDUCE_MIN, isLocallyComplete,
+                         outArg (isGloballyComplete));
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (isGloballyComplete != 1, std::runtime_error, "On at least one process, "
+       "you called insertGlobalValues with a global row index which is not in "
+       "the matrix's row Map on any process in its communicator.");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
