@@ -182,9 +182,8 @@ solve(VectorBase<double> *x,
     if(param_list_->isParameter("Right Scaling Vector")){
       Teuchos::RCP<NOX::Abstract::Vector> abstract_vec = param_list_->get<RCP<NOX::Abstract::Vector> >("Right Scaling Vector");
       right_scaling_vector_ = Teuchos::rcp_dynamic_cast<NOX::Thyra::Vector>(abstract_vec)->getThyraRCPVector();
-    }    
-
-    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_, right_scaling_vector_));
+    }
+    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_, right_scaling_vector_,rightScalingFirst_));
     nox_group_->getNonconstInArgs() = this->basePoint_;
 
     status_test_ = this->buildStatusTests(*param_list_);
@@ -383,6 +382,7 @@ validateAndParseThyraGroupOptions(Teuchos::ParameterList& thyra_group_options_su
       );
 
     validParams.set<Teuchos::RCP< ::Thyra::VectorBase<double> > >("User Defined Scaling", Teuchos::null);
+    validParams.set<bool >("Do Right Scaling First", false);
   }
 
   thyra_group_options_sublist.validateParametersAndSetDefaults(validParams);
@@ -402,6 +402,8 @@ validateAndParseThyraGroupOptions(Teuchos::ParameterList& thyra_group_options_su
 
   if (function_scaling_ =="User Defined")
     scaling_vector_ = thyra_group_options_sublist.get<Teuchos::RCP< ::Thyra::VectorBase<double> > >("User Defined Scaling");
+
+  rightScalingFirst_ = thyra_group_options_sublist.get<bool>("Do Right Scaling First");
 
 }
 
