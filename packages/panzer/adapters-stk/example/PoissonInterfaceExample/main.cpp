@@ -505,23 +505,12 @@ int main (int argc, char* argv[])
     // reader.
     po.is3d = mesh->getMetaData()->spatial_dimension() == 3;
   
-    if ( ! po.mesh_filename.empty() && ! po.is3d) {
-      // Special case.
-      po.eb_names.clear();
-      po.ss_names.clear();
-      po.eb_names.push_back("silicon1");
-      po.eb_names.push_back("silicon2");
-      po.ss_names.push_back("anode");
-      po.ss_names.push_back("interface");
-      po.ss_names.push_back("cathode");    
+    if (po.is3d) {
+      po.eb_names.push_back("eblock-0_0_0");
+      po.eb_names.push_back("eblock-1_0_0");
     } else {
-      if (po.is3d) {
-        po.eb_names.push_back("eblock-0_0_0");
-        po.eb_names.push_back("eblock-1_0_0");
-      } else {
-        po.eb_names.push_back("eblock-0_0");
-        po.eb_names.push_back("eblock-1_0");
-      }
+      po.eb_names.push_back("eblock-0_0");
+      po.eb_names.push_back("eblock-1_0");
     }
   
     // construct input physics and physics block
