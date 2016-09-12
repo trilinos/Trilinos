@@ -53,10 +53,9 @@ namespace Tpetra {
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target) :
     source_ (source),
     target_ (target),
-    comm_ (source->getComm ()),
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     numSameIDs_ (0),
-    distributor_ (comm_, out_)
+    distributor_ (source->getComm (), out_)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -66,10 +65,9 @@ namespace Tpetra {
                     const Teuchos::RCP<Teuchos::FancyOStream>& out) :
     source_ (source),
     target_ (target),
-    comm_ (source->getComm ()),
     out_ (out),
     numSameIDs_ (0),
-    distributor_ (comm_, out_)
+    distributor_ (source->getComm (), out_)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -79,10 +77,9 @@ namespace Tpetra {
                     const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     source_ (source),
     target_ (target),
-    comm_ (source->getComm ()),
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     numSameIDs_ (0),
-    distributor_ (comm_, out_, plist)
+    distributor_ (source->getComm (), out_, plist)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -93,10 +90,9 @@ namespace Tpetra {
                     const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     source_ (source),
     target_ (target),
-    comm_ (source->getComm ()),
     out_ (out),
     numSameIDs_ (0),
-    distributor_ (comm_, out_, plist)
+    distributor_ (source->getComm (), out_, plist)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -107,7 +103,6 @@ namespace Tpetra {
       rcp (new ImportExportData<LocalOrdinal,GlobalOrdinal,Node> (target_, source_));
 
     // Things that stay the same
-    tData->comm_             = comm_;
     tData->numSameIDs_       = numSameIDs_;
 
     // Things that reverse

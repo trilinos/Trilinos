@@ -135,9 +135,6 @@ namespace Tpetra {
     //! Target Map of the Import or Export
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
 
-    //! Communicator over which the source and target objects are distributed.
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
     //! Output stream for debug output.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
 
