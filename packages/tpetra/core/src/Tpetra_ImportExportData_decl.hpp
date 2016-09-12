@@ -122,15 +122,24 @@ namespace Tpetra {
     //! Destructor
     ~ImportExportData();
 
-    //! Output stream for debug output.
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
-
     /// \brief Copy the data, but reverse the direction of the
     ///   transfer as well as reversing the Distributor.
     ///
     /// "Reverse the direction of the transfer" means that an Import
     /// becomes an Export in the opposite direction, and vice versa.
     Teuchos::RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> > reverseClone();
+
+    //! Source Map of the Import or Export
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > source_;
+
+    //! Target Map of the Import or Export
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
+
+    //! Communicator over which the source and target objects are distributed.
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+
+    //! Output stream for debug output.
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
 
     /// \brief Index of target Map LIDs to which to permute.
     ///
@@ -190,15 +199,6 @@ namespace Tpetra {
     /// we say "ID" in the previous paragraph, we include both GID and
     /// LID.
     size_t numSameIDs_;
-
-    //! Source Map of the Import or Export
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > source_;
-
-    //! Target Map of the Import or Export
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
-
-    //! Communicator over which the source and target objects are distributed.
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
     /// \brief Object that actually distributes (sends and receives) data.
     ///
