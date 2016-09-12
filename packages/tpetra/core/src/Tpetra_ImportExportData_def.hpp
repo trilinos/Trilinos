@@ -55,7 +55,8 @@ namespace Tpetra {
     target_ (target),
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     numSameIDs_ (0),
-    distributor_ (source->getComm (), out_)
+    distributor_ (source->getComm (), out_),
+    isLocallyComplete_ (true) // Import/Export constructor may change this
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -67,7 +68,8 @@ namespace Tpetra {
     target_ (target),
     out_ (out),
     numSameIDs_ (0),
-    distributor_ (source->getComm (), out_)
+    distributor_ (source->getComm (), out_),
+    isLocallyComplete_ (true) // Import/Export constructor may change this
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -79,7 +81,8 @@ namespace Tpetra {
     target_ (target),
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     numSameIDs_ (0),
-    distributor_ (source->getComm (), out_, plist)
+    distributor_ (source->getComm (), out_, plist),
+    isLocallyComplete_ (true) // Import/Export constructor may change this
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -92,7 +95,8 @@ namespace Tpetra {
     target_ (target),
     out_ (out),
     numSameIDs_ (0),
-    distributor_ (source->getComm (), out_, plist)
+    distributor_ (source->getComm (), out_, plist),
+    isLocallyComplete_ (true) // Import/Export constructor may change this
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -120,13 +124,22 @@ namespace Tpetra {
     ArrayView<const int> ProcsFrom      = distributor_.getProcsFrom();
     ArrayView<const size_t> LengthsFrom = distributor_.getLengthsFrom();
 
+    // isLocallyComplete is a local predicate.
+    // It could be true in one direction but false in another.
+
+    bool isLocallyComplete = true; // by default
     for (size_t i = 0, j = 0; i < NumReceives; ++i) {
       const int pid = ProcsFrom[i];
+      if (pid == -1) {
+        isLocallyComplete = false;
+      }
       for (size_t k = 0; k < LengthsFrom[i]; ++k) {
         tData->exportPIDs_[j] = pid;
         ++j;
       }
     }
+    tData->isLocallyComplete_ = isLocallyComplete;
+
     return tData;
   }
 

@@ -208,7 +208,7 @@ namespace Tpetra {
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
             Teuchos::Array<int> & remotePIDs);
-  
+
     /// \brief Copy constructor.
     ///
     /// \note Currently this only makes a shallow copy of the Import's
@@ -228,14 +228,14 @@ namespace Tpetra {
     ///
 
     Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
-	    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
-	    Teuchos::Array<int> & userRemotePIDs,
-	    Teuchos::Array<GlobalOrdinal>& remoteGIDs,
-	    const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
-	    const Teuchos::ArrayView<const int> & userExportPIDs,
-	    const bool useRemotePIDs,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
-	    const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
+            const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
+            Teuchos::Array<int> & userRemotePIDs,
+            Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+            const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
+            const Teuchos::ArrayView<const int> & userExportPIDs,
+            const bool useRemotePIDs,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
 
     //! Destructor.
@@ -297,6 +297,18 @@ namespace Tpetra {
 
     //! The Distributor that this Import object uses to move data.
     Distributor & getDistributor() const;
+
+    /// \brief Do all target Map indices on the calling process exist
+    ///   on at least one process (not necessarily this one) in the
+    ///   source Map?
+    ///
+    /// It's not necessarily an error for an Import not to be locally
+    /// complete on one or more processes.  For example, this may
+    /// happen in the common use case of "restriction" -- that is,
+    /// taking a subset of a large object.  Nevertheless, you may find
+    /// this predicate useful for figuring out whether you set up your
+    /// Maps in the way that you expect.
+    bool isLocallyComplete () const;
 
     //! Assignment operator.
     Import<LocalOrdinal,GlobalOrdinal,Node>&

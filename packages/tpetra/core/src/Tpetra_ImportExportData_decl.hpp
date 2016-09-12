@@ -205,6 +205,24 @@ namespace Tpetra {
     /// communicator; it does not complete initialization.
     Distributor distributor_;
 
+    /// \brief Is this Export or Import locally complete?
+    ///
+    /// If this is an Export, then do all source Map indices on the
+    /// calling process exist on at least one process (not necessarily
+    /// this one) in the target Map?
+    ///
+    /// If this is an Import, then do all target Map indices on the
+    /// calling process exist on at least one process (not necessarily
+    /// this one) in the source Map?
+    ///
+    /// It's not necessarily an error for an Export or Import not to
+    /// be locally complete on one or more processes.  For example,
+    /// this may happen in the common use case of "restriction" --
+    /// that is, taking a subset of a large object.  Nevertheless, you
+    /// may find this predicate useful for figuring out whether you
+    /// set up your Maps in the way that you expect.
+    bool isLocallyComplete_;
+
   private:
     //! Copy constructor (declared but not defined, do not use)
     ImportExportData (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> &rhs);

@@ -375,6 +375,12 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  Export<LocalOrdinal,GlobalOrdinal,Node>::isLocallyComplete () const {
+    return ExportData_->isLocallyComplete_;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>&
   Export<LocalOrdinal,GlobalOrdinal,Node>::
   operator= (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs) {
@@ -417,6 +423,8 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename ArrayView<const GO>::size_type size_type;
+    const char tfecfFuncName[] = "setupExport: ";
+
     const map_type& source = * (getSourceMap ());
     const map_type& target = * (getTargetMap ());
     ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
@@ -483,12 +491,20 @@ namespace Tpetra {
     // overlapping, so multiple processes might send to the same LID
     // on a receiving process.
 
-    TPETRA_ABUSE_WARNING(
-      getNumExportIDs() > 0 && ! source.isDistributed(),
-      std::runtime_error,
-      "::setupSamePermuteExport(): Source has export LIDs but Source is not "
-      "distributed globally." << std::endl
-      << "Exporting to a submap of the target map.");
+    if (exportLIDs.size () != 0 && ! source.isDistributed ()) {
+      // This Export has export LIDs, meaning that the source Map has
+      // entries on this process that are not in the target Map on
+      // this process.  However, the source Map is not distributed
+      // globally.  This implies that this Import is not locally
+      // complete on this process.
+      ExportData_->isLocallyComplete_ = false;
+      // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
+      // correct behavior, depending on the circumstances.
+      TPETRA_ABUSE_WARNING
+        (true, std::runtime_error, "::setupSamePermuteExport(): Source has "
+         "export LIDs but Source is not distributed globally.  Exporting to "
+         "a submap of the target map.");
+    }
 
     // Compute exportPIDs_ ("outgoing" process IDs).
     //
@@ -509,6 +525,8 @@ namespace Tpetra {
       const LookupStatus lookup =
         target.getRemoteIndexList (exportGIDs(),
                                    ExportData_->exportPIDs_ ());
+      // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
+      // correct behavior, depending on the circumstances.
       TPETRA_ABUSE_WARNING( lookup == IDNotPresent, std::runtime_error,
         "::setupSamePermuteExport(): The source Map has GIDs not found "
         "in the target Map.");
@@ -517,10 +535,20 @@ namespace Tpetra {
       // exporting to GIDs which don't belong to any process in the
       // target Map.
       if (lookup == IDNotPresent) {
+        // There is at least one GID owned by the calling process in
+        // the source Map, which is not owned by any process in the
+        // target Map.
+        ExportData_->isLocallyComplete_ = false;
+
         const size_type numInvalidExports =
           std::count_if (ExportData_->exportPIDs_().begin(),
                          ExportData_->exportPIDs_().end(),
                          std::bind1st (std::equal_to<int>(), -1));
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (numInvalidExports == 0, std::logic_error, "Calling getRemoteIndexList "
+           "on the target Map returned IDNotPresent, but none of the returned "
+           "\"export\" process ranks are -1.  Please report this bug to the "
+           "Tpetra developers.");
 
         // count number of valid and total number of exports
         const size_type totalNumExports = ExportData_->exportPIDs_.size();

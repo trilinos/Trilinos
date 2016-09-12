@@ -267,6 +267,16 @@ namespace Tpetra {
     //! The Distributor that this Export object uses to move data.
     Distributor & getDistributor() const;
 
+    /// \brief Do all source Map indices on the calling process exist
+    ///   on at least one process (not necessarily this one) in the
+    ///   target Map?
+    ///
+    /// It's not necessarily an error for an Export not to be locally
+    /// complete on one or more processes.  Nevertheless, you may find
+    /// this predicate useful for figuring out whether you set up your
+    /// Maps in the way that you expect.
+    bool isLocallyComplete () const;
+
     //! Assignment operator
     Export<LocalOrdinal,GlobalOrdinal,Node>&
     operator= (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);

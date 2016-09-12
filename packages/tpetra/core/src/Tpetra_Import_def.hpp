@@ -215,16 +215,16 @@ namespace Tpetra {
    template <class LocalOrdinal, class GlobalOrdinal, class Node>
    Import<LocalOrdinal,GlobalOrdinal,Node>::
    Import(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
-	  const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
-	  Teuchos::Array<int>& userRemotePIDs,
-	  Teuchos::Array<GlobalOrdinal>& remoteGIDs,
-	  const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
-	  const Teuchos::ArrayView<const int> & userExportPIDs,
-	  const bool useRemotePIDGID,
-	  const Teuchos::RCP<Teuchos::ParameterList>& plist,
-	  const Teuchos::RCP<Teuchos::FancyOStream>& out) :
-     out_ (out.is_null () ? 
-	   Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
+          const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
+          Teuchos::Array<int>& userRemotePIDs,
+          Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+          const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
+          const Teuchos::ArrayView<const int> & userExportPIDs,
+          const bool useRemotePIDGID,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist,
+          const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+     out_ (out.is_null () ?
+           Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -277,29 +277,29 @@ namespace Tpetra {
       remoteGIDs.clear();
       remoteLIDs.clear();
     }
-    
+
     for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
       const GO curTargetGid = targetGIDs[tgtLid];
       // getLocalElement() returns LINVALID if the GID isn't in the source Map.
       const LO srcLid = source->getLocalElement (curTargetGid);
       if (srcLid != LINVALID) {
-	permuteToLIDs.push_back (tgtLid);
-	permuteFromLIDs.push_back (srcLid);
+        permuteToLIDs.push_back (tgtLid);
+        permuteFromLIDs.push_back (srcLid);
       } else {
-	if(!useRemotePIDGID) {
-	  remoteGIDs.push_back (curTargetGid);
-	  remoteLIDs.push_back (tgtLid);
-	}
+        if(!useRemotePIDGID) {
+          remoteGIDs.push_back (curTargetGid);
+          remoteLIDs.push_back (tgtLid);
+        }
       }
     }
-  
+
     TPETRA_ABUSE_WARNING(
       getNumRemoteIDs() > 0 && ! source->isDistributed(),
       std::runtime_error,
       "::constructExpert(): Target has remote LIDs but Source is not "
       "distributed globally." << std::endl
       << "Importing to a submap of the target map.");
-    
+
     Array<int> remotePIDs;
     remotePIDs.resize (remoteGIDs.size (),0);
     LookupStatus lookup = AllIDsPresent;
@@ -316,14 +316,14 @@ namespace Tpetra {
       "means that there is at least one GID owned by some process in the target"
       " Map which is not owned by any process in the source Map.  (That is, the"
       " source and target Maps do not contain the same set of GIDs globally.)");
-     
+
     // Sort remoteProcIDs in ascending order, and apply the resulting
     // permutation to remoteGIDs and remoteLIDs_.  This ensures that
     // remoteProcIDs[i], remoteGIDs[i], and remoteLIDs_[i] all refer
     // to the same thing.
-  
+
     TEUCHOS_TEST_FOR_EXCEPTION( !(remoteProcIDs.size() == remoteGIDsView.size() &&remoteGIDsView.size() == remoteLIDs.size()), std::runtime_error,
-			       "Import::Import createExpert version: Size miss match on RemoteProcIDs, remoteGIDsView and remoteLIDs Array's to sort3. This will produce produce an error, aborting ");
+                               "Import::Import createExpert version: Size miss match on RemoteProcIDs, remoteGIDsView and remoteLIDs Array's to sort3. This will produce produce an error, aborting ");
 
     sort3 (remoteProcIDs.begin (),
            remoteProcIDs.end (),
@@ -335,13 +335,18 @@ namespace Tpetra {
     ImportData_->exportPIDs_ = Teuchos::Array<int>(userExportPIDs.size(),0);
     ImportData_->exportLIDs_ = Teuchos::Array<int>(userExportPIDs.size(),0);
 
+    bool isLocallyComplete = true;
     for(size_type i=0; i<userExportPIDs.size(); i++)  {
+      if (userExportPIDs[i] == -1) {
+        isLocallyComplete = false;
+      }
       ImportData_->exportPIDs_[i] = userExportPIDs[i];
       ImportData_->exportLIDs_[i] = userExportLIDs[i];
     }
- 
+    ImportData_->isLocallyComplete_ = isLocallyComplete;
+
     ImportData_->distributor_.createFromSendsAndRecvs(ImportData_->exportPIDs_,remoteProcIDs);
- 
+
   }
 
 
@@ -387,6 +392,14 @@ namespace Tpetra {
       *out_ << os.str ();
     }
     ImportData_ = rcp (new data_type (source, target, out_, plist));
+
+    bool isLocallyComplete = true;
+    for (Teuchos::Array<int>::size_type i = 0; i < exportPIDs.size (); ++i) {
+      if (exportPIDs[i] == -1) {
+        isLocallyComplete = false;
+      }
+    }
+    ImportData_->isLocallyComplete_ = isLocallyComplete;
 
     ImportData_->numSameIDs_ = numSameIDs;
     ImportData_->permuteToLIDs_.swap (permuteToLIDs);
@@ -467,6 +480,12 @@ namespace Tpetra {
   Distributor &
   Import<LocalOrdinal,GlobalOrdinal,Node>::getDistributor() const {
     return ImportData_->distributor_;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  Import<LocalOrdinal,GlobalOrdinal,Node>::isLocallyComplete () const {
+    return ImportData_->isLocallyComplete_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -570,12 +589,20 @@ namespace Tpetra {
       }
     }
 
-    TPETRA_ABUSE_WARNING(
-      getNumRemoteIDs() > 0 && ! source.isDistributed(),
-      std::runtime_error,
-      "::setupSamePermuteRemote(): Target has remote LIDs but Source is not "
-      "distributed globally." << std::endl
-      << "Importing to a submap of the target map.");
+    if (remoteLIDs.size () != 0 && ! source.isDistributed ()) {
+      // This Import has remote LIDs, meaning that the target Map has
+      // entries on this process that are not in the source Map on
+      // this process.  However, the source Map is not distributed
+      // globally.  This implies that this Import is not locally
+      // complete on this process.
+      ImportData_->isLocallyComplete_ = false;
+      // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
+      // correct behavior, depending on the circumstances.
+      TPETRA_ABUSE_WARNING
+        (true, std::runtime_error, "::setupSamePermuteRemote(): Target has "
+         "remote LIDs but Source is not distributed globally.  Importing to a "
+         "submap of the target map.");
+    }
   }
 
 
@@ -594,11 +621,11 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Array<int>::difference_type size_type;
+    const char tfecfFuncName[] = "setupExport: ";
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      getSourceMap ().is_null (), std::logic_error, "Tpetra::Import::"
-      "setupExport: Source Map is null.  Please report this bug to the Tpetra "
-      "developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (getSourceMap ().is_null (), std::logic_error, "Source Map is null.  "
+       "Please report this bug to the Tpetra developers.");
     const map_type& source = * (getSourceMap ());
 
     Teuchos::OSTab tab (out_);
@@ -610,14 +637,13 @@ namespace Tpetra {
     // }
 
     // Sanity checks
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! useRemotePIDs && (userRemotePIDs.size() > 0), std::invalid_argument,
-      "Tpetra::Import::setupExport: remotePIDs are non-empty but their use has "
-      "not been requested.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      userRemotePIDs.size () > 0 && remoteGIDs.size () != userRemotePIDs.size (),
-      std::invalid_argument, "Tpetra::Import::setupExport: remotePIDs must "
-      "either be of size zero or match the size of remoteGIDs.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! useRemotePIDs && (userRemotePIDs.size() > 0), std::invalid_argument,
+       "remotePIDs are non-empty but their use has not been requested.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (userRemotePIDs.size () > 0 && remoteGIDs.size () != userRemotePIDs.size (),
+       std::invalid_argument, "remotePIDs must either be of size zero or match "
+       "the size of remoteGIDs.");
 
     // For each entry remoteGIDs[i], remoteProcIDs[i] will contain
     // the process ID of the process that owns that GID.
@@ -658,20 +684,35 @@ namespace Tpetra {
     }
     Array<int>& remoteProcIDs = useRemotePIDs ? userRemotePIDs : newRemotePIDs;
 
-    TPETRA_ABUSE_WARNING( lookup == IDNotPresent, std::runtime_error,
-      "::setupExport(): the source Map wasn't able to figure out which process "
-      "owns one or more of the GIDs in the list of remote GIDs.  This probably "
-      "means that there is at least one GID owned by some process in the target"
-      " Map which is not owned by any process in the source Map.  (That is, the"
-      " source and target Maps do not contain the same set of GIDs globally.)");
-
-    // Ignore remote GIDs that aren't owned by any process in the
-    // source Map.  getRemoteIndexList() gives each of these a process
-    // ID of -1.
     if (lookup == IDNotPresent) {
+      // There is at least one GID owned by the calling process in the
+      // target Map, which is not owned by any process in the source
+      // Map.
+      ImportData_->isLocallyComplete_ = false;
+
+      // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
+      // correct behavior, depending on the circumstances.
+      TPETRA_ABUSE_WARNING
+        (true, std::runtime_error, "::setupExport(): the source Map wasn't "
+         "able to figure out which process owns one or more of the GIDs in the "
+         "list of remote GIDs.  This probably means that there is at least one "
+         "GID owned by some process in the target Map which is not owned by any"
+         " process in the source Map.  (That is, the source and target Maps do "
+         "not contain the same set of GIDs globally.)");
+
+      // Ignore remote GIDs that aren't owned by any process in the
+      // source Map.  getRemoteIndexList() gives each of these a
+      // process ID of -1.
+
       const size_type numInvalidRemote =
         std::count_if (remoteProcIDs.begin (), remoteProcIDs.end (),
                        std::bind1st (std::equal_to<int> (), -1));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numInvalidRemote == 0, std::logic_error, "Calling getRemoteIndexList "
+         "on the source Map returned IDNotPresent, but none of the returned "
+         "\"remote\" process ranks are -1.  Please report this bug to the "
+         "Tpetra developers.");
+
       // If all of them are invalid, we can delete the whole array.
       const size_type totalNumRemote = getNumRemoteIDs ();
       if (numInvalidRemote == totalNumRemote) {
@@ -1435,13 +1476,13 @@ namespace Tpetra {
 
     // Build the importer using the "expert" constructor
     unionImport = rcp(new Import<LocalOrdinal, GlobalOrdinal, Node>(srcMap,
-								    targetMapNew,
-								    numSameIDsNew,
-								    permuteToLIDsNew,
-								    permuteFromLIDsNew,
+                                                                    targetMapNew,
+                                                                    numSameIDsNew,
+                                                                    permuteToLIDsNew,
+                                                                    permuteFromLIDsNew,
                                                                     remoteLIDsNew,
-								    exportLIDsnew,
-								    exportPIDsnew,D));
+                                                                    exportLIDsnew,
+                                                                    exportPIDsnew,D));
 
     return unionImport;
   }
