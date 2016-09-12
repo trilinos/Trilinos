@@ -428,11 +428,15 @@ Time Scheduler::adjust_dt(Time dt, Time time)
   assert(dt > 0.0);
 
   if (lookAhead_ == 0)
+  {
     return dt;
+  }
 
   // See if this output block is still active...
   if (time >= terminationTime_)
+  {
     return dt;
+  }
 
   Time next_imp = next_implicit_output_time(time);
   Time next_exp = next_explicit_output_time(time);
@@ -443,7 +447,9 @@ Time Scheduler::adjust_dt(Time dt, Time time)
   // In that case, we have already hit the desired output time and
   // don't need to adjust the dt
   if (delta <= 0.0)
+  {
     return dt;
+  }
 
   TolerancedTime delta_range = get_toleranced_time_range(delta);
   double steps;
@@ -620,9 +626,8 @@ bool Scheduler::set_lookahead(int lookahead)
   if (lookahead >= 0) {
     lookAhead_ = lookahead;
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 bool Scheduler::set_start_time(Time time)
@@ -641,7 +646,9 @@ bool Scheduler::set_start_time(Time time)
 bool Scheduler::set_termination_time(Time time)
 {
   if (terminationTime_ > time && time != -Real_MAX)
+  {
     terminationTime_ = time;
+  }
   return true;
 }
 
@@ -775,4 +782,5 @@ TimeContainer::const_iterator Scheduler::get_time_interval(Time time, bool erase
   // At this point, have the correct time interval which specifies start and frequency
   return begin;
 }
-}}
+} // end namespace util
+} // end namespace stk

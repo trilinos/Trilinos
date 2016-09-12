@@ -160,7 +160,7 @@ PrintTable::print(
       int prespaces = 0;
 
       if(m_title.length() < m_tableWidth)
-	prespaces = (m_tableWidth - m_title.length())/2;;
+	prespaces = (m_tableWidth - m_title.length())/2;
 
       os << m_commentPrefix;
       os << std::left << std::setw(prespaces) << "" << m_title << '\n';

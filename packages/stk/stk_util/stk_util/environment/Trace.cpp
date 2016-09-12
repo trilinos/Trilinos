@@ -49,7 +49,7 @@ namespace stk {
 namespace diag {
 
 Trace::ExtraFuncPtr
-Trace::s_extra = 0;
+Trace::s_extra = nullptr;
 
 Trace::TraceList
 Trace::s_traceList;
@@ -103,8 +103,10 @@ prefix_find(
   const char *    s)
 {
   for (Trace::TraceList::const_iterator it = trace_list.begin(); it != trace_list.end(); ++it)
+  {
     if (prefix_compare((*it), s))
-      return true;;
+      return true;
+  }
   return false;
 }
 

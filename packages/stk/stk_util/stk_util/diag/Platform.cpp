@@ -80,14 +80,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#elif defined(__sun)
-#include <fstream>
-#include <procfs.h>
-#include <sys/resource.h>
-#include <sys/systeminfo.h>
-#include <sys/utsname.h>
-#include <sys/time.h>
-
 #elif defined(__SUNPRO_CC)
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -191,16 +183,6 @@ get_heap_info(
 			      << ", keepcost " << minfo.keepcost << Diag::dendl;
 
 
-# elif defined(__sun)
-  pstatus_t proc_status;
-
-  std::ifstream proc("/proc/self/status", std::ios_base::in|std::ios_base::binary);
-  if (proc) {
-    proc.read(reinterpret_cast<char *>(&proc_status), sizeof(proc_status));
-    heap_size = proc_status.pr_brksize;
-    slibout.m(Slib::LOG_MEMORY) <<"pr_brksize " << proc_status.pr_brksize
-				<< ", pr_stksize " << proc_status.pr_stksize << Diag::dendl;
-  }
 # endif
 #endif // defined(SIERRA_HEAP_INFO)
 }
@@ -249,28 +231,8 @@ get_memory_info(
     proc >> memory_usage;
     ++i;
   }
-# elif defined(__sun)
-  {
-
-    psinfo_t proc_info;
-
-    std::ifstream proc("/proc/self/psinfo", std::ios_base::in|std::ios_base::binary);
-    if (proc) {
-      proc.read(reinterpret_cast<char *>(&proc_info), sizeof(proc_info));
-      memory_usage = proc_info.pr_size*1024;
-    }
-  }
-
-  {
-    prusage_t proc_usage;
-
-    std::ifstream proc("/proc/self/usage", std::ios_base::in|std::ios_base::binary);
-    if (proc) {
-      proc.read(reinterpret_cast<char *>(&proc_usage), sizeof(proc_usage));
-      faults = proc_usage.pr_majf;
-    }
-  }
 # endif
+
 #endif // defined(SIERRA_MEMORY_INFO)
 }
 
@@ -287,17 +249,6 @@ hostname()
 std::string
 domainname()
 {
-#if defined(__sun)
-  std::string domain(".");
-  char buf[255];
-
-  ::sysinfo(SI_SRPC_DOMAIN, buf, sizeof(buf));
-  if (std::strlen(buf)) {
-    domain += buf;
-  }
-  return domain;
-
-#else
   std::string domain(".");
   char buf[255];
 
@@ -306,8 +257,6 @@ domainname()
     domain += buf;
   }
   return domain;
-
-#endif
 }
 
 namespace {

@@ -190,7 +190,7 @@ public:
   explicit Traceback(const char *function_spec)
     : Tracespec(function_spec)
   {
-    if (s_top >= &s_stack[STACK_SIZE - 1] || s_top == 0)
+    if (s_top >= &s_stack[STACK_SIZE - 1] || s_top == nullptr)
       s_top = s_stack;
     *s_top++ = function_spec;
 
@@ -456,8 +456,9 @@ public:
    *
    */
   inline static void clearTraceFunctions() {
-    for (std::vector<const char *>::iterator it = s_traceList.begin(); it != s_traceList.end(); ++it)
+    for (auto it = s_traceList.begin(); it != s_traceList.end(); ++it) {
       delete[] (*it);
+    }
 
     s_traceList.clear();
   }
@@ -527,8 +528,8 @@ typedef stk::diag::Tracespec Tracespec;
 typedef stk::diag::Traceback Traceback;
 typedef stk::diag::Trace Trace;
 
-} // namespace sierra 
 } // namespace Diag 
+} // namespace sierra 
 
 
 ///

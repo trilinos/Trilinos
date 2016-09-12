@@ -278,19 +278,6 @@ all_reduce(
   // MPI_Allreduce with a user defined operator,
   // use reduce/broadcast instead.
 
-#ifdef SIERRA_MPI_ALLREDUCE_USER_FUNCTION_BUG
-  const int result_reduce = MPI_Reduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,0,arg_comm);
-  const int result_bcast = MPI_Bcast(arg_out,arg_len,MPI_BYTE,0,arg_comm);
-
-  MPI_Op_free(& mpi_op);
-
-  if (MPI_SUCCESS != result_reduce || MPI_SUCCESS != result_bcast) {
-    std::ostringstream msg ;
-    msg << "sierra::MPI::all_reduce FAILED: MPI_Reduce = " << result_reduce
-	<< " MPI_Bcast = " << result_bcast ;
-    throw std::runtime_error(msg.str());
-  }
-#else
   const int result = MPI_Allreduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,arg_comm);
 
   MPI_Op_free(& mpi_op);
@@ -300,7 +287,6 @@ all_reduce(
     msg << "sierra::MPI::all_reduce FAILED: MPI_Allreduce = " << result;
     throw std::runtime_error(msg.str());
   }
-#endif
 }
 
 struct ReduceCheck : public ReduceInterface
