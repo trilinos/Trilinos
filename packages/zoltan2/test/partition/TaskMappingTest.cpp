@@ -294,7 +294,7 @@ int main(int argc, char *argv[]){
           zgno_t n = task_communication_adj_tmp[j];
           part_t procId2 = ctm.getAssignedProcForTask(all_parts[n]);
 
-          double distance2 = 0;
+          zscalar_t distance2 = 0;
           mach.getHopCount(procId1, procId2, distance2);
           hops2 += distance2;
           for (int k = 0 ; k < mach_coord_dim ; ++k){
