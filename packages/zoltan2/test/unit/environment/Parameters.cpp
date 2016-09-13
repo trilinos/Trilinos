@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   std::cout << "A few parameters after validation: " << std::endl;
   std::cout << myParams << std::endl;
 
-  rangeList_t &a1 = myParams.get<rangeList_t>("debug_procs");
+  rangeList_t *a1 = myParams.getPtr<rangeList_t>("debug_procs");
   std::cout << "debug_procs translation: ";
   Zoltan2::printIntegralRangeList(std::cout, *a1);
   std::cout << std::endl;
@@ -148,16 +148,9 @@ int main(int argc, char *argv[])
   all.set("timer_output_file", "/home/me/performance.txt");
   all.set("memory_output_file", "/home/me/memoryUsed.txt");
 
-  all.set("speed_versus_quality", "speed");
-  all.set("memory_versus_speed", "memory");
-
   all.set("error_check_level", "basic_assertions");
 
   all.set("random_seed", .12121212);
-
-  all.set("topology", "2,6,6");
-
-  all.set("randomize_input", "true");
 
   all.set("partitioning_objective", "minimize_cut_edge_weight");
 

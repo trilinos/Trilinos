@@ -241,7 +241,18 @@ class AlgSerialGreedy : public Algorithm<Adapter>
   
     return;
   }
-  
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getDefaultParameters(ParameterList & pl)
+  {
+    RCP<Teuchos::StringValidator> color_choice_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+      Teuchos::tuple<std::string>(
+        "FirstFit", "Random", "RandomFast", "LeastUsed" )));
+    pl.set("color_choice", "FirstFit", "selection criterion for coloring",
+      color_choice_Validator);
+  }
 };
 }
 #endif

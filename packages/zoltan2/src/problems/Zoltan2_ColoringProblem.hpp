@@ -125,6 +125,17 @@ public:
     createColoringProblem();
   };
 
+  /*! \brief Set up validators specific to this Problem
+  */
+  static void getDefaultParameters(ParameterList & pl)
+  {
+    RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "SerialGreedy" )));
+    pl.set("color_method", "SerialGreedy", "coloring algorithm",
+     color_method_Validator);
+  }
+
   //!  \brief Direct the problem to create a solution.
   //
   //    \param updateInputData   If true this indicates that either

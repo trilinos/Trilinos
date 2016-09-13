@@ -126,7 +126,6 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="rcb"/>
-      <Parameter name="bisection_num_test_cuts" type="int" value="7" />
       <Parameter name="imbalance_tolerance" type="double" value="1.1"/>
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>

@@ -6378,36 +6378,27 @@ public:
       pl.set("mj_parts", "0", "list of parts for multiJagged partitioning "
         "algorithm. As many as the dimension count.", mj_parts_Validator);
 
-      Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes typesNotDouble;
-      typesNotDouble.allowDouble(false);
-      RCP<Teuchos::AnyNumberParameterEntryValidator> int_or_string_validator =
-        Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
-        Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, typesNotDouble) );
-
       pl.set("mj_concurrent_part_count", 1, "The number of parts whose cut "
-        "coordinates will be calculated concurently.", int_or_string_validator);
+        "coordinates will be calculated concurently.", Environment::getAnyIntValidator());
 
-      RCP<Teuchos::AnyNumberParameterEntryValidator>
-        mj_minimum_migration_imbalance_Validator = Teuchos::rcp(
-          new Teuchos::AnyNumberParameterEntryValidator() );
-      pl.set("mj_minimum_migration_imbalance", "1.1",
+      pl.set("mj_minimum_migration_imbalance", 1.1,
         "mj_minimum_migration_imbalance, the minimum imbalance of the "
         "processors to avoid migration",
-        mj_minimum_migration_imbalance_Validator);
+        Environment::getAnyDoubleValidator());
 
       pl.set("mj_migration_option", 1, "Migration option, 0 for decision "
         "depending on the imbalance, 1 for forcing migration, 2 for "
-        "avoiding migration", int_or_string_validator);
+        "avoiding migration", Environment::getAnyIntValidator());
 
       pl.set("mj_keep_part_boxes", -1, "Keep the part boundaries of the "
         "geometric partitioning: Truth values - 0 False, Otherwise True.",
-        int_or_string_validator);
+        Environment::getAnyIntValidator());
 
       pl.set("mj_enable_rcb", 0, "Use MJ as RCB: Truth values - 0 False, "
-        "Otherwise True.", int_or_string_validator);
+        "Otherwise True.", Environment::getAnyIntValidator());
 
       pl.set("mj_recursion_depth", -1, "Recursion depth for MJ: Must be "
-        "greater than 0.", int_or_string_validator);
+        "greater than 0.", Environment::getAnyIntValidator());
     }
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.

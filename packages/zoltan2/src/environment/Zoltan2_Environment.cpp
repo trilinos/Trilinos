@@ -146,6 +146,8 @@ Environment::~Environment()
 }
 
 // provides a generic validator to avoid clutter in the code in several places
+// this was originally accepting true/false/yes/no/1/0 - it has been simplified
+// so there may be a backwards compatibility issue for some setups
 RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
   Environment::getTrueFalseValidator()
 {
@@ -154,6 +156,29 @@ RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
       Teuchos::tuple<std::string>("true", "false"),
       Teuchos::tuple<std::string>( "", "" ),
       Teuchos::tuple<int>( 1, 0 ), "false") );
+}
+
+// provides a generic any double validator to avoid clutter
+RCP<Teuchos::AnyNumberParameterEntryValidator>
+  Environment::getAnyDoubleValidator()
+{
+  Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes allTypes;
+  RCP<Teuchos::AnyNumberParameterEntryValidator> any_number_validator =
+    Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
+    Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE, allTypes) );
+  return any_number_validator;
+}
+
+// provides a generic any number validator to avoid clutter
+RCP<Teuchos::AnyNumberParameterEntryValidator>
+  Environment::getAnyIntValidator()
+{
+  Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes typesNoDoubles;
+  typesNoDoubles.allowDouble(false);
+  RCP<Teuchos::AnyNumberParameterEntryValidator> int_string_validator =
+    Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
+    Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, typesNoDoubles) );
+  return int_string_validator;
 }
 
 void Environment::getDefaultParameters(ParameterList & pl)
@@ -267,41 +292,10 @@ void Environment::getDefaultParameters(ParameterList & pl)
   pl.set("memory_procs", "0", "list of ranks that do memory profiling "
     "information", procs_Validator);
 
-  // random_seed
-  RCP<Teuchos::AnyNumberParameterEntryValidator> random_seed_Validator =
-    Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
-  pl.set("random_seed", "0.5", "random seed", random_seed_Validator);
-
-  // speed versus quality
-  RCP<Teuchos::StringValidator> speed_versus_quality_Validator =
-    Teuchos::rcp( new Teuchos::StringValidator(
-    Teuchos::tuple<std::string>( "speed", "balance", "quality" )));
-  pl.set("speed_versus_quality", "balance", "When algorithm choices "
-    "exist, opt for speed or solution quality? (balance is a balance "
-    "of speed and quality)", speed_versus_quality_Validator);
-
-  // memory_versus_speed
-  RCP<Teuchos::StringValidator> memory_versus_speed_Validator =
-    Teuchos::rcp( new Teuchos::StringValidator(
-    Teuchos::tuple<std::string>( "memory", "balance", "speed" )));
-  pl.set("memory_versus_speed", "balance", "When algorithm choices exist, "
-    "opt for the use of less memory at the expense of runtime (balance is "
-    "a balance of memory conservation and speed)",
-    memory_versus_speed_Validator);
-
-  // topology
-  const bool bUnsortedTrue = true; // defined this to clarify the meaning
-  RCP<Zoltan2::IntegerRangeListValidator<int>> topology_Validator =
-    Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(bUnsortedTrue) );
-  pl.set("topology", "", "Topology of node to be used in hierarchical "
-    "partitioning \"2,4\"  for dual-socket quad-core \"2,2,6\"  for "
-    "dual-socket, dual-die, six-core \"2,2,3\"  for dual-socket, dualdie, "
-    "six-core but with only three partitions per die",
-    topology_Validator);
-
-  // randomize_input
-  pl.set("randomize_input", "false", "randomize input prior to partitioning",
-    getTrueFalseValidator());
+  // random_seed - MDM - to check - is random seed supposed to be int?
+  // Then we could use getAnyIntValidator here
+  pl.set("random_seed", 111, "random seed",
+    Environment::getAnyDoubleValidator());
 }
 
 void Environment::commitParameters()

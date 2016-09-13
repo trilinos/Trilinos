@@ -72,15 +72,19 @@ static string fnParams[NUMFN][3]={
 
 // Value value is any integer - a string is invalid
 
-#define NUMANYINT 3 
+#define NUMANYINT 8
 static string anyIntParams[NUMANYINT][3]={
-  {"num_global_parts", "12", "invalid_value"},
-  {"num_local_parts", "1", "invalid_value"},
-  {"random_seed", "9999", "invalid_value"},
+  {"num_global_parts", "12", "invalid_value"}, // were set up as double - need long long?
+  {"num_local_parts", "1", "invalid_value"}, // were set up as double - need long long?
+  {"random_seed", "9999", "invalid_value"}, // set up as double - possibly should be int?
+  {"mj_concurrent_part_count", "0", "invalid_value"},
+  {"mj_keep_part_boxes", "0", "invalid_value"},
+  {"mj_enable_rcb", "0", "invalid_value"},
+  {"mj_recursion_depth", "0", "invalid_value"},
+  {"mapping_type", "0", "invalid_value"}
 };
 
 // Value value is a particular string
-
 #define NUMSTR 25
 static string strParams[NUMSTR][3]={
   {"error_check_level", "basic_assertions", "invalid_assertion_request"},
@@ -92,13 +96,9 @@ static string strParams[NUMSTR][3]={
   {"debug_procs", "all", "not_a_valid_list_of_any_type"},
   {"mj_parts", "2,3,4", "not_a_valid_list_of_any_type"},
   {"memory_procs", "2-10", "not_a_valid_list_of_any_type"},
-  {"speed_versus_quality", "balance", "invalid_option"},
-  {"memory_versus_speed", "memory", "invalid_option"},
   {"order_method", "rcm", "invalid_method"},
   {"order_package", "amd", "invalid_package"},
   {"compute_metrics", "true", "maybe"},
-  {"topology", "2,3,6", "invalid_option"},
-  {"randomize_input", "1", "22"},
   {"partitioning_objective", "balance_object_weight", "invalid_objective"},
   {"partitioning_approach", "repartition", "invalid_approach"},
   {"objects_to_partition", "graph_vertices", "invalid_objects"},
@@ -106,8 +106,12 @@ static string strParams[NUMSTR][3]={
   {"algorithm", "rcb", "invalid_algorithm"},
   {"rectilinear", "true", "invalid_option"},
   {"symmetrize_input", "transpose", "invalid_option"},
-  {"subset_graph", "1", "invalid_option"},
-  {"imbalance_tolerance", "1.1", "invalid_option"}
+  {"subset_graph", "true", "invalid_option"},
+  {"imbalance_tolerance", "1.1", "invalid_option"},
+  {"mj_minimum_migration_imbalance", "1.1", "invalid_option"},
+  {"pulp_vert_imbalance", "1.1", "invalid_option"},
+  {"pulp_edge_imbalance", "1.1", "invalid_option"},
+  {"scotch_imbalance_ratio", "1.1", "invalid_option"},
 };
 
 

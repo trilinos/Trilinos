@@ -141,11 +141,6 @@ int main(int argc, char *argv[])
 
   myParams.set("memory_output_file", "memInfo.txt");
 
-  myParams.set("speed_versus_quality", "speed");
-  myParams.set("memory_versus_speed", "memory");
-
-  myParams.set("topology", "2,6,6");
-  myParams.set("randomize_input", "true");
   myParams.set("partitioning_objective", "minimize_cut_edge_weight");
   myParams.set("imbalance_tolerance", 1.2);
 
@@ -241,9 +236,8 @@ int main(int argc, char *argv[])
   
   Teuchos::ParameterList newParams = oldParams;
   newParams.set("error_check_level", "debug_mode_assertions");
-  newParams.set("memory_versus_speed", "speed");
   newParams.remove("memory_output_file");
-  newParams.set("imbalance_tolerance", "1.05");
+  newParams.set("imbalance_tolerance", 1.05);
   newParams.set("algorithm", "phg");
   newParams.set("partitioning_objective", "minimize_cut_edge_weight");
   

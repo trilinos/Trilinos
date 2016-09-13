@@ -51,12 +51,12 @@
 
 // Parameters.cpp builds the full lists from a series of member statics
 #include <Zoltan2_InputTraits.hpp>
-#include <Zoltan2_BasicVectorAdapter.hpp>
-#include <Zoltan2_BasicVectorAdapter.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_OrderingProblem.hpp>
 #include <Zoltan2_MappingProblem.hpp>
+#include <Zoltan2_ColoringProblem.hpp>
 
 namespace Zoltan2 {
 
@@ -72,8 +72,12 @@ void createAllParameters(Teuchos::ParameterList &pList)
 {
   // the old method loads from a larger #define XML string
   // the new way loads from a series of static functions
+
+  // The dummy adapter is arbitrary
+  // It allows us to keep the getDefaultParameters method in the class
+  // However currently that has no template dependence
   typedef Zoltan2::BasicUserTypes<int, int, int> dummyTypes;
-  typedef Zoltan2::BasicVectorAdapter< dummyTypes > dummyAdapter;
+  typedef Zoltan2::BasicIdentifierAdapter< dummyTypes > dummyAdapter;
 
   // environment has some of it's own parameters to provide
   Environment::getDefaultParameters(pList);
@@ -87,6 +91,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // Other problems have their own unique parameters
   Zoltan2::OrderingProblem<dummyAdapter>::getDefaultParameters(pList);
   Zoltan2::MappingProblem<dummyAdapter>::getDefaultParameters(pList);
+  Zoltan2::ColoringProblem<dummyAdapter>::getDefaultParameters(pList);
 }
 
 /*! \brief  Create a parameter list that can validate a

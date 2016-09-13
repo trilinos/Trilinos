@@ -72,11 +72,8 @@ static inline void getScotchParameters(Teuchos::ParameterList & pl)
     "separators tree for the initial graph at the root of the tree",
     scotch_level_Validator);
 
-  RCP<Teuchos::AnyNumberParameterEntryValidator>
-    scotch_imbalance_ratio_Validator = Teuchos::rcp(
-      new Teuchos::AnyNumberParameterEntryValidator() );
-  pl.set("scotch_imbalance_ratio", "0.2", "scotch ordering - Dissection "
-    "imbalance ratio", scotch_imbalance_ratio_Validator);
+  pl.set("scotch_imbalance_ratio", 0.2, "scotch ordering - Dissection "
+    "imbalance ratio", Environment::getAnyDoubleValidator());
 
   pl.set("scotch_ordering_default", "true", "use default scotch ordering "
     "strategy", Environment::getTrueFalseValidator());

@@ -103,7 +103,6 @@ void testFromDataFile(
   params.set("num_global_parts", nParts);
   params.set("algorithm", "rcb");
   params.set("imbalance_tolerance", 1.1);
-  params.set("bisection_num_test_cuts", 7);
   if (doRemap) params.set("remap_parts", "true");
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -150,7 +149,6 @@ void serialTest(int numParts, bool doRemap)
   params.set("num_global_parts", numParts);
   params.set("algorithm", "rcb");
   params.set("imbalance_tolerance", 1.1);
-  params.set("bisection_num_test_cuts", 7);
   if (doRemap) params.set("remap_parts", "true");
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -185,7 +183,6 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 
   Teuchos::ParameterList params("test params");
-  params.set("bisection_num_test_cuts", 7);
   params.set("rectilinear", "true");
 
 #ifdef HAVE_ZOLTAN2_MPI

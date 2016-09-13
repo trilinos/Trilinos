@@ -126,9 +126,20 @@ public:
    */
   static void getDefaultParameters(ParameterList & pl);
 
-  // this exists so it doesn't have to be duplicated in several places in the code
+  /*! \brief Exists to make setting up validators less cluttered
+   */
   static RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
     getTrueFalseValidator();
+
+  /*! \brief Exists to make setting up validators less cluttered
+   */
+  static RCP<Teuchos::AnyNumberParameterEntryValidator>
+    getAnyDoubleValidator();
+
+  /*! \brief Exists to make setting up validators less cluttered
+   */
+  static RCP<Teuchos::AnyNumberParameterEntryValidator>
+    getAnyIntValidator();
 
   /*! \brief Provide the Timer object to the Environment.
    *

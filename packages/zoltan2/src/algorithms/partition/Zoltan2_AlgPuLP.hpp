@@ -81,17 +81,13 @@ public:
   */
   static void getDefaultParameters(ParameterList & pl)
   {
-    RCP<Teuchos::AnyNumberParameterEntryValidator> pulp_vert_imbalance_Validator
-      = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
-    pl.set("pulp_vert_imbalance", "1.1", "vertex imbalance tolerance, ratio of "
+    pl.set("pulp_vert_imbalance", 1.1, "vertex imbalance tolerance, ratio of "
       "maximum load over average load",
-      pulp_vert_imbalance_Validator);
+      Environment::getAnyDoubleValidator());
 
-    RCP<Teuchos::AnyNumberParameterEntryValidator> pulp_edge_imbalance_Validator
-      = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
-    pl.set("pulp_edge_imbalance", "1.1", "edge imbalance tolerance, ratio of "
+    pl.set("pulp_edge_imbalance", 1.1, "edge imbalance tolerance, ratio of "
       "maximum load over average load",
-      pulp_edge_imbalance_Validator);
+      Environment::getAnyDoubleValidator());
 
     pl.set("pulp_lp_init", "false", "perform label propagation-based "
       "initialization", Environment::getTrueFalseValidator());

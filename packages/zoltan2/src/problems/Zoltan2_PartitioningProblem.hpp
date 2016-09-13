@@ -58,6 +58,7 @@
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>
 #include <Zoltan2_MachineRepresentation.hpp>
+#include <Zoltan2_AlgSerialGreedy.hpp>
 #ifdef ZOLTAN2_TASKMAPPING_MOVE
 #include <Zoltan2_TaskMapping.hpp>
 #endif
@@ -276,6 +277,7 @@ public:
     Zoltan2_AlgMJ<Adapter>::getDefaultParameters(pl);
     AlgPuLP<Adapter>::getDefaultParameters(pl);
     AlgPTScotch<Adapter>::getDefaultParameters(pl);
+    AlgSerialGreedy<Adapter>::getDefaultParameters(pl);
     AlgForTestingOnly<Adapter>::getDefaultParameters(pl);
 
     // This set up does not use tuple because we didn't have constructors
@@ -306,6 +308,12 @@ public:
     pl.set("algorithm", "random", "partitioning algorithm",
       algorithm_Validator);
 
+    pl.set("rectilinear", "false", "If true, then when a cut is made, all of the "
+      "dots located on the cut are moved to the same side of the cut. The "
+      "resulting regions are then rectilinear. The resulting load balance may "
+      "not be as good as when the group of dots is split by the cut. ",
+      Environment::getTrueFalseValidator());
+
     RCP<Teuchos::StringValidator> partitioning_objective_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
        Teuchos::tuple<std::string>( "balance_object_count",
@@ -317,17 +325,31 @@ public:
     pl.set("partitioning_objective", "balance_object_weight",
       "objective of partitioning", partitioning_objective_Validator);
 
-    RCP<Teuchos::AnyNumberParameterEntryValidator> any_Number_Validator
-      = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
+    /* MDM - expect we will be using EnhancedNumberValidator for these types
+    #define LARGE_MAXIMUM 99999999.999999
+    RCP<Teuchos::EnhancedNumberValidator<double>> imbalance_tolerance_validator =
+      Teuchos::rcp(
+        new Teuchos::EnhancedNumberValidator<double>(1.0, LARGE_MAXIMUM) );
+    */
+    pl.set("imbalance_tolerance", 1.1, "imbalance tolerance, ratio of "
+      "maximum load over average load", Environment::getAnyDoubleValidator());
 
-    pl.set("imbalance_tolerance", "1.1", "imbalance tolerance, ratio of "
-      "maximum load over average load", any_Number_Validator);
+    // MDM this should really be prefer int - or specifically prefer long long
+    // This will require some parameter updgrading - to do
+    // PartitioningSolution<Adapter>::setPartDistribution() currently has
+    // a coded conversion from double to int which requires this PREFER_DOUBLE
+    Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes typesNoDoubles;
+  //  typesNoDoubles.allowDouble(false);
+    RCP<Teuchos::AnyNumberParameterEntryValidator> tempValidator =
+      Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
+      Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE, typesNoDoubles) );
 
-    pl.set("num_global_parts", "0", "global number of parts to compute "
-      "(0 means use the number of processes)", any_Number_Validator);
+    pl.set("num_global_parts", 0, "global number of parts to compute "
+      "(0 means use the number of processes)",
+      tempValidator);
 
-    pl.set("num_local_parts", "0", "number of parts to compute for this "
-      "process (0 means one)", any_Number_Validator);
+    pl.set("num_local_parts", 0, "number of parts to compute for this "
+      "process (0 means one)", tempValidator);
 
     RCP<Teuchos::StringValidator> partitioning_approach_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
@@ -354,32 +376,11 @@ public:
       "library will choose a computational model based on the algorithm or "
       "objective specified by the user.", model_Validator);
 
-    pl.set("subset_graph", "false", "If \"true\", the graph input is to be "
-      "subsetted.  If a vertex neighbor is not a valid vertex, it will be "
-      "omitted from the pList.  Otherwise, an invalid neighbor identifier "
-      "is considered an error.", Environment::getTrueFalseValidator());
-
-    RCP<Teuchos::StringValidator> symmetrize_input_Validator = Teuchos::rcp(
-      new Teuchos::StringValidator(
-        Teuchos::tuple<std::string>( "no", "transpose", "bipartite" )));
-    pl.set("symmetrize_input", "no", "Symmetrize input prior to pList.  "
-      "If \"transpose\", symmetrize A by computing A plus ATranspose.  "
-      "If \"bipartite\", A becomes [[0 A][ATranspose 0]].",
-      symmetrize_input_Validator);
-
     pl.set("remap_parts", "false", "remap part numbers to minimize migration "
       "between old and new partitions", Environment::getTrueFalseValidator());
 
-    Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes
-      acceptedTypesNotDouble;
-    acceptedTypesNotDouble.allowDouble(false);
-    RCP<Teuchos::AnyNumberParameterEntryValidator> int_or_string_validator =
-      Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
-        Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,
-          acceptedTypesNotDouble) );
-
     pl.set("mapping_type", -1, "Mapping of solution to the processors. -1 No"
-      " Mapping, 0 coordinate mapping.", int_or_string_validator);
+      " Mapping, 0 coordinate mapping.", Environment::getAnyIntValidator());
 
     RCP<Teuchos::EnhancedNumberValidator<int>> ghost_layers_Validator =
       Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(1, 10, 1, 0) );

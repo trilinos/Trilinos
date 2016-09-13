@@ -166,47 +166,28 @@ public:
     pl.set("compute_metrics", "false", "Compute metrics after computing solution",
       Environment::getTrueFalseValidator());
 
-    pl.set("rectilinear", "false", "If true, then when a cut is made, all of the "
-      "dots located on the cut are moved to the same side of the cut. The "
-      "resulting regions are then rectilinear. The resulting load balance may "
-      "not be as good as when the group of dots is split by the cut. ",
-      Environment::getTrueFalseValidator());
-
-    pl.set("average_cuts", "false", "When true, coordinates of RCB cutting planes "
-      "are computed to be the average of the coordinates of the closest object "
-      "on each side of the cut. Otherwise, coordinates of cutting planes may "
-      "equal those of one of the closest objects.",
-      Environment::getTrueFalseValidator());
-
-    // this was an int type
-    RCP<Teuchos::EnhancedNumberValidator<int>> bisection_num_test_cuts_Validator
-      = Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(1, 250, 1, 0) );
-    pl.set("bisection_num_test_cuts", 1, "Experimental: number of test cuts "
-      "to do simultaneously", bisection_num_test_cuts_Validator);
-
     RCP<Teuchos::StringValidator> hypergraph_model_type_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
         Teuchos::tuple<std::string>( "traditional", "ghosting" )));
     pl.set("hypergraph_model_type", "traditional", "construction type when "
       "creating a hypergraph model", hypergraph_model_type_Validator);
 
+    pl.set("subset_graph", "false", "If \"true\", the graph input is to be "
+      "subsetted.  If a vertex neighbor is not a valid vertex, it will be "
+      "omitted from the pList.  Otherwise, an invalid neighbor identifier "
+      "is considered an error.", Environment::getTrueFalseValidator());
+
+    RCP<Teuchos::StringValidator> symmetrize_input_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "no", "transpose", "bipartite" )));
+    pl.set("symmetrize_input", "no", "Symmetrize input prior to pList.  "
+      "If \"transpose\", symmetrize A by computing A plus ATranspose.  "
+      "If \"bipartite\", A becomes [[0 A][ATranspose 0]].",
+      symmetrize_input_Validator);
+
     // these sublists are used for parameters which do not get validated
     pl.sublist("zoltan_parameters");
     pl.sublist("parma_parameters");
-
-    // MDM - Note these were fixed as original setup set wrong defaults
-    RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
-      new Teuchos::StringValidator(
-        Teuchos::tuple<std::string>( "SerialGreedy" )));
-    pl.set("color_method", "SerialGreedy", "coloring algorithm",
-     color_method_Validator);
-
-    RCP<Teuchos::StringValidator> color_choice_Validator = Teuchos::rcp(
-      new Teuchos::StringValidator(
-      Teuchos::tuple<std::string>(
-        "FirstFit", "Random", "RandomFast", "LeastUsed" )));
-    pl.set("color_choice", "FirstFit", "selection criterion for coloring",
-      color_choice_Validator);
   }
 
   /*! \brief Get the current Environment.
