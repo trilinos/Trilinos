@@ -116,18 +116,18 @@ public:
   EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
       const Import<LocalOrdinal,GlobalOrdinal,Node> &RowImporter,
       const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
-      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
       "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
   EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
       const Export<LocalOrdinal,GlobalOrdinal,Node> &RowExporter,
       const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
-      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
       "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
@@ -358,9 +358,9 @@ public:
   EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
       const Import<LocalOrdinal,GlobalOrdinal,Node> &RowImporter,
       const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
-      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) :
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) :
         isFillResumed_(false)
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
   , isInitializedLocalMatrix_(false)
@@ -384,9 +384,9 @@ public:
   EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
       const Export<LocalOrdinal,GlobalOrdinal,Node> &RowExporter,
       const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
-      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) :
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) :
         isFillResumed_(false)
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
   , isInitializedLocalMatrix_(false)
@@ -1355,9 +1355,9 @@ public:
   EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
       const Import<LocalOrdinal,GlobalOrdinal,Node> &RowImporter,
       const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
-      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) :
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) :
         isFillResumed_(false)
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
   , isInitializedLocalMatrix_(false)
@@ -1381,9 +1381,9 @@ public:
   EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
       const Export<LocalOrdinal,GlobalOrdinal,Node> &RowExporter,
       const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
-      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) :
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+      const Teuchos::RCP<Teuchos::ParameterList>& params) :
         isFillResumed_(false)
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
   , isInitializedLocalMatrix_(false)

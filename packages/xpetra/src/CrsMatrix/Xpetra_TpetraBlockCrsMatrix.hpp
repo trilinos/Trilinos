@@ -128,18 +128,18 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
                     const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+       const Teuchos::RCP<Teuchos::ParameterList>& params)
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
     //! Constructor for a fused export (not implemented(
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & RowExporter,
                     const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
     //! Destructor.
@@ -496,18 +496,18 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
                     const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+       const Teuchos::RCP<Teuchos::ParameterList>& params)
     { XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );}
 
     //! Constructor for a fused export (not implemented(
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
                     const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
     { XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );}
 
     //! Destructor.
@@ -838,18 +838,18 @@ namespace Xpetra {
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
                     const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+       const Teuchos::RCP<Teuchos::ParameterList>& params)
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Constructor for a fused export (not implemented(
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & RowExporter,
                     const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
     {XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );}
 
     //! Destructor.
