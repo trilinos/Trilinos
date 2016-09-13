@@ -9,6 +9,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_CopyFiles
-  DEST_FILES Tempus_BackwardEuler_SinCos.xml
+  DEST_FILES Tempus_BackwardEuler_SinCos.xml Tempus_BackwardEuler_CDR.xml
   EXEDEPS BackwardEuler
   )

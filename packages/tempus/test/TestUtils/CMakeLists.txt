@@ -13,9 +13,14 @@ APPEND_SET(HEADERS
 APPEND_SET(SOURCES
   )
 
-TRIBITS_ADD_LIBRARY(
-  tempus_test_utils
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  TESTONLY
-  )
+# This is a header only library at the moment. Some versions of ar
+# fail to create the library with an error if it is empty. So we are
+# commenting out this library declaration until we have a true object
+# defined in it. If we always used ETI, then we could uncomment this.
+
+#TRIBITS_ADD_LIBRARY(
+#  tempus_test_utils
+#  HEADERS ${HEADERS}
+#  SOURCES ${SOURCES}
+#  TESTONLY
+#  )

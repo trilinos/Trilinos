@@ -6,11 +6,12 @@
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
+#include <vector>
+
 using Teuchos::RCP;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
-using Teuchos::Array;
 
 using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
@@ -20,8 +21,8 @@ namespace Tempus_Test {
 
 TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 {
-  Array<double> StepSize;
-  Array<double> ErrorNorm;
+  std::vector<double> StepSize;
+  std::vector<double> ErrorNorm;
   const int nTimeStepSizes = 7;
   double dt = 0.2;
   for (int n=0; n<nTimeStepSizes; n++) {

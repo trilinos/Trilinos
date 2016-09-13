@@ -4,6 +4,7 @@
 #cmakedefine Tempus_DEBUG
 #cmakedefine Tempus_TEUCHOS_TIME_MONITOR
 #cmakedefine HAVE_TEMPUS_EXPLICIT_INSTANTIATION
+#cmakedefine Tempus_ENABLE_MPI
 
 @PHALANX_DEPRECATED_DECLARATIONS@
 

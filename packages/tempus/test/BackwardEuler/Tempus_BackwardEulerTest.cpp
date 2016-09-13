@@ -1,16 +1,30 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
+#include "CDR_Model.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
+
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+
+#ifdef Tempus_ENABLE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+
+#include <vector>
+#include <sstream>
+#include <limits>
 
 using Teuchos::RCP;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
-using Teuchos::Array;
 
 using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
@@ -20,8 +34,8 @@ namespace Tempus_Test {
 
 TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
 {
-  Array<double> StepSize;
-  Array<double> ErrorNorm;
+  std::vector<double> StepSize;
+  std::vector<double> ErrorNorm;
   const int nTimeStepSizes = 7;
   double dt = 0.2;
   for (int n=0; n<nTimeStepSizes; n++) {
@@ -103,4 +117,137 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
   ftmp.close();
 }
 
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
+{
+  // Create a communicator for Epetra objects
+  RCP<Epetra_Comm> comm;
+#ifdef Tempus_ENABLE_MPI
+  comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  comm = Teuchos::rcp(new Epetra_SerialComm);
+#endif
+
+  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+  std::vector<double> StepSize;
+  std::vector<double> ErrorNorm;
+  const int nTimeStepSizes = 5;
+  double dt = 0.2;
+  for (int n=0; n<nTimeStepSizes; n++) {
+    
+    // Read params from .xml file
+    RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_BackwardEuler_CDR.xml");
+    
+    // Create CDR Model
+    RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
+    const int num_elements = model_pl->get<int>("num elements");
+    const double left_end = model_pl->get<double>("left end");
+    const double right_end = model_pl->get<double>("right end");
+    const double a_convection = model_pl->get<double>("a (convection)");
+    const double k_source = model_pl->get<double>("k (source)");
+    
+    RCP<Tempus_Test::CDR_Model<double>> model =
+      Teuchos::rcp(new Tempus_Test::CDR_Model<double>(comm,
+                                                      num_elements,
+                                                      left_end,
+                                                      right_end,
+                                                      a_convection,
+                                                      k_source));
+    
+    // Set the factory
+    ::Stratimikos::DefaultLinearSolverBuilder builder;
+    
+    Teuchos::RCP<Teuchos::ParameterList> p =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    p->set("Linear Solver Type", "Belos");
+    p->set("Preconditioner Type", "None");
+    builder.setParameterList(p);
+    
+    Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
+      lowsFactory = builder.createLinearSolveStrategy("");
+    
+    model->set_W_factory(lowsFactory);
+
+    // Set the step size
+    dt /= 2;
+    
+    // Setup the Integrator and reset initial time step
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+    pl->sublist("Demo Integrator").set("Initial Time Step", dt);
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>(pl, model);
+    
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+    // Test if at 'Final Time'
+    double time = integrator->getTime();
+    double timeFinal =pl->sublist("Demo Integrator").get<double>("Final Time");
+    double tol = 100.0 * std::numeric_limits<double>::epsilon();
+    TEST_FLOATING_EQUALITY(time, timeFinal, tol);
+
+    // Store off the final solution and step size
+    auto solution = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getX()),solution.ptr());
+    solutions.push_back(solution);
+    StepSize.push_back(dt);
+  }
+
+  // Calculate the error - use the most temporally refined mesh for
+  // the base solution.
+  auto base_solution = solutions[solutions.size()-1];
+  std::vector<double> StepSizeCheck;
+  for (std::size_t i=0; i < (solutions.size()-1); ++i) {
+    auto tmp = solutions[i];
+    Thyra::Vp_StV(tmp.ptr(), -1.0, *base_solution);
+    const double L2norm = Thyra::norm_2(*tmp);
+    StepSizeCheck.push_back(StepSize[i]);
+    ErrorNorm.push_back(L2norm);
+  }
+
+  // Check the order and intercept
+  double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
+  TEST_FLOATING_EQUALITY(slope, 1.0, 0.35);
+  TEST_COMPARE(slope, >, 0.95);
+  out << "\n\n ** Slope on Backward Euler Method = " << slope
+      << "\n" << std::endl;
+
+  // Write error data
+  {
+    std::ofstream ftmp("Tempus_BackwardEuler_CDR-Error.dat");
+    double error0 = 0.8*ErrorNorm[0];
+    for (std::size_t n = 0; n < StepSizeCheck.size(); n++) {
+      ftmp << StepSizeCheck[n]  << "   " << ErrorNorm[n] << "   "
+           << error0*(StepSize[n]/StepSize[0]) << std::endl;
+    }
+    ftmp.close();
+  }
+
+  // Write fine mesh solution at final time
+  // This only works for ONE MPI process
+  /*
+  if (comm.NumProc() == 1) {
+    RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_BackwardEuler_CDR.xml");
+    RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
+    const int num_elements = model_pl->get<int>("num elements");
+    const double left_end = model_pl->get<double>("left end");
+    const double right_end = model_pl->get<double>("right end");
+
+    std::ofstream ftmp("Tempus_BackwardEuler_CDR-Solution.dat");
+    for (std::size_t n = 0; n < num_elements+1; n++) {
+      const double dx = std::fabs(left_end-right_end) /
+                        static_cast<double>(num_elements);
+      const double x_coord = left_end + static_cast<double>(n) * dx; 
+      ftmp << x_coord << "   " <<  << std::endl;
+    }
+    ftmp.close();
+  }
+  */
+  
+}
+  
 } // namespace Tempus_Test

@@ -1,7 +1,7 @@
 #ifndef TEMPUS_CONVERGENCE_TEST_UTILS_HPP
 #define TEMPUS_CONVERGENCE_TEST_UTILS_HPP
 
-#include "Teuchos_Array.hpp"
+#include <vector>
 #include "Teuchos_as.hpp"
 
 namespace Tempus_Test {
@@ -14,17 +14,17 @@ class LinearRegression
 {
   public:
     LinearRegression();
-    void setData(Teuchos::Array<Scalar>& x, Teuchos::Array<Scalar>& y);
+    void setData(std::vector<Scalar>& x, std::vector<Scalar>& y);
     Scalar getSlope() const;
     Scalar getYIntercept() const;
   private:
     // Private functions
     void compute_();
-    void validateXYData_(Teuchos::Array<Scalar>& x, Teuchos::Array<Scalar>& y);
+    void validateXYData_(std::vector<Scalar>& x, std::vector<Scalar>& y);
 
     // Private data
-    Teuchos::Array<Scalar> x_;
-    Teuchos::Array<Scalar> y_;
+    std::vector<Scalar> x_;
+    std::vector<Scalar> y_;
     Scalar slope_;
     Scalar yIntercept_;
     bool isInitialized_;
@@ -40,7 +40,7 @@ LinearRegression<Scalar>::LinearRegression()
 
 template<class Scalar>
 void LinearRegression<Scalar>::setData(
-  Teuchos::Array<Scalar>& x, Teuchos::Array<Scalar>& y)
+  std::vector<Scalar>& x, std::vector<Scalar>& y)
 {
   validateXYData_(x,y);
   x_ = x; // copy x data
@@ -51,7 +51,7 @@ void LinearRegression<Scalar>::setData(
 
 template<class Scalar>
 void LinearRegression<Scalar>::validateXYData_(
-  Teuchos::Array<Scalar>& x, Teuchos::Array<Scalar>& y)
+  std::vector<Scalar>& x, std::vector<Scalar>& y)
 {
   TEUCHOS_TEST_FOR_EXCEPT(x.size() != y.size());
   TEUCHOS_TEST_FOR_EXCEPT(x.size() < 2);
@@ -121,7 +121,7 @@ void LinearRegression<Scalar>::compute_()
 // Nonmember helper functions:
 template<class Scalar>
 Scalar computeLinearRegression(
-  Teuchos::Array<Scalar>& x, Teuchos::Array<Scalar>& y)
+  std::vector<Scalar>& x, std::vector<Scalar>& y)
 {
   LinearRegression<Scalar> lr;
   lr.setData(x,y);
@@ -130,7 +130,7 @@ Scalar computeLinearRegression(
 
 template<class Scalar>
 void computeLinearRegression(
-  Teuchos::Array<Scalar>& x, Teuchos::Array<Scalar>& y,
+  std::vector<Scalar>& x, std::vector<Scalar>& y,
   Scalar & slope, Scalar & yIntercept)
 {
   LinearRegression<Scalar> lr;
@@ -142,12 +142,12 @@ void computeLinearRegression(
 
 template<class Scalar>
 Scalar computeLinearRegressionLogLog(
-  Teuchos::Array<Scalar>& x, Teuchos::Array<Scalar>& y)
+  std::vector<Scalar>& x, std::vector<Scalar>& y)
 {
   TEUCHOS_TEST_FOR_EXCEPT(x.size() != y.size());
   int N = Teuchos::as<int>(x.size());
-  Teuchos::Array<Scalar> xlog;
-  Teuchos::Array<Scalar> ylog;
+  std::vector<Scalar> xlog;
+  std::vector<Scalar> ylog;
 
   for (int i=0 ; i<N ; ++i) {
     xlog.push_back(log(x[i]));
