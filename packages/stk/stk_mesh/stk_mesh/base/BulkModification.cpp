@@ -120,19 +120,19 @@ void construct_communication_set( const BulkData & bulk, const std::set<Entity,E
   }
 }
 
-size_t count_ghost_entities( const BulkData & bulk, const EntityVector & entities)
-{
-  size_t num_ghost_entities = 0;
-
-  for ( EntityVector::const_iterator
-        i = entities.begin(); i != entities.end(); ++i ) {
-    if ( ! bulk.owned_closure(*i) ) {
-      ++num_ghost_entities;
-    }
-  }
-
-  return num_ghost_entities;
-}
+//size_t count_ghost_entities( const BulkData & bulk, const EntityVector & entities)
+//{
+//  size_t num_ghost_entities = 0;
+//
+//  for ( EntityVector::const_iterator
+//        i = entities.begin(); i != entities.end(); ++i ) {
+//    if ( ! bulk.owned_closure(*i) ) {
+//      ++num_ghost_entities;
+//    }
+//  }
+//
+//  return num_ghost_entities;
+//}
 
 }
 
