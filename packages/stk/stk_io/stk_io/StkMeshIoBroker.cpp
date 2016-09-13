@@ -73,6 +73,8 @@
 #include "Ioss_VariableType.h"          // for NameList, VariableType
 
 #include "ProcessSetsOrBlocks.hpp"
+#include "SidesetTranslator.hpp"
+#include "StkIoUtils.hpp"
 
 #include "Teuchos_RCP.hpp"              // for RCP::operator->, etc
 #include "boost/any.hpp"                // for any_cast, any

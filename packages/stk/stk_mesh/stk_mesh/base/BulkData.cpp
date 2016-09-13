@@ -504,7 +504,9 @@ BulkData::BulkData( MetaData & mesh_meta_data
         bucket_capacity),
     m_use_identifiers_for_resolving_sharing(false),
     m_modSummary(*this),
-    m_meshDiagnosticObserver(*this)
+    m_meshDiagnosticObserver(*this),
+    m_sideSetData(),
+    m_hasSideSetData(false)
 {
   mesh_meta_data.set_mesh_bulk_data(this);
   m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);

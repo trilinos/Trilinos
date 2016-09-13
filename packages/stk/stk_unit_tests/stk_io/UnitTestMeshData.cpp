@@ -159,10 +159,10 @@ TEST( StkMeshIoBroker, testModifyTopology )
             mesh.change_entity_parts(element2, add_parts);
 
             const int elem1_side_ordinal = 5;
-            stk::mesh::Entity side1 = mesh.declare_element_side(element1, elem1_side_ordinal, {&side_set_part});
+            stk::mesh::Entity side1 = mesh.declare_element_side(element1, elem1_side_ordinal, stk::mesh::PartVector{&side_set_part});
 
             const int elem2_side_ordinal = 4;
-            stk::mesh::Entity side2 = mesh.declare_element_side(element2, elem2_side_ordinal, {&side_set_part});
+            stk::mesh::Entity side2 = mesh.declare_element_side(element2, elem2_side_ordinal, stk::mesh::PartVector{&side_set_part});
             mesh.modification_end();
 
             EXPECT_EQ(side1, side2);
