@@ -162,7 +162,7 @@ void calculate_nodal_volume_given_elem_volume(const ngp::Mesh &ngpMesh,
 STK_FUNCTION
 double calculate_element_volume(const ngp::Mesh &ngpMesh,
                                 ngp::Mesh::ConnectedNodes nodes,
-                                const ngp::Field<double> &coords)
+                                const ngp::ConstField<double> &coords)
 {
     double min[3] = {DBL_MAX, DBL_MAX, DBL_MAX};
     double max[3] = {DBL_MIN, DBL_MIN, DBL_MIN};
@@ -170,7 +170,7 @@ double calculate_element_volume(const ngp::Mesh &ngpMesh,
     for(unsigned i=0; i<numElemNodes; ++i) {
         stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
         for(int j=0; j<3; ++j) {
-            double val = coords.const_get(nodeIndex, j);
+            double val = coords.get(nodeIndex, j);
 //            double val = coords.get(nodeIndex, j);
             if (val > max[j])
                 max[j] = val;
@@ -184,7 +184,7 @@ double calculate_element_volume(const ngp::Mesh &ngpMesh,
 STK_FUNCTION
 void calculate_nodal_volume_device(const ngp::Mesh &ngpMesh,
                                    const ngp::Mesh::MeshIndex elem,
-                                   const ngp::Field<double> &coords,
+                                   const ngp::ConstField<double> &coords,
                                    const ngp::Field<double> &nodalVolume)
 {
     ngp::Mesh::ConnectedNodes nodes = ngpMesh.get_nodes(elem);
@@ -193,7 +193,7 @@ void calculate_nodal_volume_device(const ngp::Mesh &ngpMesh,
     calculate_nodal_volume_given_elem_volume(ngpMesh, nodes, elemVolumePerNode, nodalVolume);
 }
 
-void calculate_nodal_volume(ngp::Mesh &ngpMesh, stk::mesh::Selector selector, const ngp::Field<double> &coords, ngp::Field<double> &nodalVolume)
+void calculate_nodal_volume(ngp::Mesh &ngpMesh, stk::mesh::Selector selector, const ngp::ConstField<double> &coords, ngp::Field<double> &nodalVolume)
 {
     ngp::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector, KOKKOS_LAMBDA(ngp::Mesh::MeshIndex elem)
     {
@@ -208,7 +208,7 @@ void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh,
 {
     double start = stk::wall_time();
     const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
-    ngp::Field<double> ngpCoords(mesh, coords);
+    ngp::ConstField<double> ngpCoords(mesh, coords);
     ngp::Field<double> ngpNodalVolume(mesh, nodalVolumeField);
     ngp::Mesh ngpMesh(mesh);
     double middle = stk::wall_time();

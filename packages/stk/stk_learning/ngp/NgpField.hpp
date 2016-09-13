@@ -7,6 +7,8 @@
 
 namespace ngp {
 
+template<typename T> class ConstStkFieldAdapter;
+
 template<typename T>
 class StkFieldAdapter
 {
@@ -24,13 +26,6 @@ public:
         return data[component];
     }
 
-    const T& const_get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
-    {
-        const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
-        ThrowAssert(data);
-        return data[component];
-    }
-
     T& get(stk::mesh::FastMeshIndex entity, int component) const
     {
         T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
@@ -38,23 +33,9 @@ public:
         return data[component];
     }
 
-    const T& const_get(stk::mesh::FastMeshIndex entity, int component) const
-    {
-        const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
-        ThrowAssert(data);
-        return data[component];
-    }
-
     T& get(StkMeshAdapter::MeshIndex entity, int component) const
     {
         T* data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
-        ThrowAssert(data);
-        return data[component];
-    }
-
-    const T& const_get(StkMeshAdapter::MeshIndex entity, int component) const
-    {
-        const T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
         ThrowAssert(data);
         return data[component];
     }
@@ -67,16 +48,59 @@ public:
 
 private:
     const stk::mesh::FieldBase * field;
+
+    friend ConstStkFieldAdapter<T>;
+};
+
+template<typename T>
+class ConstStkFieldAdapter
+{
+public:
+    typedef T value_type;
+
+    ConstStkFieldAdapter() : stkFieldAdapter() { }
+
+    ConstStkFieldAdapter(const StkFieldAdapter<T> &sfa)
+    :   stkFieldAdapter(sfa)
+    {
+    }
+
+    ConstStkFieldAdapter(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f)
+    :   stkFieldAdapter(b, f)
+    {
+    }
+
+    const T& get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        return stkFieldAdapter.get(ngpMesh, entity, component);
+    }
+
+    const T& get(stk::mesh::FastMeshIndex entity, int component) const
+    {
+        return stkFieldAdapter.get(entity, component);
+    }
+
+    const T& get(StkMeshAdapter::MeshIndex entity, int component) const
+    {
+        return stkFieldAdapter.get(entity, component);
+    }
+
+    stk::mesh::EntityRank get_rank() const { return stkFieldAdapter.get_rank(); }
+
+private:
+    StkFieldAdapter<T> stkFieldAdapter;
 };
 
 
+
+template<typename T> class ConstStaticField;
 
 template<typename T>
 class StaticField {
 public:
     typedef T value_type;
 
-    StaticField() { }
+    StaticField() : rank(stk::topology::NODE_RANK) { }
 
     StaticField(stk::mesh::EntityRank r, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
     : deviceData(), rank(r)
@@ -104,7 +128,6 @@ public:
         copy_data(buckets, field, [](T &staticData, T &fieldData){staticData = fieldData;});
 
         Kokkos::deep_copy(deviceData, hostData);
-        constDeviceData = deviceData;
     }
 
     void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
@@ -116,7 +139,7 @@ public:
         copy_data(buckets, field, [](T &staticData, T &fieldData){fieldData = staticData;});
     }
 
-    KOKKOS_INLINE_FUNCTION ~StaticField(){}
+    STK_FUNCTION ~StaticField(){}
 
     template <typename Mesh> STK_FUNCTION
     T& get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
@@ -125,35 +148,16 @@ public:
         return deviceData(idx+component);
     }
 
-    template <typename Mesh> STK_FUNCTION
-    const T& const_get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
-    {
-        unsigned idx = get_index(ngpMesh, entity);
-        return constDeviceData(idx+component);
-    }
-
     STK_FUNCTION
     T& get(stk::mesh::FastMeshIndex entity, int component) const
     {
         return deviceData(get_index(entity.bucket_id, entity.bucket_ord)+component);
     }
 
-    STK_FUNCTION
-    const T& const_get(stk::mesh::FastMeshIndex entity, int component) const
-    {
-        return constDeviceData(get_index(entity.bucket_id, entity.bucket_ord)+component);
-    }
-
     template <typename MeshIndex> STK_FUNCTION
     T& get(MeshIndex entity, int component) const
     {
         return deviceData(get_index(entity.bucket->bucket_id(), entity.bucketOrd)+component);
-    }
-
-    template <typename MeshIndex> STK_FUNCTION
-    const T& const_get(MeshIndex entity, int component) const
-    {
-        return constDeviceData(get_index(entity.bucket->bucket_id(), entity.bucketOrd)+component);
     }
 
     STK_FUNCTION
@@ -247,7 +251,6 @@ private:
         hostData = Kokkos::create_mirror_view(deviceData);
         Kokkos::deep_copy(hostData, initialValue);
         Kokkos::deep_copy(deviceData, hostData);
-        constDeviceData = deviceData;
     }
 
     template <typename Assigner>
@@ -270,9 +273,7 @@ private:
     }
 
     typedef Kokkos::View<T*> FieldDataType;
-    typedef Kokkos::View<const T*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > ConstFieldDataType;
     typedef Kokkos::View<unsigned*> UnsignedType;
-    typedef Kokkos::View<const unsigned*, Kokkos::MemoryTraits<Kokkos::RandomAccess>> ConstUnsignedType;
 
     UnsignedType numPerEntity;
     typename UnsignedType::HostMirror hostNumPerEntity;
@@ -282,10 +283,61 @@ private:
 
     typename FieldDataType::HostMirror hostData;
     FieldDataType deviceData;
-    ConstFieldDataType constDeviceData;
+
     stk::mesh::EntityRank rank;
+
+    friend ConstStaticField<T>;
 };
 
+template<typename T>
+class ConstStaticField {
+public:
+    typedef T value_type;
+
+    ConstStaticField() { }
+
+    ConstStaticField(const StaticField<T> &sf) :
+        staticField(sf),
+        constDeviceData(staticField.deviceData)
+    {
+    }
+
+    ConstStaticField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
+    :   staticField(bulk, field),
+        constDeviceData(staticField.deviceData)
+    {
+    }
+
+    STK_FUNCTION ~ConstStaticField(){}
+
+    template <typename Mesh> STK_FUNCTION
+    const T& get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        unsigned idx = staticField.get_index(ngpMesh, entity);
+        return constDeviceData(idx+component);
+    }
+
+    STK_FUNCTION
+    const T& get(stk::mesh::FastMeshIndex entity, int component) const
+    {
+        return constDeviceData(staticField.get_index(entity.bucket_id, entity.bucket_ord)+component);
+    }
+
+    template <typename MeshIndex> STK_FUNCTION
+    const T& get(MeshIndex entity, int component) const
+    {
+        return constDeviceData(staticField.get_index(entity.bucket->bucket_id(), entity.bucketOrd)+component);
+    }
+
+    STK_FUNCTION
+    stk::mesh::EntityRank get_rank() const { return staticField.rank; }
+
+private:
+    StaticField<T> staticField;
+
+    typedef Kokkos::View<const T*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > ConstFieldDataType;
+    ConstFieldDataType constDeviceData;
+};
 
 }
 
