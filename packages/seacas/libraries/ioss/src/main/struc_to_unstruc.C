@@ -59,9 +59,9 @@
 #include <mpi.h>
 #endif
 
-#define OUTPUT                                                                                     \
-  if (rank == 0)                                                                                   \
-  std::cerr
+#define OUTPUT                                  \
+  if (rank == 0)                                \
+    std::cerr
 
 // ========================================================================
 
@@ -154,7 +154,7 @@ namespace {
   {
     Ioss::PropertyManager properties;
     Ioss::DatabaseIO *    dbi = Ioss::IOFactory::create("cgns", inpfile, Ioss::READ_MODEL,
-							(MPI_Comm)MPI_COMM_WORLD, properties);
+                                                        (MPI_Comm)MPI_COMM_WORLD, properties);
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -198,24 +198,54 @@ namespace {
     output_region.end_mode(Ioss::STATE_MODEL);
   }
 
+  void print_block_info(Ioss::StructuredBlock& block)
+  {
+    std::ostringstream str;
+    if (block.m_ni != 0 && block.m_nj != 0 && block.m_nk != 0)
+      {
+        str << " m_ni= " <<  block.m_ni << std::endl;
+        str << " m_nj= " <<  block.m_nj << std::endl;
+        str << " m_nk= " <<  block.m_nk << std::endl;
+
+        str << " m_offsetI= " <<  block.m_offsetI << std::endl;
+        str << " m_offsetJ= " <<  block.m_offsetJ << std::endl;
+        str << " m_offsetK= " <<  block.m_offsetK << std::endl;
+
+        str << " m_niGlobal= " <<  block.m_niGlobal << std::endl;
+        str << " m_njGlobal= " <<  block.m_njGlobal << std::endl;
+        str << " m_nkGlobal= " <<  block.m_nkGlobal << std::endl;
+
+        str << " m_nodeOffset= " <<  block.m_nodeOffset << std::endl;
+        str << " m_cellOffset= " <<  block.m_cellOffset << std::endl;
+
+        str << " m_nodeGlobalOffset= " <<  block.m_nodeGlobalOffset << std::endl;
+        str << " m_cellGlobalOffset= " <<  block.m_cellGlobalOffset << std::endl;
+        std::cout << "P[" << rank << "] tmp srk block= " << block.name() << "\n" << str.str() << std::endl;
+      }
+  }
+
   void transfer_nodal(Ioss::Region &region, Ioss::Region &output_region)
   {
     auto nb = output_region.get_node_blocks()[0];
     size_t node_count = region.get_node_blocks()[0]->get_property("entity_count").get_int();
+    std::cout << "tmp srk node_count= " << node_count << std::endl;
     {
       std::vector<int> ids(node_count); // To hold the global node id map.
       auto &           blocks = region.get_structured_blocks();
       for (auto &block : blocks) {
+        
+        print_block_info(*block);
+
         std::vector<int> cell_id;
         block->get_field_data("cell_node_ids", cell_id);
 
-	for (size_t i=0; i < cell_id.size(); i++) {
-	  size_t idx = block->m_blockLocalNodeIndex[i];
-	  assert(idx >= 0 && idx < node_count);
-	  if (ids[idx] == 0) {
-	    ids[idx] = cell_id[i];
-	  }
-	}
+        for (size_t i=0; i < cell_id.size(); i++) {
+          size_t idx = block->m_blockLocalNodeIndex[i];
+          assert(idx >= 0 && idx < node_count);
+          if (ids[idx] == 0) {
+            ids[idx] = cell_id[i];
+          }
+        }
 
       }
       assert(nb != nullptr);
@@ -268,7 +298,7 @@ namespace {
 
       {
         std::vector<int> connect;
-	connect.reserve(ni*nj*nk*8);
+        connect.reserve(ni*nj*nk*8);
         for (size_t k = 0; k < nk; k++) {
           for (size_t j = 0, m = 0; j < nj; j++) {
             for (size_t i = 0; i < ni; i++, m++) {
@@ -288,20 +318,20 @@ namespace {
         }
         // 'connect' contains 0-based block-local node ids at this point
         // Now, map them to processor-global values...
-	// NOTE: "processor-global" is 1..num_node_on_processor
+        // NOTE: "processor-global" is 1..num_node_on_processor
 
         const auto &gnil = block->m_blockLocalNodeIndex;
-	if (!gnil.empty()) {
-	  for (size_t i = 0; i < connect.size(); i++) {
-	    connect[i] = gnil[connect[i]] + 1;
-	  }
-	}
-	else {
-	  size_t node_offset = block->get_node_offset();
-	  for (size_t i = 0; i < connect.size(); i++) {
-	    connect[i] = connect[i] + node_offset + 1;
-	  }
-	}
+        if (!gnil.empty()) {
+          for (size_t i = 0; i < connect.size(); i++) {
+            connect[i] = gnil[connect[i]] + 1;
+          }
+        }
+        else {
+          size_t node_offset = block->get_node_offset();
+          for (size_t i = 0; i < connect.size(); i++) {
+            connect[i] = connect[i] + node_offset + 1;
+          }
+        }
 
         output->put_field_data("connectivity_raw", connect);
       }
@@ -309,7 +339,7 @@ namespace {
       {
         std::vector<int> ids;
         block->get_field_data("cell_ids", ids);
-	output->put_field_data("ids", ids);
+        output->put_field_data("ids", ids);
       }
     }
     return;
@@ -330,65 +360,65 @@ namespace {
       const auto &fbs  = ss->get_side_blocks();
       size_t fb_index = 0;
       for (auto fb : fbs) {
-	// Get corresponding sideblock on output sideset 'ofs'
-	// Assumes sideblocks are ordered the same on input and output.
-	auto ofb = ofs->get_block(fb_index++);
-	assert(ofb != nullptr);
+        // Get corresponding sideblock on output sideset 'ofs'
+        // Assumes sideblocks are ordered the same on input and output.
+        auto ofb = ofs->get_block(fb_index++);
+        assert(ofb != nullptr);
 	
-	// Get parent structured block for this side block...
-	auto parent = fb->parent_block();
-	assert(parent != nullptr);
-	assert(parent->type() == Ioss::STRUCTUREDBLOCK);
-	auto sb_parent = dynamic_cast<const Ioss::StructuredBlock*>(parent);
-	Ioss::Utils::check_dynamic_cast(sb_parent);
+        // Get parent structured block for this side block...
+        auto parent = fb->parent_block();
+        assert(parent != nullptr);
+        assert(parent->type() == Ioss::STRUCTUREDBLOCK);
+        auto sb_parent = dynamic_cast<const Ioss::StructuredBlock*>(parent);
+        Ioss::Utils::check_dynamic_cast(sb_parent);
 
-	// Find this sideblock on the parent block...
-	auto &bc_name = fb->name();
-	for (auto &bc : sb_parent->m_boundaryConditions) {
-	  if (bc_name == bc.m_bcName) {
-	    std::vector<int> elem_side;
-	    if (bc.get_face_count() > 0) {
-	    Ioss::IJK_t range_beg = bc.m_rangeBeg;
-	    Ioss::IJK_t cell_range_end = bc.m_rangeEnd;
+        // Find this sideblock on the parent block...
+        auto &bc_name = fb->name();
+        for (auto &bc : sb_parent->m_boundaryConditions) {
+          if (bc_name == bc.m_bcName) {
+            std::vector<int> elem_side;
+            if (bc.get_face_count() > 0) {
+              Ioss::IJK_t range_beg = bc.m_rangeBeg;
+              Ioss::IJK_t cell_range_end = bc.m_rangeEnd;
 
-	    // The range_beg/end are current points and not cells.
-	    // Need to convert cell_range_end to cells which is typically just point-1
-	    // except if the ordinal is the plane of this surface. In this case,
-	    // range_beg[ord] == cell_range_end[ord].  If this is the case,
-	    // and we are at the top end of the range, then the beg and end must
-	    // both be reduced by 1.  If at the bottom end of the range, then both
-	    // are equal to 1.
-	    // 
-	    for (int i=0; i < 3; i++) {
-	      if (cell_range_end[i] == range_beg[i]) {
-		if (cell_range_end[i] != 1) {
-		  cell_range_end[i]--;
-		  range_beg[i]--;
-		}
-	      }
-	      else {
-		cell_range_end[i]--;
-	      }
-	    }
+              // The range_beg/end are current points and not cells.
+              // Need to convert cell_range_end to cells which is typically just point-1
+              // except if the ordinal is the plane of this surface. In this case,
+              // range_beg[ord] == cell_range_end[ord].  If this is the case,
+              // and we are at the top end of the range, then the beg and end must
+              // both be reduced by 1.  If at the bottom end of the range, then both
+              // are equal to 1.
+              // 
+              for (int i=0; i < 3; i++) {
+                if (cell_range_end[i] == range_beg[i]) {
+                  if (cell_range_end[i] != 1) {
+                    cell_range_end[i]--;
+                    range_beg[i]--;
+                  }
+                }
+                else {
+                  cell_range_end[i]--;
+                }
+              }
 
-	    std::cerr << bc << "\n";
-	    auto parent_face = face_map[bc.which_parent_face()+3];
-	    elem_side.reserve(bc.get_face_count() * 2);
-	    for (auto k=range_beg[2]; k <= cell_range_end[2]; k++) {
-	      for (auto j=range_beg[1]; j <= cell_range_end[1]; j++) {
-		for (auto i=range_beg[0]; i <= cell_range_end[0]; i++) {
-		  auto cell_id = sb_parent->get_global_cell_id(i, j, k);
-		  assert(cell_id > 0);
-		  elem_side.push_back(cell_id);
-		  elem_side.push_back(parent_face);
-		}
-	      }
-	    }
-	    }
-	    ofb->put_field_data("element_side", elem_side);
-	    break;
-	  }
-	}
+              std::cerr << bc << "\n";
+              auto parent_face = face_map[bc.which_parent_face()+3];
+              elem_side.reserve(bc.get_face_count() * 2);
+              for (auto k=range_beg[2]; k <= cell_range_end[2]; k++) {
+                for (auto j=range_beg[1]; j <= cell_range_end[1]; j++) {
+                  for (auto i=range_beg[0]; i <= cell_range_end[0]; i++) {
+                    auto cell_id = sb_parent->get_global_cell_id(i, j, k);
+                    assert(cell_id > 0);
+                    elem_side.push_back(cell_id);
+                    elem_side.push_back(parent_face);
+                  }
+                }
+              }
+            }
+            ofb->put_field_data("element_side", elem_side);
+            break;
+          }
+        }
       }
     }
   }
@@ -403,9 +433,9 @@ namespace {
     output_region.add(nb);
 
     std::cout << "P[" << rank << "] Number of coordinates per node ="
-	      << std::setw(12) << degree << "\n";
+              << std::setw(12) << degree << "\n";
     std::cout << "P[" << rank << "] Number of nodes                ="
-	      << std::setw(12) << num_nodes << "\n";
+              << std::setw(12) << num_nodes << "\n";
   }
 
   void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region)
@@ -419,12 +449,12 @@ namespace {
       auto block = new Ioss::ElementBlock(output_region.get_database(), name, type, count);
       output_region.add(block);
       std::cout << "P[" << rank << "] Created Element Block '" << name
-		<< "' with " << count << " elements.\n";
+                << "' with " << count << " elements.\n";
       total_entities += count;
     }
     std::cout << "P[" << rank << "] Number of Element Blocks       ="
-	      << std::setw(12) << blocks.size()
-	      << ", Number of elements (cells) =" << std::setw(12) << total_entities << "\n";
+              << std::setw(12) << blocks.size()
+              << ", Number of elements (cells) =" << std::setw(12) << total_entities << "\n";
   }
 
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region)
@@ -445,11 +475,11 @@ namespace {
         total_sides += num_side;
 
         auto block =
-            new Ioss::SideBlock(output_region.get_database(), fbname, fbtype, partype, num_side);
+          new Ioss::SideBlock(output_region.get_database(), fbname, fbtype, partype, num_side);
         surf->add(block);
-	block->property_add(Ioss::Property("set_offset", ss_sides));
+        block->property_add(Ioss::Property("set_offset", ss_sides));
 
-	ss_sides += num_side;
+        ss_sides += num_side;
       }
       output_region.add(surf);
     }
