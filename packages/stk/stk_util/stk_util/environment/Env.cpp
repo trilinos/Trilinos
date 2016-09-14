@@ -120,8 +120,9 @@ startup_date()
 {
   static std::string startup_date;
 
-  if (startup_date.empty())
+  if (startup_date.empty()) {
     startup_date = format_time(stk::EnvData::instance().m_startTime).c_str();
+  }
 
   return startup_date;
 }
@@ -418,7 +419,6 @@ void
 set_param(
   const char *          option,
   const std::string &   value) {
-
 
   namespace opt = boost::program_options;
 

@@ -64,7 +64,6 @@ namespace stk {
  *
  */
 typedef ptrdiff_t MessageId;
-// typedef std::vector<void *>::difference_type MessageId;
 
 /**
  * @brief Enumeration <b>MessageType</b> declares the global message types.

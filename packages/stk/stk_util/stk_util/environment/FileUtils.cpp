@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-
 #include <stk_util/environment/FileUtils.hpp>
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for max
@@ -41,17 +40,14 @@
 #include "boost/program_options/variables_map.hpp"  // for variables_map
 
 
-
-typedef std::vector<std::string> StringVector;
-
 namespace {
   std::string tailname(const std::string &filename)
   {
     size_t ind = filename.find_last_of("/", filename.size());
-    if (ind != std::string::npos)
+    if (ind != std::string::npos) {
       return filename.substr(ind+1, filename.size());
-    else
-      return filename; // No path, just return the filename
+    }
+    return filename; // No path, just return the filename
   }
 
   std::string basename(const std::string &filename)
@@ -60,10 +56,10 @@ namespace {
 
     // Strip off the extension
     size_t ind = tail.find_last_of('.', tail.size());
-    if (ind != std::string::npos)
+    if (ind != std::string::npos) {
       return tail.substr(0,ind);
-    else
-      return tail;
+    }
+    return tail;
   }
 
   std::string  get_input_file_basename()

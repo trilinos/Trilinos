@@ -161,10 +161,10 @@ get_message_type_info(
   unsigned              type)
 {
   MessageTypeInfoMap::iterator it = s_messageTypeInfo.find(type & MSG_TYPE_MASK);
-  if (it != s_messageTypeInfo.end())
+  if (it != s_messageTypeInfo.end()) {
     return (*it).second;
-  else
-    return s_messageTypeInfo[type & MSG_TYPE_MASK];
+  }
+  return s_messageTypeInfo[type & MSG_TYPE_MASK];
 }
 
 
@@ -184,12 +184,13 @@ count_message(
   std::pair<MessageIdMap::iterator, bool> res = s_messageIdMap.insert(MessageIdMap::value_type(MessageIdMap::key_type(message_id, std::string(message)), throttle));
   size_t count = ++(*res.first).second.m_count;
 
-  if (count < (*res.first).second.m_cutoff)
+  if (count < (*res.first).second.m_cutoff) {
     return MSG_DISPLAY;
-  else if (count == (*res.first).second.m_cutoff)
+  } else if (count == (*res.first).second.m_cutoff) {
     return MSG_CUTOFF;
-  else
+  } else {
     return MSG_CUTOFF_EXCEEDED;
+  }
 }
 
 Marshal &operator<<(Marshal &mout, const DeferredMessage &s)  {
@@ -273,10 +274,9 @@ report_message(
   unsigned              message_type, 
   const MessageCode &   message_code)
 {
-  if (message_type & MSG_DEFERRED)
+  if (message_type & MSG_DEFERRED) {
     report(message, message_type);
-  
-  else { 
+  } else { 
     unsigned count = increment_message_count(message_type);
     unsigned max_count = get_max_message_count(message_type); 
   
@@ -300,7 +300,9 @@ report_message(
       }
     
       else if (cutoff == MSG_DISPLAY)
+      {
         report(message, message_type);
+      }
     }
   }
 }
@@ -310,9 +312,11 @@ void
 reset_throttle_group(
   int                   throttle_group)
 {
-  for (MessageIdMap::iterator it = s_messageIdMap.begin(); it != s_messageIdMap.end(); ++it)
-    if ((*it).second.m_group == throttle_group)
+  for (auto it = s_messageIdMap.begin(); it != s_messageIdMap.end(); ++it) {
+    if ((*it).second.m_group == throttle_group) {
       (*it).second.m_count = 0;
+    }
+  }
 }
 
 
@@ -333,8 +337,9 @@ add_deferred_message(
   std::pair<MessageIdMap::iterator, bool> res = s_deferredMessageIdMap.insert(MessageIdMap::value_type(MessageIdMap::key_type(message_id, header), Throttle(throttle_cutoff, throttle_group)));
   size_t count = ++(*res.first).second.m_count;
 
-  if (count <= throttle_cutoff)
+  if (count <= throttle_cutoff) {
     s_deferredMessageVector.push_back(DeferredMessage(message_type, message_id, throttle_cutoff, throttle_group, header, aggegrate));
+  }
 }
 
 
@@ -349,8 +354,10 @@ report_deferred_messages(
   int p_size = stk::parallel_machine_size(comm);
   int p_rank = stk::parallel_machine_rank(comm);
 
-  for (DeferredMessageVector::iterator it = s_deferredMessageVector.begin(); it != s_deferredMessageVector.end(); ++it)
+  for (auto it = s_deferredMessageVector.begin(); it != s_deferredMessageVector.end(); ++it)
+  {
     (*it).m_rank = p_rank;
+  }
   
   Marshal mout;
   mout << s_deferredMessageVector;
@@ -363,9 +370,8 @@ report_deferred_messages(
   std::vector<int> recv_count(p_size, 0);
   int * const recv_count_ptr = recv_count.data() ;
 
-  int result = MPI_Gather(&send_count, 1, MPI_INT,
-                          recv_count_ptr, 1, MPI_INT,
-                          p_root, comm);
+  int result = MPI_Gather(&send_count, 1, MPI_INT, recv_count_ptr, 1, MPI_INT, p_root, comm);
+
   if (MPI_SUCCESS != result) {
     std::ostringstream message ;
     message << "stk::report_deferred_messages FAILED: MPI_Gather = " << result ;
@@ -396,7 +402,6 @@ report_deferred_messages(
       message << "stk::report_deferred_messages FAILED: MPI_Gatherv = " << result ;
       throw std::runtime_error(message.str());
     }
-
 
     if (p_rank == p_root) {
       for (int i = 0; i < p_size; ++i) {
@@ -494,7 +499,7 @@ aggregate_messages(
 
   {
     const char * const send_ptr = message.c_str();
-    char * const recv_ptr = recv_size ? buffer.data() : NULL ;
+    char * const recv_ptr = recv_size ? buffer.data() : nullptr ;
     int * const recv_displ_ptr = recv_displ.data() ;
 
     result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
@@ -520,9 +525,9 @@ aggregate_messages(
       }
     }
     os.flush();
-  }
-  else
+  } else {
     os << message;
+  }
 #endif
 }
 
@@ -532,10 +537,7 @@ operator<<(
   std::ostream &        os,
   const MessageType &   message_type) 
 {
-//   if (message_type & MSG_SYMMETRIC)
-//     os << "parallel ";
   os << get_message_type_info(message_type).m_name;
-
   return os;
 }
 
