@@ -2234,6 +2234,38 @@ namespace Tpetra {
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
                      Teuchos::ArrayView<const Scalar>& values) const;
 
+    /// \brief Get a constant, nonpersisting, locally indexed view of
+    ///   the given row of the matrix, using "raw" pointers instead of
+    ///   Teuchos::ArrayView.
+    ///
+    /// The returned views of the column indices and values are not
+    /// guaranteed to persist beyond the lifetime of <tt>this</tt>.
+    /// Furthermore, any changes to the indices or values, or any
+    /// intervening calls to fillComplete() or resumeFill(), may
+    /// invalidate the returned views.
+    ///
+    /// This method only gets the entries in the given row that are
+    /// stored on the calling process.  Note that if the matrix has an
+    /// overlapping row Map, it is possible that the calling process
+    /// does not store all the entries in that row.
+    ///
+    /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
+    /// \post <tt>numEnt == getNumEntriesInGlobalRow (LocalRow)</tt>
+    ///
+    /// \param lclRow [in] Local index of the row.
+    /// \param numEnt [out] Number of entries in the row that are
+    ///   stored on the calling process.
+    /// \param lclColInds [out] Local indices of the columns
+    ///   corresponding to values.
+    /// \param vals [out] Matrix values.
+    ///
+    /// \return Error code; zero on no error.
+    LocalOrdinal
+    getLocalRowViewRaw (const LocalOrdinal lclRow,
+                        LocalOrdinal& numEnt,
+                        const LocalOrdinal*& lclColInds,
+                        const Scalar*& vals) const;
+
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using local row and column indices, with raw
     ///   pointers.

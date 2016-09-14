@@ -3187,6 +3187,21 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getLocalRowViewRaw (const LocalOrdinal lclRow,
+                      LocalOrdinal& numEnt,
+                      const LocalOrdinal*& lclColInds,
+                      const Scalar*& vals) const
+  {
+    const impl_scalar_type* vals_ist = NULL;
+    const LocalOrdinal errCode =
+      this->getLocalRowView (lclRow, numEnt, vals_ist, lclColInds);
+    vals = reinterpret_cast<const Scalar*> (vals_ist);
+    return errCode;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalRowView (GlobalOrdinal globalRow,
