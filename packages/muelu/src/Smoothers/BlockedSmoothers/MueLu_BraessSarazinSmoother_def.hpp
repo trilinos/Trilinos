@@ -233,6 +233,12 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError,
                                "MueLu::BraessSarazinSmoother::Apply(): Setup() has not been called");
 
+#ifdef HAVE_MUELU_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(A_->getRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
+    TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
+#endif
+
+
     // The following boolean flags catch the case where we need special transformation
     // for the GIDs when calling the subsmoothers.
     RCP<BlockedCrsMatrix> bA11 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A11_);
