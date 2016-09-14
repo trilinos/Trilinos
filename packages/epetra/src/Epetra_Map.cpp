@@ -288,32 +288,18 @@ Epetra_Map* Epetra_Map::ReplaceCommWithSubset(const Epetra_Comm * theComm) const
   // Create the Map to return (unless theComm is NULL, in which case
   // we return zero).
   if(theComm) {
-    // Map requires that the index base equal the global min GID.
-    // Figuring out the global min GID requires a reduction over all
-    // processes in the new communicator.  It could be that some (or
-    // even all) of these processes contain zero entries.  (Recall
-    // that this method, unlike removeEmptyProcesses(), may remove
-    // an arbitrary subset of processes.)  We deal with this by
-    // doing a min over the min GID on each process if the process
-    // has more than zero entries, or the global max GID, if that
-    // process has zero entries.  If no processes have any entries,
-    // then the index base doesn't matter anyway.
-
+    // Note: we replace the communicator with a subset of that communicator (that is
+    //       we do not just remove the empty procs). This does not affect the index
+    //       base: we keep the existing index base.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     if(GlobalIndicesInt()) {
-      int MyMin, theIndexBase;
-      MyMin  = NumMyElements() > 0 ? MinMyGID() : MaxAllGID();
-      theComm->MinAll(&MyMin,&theIndexBase,1);
-      NewMap = new Epetra_Map(-1,NumMyElements(),MyGlobalElements(),theIndexBase,*theComm);
+      NewMap = new Epetra_Map(-1,NumMyElements(),MyGlobalElements(),IndexBase(),*theComm);
     }
     else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     if(GlobalIndicesLongLong()) {
-      long long MyMin, theIndexBase;
-      MyMin = NumMyElements() > 0 ? MinMyGID64() : MaxAllGID64();
-      theComm->MinAll(&MyMin,&theIndexBase,1);
-      NewMap = new Epetra_Map(-1,NumMyElements(),MyGlobalElements64(),theIndexBase,*theComm);
+      NewMap = new Epetra_Map(-1,NumMyElements(),MyGlobalElements64(),IndexBase(),*theComm);
     }
     else
 #endif
