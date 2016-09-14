@@ -88,60 +88,6 @@ struct AbsMax {
   }
 };
 
-/// \struct CrsIJV
-/// \brief Struct representing a sparse matrix entry as an i,j,v triplet.
-/// \tparam Ordinal Same as the GlobalOrdinal template parameter of CrsMatrix.
-/// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
-///
-/// \warning This is an implementation detail of CrsMatrix.  Users
-///   must not rely on this class.  It may disappear or its
-///   interface may change at any time.
-///
-/// CrsMatrix uses this struct to communicate nonlocal sparse
-/// matrix entries in its globalAssemble() method.
-template <class Ordinal, class Scalar>
-struct CrsIJV {
-  /// \brief Default constructor
-  ///
-  /// This constructor sets the row and column indices to
-  /// <tt>Teuchos::OrdinalTraits<Ordinal>::invalid()</tt>, as a
-  /// clear sign that they were not initialized.
-  CrsIJV () :
-    i (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
-    j (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
-    v (Teuchos::ScalarTraits<Scalar>::zero ())
-  {}
-
-  /// \brief Standard constructor
-  ///
-  /// \param row [in] (Global) row index
-  /// \param col [in] (Global) column index
-  /// \param val [in] Value of matrix entry
-  CrsIJV (Ordinal row, Ordinal col, const Scalar &val) :
-    i (row), j (col), v (val)
-  {}
-
-  /// \brief Comparison operator
-  ///
-  /// Comparison operator for sparse matrix entries stored as
-  /// (i,j,v) triples.  Defining this lets Tpetra::CrsMatrix use
-  /// std::sort to sort CrsIJV instances.
-  bool operator< (const CrsIJV<Ordinal, Scalar>& rhs) const {
-    // FIXME (mfh 10 May 2013): This is what I found when I moved
-    // this operator out of the std namespace to be an instance
-    // method of CrsIJV.  It's a little odd to me that it doesn't
-    // include the column index in the sort order (for the usual
-    // lexicographic sort).  It doesn't really matter because
-    // CrsMatrix will sort rows by column index anyway, but it's
-    // still odd.
-    return this->i < rhs.i;
-  }
-
-  Ordinal i; //!< (Global) row index
-  Ordinal j; //!< (Global) column index
-  Scalar  v; //!< Value of matrix entry
-};
-
 /// \brief Functor that implements much of the one-argument overload
 ///   of Tpetra::CrsMatrix::getLocalDiagCopy, for the case where the
 ///   matrix is fill complete.
@@ -449,24 +395,6 @@ getLocalDiagCopyWithoutOffsetsNotFillComplete (VectorType& diag, const CrsMatrix
 
 } // namespace Details
 } // namespace Tpetra
-
-namespace Teuchos {
-  // SerializationTraits specialization for Tpetra::Details::CrsIJV.
-  //
-  // Tpetra::Details::CrsIJV can be serialized using
-  // DirectSerialization.  This lets Comm send and receive instances
-  // of this class.
-  //
-  // NOTE (mfh 16 Dec 2012): This won't work if Scalar does not
-  // support direct serialization ("just taking the address").  The
-  // usual Scalar types (float, double, dd_real, qd_real, or
-  // std::complex<T> for any of these types) _do_ support direct
-  // serialization.
-  template <typename Ordinal, typename Scalar>
-  class SerializationTraits<int, Tpetra::Details::CrsIJV<Ordinal, Scalar> >
-    : public DirectSerializationTraits<int, Tpetra::Details::CrsIJV<Ordinal, Scalar> >
-  {};
-} // namespace Teuchos
 
 namespace Tpetra {
 
