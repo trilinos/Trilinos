@@ -33,7 +33,6 @@
 
 #include <math.h>
 #include <sstream>
-#include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <functional>
@@ -76,7 +75,6 @@
 #include <stk_util/util/string_case_compare.hpp>
 
 #include <stk_util/diag/WriterExt.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
 
 namespace stk {
 namespace diag {
@@ -385,7 +383,7 @@ private:
   TimerMask             m_timerMask;            ///< Bit mask to enable timer
   TimerImpl *           m_parentTimer;          ///< Parent timer
   mutable double        m_subtimerLapCount;     ///< Sum of subtimer lap counts and m_lapCount
-  bool                  m_timerIsRunning;       ///< Is the timer started? change name?
+  unsigned              m_lapStartCount;        ///< Number of pending lap stops
 
   TimerList             m_subtimerList;         ///< List of subordinate timers
 
@@ -426,9 +424,7 @@ createRootTimer(
   const std::string &   name,
   const TimerSet &      timer_set)
 {
-  auto t = TimerImpl::createRootTimer(name, timer_set);
-  t.start();
-  return t;
+  return TimerImpl::createRootTimer(name, timer_set);
 }
 
 
@@ -457,7 +453,7 @@ TimerImpl::TimerImpl(
     m_timerMask(timer_mask),
     m_parentTimer(parent_timer),
     m_subtimerLapCount(0.0),
-    m_timerIsRunning(false),
+    m_lapStartCount(0),
     m_subtimerList(),
     m_timerSet(timer_set)
 {}
@@ -465,13 +461,12 @@ TimerImpl::TimerImpl(
 
 TimerImpl::~TimerImpl()
 {
-  try {
-    for (TimerList::iterator it = m_subtimerList.begin(); it != m_subtimerList.end(); ++it) {
+  try {  
+    for (TimerList::iterator it = m_subtimerList.begin(); it != m_subtimerList.end(); ++it)
       delete (*it).m_timerImpl;
-    }
   }
   catch (std::exception &) {
-  }
+  }  
 }
 
 
@@ -520,7 +515,7 @@ TimerImpl::getMetric<HeapAlloc>() const {
 void
 TimerImpl::reset()
 {
-  m_timerIsRunning = false;
+  m_lapStartCount = 0;
 
   m_lapCount.reset();
   m_cpuTime.reset();
@@ -565,12 +560,8 @@ TimerImpl::addSubtimer(
 TimerImpl &
 TimerImpl::start()
 {
-  if ( shouldRecord() ) {
-
-    if ( !m_timerIsRunning ) {
-
-      m_timerIsRunning  = true;
-
+  if (shouldRecord()) {
+    if (m_lapStartCount++ == 0) {
       m_lapCount.m_lapStart = m_lapCount.m_lapStop;
 
       m_cpuTime.m_lapStop = m_cpuTime.m_lapStart = value_now<CPUTime>();
@@ -589,7 +580,7 @@ TimerImpl &
 TimerImpl::lap()
 {
   if (shouldRecord()) {
-    if ( m_timerIsRunning ) {
+    if (m_lapStartCount > 0) {
       m_cpuTime.m_lapStop = value_now<CPUTime>();
       m_wallTime.m_lapStop = value_now<WallTime>();
       m_MPICount.m_lapStop = value_now<MPICount>();
@@ -605,12 +596,9 @@ TimerImpl::lap()
 TimerImpl &
 TimerImpl::stop()
 {
-  if ( shouldRecord() ) {
-
-    if ( m_timerIsRunning ) {
-
-      m_timerIsRunning = false;
-
+  if (shouldRecord()) {
+    if (--m_lapStartCount <= 0) {
+      m_lapStartCount = 0;
       m_lapCount.m_lapStop++;
 
       m_cpuTime.m_lapStop = value_now<CPUTime>();
@@ -657,33 +645,29 @@ TimerImpl::checkpoint() const
   m_MPIByteCount.checkpoint();
   m_heapAlloc.checkpoint();
 
-  for (TimerList::const_iterator it = m_subtimerList.begin(); it != m_subtimerList.end(); ++it) {
+  for (TimerList::const_iterator it = m_subtimerList.begin(); it != m_subtimerList.end(); ++it)
     (*it).m_timerImpl->checkpoint();
-  }
 }
 
 
 void
 TimerImpl::updateRootTimer(TimerImpl *root_timer)
 {
-  if( root_timer->m_timerIsRunning ) {
+  root_timer->m_lapCount.m_lapStop = value_now<LapCount>();
+  root_timer->m_cpuTime.m_lapStop = value_now<CPUTime>();
+  root_timer->m_wallTime.m_lapStop = value_now<WallTime>();
+  root_timer->m_MPICount.m_lapStop = value_now<MPICount>();
+  root_timer->m_MPIByteCount.m_lapStop = value_now<MPIByteCount>();
+  root_timer->m_heapAlloc.m_lapStop = value_now<HeapAlloc>();
 
-    root_timer->m_lapCount.m_lapStop = value_now<LapCount>();
-    root_timer->m_cpuTime.m_lapStop = value_now<CPUTime>();
-    root_timer->m_wallTime.m_lapStop = value_now<WallTime>();
-    root_timer->m_MPICount.m_lapStop = value_now<MPICount>();
-    root_timer->m_MPIByteCount.m_lapStop = value_now<MPIByteCount>();
-    root_timer->m_heapAlloc.m_lapStop = value_now<HeapAlloc>();
-
-    root_timer->m_lapCount.m_accumulatedLap = root_timer->m_lapCount.m_lapStop - root_timer->m_lapCount.m_lapStart;
-    root_timer->m_cpuTime.m_accumulatedLap = root_timer->m_cpuTime.m_lapStop - root_timer->m_cpuTime.m_lapStart;
-    root_timer->m_wallTime.m_accumulatedLap = root_timer->m_wallTime.m_lapStop - root_timer->m_wallTime.m_lapStart;
-    root_timer->m_MPICount.m_accumulatedLap = root_timer->m_MPICount.m_lapStop - root_timer->m_MPICount.m_lapStart;
-    root_timer->m_MPIByteCount.m_accumulatedLap = root_timer->m_MPIByteCount.m_lapStop - root_timer->m_MPIByteCount.m_lapStart;
-    root_timer->m_heapAlloc.m_accumulatedLap = root_timer->m_heapAlloc.m_lapStop - root_timer->m_heapAlloc.m_lapStart;
-
-  }
+  root_timer->m_lapCount.m_accumulatedLap = root_timer->m_lapCount.m_lapStop - root_timer->m_lapCount.m_lapStart;
+  root_timer->m_cpuTime.m_accumulatedLap = root_timer->m_cpuTime.m_lapStop - root_timer->m_cpuTime.m_lapStart;
+  root_timer->m_wallTime.m_accumulatedLap = root_timer->m_wallTime.m_lapStop - root_timer->m_wallTime.m_lapStart;
+  root_timer->m_MPICount.m_accumulatedLap = root_timer->m_MPICount.m_lapStop - root_timer->m_MPICount.m_lapStart;
+  root_timer->m_MPIByteCount.m_accumulatedLap = root_timer->m_MPIByteCount.m_lapStop - root_timer->m_MPIByteCount.m_lapStart;
+  root_timer->m_heapAlloc.m_accumulatedLap = root_timer->m_heapAlloc.m_lapStop - root_timer->m_heapAlloc.m_lapStart;
 }
+
 
 
 Timer
@@ -742,8 +726,9 @@ TimerImpl::dump(
     dout << "TimerImpl" << push << dendl;
     dout << "m_name, " << m_name << dendl;
     dout << "m_timerMask, " << m_timerMask << dendl;
+//    dout << "m_parentTimer, " << c_ptr_name(m_parentTimer) << dendl;
     dout << "m_subtimerLapCount, " << m_subtimerLapCount << dendl;
-    dout << "m_timerIsRunning, " << m_timerIsRunning << dendl;
+    dout << "m_lapStartCount, " << m_lapStartCount << dendl;
 
     dout << "m_lapCount, " << m_lapCount << dendl;
     dout << "m_cpuTime, " << m_cpuTime << dendl;
@@ -994,7 +979,7 @@ namespace Diag {
 namespace {
 
 size_t
-s_timerNameMaxWidth = DEFAULT_TIMER_NAME_MAX_WIDTH; ///< Maximum width for names
+s_timerNameMaxWidth = DEFAULT_TIMER_NAME_MAX_WIDTH;		///< Maximum width for names
 
 } // namespace
 
