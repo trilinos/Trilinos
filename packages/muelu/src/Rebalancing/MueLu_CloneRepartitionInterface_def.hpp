@@ -109,16 +109,35 @@ namespace MueLu {
     ArrayRCP<GO> retDecompEntries = ret->getDataNonConst(0);
 
     // block size of output vector
-    LocalOrdinal blkSize = A->GetFixedBlockSize();
+    LocalOrdinal blkSize = 1;
+
+    // check for blocking/striding information
+    if(A->IsView("stridedMaps") &&
+       Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
+      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+      RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
+      TEUCHOS_TEST_FOR_EXCEPTION(strMap == Teuchos::null,Exceptions::BadCast,"MueLu::CloneRepartitionInterface::Build: cast to strided row map failed.");
+      LocalOrdinal stridedBlock = strMap->getStridedBlockId();
+      if (stridedBlock == -1)
+        blkSize = strMap->getFixedBlockSize();
+      else {
+        std::vector<size_t> strInfo = strMap->getStridingData();
+        blkSize = strInfo[stridedBlock];
+      }
+      oldView = A->SwitchToView(oldView);
+      GetOStream(Statistics1) << "CloneRepartitionInterface::Build():" << " found blockdim=" << blkSize << " from strided maps."<< std::endl;
+    } else {
+      GetOStream(Statistics1) << "CloneRepartitionInterface::Build(): no striding information available. Use blockdim=" << blkSize << " (DofsPerNode)." << std::endl;
+      blkSize = A->GetFixedBlockSize();
+    }
 
     // plausibility check!
     size_t inLocalLength  = decomposition->getLocalLength();
     size_t outLocalLength = A->getRowMap()->getNodeNumElements();
 
-    // TODO fix me
     // only for non-strided maps
     size_t numLocalNodes = outLocalLength / blkSize;
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(outLocalLength  % blkSize) != 0, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: inconsistent number of local DOFs (" << outLocalLength << ") and degrees of freedoms ("<<blkSize<<")");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(outLocalLength  % blkSize) != 0, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: inconsistent number of local DOFs (" << outLocalLength << ") and degrees of freedoms (" << blkSize <<")");
 
     if (numLocalNodes > 0) {
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(inLocalLength  % numLocalNodes) != 0, MueLu::Exceptions::RuntimeError,"CloneRepartitionInterface: inconsistent number of local DOFs (" << inLocalLength << ") and number of local nodes (" << numLocalNodes << ")");
