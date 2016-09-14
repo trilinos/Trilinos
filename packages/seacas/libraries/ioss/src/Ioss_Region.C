@@ -240,6 +240,38 @@ namespace Ioss {
 
   void Region::delete_database() { GroupingEntity::really_delete_database(); }
 
+
+  MeshType Region::mesh_type() const
+  {
+    if (elementBlocks.empty() && structuredBlocks.empty()) {
+      return MeshType::UNKNOWN;
+    }
+    else if (!elementBlocks.empty() && !structuredBlocks.empty()) {
+      return MeshType::HYBRID;
+    }
+    else if (!structuredBlocks.empty()) {
+      return MeshType::STRUCTURED;
+    }
+    assert(!elementBlocks.empty());
+    return MeshType::UNSTRUCTURED;
+  }
+
+  const std::string Region::mesh_type_string() const
+  {
+    switch (mesh_type()) {
+    case MeshType::UNKNOWN:
+      return "Unknown";
+    case MeshType::HYBRID:
+      return "Hybrid";
+    case MeshType::STRUCTURED:
+      return "Structured";
+    case MeshType::UNSTRUCTURED:
+      return "Unstructured";
+    }
+    assert(1==0 && "Program Error");
+    return "Invalid";
+  }
+
   /** \brief Print a summary of entities in the region.
    *
    *  \param[in,out] strm The output stream to use for printing.
@@ -248,7 +280,7 @@ namespace Ioss {
   void Region::output_summary(std::ostream &strm, bool do_transient)
   {
     strm << "\n Database: " << get_database()->get_filename() << "\n";
-
+    strm << "Mesh Type = " << mesh_type_string() << "\n";
     strm << "\n Number of coordinates per node   =" << std::setw(12)
          << get_property("spatial_dimension").get_int() << "\n";
     strm << " Number of nodes                  =" << std::setw(12)

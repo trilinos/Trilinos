@@ -256,6 +256,7 @@ size_t Iocgns::Utils::resolve_nodes(Ioss::Region &region, int my_processor)
                   if (cell_node_map[local_offset] == ss_max) {
                     cell_node_map[local_offset] = owner_local_offset;
                   }
+#if defined(IOSS_DEBUG_OUTPUT)
                   else {
                     if (cell_node_map[local_offset] != owner_local_offset) {
                       std::cerr << "DUPLICATE?: " << local_offset << " " << owner_local_offset
@@ -263,6 +264,7 @@ size_t Iocgns::Utils::resolve_nodes(Ioss::Region &region, int my_processor)
                                 << owner_global_offset << "\n";
                     }
                   }
+#endif
                 }
               }
             }

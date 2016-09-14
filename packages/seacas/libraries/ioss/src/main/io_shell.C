@@ -33,6 +33,7 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_CodeTypes.h>
 #include <Ioss_FileInfo.h>
+#include <Ioss_MeshType.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_SurfaceSplit.h>
@@ -293,6 +294,12 @@ namespace {
 
       // NOTE: 'region' owns 'db' pointer at this time...
       Ioss::Region region(dbi, "region_1");
+
+      if (region.mesh_type() != Ioss::MeshType::UNSTRUCTURED) {
+	OUTPUT << "\nERROR: io_shell does not support '" << region.mesh_type_string()
+	       << "' meshes.  Only 'Unstructured' mesh is supported at this time.\n";
+	return;
+      }
 
       // Get length of longest name on input file...
       int max_name_length = dbi->maximum_symbol_length();
