@@ -56,7 +56,7 @@ using FAD = Sacado::Fad::SLFad<T, N>;
 ///
 /// Function base class that defines the interface to Mini Solvers.
 ///
-template<typename FunctionDerived, typename S>
+template<typename FunctionDerived, typename S, Index M>
 struct Function_Base
 {
 public:
@@ -99,6 +99,9 @@ public:
   bool
   failed{false};
 
+  static constexpr
+  Index
+  DIMENSION{M};
 };
 
 ///

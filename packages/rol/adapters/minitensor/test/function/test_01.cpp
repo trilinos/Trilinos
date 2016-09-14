@@ -65,20 +65,18 @@ main(int ac, char * av[])
 //
 // Paraboloid of revolution
 //
-template<typename S>
-class Paraboloid : public Intrepid2::Function_Base<Paraboloid<S>, S>
+template<typename S, Intrepid2::Index M = 2>
+class Paraboloid : public Intrepid2::Function_Base<Paraboloid<S, M>, S, M>
 {
 public:
 
   Paraboloid() {}
 
   static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
-
-  static constexpr
   char const * const
   NAME{"Paraboloid"};
+
+  using Base = Intrepid2::Function_Base<Paraboloid<S, M>, S, M>;
 
   // Explicit value.
   template<typename T, Intrepid2::Index N>
@@ -88,7 +86,7 @@ public:
     Intrepid2::Index const
     dimension = x.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
     T const
     f = (x(0) * x(0) + x(1) * x(1));
@@ -101,7 +99,7 @@ public:
   Intrepid2::Vector<T, N>
   gradient(Intrepid2::Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Paraboloid<S>, S>::gradient(*this, x);
+    return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
@@ -109,7 +107,7 @@ public:
   Intrepid2::Tensor<T, N>
   hessian(Intrepid2::Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Paraboloid<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };

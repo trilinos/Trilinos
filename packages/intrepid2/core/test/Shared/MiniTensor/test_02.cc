@@ -67,41 +67,40 @@ namespace {
 //
 //
 //
-template<typename S>
-class SquareRootNLS : public Intrepid2::Function_Base<SquareRootNLS<S>, S>
+template<typename S, Index M = 1>
+class SquareRoot : public Function_Base<SquareRoot<S, M>, S, M>
 {
 public:
-  SquareRootNLS(S const c) : c_(c)
+
+  SquareRoot(S const c) : c_(c)
   {
   }
-
-  static constexpr
-  Intrepid2::Index
-  DIMENSION{1};
 
   static constexpr
   char const * const
   NAME{"Square Root"};
 
+  using Base = Function_Base<SquareRoot<S, M>, S, M>;
+
   // Default value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<SquareRootNLS<S>, S>::value(*this, x);
+    return Base::value(*this, x);
   }
 
   // Explicit gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x) const
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x) const
   {
-    Intrepid2::Index const
+    Index const
     dimension = x.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
-    Intrepid2::Vector<T, N>
+    Vector<T, N>
     r(dimension);
 
     r(0) = x(0) * x(0) - c_;
@@ -110,11 +109,11 @@ public:
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<SquareRootNLS<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 private:
@@ -125,41 +124,39 @@ private:
 //
 //
 //
-template<typename S>
-class QuadraticNLS : public Intrepid2::Function_Base<QuadraticNLS<S>, S>
+template<typename S, Index M = 2>
+class Quadratic : public Function_Base<Quadratic<S, M>, S, M>
 {
 public:
-  QuadraticNLS(S const a, S const b, S const c) :  a_(a), b_(b), c_(c)
+  Quadratic(S const a, S const b, S const c) :  a_(a), b_(b), c_(c)
   {
   }
-
-  static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
 
   static constexpr
   char const * const
   NAME{"Quadratic"};
 
+  using Base = Function_Base<Quadratic<S, M>, S, M>;
+
   // Default value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<QuadraticNLS<S>, S>::value(*this, x);
+    return Base::value(*this, x);
   }
 
   // Explicit gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x) const
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x) const
   {
-    Intrepid2::Index const
+    Index const
     dimension = x.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
-    Intrepid2::Vector<T, N>
+    Vector<T, N>
     r(dimension);
 
     r(0) = 2.0 * c_ * (x(0) - a_);
@@ -169,11 +166,11 @@ public:
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<QuadraticNLS<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 private:
@@ -190,41 +187,39 @@ private:
 //
 //
 //
-template<typename S>
-class GaussianNLS : public Intrepid2::Function_Base<GaussianNLS<S>, S>
+template<typename S, Index M = 2>
+class Gaussian : public Function_Base<Gaussian<S, M>, S, M>
 {
 public:
-  GaussianNLS(S const a, S const b, S const c) : a_(a), b_(b), c_(c)
+  Gaussian(S const a, S const b, S const c) : a_(a), b_(b), c_(c)
   {
   }
-
-  static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
 
   static constexpr
   char const * const
   NAME{"Inverted Gaussian"};
 
+  using Base = Function_Base<Gaussian<S, M>, S, M>;
+
   // Default value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<GaussianNLS<S>, S>::value(*this, x);
+    return Base::value(*this, x);
   }
 
   // Explicit gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x) const
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x) const
   {
-    Intrepid2::Index const
+    Index const
     dimension = x.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
-    Intrepid2::Vector<T, N>
+    Vector<T, N>
     r(dimension);
 
     T const
@@ -243,11 +238,11 @@ public:
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<GaussianNLS<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 private:
@@ -264,42 +259,40 @@ private:
 //
 //
 //
-template<typename S>
-class BananaNLS : public Intrepid2::Function_Base<BananaNLS<S>, S>
+template<typename S, Index M = 2>
+class Banana : public Function_Base<Banana<S, M>, S, M>
 {
 public:
 
-  BananaNLS()
+  Banana()
   {
   }
-
-  static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
 
   static constexpr
   char const * const
   NAME{"Rosenbrock's Banana"};
 
+  using Base = Function_Base<Banana<S, M>, S, M>;
+
   // Default value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<BananaNLS<S>, S>::value(*this, x);
+    return Base::value(*this, x);
   }
 
   // Explicit gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x) const
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x) const
   {
-    Intrepid2::Index const
+    Index const
     dimension = x.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
-    Intrepid2::Vector<T, N>
+    Vector<T, N>
     r(dimension);
 
     r(0) = 2.0 * (x(0) - 1.0) + 400.0 * x(0) * (x(0) * x(0) - x(1));
@@ -309,11 +302,11 @@ public:
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<BananaNLS<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -321,40 +314,38 @@ public:
 //
 //
 //
-template<typename S>
-class MatyasNLS : public Intrepid2::Function_Base<MatyasNLS<S>, S>
+template<typename S, Index M = 2>
+class Matyas : public Function_Base<Matyas<S, M>, S, M>
 {
 public:
 
-  MatyasNLS() {}
-
-  static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
+  Matyas() {}
 
   static constexpr
   char const * const
   NAME{"Matyas"};
 
+  using Base = Function_Base<Matyas<S, M>, S, M>;
+
   // Default value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<MatyasNLS<S>, S>::value(*this, x);
+    return Base::value(*this, x);
   }
 
   // Explicit gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x) const
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x) const
   {
-    Intrepid2::Index const
+    Index const
     dimension = x.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
-    Intrepid2::Vector<T, N>
+    Vector<T, N>
     r(dimension);
 
     r(0) = (13.0 * x(0) - 12.0 * x(1)) / 25.0;
@@ -364,11 +355,11 @@ public:
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<MatyasNLS<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -376,40 +367,38 @@ public:
 //
 //
 //
-template<typename S>
-class McCormickNLS : public Intrepid2::Function_Base<McCormickNLS<S>, S>
+template<typename S, Index M = 2>
+class McCormick : public Function_Base<McCormick<S, M>, S, M>
 {
 public:
 
-  McCormickNLS() {}
-
-  static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
+  McCormick() {}
 
   static constexpr
   char const * const
   NAME{"McCormick"};
 
+  using Base = Function_Base<McCormick<S, M>, S, M>;
+
   // Default value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<McCormickNLS<S>, S>::value(*this, x);
+    return Base::value(*this, x);
   }
 
   // Explicit gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x) const
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x) const
   {
-    Intrepid2::Index const
+    Index const
     dimension = x.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
-    Intrepid2::Vector<T, N>
+    Vector<T, N>
     r(dimension);
 
     r(0) = std::cos(x(0) + x(1)) + 2.0 * x(0) - 2.0 * x(1) - 1.5;
@@ -419,11 +408,11 @@ public:
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<McCormickNLS<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -431,40 +420,38 @@ public:
 //
 //
 //
-template<typename S>
-class StyblinskiTangNLS : public Intrepid2::Function_Base<StyblinskiTangNLS<S>, S>
+template<typename S, Index M = 2>
+class StyblinskiTang : public Function_Base<StyblinskiTang<S, M>, S, M>
 {
 public:
 
-  StyblinskiTangNLS() {}
-
-  static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
+  StyblinskiTang() {}
 
   static constexpr
   char const * const
   NAME{"Styblinski-Tang"};
 
+  using Base = Function_Base<StyblinskiTang<S, M>, S, M>;
+
   // Default value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<StyblinskiTangNLS<S>, S>::value(*this, x);
+    return Base::value(*this, x);
   }
 
   // Explicit gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x) const
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x) const
   {
-    Intrepid2::Index const
+    Index const
     dimension = x.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
-    Intrepid2::Vector<T, N>
+    Vector<T, N>
     r(dimension);
 
     r(0) = 2.0 * x(0) * x(0) * x(0) - 16.0 * x(0) + 2.5;
@@ -474,11 +461,11 @@ public:
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<StyblinskiTangNLS<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -490,30 +477,28 @@ public:
 //
 // Paraboloid of revolution
 //
-template<typename S>
-class Paraboloid : public Intrepid2::Function_Base<Paraboloid<S>, S>
+template<typename S, Index M = 2>
+class Paraboloid : public Function_Base<Paraboloid<S, M>, S, M>
 {
 public:
 
   Paraboloid() {}
 
   static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
-
-  static constexpr
   char const * const
   NAME{"Paraboloid"};
 
+  using Base = Function_Base<Paraboloid<S, M>, S, M>;
+
   // Explicit value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & x)
+  value(Vector<T, N> const & x)
   {
-    Intrepid2::Index const
+    Index const
     dimension = x.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
     T const
     f = (x(0) * x(0) + x(1) * x(1));
@@ -522,19 +507,19 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Paraboloid<S>, S>::gradient(*this, x);
+    return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Paraboloid<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -542,30 +527,28 @@ public:
 //
 // Beale's function
 //
-template<typename S>
-class Beale : public Intrepid2::Function_Base<Beale<S>, S>
+template<typename S, Index M = 2>
+class Beale : public Function_Base<Beale<S, M>, S, M>
 {
 public:
 
   Beale() {}
 
   static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
-
-  static constexpr
   char const * const
   NAME{"Beale"};
 
+  using Base = Function_Base<Beale<S, M>, S, M>;
+
   // Explicit value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & X)
+  value(Vector<T, N> const & X)
   {
-    Intrepid2::Index const
+    Index const
     dimension = X.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
     T const &
     x = X(0);
@@ -589,19 +572,19 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Beale<S>, S>::gradient(*this, x);
+    return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Beale<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -609,30 +592,28 @@ public:
 //
 // Booth's function
 //
-template<typename S>
-class Booth : public Intrepid2::Function_Base<Booth<S>, S>
+template<typename S, Index M = 2>
+class Booth : public Function_Base<Booth<S, M>, S, M>
 {
 public:
 
   Booth() {}
 
   static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
-
-  static constexpr
   char const * const
   NAME{"Booth"};
 
+  using Base = Function_Base<Booth<S, M>, S, M>;
+
   // Explicit value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & X)
+  value(Vector<T, N> const & X)
   {
-    Intrepid2::Index const
+    Index const
     dimension = X.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
     T const &
     x = X(0);
@@ -653,19 +634,19 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Booth<S>, S>::gradient(*this, x);
+    return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Booth<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -673,30 +654,28 @@ public:
 //
 // Goldstein-Price function
 //
-template<typename S>
-class GoldsteinPrice : public Intrepid2::Function_Base<GoldsteinPrice<S>, S>
+template<typename S, Index M = 2>
+class GoldsteinPrice : public Function_Base<GoldsteinPrice<S, M>, S, M>
 {
 public:
 
   GoldsteinPrice() {}
 
   static constexpr
-  Intrepid2::Index
-  DIMENSION{2};
-
-  static constexpr
   char const * const
   NAME{"Goldstein-Price"};
 
+  using Base = Function_Base<GoldsteinPrice<S, M>, S, M>;
+
   // Explicit value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & X)
+  value(Vector<T, N> const & X)
   {
-    Intrepid2::Index const
+    Index const
     dimension = X.get_dimension();
 
-    assert(dimension == DIMENSION);
+    assert(dimension == Base::DIMENSION);
 
     T const &
     x = X(0);
@@ -729,19 +708,19 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<GoldsteinPrice<S>, S>::gradient(*this, x);
+    return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<GoldsteinPrice<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -749,30 +728,28 @@ public:
 //
 // Failure function to test failed mechanism
 //
-template<typename S>
-class Failure : public Intrepid2::Function_Base<Failure<S>, S>
+template<typename S, Index M = 1>
+class Failure : public Function_Base<Failure<S, M>, S, M>
 {
 public:
 
   Failure() {}
 
   static constexpr
-  Intrepid2::Index
-  DIMENSION{1};
-
-  static constexpr
   char const * const
   NAME{"Failure"};
 
+  using Base = Function_Base<Failure<S, M>, S, M>;
+
   // Explicit value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & X)
+  value(Vector<T, N> const & X)
   {
     // Get a convenience reference to the failed flag in case it is used more
     // than once.
     bool &
-    failed = Intrepid2::Function_Base<Failure<S>, S>::failed;
+    failed = Base::failed;
 
     // Set the flag to signal that an unrecoverable error happened.
 
@@ -785,19 +762,19 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Failure<S>, S>::gradient(*this, x);
+    return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Failure<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -805,25 +782,23 @@ public:
 //
 // Non-monotonic function to test monotonicity enforcement.
 //
-template<typename S>
-class Mesa : public Intrepid2::Function_Base<Mesa<S>, S>
+template<typename S, Index M = 1>
+class Mesa : public Function_Base<Mesa<S, M>, S, M>
 {
 public:
 
   Mesa() {}
 
   static constexpr
-  Intrepid2::Index
-  DIMENSION{1};
-
-  static constexpr
   char const * const
   NAME{"Mesa"};
 
+  using Base = Function_Base<Mesa<S, M>, S, M>;
+
   // Explicit value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & X)
+  value(Vector<T, N> const & X)
   {
     T const &
     x = X(0);
@@ -839,19 +814,19 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Mesa<S>, S>::gradient(*this, x);
+    return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Mesa<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -859,25 +834,23 @@ public:
 //
 // Function to test boundedness or residual enforcement.
 //
-template<typename S>
-class Sigmoid : public Intrepid2::Function_Base<Sigmoid<S>, S>
+template<typename S, Index M = 1>
+class Sigmoid : public Function_Base<Sigmoid<S, M>, S, M>
 {
 public:
 
   Sigmoid() {}
 
   static constexpr
-  Intrepid2::Index
-  DIMENSION{1};
-
-  static constexpr
   char const * const
   NAME{"Sigmoid"};
 
+  using Base = Function_Base<Sigmoid<S, M>, S, M>;
+
   // Explicit value.
-  template<typename T, Intrepid2::Index N>
+  template<typename T, Index N>
   T
-  value(Intrepid2::Vector<T, N> const & X)
+  value(Vector<T, N> const & X)
   {
     T const &
     x = X(0);
@@ -904,19 +877,19 @@ public:
   }
 
   // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Sigmoid<S>, S>::gradient(*this, x);
+    return Base::gradient(*this, x);
   }
 
   // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
   {
-    return Intrepid2::Function_Base<Sigmoid<S>, S>::hessian(*this, x);
+    return Base::hessian(*this, x);
   }
 
 };
@@ -926,11 +899,11 @@ public:
 //
 
 // Test one function with one method.
-template <typename STEP, typename FN, typename T, Intrepid2::Index N>
+template <typename STEP, typename FN, typename T, Index N>
 bool
-solveFNwithSTEP(STEP & step_method, FN & function, Intrepid2::Vector<T, N> & x)
+solveFNwithSTEP(STEP & step_method, FN & function, Vector<T, N> & x)
 {
-  Intrepid2::Minimizer<T, N>
+  Minimizer<T, N>
   minimizer;
 
   minimizer.solve(step_method, function, x);
@@ -941,17 +914,17 @@ solveFNwithSTEP(STEP & step_method, FN & function, Intrepid2::Vector<T, N> & x)
 }
 
 // Test one system with various methods.
-template <typename FN, typename T, Intrepid2::Index N>
+template <typename FN, typename T, Index N>
 bool
-solveFN(FN & function, Intrepid2::Vector<T, N> const & x)
+solveFN(FN & function, Vector<T, N> const & x)
 {
   bool
   all_ok = true;
 
-  Intrepid2::Vector<T, N>
+  Vector<T, N>
   y;
 
-  Intrepid2::NewtonStep<FN, T, N>
+  NewtonStep<FN, T, N>
   newton_step;
 
   y = x;
@@ -961,7 +934,7 @@ solveFN(FN & function, Intrepid2::Vector<T, N> const & x)
 
   all_ok = all_ok && newton_ok;
 
-  Intrepid2::TrustRegionStep<FN, T, N>
+  TrustRegionStep<FN, T, N>
   trust_region_step;
 
   y = x;
@@ -971,7 +944,7 @@ solveFN(FN & function, Intrepid2::Vector<T, N> const & x)
 
   all_ok = all_ok && trust_region_ok;
 
-  Intrepid2::ConjugateGradientStep<FN, T, N>
+  ConjugateGradientStep<FN, T, N>
   pcg_step;
 
   y = x;
@@ -981,7 +954,7 @@ solveFN(FN & function, Intrepid2::Vector<T, N> const & x)
 
   all_ok = all_ok && pcg_ok;
 
-  Intrepid2::LineSearchRegularizedStep<FN, T, N>
+  LineSearchRegularizedStep<FN, T, N>
   line_search_step;
 
   y = x;
@@ -991,7 +964,7 @@ solveFN(FN & function, Intrepid2::Vector<T, N> const & x)
 
   all_ok = all_ok && line_search_ok;
   
-  Intrepid2::NewtonWithLineSearchStep<FN, T, N>
+  NewtonWithLineSearchStep<FN, T, N>
   newton_line_search_step;
 
   y = x;
@@ -1007,19 +980,19 @@ solveFN(FN & function, Intrepid2::Vector<T, N> const & x)
 // Test various systems with various methods.
 bool testSystemsAndMethods()
 {
-  constexpr Intrepid2::Index
+  constexpr Index
   max_dimension{2};
 
   bool
   all_ok = true;
 
-  Intrepid2::Vector<Real, max_dimension>
+  Vector<Real, max_dimension>
   x;
 
-  SquareRootNLS<Real>
+  SquareRoot<Real>
   square_root(2.0);
 
-  x.set_dimension(SquareRootNLS<Real>::DIMENSION);
+  x.set_dimension(SquareRoot<Real>::DIMENSION);
 
   x(0) = 10.0;
 
@@ -1028,10 +1001,10 @@ bool testSystemsAndMethods()
 
   all_ok = all_ok && square_root_ok;
 
-  QuadraticNLS<Real>
+  Quadratic<Real>
   quadratic(10.0, 15.0, 1.0);
 
-  x.set_dimension(QuadraticNLS<Real>::DIMENSION);
+  x.set_dimension(Quadratic<Real>::DIMENSION);
 
   x(0) = -15.0;
   x(1) = -10.0;
@@ -1041,10 +1014,10 @@ bool testSystemsAndMethods()
 
   all_ok = all_ok && quadratic_ok;
 
-  GaussianNLS<Real>
+  Gaussian<Real>
   gaussian(1.0, 2.0, 0.125);
 
-  x.set_dimension(GaussianNLS<Real>::DIMENSION);
+  x.set_dimension(Gaussian<Real>::DIMENSION);
 
   x(0) = 0.0;
   x(1) = 0.0;
@@ -1054,10 +1027,10 @@ bool testSystemsAndMethods()
 
   all_ok = all_ok && gaussian_ok;
 
-  BananaNLS<Real>
+  Banana<Real>
   banana;
 
-  x.set_dimension(BananaNLS<Real>::DIMENSION);
+  x.set_dimension(Banana<Real>::DIMENSION);
 
   x(0) = 0.0;
   x(1) = 3.0;
@@ -1067,10 +1040,10 @@ bool testSystemsAndMethods()
 
   all_ok = all_ok && banana_ok;
 
-  MatyasNLS<Real>
+  Matyas<Real>
   matyas;
 
-  x.set_dimension(MatyasNLS<Real>::DIMENSION);
+  x.set_dimension(Matyas<Real>::DIMENSION);
 
   x(0) = 10.0;
   x(1) =  0.0;
@@ -1080,10 +1053,10 @@ bool testSystemsAndMethods()
 
   all_ok = all_ok && matyas_ok;
 
-  McCormickNLS<Real>
+  McCormick<Real>
   mccormick;
 
-  x.set_dimension(McCormickNLS<Real>::DIMENSION);
+  x.set_dimension(McCormick<Real>::DIMENSION);
 
   x(0) = -0.5;
   x(1) = -1.5;
@@ -1093,10 +1066,10 @@ bool testSystemsAndMethods()
 
   all_ok = all_ok && mccormick_ok;
 
-  StyblinskiTangNLS<Real>
+  StyblinskiTang<Real>
   styblinski_tang;
 
-  x.set_dimension(StyblinskiTangNLS<Real>::DIMENSION);
+  x.set_dimension(StyblinskiTang<Real>::DIMENSION);
 
   x(0) = -4.0;
   x(1) = -4.0;
@@ -1173,12 +1146,12 @@ TEST(NonlinearSystems, NonlinearMethods)
 
 TEST(Testing, OptimizationMethods)
 {
-  constexpr Intrepid2::Index
+  constexpr Index
   dimension{2};
 
-  using MIN = Intrepid2::Minimizer<Real, dimension>;
-  using FN = BananaNLS<Real>;
-  using STEP = Intrepid2::NewtonStep<FN, Real, dimension>;
+  using MIN = Minimizer<Real, dimension>;
+  using FN = Banana<Real>;
+  using STEP = NewtonStep<FN, Real, dimension>;
 
   MIN
   minimizer;
@@ -1189,7 +1162,7 @@ TEST(Testing, OptimizationMethods)
   STEP
   step;
 
-  Intrepid2::Vector<Real, dimension>
+  Vector<Real, dimension>
   x;
 
   x(0) = 0.0;
@@ -1204,22 +1177,22 @@ TEST(Testing, OptimizationMethods)
 
 TEST(Testing, ValueGradientHessian)
 {
-  constexpr Intrepid2::Index
+  constexpr Index
   dimension{2};
 
   Paraboloid<Real>
   p;
 
-  Intrepid2::Vector<Real, dimension> const
+  Vector<Real, dimension> const
   x(0.0, 0.0);
 
   Real const
   f = p.value(x);
 
-  Intrepid2::Vector<Real, dimension> const
+  Vector<Real, dimension> const
   df = p.gradient(x);
 
-  Intrepid2::Tensor<Real, dimension> const
+  Tensor<Real, dimension> const
   ddf = p.hessian(x);
 
   std::cout << "Point   : " << x << '\n';
@@ -1227,38 +1200,38 @@ TEST(Testing, ValueGradientHessian)
   std::cout << "Gradient: " << df << '\n';
   std::cout << "Hessian : " << ddf << '\n';
 
-  Intrepid2::Tensor<Real, dimension> const
-  I = Intrepid2::identity<Real, dimension>(dimension);
+  Tensor<Real, dimension> const
+  I = identity<Real, dimension>(dimension);
 
   Real const
-  error = std::sqrt(f) + Intrepid2::norm(df) + Intrepid2::norm(ddf - 2.0 * I);
+  error = std::sqrt(f) + norm(df) + norm(ddf - 2.0 * I);
 
-  ASSERT_LE(error, Intrepid2::machine_epsilon<Real>());
+  ASSERT_LE(error, machine_epsilon<Real>());
 }
 
 TEST(Testing, MixedStorage)
 {
-  Intrepid2::Index const
+  Index const
   dimension{2};
 
   std::cout << '\n';
 
-  Intrepid2::Vector<Real, 3>
+  Vector<Real, 3>
   v(1.0, 2.0, 3.0);
 
   v.set_dimension(dimension);
 
   std::cout << "Vector   : " << v << '\n';
 
-  Intrepid2::Tensor<Real, 3>
+  Tensor<Real, 3>
   A(1.0, 2.0, 3.0, 4.0, 5.0, 5.0, 7.0, 8.0, 9.0);
 
   A.set_dimension(dimension);
 
   std::cout << "Tensor   : " << A << '\n';
 
-  Intrepid2::Matrix<Real, 3, 4>
-  B(Intrepid2::ONES);
+  Matrix<Real, 3, 4>
+  B(ONES);
 
   B.set_dimensions(4, 2);
 
@@ -1273,12 +1246,12 @@ TEST(Testing, MixedStorage)
 
 TEST(Testing, FailedFlag)
 {
-  constexpr Intrepid2::Index
+  constexpr Index
   dimension{1};
 
-  using MIN = Intrepid2::Minimizer<Real, dimension>;
+  using MIN = Minimizer<Real, dimension>;
   using FN = Failure<Real>;
-  using STEP = Intrepid2::NewtonStep<FN, Real, dimension>;
+  using STEP = NewtonStep<FN, Real, dimension>;
 
   MIN
   minimizer;
@@ -1289,7 +1262,7 @@ TEST(Testing, FailedFlag)
   STEP
   step;
 
-  Intrepid2::Vector<Real, dimension>
+  Vector<Real, dimension>
   x;
 
   x(0) = 0.0;
@@ -1301,12 +1274,12 @@ TEST(Testing, FailedFlag)
 
 TEST(Testing, Monotonicity)
 {
-  constexpr Intrepid2::Index
+  constexpr Index
   dimension{1};
 
-  using MIN = Intrepid2::Minimizer<Real, dimension>;
+  using MIN = Minimizer<Real, dimension>;
   using FN = Mesa<Real>;
-  using STEP = Intrepid2::NewtonStep<FN, Real, dimension>;
+  using STEP = NewtonStep<FN, Real, dimension>;
 
   MIN
   minimizer;
@@ -1319,7 +1292,7 @@ TEST(Testing, Monotonicity)
   STEP
   step;
 
-  Intrepid2::Vector<Real, dimension>
+  Vector<Real, dimension>
   x;
 
   x(0) = 2.0;
@@ -1332,12 +1305,12 @@ TEST(Testing, Monotonicity)
 
 TEST(Testing, Boundedness)
 {
-  constexpr Intrepid2::Index
+  constexpr Index
   dimension{1};
 
-  using MIN = Intrepid2::Minimizer<Real, dimension>;
+  using MIN = Minimizer<Real, dimension>;
   using FN = Sigmoid<Real>;
-  using STEP = Intrepid2::NewtonStep<FN, Real, dimension>;
+  using STEP = NewtonStep<FN, Real, dimension>;
 
   MIN
   minimizer;
@@ -1350,7 +1323,7 @@ TEST(Testing, Boundedness)
   STEP
   step;
 
-  Intrepid2::Vector<Real, dimension>
+  Vector<Real, dimension>
   x;
 
   x(0) = 0.5;

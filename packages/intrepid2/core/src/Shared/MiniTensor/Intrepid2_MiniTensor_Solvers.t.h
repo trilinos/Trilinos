@@ -45,12 +45,17 @@ namespace Intrepid2
 //
 //
 //
-template<typename FunctionDerived, typename S>
+template<typename FunctionDerived, typename S, Index M>
 template<typename T, Index N>
 T
-Function_Base<FunctionDerived, S>::
+Function_Base<FunctionDerived, S, M>::
 value(FunctionDerived & f, Vector<T, N> const & x)
 {
+  Index const
+  dimension = x.get_dimension();
+
+  assert(dimension == DIMENSION);
+
   Vector<T, N> const
   r = residual(f, x);
 
@@ -60,16 +65,18 @@ value(FunctionDerived & f, Vector<T, N> const & x)
 //
 //
 //
-template<typename FunctionDerived, typename S>
+template<typename FunctionDerived, typename S, Index M>
 template<typename T, Index N>
 Vector<T, N>
-Function_Base<FunctionDerived, S>::
+Function_Base<FunctionDerived, S, M>::
 gradient(FunctionDerived & f, Vector<T, N> const & x)
 {
   using AD = FAD<T, N>;
 
   Index const
   dimension = x.get_dimension();
+
+  assert(dimension == DIMENSION);
 
   Vector<AD, N>
   x_ad(dimension);
@@ -94,10 +101,10 @@ gradient(FunctionDerived & f, Vector<T, N> const & x)
 //
 //
 //
-template<typename FunctionDerived, typename S>
+template<typename FunctionDerived, typename S, Index M>
 template<typename T, Index N>
 Vector<T, N>
-Function_Base<FunctionDerived, S>::
+Function_Base<FunctionDerived, S, M>::
 residual(FunctionDerived & f, Vector<T, N> const & x)
 {
   return f.gradient(x);
@@ -106,16 +113,18 @@ residual(FunctionDerived & f, Vector<T, N> const & x)
 //
 //
 //
-template<typename FunctionDerived, typename S>
+template<typename FunctionDerived, typename S, Index M>
 template<typename T, Index N>
 Tensor<T, N>
-Function_Base<FunctionDerived, S>::
+Function_Base<FunctionDerived, S, M>::
 hessian(FunctionDerived & f, Vector<T, N> const & x)
 {
   using AD = FAD<T, N>;
 
   Index const
   dimension = x.get_dimension();
+
+  assert(dimension == DIMENSION);
 
   Vector<AD, N>
   x_ad(dimension);

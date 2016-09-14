@@ -51,7 +51,7 @@ namespace ROL {
 ///
 /// Function base class that defines the interface to Mini Solvers.
 ///
-template<template<typename S> class MSFN, typename S>
+template<template<typename S, Intrepid2::Index M> class MSFN, typename S, Intrepid2::Index M>
 class MiniTensor_Objective : public Objective<S>
 {
 public:
@@ -67,7 +67,7 @@ public:
   }
 
 private:
-  MSFN<S>
+  MSFN<S, M>
   minisolver_fn_;
 };
 } // namespace ROL
