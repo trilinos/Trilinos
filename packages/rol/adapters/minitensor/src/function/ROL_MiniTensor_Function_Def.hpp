@@ -39,37 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(ROL_MiniTensor_Function_hpp)
-#define ROL_MiniTensor_Function_hpp
-
-#include "Intrepid2_MiniTensor_Solvers.h"
-#include "ROL_Objective.hpp"
-#include "ROL_MiniTensor_Vector.hpp"
 
 namespace ROL {
 
-///
-/// Function base class that defines the interface to Mini Solvers.
-///
-template<template<typename S> class MSFN, typename S>
-class MiniTensor_Objective : public Objective<S>
-{
-public:
-  // ROL interface
-  virtual
-  S
-  value(Vector<S> const & x, S & tol) final;
-
-  virtual
-  ~MiniTensor_Objective()
-  {
-    return;
-  }
-
-private:
-  MSFN<S>
-  minisolver_fn_;
-};
 } // namespace ROL
-
-#endif // ROL_MiniTensor_Function_hpp

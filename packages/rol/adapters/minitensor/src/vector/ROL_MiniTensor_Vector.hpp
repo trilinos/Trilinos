@@ -47,7 +47,7 @@
 
 namespace ROL {
 
-template <typename T, Intrepid2::Index N>
+template<typename T, Intrepid2::Index N>
 class MiniTensorVector : public Vector<T> {
 
 public:
@@ -209,7 +209,7 @@ public:
   }
 
   void
-  applyBinary(Elementwise::BinaryFunction<T> const & f, Vector<T> const & x )
+  applyBinary(Elementwise::BinaryFunction<T> const & f, Vector<T> const & x)
   {
     MiniTensorVector<T, N> const &
     ex = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
@@ -246,6 +246,21 @@ private:
   Intrepid2::Vector<T, N>
   vector_;
 }; // class MiniTensorVector
+
+// Utility conversion
+template<typename T, Intrepid2::Index N>
+Intrepid2::Vector<T, N>
+MTfromROL(Vector<T> const & x)
+{
+  MiniTensorVector<T, N> const &
+  ex = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+
+  Intrepid2::Vector<T, N> const &
+  xval = ex.getVector();
+
+  return xval;
+}
+
 
 } // namespace ROL
 

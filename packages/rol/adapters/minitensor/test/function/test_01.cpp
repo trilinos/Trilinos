@@ -40,9 +40,9 @@
 // @HEADER
 
 #include <gtest/gtest.h>
-#include <ROL_MiniTensor_Vector.hpp>
+#include <ROL_MiniTensor_Function.hpp>
 
-using T = double;
+using Real = double;
 
 int
 main(int ac, char * av[])
@@ -62,7 +62,59 @@ main(int ac, char * av[])
   return retval;
 }
 
-TEST(MiniTensor_ROL, VectorAdaptor)
+//
+// Paraboloid of revolution
+//
+template<typename S>
+class Paraboloid : public Intrepid2::Function_Base<Paraboloid<S>, S>
+{
+public:
+
+  Paraboloid() {}
+
+  static constexpr
+  Intrepid2::Index
+  DIMENSION{2};
+
+  static constexpr
+  char const * const
+  NAME{"Paraboloid"};
+
+  // Explicit value.
+  template<typename T, Intrepid2::Index N>
+  T
+  value(Intrepid2::Vector<T, N> const & x)
+  {
+    Intrepid2::Index const
+    dimension = x.get_dimension();
+
+    assert(dimension == DIMENSION);
+
+    T const
+    f = (x(0) * x(0) + x(1) * x(1));
+
+    return f;
+  }
+
+  // Default AD gradient.
+  template<typename T, Intrepid2::Index N>
+  Intrepid2::Vector<T, N>
+  gradient(Intrepid2::Vector<T, N> const & x)
+  {
+    return Intrepid2::Function_Base<Paraboloid<S>, S>::gradient(*this, x);
+  }
+
+  // Default AD hessian.
+  template<typename T, Intrepid2::Index N>
+  Intrepid2::Tensor<T, N>
+  hessian(Intrepid2::Vector<T, N> const & x)
+  {
+    return Intrepid2::Function_Base<Paraboloid<S>, S>::hessian(*this, x);
+  }
+
+};
+
+TEST(MiniTensor_ROL, FunctionAdaptor)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -74,89 +126,35 @@ TEST(MiniTensor_ROL, VectorAdaptor)
   std::ostream &
   os = (print_output == true) ? std::cout : bhs;
 
-  T const
-  epsilon{Intrepid2::machine_epsilon<T>()};
-
-  T const
-  error_tol{16.0 * epsilon};
-
   constexpr Intrepid2::Index
-  N{16};
+  dimension{2};
 
-  Intrepid2::Vector<T, N>
-  vx(Intrepid2::RANDOM);
+  Paraboloid<Real>
+  p;
 
-  Intrepid2::Vector<T, N>
-  vy(Intrepid2::RANDOM);
+  Intrepid2::Vector<Real, dimension> const
+  x(0.0, 0.0);
 
-  Intrepid2::Vector<T, N>
-  vz(Intrepid2::RANDOM);
+  Real const
+  f = p.value(x);
 
-  ROL::MiniTensorVector<T, N>
-  x(vx);
+  Intrepid2::Vector<Real, dimension> const
+  df = p.gradient(x);
 
-  ROL::MiniTensorVector<T, N>
-  y(vy);
+  Intrepid2::Tensor<Real, dimension> const
+  ddf = p.hessian(x);
 
-  ROL::MiniTensorVector<T, N>
-  z(vz);
+  os << "Point   : " << x << '\n';
+  os << "Value   : " << f << '\n';
+  os << "Gradient: " << df << '\n';
+  os << "Hessian : " << ddf << '\n';
 
-  // Standard tests.
-  std::vector<T>
-  consistency = x.checkVector(y, z, true, os);
+  Intrepid2::Tensor<Real, dimension> const
+  I = Intrepid2::identity<Real, dimension>(dimension);
 
-  Intrepid2::Index const
-  num_tests = consistency.size();
+  Real const
+  error = std::sqrt(f) + Intrepid2::norm(df) + Intrepid2::norm(ddf - 2.0 * I);
 
-  Intrepid2::Vector<T>
-  checkvec(num_tests);
-
-  checkvec.fill(&consistency[0]);
-
-  ASSERT_LE(Intrepid2::norm(checkvec), std::sqrt(epsilon));
-
-  // Basis tests.
-  // set x to first basis vector
-  Teuchos::RCP<ROL::Vector<T>>
-  w = x.clone();
-
-  w = x.basis(0);
-
-  T
-  wnorm = w->norm();
-
-  os << "Norm of ROL::Vector w (first basis vector): ";
-  os << wnorm << "\n";
-
-  ASSERT_LE(std::abs(wnorm - 1.0), error_tol);
-
-  // set x to middle basis vector
-  w = x.basis(N / 2);
-
-  wnorm = w->norm();
-
-  os << "\nNorm of ROL::Vector w ('middle' basis vector): ";
-  os << wnorm << "\n";
-
-  ASSERT_LE(std::abs(wnorm - 1.0), error_tol);
-
-  // set x to last basis vector
-  w = x.basis(N - 1);
-
-  wnorm = w->norm();
-
-  os << "\nNorm of ROL::Vector w (last basis vector): ";
-  os << wnorm << "\n";
-
-  ASSERT_LE(std::abs(wnorm - 1.0), error_tol);
-
-  // Repeat the checkVector tests with a zero vector.
-  x.scale(0.0);
-
-  consistency = x.checkVector(x, x, true, os);
-
-  checkvec.fill(&consistency[0]);
-
-  ASSERT_EQ(Intrepid2::norm(checkvec), 0.0);
+  ASSERT_LE(error, Intrepid2::machine_epsilon<Real>());
 }
 
