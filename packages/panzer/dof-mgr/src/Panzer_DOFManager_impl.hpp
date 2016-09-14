@@ -116,12 +116,12 @@ using Teuchos::ArrayView;
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager()
-  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false), buildGhosted_(false)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false), useNeighbors_(false)
 { }
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
-  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false), buildGhosted_(false)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false), useNeighbors_(false)
 {
   setConnManager(connMngr,mpiComm);
 }
@@ -270,7 +270,7 @@ void DOFManager<LO,GO>::getOwnedIndices(std::vector<GO> & indicies) const
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::getOwnedAndSharedIndices(std::vector<GO> & indicies) const
+void DOFManager<LO,GO>::getOwnedAndGhostedIndices(std::vector<GO> & indicies) const
 {
   indicies.resize(owned_and_ghosted_.size());
   for (size_t i = 0; i < owned_and_ghosted_.size(); ++i) {
@@ -386,21 +386,24 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   // if neighbor unknowns are required, then make sure they are included
   // in the elementGIDs_
-  if (buildGhosted_) { // enabling this turns on GID construction for
+  if (useNeighbors_) { // enabling this turns on GID construction for
                        // neighbor processors
-    ElementBlockAccess naborAccess(false,connMngr_);
-    RCP<const Map> overlap_map_nabor = buildOverlapMapFromElements(naborAccess);
+    ElementBlockAccess neighborAccess(false,connMngr_);
+    RCP<const Map> overlap_map_neighbor =
+      buildOverlapMapFromElements(neighborAccess);
 
-    // Export e(overlap_map_nabor,non_overlap_map);
-    Import imp_nabor(non_overlap_map,overlap_map_nabor);
+    // Export e(overlap_map_neighbor,non_overlap_map);
+    Import imp_neighbor(non_overlap_map,overlap_map_neighbor);
 
-    Teuchos::RCP<MultiVector> overlap_mv_nabor
-        = Tpetra::createMultiVector<GO>(overlap_map_nabor,(size_t)numFields_);
+    Teuchos::RCP<MultiVector> overlap_mv_neighbor =
+      Tpetra::createMultiVector<GO>(overlap_map_neighbor, (size_t)numFields_);
 
     // get all neighbor information
-    overlap_mv_nabor->doImport(*non_overlap_mv,imp_nabor,Tpetra::REPLACE);
+    overlap_mv_neighbor->doImport(*non_overlap_mv, imp_neighbor,
+      Tpetra::REPLACE);
 
-    fillGIDsFromOverlappedMV(naborAccess,elementGIDs_,*overlap_map_nabor,*overlap_mv_nabor);
+    fillGIDsFromOverlappedMV(neighborAccess, elementGIDs_,
+      *overlap_map_neighbor, *overlap_mv_neighbor);
   }
 
   //////////////////////////////////////////////////////////////////
@@ -434,12 +437,12 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     HashTable isOwned, remainingOwned;
     //owned_ is made up of owned_ids.
     Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
-    for (int j = 0; j < nvals.size(); ++j) {
-      if(nvals[j]!=-1) {
+    for (int j = 0; j < nvals.size(); ++j)
+    {
+      if (nvals[j] != -1)
         isOwned.insert(nvals[j]);
-        remainingOwned.insert(nvals[j]);
-      }
     }
+    remainingOwned = isOwned;
 
     HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
@@ -499,10 +502,10 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     }
 
     // this cute trick of constructing a accessor vector is to eliminate a copy
-    // of the block of code computing shared/owned DOFs
+    // of the block of code computing ghosted/owned DOFs
     std::vector<ElementBlockAccess> blockAccessVec;
     blockAccessVec.push_back(ElementBlockAccess(true,connMngr_));
-    if(buildGhosted_)
+    if(useNeighbors_)
       blockAccessVec.push_back(ElementBlockAccess(false,connMngr_));
     // all owned will be processed first followed by those that are
     // optionally ghosted
@@ -543,9 +546,9 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   }
 
   // allocate the local IDs
-  if (buildGhosted_) {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::build_local_ids_from_owned_and_shared");
-    this->buildLocalIdsFromOwnedAndSharedElements();
+  if (useNeighbors_) {
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::build_local_ids_from_owned_and_ghosted");
+    this->buildLocalIdsFromOwnedAndGhostedElements();
   }
   else {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::build_local_ids");
@@ -1188,17 +1191,17 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::buildLocalIdsFromOwnedAndSharedElements()
+void DOFManager<LO,GO>::buildLocalIdsFromOwnedAndGhostedElements()
 {
   std::vector<std::vector<LO> > elementLIDs(elementGIDs_.size());
 
-  std::vector<GO> ownedAndShared;
-  this->getOwnedAndSharedIndices(ownedAndShared);
+  std::vector<GO> ownedAndGhosted;
+  this->getOwnedAndGhostedIndices(ownedAndGhosted);
 
   // build global to local hash map (temporary and used only once)
   std::unordered_map<GO,LO> hashMap;
-  for(std::size_t i = 0; i < ownedAndShared.size(); ++i)
-    hashMap[ownedAndShared[i]] = i;
+  for(std::size_t i = 0; i < ownedAndGhosted.size(); ++i)
+    hashMap[ownedAndGhosted[i]] = i;
 
   for (std::size_t i = 0; i < elementGIDs_.size(); ++i) {
     const std::vector<GO>& gids = elementGIDs_[i];

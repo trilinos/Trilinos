@@ -300,7 +300,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
 }
 
 // quad tests
-TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
+TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, ghosted_owned_indices)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -328,15 +328,15 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
    // test UniqueGlobalIndexer
    RCP<panzer::UniqueGlobalIndexer<int,int> > glbNum = dofManager;
 
-   std::vector<int> owned, ownedAndShared;
+   std::vector<int> owned, ownedAndGhosted;
    glbNum->getOwnedIndices(owned);
-   glbNum->getOwnedAndSharedIndices(ownedAndShared);
+   glbNum->getOwnedAndGhostedIndices(ownedAndGhosted);
 
    if(myRank==0 && numProcs==2) {
       TEST_EQUALITY(owned.size(),3);
-      TEST_EQUALITY(ownedAndShared.size(),6);
+      TEST_EQUALITY(ownedAndGhosted.size(),6);
       bool ownedCorrect = true;
-      bool ownedAndSharedCorrect = true;
+      bool ownedAndGhostedCorrect = true;
 
       std::sort(owned.begin(),owned.end());
       ownedCorrect &= (owned[0] == (int) 0);
@@ -344,20 +344,20 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
       ownedCorrect &= (owned[2] == (int) 2);
       TEST_ASSERT(ownedCorrect);
 
-      std::sort(ownedAndShared.begin(),ownedAndShared.end());
-      ownedAndSharedCorrect &= (ownedAndShared[0] == (int) 0);
-      ownedAndSharedCorrect &= (ownedAndShared[1] == (int) 1);
-      ownedAndSharedCorrect &= (ownedAndShared[2] == (int) 2);
-      ownedAndSharedCorrect &= (ownedAndShared[3] == (int) 3);
-      ownedAndSharedCorrect &= (ownedAndShared[4] == (int) 5);
-      ownedAndSharedCorrect &= (ownedAndShared[5] == (int) 7);
-      TEST_ASSERT(ownedAndSharedCorrect);
+      std::sort(ownedAndGhosted.begin(),ownedAndGhosted.end());
+      ownedAndGhostedCorrect &= (ownedAndGhosted[0] == (int) 0);
+      ownedAndGhostedCorrect &= (ownedAndGhosted[1] == (int) 1);
+      ownedAndGhostedCorrect &= (ownedAndGhosted[2] == (int) 2);
+      ownedAndGhostedCorrect &= (ownedAndGhosted[3] == (int) 3);
+      ownedAndGhostedCorrect &= (ownedAndGhosted[4] == (int) 5);
+      ownedAndGhostedCorrect &= (ownedAndGhosted[5] == (int) 7);
+      TEST_ASSERT(ownedAndGhostedCorrect);
    }
    else if(myRank==1 && numProcs==2) {
       TEST_EQUALITY(owned.size(),6);
-      TEST_EQUALITY(ownedAndShared.size(),6);
+      TEST_EQUALITY(ownedAndGhosted.size(),6);
       bool ownedCorrect = true;
-      bool ownedAndSharedCorrect = true;
+      bool ownedAndGhostedCorrect = true;
 
       std::sort(owned.begin(),owned.end());
       ownedCorrect &= (owned[0] == (int) 3);
@@ -368,11 +368,11 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
       ownedCorrect &= (owned[5] == (int) 8);
       TEST_ASSERT(ownedCorrect);
 
-      std::sort(ownedAndShared.begin(),ownedAndShared.end());
-      for(std::size_t i=0;i<ownedAndShared.size();i++) {
-         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) i+3);
+      std::sort(ownedAndGhosted.begin(),ownedAndGhosted.end());
+      for(std::size_t i=0;i<ownedAndGhosted.size();i++) {
+         ownedAndGhostedCorrect &= (ownedAndGhosted[i] == (int) i+3);
       }
-      TEST_ASSERT(ownedAndSharedCorrect);
+      TEST_ASSERT(ownedAndGhostedCorrect);
    }
    else 
       TEUCHOS_ASSERT(false);
@@ -893,17 +893,17 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_q2q1)
       TEST_EQUALITY(gids[20],57); TEST_EQUALITY(gids[21],58);
    }
 
-   std::vector<int> owned, ownedAndShared;
+   std::vector<int> owned, ownedAndGhosted;
    dofManager->getOwnedIndices(owned);
-   dofManager->getOwnedAndSharedIndices(ownedAndShared);
+   dofManager->getOwnedAndGhostedIndices(ownedAndGhosted);
 
    if(myRank==0) {
       TEST_EQUALITY(owned.size(),23);
-      TEST_EQUALITY(ownedAndShared.size(),36);
+      TEST_EQUALITY(ownedAndGhosted.size(),36);
    }
    else if(myRank==1) {
       TEST_EQUALITY(owned.size(),59-23);
-      TEST_EQUALITY(ownedAndShared.size(),36);
+      TEST_EQUALITY(ownedAndGhosted.size(),36);
    }
    else 
       TEUCHOS_ASSERT(false);
@@ -929,25 +929,26 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,4,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
-   RCP<panzer::DOFManager<int,int> > dofManager_noghosts = rcp(new panzer::DOFManager<int,int>());
-   dofManager->enableGhosting(true);
+   RCP<panzer::DOFManager<int,int> > dofManager_noNeighbors =
+    rcp(new panzer::DOFManager<int,int>());
+   dofManager->useNeighbors(true);
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
-   dofManager_noghosts->setConnManager(connManager,MPI_COMM_WORLD);
+   dofManager_noNeighbors->setConnManager(connManager,MPI_COMM_WORLD);
    TEST_EQUALITY(dofManager->getConnManager(),connManager);
 
    dofManager->addField("ux",patternC1);
    dofManager->addField("uy",patternC1);
    dofManager->addField("p",patternC1);
-   dofManager_noghosts->addField("ux",patternC1);
-   dofManager_noghosts->addField("uy",patternC1);
-   dofManager_noghosts->addField("p",patternC1);
+   dofManager_noNeighbors->addField("ux",patternC1);
+   dofManager_noNeighbors->addField("uy",patternC1);
+   dofManager_noNeighbors->addField("p",patternC1);
 
    dofManager->buildGlobalUnknowns();
-   dofManager_noghosts->buildGlobalUnknowns();
+   dofManager_noNeighbors->buildGlobalUnknowns();
    dofManager->printFieldInformation(out);
 
    TEST_EQUALITY(connManager->getElementBlock("eblock-0_0").size(),4);
@@ -1014,25 +1015,25 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
 
    // owned vector
    {
-     std::vector<int> owned, owned_noghosts;
+     std::vector<int> owned, owned_noNeighbors;
      dofManager->getOwnedIndices(owned);
-     dofManager_noghosts->getOwnedIndices(owned_noghosts);
-     TEST_EQUALITY(owned.size(),owned_noghosts.size());
+     dofManager_noNeighbors->getOwnedIndices(owned_noNeighbors);
+     TEST_EQUALITY(owned.size(),owned_noNeighbors.size());
   
      bool owned_result = true;
      for(std::size_t j=0;j<owned.size();j++) 
-       owned_result &= (owned[j]==owned_noghosts[j]);
+       owned_result &= (owned[j]==owned_noNeighbors[j]);
      TEST_ASSERT(owned_result);
    }
 
-   // owned and shared vector
+   // owned and ghosted vector
    {
-     std::vector<int> shared;
-     dofManager->getOwnedAndSharedIndices(shared);
+     std::vector<int> ghosted;
+     dofManager->getOwnedAndGhostedIndices(ghosted);
 
-     std::set<int> shared_set;
-     shared_set.insert(shared.begin(),shared.end());
-     TEST_EQUALITY(shared_set.size(),shared.size()); // make sure there are no duplicated entries
+     std::set<int> ghosted_set;
+     ghosted_set.insert(ghosted.begin(),ghosted.end());
+     TEST_EQUALITY(ghosted_set.size(),ghosted.size()); // make sure there are no duplicated entries
 
      for(int e=0;e<6;e++) {
        std::vector<int> gids;
@@ -1040,7 +1041,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
        dofManager->getElementGIDs(e,gids);
        bool allFound = true;
        for(std::size_t i=0;i<gids.size();i++) 
-         allFound &= (shared_set.find(gids[i])!=shared_set.end());
+         allFound &= (ghosted_set.find(gids[i])!=ghosted_set.end());
 
        TEST_ASSERT(allFound); 
      }

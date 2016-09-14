@@ -74,17 +74,17 @@ public:
      * requires communication. 
      *
      * \param[out] indicator Vector the same length of output argument of
-     *                       <code>getOwendAndSharedIndices</code>. If a value is one it
+     *                       <code>getOwendAndGhostedIndices</code>. If a value is one it
      *                       is included (not filtered), if it is zero then the GID has
      *                       been filtered out.
      */
-   void getOwnedAndSharedNotFilteredIndicator(std::vector<int> & indicator) const;
+   void getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const;
 
-   /** Get the set of filtered indices that are owned and shared. 
+   /** Get the set of filtered indices that are owned and ghosted. 
      *
      * \param[out] indices Set of filtered indices
      */
-   void getFilteredOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const ;
+   void getFilteredOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const ;
 
    // This functions are overriden, and the filtered indices removed
   
@@ -138,8 +138,8 @@ public:
    virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint="") const 
    { base_->getElementGIDs(localElmtId,gids,blockIdHint); }
 
-   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const 
-   { base_->getOwnedAndSharedIndices(indices); }
+   virtual void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const 
+   { base_->getOwnedAndGhostedIndices(indices); }
 
    virtual int getElementBlockGIDCount(const std::string & blockId) const 
    { return base_->getElementBlockGIDCount(blockId); }

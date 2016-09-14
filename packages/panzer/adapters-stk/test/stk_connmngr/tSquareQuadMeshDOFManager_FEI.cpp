@@ -297,7 +297,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
 }
 
 // quad tests
-TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
+TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, ghosted_owned_indices)
 {
 
    // build global (or serial communicator)
@@ -326,15 +326,15 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
    // test UniqueGlobalIndexer
    RCP<panzer::UniqueGlobalIndexer<int,int> > glbNum = dofManager;
 
-   std::vector<int> owned, ownedAndShared;
+   std::vector<int> owned, ownedAndGhosted;
    glbNum->getOwnedIndices(owned);
-   glbNum->getOwnedAndSharedIndices(ownedAndShared);
+   glbNum->getOwnedAndGhostedIndices(ownedAndGhosted);
 
    if(myRank==0 && numProcs==2) {
       TEST_EQUALITY(owned.size(),6);
-      TEST_EQUALITY(ownedAndShared.size(),6);
+      TEST_EQUALITY(ownedAndGhosted.size(),6);
       bool ownedCorrect = true;
-      bool ownedAndSharedCorrect = true;
+      bool ownedAndGhostedCorrect = true;
 
       std::sort(owned.begin(),owned.end());
       for(std::size_t i=0;i<owned.size();i++) {
@@ -342,17 +342,17 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
       }
       TEST_ASSERT(ownedCorrect);
 
-      std::sort(ownedAndShared.begin(),ownedAndShared.end());
-      for(std::size_t i=0;i<ownedAndShared.size();i++) {
-         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) i);
+      std::sort(ownedAndGhosted.begin(),ownedAndGhosted.end());
+      for(std::size_t i=0;i<ownedAndGhosted.size();i++) {
+         ownedAndGhostedCorrect &= (ownedAndGhosted[i] == (int) i);
       }
-      TEST_ASSERT(ownedAndSharedCorrect);
+      TEST_ASSERT(ownedAndGhostedCorrect);
    }
    else if(myRank==1 && numProcs==2) {
       TEST_EQUALITY(owned.size(),3);
-      TEST_EQUALITY(ownedAndShared.size(),6);
+      TEST_EQUALITY(ownedAndGhosted.size(),6);
       bool ownedCorrect = true;
-      bool ownedAndSharedCorrect = true;
+      bool ownedAndGhostedCorrect = true;
 
       std::sort(owned.begin(),owned.end());
       for(std::size_t i=0;i<owned.size();i++) {
@@ -360,14 +360,14 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
       }
       TEST_ASSERT(ownedCorrect);
 
-      std::sort(ownedAndShared.begin(),ownedAndShared.end());
-      ownedAndSharedCorrect &= (ownedAndShared[0] == 1);
-      ownedAndSharedCorrect &= (ownedAndShared[1] == 3);
-      ownedAndSharedCorrect &= (ownedAndShared[2] == 5);
+      std::sort(ownedAndGhosted.begin(),ownedAndGhosted.end());
+      ownedAndGhostedCorrect &= (ownedAndGhosted[0] == 1);
+      ownedAndGhostedCorrect &= (ownedAndGhosted[1] == 3);
+      ownedAndGhostedCorrect &= (ownedAndGhosted[2] == 5);
       for(std::size_t i=0;i<3;i++) {
-         ownedAndSharedCorrect &= (ownedAndShared[i+3] == (int) i+6);
+         ownedAndGhostedCorrect &= (ownedAndGhosted[i+3] == (int) i+6);
       }
-      TEST_ASSERT(ownedAndSharedCorrect);
+      TEST_ASSERT(ownedAndGhostedCorrect);
    }
    else 
       TEUCHOS_ASSERT(false);

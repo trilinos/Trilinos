@@ -345,7 +345,7 @@ namespace {
     std::vector<int> myog;
 
     my_DOFManager->getOwnedIndices(myo);
-    my_DOFManager->getOwnedAndSharedIndices(myog);
+    my_DOFManager->getOwnedAndGhostedIndices(myog);
     //every value in my owned should be in my owned and ghosted.
     for (size_t i = 0; i < myo.size(); ++i) {
       bool found=false;
@@ -523,7 +523,7 @@ namespace {
     std::vector<int> myog;
 
     my_DOFManager->getOwnedIndices(myo);
-    my_DOFManager->getOwnedAndSharedIndices(myog);
+    my_DOFManager->getOwnedAndGhostedIndices(myog);
     //every value in my owned should be in my owned and ghosted.
     for (size_t i = 0; i < myo.size(); ++i) {
       bool found=false;

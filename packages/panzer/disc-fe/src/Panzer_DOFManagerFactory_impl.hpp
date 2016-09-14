@@ -94,9 +94,9 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
          Teuchos::rcp_dynamic_cast<panzer::DOFManager<LO,GO> >(dofManager);
      if (nativeDofMngr!=Teuchos::null) {
        nativeDofMngr->enableTieBreak(useTieBreak_);
-       nativeDofMngr->enableGhosting(enableGhosting_);
+       nativeDofMngr->useNeighbors(useNeighbors_);
      }
-     TEUCHOS_TEST_FOR_EXCEPTION(enableGhosting_ && nativeDofMngr.is_null(), std::logic_error,
+     TEUCHOS_TEST_FOR_EXCEPTION(useNeighbors_ && nativeDofMngr.is_null(), std::logic_error,
                                 "The non-native DOF manager does not support the necessary ghosting.");
    }
 

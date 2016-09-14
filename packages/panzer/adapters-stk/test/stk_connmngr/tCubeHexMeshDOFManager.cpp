@@ -202,23 +202,23 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 
    // check that owned is_subset owned_and_ghosted
    //////////////////////////////////////////////////////////////////////////
-   std::vector<int> owned, owned_and_shared;
+   std::vector<int> owned, owned_and_ghosted;
    dofManager->getOwnedIndices(owned);
-   dofManager->getOwnedAndSharedIndices(owned_and_shared);
+   dofManager->getOwnedAndGhostedIndices(owned_and_ghosted);
 
    if(numProcs==1) {
-     TEST_EQUALITY(owned.size(),owned_and_shared.size());
+     TEST_EQUALITY(owned.size(),owned_and_ghosted.size());
    }
    else  {
      out << "owned size = " << owned.size() << std::endl;
-     out << "owned_and_shared size = " << owned_and_shared.size() << std::endl;
-     TEST_ASSERT(owned.size()<=owned_and_shared.size());
+     out << "owned_and_ghosted size = " << owned_and_ghosted.size() << std::endl;
+     TEST_ASSERT(owned.size()<=owned_and_ghosted.size());
    }
    for(std::size_t i=0;i<owned.size();i++) {
-     TEST_EQUALITY(owned[i],owned_and_shared[i]);
+     TEST_EQUALITY(owned[i],owned_and_ghosted[i]);
    }
-   for(std::size_t i=owned.size();i<owned_and_shared.size();i++) {
-     TEST_ASSERT(std::find(owned.begin(),owned.end(),owned_and_shared[i])==owned.end());
+   for(std::size_t i=owned.size();i<owned_and_ghosted.size();i++) {
+     TEST_ASSERT(std::find(owned.begin(),owned.end(),owned_and_ghosted[i])==owned.end());
    }
 }
 

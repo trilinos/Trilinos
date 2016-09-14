@@ -583,7 +583,7 @@ buildGhostedMap() const
    std::vector<GlobalOrdinalT> indices;
 
    // get the global indices
-   gidProvider_->getOwnedAndSharedIndices(indices);
+   gidProvider_->getOwnedAndGhostedIndices(indices);
 
    return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
 }
@@ -600,7 +600,7 @@ buildGhostedColMap() const
    std::vector<GlobalOrdinalT> indices;
 
    // get the global indices
-   colGidProvider_->getOwnedAndSharedIndices(indices);
+   colGidProvider_->getOwnedAndGhostedIndices(indices);
 
    return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
 }

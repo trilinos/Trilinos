@@ -135,25 +135,25 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
    Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
    Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
-   std::vector<int> owned,ownedAndShared;
+   std::vector<int> owned,ownedAndGhosted;
    dofManager->getOwnedIndices(owned);
-   dofManager->getOwnedAndSharedIndices(ownedAndShared);
+   dofManager->getOwnedAndGhostedIndices(ownedAndGhosted);
   
    // test maps
    {
       TEST_EQUALITY(map->NumMyElements(),(int) owned.size());
-      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndGhosted.size());
 
       // test indices
       for(std::size_t i=0;i<owned.size();i++) TEST_ASSERT(map->MyGID(owned[i]));
-      for(std::size_t i=0;i<ownedAndShared.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndShared[i]));
+      for(std::size_t i=0;i<ownedAndGhosted.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndGhosted[i]));
    }
 
    // test ograph
    {
       TEST_ASSERT(gGraph->Filled());
 
-      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndGhosted.size());
       TEST_EQUALITY(gGraph->MaxNumIndices(),numProcs==2 ? 6 : 9);
 
       std::vector<int> indices(10);
@@ -246,25 +246,25 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
    Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
-   std::vector<int> owned,ownedAndShared;
+   std::vector<int> owned,ownedAndGhosted;
    dofManager->getOwnedIndices(owned);
-   dofManager->getOwnedAndSharedIndices(ownedAndShared);
+   dofManager->getOwnedAndGhostedIndices(ownedAndGhosted);
   
    // test maps
    {
       TEST_EQUALITY(map->NumMyElements(),(int) owned.size());
-      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndGhosted.size());
 
       // test indices
       for(std::size_t i=0;i<owned.size();i++) TEST_ASSERT(map->MyGID(owned[i]));
-      for(std::size_t i=0;i<ownedAndShared.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndShared[i]));
+      for(std::size_t i=0;i<ownedAndGhosted.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndGhosted[i]));
    }
 
    // test ograph
    {
       TEST_ASSERT(gGraph->Filled());
 
-      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndGhosted.size());
       TEST_EQUALITY(gGraph->MaxNumIndices(),numProcs==2 ? 6 : 9);
 
       std::vector<int> indices(10);

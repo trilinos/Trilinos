@@ -94,7 +94,7 @@ initialize(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdi
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void 
 Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-getOwnedAndSharedNotFilteredIndicator(std::vector<int> & indicator) const
+getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
 {
   using Teuchos::RCP;
 
@@ -110,7 +110,7 @@ getOwnedAndSharedNotFilteredIndicator(std::vector<int> & indicator) const
 
   // build unique and ghosted maps
   getOwnedIndices(uniqueIndices);
-  getOwnedAndSharedIndices(ghostedIndices);
+  getOwnedAndGhostedIndices(ghostedIndices);
 
   RCP<const Map> uniqueMap 
       = Tpetra::createNonContigMap<LO,GO>(uniqueIndices,getComm());
@@ -141,17 +141,17 @@ getOwnedAndSharedNotFilteredIndicator(std::vector<int> & indicator) const
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void 
 Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-getFilteredOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+getFilteredOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
   using Teuchos::RCP;
 
   // get filtered/unfiltered indicator vector
   std::vector<int> indicators;
-  getOwnedAndSharedNotFilteredIndicator(indicators);
+  getOwnedAndGhostedNotFilteredIndicator(indicators);
 
   // build ghosted maps
   std::vector<GlobalOrdinalT> ghostedIndices;
-  getOwnedAndSharedIndices(ghostedIndices);
+  getOwnedAndGhostedIndices(ghostedIndices);
 
   // filtered out filtered indices (isn't that a useful comment)
   for(std::size_t i=0;i<indicators.size();i++) {

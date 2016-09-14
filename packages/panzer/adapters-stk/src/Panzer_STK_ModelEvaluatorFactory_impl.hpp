@@ -547,7 +547,7 @@ namespace panzer_stk {
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
-       globalIndexerFactory.setEnableGhosting(has_interface_condition);
+       globalIndexerFactory.setUseNeighbors(has_interface_condition);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,
                                                          field_order);

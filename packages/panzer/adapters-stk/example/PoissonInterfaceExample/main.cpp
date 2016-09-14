@@ -596,7 +596,7 @@ int main (int argc, char* argv[])
       if (has_interface_condition)
         buildInterfaceConnections(bcs, conn_manager);
       panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-      globalIndexerFactory.setEnableGhosting(has_interface_condition);
+      globalIndexerFactory.setUseNeighbors(has_interface_condition);
       dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(
         Teuchos::opaqueWrapper(MPI_COMM_WORLD), physicsBlocks, conn_manager, "");
       if (has_interface_condition)

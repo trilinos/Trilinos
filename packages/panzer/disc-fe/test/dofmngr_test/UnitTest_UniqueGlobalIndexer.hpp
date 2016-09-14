@@ -145,10 +145,9 @@ public:
      */
    virtual void getOwnedIndices(std::vector<int> & indices) const;
 
-   /** Get set of indices owned and shared by this processor.
-     * This can be thought of as the ``ghosted'' indices.
+   /** Get the set of owned and ghosted indices for this processor.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<int> & indices) const;
+   virtual void getOwnedAndGhostedIndices(std::vector<int> & indices) const;
 
    /** Get a yes/no on ownership for each index in a vector
      */

@@ -52,7 +52,7 @@ namespace panzer {
 template <typename LO,typename GO>
 class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO,LO,GO> {
 public:
-   DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false), enableGhosting_(false) {}
+   DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false), useNeighbors_(false) {}
 
    virtual ~DOFManagerFactory() {}
 
@@ -112,11 +112,11 @@ public:
    bool getUseTieBreak() const
    { return useTieBreak_; }
 
-   void setEnableGhosting(bool flag)
-   { enableGhosting_ = flag; }
+   void setUseNeighbors(bool flag)
+   { useNeighbors_ = flag; }
 
-   bool getEnableGhosting() const
-   { return enableGhosting_; }
+   bool getUseNeighbors() const
+   { return useNeighbors_; }
 
    static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
 protected:
@@ -129,7 +129,7 @@ protected:
 
    bool useDOFManagerFEI_;
    bool useTieBreak_;
-   bool enableGhosting_;
+   bool useNeighbors_;
 };
 
 }

@@ -137,7 +137,7 @@ public:
 
   void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
-  void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
+  void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
   //! gets the number of fields
   int getNumFields() const;
@@ -253,14 +253,13 @@ public:
   void enableTieBreak(bool enable)   
   { useTieBreak_ = enable; }
 
-  /** Turn on/off the use of ghosting in the construction
-    * of the global ids. If on, then the shared GIDs
-    * will include GIDs from ghosted elements. And you will
-    * be able to call getElement(G/L)IDs for elements in the
-    * one ring of this processor.
+  /** Turn on/off the use of neighbor elements in the construction of the
+    * global ids. If on, then the ghosted GIDs will include GIDs from neighbor
+    * elements, and you will be able to call getElement(G/L)IDs for elements in
+    * the one ring of this processor.
     */
-  void enableGhosting(bool enable)   
-  { buildGhosted_ = enable; }
+  void useNeighbors(bool flag)   
+  { useNeighbors_ = flag; }
 
   // These functions are primarily for testing purposes
   // they are not intended to be useful otherwise (thus they are not 
@@ -329,7 +328,7 @@ protected:
                                 std::vector<std::vector< GO > > & elementGIDs,
                                 const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
                                 const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
-  void buildLocalIdsFromOwnedAndSharedElements();
+  void buildLocalIdsFromOwnedAndGhostedElements();
   
   Teuchos::RCP<ConnManager<LO,GO> > connMngr_;
   Teuchos::RCP<Teuchos::Comm<int> > communicator_;
@@ -368,7 +367,7 @@ protected:
   std::vector<std::vector<char> > orientation_;
 
   bool useTieBreak_;
-  bool buildGhosted_;
+  bool useNeighbors_;
 };
 
 }

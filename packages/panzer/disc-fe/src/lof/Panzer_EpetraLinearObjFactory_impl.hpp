@@ -640,7 +640,7 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::bui
    std::vector<int> indices;
 
    // get the global indices
-   gidProvider_->getOwnedAndSharedIndices(indices);
+   gidProvider_->getOwnedAndGhostedIndices(indices);
 
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
 }
@@ -655,7 +655,7 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::bui
    std::vector<int> indices;
 
    // get the global indices
-   colGidProvider_->getOwnedAndSharedIndices(indices);
+   colGidProvider_->getOwnedAndGhostedIndices(indices);
 
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
 }
@@ -758,7 +758,7 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
 
    // get all local indices that are active (i.e. unfiltered)
    std::vector<int> ghostedActive;
-   filtered_ugi->getOwnedAndSharedNotFilteredIndicator(ghostedActive);
+   filtered_ugi->getOwnedAndGhostedNotFilteredIndicator(ghostedActive);
 
    // not sure how the deep copy works, so we will do this instead. 
    // This will build a new ghosted graph // without optimized storage so entries can be removed.

@@ -894,7 +894,7 @@ buildTpetraGhostedMap(int i) const
    std::vector<GlobalOrdinalT> indices;
 
    // get the global indices
-   getGlobalIndexer(i)->getOwnedAndSharedIndices(indices);
+   getGlobalIndexer(i)->getOwnedAndGhostedIndices(indices);
 
    return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
 }

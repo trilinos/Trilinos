@@ -314,13 +314,13 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vecto
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinal> & indices) const
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndices(std::vector<GlobalOrdinal> & indices) const
 {
    // loop over field block manager and grab indices
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
       std::vector<GlobalOrdinalT> fieldBlockOwned;
 
-      fieldBlockManagers_[fbm]->getOwnedAndSharedIndices(fieldBlockOwned);
+      fieldBlockManagers_[fbm]->getOwnedAndGhostedIndices(fieldBlockOwned);
 
       for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
          indices.push_back(std::make_pair(fbm,fieldBlockOwned[i]));

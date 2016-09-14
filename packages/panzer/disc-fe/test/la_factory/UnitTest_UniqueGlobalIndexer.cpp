@@ -208,7 +208,7 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vec
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
    indices.resize(8);
    switch(procRank_) {
@@ -444,7 +444,7 @@ void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
    indices.resize(2);
    switch(procRank_) {

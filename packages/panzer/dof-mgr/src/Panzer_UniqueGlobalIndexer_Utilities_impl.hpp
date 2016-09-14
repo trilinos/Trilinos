@@ -205,12 +205,12 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
    std::vector<GlobalOrdinalT> indices;
    std::vector<std::string> blocks;
 
-   ugi.getOwnedAndSharedIndices(indices);
+   ugi.getOwnedAndGhostedIndices(indices);
    ugi.getElementBlockIds(blocks);
 
    std::vector<int> fieldNumbers(indices.size(),-1);
 
-   Teuchos::RCP<Map> sharedMap 
+   Teuchos::RCP<Map> ghostedMap 
          = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(indices),
                                 Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), ugi.getComm()));
 
@@ -229,7 +229,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
          for(std::size_t f=0;f<fields.size();f++) {
             int fieldNum = fields[f];
             GlobalOrdinalT gid = gids[f];
-            std::size_t lid = sharedMap->getLocalElement(gid); // hash table lookup
+            std::size_t lid = ghostedMap->getLocalElement(gid); // hash table lookup
 
             fieldNumbers[lid] = fieldNum; 
          }
@@ -281,7 +281,7 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
    Teuchos::RCP<Map> destMap;
    {
       std::vector<GlobalOrdinalT> indices;
-      ugi.getOwnedAndSharedIndices(indices);
+      ugi.getOwnedAndGhostedIndices(indices);
       destMap = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(indices),
                                      Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), ugi.getComm()));
    }

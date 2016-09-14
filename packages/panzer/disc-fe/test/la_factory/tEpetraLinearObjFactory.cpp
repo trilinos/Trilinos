@@ -500,9 +500,9 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContianer)
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
          = rcp(new unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
 
-   std::vector<int> ownedIndices, ownedAndSharedIndices;
+   std::vector<int> ownedIndices, ownedAndGhostedIndices;
    indexer->getOwnedIndices(ownedIndices);
-   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
+   indexer->getOwnedAndGhostedIndices(ownedAndGhostedIndices);
  
    // setup factory
    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > la_factory
@@ -630,28 +630,28 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContianer)
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
-      TEST_EQUALITY(eGhostedContainer->get_x()->MyLength(),(int) ownedAndSharedIndices.size());
+      TEST_EQUALITY(eGhostedContainer->get_x()->MyLength(),(int) ownedAndGhostedIndices.size());
    
       la_factory->initializeGhostedContainer(ELOC::DxDt,*ghostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
-      TEST_EQUALITY(eGhostedContainer->get_dxdt()->MyLength(),(int) ownedAndSharedIndices.size());
+      TEST_EQUALITY(eGhostedContainer->get_dxdt()->MyLength(),(int) ownedAndGhostedIndices.size());
    
       la_factory->initializeGhostedContainer(ELOC::F,*ghostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_f()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
-      TEST_EQUALITY(eGhostedContainer->get_f()->MyLength(),(int) ownedAndSharedIndices.size());
+      TEST_EQUALITY(eGhostedContainer->get_f()->MyLength(),(int) ownedAndGhostedIndices.size());
    
       la_factory->initializeGhostedContainer(ELOC::Mat,*ghostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_A()!=Teuchos::null);
-      TEST_EQUALITY(eGhostedContainer->get_A()->NumMyRows(),(int) ownedAndSharedIndices.size());
+      TEST_EQUALITY(eGhostedContainer->get_A()->NumMyRows(),(int) ownedAndGhostedIndices.size());
    
       // jacobian and residual vector output
       la_factory->initializeGhostedContainer(ELOC::F | ELOC::Mat,*ghostedContainer);

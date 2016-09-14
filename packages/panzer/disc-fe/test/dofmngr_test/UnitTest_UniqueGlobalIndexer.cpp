@@ -246,7 +246,7 @@ void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
    }
 }
 
-void UniqueGlobalIndexer::getOwnedAndSharedIndices(std::vector<int> & indices) const
+void UniqueGlobalIndexer::getOwnedAndGhostedIndices(std::vector<int> & indices) const
 {
    switch(procRank_) {
    case 0:

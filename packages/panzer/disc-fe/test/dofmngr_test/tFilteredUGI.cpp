@@ -153,12 +153,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
      }
    }
    
-   // check owned and shared
+   // check owned and ghosted
    {
      std::vector<int> indices, indices_f;
 
-     dofManager->getOwnedAndSharedIndices(indices);
-     filtered_ugi.getOwnedAndSharedIndices(indices_f);
+     dofManager->getOwnedAndGhostedIndices(indices);
+     filtered_ugi.getOwnedAndGhostedIndices(indices_f);
 
      TEST_EQUALITY(indices.size(),indices_f.size());
      for(std::size_t i=0;i<indices.size();i++) {
@@ -287,12 +287,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
    
-   out << "check owned and shared" << std::endl;
+   out << "check owned and ghosted" << std::endl;
    {
      std::vector<int> indices, indices_f;
 
-     dofManager->getOwnedAndSharedIndices(indices);
-     filtered_ugi.getOwnedAndSharedIndices(indices_f);
+     dofManager->getOwnedAndGhostedIndices(indices);
+     filtered_ugi.getOwnedAndGhostedIndices(indices_f);
 
      TEST_EQUALITY(indices.size(),indices_f.size());
      for(std::size_t i=0;i<indices.size();i++) {
@@ -334,13 +334,13 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   out << "testing getOwnedAndSharedNotFilteredIndicator" << std::endl;
+   out << "testing getOwnedAndGhostedNotFilteredIndicator" << std::endl;
    {
      std::vector<int> indicator;
-     filtered_ugi.getOwnedAndSharedNotFilteredIndicator(indicator);
+     filtered_ugi.getOwnedAndGhostedNotFilteredIndicator(indicator);
 
      std::vector<int> indices;
-     filtered_ugi.getOwnedAndSharedIndices(indices);
+     filtered_ugi.getOwnedAndGhostedIndices(indices);
 
      TEST_EQUALITY(indices.size(),indicator.size());
 
@@ -360,13 +360,13 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   out << "testing getFilteredOwnedAndSharedIndices" << std::endl;
+   out << "testing getFilteredOwnedAndGhostedIndices" << std::endl;
    {
      std::vector<int> indices_f;
-     filtered_ugi.getFilteredOwnedAndSharedIndices(indices_f);
+     filtered_ugi.getFilteredOwnedAndGhostedIndices(indices_f);
 
      std::vector<int> indices;
-     filtered_ugi.getOwnedAndSharedIndices(indices);
+     filtered_ugi.getOwnedAndGhostedIndices(indices);
 
      // check that the size didn't grow
      TEST_ASSERT(indices_f.size()<indices.size());
