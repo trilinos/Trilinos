@@ -159,9 +159,13 @@ namespace MueLu {
     }
 
     // restrict communicator?
+    bool bRestrictComm = false;
     const ParameterList& pL = GetParameterList();
-    RCP<ParameterList> XpetraList = Teuchos::rcp(new ParameterList());
     if (pL.get<bool>("repartition: use subcommunicators") == true)
+      bRestrictComm = true;
+
+    RCP<ParameterList> XpetraList = Teuchos::rcp(new ParameterList());
+    if(bRestrictComm)
       XpetraList->set("Restrict Communicator",true);
     else
       XpetraList->set("Restrict Communicator",false);
@@ -267,6 +271,12 @@ namespace MueLu {
               orig_stridedDoMap->getStridedBlockId(),
               orig_stridedDoMap->getOffset());
         }
+
+        if(bRestrictComm) {
+          stridedRgMap->removeEmptyProcesses();
+          stridedDoMap->removeEmptyProcesses();
+        }
+
         TEUCHOS_TEST_FOR_EXCEPTION(stridedRgMap == Teuchos::null,Exceptions::RuntimeError, "MueLu::RebalanceBlockAcFactory::Build: failed to generate striding information. error.");
         TEUCHOS_TEST_FOR_EXCEPTION(stridedDoMap == Teuchos::null,Exceptions::RuntimeError, "MueLu::RebalanceBlockAcFactory::Build: failed to generate striding information. error.");
 
@@ -356,6 +366,11 @@ namespace MueLu {
               fullDomainMapGIDs,
               domainIndexBase,
               rebalancedComm/*bA->getDomainMap()->getComm()*/); //bA->getDomainMap()->getComm());
+    }
+
+    if(bRestrictComm) {
+      fullRangeMap->removeEmptyProcesses();
+      fullDomainMap->removeEmptyProcesses();
     }
 
     // build map extractors

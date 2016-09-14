@@ -126,6 +126,12 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   RCP<const MapExtractor> rangeMapExtractor = bOriginalTransferOp->getRangeMapExtractor();
   RCP<const MapExtractor> domainMapExtractor = bOriginalTransferOp->getDomainMapExtractor();
 
+  // restrict communicator?
+  bool bRestrictComm = false;
+  const ParameterList& pL = GetParameterList();
+  if (pL.get<bool>("repartition: use subcommunicators") == true)
+    bRestrictComm = true;
+
   // check if GIDs for full maps have to be sorted:
   // For the Thyra mode ordering they do not have to be sorted since the GIDs are
   // numbered as 0...n1,0...,n2 (starting with zero for each subblock). The MapExtractor
@@ -225,6 +231,11 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
           orig_stridedDoMap->getOffset());
     } else stridedDoMap = Rii->getDomainMap();
 
+    if(bRestrictComm) {
+      stridedRgMap->removeEmptyProcesses();
+      stridedDoMap->removeEmptyProcesses();
+    }
+
     TEUCHOS_TEST_FOR_EXCEPTION(stridedRgMap == Teuchos::null,Exceptions::RuntimeError, "MueLu::RebalanceBlockRestrictionFactory::Build: failed to generate striding information. error.");
     TEUCHOS_TEST_FOR_EXCEPTION(stridedDoMap == Teuchos::null,Exceptions::RuntimeError, "MueLu::RebalanceBlockRestrictionFactory::Build: failed to generate striding information. error.");
 
@@ -268,8 +279,7 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
       permutedNullspace->doImport(*nullspace, *rebalanceImporter, Xpetra::INSERT);
 
       // TODO subcomm enabled everywhere or nowhere
-      const ParameterList& pL = GetParameterList();
-      if (pL.get<bool>("repartition: use subcommunicators") == true)
+      if (bRestrictComm)
         permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
 
       coarseLevel.Set<RCP<MultiVector> >("Nullspace", permutedNullspace, (*it)->GetFactory("Nullspace").get());
@@ -340,6 +350,11 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
             fullDomainMapGIDs,
             domainIndexBase,
             originalTransferOp->getDomainMap()->getComm());
+  }
+
+  if(bRestrictComm) {
+    fullRangeMap->removeEmptyProcesses();
+    fullDomainMap->removeEmptyProcesses();
   }
 
   // build map extractors
