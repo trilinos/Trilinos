@@ -362,21 +362,29 @@ void Iocgns::Utils::add_structured_boundary_conditions(int                    cg
       // be split among multiple processors and the block face this is applied
       // to may not exist on this decomposed block)
       auto bc = Ioss::BoundaryCondition(boconame, range_beg, range_end);
+      std::string name = std::string(boconame) + "/" + block->name();
+
       if (bc_overlaps(block, bc)) {
         bc_subset_range(block, bc);
         block->m_boundaryConditions.push_back(bc);
-        auto sb = new Ioss::SideBlock(block->get_database(), boconame, "Quad4", "Hex8",
+        auto sb = new Ioss::SideBlock(block->get_database(), name, "Quad4", "Hex8",
                                       block->m_boundaryConditions.back().get_face_count());
         sb->set_parent_block(block);
         sset->add(sb);
+        sb->property_add(Ioss::Property("base", base));
+        sb->property_add(Ioss::Property("zone", zone));
+        sb->property_add(Ioss::Property("section", ibc+1));
       }
       else {
         Ioss::IJK_t zeros{{0, 0, 0}};
         auto        zero_bc = Ioss::BoundaryCondition(boconame, zeros, zeros);
         block->m_boundaryConditions.push_back(zero_bc);
-        auto sb = new Ioss::SideBlock(block->get_database(), boconame, "Quad4", "Hex8", 0);
+        auto sb = new Ioss::SideBlock(block->get_database(), name, "Quad4", "Hex8", 0);
         sb->set_parent_block(block);
         sset->add(sb);
+        sb->property_add(Ioss::Property("base", base));
+        sb->property_add(Ioss::Property("zone", zone));
+        sb->property_add(Ioss::Property("section", ibc+1));
       }
     }
     else {
