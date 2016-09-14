@@ -133,6 +133,11 @@ namespace stk {
 	    << ". Must be READ_RESTART or READ_MODEL";
         throw std::runtime_error( msg.str() );
       }
+
+      ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+		      "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
+		      "Only 'Unstructured' mesh is currently supported.");
+
       m_database.release(); // The m_region will delete the m_database pointer.
     }
 
@@ -146,6 +151,10 @@ namespace stk {
         // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
         // RCP doesn't retain ownership...
         m_region = Teuchos::rcp(new Ioss::Region(m_database.release().get(), "input_model"));
+
+	ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+			"Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
+			"Only 'Unstructured' mesh is currently supported.");
       }
     }
 
