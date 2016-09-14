@@ -329,6 +329,12 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   "Experimental_BlockCrsMatrix_Helpers" "EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${BLOCKCRSMATRIX_HELPER_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::Details::getDiagCopyWithoutOffsets.
+  # Do so for the same set of Scalar types as CrsMatrix (see above),
+  # because this function is an implementation detail of CrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(GETDIAGCOPYWITHOUTOFFSETS_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Details_getDiagCopyWithoutOffsets" "DETAILS_GETDIAGCOPYWITHOUTOFFSETS" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${GETDIAGCOPYWITHOUTOFFSETS_OUTPUT_FILES})
+
   # DistObject requires the same Scalar type instantiations as
   # MultiVector, plus Scalar = char (for CrsMatrix).
   SET (DistObject_ETI_SCALARS ${MultiVector_ETI_SCALARS})
