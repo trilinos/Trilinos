@@ -203,6 +203,10 @@ namespace Ioss {
         delete (eb);
       }
 
+      for (auto sb : structuredBlocks) {
+        delete (sb);
+      }
+
       for (auto ss : sideSets) {
         delete (ss);
       }
