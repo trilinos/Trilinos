@@ -663,85 +663,108 @@ namespace Intrepid2 {
   }
 
 
-    namespace FunctorArrayTools {
-    template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
+  namespace FunctorArrayTools {
+    template < typename outputViewType, 
+               typename leftInputViewType, 
+               typename rightInputViewType>
     struct F_matvecProduct {
-      outputViewType _output;
-      leftInputViewType _leftInput;
-      rightInputViewType _rightInput;
-      const bool _hasField, _isTranspose;
-      typedef typename leftInputViewType::value_type value_type; 
+      /**/  outputViewType     _output;
+      const leftInputViewType  _leftInput;
+      const rightInputViewType _rightInput;
 
+      const bool _isTranspose;
+      
       KOKKOS_INLINE_FUNCTION
-      F_matvecProduct(outputViewType output_,
-              leftInputViewType leftInput_,
-              rightInputViewType rightInput_,
-              const bool hasField_,
-              const bool isTranspose_)
-        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
-          _hasField(hasField_), _isTranspose(isTranspose_) {}
+      F_matvecProduct(outputViewType     output_,
+                      leftInputViewType  leftInput_,
+                      rightInputViewType rightInput_,
+                      const bool isTranspose_)
+        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_), _isTranspose(isTranspose_) {}
 
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        size_type cell, field, point;
-        size_type rightRank = _rightInput.rank();
-        size_type leftRank = _leftInput.rank();
+      template<typename resultViewType,
+               typename leftViewType,
+               typename rightViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void 
+      apply_matvec_product(/**/  resultViewType &result, 
+                           const leftViewType   &left,
+                           const rightViewType  &right,
+                           const bool isTranspose) {
+        const ordinal_type iend = result.dimension(0);
+        const ordinal_type jend = right.dimension(0);
 
-        if (_hasField) 
-          Util::unrollIndex( cell, field, point, 
-                             _output.dimension(0),
-                             _output.dimension(1),
-                             _output.dimension(2),
-                             iter );
-        else           
-          Util::unrollIndex( cell, point, 
-                             _output.dimension(0), 
-                             _output.dimension(1), 
-                             iter );
-        
-        
-        auto result = ( _hasField ? Kokkos::subview(_output, cell, field, point, Kokkos::ALL()) :
-                        /**/        Kokkos::subview(_output, cell,        point, Kokkos::ALL()));
-
-        auto lpoint = (_leftInput.dimension(1) == 1 ? size_type(0) : point);
-        auto left   = ( leftRank == 4 ? Kokkos::subview(_leftInput, cell, lpoint, Kokkos::ALL(), Kokkos::ALL()) :
-                        leftRank == 3 ? Kokkos::subview(_leftInput, cell, lpoint, Kokkos::ALL()) :
-                        /**/            Kokkos::subview(_leftInput, cell, lpoint));
-        
-        auto right  = ( rightRank == static_cast<size_type>(2 + _hasField) ? ( _hasField ? Kokkos::subview(_rightInput,       field, point, Kokkos::ALL()) :
-                                                         /**/        Kokkos::subview(_rightInput,              point, Kokkos::ALL())) :
-                        /**/                           ( _hasField ? Kokkos::subview(_rightInput, cell, field, point, Kokkos::ALL()) : 
-                                                         /**/        Kokkos::subview(_rightInput, cell,        point, Kokkos::ALL())) );
-        
-        const size_type iend = result.dimension(0);
-        const size_type jend = right.dimension(0);
+        typedef typename resultViewType::value_type value_type; 
 
         switch (left.rank()) {
-          case 2:
-            if (_isTranspose) {
-              for (size_type i=0; i<iend; ++i) {
-                result(i) = value_type(0);
-                for (size_type j=0; j<jend; ++j)
-                  result(i) += left(j, i) * right(j);
-              }
-            } else {
-              for (size_type i=0; i<iend; ++i) {
-                result(i) = value_type(0);
-                for (size_type j=0; j<jend; ++j)
-                  result(i) += left(i, j) * right(j);
-              }
+        case 2:
+          if (isTranspose) {
+            for (ordinal_type i=0;i<iend;++i) {
+              value_type tmp(0);
+              for (ordinal_type j=0;j<jend;++j)
+                tmp += left(j, i)*right(j);
+              result(i) = tmp;
             }
-            break;
-          case 1:  //matrix is diagonal
-            for (size_type i=0; i<iend; ++i)
-                result(i) = left(i) * right(i);
-            break;
-          case 0:  //matrix is a scaled identity
-            for (size_type i=0; i<iend; ++i) {
-                result(i) = left() * right(i);
+          } else {
+            for (ordinal_type i=0;i<iend;++i) {
+              value_type tmp(0);
+              for (ordinal_type j=0;j<jend;++j)
+                tmp += left(i, j)*right(j);
+              result(i) = tmp;
             }
-            break;
+          }
+          break;
+        case 1: { //matrix is diagonal
+          for (ordinal_type i=0;i<iend;++i)
+            result(i) = left(i)*right(i);
+          break;
         }
+        case 0:  { //matrix is a scaled identity
+          const value_type val = left();
+          for (ordinal_type i=0;i<iend;++i) {
+            result(i) = val*right(i);
+          }
+          break;
+        }
+        }
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cl,
+                      const ordinal_type pt) const {
+        const auto rightRank = _rightInput.rank();
+        const auto leftRank  = _leftInput.rank();
+        
+        auto result = Kokkos::subview(_output, cl, pt, Kokkos::ALL());
+        
+        auto lpt  = (_leftInput.dimension(1) == 1 ? size_type(0) : pt);
+        auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
+                      leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
+                      /**/            Kokkos::subview(_leftInput, cl, lpt));
+        
+        auto right = ( rightRank == 2) ? ( Kokkos::subview(_rightInput,     pt, Kokkos::ALL())) :
+          /**/                            ( Kokkos::subview(_rightInput, cl, pt, Kokkos::ALL()));
+        
+        apply_matvec_product( result, left, right, _isTranspose );
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cl,
+                      const ordinal_type bf,
+                      const ordinal_type pt) const {
+        const auto rightRank = _rightInput.rank();
+        const auto leftRank  = _leftInput.rank();
+
+        auto result = Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL());
+
+        auto lpt  = (_leftInput.dimension(1) == 1 ? size_type(0) : pt);
+        auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
+                      leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
+                      /**/            Kokkos::subview(_leftInput, cl, lpt));
+        
+        auto right = ( rightRank == 3 ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL()) :
+                       /**/             Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL())); 
+        
+        apply_matvec_product( result, left, right, _isTranspose );
       }
     };
     } //namespace
@@ -751,25 +774,33 @@ namespace Intrepid2 {
            typename leftInputValueType,  class ...leftInputProperties,
            typename rightInputValueType, class ...rightInputProperties>
   void
-  ArrayTools<SpT>::Internal::matvecProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+  ArrayTools<SpT>::Internal::
+  matvecProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                  const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
                  const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                  const bool hasField,
                  const bool isTranspose ) {
 
-    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      outputViewType;
+    typedef /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      outputViewType;
     typedef const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
     typedef const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
     typedef FunctorArrayTools::F_matvecProduct<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
     typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
-    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
-                                 /**/       output.dimension(0)*output.dimension(1) );
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, hasField, isTranspose) );
+    if (hasField) {
+      using range_policy_type = Kokkos::Experimental::MDRangePolicy
+        < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+      range_policy_type policy( { 0, 0, 0 },
+                                { output.dimension(0), output.dimension(1), output.dimension(2) } );
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
+    } else {
+      using range_policy_type = Kokkos::Experimental::MDRangePolicy
+        < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      range_policy_type policy( { 0, 0 },
+                                { output.dimension(0), output.dimension(1) } );
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
+    }
   }
-
-
 
   template<typename ExecSpaceType>
   template<typename outputFieldValueType, class ...outputFieldProperties,
