@@ -89,11 +89,10 @@ namespace Tacho {
                 << std::endl;
 
       const ordinal_type m = 12, nnz = 46;
-      
-      data.ap = new size_type[m+1]{
+      const size_type ap[m+1] = {
         0, 3, 7, 11, 15, 20, 23, 26, 31, 35, 39, 43, 46
       };
-      data.aj = new ordinal_type[nnz]{
+      const ordinal_type aj[nnz] = {
         0, 1, 2,
         0, 1, 3, 4,  
         0, 2, 4, 5, 
@@ -107,7 +106,7 @@ namespace Tacho {
         7, 8, 10, 11, 
         9, 10, 11 
       };
-      data.ax = new value_type[nnz]{
+      const value_type ax[nnz] = {
         10,  1,  1, 
         1, 10,  1,  2, 
         1, 10,  1,  1, 
@@ -121,6 +120,18 @@ namespace Tacho {
         1,  1, 10,  1, 
         2, 1, 10 
       };
+
+      data.ap = new size_type[m+1]();
+      data.aj = new ordinal_type[nnz]();
+      data.ax = new value_type[nnz]();
+
+      for (auto i=0;i<(m+1);++i) 
+        data.ap[i] = ap[i];
+
+      for (auto k=0;k<nnz;++k) {
+        data.aj[k] = aj[k];
+        data.ax[k] = ax[k];
+      }
 
       typename SolverType::CrsMatrixBaseHostType AA("AA", m, m, nnz);
 

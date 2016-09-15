@@ -188,13 +188,14 @@ namespace Tacho {
     /// \brief Default constructor.
     KOKKOS_INLINE_FUNCTION
     DenseMatrixBase() 
-      : _label{"DenseMatrixBase"},
-        _m(0),
+      : _m(0),
         _n(0),
         _rs(0),
         _cs(0),
         _a()
-    {}
+    {
+      setLabel("DenseMatrixBase"); 
+    }
 
     /// \brief Constructor with label
     KOKKOS_INLINE_FUNCTION
