@@ -115,7 +115,7 @@ cmake \
 -D TPL_ENABLE_CUDA:BOOL=${USE_CUDA} \
 -D TPL_ENABLE_CUSPARSE:BOOL=${USE_CUDA} \
 -D Kokkos_ENABLE_Cuda_UVM:BOOL=${USE_CUDA} \
--D Kokkos_ENABLE_Debug_Bounds_Check=ON \
--D     Kokkos_USING_DEPRECATED_VIEW=ON \
+-D Kokkos_ENABLE_Debug_Bounds_Check=OFF \
+-D     Kokkos_USING_DEPRECATED_VIEW=OFF \
 -DTrilinos_VERBOSE_CONFIGURE=OFF \
 ${WORKSPACE}/Trilinos
