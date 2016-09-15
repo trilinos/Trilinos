@@ -64,6 +64,56 @@ namespace Intrepid2 {
   }
   
   // ------------------------------------------------------------------------------------
+
+  namespace FunctorFunctionSpaceTools {
+    template < typename outputViewType,
+               typename leftInputViewType,
+               typename rightInputViewType>
+    struct F_HgradtransformGRAD {
+      /**/  outputViewType     _output;
+      const leftInputViewType  _leftInput;
+      const rightInputViewType _rightInput;
+
+      // output CPDD, left CPDD or PDD, right FPD
+      KOKKOS_INLINE_FUNCTION
+      F_HgradtransformGRAD(outputViewType     output_,
+                           leftInputViewType  leftInput_,
+                           rightInputViewType rightInput_)
+        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_) {}
+      
+      template<typename resultViewType,
+               typename leftViewType,
+               typename rightViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void
+      apply_hgrad_transform_grad(/**/  resultViewType &result,
+                                 const leftViewType   &left,
+                                 const rightViewType  &right) {
+        const ordinal_type iend = result.dimension(0);
+        const ordinal_type jend = right.dimension(0);
+
+        typedef typename resultViewType::value_type value_type;
+ 
+        for (ordinal_type i=0;i<iend;++i) {
+          value_type tmp(0);
+          for (ordinal_type j=0;j<jend;++j)
+            tmp += left(j, i)*right(j);
+          result(i) = tmp;
+        }
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cl,
+                      const ordinal_type bf,
+                      const ordinal_type pt) const {
+        auto       result = Kokkos::subview(_output,     cl, bf, pt, Kokkos::ALL());
+        const auto left   = Kokkos::subview(_leftInput,  cl,     pt, Kokkos::ALL(), Kokkos::ALL());
+        const auto right  = Kokkos::subview(_rightInput, bf,     pt, Kokkos::ALL());
+        
+        apply_hgrad_transform_grad( result, left, right );
+      }
+    };
+  }
   
   template<typename SpT>
   template<typename outputValValueType,       class ...outputValProperties,
@@ -74,7 +124,19 @@ namespace Intrepid2 {
   HGRADtransformGRAD( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                       const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
                       const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals ) {
-    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
+    // ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
+
+    typedef /**/  Kokkos::DynRankView<outputValValueType, outputValProperties...> outputViewType;
+    typedef const Kokkos::DynRankView<jacobianInverseValueType, jacobianInverseProperties...> leftInputViewType;
+    typedef const Kokkos::DynRankView<inputValValueType,inputValProperties...>  rightInputViewType;
+    typedef FunctorFunctionSpaceTools::F_HgradtransformGRAD<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
+    typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
+
+    using range_policy_type = Kokkos::Experimental::MDRangePolicy
+      < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    range_policy_type policy( { 0, 0, 0 },
+                              { outputVals.dimension(0), outputVals.dimension(1), outputVals.dimension(2) } );
+    Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
   }
 
   // ------------------------------------------------------------------------------------

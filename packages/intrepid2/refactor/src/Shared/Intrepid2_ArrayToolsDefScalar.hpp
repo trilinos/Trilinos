@@ -51,67 +51,82 @@
 
 namespace Intrepid2 {
 
-    namespace FunctorArrayTools {
+  namespace FunctorArrayTools {
     template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
     struct F_scalarMultiply{
       outputViewType _output;
       leftInputViewType _leftInput;
       rightInputViewType _rightInput;
-      const bool _hasField, _reciprocal;
+      const bool _reciprocal;
 
       KOKKOS_INLINE_FUNCTION
       F_scalarMultiply(outputViewType output_,
               leftInputViewType leftInput_,
               rightInputViewType rightInput_,
-              const bool hasField_,
               const bool reciprocal_)
         : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_), 
-          _hasField(hasField_), _reciprocal(reciprocal_) {}
+          _reciprocal(reciprocal_) {}
+
+      template<typename resultViewType,
+               typename leftViewType,
+               typename rightViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void 
+      apply_scalar_multiply( resultViewType &result,
+                             const leftViewType &left,
+                             const rightViewType &right,
+                             const bool reciprocal ) {
+        const ordinal_type iend = result.dimension(0);
+        const ordinal_type jend = result.dimension(1);
+
+        const auto val = left();
+        if (reciprocal)
+          for (ordinal_type i=0;i<iend;++i)
+            for (ordinal_type j=0;j<jend;++j)
+              result(i, j) = right(i, j)/val;
+        else
+          for (ordinal_type i=0;i<iend;++i)
+            for (ordinal_type j=0;j<jend;++j)
+              result(i, j) = right(i, j)*val;
+      }
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        size_type cl = 0, bf = 0, pt = 0;
-        size_type outputRank(_output.rank()), rightRank(_rightInput.rank());
-
-        if (_hasField) 
-          Util::unrollIndex( cl, bf, pt, 
-                             _output.dimension(0),
-                             _output.dimension(1),
-                             _output.dimension(2),
-                             iter );
-        else          
-          Util::unrollIndex( cl, pt,
-                             _output.dimension(0),
-                             _output.dimension(1),
-                             iter );
-
-        auto result = ( _hasField ? Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                        /**/        Kokkos::subview(_output, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
+      void operator()(const ordinal_type cl,
+                      const ordinal_type bf,
+                      const ordinal_type pt) const {
+        const ordinal_type outputRank = _output.rank();
+        const ordinal_type rightRank = _rightInput.rank();
         
-        const auto right = ( outputRank == rightRank ? ( _hasField ? Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                                                         /**/        Kokkos::subview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL()) ) : 
-                             /**/                      ( _hasField ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                                                         /**/        Kokkos::subview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()) ) );
-                                                                
+        auto result = Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL());
+        
+        const auto right = ( outputRank == rightRank ? Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                             /**/                      Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) );
+        
+        const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subview(_leftInput, cl, 0) :
+                            /**/                           Kokkos::subview(_leftInput, cl, pt);
+        
+        apply_scalar_multiply( result, left, right, _reciprocal );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cl,
+                      const ordinal_type pt) const {
+        const ordinal_type outputRank = _output.rank();
+        const ordinal_type rightRank = _rightInput.rank();
+
+        auto result = Kokkos::subview(_output, cl, pt, Kokkos::ALL(), Kokkos::ALL());
+        
+        const auto right = ( outputRank == rightRank ? Kokkos::subview(_rightInput, cl, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                             /**/                      Kokkos::subview(_rightInput,     pt, Kokkos::ALL(), Kokkos::ALL()) );
+        
         const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subview(_leftInput, cl, 0) :
                             /**/                           Kokkos::subview(_leftInput, cl, pt);
 
-        const size_type iend  = result.dimension(0);
-        const size_type jend  = result.dimension(1);
-
-        const auto val = left();
-        if (_reciprocal)
-          for(size_type i = 0; i < iend; ++i)
-            for(size_type j = 0; j < jend; ++j)
-              result(i, j) = right(i, j)/val;
-        else
-          for(size_type i = 0; i < iend; ++i)
-            for(size_type j = 0; j < jend; ++j)
-              result(i, j) = right(i, j)*val;
+        apply_scalar_multiply( result, left, right, _reciprocal );
       }
     };
-    } // namespace
-
+  } // namespace
+  
   template<typename SpT>
   template<typename outputValueType,     class ...outputProperties,
            typename leftInputValueType,  class ...leftInputProperties,
@@ -130,13 +145,20 @@ namespace Intrepid2 {
     typedef FunctorArrayTools::F_scalarMultiply<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
     typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
-    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
-                                 /**/       output.dimension(0)*output.dimension(1) );
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, hasField, reciprocal) );
+    if (hasField) {
+      using range_policy_type = Kokkos::Experimental::MDRangePolicy
+        < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+      range_policy_type policy( { 0, 0, 0 },
+                                { output.dimension(0), output.dimension(1), output.dimension(2) } );
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, leftInput, rightInput, reciprocal) );
+    } else {
+      using range_policy_type = Kokkos::Experimental::MDRangePolicy
+        < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      range_policy_type policy( { 0, 0 },
+                                { output.dimension(0), output.dimension(1) } );
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, leftInput, rightInput, reciprocal) );
+    }
   }
-
-
 
   template<typename ExecSpaceType>
   template<typename outputFieldValueType, class ...outputFieldProperties,

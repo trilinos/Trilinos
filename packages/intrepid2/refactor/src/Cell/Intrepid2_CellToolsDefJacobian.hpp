@@ -79,26 +79,22 @@ namespace Intrepid2 {
         : _jacobian(jacobian_), _worksetCells(worksetCells_), _basisGrads(basisGrads_) {}
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        size_type cell, pt;
-        Util::unrollIndex( cell, pt,
-                           _jacobian.dimension(0),
-                           _jacobian.dimension(1),
-                           iter );
-        /**/  auto jac  = Kokkos::subdynrankview( _jacobian, cell, pt, Kokkos::ALL(),Kokkos::ALL());
-        const auto dofs = Kokkos::subdynrankview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());
-
-        const auto gradRank = _basisGrads.rank(); 
-        const auto grad = ( gradRank == 3 ? Kokkos::subdynrankview( _basisGrads,       Kokkos::ALL(), pt, Kokkos::ALL()) :
-                            /**/            Kokkos::subdynrankview( _basisGrads, cell, Kokkos::ALL(), pt, Kokkos::ALL()));
+      void operator()(const ordinal_type cl, 
+                      const ordinal_type pt) const {
+        /**/  auto jac  = Kokkos::subview( _jacobian,     cl, pt, Kokkos::ALL(), Kokkos::ALL());
+        const auto dofs = Kokkos::subview( _worksetCells, cl,     Kokkos::ALL(), Kokkos::ALL());
         
-        const auto dim = jac.dimension(0); // dim0 and dim1 should match
-        const auto cardinality = grad.dimension(0);
+        const ordinal_type gradRank = _basisGrads.rank(); 
+        const auto grad = ( gradRank == 3 ? Kokkos::subdynrankview( _basisGrads,     Kokkos::ALL(), pt, Kokkos::ALL()) :
+                            /**/            Kokkos::subdynrankview( _basisGrads, cl, Kokkos::ALL(), pt, Kokkos::ALL()));
+        
+        const ordinal_type dim = jac.dimension(0); // dim0 and dim1 should match
+        const ordinal_type cardinality = grad.dimension(0);
 
-        for (size_type i=0;i<dim;++i)
-          for (size_type j=0;j<dim;++j) {
+        for (ordinal_type i=0;i<dim;++i)
+          for (ordinal_type j=0;j<dim;++j) {
             jac(i, j) = 0;
-            for (size_type bf=0;bf<cardinality;++bf) 
+            for (ordinal_type bf=0;bf<cardinality;++bf) 
               jac(i, j) += dofs(bf, i)*grad(bf, j);
           } 
       }
@@ -120,13 +116,13 @@ namespace Intrepid2 {
     CellTools_setJacobianArgs(jacobian, points, worksetCell, basis->getBaseCellTopology());
 #endif
     const auto cellTopo = basis->getBaseCellTopology();
-    const auto spaceDim = cellTopo.getDimension();
-    const auto numCells = worksetCell.dimension(0);
+    const ordinal_type spaceDim = cellTopo.getDimension();
+    const ordinal_type numCells = worksetCell.dimension(0);
     
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
-    const auto pointRank = points.rank();
-    const auto numPoints = (pointRank == 2 ? points.dimension(0) : points.dimension(1));
-    const auto basisCardinality = basis->getCardinality();    
+    const ordinal_type pointRank = points.rank();
+    const ordinal_type numPoints = (pointRank == 2 ? points.dimension(0) : points.dimension(1));
+    const ordinal_type basisCardinality = basis->getCardinality();    
 
     typedef Kokkos::DynRankView<jacobianValueType,jacobianProperties...> jacobianViewType;
     
@@ -148,9 +144,9 @@ namespace Intrepid2 {
     case 3: { 
       // For CVFEM
       grads = gradViewType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
-      for (size_type cell=0;cell<numCells;++cell) 
-        basis->getValues(Kokkos::subdynrankview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
-                         Kokkos::subdynrankview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
+      for (ordinal_type cell=0;cell<numCells;++cell) 
+        basis->getValues(Kokkos::subview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
+                         Kokkos::subview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
                          OPERATOR_GRAD);
       break;
     }
@@ -159,10 +155,12 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
     typedef FunctorCellTools::F_setJacobian<jacobianViewType,worksetCellViewType,gradViewType> FunctorType;
     typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
-      
-    const auto loopSize = jacobian.dimension(0)*jacobian.dimension(1);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, grads) );
+    
+    using range_policy_type = Kokkos::Experimental::MDRangePolicy
+      < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+    range_policy_type policy( { 0, 0 },
+                              { jacobian.dimension(0), jacobian.dimension(1) } );
+    Kokkos::Experimental::md_parallel_for( policy, FunctorType(jacobian, worksetCell, grads) );
   }
 
   template<typename SpT>

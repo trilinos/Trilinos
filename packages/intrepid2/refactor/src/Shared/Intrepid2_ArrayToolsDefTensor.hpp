@@ -736,14 +736,13 @@ namespace Intrepid2 {
         
         auto result = Kokkos::subview(_output, cl, pt, Kokkos::ALL());
         
-        auto lpt  = (_leftInput.dimension(1) == 1 ? size_type(0) : pt);
-        auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
-                      leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
-                      /**/            Kokkos::subview(_leftInput, cl, lpt));
+        const auto lpt  = (_leftInput.dimension(1) == 1 ? size_type(0) : pt);
+        const auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
+                            leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
+                            /**/            Kokkos::subview(_leftInput, cl, lpt));
         
-        auto right = ( rightRank == 2) ? ( Kokkos::subview(_rightInput,     pt, Kokkos::ALL())) :
-          /**/                            ( Kokkos::subview(_rightInput, cl, pt, Kokkos::ALL()));
-        
+        const auto right = ( rightRank == 2 ? Kokkos::subview(_rightInput,     pt, Kokkos::ALL()) :
+                             /**/             Kokkos::subview(_rightInput, cl, pt, Kokkos::ALL()) );
         apply_matvec_product( result, left, right, _isTranspose );
       }
       
@@ -756,18 +755,18 @@ namespace Intrepid2 {
 
         auto result = Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL());
 
-        auto lpt  = (_leftInput.dimension(1) == 1 ? size_type(0) : pt);
-        auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
-                      leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
-                      /**/            Kokkos::subview(_leftInput, cl, lpt));
+        const auto lpt  = (_leftInput.dimension(1) == 1 ? size_type(0) : pt);
+        const auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
+                            leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
+                            /**/            Kokkos::subview(_leftInput, cl, lpt));
         
-        auto right = ( rightRank == 3 ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL()) :
-                       /**/             Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL())); 
+        const auto right = ( rightRank == 3 ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL()) :
+                             /**/             Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL())); 
         
         apply_matvec_product( result, left, right, _isTranspose );
       }
     };
-    } //namespace
+  } //namespace
 
   template<typename SpT>
   template<typename outputValueType,     class ...outputProperties,
@@ -1207,7 +1206,8 @@ namespace Intrepid2 {
            typename leftInputValueType,  class ...leftInputProperties,
            typename rightInputValueType, class ...rightInputProperties>
   void
-  ArrayTools<SpT>::Internal::matmatProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+  ArrayTools<SpT>::Internal::
+  matmatProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                  const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
                  const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                  const bool hasField,

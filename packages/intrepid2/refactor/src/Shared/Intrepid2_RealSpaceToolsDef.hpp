@@ -533,28 +533,15 @@ namespace Intrepid2 {
                  inMatViewType      inMats_ )
         : _inverseMats(inverseMats_), _inMats(inMats_) {}
 
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type iter) const {
-        const auto r = _inMats.rank();
-
-        ordinal_type i = iter, j = 0;
-        if ( r > 3 ) 
-          Util::unrollIndex( i, j,
-                             _inverseMats.dimension(0),
-                             _inverseMats.dimension(1),
-                             iter );
-
-        const auto mat = ( r == 2 ? Kokkos::subview(_inMats,       Kokkos::ALL(), Kokkos::ALL()) :
-                           r == 3 ? Kokkos::subview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
-                           /**/     Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
-
-        auto inv = ( r == 2 ? Kokkos::subview(_inverseMats,       Kokkos::ALL(), Kokkos::ALL()) :
-                     r == 3 ? Kokkos::subview(_inverseMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
-                     /**/     Kokkos::subview(_inverseMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
-
+      template<typename matViewType,
+               typename invViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static void 
+      apply_inverse( /**/  invViewType inv,
+                     const matViewType mat ) {
         // compute determinant
         const value_type val = RealSpaceTools<>::Serial::det(mat);
-
+        
 #ifdef HAVE_INTREPID2_DEBUG
         {
           bool dbgInfo = false;
@@ -567,8 +554,7 @@ namespace Intrepid2 {
 #endif
         }
 #endif
-        const size_t dim = mat.dimension(0);
-        switch (dim) {
+        switch (mat.dimension(0)) {
         case 1: {
           inv(0,0) = value_type(1)/mat(0,0);
           break;
@@ -611,6 +597,23 @@ namespace Intrepid2 {
         }
         }
       }
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cl,
+                      const ordinal_type pt) const {
+        const auto mat = Kokkos::subview(_inMats,      cl, pt, Kokkos::ALL(), Kokkos::ALL());
+        auto       inv = Kokkos::subview(_inverseMats, cl, pt, Kokkos::ALL(), Kokkos::ALL());
+
+        apply_inverse( inv, mat );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type pt) const {
+        const auto mat = Kokkos::subview(_inMats,      pt, Kokkos::ALL(), Kokkos::ALL());
+        auto       inv = Kokkos::subview(_inverseMats, pt, Kokkos::ALL(), Kokkos::ALL());
+
+        apply_inverse( inv, mat );
+      }
     };
   }
 
@@ -626,8 +629,8 @@ namespace Intrepid2 {
     {
       INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != inverseMats.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Matrix array arguments do not have identical ranks!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument,
-                                      ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 3 || inMats.rank() > 4, std::invalid_argument,
+                                      ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 3, or 4!");
       for (size_t i=0;i<inMats.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != inverseMats.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::inverse): Dimensions of matrix arguments do not agree!");
@@ -644,13 +647,27 @@ namespace Intrepid2 {
     typedef          FunctorRealSpaceTools::F_inverse<inverseMatViewType,inMatViewType>    FunctorType;
     typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
-    const auto r = inMats.rank();
-    const auto loopSize = ( r == 2 ? 1 :
-                            r == 3 ? inverseMats.dimension(0) :
-                            /**/     inverseMats.dimension(0)*inverseMats.dimension(1) );
-
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(inverseMats, inMats) );
+    switch (inMats.rank()) {
+    case 3: { // output P,D,D and input P,D,D
+      using range_policy_type = Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> >;
+      range_policy_type policy(0, inverseMats.dimension(0));
+      Kokkos::parallel_for( policy, FunctorType(inverseMats, inMats) );
+      break;
+    }
+    case 4: { // output C,P,D,D and input C,P,D,D
+      using range_policy_type = Kokkos::Experimental::MDRangePolicy
+        < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      range_policy_type policy( { 0, 0 },
+                                { inverseMats.dimension(0), inverseMats.dimension(1) } );
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(inverseMats, inMats) );
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                    ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
+      break;
+    }
+    }
   }
 
   // ------------------------------------------------------------------------------------
@@ -668,18 +685,16 @@ namespace Intrepid2 {
         : _detArray(detArray_), _inMats(inMats_) {}
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type iter) const {
-        ordinal_type i, j;
-        Util::unrollIndex( i, j,
-                           _detArray.dimension(0),
-                           _detArray.dimension(1),
-                           iter );
+      void operator()(const ordinal_type pt) const {
+        const auto mat = Kokkos::subview(_inMats, pt, Kokkos::ALL(), Kokkos::ALL());
+        _detArray(pt) = RealSpaceTools<>::Serial::det(mat);
+      }
 
-        const auto r = _inMats.rank();
-        auto mat = ( r == 3 ? Kokkos::subview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
-                     /**/     Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
-
-        _detArray(i, j) = RealSpaceTools<>::Serial::det(mat);
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cl, 
+                      const ordinal_type pt) const {
+        const auto mat = Kokkos::subview(_inMats, cl, pt, Kokkos::ALL(), Kokkos::ALL());
+        _detArray(cl, pt) = RealSpaceTools<>::Serial::det(mat);
       }
     };
   }
@@ -714,9 +729,27 @@ namespace Intrepid2 {
     typedef          FunctorRealSpaceTools::F_det<detArrayViewType,inMatViewType>          FunctorType;
     typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
-    const auto loopSize = detArray.dimension(0)*detArray.dimension(1);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(detArray, inMats) );
+    switch (detArray.rank()) {
+    case 1: { // output P and input P,D,D
+      using range_policy_type = Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> >;
+      range_policy_type policy(0, detArray.dimension(0));
+      Kokkos::parallel_for( policy, FunctorType(detArray, inMats) );
+      break;
+    }
+    case 2: { // output C,P and input C,P,D,D
+      using range_policy_type = Kokkos::Experimental::MDRangePolicy
+        < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      range_policy_type policy( { 0, 0 },
+                                { detArray.dimension(0), detArray.dimension(1) } );
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(detArray, inMats) );
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                    ">>> ERROR (RealSpaceTools::det): Rank of detArray must be 1 or 2!");
+      break;
+    }
+    }
   }
 
   // ------------------------------------------------------------------------------------
