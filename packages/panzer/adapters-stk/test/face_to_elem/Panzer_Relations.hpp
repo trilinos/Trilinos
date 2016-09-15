@@ -32,7 +32,7 @@ public:
 
   void setNormals(Teuchos::RCP<std::vector<panzer::Workset> > worksets);
 
-  void getNormal(int ielem, int iface, std::vector<double> &normal);
+  void getNormal(LocalOrdinal ielem, int iface, std::vector<double> &normal);
 protected:
   Teuchos::RCP<panzer::ConnManager<int,int> > conn_;
 

@@ -259,7 +259,7 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
     }
   }
 }
-void FaceToElems::getNormal(int ielem, int iface, std::vector<double> &normal){
+void FaceToElems::getNormal(LocalOrdinal ielem, int iface, std::vector<double> &normal){
   TEUCHOS_ASSERT(ielem < face_normal_.extent(0));
   TEUCHOS_ASSERT(iface < face_normal_.extent(1));
   normal.resize(dimension_);

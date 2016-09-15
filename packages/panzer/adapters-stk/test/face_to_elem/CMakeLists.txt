@@ -6,7 +6,7 @@ SET(UNIT_TEST_DRIVER
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tFaceToElem
   SOURCES tFaceToElem.cpp Panzer_Relations.cpp Panzer_ElemFieldPattern.cpp Panzer_FaceFieldPattern.cpp Panzer_EdgeFieldPattern.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 4
+  NUM_MPI_PROCS 2
   COMM serial mpi
   )
 

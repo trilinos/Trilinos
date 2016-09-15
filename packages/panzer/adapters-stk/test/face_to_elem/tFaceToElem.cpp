@@ -300,6 +300,10 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tri_normals)
   std::vector<double> norm;
   double nxny2=sqrt(nx*nx+ny*ny);
 
+  int rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &rank);
+  if (rank > 0) return;
+
   // face 0 is pointing up.
   rel.getNormal(4, 0, norm);
   TEST_FLOATING_EQUALITY( norm[1], 1.0, 1e-14);
