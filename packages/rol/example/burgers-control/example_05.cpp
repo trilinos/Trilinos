@@ -84,42 +84,41 @@ int main(int argc, char* argv[]) {
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-7);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
-    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
     /**********************************************************************************************/
     /************************* CONSTRUCT VECTORS **************************************************/
     /**********************************************************************************************/
     // Build control vectors
     int nx = 256;
-    Teuchos::RCP<std::vector<RealT> > x1_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> x1(x1_rcp);
-    Teuchos::RCP<std::vector<RealT> > x2_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> x2(x2_rcp);
-    Teuchos::RCP<std::vector<RealT> > x3_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> x3(x3_rcp);
-    Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
-    ROL::StdVector<RealT> z(z_rcp);
-    Teuchos::RCP<std::vector<RealT> > xr_rcp = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
+    // Construct storage for optimal solution
+    Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp(new std::vector<RealT>(nx+2,0));
+    Teuchos::RCP<ROL::Vector<RealT> > zp  = Teuchos::rcp(new ROL::StdVector<RealT>(z_rcp));
+    Teuchos::RCP<std::vector<RealT> > x1_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0));
+    Teuchos::RCP<ROL::Vector<RealT> > x1p = Teuchos::rcp(new ROL::StdVector<RealT>(x1_rcp));
+    Teuchos::RCP<std::vector<RealT> > x2_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0));
+    Teuchos::RCP<ROL::Vector<RealT> > x2p = Teuchos::rcp(new ROL::StdVector<RealT>(x2_rcp));
+    Teuchos::RCP<std::vector<RealT> > x3_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0));
+    Teuchos::RCP<ROL::Vector<RealT> > x3p = Teuchos::rcp(new ROL::StdVector<RealT>(x3_rcp));
+    std::vector<Teuchos::RCP<ROL::Vector<RealT> > > xvec = {x1p, x2p, x3p};
+    // Create vectors for derivative check
+    Teuchos::RCP<std::vector<RealT> > xr_rcp = Teuchos::rcp(new std::vector<RealT>(nx+2,0));
     ROL::StdVector<RealT> xr(xr_rcp);
-    Teuchos::RCP<std::vector<RealT> > d_rcp  = Teuchos::rcp( new std::vector<RealT>(nx+2,0.0) );
+    Teuchos::RCP<std::vector<RealT> > d_rcp  = Teuchos::rcp(new std::vector<RealT>(nx+2,0));
     ROL::StdVector<RealT> d(d_rcp);
     for ( int i = 0; i < nx+2; i++ ) {
       (*xr_rcp)[i] = random<RealT>(comm);
       (*d_rcp)[i]  = random<RealT>(comm);
     }
     // Build state and adjoint vectors
-    Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
-    ROL::StdVector<RealT> u(u_rcp);
-    Teuchos::RCP<std::vector<RealT> > p_rcp  = Teuchos::rcp( new std::vector<RealT>(nx,0.0) );
-    ROL::StdVector<RealT> p(p_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(&u,false);
-    Teuchos::RCP<ROL::Vector<RealT> > pp = Teuchos::rcp(&p,false);
+    Teuchos::RCP<std::vector<RealT> > u_rcp = Teuchos::rcp(new std::vector<RealT>(nx,1));
+    Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::StdVector<RealT>(u_rcp));
+    Teuchos::RCP<std::vector<RealT> > p_rcp = Teuchos::rcp(new std::vector<RealT>(nx,0));
+    Teuchos::RCP<ROL::Vector<RealT> > pp = Teuchos::rcp(new ROL::StdVector<RealT>(p_rcp));
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
     // Build samplers
-    int dim = 4;
-    int nSamp = 100;
-    std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
+    int dim = 4, nSamp = 100;
+    std::vector<RealT> tmp = {-1, 1};
     std::vector<std::vector<RealT> > bounds(dim,tmp);
     Teuchos::RCP<ROL::BatchManager<RealT> > bman
       = Teuchos::rcp(new ROL::StdTeuchosBatchManager<RealT,int>(comm));
@@ -134,153 +133,114 @@ int main(int argc, char* argv[]) {
       = Teuchos::rcp(new Objective_BurgersControl<RealT>(alpha,nx));
     Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > pconSimOpt
       = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(nx));
+    pconSimOpt->setSolveParameters(*parlist);
     Teuchos::RCP<ROL::ParametrizedObjective<RealT> > pObj
       = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,pp));
-    Teuchos::RCP<ROL::Objective<RealT> > obj;
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
-    x1.set(xr);
+    xvec[0]->set(xr);
     pObj->setParameter(sampler->getMyPoint(0));
-    pObj->checkGradient(x1,d,true,*outStream);
-    pObj->checkHessVec(x1,d,true,*outStream);
+    pObj->checkGradient(*xvec[0],d,true,*outStream);
+    pObj->checkHessVec(*xvec[0],d,true,*outStream);
     /**********************************************************************************************/
-    /************************* SMOOTHED CVAR 1.e-2 ************************************************/
+    /************************* SMOOTHED CVAR 1.e-2, 1.e-4, 1.e-6 **********************************/
     /**********************************************************************************************/
-    *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
-    // Build CVaR objective function
-    Teuchos::ParameterList list1;
-    list1.sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
-    list1.sublist("SOL").set("Store Sampled Value and Gradient",true);
-    list1.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
-    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.99);
-    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
-    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1.e-2);
-    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
-    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
-    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
-    // Build stochastic problem
-    Teuchos::RCP<ROL::Vector<RealT> > x1p = Teuchos::rcp(&x1,false);
-    x1p->zero();
-    ROL::StochasticProblem<RealT> optProb1(list1,pObj,sampler,x1p);
-    optProb1.checkObjectiveGradient(d,true,*outStream);
-    optProb1.checkObjectiveHessVec(d,true,*outStream);
-    // Run ROL algorithm
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
-    clock_t start = clock();
-    algo->run(optProb1,true,*outStream);
-    *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
-    /**********************************************************************************************/
-    /************************* SMOOTHED CVAR 1.e-4 ************************************************/
-    /**********************************************************************************************/
-    *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
-    Teuchos::ParameterList list2;
-    list2.sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
-    list2.sublist("SOL").set("Store Sampled Value and Gradient",true);
-    list2.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
-    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.99);
-    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
-    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1.e-4);
-    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
-    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
-    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
-    // Build stochastic problem
-    Teuchos::RCP<ROL::Vector<RealT> > x2p = Teuchos::rcp(&x2,false);
-    x2p->set(*x1p);
-    ROL::StochasticProblem<RealT> optProb2(list2,pObj,sampler,x2p);
-    optProb2.setSolutionStatistic(optProb1.getSolutionStatistic());
-    optProb2.checkObjectiveGradient(d,true,*outStream);
-    optProb2.checkObjectiveHessVec(d,true,*outStream);
-    // Run ROL algorithm
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
-    start = clock();
-    algo->run(optProb2,true,*outStream);
-    *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
-    /**********************************************************************************************/
-    /************************* SMOOTHED CVAR 1.e-6 ************************************************/
-    /**********************************************************************************************/
-    *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
-    Teuchos::ParameterList list3;
-    list3.sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
-    list3.sublist("SOL").set("Store Sampled Value and Gradient",true);
-    list3.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
-    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.99);
-    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
-    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1.e-6);
-    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
-    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
-    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
-    // Build stochastic problem
-    Teuchos::RCP<ROL::Vector<RealT> > x3p = Teuchos::rcp(&x3,false);
-    x3p->set(*x2p);
-    ROL::StochasticProblem<RealT> optProb3(list3,pObj,sampler,x3p);
-    optProb3.setSolutionStatistic(optProb2.getSolutionStatistic());
-    optProb3.checkObjectiveGradient(d,true,*outStream);
-    optProb3.checkObjectiveHessVec(d,true,*outStream);
-    // Run ROL algorithm
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
-    start = clock();
-    algo->run(optProb3,true,*outStream);
-    *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
+    const RealT cl(0.9), cc(1), lb(-0.5), ub(0.5);
+    const std::string ra = "Risk Averse", rm = "CVaR", dist = "Parabolic";
+    const bool storage = true;
+    RealT eps(1.e-2);
+    std::vector<RealT> stat(3,0);
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
+    Teuchos::RCP<ROL::StochasticProblem<RealT> > optProb;
+    for (int i = 0; i < 3; ++i) {
+      *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
+      // Build CVaR risk measure
+      Teuchos::ParameterList list;
+      list.sublist("SOL").set("Stochastic Optimization Type",ra);
+      list.sublist("SOL").set("Store Sampled Value and Gradient",storage);
+      list.sublist("SOL").sublist("Risk Measure").set("Name",rm);
+      list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Confidence Level",cl);
+      list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Convex Combination Parameter",cc);
+      list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Smoothing Parameter",eps);
+      list.sublist("SOL").sublist("Risk Measure").sublist(rm).sublist("Distribution").set("Name",dist);
+      list.sublist("SOL").sublist("Risk Measure").sublist(rm).sublist("Distribution").sublist(dist).set("Lower Bound",lb);
+      list.sublist("SOL").sublist("Risk Measure").sublist(rm).sublist("Distribution").sublist(dist).set("Upper Bound",ub);
+      // Build stochastic problem
+      if ( i==0 ) { xvec[i]->zero();          }
+      else        { xvec[i]->set(*xvec[i-1]); }
+      optProb = Teuchos::rcp(new ROL::StochasticProblem<RealT>(list,pObj,sampler,xvec[i]));
+      if ( i==0 ) { optProb->setSolutionStatistic(1);         }
+      else        { optProb->setSolutionStatistic(stat[i-1]); }
+      optProb->checkObjectiveGradient(d,true,*outStream);
+      optProb->checkObjectiveHessVec(d,true,*outStream);
+      // Run ROL algorithm
+      algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+      clock_t start = clock();
+      algo->run(*optProb,true,*outStream);
+      *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
+      // Get solution statistic
+      stat[i] = optProb->getSolutionStatistic();
+      // Update smoothing parameter
+      eps *= static_cast<RealT>(1.e-2);
+    }
     /**********************************************************************************************/
     /************************* NONSMOOTH PROBLEM **************************************************/
     /**********************************************************************************************/
     *outStream << "\nSOLVE NONSMOOTH CVAR PROBLEM WITH BUNDLE TRUST REGION\n";
     Teuchos::ParameterList list;
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
-    list.sublist("SOL").set("Store Sampled Value and Gradient",true);
-    list.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.99);
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",0.);
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Dirac");
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Dirac").set("Location",0.);
+    list.sublist("SOL").set("Stochastic Optimization Type",ra);
+    list.sublist("SOL").set("Store Sampled Value and Gradient",storage);
+    list.sublist("SOL").sublist("Risk Measure").set("Name",rm);
+    list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Confidence Level",cl);
+    list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Convex Combination Parameter",cc);
+    list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Smoothing Parameter",0.);
+    list.sublist("SOL").sublist("Risk Measure").sublist(rm).sublist("Distribution").set("Name","Dirac");
+    list.sublist("SOL").sublist("Risk Measure").sublist(rm).sublist("Distribution").sublist("Dirac").set("Location",0.);
     // Build stochastic problem
-    Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(&z,false);
-    zp->set(*x3p);
-    ROL::StochasticProblem<RealT> optProb(list,pObj,sampler,zp);
-    optProb.setSolutionStatistic(optProb3.getSolutionStatistic());
-    optProb.checkObjectiveGradient(d,true,*outStream);
-    optProb.checkObjectiveHessVec(d,true,*outStream);
+    zp->set(*xvec[2]);
+    optProb = Teuchos::rcp(new ROL::StochasticProblem<RealT>(list,pObj,sampler,zp));
+    optProb->setSolutionStatistic(stat[2]);
+    optProb->checkObjectiveGradient(d,true,*outStream);
+    optProb->checkObjectiveHessVec(d,true,*outStream);
     // Run ROL algorithm
     parlist->sublist("Status Test").set("Iteration Limit",1000);
     parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-7);
     algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Bundle",*parlist,false));
-    start = clock();
-    algo->run(optProb,true,*outStream);
+    clock_t start = clock();
+    algo->run(*optProb,true,*outStream);
     *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* COMPUTE ERROR ******************************************************/
     /**********************************************************************************************/
+    Teuchos::RCP<ROL::Vector<RealT> > cErr = zp->clone();
+    RealT zstat = optProb->getSolutionStatistic();
     *outStream << "\nSUMMARY:\n";
     *outStream << "  ---------------------------------------------\n";
-    *outStream << "    True Value-At-Risk    = " << optProb.getSolutionStatistic() << "\n";
+    *outStream << "    True Value-At-Risk    = " << zstat << "\n";
     *outStream << "  ---------------------------------------------\n";
-    RealT VARerror  = std::abs(optProb.getSolutionStatistic()-optProb1.getSolutionStatistic());
-    Teuchos::RCP<ROL::Vector<RealT> > cErr = x1.clone();
-    cErr->set(x1); cErr->axpy(-1.0,z);
+    RealT VARerror  = std::abs(zstat-stat[0]);
+    cErr->set(*xvec[0]); cErr->axpy(-1.0,*zp);
     RealT CTRLerror = cErr->norm();
     RealT TOTerror1 = std::sqrt(std::pow(VARerror,2)+std::pow(CTRLerror,2));
-    *outStream << "    Value-At-Risk (1.e-2) = " << optProb1.getSolutionStatistic() << "\n";
+    *outStream << "    Value-At-Risk (1.e-2) = " <<   stat[0] << "\n";
     *outStream << "    Value-At-Risk Error   = " <<  VARerror << "\n";
     *outStream << "    Control Error         = " << CTRLerror << "\n";
     *outStream << "    Total Error           = " << TOTerror1 << "\n";
     *outStream << "  ---------------------------------------------\n";
-    VARerror  = std::abs(optProb.getSolutionStatistic()-optProb2.getSolutionStatistic());
-    cErr = x2.clone();
-    cErr->set(x2); cErr->axpy(-1.0,z);
+    VARerror  = std::abs(zstat-stat[1]);
+    cErr->set(*xvec[1]); cErr->axpy(-1.0,*zp);
     CTRLerror = cErr->norm();
     RealT TOTerror2 = std::sqrt(std::pow(VARerror,2)+std::pow(CTRLerror,2));
-    *outStream << "    Value-At-Risk (1.e-4) = " << optProb2.getSolutionStatistic() << "\n";
+    *outStream << "    Value-At-Risk (1.e-4) = " <<   stat[1] << "\n";
     *outStream << "    Value-At-Risk Error   = " <<  VARerror << "\n";
     *outStream << "    Control Error         = " << CTRLerror << "\n";
     *outStream << "    Total Error           = " << TOTerror2 << "\n";
     *outStream << "  ---------------------------------------------\n";
-    VARerror  = std::abs(optProb.getSolutionStatistic()-optProb3.getSolutionStatistic());
-    cErr = x3.clone();
-    cErr->set(x3); cErr->axpy(-1.0,z);
+    VARerror  = std::abs(zstat-stat[2]);
+    cErr->set(*xvec[2]); cErr->axpy(-1.0,*zp);
     CTRLerror = cErr->norm();
     RealT TOTerror3 = std::sqrt(std::pow(VARerror,2)+std::pow(CTRLerror,2));
-    *outStream << "    Value-At-Risk (1.e-6) = " << optProb3.getSolutionStatistic() << "\n";
+    *outStream << "    Value-At-Risk (1.e-6) = " <<   stat[2] << "\n";
     *outStream << "    Value-At-Risk Error   = " <<  VARerror << "\n";
     *outStream << "    Control Error         = " << CTRLerror << "\n";
     *outStream << "    Total Error           = " << TOTerror3 << "\n";

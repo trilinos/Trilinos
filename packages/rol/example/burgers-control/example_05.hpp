@@ -206,9 +206,7 @@ public:
   void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<std::vector<Real> > up =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(u)).getVector());
-    //up->assign(up->size(),z.norm()/(Real)up->size());
-    up->assign(up->size(),z.norm()/up->size());
-    //up->assign(up->size(),1.0);
+    up->assign(up->size(),static_cast<Real>(1));
     ROL::ParametrizedEqualityConstraint_SimOpt<Real>::solve(c,u,z,tol);
   }
 
