@@ -52,7 +52,7 @@
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
-#include "Tpetra_Map_decl.hpp"
+#include "Tpetra_Details_LocalMap.hpp"
 #include <type_traits>
 
 namespace Tpetra {
