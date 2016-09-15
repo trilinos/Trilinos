@@ -85,8 +85,23 @@ public:
         return stkFieldAdapter.get(entity, component);
     }
 
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field_in)
+    {
+    }
+
     stk::mesh::EntityRank get_rank() const { return stkFieldAdapter.get_rank(); }
 
+    void swap_data(ConstStkFieldAdapter<T> &sf)
+    {
+    }
+    void swap_data(StkFieldAdapter<T> &sf)
+    {
+    }
+    //TODO: delete and work with SM to replace usage
+    StkFieldAdapter<T> get_non_const_field() const
+    {
+        return stkFieldAdapter;
+    }
 private:
     StkFieldAdapter<T> stkFieldAdapter;
 };
@@ -331,6 +346,32 @@ public:
 
     STK_FUNCTION
     stk::mesh::EntityRank get_rank() const { return staticField.rank; }
+
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
+    {
+        staticField.copy_device_to_host(bulk, field);
+    }
+
+    STK_FUNCTION
+    void swap_data(ConstStaticField<T> &sf)
+    {
+        swap_data(sf.staticField);
+    }
+    STK_FUNCTION
+    void swap_data(StaticField<T> &sf)
+    {
+        StaticField<T> tmp = sf;
+        sf = staticField;
+        staticField = tmp;
+        constDeviceData = staticField.deviceData;
+    }
+
+    //TODO: delete and work with SM to replace usage
+    STK_FUNCTION
+    StaticField<T> get_non_const_field() const
+    {
+        return staticField;
+    }
 
 private:
     StaticField<T> staticField;
