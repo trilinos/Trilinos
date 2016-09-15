@@ -1608,21 +1608,7 @@ namespace Tpetra {
     if (newComm.is_null ()) {
       return null; // my process does not participate in the new Map
     } else {
-      // Map requires that the index base equal the global min GID.
-      // Figuring out the global min GID requires a reduction over all
-      // processes in the new communicator.  It could be that some (or
-      // even all) of these processes contain zero entries.  (Recall
-      // that this method, unlike removeEmptyProcesses(), may remove
-      // an arbitrary subset of processes.)  We deal with this by
-      // doing a min over the min GID on each process if the process
-      // has more than zero entries, or the global max GID, if that
-      // process has zero entries.  If no processes have any entries,
-      // then the index base doesn't matter anyway.
-      const GO myMinGid = (this->getNodeNumElements () == 0) ?
-        this->getMaxAllGlobalIndex () : this->getMinGlobalIndex ();
-      GO newIndexBase = OrdinalTraits<GO>::invalid ();
-      reduceAll<int, GO> (*newComm, REDUCE_MIN, myMinGid, outArg (newIndexBase));
-      return rcp (new map_type (globalNumElts, myElts, newIndexBase, newComm, node));
+      return rcp (new map_type (globalNumElts, myElts, getIndexBase(), newComm, node));
     }
   }
 
