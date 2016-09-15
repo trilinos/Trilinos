@@ -1795,9 +1795,7 @@ TEST(BulkData, testChangeEntityPartsOfShared)
             EXPECT_FALSE(shared_procs.empty());
         }
 
-        // Expect that part change had no impact since it was on the proc that did not end
-        // up as the owner
-        EXPECT_FALSE(mesh.bucket(changing_node).member(extra_node_part));
+        EXPECT_TRUE(mesh.bucket(changing_node).member(extra_node_part));
 
         mesh.modification_begin();
 
@@ -2677,9 +2675,9 @@ TEST(BulkData, onlyKeepTheOwnersParts)
     EXPECT_TRUE( nodeBucket.member(stkMeshMetaData.globally_shared_part()));
 
     EXPECT_TRUE( nodeBucket.member(partA));
-    EXPECT_FALSE( nodeBucket.member(partB));
+    EXPECT_TRUE( nodeBucket.member(partB));
     EXPECT_TRUE( stk::mesh::has_superset(nodeBucket,partA));
-    EXPECT_FALSE( stk::mesh::has_superset(nodeBucket,partB));
+    EXPECT_TRUE( stk::mesh::has_superset(nodeBucket,partB));
 
     stk::mesh::Entity element0 = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, element_id_0);
     stk::mesh::Entity element1 = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, element_id_1);

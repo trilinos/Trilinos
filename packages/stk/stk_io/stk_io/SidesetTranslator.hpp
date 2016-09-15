@@ -18,6 +18,8 @@ inline size_t get_number_sides_in_sideset(const stk::mesh::BulkData& bulk,
 {
     if (bulk.has_sideset_data())
     {
+        selector &= ( bulk.mesh_meta_data().locally_owned_part() | bulk.mesh_meta_data().globally_shared_part());
+
         size_t num_sides = 0;
 
         const stk::mesh::SideSet& sset = bulk.get_sideset_data(sideset_id);
@@ -45,6 +47,7 @@ inline size_t get_number_sides_in_sideset(const stk::mesh::BulkData& bulk,
     }
     else
     {
+        selector &= bulk.mesh_meta_data().locally_owned_part();
         return count_selected_entities(selector, buckets);
     }
 }
@@ -64,7 +67,7 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
         size_t num_sides = sset.size();
         elem_side_ids.reserve(num_sides*2);
 
-        stk::mesh::Selector selector = *part & bulk_data.mesh_meta_data().locally_owned_part();
+        stk::mesh::Selector selector = *part & ( bulk_data.mesh_meta_data().locally_owned_part() | bulk_data.mesh_meta_data().globally_shared_part() );
         if(subset_selector)
             selector &= *subset_selector;
 

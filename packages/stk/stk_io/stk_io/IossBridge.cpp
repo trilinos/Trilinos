@@ -1218,7 +1218,7 @@ namespace stk {
     namespace {
 
       void define_side_block(const stk::mesh::BulkData &bulk,
-                             const stk::mesh::Selector &selector,
+                             stk::mesh::Selector selector,
                              stk::mesh::Part &part,
                              Ioss::SideSet *sset,
                              int spatial_dimension)
@@ -1274,6 +1274,8 @@ namespace stk {
                                             Ioss::Field::MESH, side_count));
         }
 
+        selector &= bulk.mesh_meta_data().locally_owned_part();
+
         mesh::Selector *select = new mesh::Selector(selector);
         side_block->property_add(Ioss::Property(internal_selector_name, select, false));
         side_block->property_add(Ioss::Property(base_stk_part_name, getPartName(part)));
@@ -1289,21 +1291,20 @@ namespace stk {
                               int spatial_dimension,
                               const stk::mesh::Selector *subset_selector)
       {
-        mesh::MetaData & meta = mesh::MetaData::get(part);
         STKIORequire(type == stk::topology::FACE_RANK || stk::topology::EDGE_RANK);
 
         const stk::mesh::PartVector &blocks = part.subsets();
         if (blocks.size() > 0) {
           for (size_t j = 0; j < blocks.size(); j++) {
             mesh::Part & side_block_part = *blocks[j];
-            mesh::Selector selector = meta.locally_owned_part() & side_block_part;
+            mesh::Selector selector = side_block_part;
             if (subset_selector) selector &= *subset_selector;
 
             define_side_block(bulk_data, selector, side_block_part,
                               sset, spatial_dimension);
           }
         } else {
-          mesh::Selector selector = meta.locally_owned_part() & part;
+          mesh::Selector selector = part;
           if (subset_selector) selector &= *subset_selector;
           define_side_block(bulk_data, selector, part, sset, spatial_dimension);
         }

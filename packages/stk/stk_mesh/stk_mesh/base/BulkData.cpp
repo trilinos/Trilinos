@@ -4851,6 +4851,26 @@ void pack_induced_memberships_for_entities_less_than_element_rank( BulkData& bul
     }
 }
 
+void append_parts_from_sharer_to_owner(stk::mesh::BulkData& bulk, stk::mesh::Entity entity, stk::mesh::OrdinalVector &partOrdinals)
+{
+    if(bulk.state(entity)==stk::mesh::Created)
+    {
+        const stk::mesh::PartVector& all_parts = bulk.bucket(entity).supersets();
+        partOrdinals.reserve(all_parts.size());
+        for(stk::mesh::Part* part : all_parts)
+        {
+            bool isPartSameRankAsEntity = part->primary_entity_rank()==bulk.entity_rank(entity);
+            bool isPartParallelConsistent = part->entity_membership_is_parallel_consistent();
+            bool isRootTopologyPart = stk::mesh::is_topology_root_part(*part);
+            bool isAutoDeclaredPart = stk::mesh::is_auto_declared_part(*part);
+            if(isPartSameRankAsEntity && isPartParallelConsistent && !isRootTopologyPart && !isAutoDeclaredPart)
+            {
+                partOrdinals.push_back(part->mesh_meta_data_ordinal());
+            }
+        }
+    }
+}
+
 void pack_induced_memberships( BulkData& bulk_data,
                                stk::CommSparse & comm ,
                                const EntityCommListInfoVector & entity_comm )
@@ -4865,6 +4885,7 @@ void pack_induced_memberships( BulkData& bulk_data,
       induced.clear();
 
       induced_part_membership(bulk_data, entity_comm[i].entity , empty , induced );
+      append_parts_from_sharer_to_owner(bulk_data, entity_comm[i].entity, induced);
 
       CommBuffer & buf = comm.send_buffer( entity_comm[i].owner );
 
@@ -4979,14 +5000,17 @@ struct PartStorage
    PartVector removeParts;
 };
 
+
 void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, const EntityCommInfoVector& entity_comm_info,
         PartStorage& part_storage, stk::CommSparse& comm)
 {
     part_storage.induced_part_ordinals.clear();
     induced_part_membership(*this, entity, part_storage.empty, part_storage.induced_part_ordinals);
+
     unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
     filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
     stk::mesh::impl::convert_part_ordinals_to_parts(mesh_meta_data(), part_storage.induced_part_ordinals, part_storage.inducedParts);
+
     internal_change_entity_parts(entity, part_storage.inducedParts, part_storage.removeParts);
 }
 
