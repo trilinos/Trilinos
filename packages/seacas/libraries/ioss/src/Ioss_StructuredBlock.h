@@ -356,7 +356,7 @@ namespace Ioss {
     int64_t internal_put_field_data(const Field &field, void *data,
                                     size_t data_size) const override;
 
-  public:
+  private:
     void add_properties_and_fields(int index_dim);
 
     int m_ni;
