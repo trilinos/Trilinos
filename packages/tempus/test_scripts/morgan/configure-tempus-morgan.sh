@@ -50,12 +50,12 @@ cmake \
 -D Trilinos_ENABLE_SEACAS:BOOL=ON \
 -D Trilinos_ENABLE_SEACASIoss:BOOL=ON \
 -D Trilinos_ENABLE_STK:BOOL=ON \
--D Trilinos_ENABLE_STKClassic:BOOL=ON \
--D Trilinos_ENABLE_STKMesh:BOOL=OFF \
--D Trilinos_ENABLE_STKUtil:BOOL=OFF \
+-D Trilinos_ENABLE_STKClassic:BOOL=OFF \
+-D Trilinos_ENABLE_STKMesh:BOOL=ON \
+-D Trilinos_ENABLE_STKUtil:BOOL=ON \
 -D Trilinos_ENABLE_STKSearch:BOOL=OFF \
--D Trilinos_ENABLE_STKTopology:BOOL=OFF \
--D Trilinos_ENABLE_STKTransfer:BOOL=OFF \
+-D Trilinos_ENABLE_STKTopology:BOOL=ON \
+-D Trilinos_ENABLE_STKTransfer:BOOL=ON \
 -D Trilinos_ENABLE_STKDoc_tests:BOOL=OFF \
 -D Trilinos_ENABLE_STKUnit_tests:BOOL=OFF \
 -D Trilinos_ENABLE_STKUnit_test_utils:BOOL=OFF \
