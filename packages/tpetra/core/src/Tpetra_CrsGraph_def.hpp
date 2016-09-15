@@ -50,9 +50,10 @@
 /// want the declaration of Tpetra::CrsGraph, include
 /// "Tpetra_CrsGraph_decl.hpp".
 
-#include "Tpetra_Distributor.hpp"
-#include "Tpetra_Details_copyOffsets.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
+#include "Tpetra_Details_copyOffsets.hpp"
+#include "Tpetra_Details_getGraphDiagOffsets.hpp"
+#include "Tpetra_Distributor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include <algorithm>
 #include <limits>
@@ -60,97 +61,6 @@
 #include <utility>
 
 namespace Tpetra {
-
-  namespace Details {
-
-    // Implementation of Tpetra::CrsGraph::getLocalDiagOffsets, for
-    // the fillComplete case.
-    //
-    // FIXME (mfh 12 Mar 2016) There's currently no way to make a
-    // MemoryUnmanaged Kokkos::StaticCrsGraph.  Thus, we have to do
-    // this separately for its column indices.  We want the column
-    // indices to be unmanaged because we need to take subviews in
-    // this kernel.  Taking a subview of a managed View updates the
-    // reference count, which is a thread scalability bottleneck.
-    template<class LO, class GO, class Node>
-    class GetLocalDiagOffsets {
-    public:
-      typedef typename Node::device_type device_type;
-      // mfh 12 Mar 2016: getLocalDiagOffsets returns offsets as
-      // size_t.  However, see Github Issue #213.
-      typedef size_t diag_offset_type;
-      typedef Kokkos::View<diag_offset_type*, device_type,
-                           Kokkos::MemoryUnmanaged> diag_offsets_type;
-      typedef typename ::Tpetra::CrsGraph<LO, GO, Node> global_graph_type;
-      typedef typename global_graph_type::local_graph_type local_graph_type;
-      typedef typename global_graph_type::map_type::local_map_type local_map_type;
-      typedef Kokkos::View<const typename local_graph_type::size_type*,
-                           Kokkos::LayoutLeft, device_type> row_offsets_type;
-      // This is unmanaged for performance, because we need to take
-      // subviews inside the functor.
-      typedef Kokkos::View<const LO*, Kokkos::LayoutLeft, device_type,
-                           Kokkos::MemoryUnmanaged> lcl_col_inds_type;
-
-      GetLocalDiagOffsets (const diag_offsets_type& diagOffsets,
-                           const local_map_type& lclRowMap,
-                           const local_map_type& lclColMap,
-                           const row_offsets_type& ptr,
-                           const lcl_col_inds_type& ind,
-                           const bool isSorted) :
-        diagOffsets_ (diagOffsets),
-        lclRowMap_ (lclRowMap),
-        lclColMap_ (lclColMap),
-        ptr_ (ptr),
-        ind_ (ind),
-        isSorted_ (isSorted)
-      {
-        typedef typename device_type::execution_space execution_space;
-        typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
-
-        const LO lclNumRows = lclRowMap.getNodeNumElements ();
-        policy_type range (0, lclNumRows);
-        Kokkos::parallel_for (range, *this);
-      }
-
-      KOKKOS_INLINE_FUNCTION void
-      operator() (const LO& lclRowInd) const
-      {
-        const size_t STINV =
-          Tpetra::Details::OrdinalTraits<diag_offset_type>::invalid ();
-        const GO gblRowInd = lclRowMap_.getGlobalElement (lclRowInd);
-        const GO gblColInd = gblRowInd;
-        const LO lclColInd = lclColMap_.getLocalElement (gblColInd);
-
-        if (lclColInd == Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
-          diagOffsets_[lclRowInd] = STINV;
-        }
-        else {
-          // Could be empty, but that's OK.
-          const LO numEnt = ptr_[lclRowInd+1] - ptr_[lclRowInd];
-          // std::pair doesn't have its methods marked as device
-          // functions, so we have to use Kokkos::pair.
-          auto lclColInds =
-            Kokkos::subview (ind_, Kokkos::make_pair (ptr_[lclRowInd],
-                                                      ptr_[lclRowInd+1]));
-          using ::KokkosSparse::findRelOffset;
-          const LO diagOffset =
-            findRelOffset<LO, lcl_col_inds_type> (lclColInds, numEnt,
-                                                  lclColInd, 0, isSorted_);
-          diagOffsets_[lclRowInd] = (diagOffset == numEnt) ? STINV :
-            static_cast<diag_offset_type> (diagOffset);
-        }
-      }
-
-    private:
-      diag_offsets_type diagOffsets_;
-      local_map_type lclRowMap_;
-      local_map_type lclColMap_;
-      row_offsets_type ptr_;
-      lcl_col_inds_type ind_;
-      bool isSorted_;
-    };
-
-  } // namespace Details
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
@@ -5616,13 +5526,9 @@ namespace Tpetra {
     const bool sorted = this->isSorted ();
     if (isFillComplete ()) {
       auto lclGraph = this->getLocalGraph ();
-      // This actually invokes the parallel kernel to do the work.
-      Details::GetLocalDiagOffsets<LO, GO, Node> doIt (offsets,
-                                                       lclRowMap,
-                                                       lclColMap,
-                                                       lclGraph.row_map,
-                                                       lclGraph.entries,
-                                                       sorted);
+      Details::getGraphDiagOffsets (offsets, lclRowMap, lclColMap,
+                                    lclGraph.row_map, lclGraph.entries,
+                                    sorted);
     }
     else {
       for (LO lclRowInd = 0; lclRowInd < lclNumRows; ++lclRowInd) {
