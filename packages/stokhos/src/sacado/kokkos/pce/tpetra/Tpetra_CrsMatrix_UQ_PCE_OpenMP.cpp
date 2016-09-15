@@ -46,16 +46,26 @@
 
 #include "Tpetra_CrsMatrix_UQ_PCE.hpp"
 #include "Tpetra_CrsMatrix_UQ_PCE_def.hpp"
+#include "Kokkos_ArithTraits_MP_Vector.hpp"
+#include "Tpetra_Details_getDiagCopyWithoutOffsets_def.hpp"
 
 #define TPETRA_LOCAL_INST_N(N)               \
   INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_UQ_PCE_SPEC, N) \
   INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_INSTANT, N)
+
+// mfh 15 Sep 2016: Adding the following to the TPETRA_LOCAL_INST_N list above didn't help.
+//  INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_DETAILS_GETDIAGCOPYWITHOUTOFFSETS_INSTANT, N)
 
 namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   INSTANTIATE_TPETRA_UQ_PCE_OPENMP(TPETRA_LOCAL_INST_N)
+
+  template int Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 32, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> >(Tpetra::Vector<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 32, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>::classic>&, Tpetra::RowMatrix<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 32, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > const&, bool);
+  template int Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 16, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> >(Tpetra::Vector<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 16, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>::classic>&, Tpetra::RowMatrix<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 16, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > const&, bool);
+  template int Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 8, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> >(Tpetra::Vector<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 8, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>::classic>&, Tpetra::RowMatrix<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 8, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > const&, bool);
+  template int Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 4, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> >(Tpetra::Vector<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 4, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>::classic>&, Tpetra::RowMatrix<Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 4, Kokkos::OpenMP> >, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > const&, bool);
 
 } // namespace Tpetra
 
