@@ -53,20 +53,6 @@
 #include "Tpetra_Details_FixedHashTable_decl.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 
-// mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
-// it is by default), then Map will used the fixed-structure hash
-// table variant for global-to-local index lookups.  Otherwise, it
-// will use the dynamic-structure hash table variant.
-//
-// mfh 23 Mar 2014: I've removed all code in Map that uses the
-// dynamic-structure hash table variant, since it has not been used
-// for at least a year.  However, I am retaining the #define, in case
-// downstream code depends on it.
-
-#ifndef HAVE_TPETRA_FIXED_HASH_TABLE
-#  define HAVE_TPETRA_FIXED_HASH_TABLE 1
-#endif // HAVE_TPETRA_FIXED_HASH_TABLE
-
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
