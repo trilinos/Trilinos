@@ -70,7 +70,8 @@ public:
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                  Teuchos::ParameterList &parlist,
                  std::ostream &outStream = std::cout)
-    : pde_(pde), computeJ1_(true), computeJ2_(true), computeJ3_(true),
+    : ROL::ParametrizedEqualityConstraint_SimOpt<Real>(),
+      pde_(pde), computeJ1_(true), computeJ2_(true), computeJ3_(true),
       computeH11_(true), computeH12_(true), computeH13_(true),
       computeH21_(true), computeH22_(true), computeH23_(true),
       computeH31_(true), computeH32_(true), computeH33_(true) {
@@ -80,7 +81,8 @@ public:
 
   PDE_Constraint(const Teuchos::RCP<PDE<Real> > &pde,
                  const Teuchos::RCP<Assembler<Real> > &assembler)
-    : pde_(pde), assembler_(assembler), computeJ1_(true), computeJ2_(true), computeJ3_(true),
+    : ROL::ParametrizedEqualityConstraint_SimOpt<Real>(),
+      pde_(pde), assembler_(assembler), computeJ1_(true), computeJ2_(true), computeJ3_(true),
       computeH11_(true), computeH12_(true), computeH13_(true),
       computeH21_(true), computeH22_(true), computeH23_(true),
       computeH31_(true), computeH32_(true), computeH33_(true) {
