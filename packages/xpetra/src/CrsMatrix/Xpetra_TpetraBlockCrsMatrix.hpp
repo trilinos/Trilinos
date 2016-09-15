@@ -504,7 +504,7 @@ namespace Xpetra {
     //! Constructor for a fused export (not implemented(
     TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
-                    const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter,
+                    const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter2,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
                     const Teuchos::RCP<Teuchos::ParameterList>& params)
