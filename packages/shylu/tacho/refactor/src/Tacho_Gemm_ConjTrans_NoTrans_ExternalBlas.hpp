@@ -28,6 +28,8 @@ namespace Tacho {
          DenseExecViewTypeC &C) {
     Stat r_val;
 
+    typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
+
     const ordinal_type m = C.NumRows();
     const ordinal_type n = C.NumCols();
     const ordinal_type k = B.NumRows();
@@ -79,7 +81,7 @@ namespace Tacho {
       typedef typename DenseExecViewTypeA::value_type   value_type;
 
       Teuchos::BLAS<ordinal_type,value_type> blas;
-      
+
       const ordinal_type m = C.NumRows();
       const ordinal_type n = C.NumCols();
       const ordinal_type k = B.NumRows();
