@@ -51,56 +51,29 @@
 
 namespace Intrepid2 {
   
-  
   namespace FunctorArrayTools {
     template <typename outputFieldViewType, 
-              typename inputFieldViewType,
-              int fieldRank>
+              typename inputFieldViewType>
     struct F_cloneFields{
       outputFieldViewType _outputFields;
       inputFieldViewType _inputFields;
 
       KOKKOS_INLINE_FUNCTION
       F_cloneFields(outputFieldViewType outputFields_,
-              inputFieldViewType inputFields_)
+                    inputFieldViewType inputFields_)
         : _outputFields(outputFields_), _inputFields(inputFields_) {}
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        size_type cl, bf, pt;
-        Util::unrollIndex( cl, bf, pt,
-                           _outputFields.dimension(0), 
-                           _outputFields.dimension(1),
-                           _outputFields.dimension(2),
-                           iter );
-        
-        switch (fieldRank) {
-        case 3: { // scalar copy
-          _outputFields(cl, bf, pt) = _inputFields(bf, pt);
-          break;
-        }
-        case 4: { // vector copy
-          auto       output = Kokkos::subview( _outputFields, cl, bf, pt, Kokkos::ALL() );
-          const auto input  = Kokkos::subview( _inputFields,      bf, pt, Kokkos::ALL() );
-          
-          const size_type iend  = output.dimension(0);
-          for(size_type i = 0; i < iend; ++i)
-            output(i) = input(i);
-          break;
-        }
-        case 5: { // matrix
-          auto       output = Kokkos::subview( _outputFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-          const auto input  = Kokkos::subview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-          
-          const size_type iend  = output.dimension(0);
-          const size_type jend  = output.dimension(1);
-          
-          for(size_type i = 0; i < iend; ++i)
-            for(size_type j = 0; j < jend; ++j)
-              output(i, j) = input(i, j);
-          break;
-        }
-        }
+      void operator()(const ordinal_type cl,
+                      const ordinal_type bf,
+                      const ordinal_type pt) const {
+        const ordinal_type 
+          iend = _outputFields.dimension(3),
+          jend = _outputFields.dimension(4);
+
+        for (ordinal_type i=0;i<iend;++i)
+          for (ordinal_type j=0;j<jend;++j)
+            _outputFields(cl, bf, pt, i, j) = _inputFields(bf, pt, i, j);        
       }
     };
   } //namespace
@@ -131,31 +104,13 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFieldViewType;
     typedef Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFieldViewType; 
     typedef typename ExecSpace< typename inputFieldViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
-    
-    const size_type loopSize = outputFields.dimension(0)*outputFields.dimension(1)*outputFields.dimension(2);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
-    switch (outputFields.rank()) {
-    case 3: {
-      typedef FunctorArrayTools::F_cloneFields<outputFieldViewType, inputFieldViewType,3> FunctorType; 
-      Kokkos::parallel_for( policy, FunctorType(outputFields, inputFields) );
-      break;
-    }
-    case 4: {
-      typedef FunctorArrayTools::F_cloneFields<outputFieldViewType, inputFieldViewType,4> FunctorType; 
-      Kokkos::parallel_for( policy, FunctorType(outputFields, inputFields) );
-      break;
-    }
-    case 5: {
-      typedef FunctorArrayTools::F_cloneFields<outputFieldViewType, inputFieldViewType,5> FunctorType; 
-      Kokkos::parallel_for( policy, FunctorType(outputFields, inputFields) );
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                    ">>> ERROR (ArrayTools::cloneFields): The rank of the outputFields must be 3, 4, or 5.");
-    } 
-    }
+    typedef FunctorArrayTools::F_cloneFields<outputFieldViewType, inputFieldViewType> FunctorType; 
+    using range_policy_type = Kokkos::Experimental::MDRangePolicy
+      < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    range_policy_type policy( { 0, 0, 0 }, 
+                              { outputFields.dimension(0), outputFields.dimension(1), outputFields.dimension(2) } );
+    Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputFields) );
   }
   
   namespace FunctorArrayTools {
@@ -164,37 +119,28 @@ namespace Intrepid2 {
       outputFieldViewType _outputFields;
       inputFactorsViewType _inputFactors;
       inputFieldViewType _inputFields;
-
+      
       KOKKOS_INLINE_FUNCTION
       F_cloneScaleFields(outputFieldViewType outputFields_,
-              inputFactorsViewType inputFactors_,
-              inputFieldViewType inputFields_)
+                         inputFactorsViewType inputFactors_,
+                         inputFieldViewType inputFields_)
         : _outputFields(outputFields_), _inputFactors(inputFactors_), _inputFields(inputFields_) {}
-
+      
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        size_type cl, bf, pt;
-        Util::unrollIndex( cl, bf, pt,
-                           _outputFields.dimension(0),
-                           _outputFields.dimension(1),
-                           _outputFields.dimension(2),
-                           iter );
-
-        auto       output = Kokkos::subview( _outputFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-        const auto field  = Kokkos::subview( _inputFields,      bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-        const auto factor = Kokkos::subview( _inputFactors, cl, bf );
-
-        const size_type iend  = _outputFields.dimension(3);
-        const size_type jend  = _outputFields.dimension(4);
-
-        const auto val = factor();
-        for(size_type i = 0; i < iend; ++i)
-          for(size_type j = 0; j < jend; ++j)
-            output(i, j) = field(i, j) * val;
+      void operator()(const ordinal_type cl,
+                      const ordinal_type bf,
+                      const ordinal_type pt) const {
+        const ordinal_type iend  = _outputFields.dimension(3);
+        const ordinal_type jend  = _outputFields.dimension(4);
+        
+        const auto val = _inputFactors( cl, bf );
+        for (ordinal_type i=0;i<iend;++i)
+          for (ordinal_type j=0;j<jend;++j)
+            _outputFields( cl, bf, pt, i, j) = _inputFields(bf, pt, i, j)*val;
       }
     };
-    } //namespace
-
+  } //namespace
+  
   template<typename SpT>
   template<typename outputFieldValueType, class ...outputFieldProperties,
            typename inputFactorValueType, class ...inputFactorProperties,
@@ -231,13 +177,14 @@ namespace Intrepid2 {
     typedef FunctorArrayTools::F_cloneScaleFields<outputFieldViewType, inputFactorsViewType, inputFieldViewType> FunctorType;
     typedef typename ExecSpace<typename inputFieldViewType::execution_space , SpT>::ExecSpaceType ExecSpaceType;
 
-    const size_type loopSize = outputFields.dimension(0)*outputFields.dimension(1)*outputFields.dimension(2);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(outputFields, inputFactors, inputFields) );
+    using range_policy_type = Kokkos::Experimental::MDRangePolicy
+      < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    range_policy_type policy( { 0, 0, 0 }, 
+                              { outputFields.dimension(0), outputFields.dimension(1), outputFields.dimension(2) } );
+    Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputFactors, inputFields) );
   }
 
-
-    namespace FunctorArrayTools {
+  namespace FunctorArrayTools {
     template < typename inoutFieldViewType , typename inputFactorsViewType >
     struct F_scaleFields {
       inoutFieldViewType _inoutFields;
@@ -245,28 +192,20 @@ namespace Intrepid2 {
 
 
       F_scaleFields(inoutFieldViewType inoutFields_,
-              inputFactorsViewType inputFactors_)
+                    inputFactorsViewType inputFactors_)
         : _inoutFields(inoutFields_), _inputFactors(inputFactors_) {}
-
+      
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        size_type cl, bf, pt;
-        Util::unrollIndex( cl, bf, pt,
-                           _inoutFields.dimension(0),
-                           _inoutFields.dimension(1),
-                           _inoutFields.dimension(2),
-                           iter );
-        
-        auto       inout  = Kokkos::subview( _inoutFields, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL() );
-        const auto factor = Kokkos::subview( _inputFactors, cl, bf );
+      void operator()(const ordinal_type cl,
+                      const ordinal_type bf,
+                      const ordinal_type pt) const {
+        const ordinal_type iend  = _inoutFields.dimension(3);
+        const ordinal_type jend  = _inoutFields.dimension(4);
 
-        const size_type iend  = _inoutFields.dimension(3);
-        const size_type jend  = _inoutFields.dimension(4);
-
-        const auto val = factor();
-        for(size_type i = 0; i < iend; ++i)
-          for(size_type j = 0; j < jend; ++j)
-            inout(i, j) *= val;
+        const auto val = _inputFactors( cl, bf );
+        for (ordinal_type i=0;i<iend;++i)
+          for (ordinal_type j=0;j<jend;++j)
+            _inoutFields(cl, bf, pt, i, j) *= val;
       }
     };
     } //namespace
@@ -297,9 +236,11 @@ namespace Intrepid2 {
     typedef FunctorArrayTools::F_scaleFields<inoutFieldViewType, inputFactorsViewType> FunctorType;
     typedef typename ExecSpace< typename inoutFieldViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
     
-    const size_type loopSize = inoutFields.dimension(0)*inoutFields.dimension(1)*inoutFields.dimension(2);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(inoutFields, inputFactors) );
+    using range_policy_type = Kokkos::Experimental::MDRangePolicy
+      < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    range_policy_type policy( { 0, 0, 0 }, 
+                              { inoutFields.dimension(0), inoutFields.dimension(1), inoutFields.dimension(2) } );
+    Kokkos::Experimental::md_parallel_for( policy, FunctorType(inoutFields, inputFactors) );
   }
 
 } // end namespace Intrepid2
