@@ -136,7 +136,6 @@ public:
   Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const;
 
   void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
-
   void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
   //! gets the number of fields
@@ -215,7 +214,7 @@ public:
 
   const std::string & getFieldString(int num) const;
 
-  /** \brief Reset the indicies for this DOF manager.
+  /** \brief Reset the indices for this DOF manager.
     *
     * This method resets the indices and wipes out internal state. This method
     * does preserve the fields and the patterns added to the object. Also the
@@ -350,7 +349,7 @@ protected:
   std::vector<Teuchos::RCP<panzer::FieldAggPattern> > fa_fps_; //Ordered by blockOrder_;
 
   std::vector<GO> owned_;
-  std::vector<GO> owned_and_ghosted_;
+  std::vector<GO> ghosted_;
 
   // Element GIDS ordered by LID.
   std::vector<std::vector< GO > > elementGIDs_;

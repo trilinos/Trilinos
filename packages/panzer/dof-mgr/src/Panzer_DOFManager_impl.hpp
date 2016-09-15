@@ -261,21 +261,20 @@ Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::s
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::getOwnedIndices(std::vector<GO> & indicies) const
+void DOFManager<LO, GO>::getOwnedIndices(std::vector<GO>& indices) const
 {
-  indicies.resize(owned_.size());
-  for (size_t i = 0; i < owned_.size(); ++i) {
-    indicies[i]=owned_[i];
-  }
+  indices = owned_;
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::getOwnedAndGhostedIndices(std::vector<GO> & indicies) const
+void DOFManager<LO, GO>::getOwnedAndGhostedIndices(std::vector<GO>& indices)
+	const
 {
-  indicies.resize(owned_and_ghosted_.size());
-  for (size_t i = 0; i < owned_and_ghosted_.size(); ++i) {
-    indicies[i]=owned_and_ghosted_[i];
-  }
+  indices.resize(owned_.size() + ghosted_.size());
+  for (size_t i = 0; i < owned_.size(); ++i)
+    indices[i] = owned_[i];
+  for (size_t i = 0; i < ghosted_.size(); ++i)
+    indices[owned_.size() + i] = ghosted_[i];
 }
 
   //gets the number of fields
@@ -444,7 +443,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     }
     remainingOwned = isOwned;
 
-    HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
+    HashTable hashTable; // use to detect if global ID has been added to owned_
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
 
       if(fa_fps_[b]==Teuchos::null)
@@ -485,52 +484,52 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   }
 
-  // build owned and ghosted array: The old simple way led to slow
-  // Jacobian assembly, the new way speeds up Jacobian assembly
+  // Build the ghosted_ array.  The old simple way led to slow Jacobian
+  // assembly; the new way speeds up Jacobian assembly.
   {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns::build_owned_and_ghosted_array");
+    // Loop over all the elements and do a greedy ordering of local values over
+    // the elements for building ghosted_.  Hopefully this gives a better
+    // layout for an element-ordered assembly.
+    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::" \
+      "buildGlobalUnknowns::build_ghosted_array");
 
-    // loop over all elements. do greedy ordering of local values over elements for
-    // building owned_and_ghosted, hopefully this gives a better layout
-    // for element ordered assembly
+    // Use a hash table to detect if global IDs have been added to owned_.
     typedef std::unordered_set<GO> HashTable;
-    HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
-
-    for(std::size_t i=0;i<owned_.size();i++) {
+    HashTable hashTable;
+    for (std::size_t i = 0; i < owned_.size(); i++)
       hashTable.insert(owned_[i]);
-      owned_and_ghosted_.push_back(owned_[i]);
-    }
 
-    // this cute trick of constructing a accessor vector is to eliminate a copy
-    // of the block of code computing ghosted/owned DOFs
+    // Here we construct an accessor vector, such that we first process
+    // everything in the current element block, optionally followed by
+    // everything in the neighbor element block.
     std::vector<ElementBlockAccess> blockAccessVec;
     blockAccessVec.push_back(ElementBlockAccess(true,connMngr_));
     if(useNeighbors_)
       blockAccessVec.push_back(ElementBlockAccess(false,connMngr_));
-    // all owned will be processed first followed by those that are
-    // optionally ghosted
-
-    for(std::size_t a=0;a < blockAccessVec.size(); a++) {
-      // get access type (owned or neighbor)
-      const ElementBlockAccess & access = blockAccessVec[a];
-
-      for (size_t b = 0; b < blockOrder_.size(); ++b) {
-        if(fa_fps_[b]==Teuchos::null)
+    for (std::size_t a = 0; a < blockAccessVec.size(); ++a)
+    {
+      // Get the access type (owned or neighbor).
+      const ElementBlockAccess& access = blockAccessVec[a];
+      for (size_t b = 0; b < blockOrder_.size(); ++b)
+      {
+        if (fa_fps_[b] == Teuchos::null)
           continue;
+        const std::vector<LO>& myElements =
+          access.getElementBlock(blockOrder_[b]);
+        for (size_t l = 0; l < myElements.size(); ++l)
+        {
+          const std::vector<GO>& localOrdering = elementGIDs_[myElements[l]];
 
-        const std::vector<LO> & myElements = access.getElementBlock(blockOrder_[b]);
+          // Add "novel" global IDs into the ghosted_ vector.
+          for (std::size_t i = 0; i < localOrdering.size(); ++i)
+          {
+            std::pair<typename HashTable::iterator, bool> insertResult =
+              hashTable.insert(localOrdering[i]);
 
-        for (size_t l = 0; l < myElements.size(); ++l) {
-          const std::vector<GO> & localOrdering = elementGIDs_[myElements[l]];
-
-          // add "novel" global ids into owned_and_ghosted_ vector.
-          for(std::size_t i=0;i<localOrdering.size();i++) {
-            std::pair<typename HashTable::iterator,bool> insertResult = hashTable.insert(localOrdering[i]);
-
-            // if insertion succeeds, then this is "novel" to owned_and_ghosted_
-            // vector so include it
+            // If the insertion succeeds, then this is "novel" to the owned_
+            // and ghosted_ vectors, so include it in ghosted_.
             if(insertResult.second)
-              owned_and_ghosted_.push_back(localOrdering[i]);
+              ghosted_.push_back(localOrdering[i]);
           }
         }
       }
@@ -1068,7 +1067,7 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManager<LocalOrdinal
    fa_fps_.clear();
    elementGIDs_.clear();
    owned_.clear();
-   owned_and_ghosted_.clear();
+   ghosted_.clear();
    elementBlockGIDCount_.clear();
 
    return connMngr;
