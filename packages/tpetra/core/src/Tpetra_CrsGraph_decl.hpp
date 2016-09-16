@@ -414,7 +414,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const size_t maxNumEntriesPerRow,
               const ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
     ///
@@ -438,7 +438,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries
     ///   in each row (legacy KokkosClassic version).
@@ -463,7 +463,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -488,7 +488,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const typename local_graph_type::row_map_type& rowPointers,
               const typename local_graph_type::entries_type::non_const_type& columnIndices,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
     ///
@@ -513,7 +513,7 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<size_t> & rowPointers,
               const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and a local (sorted)
     ///   graph, which the resulting CrsGraph views.
@@ -587,7 +587,7 @@ namespace Tpetra {
     void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Default parameter list suitable for validation.
-    Teuchos::RCP<const ParameterList> getValidParameters () const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
 
     //@}
     //! @name Insertion/Removal Methods
@@ -748,7 +748,7 @@ namespace Tpetra {
     //@{
 
     //! Returns the communicator.
-    Teuchos::RCP<const Comm<int> > getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
     //! Returns the underlying node.
     Teuchos::RCP<node_type> getNode() const;
@@ -1280,6 +1280,7 @@ namespace Tpetra {
       using Teuchos::arcp;
       using Teuchos::Array;
       using Teuchos::ArrayRCP;
+      using Teuchos::null;
       const char tfecfFuncName[] = "allocateValues2D: ";
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -3117,6 +3118,7 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
       {
         using Teuchos::arcp;
+        using Teuchos::Array;
         using Teuchos::ArrayRCP;
         using Teuchos::ArrayView;
         using Teuchos::null;

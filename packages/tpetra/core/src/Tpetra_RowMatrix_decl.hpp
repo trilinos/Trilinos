@@ -320,8 +320,8 @@ namespace Tpetra {
     /// is set to \c null.
     virtual void
     getGlobalRowView (GlobalOrdinal GlobalRow,
-                      ArrayView<const GlobalOrdinal> &indices,
-                      ArrayView<const Scalar> &values) const = 0;
+                      Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                      Teuchos::ArrayView<const Scalar> &values) const = 0;
 
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix.

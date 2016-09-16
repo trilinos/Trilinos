@@ -156,7 +156,7 @@ namespace Tpetra {
     /// \param out [in/out] Output stream for debugging output.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            const RCP<Teuchos::FancyOStream>& out);
+            const Teuchos::RCP<Teuchos::FancyOStream>& out);
 
     /// \brief Constructor (with list of parameters)
     ///
@@ -191,7 +191,7 @@ namespace Tpetra {
     ///   two-argument constructor, listed above.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            const RCP<Teuchos::FancyOStream>& out,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out,
             const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Construct an Import from the source and target Maps.
@@ -266,28 +266,28 @@ namespace Tpetra {
     size_t getNumPermuteIDs() const;
 
     //! List of local IDs in the source Map that are permuted.
-    ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
+    Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
 
     //! List of local IDs in the target Map that are permuted.
-    ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
+    Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
 
     //! Number of entries not on the calling process.
     size_t getNumRemoteIDs() const;
 
     //! List of entries in the target Map to receive from other processes.
-    ArrayView<const LocalOrdinal> getRemoteLIDs() const;
+    Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const;
 
     //! Number of entries that must be sent by the calling process to other processes.
     size_t getNumExportIDs() const;
 
     //! List of entries in the source Map that will be sent to other processes.
-    ArrayView<const LocalOrdinal> getExportLIDs() const;
+    Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const;
 
     /// \brief List of processes to which entries will be sent.
     ///
     /// The entry with Local ID <tt>getExportLIDs()[i]</tt> will be
     /// sent to process <tt>getExportPIDs()[i]</tt>.
-    ArrayView<const int> getExportPIDs() const;
+    Teuchos::ArrayView<const int> getExportPIDs() const;
 
     //! The Source Map used to construct this Import object.
     Teuchos::RCP<const map_type> getSourceMap () const;
@@ -429,9 +429,9 @@ namespace Tpetra {
     //@}
   private:
     //! All the data needed for executing the Import communication plan.
-    RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
+    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
     //! Output stream for debug output.
-    RCP<Teuchos::FancyOStream> out_;
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
     //! Whether to print copious debug output on each process.
     bool debug_;
 
@@ -568,7 +568,7 @@ namespace Tpetra {
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      src == null || tgt == null, std::runtime_error,
+      src == Teuchos::null || tgt == Teuchos::null, std::runtime_error,
       "Tpetra::createImport(): neither source nor target map may be null:"
       << std::endl << "source: " << src << std::endl << "target: " << tgt
       << std::endl);
@@ -599,7 +599,7 @@ namespace Tpetra {
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      src == null || tgt == null, std::runtime_error,
+      src == Teuchos::null || tgt == Teuchos::null, std::runtime_error,
       "Tpetra::createImport(): neither source nor target map may be null:"
       << std::endl << "source: " << src << std::endl << "target: " << tgt
       << std::endl);

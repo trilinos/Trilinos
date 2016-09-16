@@ -86,7 +86,8 @@ void Multiply(
   const std::string& label,
   const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
-  // Convience typedefs
+  using Teuchos::null;
+  using Teuchos::RCP;
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
@@ -251,10 +252,10 @@ void Jacobi(Scalar omega,
             const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
             CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
             bool call_FillComplete_on_result,
-	         const std::string& label,
+                 const std::string& label,
             const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
-  // Convience typedefs
+  using Teuchos::RCP;
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
@@ -389,7 +390,9 @@ void Add(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   Scalar scalarB )
 {
-  // Convience typedef
+  using Teuchos::Array;
+  using Teuchos::RCP;
+  using Teuchos::null;
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
@@ -425,17 +428,17 @@ void Add(
   Array<SC> a_vals(A.getNodeMaxNumRowEntries());
   GO row;
 
-  if (scalarB != ScalarTraits<SC>::one())
+  if (scalarB != Teuchos::ScalarTraits<SC>::one())
     B.scale(scalarB);
 
   bool bFilled = B.isFillComplete();
   size_t numMyRows = B.getNodeNumRows();
-  if (scalarA != ScalarTraits<SC>::zero()) {
+  if (scalarA != Teuchos::ScalarTraits<SC>::zero()) {
     for (LO i = 0; (size_t)i < numMyRows; ++i) {
       row = B.getRowMap()->getGlobalElement(i);
       Aprime->getGlobalRowCopy(row, a_inds(), a_vals(), a_numEntries);
 
-      if (scalarA != ScalarTraits<SC>::one())
+      if (scalarA != Teuchos::ScalarTraits<SC>::one())
         for (size_t j = 0; j < a_numEntries; ++j)
           a_vals[j] *= scalarA;
 
@@ -463,10 +466,11 @@ add (const Scalar& alpha,
      const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
      const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
+  using Teuchos::RCP;
+  using Teuchos::rcpFromRef;
   using Teuchos::rcp_implicit_cast;
   using Teuchos::rcp_dynamic_cast;
 
-  // Convenience typedefs
   typedef Scalar                            SC;
   typedef LocalOrdinal                      LO;
   typedef GlobalOrdinal                     GO;
@@ -553,7 +557,7 @@ void Add(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   bool transposeB,
   Scalar scalarB,
-  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C)
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C)
 {
   using Teuchos::as;
   using Teuchos::Array;
@@ -1011,6 +1015,12 @@ void mult_A_B(
   const std::string& label,
   const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::OrdinalTraits;
+  using Teuchos::null;
+
   typedef Teuchos::ScalarTraits<Scalar> STS;
   // TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
   LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
@@ -1207,10 +1217,10 @@ template<class Scalar,
          class GlobalOrdinal,
          class Node>
 void setMaxNumEntriesPerRow(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview) {
-  typedef typename Array<ArrayView<const LocalOrdinal> >::size_type local_length_size;
-  Mview.maxNumRowEntries = OrdinalTraits<local_length_size>::zero();
+  typedef typename Teuchos::Array<Teuchos::ArrayView<const LocalOrdinal> >::size_type local_length_size;
+  Mview.maxNumRowEntries = Teuchos::OrdinalTraits<local_length_size>::zero();
 
-  if (Mview.indices.size() > OrdinalTraits<local_length_size>::zero()) {
+  if (Mview.indices.size() > Teuchos::OrdinalTraits<local_length_size>::zero()) {
     Mview.maxNumRowEntries = Mview.indices[0].size();
 
     for (local_length_size i = 1; i < Mview.indices.size(); ++i)
@@ -1248,9 +1258,11 @@ void mult_A_B_newmatrix(
   const std::string& label,
   const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ArrayView;
 
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
@@ -1476,9 +1488,11 @@ void mult_A_B_reuse(
   const std::string& label,
   const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ArrayView;
 
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
@@ -1644,9 +1658,11 @@ void jacobi_A_B_newmatrix(
   const std::string& label,
   const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ArrayView;
 
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
@@ -1896,9 +1912,11 @@ void jacobi_A_B_reuse(
   const std::string& label,
   const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ArrayView;
 
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
@@ -2079,18 +2097,19 @@ template<class Scalar,
          class Node>
 void import_and_extract_views(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   A,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >            targetMap,
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >   targetMap,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   Aview,
-  RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >         prototypeImporter,
+  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
   bool                                                          userAssertsThereAreNoRemotes,
   const std::string&                                            label,
   const Teuchos::RCP<Teuchos::ParameterList>&                   params)
 {
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ArrayView;
+  using Teuchos::null;
 
-  //Convience typedef
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
   typedef GlobalOrdinal     GO;
@@ -2150,7 +2169,7 @@ void import_and_extract_views(
       for (size_t i = 0; i < numRemote; i++)
         remoteRows[i] = targetMap->getGlobalElement(remoteLIDs[i]);
 
-      remoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), remoteRows(),
+      remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
                                       rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
       mode = 1;
 
@@ -2163,11 +2182,11 @@ void import_and_extract_views(
       for(size_t i = 0; i < numRows; ++i) {
         const LO mlid = rowMap->getLocalElement(rows[i]);
 
-        if (mlid == OrdinalTraits<LO>::invalid())
+        if (mlid == Teuchos::OrdinalTraits<LO>::invalid())
           remoteRows[numRemote++] = rows[i];
       }
       remoteRows.resize(numRemote);
-      remoteRowMap = rcp(new map_type(OrdinalTraits<global_size_t>::invalid(), remoteRows(),
+      remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
                                       rowMap->getIndexBase(), rowMap->getComm(), rowMap->getNode()));
       mode = 2;
 
@@ -2280,7 +2299,7 @@ template \
     const CrsMatrix< SCALAR , LO , GO , NODE >& B, \
     bool transposeB, \
     SCALAR scalarB, \
-    RCP<CrsMatrix< SCALAR , LO , GO , NODE > > C); \
+    Teuchos::RCP<CrsMatrix< SCALAR , LO , GO , NODE > > C); \
   \
   template \
   void MatrixMatrix::Add( \

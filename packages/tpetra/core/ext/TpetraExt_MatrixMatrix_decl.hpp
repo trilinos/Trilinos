@@ -213,7 +213,7 @@ void Add(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   bool transposeB,
   Scalar scalarB,
-  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C);
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C);
 
 
   /** Given CrsMatrix objects A, B and C, and Vector Dinv, form the product C = (I-omega * Dinv A)*B
@@ -247,7 +247,7 @@ void Add(
               const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
               bool call_FillComplete_on_result = true,
-	           const std::string& label = std::string(),
+                   const std::string& label = std::string(),
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 } // namespace MatrixMatrix
@@ -331,9 +331,9 @@ template<class Scalar,
          class Node>
 void import_and_extract_views(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
-  RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
+  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
   bool userAssertsThereAreNoRemotes = false,
   const std::string& label = std::string(),
   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);

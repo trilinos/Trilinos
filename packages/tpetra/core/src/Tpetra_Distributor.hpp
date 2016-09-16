@@ -936,7 +936,7 @@ namespace Tpetra {
     ///   the number of outstanding nonblocking receives and sends.
     ///   This means you should always resize to zero after completing
     ///   receive and send requests.
-    Teuchos::Array<RCP<Teuchos::CommRequest<int> > > requests_;
+    Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int> > > requests_;
 
     /// \brief The reverse distributor.
     ///
@@ -1153,6 +1153,7 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
     using Teuchos::as;
     using Teuchos::FancyOStream;
     using Teuchos::includesVerbLevel;
@@ -1543,6 +1544,7 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
     using Teuchos::as;
     using Teuchos::ireceive;
     using Teuchos::isend;
@@ -2942,6 +2944,8 @@ namespace Tpetra {
     // OrdinalType elements of importGIDs (along with their
     // corresponding process IDs, as int) to size_t, and does a
     // doPostsAndWaits<size_t>() to send the packed data.
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
     using std::endl;
     typedef typename ArrayView<const OrdinalType>::size_type size_type;
 

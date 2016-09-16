@@ -100,11 +100,13 @@ namespace Tpetra {
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> >
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::reverseClone()
   {
+    using Teuchos::ArrayView;
+
     Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > tData =
-      rcp (new ImportExportData<LocalOrdinal,GlobalOrdinal,Node> (target_, source_));
+      Teuchos::rcp (new ImportExportData<LocalOrdinal,GlobalOrdinal,Node> (target_, source_));
 
     // Things that stay the same
     tData->numSameIDs_       = numSameIDs_;

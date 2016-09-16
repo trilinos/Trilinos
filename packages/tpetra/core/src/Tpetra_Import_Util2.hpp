@@ -234,7 +234,7 @@ void
 lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowPointers,
                                       const Teuchos::ArrayView<LocalOrdinal> &columnIndices_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &columnIndices_GID,
-                                      const Tpetra::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
                                       const Teuchos::ArrayView<const int> &owningPids,
                                       Teuchos::Array<int> &remotePids,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
@@ -855,6 +855,7 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   using Kokkos::MemoryUnmanaged;
   using Kokkos::subview;
   using Kokkos::View;
+  using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::av_reinterpret_cast;
@@ -1199,9 +1200,9 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex (const ArrayView<const size_t> &rowptr,
-                                      const ArrayView<LocalOrdinal> &colind_LID,
-                                      const ArrayView<GlobalOrdinal> &colind_GID,
+lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowptr,
+                                      const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
+                                      const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
                                       const Teuchos::ArrayView<const int> &owningPIDs,
                                       Teuchos::Array<int> &remotePIDs,

@@ -534,10 +534,10 @@ namespace Tpetra {
 
   protected:
     //! Teuchos::Comm object instantiated for the platform.
-    RCP<const Teuchos::Comm<int> > comm_;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
     //! Kokkos Node object instantiated for the platform.
-    RCP<NodeType> node_;
+    Teuchos::RCP<NodeType> node_;
   };
 
 } // namespace Tpetra

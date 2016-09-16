@@ -2305,6 +2305,7 @@ namespace Tpetra {
     clone (const src_mv_type& X,
            const Teuchos::RCP<typename dst_mv_type::node_type>& node2)
     {
+      using Teuchos::RCP;
       typedef typename src_mv_type::map_type src_map_type;
       typedef typename dst_mv_type::map_type dst_map_type;
       typedef typename dst_mv_type::node_type dst_node_type;

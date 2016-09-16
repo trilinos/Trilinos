@@ -96,7 +96,7 @@ namespace Tpetra {
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              size_t maxNumEntriesPerRow,
              ProfileType pftype,
-             const RCP<Teuchos::ParameterList>& params) :
+             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
                     Details::STORAGE_1D_UNPACKED :
@@ -304,6 +304,7 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
+    using Teuchos::RCP;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, ptr, ind, val[, params]): ";
     const char suffix[] = ".  Please report this bug to the Tpetra developers.";
@@ -413,6 +414,7 @@ namespace Tpetra {
   {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Teuchos::av_reinterpret_cast;
+    using Teuchos::RCP;
     typedef typename local_matrix_type::values_type values_type;
     typedef impl_scalar_type IST;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
@@ -849,6 +851,7 @@ namespace Tpetra {
                 Teuchos::ArrayRCP<const LocalOrdinal>& columnIndices,
                 Teuchos::ArrayRCP<const Scalar>& values) const
   {
+    using Teuchos::RCP;
     const char tfecfFuncName[] = "getAllValues: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       columnIndices.size () != values.size (), std::runtime_error,
@@ -889,6 +892,7 @@ namespace Tpetra {
     using ::Tpetra::Details::computeOffsetsFromCounts;
     using Kokkos::create_mirror_view;
     using Teuchos::arcp_const_cast;
+    using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::null;
     using Teuchos::RCP;
@@ -2417,7 +2421,7 @@ namespace Tpetra {
       const ST* const sv_raw = (rowinfo.allocSize == 0) ? NULL : sv.ptr_on_device ();
       return ArrayView<const ST> (sv_raw, rowinfo.allocSize);
     }
-    else if (values2D_ != null) {
+    else if (values2D_ != Teuchos::null) {
       return values2D_[rowinfo.localRow] ();
     }
     else {
@@ -2510,7 +2514,7 @@ namespace Tpetra {
       // the subview from that.
       return Kokkos::subview (subview_type (k_values1D_), range);
     }
-    else if (values2D_ != null) {
+    else if (values2D_ != Teuchos::null) {
       Teuchos::ArrayView<const ST> rowView = values2D_[rowInfo.localRow] ();
       return subview_type (rowView.getRawPtr (), rowView.size ());
     }
@@ -2550,7 +2554,7 @@ namespace Tpetra {
       // the subview from that.
       return Kokkos::subview (subview_type (k_values1D_), range);
     }
-    else if (values2D_ != null) {
+    else if (values2D_ != Teuchos::null) {
       Teuchos::ArrayView<ST> rowView = values2D_[rowInfo.localRow] ();
       return subview_type (rowView.getRawPtr (), rowView.size ());
     }
@@ -3363,7 +3367,7 @@ namespace Tpetra {
       // import elements that are permuted or are on other processors.
       // (We will use the exporter to perform the import ("reverse
       // mode").)
-      if (getCrsGraph ()->getExporter () != null) {
+      if (getCrsGraph ()->getExporter () != Teuchos::null) {
         RCP<vec_type> tempVec = rcp (new vec_type (getRowMap ()));
         tempVec->doImport (x, * (getCrsGraph ()->getExporter ()), INSERT);
         xp = tempVec;
@@ -3418,7 +3422,7 @@ namespace Tpetra {
       // Take from Epetra: If we have a non-trivial exporter, we must
       // import elements that are permuted or are on other processors.
       // (We will use the exporter to perform the import.)
-      if (getCrsGraph ()->getImporter () != null) {
+      if (getCrsGraph ()->getImporter () != Teuchos::null) {
         RCP<vec_type> tempVec = rcp (new vec_type (getColMap ()));
         tempVec->doImport (x, * (getCrsGraph ()->getImporter ()), INSERT);
         xp = tempVec;
@@ -3456,6 +3460,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getFrobeniusNorm () const
   {
+    using Teuchos::ArrayView;
     using Teuchos::outArg;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
@@ -3847,7 +3852,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  fillComplete (const RCP<ParameterList>& params)
+  fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       getCrsGraph ().is_null (), std::logic_error, "Tpetra::CrsMatrix::"
@@ -4347,16 +4352,16 @@ namespace Tpetra {
     }
 
     // Set up temporary multivectors for Import and/or Export.
-    if (importer != null) {
-      if (importMV_ != null && importMV_->getNumVectors() != numVectors) {
+    if (importer != Teuchos::null) {
+      if (importMV_ != Teuchos::null && importMV_->getNumVectors() != numVectors) {
         importMV_ = null;
       }
       if (importMV_ == null) {
         importMV_ = rcp (new MV (this->getColMap (), numVectors));
       }
     }
-    if (exporter != null) {
-      if (exportMV_ != null && exportMV_->getNumVectors() != numVectors) {
+    if (exporter != Teuchos::null) {
+      if (exportMV_ != Teuchos::null && exportMV_->getNumVectors() != numVectors) {
         exportMV_ = null;
       }
       if (exportMV_ == null) {
@@ -4374,7 +4379,7 @@ namespace Tpetra {
     // If we have a non-trivial importer, we must export elements that
     // are permuted or belong to other processors.  We will compute
     // solution into the to-be-exported MV; get a view.
-    if (importer != null) {
+    if (importer != Teuchos::null) {
       // FIXME (mfh 18 Apr 2015) Temporary fix suggested by Clark
       // Dohrmann on Fri 17 Apr 2015.  At some point, we need to go
       // back and figure out why this helps.  importMV_ SHOULD be
@@ -5206,7 +5211,7 @@ namespace Tpetra {
       std::logic_error, err);
     // if matrix/graph are static profile, then 2D allocation should not be present
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      getProfileType() == StaticProfile && values2D_ != null,
+      getProfileType() == StaticProfile && values2D_ != Teuchos::null,
       std::logic_error, err);
     // if matrix/graph are dynamic profile, then 1D allocation should not be present
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -5223,7 +5228,7 @@ namespace Tpetra {
       std::logic_error, err);
     // we cannot have both a 1D and 2D allocation
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      k_values1D_.dimension_0 () > 0 && values2D_ != null,
+      k_values1D_.dimension_0 () > 0 && values2D_ != Teuchos::null,
       std::logic_error, err << "  Specifically, k_values1D_ is allocated (has "
       "size " << k_values1D_.dimension_0 () << " > 0) and values2D_ is also "
       "allocated.  CrsMatrix is not suppose to have both a 1-D and a 2-D "
@@ -5265,6 +5270,7 @@ namespace Tpetra {
   {
     using std::endl;
     using std::setw;
+    using Teuchos::ArrayView;
     using Teuchos::Comm;
     using Teuchos::RCP;
     using Teuchos::TypeNameTraits;
@@ -6136,6 +6142,7 @@ namespace Tpetra {
                         Distributor & /* distor */,
                         CombineMode combineMode)
   {
+    using Teuchos::Array;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
@@ -6420,6 +6427,7 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -6656,6 +6664,7 @@ namespace Tpetra {
                            const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
     using Tpetra::Details::getArrayViewFromDualView;
+    using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::Comm;
     using Teuchos::ParameterList;
@@ -7427,43 +7436,43 @@ namespace Tpetra {
 #define TPETRA_CRSMATRIX_MATRIX_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class CrsMatrix< SCALAR , LO , GO , NODE >; \
-  template RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
+  template Teuchos::RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
                 CrsMatrix< SCALAR , LO , GO , NODE >::convert< SCALAR > () const;
 
 #define TPETRA_CRSMATRIX_CONVERT_INSTANT(SO,SI,LO,GO,NODE) \
   \
-  template RCP< CrsMatrix< SO , LO , GO , NODE > >   \
+  template Teuchos::RCP< CrsMatrix< SO , LO , GO , NODE > >   \
                 CrsMatrix< SI , LO , GO , NODE >::convert< SO > () const;
 
 #define TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
   template<>                                                                        \
-  RCP<CrsMatrix<SCALAR, LO, GO, NODE> >                                \
-  importAndFillCompleteCrsMatrix (const RCP<const CrsMatrix<SCALAR, LO, GO, NODE> >& sourceMatrix, \
+  Teuchos::RCP<CrsMatrix<SCALAR, LO, GO, NODE> >                        \
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<SCALAR, LO, GO, NODE> >& sourceMatrix, \
                                   const Import<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,  \
                                                CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,  \
                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type>& importer, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
+                                  const Teuchos::RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& domainMap, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
+                                  const Teuchos::RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
-                                                               const RCP<Teuchos::ParameterList>& params);
+                                                               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 #define TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
   template<>                                                                        \
-  RCP<CrsMatrix<SCALAR, LO, GO, NODE> >                                \
-  exportAndFillCompleteCrsMatrix (const RCP<const CrsMatrix<SCALAR, LO, GO, NODE> >& sourceMatrix, \
+  Teuchos::RCP<CrsMatrix<SCALAR, LO, GO, NODE> >                        \
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<SCALAR, LO, GO, NODE> >& sourceMatrix, \
                                   const Export<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,  \
                                                CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,  \
                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type>& exporter, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
+                                  const Teuchos::RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& domainMap, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
+                                  const Teuchos::RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
-                                                               const RCP<Teuchos::ParameterList>& params);
+                                                               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 #define TPETRA_CRSMATRIX_INSTANT(SCALAR, LO, GO ,NODE)                    \
   TPETRA_CRSMATRIX_MATRIX_INSTANT(SCALAR, LO, GO, NODE)                   \

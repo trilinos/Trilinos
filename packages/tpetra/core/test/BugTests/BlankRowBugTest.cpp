@@ -51,7 +51,7 @@ namespace {
 
   using Teuchos::RCP;
   using Teuchos::Comm;
-  using Tpetra::tuple;
+  using Teuchos::tuple;
 
   TEUCHOS_UNIT_TEST(CrsMatrix, BlankRowImport)
   {

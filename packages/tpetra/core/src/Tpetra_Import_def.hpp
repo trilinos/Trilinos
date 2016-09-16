@@ -83,6 +83,7 @@ namespace Tpetra {
         Teuchos::Array<int> & remotePIDs,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
+    using Teuchos::Array;
     using Teuchos::null;
     using Teuchos::Ptr;
     using Teuchos::rcp;
@@ -134,8 +135,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const RCP<const map_type >& source,
-          const RCP<const map_type >& target) :
+  Import (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target) :
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     debug_ (tpetraImportDebugDefault)
   {
@@ -145,9 +146,9 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const RCP<const map_type >& source,
-          const RCP<const map_type >& target,
-          const RCP<Teuchos::FancyOStream>& out) :
+  Import (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target,
+          const Teuchos::RCP<Teuchos::FancyOStream>& out) :
     out_ (out),
     debug_ (tpetraImportDebugDefault)
   {
@@ -171,7 +172,7 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
-          const RCP<Teuchos::FancyOStream>& out,
+          const Teuchos::RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     out_ (out),
     debug_ (tpetraImportDebugDefault)
@@ -232,6 +233,7 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::as;
     using Teuchos::null;
+    using Teuchos::rcp;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Teuchos::Array<int>::size_type size_type;
@@ -425,13 +427,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal>
+  Teuchos::ArrayView<const LocalOrdinal>
   Import<LocalOrdinal,GlobalOrdinal,Node>::getPermuteFromLIDs() const {
     return ImportData_->permuteFromLIDs_();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal>
+  Teuchos::ArrayView<const LocalOrdinal>
   Import<LocalOrdinal,GlobalOrdinal,Node>::getPermuteToLIDs() const {
     return ImportData_->permuteToLIDs_();
   }
@@ -442,7 +444,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal>
+  Teuchos::ArrayView<const LocalOrdinal>
   Import<LocalOrdinal,GlobalOrdinal,Node>::getRemoteLIDs() const {
     return ImportData_->remoteLIDs_();
   }
@@ -453,13 +455,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal>
+  Teuchos::ArrayView<const LocalOrdinal>
   Import<LocalOrdinal,GlobalOrdinal,Node>::getExportLIDs() const {
     return ImportData_->exportLIDs_();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const int>
+  Teuchos::ArrayView<const int>
   Import<LocalOrdinal,GlobalOrdinal,Node>::getExportPIDs() const {
     return ImportData_->exportPIDs_();
   }

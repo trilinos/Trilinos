@@ -268,7 +268,7 @@ namespace Tpetra {
         // all processes).
         ArrayRCP<GO> allGlobalElts;
         if (myRank == 0) {
-          allGlobalElts = arcp<GO> (oneToOneMap->getGlobalNumElements ());
+          allGlobalElts = Teuchos::arcp<GO> (oneToOneMap->getGlobalNumElements ());
           std::fill (allGlobalElts.begin (), allGlobalElts.end (), 0);
         }
 

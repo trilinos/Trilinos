@@ -625,7 +625,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   MultiVector (const Teuchos::RCP<const map_type>& map,
-               const Teuchos::ArrayView<const ArrayView<const Scalar> >& ArrayOfPtrs,
+               const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >& ArrayOfPtrs,
                const size_t numVecs) :
     base_type (map)
   {
@@ -3481,7 +3481,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  subViewNonConst (const ArrayView<const size_t> &cols)
+  subViewNonConst (const Teuchos::ArrayView<const size_t> &cols)
   {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     return Teuchos::rcp_const_cast<MV> (this->subView (cols));
@@ -3645,7 +3645,7 @@ namespace Tpetra {
 
       // We've validated the input, so it's safe to start copying.
       for (size_t j = 0; j < numCols; ++j) {
-        RCP<const V> X_j = this->getVector (j);
+        Teuchos::RCP<const V> X_j = this->getVector (j);
         const size_t LDA = static_cast<size_t> (ArrayOfPtrs[j].size ());
         X_j->get1dCopy (ArrayOfPtrs[j], LDA);
       }

@@ -418,7 +418,7 @@ namespace Tpetra {
                const typename local_matrix_type::row_map_type& rowPointers,
                const typename local_graph_type::entries_type::non_const_type& columnIndices,
                const typename local_matrix_type::values_type& values,
-               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing
     ///   the matrix in sorted, local ids.
@@ -448,7 +448,7 @@ namespace Tpetra {
                const Teuchos::ArrayRCP<size_t>& rowPointers,
                const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
                const Teuchos::ArrayRCP<Scalar>& values,
-               const Teuchos::RCP<ParameterList>& params = null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
@@ -473,7 +473,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const local_matrix_type& lclMatrix,
-               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2, const bool isClassic>
@@ -506,9 +506,11 @@ namespace Tpetra {
     template <class Node2>
     Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, Node2::classic> >
     clone (const Teuchos::RCP<Node2>& node2,
-           const Teuchos::RCP<Teuchos::ParameterList>& params = null) const
+           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
     {
+      using Teuchos::Array;
       using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
       using Teuchos::null;
       using Teuchos::ParameterList;
       using Teuchos::RCP;
@@ -1680,7 +1682,7 @@ namespace Tpetra {
     /// resumeFill calls as many times as you wish.
     ///
     /// \post <tt>isFillActive() && ! isFillComplete()</tt>
-    void resumeFill (const RCP<ParameterList>& params = null);
+    void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
@@ -1716,9 +1718,9 @@ namespace Tpetra {
         may change or disappear at any time.
     */
     void
-    fillComplete (const RCP<const map_type>& domainMap,
-                  const RCP<const map_type>& rangeMap,
-                  const RCP<ParameterList>& params = null);
+    fillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                  const Teuchos::RCP<const map_type>& rangeMap,
+                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /*! \brief Signal that data entry is complete.
 
@@ -1732,7 +1734,7 @@ namespace Tpetra {
       \post <tt>isFillActive() == false<tt>
       \post <tt>isFillComplete() == true<tt>
     */
-    void fillComplete (const RCP<ParameterList>& params = null);
+    void fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Perform a fillComplete on a matrix that already has data.
     ///
@@ -1746,11 +1748,11 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    expertStaticFillComplete (const RCP<const map_type>& domainMap,
-                              const RCP<const map_type>& rangeMap,
-                              const RCP<const import_type>& importer = Teuchos::null,
-                              const RCP<const export_type>& exporter = Teuchos::null,
-                              const RCP<ParameterList>& params = Teuchos::null);
+    expertStaticFillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                              const Teuchos::RCP<const map_type>& rangeMap,
+                              const Teuchos::RCP<const import_type>& importer = Teuchos::null,
+                              const Teuchos::RCP<const export_type>& exporter = Teuchos::null,
+                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Replace the matrix's column Map with the given Map.
     ///
@@ -2876,8 +2878,8 @@ namespace Tpetra {
     apply (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
            MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
-           Scalar alpha = ScalarTraits<Scalar>::one(),
-           Scalar beta = ScalarTraits<Scalar>::zero()) const;
+           Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
     //! Whether apply() allows applying the transpose or conjugate transpose.
     bool hasTransposeApply () const;

@@ -966,7 +966,7 @@ namespace Tpetra {
     //! Create a shallow copy of this Map, with a different Node type.
     template <class NodeOut>
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
-    clone (const RCP<NodeOut>& nodeOut) const;
+    clone (const Teuchos::RCP<NodeOut>& nodeOut) const;
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
@@ -1015,7 +1015,7 @@ namespace Tpetra {
     /// intentionally leave some processes with zero rows.  Removing
     /// processes with zero rows makes the all-reduces and other
     /// communication operations cheaper.
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
     removeEmptyProcesses () const;
 
     /// \brief Replace this Map's communicator with a subset communicator.
@@ -1045,7 +1045,7 @@ namespace Tpetra {
     ///   same graph.  For the latter three Maps, one would in general
     ///   use this method instead of removeEmptyProcesses(), giving
     ///   the new row Map's communicator to this method.
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
     replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
 
@@ -1542,7 +1542,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class NodeOut>
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   clone (const Teuchos::RCP<NodeOut>& nodeOut) const
   {

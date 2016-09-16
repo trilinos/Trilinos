@@ -392,7 +392,7 @@ namespace Tpetra {
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , nodeNumEntries_(0)
-    , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
+    , nodeNumAllocated_(Teuchos::OrdinalTraits<size_t>::invalid())
     , pftype_(StaticProfile)
     , numAllocForAllRows_(0)
     , storageStatus_ (Details::STORAGE_1D_PACKED)
@@ -1629,16 +1629,16 @@ namespace Tpetra {
     const char msg[] = "Tpetra::CrsGraph: Object cannot be created with the "
       "given template arguments: size assumptions are not valid.";
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (OrdinalTraits<LO>::max ()) > OrdinalTraits<size_t>::max (),
+      static_cast<size_t> (Teuchos::OrdinalTraits<LO>::max ()) > Teuchos::OrdinalTraits<size_t>::max (),
       std::runtime_error, msg);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<GST> (OrdinalTraits<LO>::max ()) > static_cast<GST> (OrdinalTraits<GO>::max ()),
+      static_cast<GST> (Teuchos::OrdinalTraits<LO>::max ()) > static_cast<GST> (Teuchos::OrdinalTraits<GO>::max ()),
       std::runtime_error, msg);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (OrdinalTraits<GO>::max ()) > OrdinalTraits<GST>::max(),
+      static_cast<size_t> (Teuchos::OrdinalTraits<GO>::max ()) > Teuchos::OrdinalTraits<GST>::max(),
       std::runtime_error, msg);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      OrdinalTraits<size_t>::max () > OrdinalTraits<GST>::max (),
+      Teuchos::OrdinalTraits<size_t>::max () > Teuchos::OrdinalTraits<GST>::max (),
       std::runtime_error, msg);
   }
 
@@ -2047,11 +2047,11 @@ namespace Tpetra {
     // simple pointer comparison for equality
     if (domainMap_ != domainMap) {
       domainMap_ = domainMap;
-      importer_ = null;
+      importer_ = Teuchos::null;
     }
     if (rangeMap_ != rangeMap) {
       rangeMap_  = rangeMap;
-      exporter_ = null;
+      exporter_ = Teuchos::null;
     }
   }
 
@@ -2082,11 +2082,11 @@ namespace Tpetra {
     // this is called by numerous state-changing methods, in a debug build, to ensure that the object
     // always remains in a valid state
     // the graph should have been allocated with a row map
-    TEUCHOS_TEST_FOR_EXCEPTION( rowMap_ == null,                     std::logic_error, err );
+    TEUCHOS_TEST_FOR_EXCEPTION( rowMap_ == Teuchos::null,                     std::logic_error, err );
     // am either complete or active
     TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() == isFillComplete(),  std::logic_error, err );
     // if the graph has been fill completed, then all maps should be present
-    TEUCHOS_TEST_FOR_EXCEPTION( isFillComplete() == true && (colMap_ == null || rangeMap_ == null || domainMap_ == null), std::logic_error, err );
+    TEUCHOS_TEST_FOR_EXCEPTION( isFillComplete() == true && (colMap_ == Teuchos::null || rangeMap_ == Teuchos::null || domainMap_ == Teuchos::null), std::logic_error, err );
     // if storage has been optimized, then indices should have been allocated (even if trivially so)
     TEUCHOS_TEST_FOR_EXCEPTION( isStorageOptimized() == true && indicesAreAllocated() == false, std::logic_error, err );
     // if storage has been optimized, then number of allocated is now the number of entries
@@ -2166,15 +2166,15 @@ namespace Tpetra {
       std::logic_error, err);
     // if profile is static, then 2D allocations should not be present
     TEUCHOS_TEST_FOR_EXCEPTION(
-      pftype_ == StaticProfile && (lclInds2D_ != null || gblInds2D_ != null),
+      pftype_ == StaticProfile && (lclInds2D_ != Teuchos::null || gblInds2D_ != Teuchos::null),
       std::logic_error, err );
 
     // if indices are not allocated, then none of the buffers should be.
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! indicesAreAllocated () &&
       ((k_rowPtrs_.dimension_0 () != 0 || k_numRowEntries_.dimension_0 () != 0) ||
-       k_lclInds1D_.dimension_0 () != 0 || lclInds2D_ != null ||
-       k_gblInds1D_.dimension_0 () != 0 || gblInds2D_ != null),
+       k_lclInds1D_.dimension_0 () != 0 || lclInds2D_ != Teuchos::null ||
+       k_gblInds1D_.dimension_0 () != 0 || gblInds2D_ != Teuchos::null),
       std::logic_error, err );
 
     // indices may be local or global only if they are allocated
@@ -2185,11 +2185,11 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION( indicesAreLocal_ == true && indicesAreGlobal_ == true,                                                  std::logic_error, err );
     // if indices are local, then global allocations should not be present
     TEUCHOS_TEST_FOR_EXCEPTION(
-      indicesAreLocal_ && (k_gblInds1D_.dimension_0 () != 0 || gblInds2D_ != null),
+      indicesAreLocal_ && (k_gblInds1D_.dimension_0 () != 0 || gblInds2D_ != Teuchos::null),
       std::logic_error, err );
     // if indices are global, then local allocations should not be present
     TEUCHOS_TEST_FOR_EXCEPTION(
-      indicesAreGlobal_ && (k_lclInds1D_.dimension_0 () != 0 || lclInds2D_ != null),
+      indicesAreGlobal_ && (k_lclInds1D_.dimension_0 () != 0 || lclInds2D_ != Teuchos::null),
       std::logic_error, err );
     // if indices are local, then local allocations should be present
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2211,12 +2211,12 @@ namespace Tpetra {
     if (indicesAreAllocated()) {
       size_t actualNumAllocated = 0;
       if (pftype_ == DynamicProfile) {
-        if (isGloballyIndexed() && gblInds2D_ != null) {
+        if (isGloballyIndexed() && gblInds2D_ != Teuchos::null) {
           for (size_t r = 0; r < getNodeNumRows(); ++r) {
             actualNumAllocated += gblInds2D_[r].size();
           }
         }
-        else if (isLocallyIndexed() && lclInds2D_ != null) {
+        else if (isLocallyIndexed() && lclInds2D_ != Teuchos::null) {
           for (size_t r = 0; r < getNodeNumRows(); ++r) {
             actualNumAllocated += lclInds2D_[r].size();
           }
@@ -2711,6 +2711,7 @@ namespace Tpetra {
   insertGlobalIndices (const GlobalOrdinal grow,
                        const Teuchos::ArrayView<const GlobalOrdinal>& indices)
   {
+    using Teuchos::Array;
     using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -3299,7 +3300,7 @@ namespace Tpetra {
     Teuchos::barrier( *rowMap_->getComm() );
 #endif // HAVE_TPETRA_DEBUG
     clearGlobalConstants();
-    if (params != null) this->setParameterList (params);
+    if (params != Teuchos::null) this->setParameterList (params);
     lowerTriangular_  = false;
     upperTriangular_  = false;
     // either still sorted/merged or initially sorted/merged
@@ -4303,6 +4304,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   computeGlobalConstants ()
   {
+    using Teuchos::ArrayView;
     using Teuchos::outArg;
     using Teuchos::reduceAll;
     typedef LocalOrdinal LO;
@@ -4577,6 +4579,7 @@ namespace Tpetra {
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
+    using Teuchos::outArg;
     using Teuchos::rcp;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
@@ -5002,14 +5005,18 @@ namespace Tpetra {
             const Teuchos::EVerbosityLevel verbLevel) const
   {
     const char tfecfFuncName[] = "describe()";
-    using std::endl;
-    using std::setw;
+    using Teuchos::ArrayView;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
+    using std::endl;
+    using std::setw;
+
     Teuchos::EVerbosityLevel vl = verbLevel;
     if (vl == VERB_DEFAULT) vl = VERB_LOW;
     RCP<const Comm<int> > comm = this->getComm();
@@ -5039,15 +5046,15 @@ namespace Tpetra {
       if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
         if (myImageID == 0) out << "\nRow map: " << std::endl;
         rowMap_->describe(out,vl);
-        if (colMap_ != null) {
+        if (colMap_ != Teuchos::null) {
           if (myImageID == 0) out << "\nColumn map: " << std::endl;
           colMap_->describe(out,vl);
         }
-        if (domainMap_ != null) {
+        if (domainMap_ != Teuchos::null) {
           if (myImageID == 0) out << "\nDomain map: " << std::endl;
           domainMap_->describe(out,vl);
         }
-        if (rangeMap_ != null) {
+        if (rangeMap_ != Teuchos::null) {
           if (myImageID == 0) out << "\nRange map: " << std::endl;
           rangeMap_->describe(out,vl);
         }

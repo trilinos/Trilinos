@@ -371,7 +371,7 @@ public:
   reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
                             const MultiVector<Scalar,LO,GO,Node>& B,
                             const MultiVector<Scalar,LO,GO,Node>& D,
-                            const ArrayView<LO>& rowIndices,
+                            const Teuchos::ArrayView<LO>& rowIndices,
                             const Scalar& dampingFactor,
                             const ESweepDirection direction,
                             const int numSweeps,

@@ -120,7 +120,7 @@ namespace Tpetra {
   Export<LocalOrdinal,GlobalOrdinal,Node>::
   Export (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
-          const RCP<Teuchos::FancyOStream>& out) :
+          const Teuchos::RCP<Teuchos::FancyOStream>& out) :
     out_ (out),
     debug_ (tpetraExportDebugDefault)
   {
@@ -219,7 +219,7 @@ namespace Tpetra {
   Export<LocalOrdinal,GlobalOrdinal,Node>::
   Export (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
-          const RCP<Teuchos::FancyOStream>& out,
+          const Teuchos::RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     debug_ (tpetraExportDebugDefault)
@@ -317,13 +317,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal>
+  Teuchos::ArrayView<const LocalOrdinal>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getPermuteFromLIDs() const {
     return ExportData_->permuteFromLIDs_();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal>
+  Teuchos::ArrayView<const LocalOrdinal>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getPermuteToLIDs() const {
     return ExportData_->permuteToLIDs_();
   }
@@ -334,7 +334,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal>
+  Teuchos::ArrayView<const LocalOrdinal>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getRemoteLIDs() const {
     return ExportData_->remoteLIDs_();
   }
@@ -345,13 +345,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const LocalOrdinal>
+  Teuchos::ArrayView<const LocalOrdinal>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getExportLIDs() const {
     return ExportData_->exportLIDs_();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ArrayView<const int>
+  Teuchos::ArrayView<const int>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getExportPIDs() const {
     return ExportData_->exportPIDs_();
   }
@@ -582,7 +582,9 @@ namespace Tpetra {
   void
   Export<LocalOrdinal,GlobalOrdinal,Node>::setupRemote(Teuchos::Array<GlobalOrdinal> & exportGIDs)
   {
+    using Teuchos::Array;
     using std::endl;
+
     const map_type& target = * (getTargetMap ());
     const int myRank = target.getComm ()->getRank ();
 

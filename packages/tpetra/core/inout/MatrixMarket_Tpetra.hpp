@@ -275,10 +275,10 @@ namespace Tpetra {
       ///   pRowMap is nonnull, used only for error checking.
       ///
       /// \return If pRowMap is null, a new row map, otherwise pRowMap.
-      static RCP<const map_type>
-      makeRowMap (const RCP<const map_type>& pRowMap,
-                  const RCP<const comm_type>& pComm,
-                  const RCP<node_type>& pNode,
+      static Teuchos::RCP<const map_type>
+      makeRowMap (const Teuchos::RCP<const map_type>& pRowMap,
+                  const Teuchos::RCP<const comm_type>& pComm,
+                  const Teuchos::RCP<node_type>& pNode,
                   const global_ordinal_type numRows)
       {
         // If the caller didn't provide a map, return a conventional,
@@ -415,20 +415,24 @@ namespace Tpetra {
       ///   implementation of \c readSparse() may become a lot shorter
       ///   in the future.
       static void
-      distribute (ArrayRCP<size_t>& myNumEntriesPerRow,
-                  ArrayRCP<size_t>& myRowPtr,
-                  ArrayRCP<global_ordinal_type>& myColInd,
-                  ArrayRCP<scalar_type>& myValues,
-                  const RCP<const map_type>& pRowMap,
-                  ArrayRCP<size_t>& numEntriesPerRow,
-                  ArrayRCP<size_t>& rowPtr,
-                  ArrayRCP<global_ordinal_type>& colInd,
-                  ArrayRCP<scalar_type>& values,
+      distribute (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
+                  Teuchos::ArrayRCP<size_t>& myRowPtr,
+                  Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
+                  Teuchos::ArrayRCP<scalar_type>& myValues,
+                  const Teuchos::RCP<const map_type>& pRowMap,
+                  Teuchos::ArrayRCP<size_t>& numEntriesPerRow,
+                  Teuchos::ArrayRCP<size_t>& rowPtr,
+                  Teuchos::ArrayRCP<global_ordinal_type>& colInd,
+                  Teuchos::ArrayRCP<scalar_type>& values,
                   const bool debug=false)
       {
+         using Teuchos::arcp;
+         using Teuchos::ArrayRCP;
+         using Teuchos::ArrayView;
          using Teuchos::as;
          using Teuchos::Comm;
          using Teuchos::CommRequest;
+         using Teuchos::null;
          using Teuchos::RCP;
          using Teuchos::receive;
          using Teuchos::send;
@@ -863,16 +867,18 @@ namespace Tpetra {
       /// Each process inserts its data into the sparse matrix, and
       /// then all processes call fillComplete().
       static Teuchos::RCP<sparse_matrix_type>
-      makeMatrix (ArrayRCP<size_t>& myNumEntriesPerRow,
-                  ArrayRCP<size_t>& myRowPtr,
-                  ArrayRCP<global_ordinal_type>& myColInd,
-                  ArrayRCP<scalar_type>& myValues,
+      makeMatrix (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
+                  Teuchos::ArrayRCP<size_t>& myRowPtr,
+                  Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
+                  Teuchos::ArrayRCP<scalar_type>& myValues,
                   const Teuchos::RCP<const map_type>& pRowMap,
                   const Teuchos::RCP<const map_type>& pRangeMap,
                   const Teuchos::RCP<const map_type>& pDomainMap,
-                  const RCP<Teuchos::ParameterList>& constructorParams,
-                  const RCP<Teuchos::ParameterList>& fillCompleteParams)
+                  const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                  const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams)
       {
+        using Teuchos::ArrayView;
+        using Teuchos::null;
         using Teuchos::RCP;
         using Teuchos::rcp;
         using std::cerr;
@@ -1036,7 +1042,7 @@ namespace Tpetra {
       ///   stderr.
       ///
       /// \return Banner [non-null]
-      static RCP<const Teuchos::MatrixMarket::Banner>
+      static Teuchos::RCP<const Teuchos::MatrixMarket::Banner>
       readBanner (std::istream& in,
                   size_t& lineNumber,
                   const bool tolerant=false,
@@ -1044,6 +1050,8 @@ namespace Tpetra {
                   const bool isGraph=false)
       {
         using Teuchos::MatrixMarket::Banner;
+        using Teuchos::RCP;
+        using Teuchos::rcp;
         using std::cerr;
         using std::endl;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -1124,7 +1132,7 @@ namespace Tpetra {
       ///   stderr on MPI Proc 0.
       ///
       /// \return (numRows, numCols, numNonzeros)
-      static Tuple<global_ordinal_type, 3>
+      static Teuchos::Tuple<global_ordinal_type, 3>
       readCoordDims (std::istream& in,
                      size_t& lineNumber,
                      const Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
@@ -1228,8 +1236,8 @@ namespace Tpetra {
       ///   only] that optionally symmetrizes the entries of the
       ///   sparse matrix.
       ///
-      static RCP<adder_type>
-      makeAdder (const Teuchos::RCP<const Comm<int> >& pComm,
+      static Teuchos::RCP<adder_type>
+      makeAdder (const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
                  Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
                  const Teuchos::Tuple<global_ordinal_type, 3>& dims,
                  const bool tolerant=false,
@@ -1274,12 +1282,12 @@ namespace Tpetra {
       ///   only] that optionally symmetrizes the entries of the
       ///   sparse matrix.
       ///
-      static RCP<graph_adder_type>
-      makeGraphAdder (const Teuchos::RCP<const Comm<int> >& pComm,
-                 Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
-                 const Teuchos::Tuple<global_ordinal_type, 3>& dims,
-                 const bool tolerant=false,
-                 const bool debug=false)
+      static Teuchos::RCP<graph_adder_type>
+      makeGraphAdder (const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                      Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
+                      const Teuchos::Tuple<global_ordinal_type, 3>& dims,
+                      const bool tolerant=false,
+                      const bool debug=false)
       {
         if (pComm->getRank () == 0) {
           typedef Teuchos::MatrixMarket::Raw::GraphAdder<global_ordinal_type> raw_adder_type;
@@ -1297,16 +1305,17 @@ namespace Tpetra {
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraphHelper (std::istream& in,
                   const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                  const RCP<node_type>& pNode,
+                  const Teuchos::RCP<node_type>& pNode,
                   const Teuchos::RCP<const map_type>& rowMap,
                   Teuchos::RCP<const map_type>& colMap,
-                  const RCP<Teuchos::ParameterList>& constructorParams,
+                  const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
                   const bool tolerant=false,
                   const bool debug=false)
       {
         using Teuchos::MatrixMarket::Banner;
         using Teuchos::RCP;
         using Teuchos::ptr;
+        using Teuchos::Tuple;
         using std::cerr;
         using std::endl;
 
@@ -1635,10 +1644,10 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraphFile (const std::string& filename,
-                       const RCP<const Comm<int> >& pComm,
-                       const bool callFillComplete=true,
-                       const bool tolerant=false,
-                       const bool debug=false)
+                           const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                           const bool callFillComplete=true,
+                           const bool tolerant=false,
+                           const bool debug=false)
       {
         return readSparseGraph (filename, pComm, Teuchos::null, callFillComplete, tolerant, debug);
       }
@@ -1646,11 +1655,11 @@ namespace Tpetra {
       //! Variant of readSparseGraph that takes a Node object.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraphFile (const std::string& filename,
-                      const RCP<const Comm<int> >& pComm,
-                      const RCP<node_type>& pNode,
-                      const bool callFillComplete=true,
-                      const bool tolerant=false,
-                      const bool debug=false)
+                           const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                           const Teuchos::RCP<node_type>& pNode,
+                           const bool callFillComplete=true,
+                           const bool tolerant=false,
+                           const bool debug=false)
       {
         const int myRank = pComm->getRank ();
         std::ifstream in;
@@ -1769,16 +1778,19 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraphFile (const std::string& filename,
-                       const RCP<const map_type>& rowMap,
-                       RCP<const map_type>& colMap,
-                       const RCP<const map_type>& domainMap,
-                       const RCP<const map_type>& rangeMap,
-                       const bool callFillComplete=true,
-                       const bool tolerant=false,
-                       const bool debug=false)
+                           const Teuchos::RCP<const map_type>& rowMap,
+                           Teuchos::RCP<const map_type>& colMap,
+                           const Teuchos::RCP<const map_type>& domainMap,
+                           const Teuchos::RCP<const map_type>& rangeMap,
+                           const bool callFillComplete=true,
+                           const bool tolerant=false,
+                           const bool debug=false)
       {
         using Teuchos::broadcast;
+        using Teuchos::Comm;
         using Teuchos::outArg;
+        using Teuchos::RCP;
+
         TEUCHOS_TEST_FOR_EXCEPTION(
           rowMap.is_null (), std::invalid_argument,
           "Row Map must be nonnull.");
@@ -1890,11 +1902,11 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraph (std::istream& in,
-                  const RCP<const Comm<int> >& pComm,
-                  const RCP<Teuchos::ParameterList>& constructorParams,
-                  const RCP<Teuchos::ParameterList>& fillCompleteParams,
-                  const bool tolerant=false,
-                  const bool debug=false)
+                       const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                       const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                       const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                       const bool tolerant=false,
+                       const bool debug=false)
       {
         return readSparseGraph (in, pComm, Teuchos::null, constructorParams,
                            fillCompleteParams, tolerant, debug);
@@ -1903,10 +1915,10 @@ namespace Tpetra {
       //! Variant of the above readSparseGraph() method that takes a Kokkos Node.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraph (std::istream& in,
-                  const RCP<const Comm<int> >& pComm,
-                  const RCP<node_type>& pNode,
-                  const RCP<Teuchos::ParameterList>& constructorParams,
-                  const RCP<Teuchos::ParameterList>& fillCompleteParams,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                  const Teuchos::RCP<node_type>& pNode,
+                  const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                  const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
                   const bool tolerant=false,
                   const bool debug=false)
       {
@@ -1998,7 +2010,7 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
-                      const RCP<const Comm<int> >& pComm,
+                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
                       const bool callFillComplete=true,
                       const bool tolerant=false,
                       const bool debug=false)
@@ -2009,8 +2021,8 @@ namespace Tpetra {
       //! Variant of readSparseFile that takes a Node object.
       static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
-                      const RCP<const Comm<int> >& pComm,
-                      const RCP<node_type>& pNode,
+                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                      const Teuchos::RCP<node_type>& pNode,
                       const bool callFillComplete=true,
                       const bool tolerant=false,
                       const bool debug=false)
@@ -2132,16 +2144,19 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
-                      const RCP<const map_type>& rowMap,
-                      RCP<const map_type>& colMap,
-                      const RCP<const map_type>& domainMap,
-                      const RCP<const map_type>& rangeMap,
+                      const Teuchos::RCP<const map_type>& rowMap,
+                      Teuchos::RCP<const map_type>& colMap,
+                      const Teuchos::RCP<const map_type>& domainMap,
+                      const Teuchos::RCP<const map_type>& rangeMap,
                       const bool callFillComplete=true,
                       const bool tolerant=false,
                       const bool debug=false)
       {
         using Teuchos::broadcast;
+        using Teuchos::Comm;
         using Teuchos::outArg;
+        using Teuchos::RCP;
+
         TEUCHOS_TEST_FOR_EXCEPTION(
           rowMap.is_null (), std::invalid_argument,
           "Row Map must be nonnull.");
@@ -2764,9 +2779,9 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_matrix_type>
       readSparse (std::istream& in,
-                  const RCP<const Comm<int> >& pComm,
-                  const RCP<Teuchos::ParameterList>& constructorParams,
-                  const RCP<Teuchos::ParameterList>& fillCompleteParams,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                  const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                  const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
                   const bool tolerant=false,
                   const bool debug=false)
       {
@@ -2777,17 +2792,22 @@ namespace Tpetra {
       //! Variant of the above readSparse() method that takes a Kokkos Node.
       static Teuchos::RCP<sparse_matrix_type>
       readSparse (std::istream& in,
-                  const RCP<const Comm<int> >& pComm,
-                  const RCP<node_type>& pNode,
-                  const RCP<Teuchos::ParameterList>& constructorParams,
-                  const RCP<Teuchos::ParameterList>& fillCompleteParams,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                  const Teuchos::RCP<node_type>& pNode,
+                  const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                  const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
                   const bool tolerant=false,
                   const bool debug=false)
       {
         using Teuchos::MatrixMarket::Banner;
+        using Teuchos::arcp;
+        using Teuchos::ArrayRCP;
         using Teuchos::broadcast;
+        using Teuchos::null;
         using Teuchos::ptr;
+        using Teuchos::RCP;
         using Teuchos::reduceAll;
+        using Teuchos::Tuple;
         using std::cerr;
         using std::endl;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -3337,9 +3357,13 @@ namespace Tpetra {
                   const bool debug=false)
       {
         using Teuchos::MatrixMarket::Banner;
+        using Teuchos::arcp;
+        using Teuchos::ArrayRCP;
+        using Teuchos::ArrayView;
         using Teuchos::as;
         using Teuchos::broadcast;
         using Teuchos::Comm;
+        using Teuchos::null;
         using Teuchos::ptr;
         using Teuchos::RCP;
         using Teuchos::reduceAll;
@@ -3939,10 +3963,10 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static RCP<multivector_type>
+      static Teuchos::RCP<multivector_type>
       readDenseFile (const std::string& filename,
-                     const RCP<const comm_type>& comm,
-                     RCP<const map_type>& map,
+                     const Teuchos::RCP<const comm_type>& comm,
+                     Teuchos::RCP<const map_type>& map,
                      const bool tolerant=false,
                      const bool debug=false)
       {
@@ -3954,11 +3978,11 @@ namespace Tpetra {
       }
 
       //! Variant of readDenseMatrix (see above) that takes a Node.
-      static RCP<multivector_type>
+      static Teuchos::RCP<multivector_type>
       readDenseFile (const std::string& filename,
-                     const RCP<const comm_type>& comm,
-                     const RCP<node_type>& node,
-                     RCP<const map_type>& map,
+                     const Teuchos::RCP<const comm_type>& comm,
+                     const Teuchos::RCP<node_type>& node,
+                     Teuchos::RCP<const map_type>& map,
                      const bool tolerant=false,
                      const bool debug=false)
       {
@@ -3998,10 +4022,10 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static RCP<vector_type>
+      static Teuchos::RCP<vector_type>
       readVectorFile (const std::string& filename,
-                      const RCP<const comm_type>& comm,
-                      RCP<const map_type>& map,
+                      const Teuchos::RCP<const comm_type>& comm,
+                      Teuchos::RCP<const map_type>& map,
                       const bool tolerant=false,
                       const bool debug=false)
       {
@@ -4014,11 +4038,11 @@ namespace Tpetra {
 
       /// \brief Like readVectorFile() (see above), but with a
       ///   supplied Node object.
-      static RCP<vector_type>
+      static Teuchos::RCP<vector_type>
       readVectorFile (const std::string& filename,
-                      const RCP<const comm_type>& comm,
-                      const RCP<node_type>& node,
-                      RCP<const map_type>& map,
+                      const Teuchos::RCP<const comm_type>& comm,
+                      const Teuchos::RCP<node_type>& node,
+                      Teuchos::RCP<const map_type>& map,
                       const bool tolerant=false,
                       const bool debug=false)
       {
@@ -4096,10 +4120,10 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static RCP<multivector_type>
+      static Teuchos::RCP<multivector_type>
       readDense (std::istream& in,
-                 const RCP<const comm_type>& comm,
-                 RCP<const map_type>& map,
+                 const Teuchos::RCP<const comm_type>& comm,
+                 Teuchos::RCP<const map_type>& map,
                  const bool tolerant=false,
                  const bool debug=false)
       {
@@ -4107,11 +4131,11 @@ namespace Tpetra {
       }
 
       //! Variant of readDense (see above) that takes a Node.
-      static RCP<multivector_type>
+      static Teuchos::RCP<multivector_type>
       readDense (std::istream& in,
-                 const RCP<const comm_type>& comm,
-                 const RCP<node_type>& node,
-                 RCP<const map_type>& map,
+                 const Teuchos::RCP<const comm_type>& comm,
+                 const Teuchos::RCP<node_type>& node,
+                 Teuchos::RCP<const map_type>& map,
                  const bool tolerant=false,
                  const bool debug=false)
       {
@@ -4122,10 +4146,10 @@ namespace Tpetra {
       }
 
       //! Read Vector from the given Matrix Market input stream.
-      static RCP<vector_type>
+      static Teuchos::RCP<vector_type>
       readVector (std::istream& in,
-                  const RCP<const comm_type>& comm,
-                  RCP<const map_type>& map,
+                  const Teuchos::RCP<const comm_type>& comm,
+                  Teuchos::RCP<const map_type>& map,
                   const bool tolerant=false,
                   const bool debug=false)
       {
@@ -4136,11 +4160,11 @@ namespace Tpetra {
       }
 
       //! Read Vector from the given Matrix Market input stream, with a supplied Node.
-      static RCP<vector_type>
+      static Teuchos::RCP<vector_type>
       readVector (std::istream& in,
-                 const RCP<const comm_type>& comm,
-                 const RCP<node_type>& node,
-                 RCP<const map_type>& map,
+                 const Teuchos::RCP<const comm_type>& comm,
+                 const Teuchos::RCP<node_type>& node,
+                 Teuchos::RCP<const map_type>& map,
                  const bool tolerant=false,
                  const bool debug=false)
       {
@@ -4170,9 +4194,9 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static RCP<const map_type>
+      static Teuchos::RCP<const map_type>
       readMapFile (const std::string& filename,
-                   const RCP<const comm_type>& comm,
+                   const Teuchos::RCP<const comm_type>& comm,
                    const bool tolerant=false,
                    const bool debug=false)
       {
@@ -4181,10 +4205,10 @@ namespace Tpetra {
 
       /// \brief Variant of readMapFile (above) that takes an explicit
       ///   Node instance.
-      static RCP<const map_type>
+      static Teuchos::RCP<const map_type>
       readMapFile (const std::string& filename,
-                   const RCP<const comm_type>& comm,
-                   const RCP<node_type>& node,
+                   const Teuchos::RCP<const comm_type>& comm,
+                   const Teuchos::RCP<node_type>& node,
                    const bool tolerant=false,
                    const bool debug=false)
       {
@@ -4209,23 +4233,26 @@ namespace Tpetra {
 
     private:
       template<class MultiVectorScalarType>
-      static RCP<Tpetra::MultiVector<MultiVectorScalarType,
+      static Teuchos::RCP<Tpetra::MultiVector<MultiVectorScalarType,
                                      local_ordinal_type,
                                      global_ordinal_type,
                                      node_type> >
       readDenseImpl (std::istream& in,
-                     const RCP<const comm_type>& comm,
-                     const RCP<node_type>& node,
-                     RCP<const map_type>& map,
+                     const Teuchos::RCP<const comm_type>& comm,
+                     const Teuchos::RCP<node_type>& node,
+                     Teuchos::RCP<const map_type>& map,
                      const Teuchos::RCP<Teuchos::FancyOStream>& err,
                      const bool tolerant=false,
                      const bool debug=false)
       {
         using Teuchos::MatrixMarket::Banner;
         using Teuchos::MatrixMarket::checkCommentLine;
+        using Teuchos::ArrayRCP;
         using Teuchos::as;
         using Teuchos::broadcast;
         using Teuchos::outArg;
+        using Teuchos::RCP;
+        using Teuchos::Tuple;
         using std::endl;
         typedef MultiVectorScalarType ST;
         typedef local_ordinal_type LO;
@@ -4718,14 +4745,14 @@ namespace Tpetra {
 
 
       template<class VectorScalarType>
-      static RCP<Tpetra::Vector<VectorScalarType,
+      static Teuchos::RCP<Tpetra::Vector<VectorScalarType,
                                      local_ordinal_type,
                                      global_ordinal_type,
                                      node_type> >
       readVectorImpl (std::istream& in,
-                      const RCP<const comm_type>& comm,
-                      const RCP<node_type>& node, // allowed to be null
-                      RCP<const map_type>& map,
+                      const Teuchos::RCP<const comm_type>& comm,
+                      const Teuchos::RCP<node_type>& node, // allowed to be null
+                      Teuchos::RCP<const map_type>& map,
                       const Teuchos::RCP<Teuchos::FancyOStream>& err,
                       const bool tolerant=false,
                       const bool debug=false)
@@ -4735,6 +4762,8 @@ namespace Tpetra {
         using Teuchos::as;
         using Teuchos::broadcast;
         using Teuchos::outArg;
+        using Teuchos::RCP;
+        using Teuchos::Tuple;
         using std::endl;
         typedef VectorScalarType ST;
         typedef local_ordinal_type LO;
@@ -5004,7 +5033,7 @@ namespace Tpetra {
             // owns all of them.  The view will expire at the end of
             // scope, so (if necessary) it will be written back to X
             // at this time.
-            ArrayRCP<ST> X_view = X->get1dViewNonConst ();
+            Teuchos::ArrayRCP<ST> X_view = X->get1dViewNonConst ();
             TEUCHOS_TEST_FOR_EXCEPTION(
               as<global_size_t> (X_view.size ()) < numRows * numCols,
               std::logic_error,
@@ -5253,9 +5282,9 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static RCP<const map_type>
+      static Teuchos::RCP<const map_type>
       readMap (std::istream& in,
-               const RCP<const comm_type>& comm,
+               const Teuchos::RCP<const comm_type>& comm,
                const bool tolerant=false,
                const bool debug=false)
       {
@@ -5266,10 +5295,10 @@ namespace Tpetra {
 
       /// \brief Variant of readMap (above) that takes an explicit
       ///   Node instance.
-      static RCP<const map_type>
+      static Teuchos::RCP<const map_type>
       readMap (std::istream& in,
-               const RCP<const comm_type>& comm,
-               const RCP<node_type>& node,
+               const Teuchos::RCP<const comm_type>& comm,
+               const Teuchos::RCP<node_type>& node,
                const bool tolerant=false,
                const bool debug=false)
       {
@@ -5303,9 +5332,9 @@ namespace Tpetra {
       ///   from the file.
       /// \param debug [in] If true, write copious debugging output to
       ///   \c err on all processes in \c comm.
-      static RCP<const map_type>
+      static Teuchos::RCP<const map_type>
       readMap (std::istream& in,
-               const RCP<const comm_type>& comm,
+               const Teuchos::RCP<const comm_type>& comm,
                const Teuchos::RCP<Teuchos::FancyOStream>& err,
                const bool tolerant=false,
                const bool debug=false)
@@ -5315,10 +5344,10 @@ namespace Tpetra {
 
       /// \brief Variant of readMap (above) that takes an explicit
       ///   Node instance.
-      static RCP<const map_type>
+      static Teuchos::RCP<const map_type>
       readMap (std::istream& in,
-               const RCP<const comm_type>& comm,
-               const RCP<node_type>& node,
+               const Teuchos::RCP<const comm_type>& comm,
+               const Teuchos::RCP<node_type>& node,
                const Teuchos::RCP<Teuchos::FancyOStream>& err,
                const bool tolerant=false,
                const bool debug=false)
@@ -5333,6 +5362,7 @@ namespace Tpetra {
         using Teuchos::inOutArg;
         using Teuchos::ireceive;
         using Teuchos::outArg;
+        using Teuchos::RCP;
         using Teuchos::receive;
         using Teuchos::reduceAll;
         using Teuchos::REDUCE_MIN;
@@ -5892,6 +5922,7 @@ namespace Tpetra {
                    const std::string& matrixDescription,
                    const bool debug=false)
       {
+        using Teuchos::ArrayView;
         using Teuchos::Comm;
         using Teuchos::FancyOStream;
         using Teuchos::getFancyOStream;
@@ -6108,7 +6139,7 @@ namespace Tpetra {
               } // For each entry in the current row
             } // For each row of the "gather" matrix
           } else { // newMatrix is locally indexed
-            typedef OrdinalTraits<GO> OTG;
+            typedef Teuchos::OrdinalTraits<GO> OTG;
             for (LO localRowIndex = gatherRowMap->getMinLocalIndex();
                  localRowIndex <= gatherRowMap->getMaxLocalIndex();
                  ++localRowIndex) {
@@ -6190,6 +6221,7 @@ namespace Tpetra {
                         const std::string& graphDescription,
                         const bool debug=false)
       {
+        using Teuchos::ArrayView;
         using Teuchos::Comm;
         using Teuchos::FancyOStream;
         using Teuchos::getFancyOStream;
@@ -6385,7 +6417,7 @@ namespace Tpetra {
             } // For each row of the "gather" graph
           }
           else { // newGraph is locally indexed
-            typedef OrdinalTraits<GO> OTG;
+            typedef Teuchos::OrdinalTraits<GO> OTG;
             for (LO localRowIndex = gatherRowMap->getMinLocalIndex ();
                  localRowIndex <= gatherRowMap->getMaxLocalIndex ();
                  ++localRowIndex) {
@@ -6567,7 +6599,7 @@ namespace Tpetra {
       ///
       static void
       writeSparse (std::ostream& out,
-                   const RCP<const sparse_matrix_type>& pMatrix,
+                   const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
                    const bool debug=false)
       {
         writeSparse (out, pMatrix, "", "", debug);
@@ -6664,7 +6696,7 @@ namespace Tpetra {
       /// writeDenseFile().
       static void
       writeDenseFile (const std::string& filename,
-                      const RCP<const multivector_type>& X,
+                      const Teuchos::RCP<const multivector_type>& X,
                       const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
                       const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
@@ -6906,8 +6938,10 @@ namespace Tpetra {
                         const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
         using Teuchos::arcp;
+        using Teuchos::Array;
         using Teuchos::ArrayRCP;
         using Teuchos::ArrayView;
+        using Teuchos::Comm;
         using Teuchos::CommRequest;
         using Teuchos::ireceive;
         using Teuchos::isend;
@@ -7455,7 +7489,7 @@ namespace Tpetra {
       /// writeDense().
       static void
       writeDense (std::ostream& out,
-                  const RCP<const multivector_type>& X,
+                  const Teuchos::RCP<const multivector_type>& X,
                   const std::string& matrixName,
                   const std::string& matrixDescription,
                   const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
@@ -7488,7 +7522,7 @@ namespace Tpetra {
       /// writeDense().
       static void
       writeDense (std::ostream& out,
-                  const RCP<const multivector_type>& X,
+                  const Teuchos::RCP<const multivector_type>& X,
                   const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
                   const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
@@ -7539,8 +7573,10 @@ namespace Tpetra {
                 const Teuchos::RCP<Teuchos::FancyOStream>& err,
                 const bool debug=false)
       {
+        using Teuchos::Array;
         using Teuchos::ArrayRCP;
         using Teuchos::ArrayView;
+        using Teuchos::Comm;
         using Teuchos::CommRequest;
         using Teuchos::ireceive;
         using Teuchos::isend;
@@ -8542,7 +8578,7 @@ namespace Tpetra {
         const Scalar zero = STS::zero();
         const size_t numRows = colsA.getGlobalLength();
         for (size_t j=0; j<numCols; ++j) {
-          ArrayRCP<const Scalar> const curCol = colsA.getData(j);
+          Teuchos::ArrayRCP<const Scalar> const curCol = colsA.getData(j);
           const GO J = colsArray[j];
           for (size_t i=0; i<numRows; ++i) {
             const Scalar val = curCol[i];

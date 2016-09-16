@@ -1576,10 +1576,11 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   Map<LocalOrdinal, GlobalOrdinal, Node>::
   replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const
   {
+    using Teuchos::ArrayView;
     using Teuchos::Comm;
     using Teuchos::null;
     using Tpetra::Details::OrdinalTraits;
@@ -1613,7 +1614,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   Map<LocalOrdinal, GlobalOrdinal, Node>::
   removeEmptyProcesses () const
   {
@@ -2234,7 +2235,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
 //! Explicit instantiation macro supporting the Map class, on the default node for specified ordinals.
 #define TPETRA_MAP_INSTANT_DEFAULTNODE(LO,GO) \
   template Teuchos::RCP< const Map<LO,GO> > \
-  createLocalMap<LO,GO>( size_t, const Teuchos::RCP< const Teuchos::Comm< int > > &); \
+  createLocalMap<LO,GO>( const size_t, const Teuchos::RCP< const Teuchos::Comm< int > > &); \
   \
   template Teuchos::RCP< const Map<LO,GO> > \
   createContigMap<LO,GO>( global_size_t, size_t, \
@@ -2242,10 +2243,10 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   \
   template Teuchos::RCP< const Map<LO,GO> >  \
   createNonContigMap(const Teuchos::ArrayView<const GO> &,          \
-                     const RCP<const Teuchos::Comm<int> > &); \
+                     const Teuchos::RCP<const Teuchos::Comm<int> > &); \
   \
   template Teuchos::RCP< const Map<LO,GO> >  \
-  createUniformContigMap<LO,GO>( global_size_t, \
+  createUniformContigMap<LO,GO>( const global_size_t, \
                                  const Teuchos::RCP< const Teuchos::Comm< int > > &); \
 
 #endif // TPETRA_MAP_DEF_HPP
