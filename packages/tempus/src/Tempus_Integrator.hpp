@@ -1,7 +1,7 @@
 #ifndef TEMPUS_INTEGRATOR_HPP
 #define TEMPUS_INTEGRATOR_HPP
 
-// Teuchos
+#include "Tempus_Stepper.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
@@ -49,6 +49,8 @@ public:
     virtual Scalar getTime() const = 0;
     /// Get current index
     virtual Scalar getIndex() const = 0;
+    /// Get the stepper
+    virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const = 0;
   //@}
 
 };

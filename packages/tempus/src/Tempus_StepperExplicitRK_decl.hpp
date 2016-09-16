@@ -1,22 +1,24 @@
-#ifndef TEMPUS_STEPPERFORWARDEULER_DECL_HPP
-#define TEMPUS_STEPPERFORWARDEULER_DECL_HPP
+#ifndef TEMPUS_STEPPEREXPLICITRK_DECL_HPP
+#define TEMPUS_STEPPEREXPLICITRK_DECL_HPP
 
 #include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
+#include "Tempus_RKButcherTableau.hpp"
+
 
 namespace Tempus {
 
 
-/** \brief Forward Euler time stepper.
- *  Forward Euler is an explicit time stepper (i.e., no solver used).
+/** \brief Explicit Runge-Kutta time stepper.
+ *  Explicit Runge-Kutta time stepper does not require any solver(s).
  */
 template<class Scalar>
-class StepperForwardEuler : virtual public Tempus::Stepper<Scalar>
+class StepperExplicitRK : virtual public Tempus::Stepper<Scalar>
 {
 public:
 
   /// Constructor
-  StepperForwardEuler(
+  StepperExplicitRK(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
 
@@ -48,7 +50,9 @@ public:
 private:
 
   /// Default Constructor -- not allowed
-  StepperForwardEuler();
+  StepperExplicitRK();
+
+  void explicitEvalModel(Teuchos::RCP<SolutionState<Scalar> > currentState);
 
 protected:
 
@@ -58,7 +62,15 @@ protected:
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
+
+  Teuchos::RCP<const RKButcherTableau<Scalar> >  ERK_ButcherTableau_;
+
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stagef_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > stageX_;
+
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > ee_;
 };
 } // namespace Tempus
 
-#endif // TEMPUS_STEPPERFORWARDEULER_DECL_HPP
+#endif // TEMPUS_STEPPEREXPLICITRK_DECL_HPP

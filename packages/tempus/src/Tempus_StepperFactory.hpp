@@ -4,60 +4,10 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
+#include "Tempus_StepperExplicitRK.hpp"
 
 
 namespace Tempus {
-
-enum StepperType {
-  FORWARD_EULER,
-  BACKWARD_EULER
-};
-
-static std::string ForwardEuler_name   = "Forward Euler";
-static std::string BackwardEuler_name  = "Backward Euler";
-static std::string StepperType_name    = "Stepper Type";
-static std::string StepperType_default = ForwardEuler_name;
-
-static Teuchos::Array<std::string> StepperType_names = Teuchos::tuple<std::string>(
-  ForwardEuler_name,
-  BackwardEuler_name);
-
-const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<StepperType> >
-StepperValidator = Teuchos::rcp(
-  new Teuchos::StringToIntegralParameterEntryValidator<StepperType>(
-    StepperType_names,
-    Teuchos::tuple<Tempus::StepperType>(
-      FORWARD_EULER,
-      BACKWARD_EULER),
-    StepperType_name));
-
-inline
-const std::string toString(const StepperType s)
-{
-  switch(s) {
-    case FORWARD_EULER:
-      return ForwardEuler_name;
-    case BACKWARD_EULER:
-      return BackwardEuler_name;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPT("Invalid StepperType!");
-  }
-  return 0; // Should never get here!
-}
-
-inline
-const StepperType fromString(const std::string ss)
-{
-  if (ss == ForwardEuler_name)
-    return FORWARD_EULER;
-  else if (ss == BackwardEuler_name)
-    return BACKWARD_EULER;
-  else
-    TEUCHOS_TEST_FOR_EXCEPT("Invalid String for StepperType!");
-
-  return FORWARD_EULER; // Should never get here!
-}
-
 
 /** \brief Stepper factory.
  *
@@ -75,23 +25,70 @@ public:
   /// Destructor
   virtual ~StepperFactory() {}
 
-  /// Factory Method
+  /// Very simple factory method
   Teuchos::RCP<Stepper<Scalar> > createStepper(
     Teuchos::RCP<Teuchos::ParameterList>                stepperPL,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model         )
   {
-    StepperType stepperType =
-      fromString(stepperPL->get<std::string>(StepperType_name));
-    switch(stepperType) {
-      case FORWARD_EULER:
-        return Teuchos::rcp(
-          new StepperForwardEuler<Scalar>(stepperPL, model));
-      case BACKWARD_EULER:
-        return Teuchos::rcp(
-          new StepperBackwardEuler<Scalar>(stepperPL, model));
-      default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-          "Unknown StepperType = " << stepperType);
+    using Teuchos::rcp;
+    std::string stepper = stepperPL->get<std::string>("Stepper Type");
+    if (stepper == "Forward Euler")
+      return rcp(new StepperForwardEuler<Scalar>(stepperPL, model));
+    else if (stepper == "Backward Euler")
+      return rcp(new StepperBackwardEuler<Scalar>(stepperPL, model));
+    else if (stepper == "RK Butcher Tableau") {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Error - User input RK not implemented yet!.\n");
+    }
+    else if (
+      stepper == "RK Forward Euler" ||
+      stepper == "RK Explicit 4 Stage" ||
+      stepper == "RK Explicit 3/8 Rule" ||
+      stepper == "RK Explicit 4 Stage 3rd order by Runge" ||
+      stepper == "RK Explicit 5 Stage 3rd order by Kinnmark and Gray"||
+      stepper == "RK Explicit 3 Stage 3rd order" ||
+      stepper == "RK Explicit 3 Stage 3rd order TVD" ||
+      stepper == "RK Explicit 3 Stage 3rd order by Heun" ||
+      stepper == "RK Explicit 2 Stage 2nd order by Runge" ||
+      stepper == "RK Explicit Trapezoidal")
+      return rcp(new StepperExplicitRK<Scalar>(stepperPL, model));
+    else if (
+      stepper == "RK Backward Euler" ||
+      stepper == "SDIRK 2 Stage 2nd order" ||
+      stepper == "SDIRK 2 Stage 3rd order" ||
+      stepper == "Diagonal IRK 2 Stage 3rd order" ||
+      stepper == "RK Implicit 3 Stage 6th Order Kuntzmann & Butcher" ||
+      stepper == "RK Implicit 4 Stage 8th Order Kuntzmann & Butcher" ||
+      stepper == "RK Implicit 2 Stage 4th Order Hammer & Hollingsworth" ||
+      stepper == "IRK 1 Stage Theta Method" ||
+      stepper == "IRK 2 Stage Theta Method" ||
+      stepper == "RK Implicit 1 Stage 2nd order Gauss" ||
+      stepper == "RK Implicit 2 Stage 4th order Gauss" ||
+      stepper == "RK Implicit 3 Stage 6th order Gauss" ||
+      stepper == "RK Implicit 1 Stage 1st order Radau left" ||
+      stepper == "RK Implicit 2 Stage 3rd order Radau left" ||
+      stepper == "RK Implicit 3 Stage 5th order Radau left" ||
+      stepper == "RK Implicit 1 Stage 1st order Radau right" ||
+      stepper == "RK Implicit 2 Stage 3rd order Radau right" ||
+      stepper == "RK Implicit 3 Stage 5th order Radau right" ||
+      stepper == "RK Implicit 2 Stage 2nd order Lobatto A" ||
+      stepper == "RK Implicit 3 Stage 4th order Lobatto A" ||
+      stepper == "RK Implicit 4 Stage 6th order Lobatto A" ||
+      stepper == "RK Implicit 2 Stage 2nd order Lobatto B" ||
+      stepper == "RK Implicit 3 Stage 4th order Lobatto B" ||
+      stepper == "RK Implicit 4 Stage 6th order Lobatto B" ||
+      stepper == "RK Implicit 2 Stage 2nd order Lobatto C" ||
+      stepper == "RK Implicit 3 Stage 4th order Lobatto C" ||
+      stepper == "RK Implicit 4 Stage 6th order Lobatto C" ||
+      stepper == "SDIRK 5 Stage 5th order" ||
+      stepper == "SDIRK 5 Stage 4th order" ||
+      stepper == "SDIRK 3 Stage 4th order" ) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Error - Implicit RK not implemented yet!.\n");
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Unknown 'Stepper Type' = " << stepper);
     }
     return Teuchos::null; // Should never get here!
   }

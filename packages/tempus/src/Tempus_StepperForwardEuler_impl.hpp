@@ -41,12 +41,11 @@ void StepperForwardEuler<Scalar>::takeStep(
   if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
   outArgs_.set_f(currentState->getXDot());
 
-  Teuchos::RCP<SolutionState<Scalar> > workingState =
-    solutionHistory->getWorkingState();
-
   eODEModel_->evalModel(inArgs_,outArgs_);
 
   // Forward Euler update, x = x + dt*xdot
+  Teuchos::RCP<SolutionState<Scalar> > workingState =
+    solutionHistory->getWorkingState();
   const Scalar dt = workingState->getTimeStep();
   Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
     *(currentState->getX()),dt,*(currentState->getXDot()));

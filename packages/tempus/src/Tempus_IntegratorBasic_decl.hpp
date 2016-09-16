@@ -11,7 +11,6 @@
 #include "Thyra_NonlinearSolverBase.hpp"
 // Tempus
 #include "Tempus_Integrator.hpp"
-#include "Tempus_Stepper.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_IntegratorObserver.hpp"
 
@@ -58,6 +57,9 @@ public:
     Scalar getTime() const {return solutionHistory_->getCurrentTime();}
     /// Get current index
     Scalar getIndex() const {return solutionHistory_->getCurrentIndex();}
+    /// Get the stepper
+    Teuchos::RCP<Stepper<Scalar> > getStepper() const {return stepper_;}
+
     /// Get current the solution, x
     Teuchos::RCP<Thyra::VectorBase<double> > getX() const
       {return solutionHistory_->getCurrentState()->getX();}
@@ -70,10 +72,10 @@ public:
 
     /// Get SolutionHistory
     Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
-    { return solutionHistory_; }
+      {return solutionHistory_;}
     /// Get current state
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
-    { return solutionHistory_->getCurrentState(); }
+      {return solutionHistory_->getCurrentState();}
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor

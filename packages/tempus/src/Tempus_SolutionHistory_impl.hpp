@@ -387,7 +387,6 @@ Teuchos::RCP<const Teuchos::ParameterList> SolutionHistory<Scalar>::getValidPara
       "Storage limit for the solution history.");
 
     validPL = pl;
-
   }
   return validPL;
 }
