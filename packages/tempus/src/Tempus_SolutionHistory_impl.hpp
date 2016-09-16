@@ -240,7 +240,7 @@ void SolutionHistory<Scalar>::initWorkingState()
   // Set workingState_
   workingState_ = (*history_)[getNumStates()-1];
 
-  getWorkingState()->metaData_->solutionStatus_ = Status::WORKING;
+  getWorkingState()->metaData_->setSolutionStatus(Status::WORKING);
 
   return;
 }
@@ -250,13 +250,13 @@ template<class Scalar>
 void SolutionHistory<Scalar>::promoteWorkingState()
 {
   Teuchos::RCP<SolutionStateMetaData<Scalar> > md =getWorkingState()->metaData_;
-  md->time_ += md->dt_;
-  md->iStep_++;
-  md->nFailures_ = std::max(0,md->nFailures_-1);
-  md->nConsecutiveFailures_ = 0;
-  md->solutionStatus_ = Status::PASSED;
-  md->isRestartable_ = true;
-  md->isInterpolated_ = false;
+  md->setTime(md->getTime() + md->getDt());
+  md->setIStep(md->getIStep()+1);
+  md->setNFailures(std::max(0,md->getNFailures()-1));
+  md->setNConsecutiveFailures(0);
+  md->setSolutionStatus(Status::PASSED);
+  md->setIsRestartable(true);
+  md->setIsInterpolated(false);
   currentState_ = workingState_;
   workingState_ = Teuchos::null;
 }

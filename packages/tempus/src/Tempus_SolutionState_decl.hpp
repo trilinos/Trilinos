@@ -86,17 +86,20 @@ public:
   /// \name Accessor methods
   //@{
     /// Get time
-    virtual Scalar getTime() const {return metaData_->time_;}
+    virtual Scalar getTime() const {return metaData_->getTime();}
 
     /// Get index
-    virtual Scalar getIndex() const {return metaData_->iStep_;}
+    virtual Scalar getIndex() const {return metaData_->getIStep();}
 
     /// Get time step
-    virtual Scalar getTimeStep() const {return metaData_->dt_;}
+    virtual Scalar getTimeStep() const {return metaData_->getDt();}
+
+    /// Get order
+    virtual Scalar getOrder() const {return metaData_->getOrder();}
 
     /// Return the Solution status
     virtual Status getSolutionStatus() const
-      {return metaData_->solutionStatus_;};
+      {return metaData_->getSolutionStatus();};
 
     /// Return the Stepper status
     virtual Status getStepperStatus() const

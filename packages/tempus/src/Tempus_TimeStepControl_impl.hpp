@@ -139,13 +139,13 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   using Teuchos::RCP;
   RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
   RCP<SolutionStateMetaData<Scalar> > metaData_ = workingState->metaData_;
-  const Scalar time = metaData_->time_;
-  const int iStep = metaData_->iStep_;
-  const Scalar errorAbs = metaData_->errorAbs_;
-  const Scalar errorRel = metaData_->errorRel_;
-  int & order = metaData_->order_;
-  Scalar & dt = metaData_->dt_;
-  bool & output = metaData_->output_;
+  const Scalar time = metaData_->getTime();
+  const int iStep = metaData_->getIStep();
+  const Scalar errorAbs = metaData_->getErrorAbs();
+  const Scalar errorRel = metaData_->getErrorRel();
+  int order = metaData_->getOrder();
+  Scalar dt = metaData_->getDt();
+  bool output = metaData_->getOutput();
 
   RCP<StepperState<Scalar> > stepperState = workingState->stepperState_;
 
@@ -293,6 +293,10 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       }
     }
   }
+
+  metaData_->setOrder(order);
+  metaData_->setDt(dt);
+  metaData_->setOutput(output);
 
   return;
 }

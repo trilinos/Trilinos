@@ -51,6 +51,50 @@ public:
   /// Destructor
   virtual ~SolutionStateMetaData() {};
 
+  /// \name Accessor methods
+  //@{
+    Scalar getTime()                 const {return time_;}
+    int    getIStep()                const {return iStep_;}
+    Scalar getDt()                   const {return dt_;}
+    Scalar getErrorAbs()             const {return errorAbs_;}
+    Scalar getErrorRel()             const {return errorRel_;}
+    int    getOrder()                const {return order_;}
+    int    getNFailures()            const {return nFailures_;}
+    int    getNConsecutiveFailures() const {return nConsecutiveFailures_;}
+    Status getSolutionStatus()       const {return solutionStatus_;}
+    bool   getOutput()               const {return output_;}
+    bool   getOutputScreen()         const {return outputScreen_;}
+    bool   getIsRestartable()        const {return isRestartable_;}
+    bool   getIsInterpolated()       const {return isInterpolated_;}
+    Scalar getAccuracy()             const {return accuracy_;}
+
+    void setTime(Scalar time) {time_ = time;}
+    void setIStep(int iStep) {iStep_ = iStep;}
+    void setDt(Scalar dt) {dt_ = dt;}
+    void setErrorAbs (Scalar errorAbs){errorAbs_ = errorAbs;}
+    void setErrorRel (Scalar errorRel){errorRel_ = errorRel;}
+    void setOrder(int order) {order_ = order;}
+    void setNFailures(int nFailures) {nFailures_ = nFailures;}
+    void setNConsecutiveFailures(int nConsecutiveFailures)
+      {nConsecutiveFailures_ = nConsecutiveFailures;}
+    void setSolutionStatus(Status solutionStatus)
+      {solutionStatus_ = solutionStatus;}
+    void setOutput(bool output) {output_ = output;}
+    void setOutputScreen(bool outputScreen) {outputScreen_ = outputScreen;}
+    void setIsRestartable(bool isRestartable) {isRestartable_=isRestartable;}
+    void setIsInterpolated(bool isInterpolated)
+      {isInterpolated_ = isInterpolated;}
+    void setAccuracy(Scalar accuracy) {accuracy_ = accuracy;}
+  //@}
+
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    virtual std::string description() const;
+    virtual void describe(Teuchos::FancyOStream          &out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
+
+protected:
   Scalar time_;              ///< Time of solution
   int    iStep_;             ///< Time step index for this solution
   Scalar dt_;                ///< Time step for this solution
@@ -73,13 +117,6 @@ public:
   bool   isRestartable_;     ///< T - soln can be used as a restart
   bool   isInterpolated_;    ///< F - soln is time integrated; T - soln is interpolated
   Scalar accuracy_;          ///< Interpolation accuracy of solution
-
-  /// \name Overridden from Teuchos::Describable
-  //@{
-    virtual std::string description() const;
-    virtual void describe(Teuchos::FancyOStream          &out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
-  //@}
 
 };
 } // namespace Tempus
