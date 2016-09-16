@@ -39,7 +39,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector, vector<>::iterator
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
@@ -119,7 +118,7 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
 
   ring_bulk.modification_begin();
   mesh.generate_mesh( );
-  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk));
+  ASSERT_TRUE(ring_bulk.modification_end());
 
   mesh.fixup_node_ownership();
 

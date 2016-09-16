@@ -55,7 +55,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string, etc
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
 #include <unit_tests/Setup8Quad4ProcMesh.hpp>
 #include <stk_unit_test_utils/getOption.h>
@@ -778,7 +777,7 @@ TEST(BulkData, testChangeOwner_ring)
 
         bulk.modification_begin();
         ring_mesh.generate_mesh();
-        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
+        ASSERT_TRUE(bulk.modification_end());
 
         ring_mesh.fixup_node_ownership();
 
@@ -1005,7 +1004,7 @@ TEST(BulkData, testChangeOwner_box)
 
         bulk.modification_begin();
         fixture.generate_boxes(root_box, local_box);
-        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
+        ASSERT_TRUE(bulk.modification_end());
 
         if(1 < p_size)
         {
@@ -1022,7 +1021,7 @@ TEST(BulkData, testChangeOwner_box)
 
         bulk.modification_begin();
         fixture.generate_boxes(root_box, local_box);
-        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
+        ASSERT_TRUE(bulk.modification_end());
 
         donate_all_shared_nodes(bulk);
     }
@@ -1036,7 +1035,7 @@ TEST(BulkData, testChangeOwner_box)
 
         bulk.modification_begin();
         fixture.generate_boxes(root_box, local_box);
-        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
+        ASSERT_TRUE(bulk.modification_end());
 
         donate_one_element(bulk);
     }

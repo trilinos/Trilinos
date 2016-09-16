@@ -57,7 +57,6 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/PairIter.hpp"   // for PairIter
-#include <stk_util/parallel/CommSparse.hpp>
 
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>

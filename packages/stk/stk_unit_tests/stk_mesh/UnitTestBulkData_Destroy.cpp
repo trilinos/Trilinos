@@ -37,7 +37,6 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -186,7 +185,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
 
     bulk.modification_begin();
     mesh.generate_mesh( );
-    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
+    ASSERT_TRUE(bulk.modification_end());
 
     mesh.fixup_node_ownership();
 
@@ -225,7 +224,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
       ASSERT_TRUE( bulk.destroy_entity( node1 ) );
       node1 = Entity();
     }
-    ASSERT_TRUE( stk::unit_test::modification_end_wrapper(bulk) );
+    ASSERT_TRUE( bulk.modification_end() );
 
     if ( bulk.is_valid(node0) ) {
       ASSERT_EQ( node0_elements - 1 , bulk.count_relations(node0) );

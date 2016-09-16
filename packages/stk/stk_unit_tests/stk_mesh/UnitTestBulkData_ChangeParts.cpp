@@ -35,7 +35,6 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -80,7 +79,7 @@ TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
 
   bulk.modification_begin();
   ring_mesh.generate_mesh( );
-  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
+  ASSERT_TRUE(bulk.modification_end());
 
   ring_mesh.fixup_node_ownership();
 

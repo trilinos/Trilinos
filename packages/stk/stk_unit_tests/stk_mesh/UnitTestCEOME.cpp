@@ -49,7 +49,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string, etc
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
 #include <unit_tests/Setup8Quad4ProcMesh.hpp>
 #include <utility>                      // for pair
