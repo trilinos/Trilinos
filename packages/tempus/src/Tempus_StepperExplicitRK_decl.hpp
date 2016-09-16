@@ -30,6 +30,9 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+    virtual Scalar getOrder() const {return ERK_ButcherTableau_->order();}
+    virtual Scalar getOrderMin() const {return ERK_ButcherTableau_->orderMin();}
+    virtual Scalar getOrderMax() const {return ERK_ButcherTableau_->orderMax();}
   //@}
 
   /// \name ParameterList methods
@@ -56,20 +59,21 @@ private:
 
 protected:
 
+  std::string                                        description_;
   Teuchos::RCP<Teuchos::ParameterList>               pList_;
   /// Explicit ODE ModelEvaluator
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > eODEModel_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
-  Teuchos::RCP<const RKButcherTableau<Scalar> >  ERK_ButcherTableau_;
+  Teuchos::RCP<const RKButcherTableau<Scalar> >      ERK_ButcherTableau_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stagef_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > stageX_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >           stageX_;
 
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > ee_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >           ee_;
 };
 } // namespace Tempus
 

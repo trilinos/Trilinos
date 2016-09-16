@@ -97,6 +97,9 @@ public:
     /// Get order
     virtual Scalar getOrder() const {return metaData_->getOrder();}
 
+    /// Set order
+    virtual void setOrder(Scalar order) {metaData_->setOrder(order);}
+
     /// Return the Solution status
     virtual Status getSolutionStatus() const
       {return metaData_->getSolutionStatus();};

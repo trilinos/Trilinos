@@ -28,6 +28,9 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+    virtual Scalar getOrder() const {return 1.0;}
+    virtual Scalar getOrderMin() const {return 1.0;}
+    virtual Scalar getOrderMax() const {return 1.0;}
   //@}
 
   /// \name ParameterList methods

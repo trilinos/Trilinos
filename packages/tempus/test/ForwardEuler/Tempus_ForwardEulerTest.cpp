@@ -25,6 +25,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
   std::vector<double> ErrorNorm;
   const int nTimeStepSizes = 7;
   double dt = 0.2;
+  double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
 
     // Read params from .xml file
@@ -47,6 +48,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
     pl->sublist("Demo Integrator").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
       Tempus::integratorBasic<double>(pl, model);
+    order = integrator->getStepper()->getOrder();
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -92,7 +94,12 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  TEST_FLOATING_EQUALITY( slope, 1.0, 0.01 );
+  std::cout << "  Stepper = ForwardEuler" << std::endl;
+  std::cout << "  =========================" << std::endl;
+  std::cout << "  Expected order: " << order << std::endl;
+  std::cout << "  Observed order: " << slope << std::endl;
+  std::cout << "  =========================" << std::endl;
+  TEST_FLOATING_EQUALITY( slope, order, 0.01 );
   TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.051123, 1.0e-4 );
 
   std::ofstream ftmp("Tempus_ForwardEuler_SinCos-Error.dat");

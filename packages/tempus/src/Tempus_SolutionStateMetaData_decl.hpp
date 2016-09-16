@@ -58,7 +58,7 @@ public:
     Scalar getDt()                   const {return dt_;}
     Scalar getErrorAbs()             const {return errorAbs_;}
     Scalar getErrorRel()             const {return errorRel_;}
-    int    getOrder()                const {return order_;}
+    Scalar getOrder()                const {return order_;}
     int    getNFailures()            const {return nFailures_;}
     int    getNConsecutiveFailures() const {return nConsecutiveFailures_;}
     Status getSolutionStatus()       const {return solutionStatus_;}
@@ -73,7 +73,7 @@ public:
     void setDt(Scalar dt) {dt_ = dt;}
     void setErrorAbs (Scalar errorAbs){errorAbs_ = errorAbs;}
     void setErrorRel (Scalar errorRel){errorRel_ = errorRel;}
-    void setOrder(int order) {order_ = order;}
+    void setOrder(Scalar order) {order_ = order;}
     void setNFailures(int nFailures) {nFailures_ = nFailures;}
     void setNConsecutiveFailures(int nConsecutiveFailures)
       {nConsecutiveFailures_ = nConsecutiveFailures;}
@@ -100,7 +100,7 @@ protected:
   Scalar dt_;                ///< Time step for this solution
   Scalar errorAbs_;          ///< Absolute local truncation error
   Scalar errorRel_;          ///< Relative local truncation error
-  int order_;                ///< Order of this solution
+  Scalar order_;             ///< Order of this solution
   int nFailures_;            ///< Total number of stepper failures
   int nConsecutiveFailures_; ///< Consecutive number of stepper failures
 

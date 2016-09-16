@@ -22,7 +22,7 @@ namespace {
   static std::string initTimeStep_name      = "Initial Time Step";
   static double      initTimeStep_default   = std::numeric_limits<double>::epsilon();
   static std::string initOrder_name         = "Initial Order";
-  static int         initOrder_default      = 1;
+  static int         initOrder_default      = 0;
   static std::string finalTime_name         = "Final Time";
   static double      finalTime_default      = std::numeric_limits<double>::max();
   static std::string finalTimeIndex_name    = "Final Time Index";
@@ -71,13 +71,17 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   Scalar dtTmp = tmpiPL->get<double>(initTimeStep_name, initTimeStep_default);
   timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL, dtTmp));
 
-  this->setParameterList(tempusPL);
-
   // Create Stepper
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
-  std::string stepperName = pList_->get<std::string>(StepperName_name);
+  std::string stepperName = tmpiPL->get<std::string>(StepperName_name);
   RCP<ParameterList> s_pl = Teuchos::sublist(tempusPL, stepperName, true);
   stepper_ = sf->createStepper(s_pl, model);
+  if (timeStepControl_->orderMin_ == 0)
+    timeStepControl_->orderMin_ = stepper_->getOrderMin();
+  if (timeStepControl_->orderMax_ == 0)
+    timeStepControl_->orderMax_ = stepper_->getOrderMax();
+
+  this->setParameterList(tempusPL);
 
   // Create meta data
   RCP<SolutionStateMetaData<Scalar> > md =
@@ -85,7 +89,9 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   md->setTime (pList_->get<double>(initTime_name,      initTime_default));
   md->setIStep(pList_->get<int>   (initTimeIndex_name, initTimeIndex_default));
   md->setDt   (pList_->get<double>(initTimeStep_name,  initTimeStep_default));
-  md->setOrder(pList_->get<int>   (initOrder_name,     initOrder_default));
+  int orderTmp = pList_->get<int> (initOrder_name,     initOrder_default);
+  if (orderTmp == 0) orderTmp = stepper_->getOrderMin();
+  md->setOrder(orderTmp);
   md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
   // Create initial condition solution state
@@ -309,13 +315,13 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
     Teuchos::OSTab ostab(out,0,"ScreenOutput");
     *out
     <<std::scientific<<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
-    <<std::scientific<<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
-    <<std::scientific<<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
-    <<std::scientific<<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()
-    <<std::scientific<<std::setw(11)<<std::setprecision(3)<<csmd->getErrorRel()
-    <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getOrder()
+                     <<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
+                     <<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
+                     <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()
+                     <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorRel()
+    <<std::fixed     <<std::setw( 7)<<std::setprecision(1)<<csmd->getOrder()
     <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
-    <<std::scientific<<std::setw(11)<<std::setprecision(3)<<steppertime
+                     <<std::setw(11)<<std::setprecision(3)<<steppertime
     <<std::endl;
   }
 }
@@ -397,6 +403,7 @@ void IntegratorBasic<Scalar>::setParameterList(
     << "    dt = " << dt << "\n");
 
   int order = pList_->get<int>(initOrder_name, initOrder_default);
+  if (order == 0) order = stepper_->getOrderMin();
   TEUCHOS_TEST_FOR_EXCEPTION(
     (order < timeStepControl_->orderMin_|| order > timeStepControl_->orderMax_),
     std::out_of_range,
@@ -442,7 +449,8 @@ void IntegratorBasic<Scalar>::setParameterList(
     }
 
     Scalar outputScreenIndexInterval =
-      pList_->get<int>(outputScreenIndexInterval_name, outputScreenIndexInterval_default);
+      pList_->get<int>(outputScreenIndexInterval_name,
+                       outputScreenIndexInterval_default);
     Scalar outputScreen_i = timeStepControl_->iStepMin_;
     while (outputScreen_i <= timeStepControl_->iStepMax_) {
       outputScreenIndices_.push_back(outputScreen_i);
@@ -488,7 +496,9 @@ IntegratorBasic<Scalar>::getValidParameters() const
 
     tmp.clear();
     tmp << "Initial order.  Required to be range ["
-        << timeStepControl_->orderMin_ << ", "<< timeStepControl_->orderMax_ <<"].";
+        << timeStepControl_->orderMin_ << ", "
+        << timeStepControl_->orderMax_ <<"].  If set to zero (default), it "
+        << "will be reset to the Stepper minimum order.";
     pl->set(initOrder_name, initOrder_default, tmp.str());
 
     tmp.clear();

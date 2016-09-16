@@ -18,6 +18,7 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
   std::string stepperType = pList_->get<std::string>("Stepper Type");
 
   ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType);
+  description_ = ERK_ButcherTableau_->description();
   TEUCHOS_TEST_FOR_EXCEPTION( ERK_ButcherTableau_->isImplicit() == true,
     std::logic_error,
        "Error - StepperExplicitRK received an implicit Butcher Tableau!\n"
@@ -95,6 +96,7 @@ void StepperExplicitRK<Scalar>::takeStep(
   }
 
   workingState->stepperState_->stepperStatus_ = Status::PASSED;
+  workingState->setOrder(ERK_ButcherTableau_->order());
   return;
 }
 
@@ -140,8 +142,7 @@ getDefaultStepperState()
 template<class Scalar>
 std::string StepperExplicitRK<Scalar>::description() const
 {
-  std::string name = "Explicit RK";
-  return(name);
+  return(description_);
 }
 
 

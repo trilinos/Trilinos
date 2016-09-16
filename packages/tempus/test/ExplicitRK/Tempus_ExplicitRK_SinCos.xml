@@ -17,7 +17,7 @@
       <Parameter name="Initial Time"       type="double" value="0.0"/>
       <Parameter name="Initial Time Index" type="int"    value="0"/>
       <Parameter name="Initial Time Step"  type="double" value="0.1"/>
-      <Parameter name="Initial Order"      type="int"    value="1"/>
+      <Parameter name="Initial Order"      type="int"    value="0"/>
       <Parameter name="Final Time"         type="double" value="1.0"/>
       <Parameter name="Final Time Index"   type="int"    value="10000"/>
       <Parameter name="Screen Output Index List"    type="string" value="1"/>
@@ -36,8 +36,8 @@
         <Parameter name="Maximum Time Step Index" type="int"    value="10000"/>
         <Parameter name="Maximum Absolute Error"  type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error"  type="double" value="1.0e-8"/>
-        <Parameter name="Minimum Time Integration Order" type="int" value="1"/>
-        <Parameter name="Maximum Time Integration Order" type="int" value="1"/>
+        <Parameter name="Minimum Time Integration Order" type="int" value="0"/>
+        <Parameter name="Maximum Time Integration Order" type="int" value="0"/>
         <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
         <Parameter name="Output Time List"        type="string" value=""/>
         <Parameter name="Output Index List"       type="string" value=""/>
@@ -49,7 +49,7 @@
     </ParameterList>
 
     <ParameterList name="Demo Stepper">
-      <Parameter name="Stepper Type" type="string" value="RK Forward Euler"/>
+      <Parameter name="Stepper Type" type="string" value="Demo"/>
     </ParameterList>
 
   </ParameterList>

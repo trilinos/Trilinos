@@ -188,18 +188,20 @@ void TimeStepControl<Scalar>::getNextTimeStep(
         order++;
         RCP<Teuchos::FancyOStream> out = this->getOStream();
         Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out << "Warning - Absolute error is too large with constant time step.\n"
-             << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
-             << "  Try increasing order.  order = " << order << std::endl;
+        *out
+          << "Warning - Absolute error is too large with constant time step.\n"
+          << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
+          << "  Try increasing order.  order = " << order << std::endl;
       } else {
         RCP<Teuchos::FancyOStream> out = this->getOStream();
         Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out << "Failure - Absolute error failed and can not change time step "
-             << "size or order!\n"
-             << "  Time step type == CONSTANT_STEP_SIZE\n"
-             << "  order = " << order
-             << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
-             << std::endl;
+        *out
+          << "Failure - Absolute error failed and can not change time step "
+          << "size or order!\n"
+          << "  Time step type == CONSTANT_STEP_SIZE\n"
+          << "  order = " << order
+          << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
+          << std::endl;
         integratorStatus = FAILED;
         return;
       }
@@ -211,18 +213,20 @@ void TimeStepControl<Scalar>::getNextTimeStep(
         order++;
         RCP<Teuchos::FancyOStream> out = this->getOStream();
         Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out << "Warning - Relative error is too large with constant time step.\n"
-             << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
-             << "  Try increasing order.  order = " << order << std::endl;
+        *out
+          << "Warning - Relative error is too large with constant time step.\n"
+          << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
+          << "  Try increasing order.  order = " << order << std::endl;
       } else {
         RCP<Teuchos::FancyOStream> out = this->getOStream();
         Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out << "Failure - Relative error failed and can not change time step "
-             << "size or order!\n"
-             << "  Time step type == CONSTANT_STEP_SIZE\n"
-             << "  order = " << order
-             << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
-             << std::endl;
+        *out
+          << "Failure - Relative error failed and can not change time step "
+          << "size or order!\n"
+          << "  Time step type == CONSTANT_STEP_SIZE\n"
+          << "  order = " << order
+          << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
+          << std::endl;
         integratorStatus = FAILED;
         return;
       }
@@ -248,7 +252,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       "Error - Solution order is out of range and can not change "
       "time step size!\n"
       "    Time step type == CONSTANT_STEP_SIZE\n"
-      "    [order_min, order_max] = [" << orderMin_ << ", " << orderMax_ << "]\n"
+      "    [order_min, order_max] = [" <<orderMin_<< ", " <<orderMax_<< "]\n"
       "    order = " << order << "\n");
 
   } else { // VARIABLE_STEP_SIZE
@@ -500,8 +504,12 @@ TimeStepControl<Scalar>::getValidParameters() const
     pl->set(iStepMax_name   , iStepMax_default   , "Maximum time step index");
     pl->set(errorMaxAbs_name, errorMaxAbs_default, "Maximum absolute error");
     pl->set(errorMaxRel_name, errorMaxRel_default, "Maximum relative error");
-    pl->set(orderMin_name, orderMin_default, "Minimum time integration order");
-    pl->set(orderMax_name, orderMax_default, "Maximum time integration order");
+    pl->set(orderMin_name, orderMin_default,
+      "Minimum time-integration order.  If set to zero (default), the\n"
+      "Stepper minimum order is used.");
+    pl->set(orderMax_name, orderMax_default,
+      "Maximum time-integration order.  If set to zero (default), the\n"
+      "Stepper maximum order is used.");
 
     pl->set(stepType_name, stepType_default,
       "'Integrator Step Type' indicates whether the Integrator will allow "

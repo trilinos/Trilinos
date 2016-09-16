@@ -61,6 +61,10 @@ class RKButcherTableau :
       { return c_; }
     /** \brief Return the order */
     virtual int order() const { return order_; }
+    /** \brief Return the minimum order */
+    virtual int orderMin() const { return orderMin_; }
+    /** \brief Return the maximum order */
+    virtual int orderMax() const { return orderMax_; }
     /** \brief Return true if the RK method is implicit */
     virtual bool isImplicit() const { return isImplicit_; }
     /** \brief Return true if the RK method has embedded capabilities */
@@ -78,6 +82,22 @@ class RKButcherTableau :
           bstar =  Teuchos::SerialDenseVector<int,Scalar>()
         )
     {
+      this->initialize(A,b,c,order,order,order,longDescription,isEmbedded,bstar);
+    }
+
+    virtual void initialize(
+        const Teuchos::SerialDenseMatrix<int,Scalar>& A,
+        const Teuchos::SerialDenseVector<int,Scalar>& b,
+        const Teuchos::SerialDenseVector<int,Scalar>& c,
+        const int order,
+        const int orderMin,
+        const int orderMax,
+        const std::string& longDescription,
+        bool isEmbedded = false,
+        const Teuchos::SerialDenseVector<int,Scalar>&
+          bstar =  Teuchos::SerialDenseVector<int,Scalar>()
+        )
+    {
       const int numStages = A.numRows();
       TEUCHOS_ASSERT_EQUALITY( A.numCols(), numStages );
       TEUCHOS_ASSERT_EQUALITY( b.length(), numStages );
@@ -87,6 +107,8 @@ class RKButcherTableau :
       b_ = b;
       c_ = c;
       order_ = order;
+      orderMin_ = orderMin;
+      orderMax_ = orderMax;
       this->set_isImplicit();
       longDescription_ = longDescription;
 
@@ -153,6 +175,8 @@ class RKButcherTableau :
     void set_b(const Teuchos::SerialDenseVector<int,Scalar>& b) { b_ = b; }
     void set_c(const Teuchos::SerialDenseVector<int,Scalar>& c) { c_ = c; }
     void set_order(const int& order) { order_ = order; }
+    void set_orderMin(const int& order) { orderMin_ = order; }
+    void set_orderMax(const int& order) { orderMax_ = order; }
     void set_isImplicit() {
       isImplicit_ = false;
       for (size_t i = 0; i < this->numStages(); i++)
@@ -171,6 +195,8 @@ class RKButcherTableau :
     Teuchos::SerialDenseVector<int,Scalar> b_;
     Teuchos::SerialDenseVector<int,Scalar> c_;
     int order_;
+    int orderMin_;
+    int orderMax_;
     bool isImplicit_;
     std::string longDescription_;
     mutable Teuchos::RCP<Teuchos::ParameterList> validPL_;
@@ -199,7 +225,26 @@ Teuchos::RCP<RKButcherTableau<Scalar> > rKButcherTableau(
 {
   Teuchos::RCP<RKButcherTableau<Scalar> > rkbt =
     rcp(new RKButcherTableau<Scalar>());
-  rkbt->initialize(A,b,c,order,description);
+  rkbt->initialize(A,b,c,order,order,order,description);
+  return(rkbt);
+}
+
+
+// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<RKButcherTableau<Scalar> > rKButcherTableau(
+    const Teuchos::SerialDenseMatrix<int,Scalar>& A,
+    const Teuchos::SerialDenseVector<int,Scalar>& b,
+    const Teuchos::SerialDenseVector<int,Scalar>& c,
+    int order,
+    int orderMin,
+    int orderMax,
+    const std::string& description = ""
+    )
+{
+  Teuchos::RCP<RKButcherTableau<Scalar> > rkbt =
+    rcp(new RKButcherTableau<Scalar>());
+  rkbt->initialize(A,b,c,order,orderMin,orderMax,description);
   return(rkbt);
 }
 
@@ -913,6 +958,8 @@ class SDIRK2Stage2ndOrder_RKBT :
     this->set_c(c);
     if (gamma_ == gamma_default_) this->set_order(2);
     else                          this->set_order(1);
+    this->set_orderMin(1);
+    this->set_orderMax(2);
   }
 
   void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
@@ -1009,6 +1056,8 @@ class SDIRK2Stage3rdOrder_RKBT :
     this->set_c(c);
     if (gamma_ == gamma_default_) this->set_order(3);
     else                          this->set_order(2);
+    this->set_orderMin(2);
+    this->set_orderMax(3);
   }
 
   void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
@@ -1312,6 +1361,8 @@ class IRK1StageTheta_RKBT :
     this->set_c(c);
     if (theta_ == theta_default_) this->set_order(2);
     else                          this->set_order(1);
+    this->set_orderMin(1);
+    this->set_orderMax(2);
   }
 
   void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
@@ -1396,6 +1447,8 @@ class IRK2StageTheta_RKBT :
       "'theta' can not be zero, as it makes this IRK stepper explicit.");
     if (theta_ == theta_default_) this->set_order(2);
     else                          this->set_order(1);
+    this->set_orderMin(1);
+    this->set_orderMax(2);
   }
 
   void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)

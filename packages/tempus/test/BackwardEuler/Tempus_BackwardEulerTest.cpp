@@ -38,6 +38,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
   std::vector<double> ErrorNorm;
   const int nTimeStepSizes = 7;
   double dt = 0.2;
+  double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
 
     // Read params from .xml file
@@ -60,6 +61,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
     pl->sublist("Demo Integrator").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
       Tempus::integratorBasic<double>(pl, model);
+    order = integrator->getStepper()->getOrder();
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -105,7 +107,12 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  TEST_FLOATING_EQUALITY( slope, 1.0, 0.01 );
+  std::cout << "  Stepper = BackwardEuler" << std::endl;
+  std::cout << "  =========================" << std::endl;
+  std::cout << "  Expected order: " << order << std::endl;
+  std::cout << "  Observed order: " << slope << std::endl;
+  std::cout << "  =========================" << std::endl;
+  TEST_FLOATING_EQUALITY( slope, order, 0.01 );
   TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
   std::ofstream ftmp("Tempus_BackwardEuler_SinCos-Error.dat");
@@ -134,12 +141,13 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
   std::vector<double> ErrorNorm;
   const int nTimeStepSizes = 5;
   double dt = 0.2;
+  double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
-    
+
     // Read params from .xml file
     RCP<ParameterList> pList =
       getParametersFromXmlFile("Tempus_BackwardEuler_CDR.xml");
-    
+
     // Create CDR Model
     RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
     const int num_elements = model_pl->get<int>("num elements");
@@ -147,7 +155,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
     const double right_end = model_pl->get<double>("right end");
     const double a_convection = model_pl->get<double>("a (convection)");
     const double k_source = model_pl->get<double>("k (source)");
-    
+
     RCP<Tempus_Test::CDR_Model<double>> model =
       Teuchos::rcp(new Tempus_Test::CDR_Model<double>(comm,
                                                       num_elements,
@@ -155,30 +163,31 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
                                                       right_end,
                                                       a_convection,
                                                       k_source));
-    
+
     // Set the factory
     ::Stratimikos::DefaultLinearSolverBuilder builder;
-    
+
     Teuchos::RCP<Teuchos::ParameterList> p =
       Teuchos::rcp(new Teuchos::ParameterList);
     p->set("Linear Solver Type", "Belos");
     p->set("Preconditioner Type", "None");
     builder.setParameterList(p);
-    
+
     Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
       lowsFactory = builder.createLinearSolveStrategy("");
-    
+
     model->set_W_factory(lowsFactory);
 
     // Set the step size
     dt /= 2;
-    
+
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Demo Integrator").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
       Tempus::integratorBasic<double>(pl, model);
-    
+    order = integrator->getStepper()->getOrder();
+
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)
@@ -210,7 +219,12 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
-  TEST_FLOATING_EQUALITY(slope, 1.0, 0.35);
+  std::cout << "  Stepper = BackwardEuler" << std::endl;
+  std::cout << "  =========================" << std::endl;
+  std::cout << "  Expected order: " << order << std::endl;
+  std::cout << "  Observed order: " << slope << std::endl;
+  std::cout << "  =========================" << std::endl;
+  TEST_FLOATING_EQUALITY( slope, order, 0.35 );
   TEST_COMPARE(slope, >, 0.95);
   out << "\n\n ** Slope on Backward Euler Method = " << slope
       << "\n" << std::endl;
@@ -241,13 +255,13 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
     for (std::size_t n = 0; n < num_elements+1; n++) {
       const double dx = std::fabs(left_end-right_end) /
                         static_cast<double>(num_elements);
-      const double x_coord = left_end + static_cast<double>(n) * dx; 
+      const double x_coord = left_end + static_cast<double>(n) * dx;
       ftmp << x_coord << "   " <<  << std::endl;
     }
     ftmp.close();
   }
   */
-  
+
 }
-  
+
 } // namespace Tempus_Test

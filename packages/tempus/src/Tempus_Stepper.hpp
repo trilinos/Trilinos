@@ -59,11 +59,14 @@ public:
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() = 0;
+    virtual Scalar getOrder() const = 0;
+    virtual Scalar getOrderMin() const = 0;
+    virtual Scalar getOrderMax() const = 0;
   //@}
 
   /// \name Helper functions
   //@{
-    /// Validate that the model supports explicit ODE evaluation, f(x,t) [= xdot]
+    /// Validate that the model supports explicit ODE evaluation, f(x,t) [=xdot]
     /** Currently the convention to evaluate f(x,t) is to set xdot=null!
      *  There is no InArgs support to test if xdot is null, so we set
      *  xdot=null and hopefully the ModelEvaluator can handle it.
