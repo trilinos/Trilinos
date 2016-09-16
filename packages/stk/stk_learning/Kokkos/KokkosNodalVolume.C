@@ -45,6 +45,7 @@
 #include <ngp/Ngp.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
+#include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -393,10 +394,7 @@ protected:
         stk::mesh::put_field(*nodalVolumeField, part);
         numElemsPerNodeField = &get_meta().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "numElemsPerNode");
         stk::mesh::put_field(*numElemsPerNodeField, part);
-        int dim = unitTestUtils::get_command_line_option<int>("-dim", "20");
-        std::string sDim = std::to_string(dim);
-        std::string meshName("generated:");
-        meshName += sDim+"x"+sDim+"x"+sDim;
+        std::string meshName = stk::unit_test_util::get_mesh_spec("-dim");
         setup_mesh(meshName, auraOption);
         std::cout << "Using mesh: "<<meshName<<", numRepeat: "<<get_num_repeat()<<std::endl;
     }

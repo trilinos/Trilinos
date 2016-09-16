@@ -1,3 +1,4 @@
+#include <gtest/gtest.h>
 #include <ngp/Ngp.hpp>
 #include <ngp/NgpMultistateField.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
