@@ -204,7 +204,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
 
   }
 
-  if(Teuchos::is_null(x_outargs) || (x_args_dim < f_sol_dim)){ // g is not large enough to store the solution
+  if(Teuchos::is_null(x_outargs) || (x_args_dim != f_sol_dim)){ // g is not the right size
 
       x_final = Thyra::createMember(this->get_g_space(this->num_g()));
 
@@ -225,7 +225,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
   }
 
   // If the arrays need resizing
-  if(x_args_dim < f_sol_dim){
+  if(x_args_dim != f_sol_dim){
 
     const int parameterCount = this->Np();
 
