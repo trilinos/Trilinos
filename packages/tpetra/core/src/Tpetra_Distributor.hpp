@@ -115,7 +115,7 @@ namespace Tpetra {
   /// Distributor.  You may use it if you would like a programmatic
   /// way to get all possible values of the "Send type" parameter of
   /// Distributor.
-  Array<std::string> distributorSendTypes ();
+  Teuchos::Array<std::string> distributorSendTypes ();
 
   /// \class Distributor
   /// \brief Sets up and executes a communication plan for a Tpetra DistObject.
@@ -303,7 +303,7 @@ namespace Tpetra {
     ///   reason, a negative entry is sufficient to break contiguity.
     ///
     /// \return Number of imports this process will be receiving.
-    size_t createFromSends (const ArrayView<const int>& exportProcIDs);
+    size_t createFromSends (const Teuchos::ArrayView<const int>& exportProcIDs);
 
     /// \brief Set up Distributor using list of process ranks from which to receive.
     ///
@@ -337,21 +337,24 @@ namespace Tpetra {
     ///
     /// The \c exportGIDs and \c exportProcIDs arrays are resized by
     /// the Distributor, which is why they are passed in as a nonconst
-    /// Array reference.
+    /// Teuchos::Array reference.
     template <class Ordinal>
     void
-    createFromRecvs (const ArrayView<const Ordinal>& remoteIDs,
-                     const ArrayView<const int>& remoteProcIDs,
-                     Array<Ordinal>& exportIDs,
-                     Array<int>& exportProcIDs);
+    createFromRecvs (const Teuchos::ArrayView<const Ordinal>& remoteIDs,
+                     const Teuchos::ArrayView<const int>& remoteProcIDs,
+                     Teuchos::Array<Ordinal>& exportIDs,
+                     Teuchos::Array<int>& exportProcIDs);
 
-
-    //   template <class Ordinal>
-    void 
-    createFromSendsAndRecvs(
-				 const ArrayView<const int> &exportProcIDs,
-				 const ArrayView<const int> &remoteProcIDs);
-    
+    /// \brief Set up Distributor using list of process ranks to which
+    ///   to send, and list of process ranks from which to receive.
+    ///
+    /// \param exportProcIDs [in] List of process ranks to which this
+    ///   process must send a message.
+    /// \param remoteProcIDs [in] List of process ranks from which
+    ///   this process must receive a message.
+    void
+    createFromSendsAndRecvs (const Teuchos::ArrayView<const int>& exportProcIDs,
+                             const Teuchos::ArrayView<const int>& remoteProcIDs);
 
     //@}
     //! @name Attribute accessor methods
@@ -380,13 +383,13 @@ namespace Tpetra {
     ///
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
-    ArrayView<const int> getProcsFrom() const;
+    Teuchos::ArrayView<const int> getProcsFrom() const;
 
     /// \brief Ranks of the processes to which this process will send values.
     ///
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
-    ArrayView<const int> getProcsTo() const;
+    Teuchos::ArrayView<const int> getProcsTo() const;
 
     /// \brief Number of values this process will receive from each process.
     ///
@@ -395,7 +398,7 @@ namespace Tpetra {
     ///
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
-    ArrayView<const size_t> getLengthsFrom() const;
+    Teuchos::ArrayView<const size_t> getLengthsFrom() const;
 
     /// \brief Number of values this process will send to each process.
     ///
@@ -404,7 +407,7 @@ namespace Tpetra {
     ///
     /// This is a nonpersisting view.  It will last only as long as
     /// this Distributor instance does.
-    ArrayView<const size_t> getLengthsTo() const;
+    Teuchos::ArrayView<const size_t> getLengthsTo() const;
 
     /// \brief Return an enum indicating whether and how a Distributor was initialized.
     ///
@@ -428,7 +431,7 @@ namespace Tpetra {
     /// doReversePosts() or doReversePostsAndWaits(), the reverse
     /// Distributor will be created automatically if it does not yet
     /// exist.
-    RCP<Distributor> getReverse() const;
+    Teuchos::RCP<Distributor> getReverse() const;
 
     //@}
     //! @name Methods for executing a communication plan
@@ -456,9 +459,9 @@ namespace Tpetra {
     ///   contains the values exported to us.
     template <class Packet>
     void
-    doPostsAndWaits (const ArrayView<const Packet> &exports,
+    doPostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
                      size_t numPackets,
-                     const ArrayView<Packet> &imports);
+                     const Teuchos::ArrayView<Packet> &imports);
 
     /// \brief Execute the (forward) communication plan.
     ///
@@ -483,9 +486,9 @@ namespace Tpetra {
     ///   each import LID (i.e., each LID to be received).
     template <class Packet>
     void
-    doPostsAndWaits (const ArrayView<const Packet> &exports,
+    doPostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
                      const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                     const ArrayView<Packet> &imports,
+                     const Teuchos::ArrayView<Packet> &imports,
                      const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
@@ -514,9 +517,9 @@ namespace Tpetra {
     ///   exported to us.
     template <class Packet>
     void
-    doPosts (const ArrayRCP<const Packet> &exports,
+    doPosts (const Teuchos::ArrayRCP<const Packet> &exports,
              size_t numPackets,
-             const ArrayRCP<Packet> &imports);
+             const Teuchos::ArrayRCP<Packet> &imports);
 
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
@@ -538,9 +541,9 @@ namespace Tpetra {
     ///   four-argument version of doPostsAndWaits().
     template <class Packet>
     void
-    doPosts (const ArrayRCP<const Packet> &exports,
+    doPosts (const Teuchos::ArrayRCP<const Packet> &exports,
              const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-             const ArrayRCP<Packet> &imports,
+             const Teuchos::ArrayRCP<Packet> &imports,
              const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// Wait on any outstanding nonblocking message requests to complete.
@@ -557,9 +560,9 @@ namespace Tpetra {
     /// version of doPostsAndWaits().
     template <class Packet>
     void
-    doReversePostsAndWaits (const ArrayView<const Packet> &exports,
+    doReversePostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
                             size_t numPackets,
-                            const ArrayView<Packet> &imports);
+                            const Teuchos::ArrayView<Packet> &imports);
 
     /// \brief Execute the reverse communication plan.
     ///
@@ -567,9 +570,9 @@ namespace Tpetra {
     /// version of doPostsAndWaits().
     template <class Packet>
     void
-    doReversePostsAndWaits (const ArrayView<const Packet> &exports,
+    doReversePostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
                             const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                            const ArrayView<Packet> &imports,
+                            const Teuchos::ArrayView<Packet> &imports,
                             const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
@@ -578,9 +581,9 @@ namespace Tpetra {
     /// version of doPosts().
     template <class Packet>
     void
-    doReversePosts (const ArrayRCP<const Packet> &exports,
+    doReversePosts (const Teuchos::ArrayRCP<const Packet> &exports,
                     size_t numPackets,
-                    const ArrayRCP<Packet> &imports);
+                    const Teuchos::ArrayRCP<Packet> &imports);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
@@ -588,9 +591,9 @@ namespace Tpetra {
     /// version of doPosts().
     template <class Packet>
     void
-    doReversePosts (const ArrayRCP<const Packet> &exports,
+    doReversePosts (const Teuchos::ArrayRCP<const Packet> &exports,
                     const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                    const ArrayRCP<Packet> &imports,
+                    const Teuchos::ArrayRCP<Packet> &imports,
                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// Wait on any outstanding nonblocking message requests to complete.
@@ -797,7 +800,7 @@ namespace Tpetra {
 
   private:
     //! The communicator over which to perform distributions.
-    RCP<const Comm<int> > comm_;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
     //! Output stream for debug output.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
@@ -838,7 +841,7 @@ namespace Tpetra {
     ///
     /// This array has length numSends_ + selfMessage_ (that is, it
     /// includes the self message, if there is one).
-    Array<int> procsTo_;
+    Teuchos::Array<int> procsTo_;
 
     /// \brief Starting index of the block of Packets to send to each process.
     ///
@@ -848,14 +851,14 @@ namespace Tpetra {
     ///
     /// This array has length numSends_ + selfMessage_ (that is, it
     /// includes the self message, if there is one).
-    Array<size_t> startsTo_;
+    Teuchos::Array<size_t> startsTo_;
 
     /// \brief Length (in number of Packets) of my process' send to each process.
     ///
     /// lengthsTo_[p] is the length of my process' send to process p.
     /// This array has length numSends_ + selfMessage_ (that is, it
     /// includes the self message, if there is one).
-    Array<size_t> lengthsTo_;
+    Teuchos::Array<size_t> lengthsTo_;
 
     /// \brief The maximum send length (in number of Packets) to another process.
     ///
@@ -877,7 +880,7 @@ namespace Tpetra {
     /// buffer.  Otherwise, this array has no entries.  (In fact,
     /// Distributor currently uses this in both overloads of doPosts()
     /// to test whether data are laid out by process.)
-    Array<size_t> indicesTo_;
+    Teuchos::Array<size_t> indicesTo_;
 
     /// \brief The number of messages received by my process from other processes.
     ///
@@ -903,21 +906,21 @@ namespace Tpetra {
     /// This array has length numReceives_ + selfMessage_.  Incoming
     /// message i from process procsFrom_[i] has length
     /// lengthsFrom_[i].
-    Array<size_t> lengthsFrom_;
+    Teuchos::Array<size_t> lengthsFrom_;
 
     /// \brief Array of ranks of the process from which the calling
     ///   process will receive a message.
     ///
     /// This array has length numReceives_ + selfMessage_.  Incoming
     /// message i was sent by process procsFrom_[i].
-    Array<int> procsFrom_;
+    Teuchos::Array<int> procsFrom_;
 
     /// \brief Array of offsets of incoming messages.
     ///
     /// This array has length numReceives_ + selfMessage_.  It is an
     /// exclusive prefix sum of lengthsFrom_.  It is only used for
     /// constructing the reverse Distributor.
-    Array<size_t> startsFrom_;
+    Teuchos::Array<size_t> startsFrom_;
 
     /// \brief List that becomes the reverse communicator's indicesTo_.
     ///
@@ -925,7 +928,7 @@ namespace Tpetra {
     /// computeReceives() as [0, 1, ..., totalReceiveLength_-1].  When
     /// creating the reverse Distributor, this is assigned to the
     /// reverse Distributor's indicesTo_.
-    Array<size_t> indicesFrom_;
+    Teuchos::Array<size_t> indicesFrom_;
 
     /// \brief Communication requests associated with nonblocking receives and sends.
     ///
@@ -933,13 +936,13 @@ namespace Tpetra {
     ///   the number of outstanding nonblocking receives and sends.
     ///   This means you should always resize to zero after completing
     ///   receive and send requests.
-    Array<RCP<Teuchos::CommRequest<int> > > requests_;
+    Teuchos::Array<RCP<Teuchos::CommRequest<int> > > requests_;
 
     /// \brief The reverse distributor.
     ///
     /// This is created on demand in getReverse() and cached for
     /// later reuse.  This is why it is declared "mutable".
-    mutable RCP<Distributor> reverseDistributor_;
+    mutable Teuchos::RCP<Distributor> reverseDistributor_;
 
     /// \brief The number of bytes sent by this proc in the last call to do/doReverse
     size_t lastRoundBytesSend_;
@@ -1028,10 +1031,10 @@ namespace Tpetra {
     /// \param exportProcIDs [out] Process IDs to which to send by my
     ///   process.  Resized if necessary.
     template <class Ordinal>
-    void computeSends (const ArrayView<const Ordinal> &remoteGIDs,
-                       const ArrayView<const int> &remoteProcIDs,
-                       Array<Ordinal> &exportGIDs,
-                       Array<int> &exportProcIDs);
+    void computeSends (const Teuchos::ArrayView<const Ordinal> &remoteGIDs,
+                       const Teuchos::ArrayView<const int> &remoteProcIDs,
+                       Teuchos::Array<Ordinal> &exportGIDs,
+                       Teuchos::Array<int> &exportProcIDs);
 
     //! Create a distributor for the reverse communication pattern.
     void createReverseDistributor() const;
@@ -1048,9 +1051,9 @@ namespace Tpetra {
 
   template <class Packet>
   void Distributor::
-  doPostsAndWaits (const ArrayView<const Packet>& exports,
+  doPostsAndWaits (const Teuchos::ArrayView<const Packet>& exports,
                    size_t numPackets,
-                   const ArrayView<Packet>& imports)
+                   const Teuchos::ArrayView<Packet>& imports)
   {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
@@ -1098,9 +1101,9 @@ namespace Tpetra {
 
   template <class Packet>
   void Distributor::
-  doPostsAndWaits (const ArrayView<const Packet>& exports,
+  doPostsAndWaits (const Teuchos::ArrayView<const Packet>& exports,
                    const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                   const ArrayView<Packet> &imports,
+                   const Teuchos::ArrayView<Packet> &imports,
                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     using Teuchos::arcp;
@@ -1144,11 +1147,12 @@ namespace Tpetra {
 
   template <class Packet>
   void Distributor::
-  doPosts (const ArrayRCP<const Packet>& exports,
+  doPosts (const Teuchos::ArrayRCP<const Packet>& exports,
            size_t numPackets,
-           const ArrayRCP<Packet>& imports)
+           const Teuchos::ArrayRCP<Packet>& imports)
   {
     using Teuchos::Array;
+    using Teuchos::ArrayRCP;
     using Teuchos::as;
     using Teuchos::FancyOStream;
     using Teuchos::includesVerbLevel;
@@ -1532,12 +1536,13 @@ namespace Tpetra {
 
   template <class Packet>
   void Distributor::
-  doPosts (const ArrayRCP<const Packet>& exports,
+  doPosts (const Teuchos::ArrayRCP<const Packet>& exports,
            const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-           const ArrayRCP<Packet>& imports,
+           const Teuchos::ArrayRCP<Packet>& imports,
            const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     using Teuchos::Array;
+    using Teuchos::ArrayRCP;
     using Teuchos::as;
     using Teuchos::ireceive;
     using Teuchos::isend;
@@ -1565,7 +1570,7 @@ namespace Tpetra {
 // #ifdef HAVE_TEUCHOS_DEBUG
 //     // Prepare for verbose output, if applicable.
 //     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-//     RCP<Teuchos::FancyOStream> out = this->getOStream ();
+//     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream ();
 //     const bool doPrint = out.get () && (comm_->getRank () == 0) &&
 //       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
 
@@ -1886,10 +1891,12 @@ namespace Tpetra {
 
   template <class Packet>
   void Distributor::
-  doReversePostsAndWaits (const ArrayView<const Packet>& exports,
+  doReversePostsAndWaits (const Teuchos::ArrayView<const Packet>& exports,
                           size_t numPackets,
-                          const ArrayView<Packet>& imports)
+                          const Teuchos::ArrayView<Packet>& imports)
   {
+    using Teuchos::arcp;
+    using Teuchos::ArrayRCP;
     using Teuchos::as;
 
     // doReversePosts() takes exports and imports as ArrayRCPs,
@@ -1920,9 +1927,9 @@ namespace Tpetra {
 
   template <class Packet>
   void Distributor::
-  doReversePostsAndWaits (const ArrayView<const Packet>& exports,
+  doReversePostsAndWaits (const Teuchos::ArrayView<const Packet>& exports,
                           const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                          const ArrayView<Packet> &imports,
+                          const Teuchos::ArrayView<Packet> &imports,
                           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     using Teuchos::as;
@@ -1961,9 +1968,9 @@ namespace Tpetra {
 
   template <class Packet>
   void Distributor::
-  doReversePosts (const ArrayRCP<const Packet>& exports,
+  doReversePosts (const Teuchos::ArrayRCP<const Packet>& exports,
                   size_t numPackets,
-                  const ArrayRCP<Packet>& imports)
+                  const Teuchos::ArrayRCP<Packet>& imports)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1978,9 +1985,9 @@ namespace Tpetra {
 
   template <class Packet>
   void Distributor::
-  doReversePosts (const ArrayRCP<const Packet>& exports,
+  doReversePosts (const Teuchos::ArrayRCP<const Packet>& exports,
                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                  const ArrayRCP<Packet>& imports,
+                  const Teuchos::ArrayRCP<Packet>& imports,
                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
@@ -2923,10 +2930,10 @@ namespace Tpetra {
 
   template <class OrdinalType>
   void Distributor::
-  computeSends (const ArrayView<const OrdinalType> & importGIDs,
-                const ArrayView<const int> & importProcIDs,
-                Array<OrdinalType> & exportGIDs,
-                Array<int> & exportProcIDs)
+  computeSends (const Teuchos::ArrayView<const OrdinalType> & importGIDs,
+                const Teuchos::ArrayView<const int> & importProcIDs,
+                Teuchos::Array<OrdinalType> & exportGIDs,
+                Teuchos::Array<int> & exportProcIDs)
   {
     // NOTE (mfh 19 Apr 2012): There was a note on this code saying:
     // "assumes that size_t >= Ordinal".  The code certainly does
@@ -3039,10 +3046,10 @@ namespace Tpetra {
 
   template <class OrdinalType>
   void Distributor::
-  createFromRecvs (const ArrayView<const OrdinalType> &remoteGIDs,
-                   const ArrayView<const int> &remoteProcIDs,
-                   Array<OrdinalType> &exportGIDs,
-                   Array<int> &exportProcIDs)
+  createFromRecvs (const Teuchos::ArrayView<const OrdinalType> &remoteGIDs,
+                   const Teuchos::ArrayView<const int> &remoteProcIDs,
+                   Teuchos::Array<OrdinalType> &exportGIDs,
+                   Teuchos::Array<int> &exportProcIDs)
   {
     using std::endl;
 
