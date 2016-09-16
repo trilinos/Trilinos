@@ -898,13 +898,21 @@ Entity BulkData::create_and_connect_side(const stk::mesh::EntityId globalSideId,
     return side;
 }
 
-Entity BulkData::declare_element_side(Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
+Entity BulkData::declare_element_side(Entity elem, const unsigned sideOrd, const stk::mesh::PartVector& parts)
 {
-    stk::mesh::Entity sideEntity = stk::mesh::get_side_entity_for_elem_side_pair(*this, elem, side_ordinal);
+    check_declare_element_side_inputs(*this, elem, sideOrd);
+
+    stk::mesh::Entity sideEntity = stk::mesh::get_side_entity_for_elem_side_pair(*this, elem, sideOrd);
     if(is_valid(sideEntity))
-        change_entity_parts(sideEntity, add_parts, {});
+        change_entity_parts(sideEntity, parts, {});
     else
-        sideEntity = declare_element_side(select_side_id(elem, side_ordinal), elem, side_ordinal, add_parts);
+    {
+        stk::mesh::EntityId chosenId = select_side_id(elem, sideOrd);
+        ThrowRequireMsg(!is_valid(get_entity(mesh_meta_data().side_rank(), chosenId)),
+                        "Conflicting id in declare_elem_side, found pre-existing side with id " << chosenId
+                        << " not connected to requested element " << identifier(elem) << ", side " << sideOrd);
+        sideEntity = create_and_connect_side(chosenId, elem, sideOrd, parts);
+    }
     return sideEntity;
 }
 
