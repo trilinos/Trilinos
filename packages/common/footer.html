@@ -10,14 +10,14 @@
 <script type="text/javascript">
 iFrameResize({
   log                 : true,   // Enable console logging
-  enablePublicMethods : true,   // Enable methods within iframe hosted page 
-  heightCalculationMethod: 'bodyScroll',
-  autoResize: true,
+  enablePublicMethods : true,   // Enable methods within iframe hosted page
+  sizeHeight:true,
+  interval: -1,
   resizedCallback     : function(messageData){ // Callback fn when msg recd
     $('p#callback').html(
         '<b>Frame ID:</b> '    + messageData.iframe.id +
         ' <b>Height:</b> '     + messageData.height +
-        ' <b>Width:</b> '      + messageData.width + 
+        ' <b>Width:</b> '      + messageData.width +
         ' <b>Event type:</b> ' + messageData.type
      );
   }
