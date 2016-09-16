@@ -3,7 +3,7 @@
 # Remove the directories to make sure that we don't have rebuild problems
 # that can sometimes happen with doxygen
 
-rm -r html
+rm -rf html
 
 # Create new directories manually since the doxygen exe under windows
 # seems to be messing this up.
@@ -29,6 +29,5 @@ doxygen Doxyfile
 #TODO:
 mkdir html/common
 cp -r ../../../doc/DocumentingParameterLists/webfiles html/common/parameterList
-cp parameterList/Domi.xml html/domi.xml
-
+cp ../../../doc/DocumentingParameterLists/doc/copy_xml_to_src_html.py .
 echo "DONE"
