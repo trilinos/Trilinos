@@ -54,6 +54,7 @@ template <class Real>
 class ParametrizedEqualityConstraint_SimOpt : public ParametrizedEqualityConstraint<Real>, public EqualityConstraint_SimOpt<Real> {
 public:
   virtual ~ParametrizedEqualityConstraint_SimOpt(void) {}
+  ParametrizedEqualityConstraint_SimOpt() : EqualityConstraint_SimOpt<Real>() {}
 }; // class ParametrizedEqualityConstraint_SimOpt
 
 } // namespace ROL

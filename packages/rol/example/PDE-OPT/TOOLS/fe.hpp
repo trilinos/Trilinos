@@ -267,7 +267,7 @@ public:
     p_  = cubature_->getNumPoints();
     d_  = cellTopo_->getDimension();
     sd_ = d_ - 1;
-    std::cout << "FE: c = " << c_ << ", f = " << f_ << ", p = " << p_ << ", d = " << d_ << std::endl;
+    //std::cout << "FE: c = " << c_ << ", f = " << f_ << ", p = " << p_ << ", d = " << d_ << std::endl;
 
     // Get side subcell topology.
     sideTopo_ = Teuchos::rcp(new shards::CellTopology(cellTopo_->getCellTopologyData(sd_, sideId_)));

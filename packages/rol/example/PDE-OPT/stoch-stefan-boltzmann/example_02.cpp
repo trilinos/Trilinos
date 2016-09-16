@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Problem dimensions
-    const int stochDim = 19, controlDim = 1;
+    const int stochDim = 32, controlDim = 1;
     const RealT one(1); 
 
     /*************************************************************************/
@@ -213,8 +213,10 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
     /*************************************************************************/
-    Teuchos::RCP<std::vector<RealT> > zlo_rcp = Teuchos::rcp(new std::vector<RealT>(controlDim,-100));
-    Teuchos::RCP<std::vector<RealT> > zhi_rcp = Teuchos::rcp(new std::vector<RealT>(controlDim, 100));
+    RealT upper = parlist->sublist("Problem").get("Upper Advection Bound", 100.0);
+    RealT lower = parlist->sublist("Problem").get("Lower Advection Bound",-100.0);
+    Teuchos::RCP<std::vector<RealT> > zlo_rcp = Teuchos::rcp(new std::vector<RealT>(controlDim,lower));
+    Teuchos::RCP<std::vector<RealT> > zhi_rcp = Teuchos::rcp(new std::vector<RealT>(controlDim,upper));
     Teuchos::RCP<ROL::Vector<RealT> > zlop
       = Teuchos::rcp(new PDE_OptVector<RealT>(Teuchos::rcp(new ROL::StdVector<RealT>(zlo_rcp))));
     Teuchos::RCP<ROL::Vector<RealT> > zhip
@@ -273,7 +275,8 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
-    //zp->zero();
+    (*z_rcp)[0] = parlist->sublist("Problem").get("Advection Magnitude",0.0);
+    u_rcp->putScalar(450.0);
     std::clock_t timer = std::clock();
     algo.run(opt,true,*outStream);
     *outStream << "Optimization time: "
@@ -288,6 +291,7 @@ int main(int argc, char *argv[]) {
     //assembler->outputTpetraVector(z_rcp,"control.txt");
     *outStream << std::endl << "Advection value: " << (*z_rcp)[0] << std::endl;
     // Output expected state and samples to file
+    *outStream << std::endl << "Print Expected Value of State" << std::endl;
     up->zero(); pp->zero(); dup->zero();
     RealT tol(1.e-8);
     Teuchos::RCP<ROL::BatchManager<RealT> > bman_Eu
@@ -299,6 +303,7 @@ int main(int argc, char *argv[]) {
     file_samp.open(name_samp.str());
     file_samp << std::scientific << std::setprecision(15);
     for (int i = 0; i < sampler->numMySamples(); ++i) {
+      *outStream << "Sample i = " << i << std::endl;
       sample = sampler->getMyPoint(i);
       con->setParameter(sample);
       con->solve(*rp,*dup,*zp,tol);
@@ -312,6 +317,7 @@ int main(int argc, char *argv[]) {
     bman_Eu->sumAll(*up,*pp);
     assembler->outputTpetraVector(p_rcp,"mean_state.txt");
     // Build objective function distribution
+    *outStream << std::endl << "Print Objective CDF" << std::endl;
     RealT val1(0), val2(0);
     int nsamp_dist = parlist->sublist("Problem").get("Number of Output Samples",100);
     Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > stateCost

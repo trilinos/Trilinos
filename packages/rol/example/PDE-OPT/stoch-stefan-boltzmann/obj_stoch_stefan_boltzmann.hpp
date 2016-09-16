@@ -354,39 +354,44 @@ public:
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
              const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    const int c = fe_vol_->gradN()->dimension(0);
-    // Initialize output val
-    val = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
-    // Compute cost integral
-    const int numLocSides = bdryCellLocIds_.size();
-    for (int l = 0; l < numLocSides; ++l) {
-      const int numCellsSide  = bdryCellLocIds_[l].size();
-      if ( numCellsSide ) {
-        const int numCubPerSide = fe_bdry_[l]->cubPts()->dimension(1);
-        // Evaluate control on FE basis
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff_bdry
-          = getBoundaryCoeff(*z_coeff, l);
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        fe_bdry_[l]->evaluateValue(valZ_eval, z_coeff_bdry);
-        // Compute cost
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > costZ
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        for (int i = 0; i < numCellsSide; ++i) {
-          for (int j = 0; j < numCubPerSide; ++j) {
-            (*costZ)(i,j) = cost((*valZ_eval)(i,j),0);
+    if ( z_coeff != Teuchos::null ) {
+      const int c = fe_vol_->gradN()->dimension(0);
+      // Initialize output val
+      val = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
+      // Compute cost integral
+      const int numLocSides = bdryCellLocIds_.size();
+      for (int l = 0; l < numLocSides; ++l) {
+        const int numCellsSide  = bdryCellLocIds_[l].size();
+        if ( numCellsSide ) {
+          const int numCubPerSide = fe_bdry_[l]->cubPts()->dimension(1);
+          // Evaluate control on FE basis
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff_bdry
+            = getBoundaryCoeff(*z_coeff, l);
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          fe_bdry_[l]->evaluateValue(valZ_eval, z_coeff_bdry);
+          // Compute cost
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > costZ
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          for (int i = 0; i < numCellsSide; ++i) {
+            for (int j = 0; j < numCubPerSide; ++j) {
+              (*costZ)(i,j) = cost((*valZ_eval)(i,j),0);
+            }
+          }
+          // Integrate cell cost
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > intVal
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide));
+          fe_bdry_[l]->computeIntegral(intVal,costZ,weight_[l]);
+          // Add to integral value
+          for (int i = 0; i < numCellsSide; ++i) {
+            int cidx = bdryCellLocIds_[l][i];
+            (*val)(cidx) += (*intVal)(i);
           }
         }
-        // Integrate cell cost
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > intVal
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide));
-        fe_bdry_[l]->computeIntegral(intVal,costZ,weight_[l]);
-        // Add to integral value
-        for (int i = 0; i < numCellsSide; ++i) {
-          int cidx = bdryCellLocIds_[l][i];
-          (*val)(cidx) += (*intVal)(i);
-        }
       }
+    }
+    else {
+      throw Exception::Zero(">>> QoI_ControlCost: Value is zero.");
     }
     return static_cast<Real>(0);
   }
@@ -402,50 +407,55 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    const int c = fe_vol_->gradN()->dimension(0);
-    const int f = fe_vol_->gradN()->dimension(1);
-    // Initialize output val
-    grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-    // Compute cost integral
-    const int numLocSides = bdryCellLocIds_.size();
-    for (int l = 0; l < numLocSides; ++l) {
-      const int numCellsSide  = bdryCellLocIds_[l].size();
-      if ( numCellsSide ) {
-        const int numCubPerSide = fe_bdry_[l]->cubPts()->dimension(1);
-        // Evaluate control on FE basis
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff_bdry
-          = getBoundaryCoeff(*z_coeff, l);
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        fe_bdry_[l]->evaluateValue(valZ_eval, z_coeff_bdry);
-        // Compute cost
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > costZ
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        for (int i = 0; i < numCellsSide; ++i) {
-          for (int j = 0; j < numCubPerSide; ++j) {
-            (*costZ)(i,j) = cost((*valZ_eval)(i,j),1);
+    if ( z_coeff != Teuchos::null ) {
+      const int c = fe_vol_->gradN()->dimension(0);
+      const int f = fe_vol_->gradN()->dimension(1);
+      // Initialize output val
+      grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+      // Compute cost integral
+      const int numLocSides = bdryCellLocIds_.size();
+      for (int l = 0; l < numLocSides; ++l) {
+        const int numCellsSide  = bdryCellLocIds_[l].size();
+        if ( numCellsSide ) {
+          const int numCubPerSide = fe_bdry_[l]->cubPts()->dimension(1);
+          // Evaluate control on FE basis
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff_bdry
+            = getBoundaryCoeff(*z_coeff, l);
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          fe_bdry_[l]->evaluateValue(valZ_eval, z_coeff_bdry);
+          // Compute cost
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > costZ
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          for (int i = 0; i < numCellsSide; ++i) {
+            for (int j = 0; j < numCubPerSide; ++j) {
+              (*costZ)(i,j) = cost((*valZ_eval)(i,j),1);
+            }
           }
-        }
-        // Multiply cost and weight
-        Intrepid::FieldContainer<Real> WcostZ(numCellsSide, numCubPerSide);
-        Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostZ,
-                                                                   *(weight_[l]),
-                                                                   *costZ);
-        // Compute gradient of squared L2-norm of diff
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > intGrad
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, f));
-        Intrepid::FunctionSpaceTools::integrate<Real>(*intGrad,
-                                                      WcostZ,
-                                                      *(fe_bdry_[l]->NdetJ()),
-                                                      Intrepid::COMP_CPP, false);
-        // Add to integral value
-        for (int i = 0; i < numCellsSide; ++i) {
-          int cidx = bdryCellLocIds_[l][i];
-          for (int j = 0; j < f; ++j) {
-            (*grad)(cidx,j) += (*intGrad)(i,j);
+          // Multiply cost and weight
+          Intrepid::FieldContainer<Real> WcostZ(numCellsSide, numCubPerSide);
+          Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostZ,
+                                                                     *(weight_[l]),
+                                                                     *costZ);
+          // Compute gradient of squared L2-norm of diff
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > intGrad
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, f));
+          Intrepid::FunctionSpaceTools::integrate<Real>(*intGrad,
+                                                        WcostZ,
+                                                        *(fe_bdry_[l]->NdetJ()),
+                                                        Intrepid::COMP_CPP, false);
+          // Add to integral value
+          for (int i = 0; i < numCellsSide; ++i) {
+            int cidx = bdryCellLocIds_[l][i];
+            for (int j = 0; j < f; ++j) {
+              (*grad)(cidx,j) += (*intGrad)(i,j);
+            }
           }
         }
       }
+    }
+    else {
+      throw Exception::Zero(">>> QoI_ControlCost: Gradient_2 is zero.");
     }
   }
 
@@ -478,61 +488,66 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    const int c = fe_vol_->gradN()->dimension(0);
-    const int f = fe_vol_->gradN()->dimension(1);
-    // Initialize output val
-    hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-    // Compute cost integral
-    const int numLocSides = bdryCellLocIds_.size();
-    for (int l = 0; l < numLocSides; ++l) {
-      const int numCellsSide  = bdryCellLocIds_[l].size();
-      if ( numCellsSide ) {
-        const int numCubPerSide = fe_bdry_[l]->cubPts()->dimension(1);
-        // Evaluate control on FE basis
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff_bdry
-          = getBoundaryCoeff(*z_coeff, l);
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        fe_bdry_[l]->evaluateValue(valZ_eval, z_coeff_bdry);
-        // Evaluate direction on FE basis
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > v_coeff_bdry
-          = getBoundaryCoeff(*v_coeff, l);
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > valV_eval
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        fe_bdry_[l]->evaluateValue(valV_eval, v_coeff_bdry);
-        // Compute cost
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > costZ
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
-        for (int i = 0; i < numCellsSide; ++i) {
-          for (int j = 0; j < numCubPerSide; ++j) {
-            (*costZ)(i,j) = cost((*valZ_eval)(i,j),2);
+    if ( z_coeff != Teuchos::null ) {
+      const int c = fe_vol_->gradN()->dimension(0);
+      const int f = fe_vol_->gradN()->dimension(1);
+      // Initialize output val
+      hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+      // Compute cost integral
+      const int numLocSides = bdryCellLocIds_.size();
+      for (int l = 0; l < numLocSides; ++l) {
+        const int numCellsSide  = bdryCellLocIds_[l].size();
+        if ( numCellsSide ) {
+          const int numCubPerSide = fe_bdry_[l]->cubPts()->dimension(1);
+          // Evaluate control on FE basis
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff_bdry
+            = getBoundaryCoeff(*z_coeff, l);
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          fe_bdry_[l]->evaluateValue(valZ_eval, z_coeff_bdry);
+          // Evaluate direction on FE basis
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > v_coeff_bdry
+            = getBoundaryCoeff(*v_coeff, l);
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > valV_eval
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          fe_bdry_[l]->evaluateValue(valV_eval, v_coeff_bdry);
+          // Compute cost
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > costZ
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+          for (int i = 0; i < numCellsSide; ++i) {
+            for (int j = 0; j < numCubPerSide; ++j) {
+              (*costZ)(i,j) = cost((*valZ_eval)(i,j),2);
+            }
           }
-        }
-        // Multiply cost and weight
-        Intrepid::FieldContainer<Real> WcostZ(numCellsSide, numCubPerSide);
-        Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostZ,
-                                                                   *(weight_[l]),
-                                                                   *costZ);
-        // Multiply weighted cost and direction
-        Intrepid::FieldContainer<Real> WcostZV(numCellsSide, numCubPerSide);
-        Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostZV,
-                                                                   WcostZ,
-                                                                   *valV_eval);
-        // Compute hessian times a vector of cost
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > intHess
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, f));
-        Intrepid::FunctionSpaceTools::integrate<Real>(*intHess,
-                                                      WcostZV,
-                                                      *(fe_bdry_[l]->NdetJ()),
-                                                      Intrepid::COMP_CPP, false);
-        // Add to integral value
-        for (int i = 0; i < numCellsSide; ++i) {
-          int cidx = bdryCellLocIds_[l][i];
-          for (int j = 0; j < f; ++j) {
-            (*hess)(cidx,j) += (*intHess)(i,j);
+          // Multiply cost and weight
+          Intrepid::FieldContainer<Real> WcostZ(numCellsSide, numCubPerSide);
+          Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostZ,
+                                                                     *(weight_[l]),
+                                                                     *costZ);
+          // Multiply weighted cost and direction
+          Intrepid::FieldContainer<Real> WcostZV(numCellsSide, numCubPerSide);
+          Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(WcostZV,
+                                                                     WcostZ,
+                                                                     *valV_eval);
+          // Compute hessian times a vector of cost
+          Teuchos::RCP<Intrepid::FieldContainer<Real> > intHess
+            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, f));
+          Intrepid::FunctionSpaceTools::integrate<Real>(*intHess,
+                                                        WcostZV,
+                                                        *(fe_bdry_[l]->NdetJ()),
+                                                        Intrepid::COMP_CPP, false);
+          // Add to integral value
+          for (int i = 0; i < numCellsSide; ++i) {
+            int cidx = bdryCellLocIds_[l][i];
+            for (int j = 0; j < f; ++j) {
+              (*hess)(cidx,j) += (*intHess)(i,j);
+            }
           }
         }
       }
+    }
+    else {
+      throw Exception::Zero(">>> QoI_ControlCost: HessVec_22 is zero.");
     }
   }
 
@@ -547,13 +562,16 @@ public:
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
              const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    const int size = z_param->size();
-    Real sum(0);
-    for (int i = 0; i < size; ++i) {
-      sum += std::pow((*z_param)[i], 2);
+    if ( z_param != Teuchos::null ) {
+      const int size = z_param->size();
+      Real sum(0);
+      for (int i = 0; i < size; ++i) {
+        sum += std::pow((*z_param)[i], 2);
+      }
+      val = Teuchos::null;
+      return static_cast<Real>(0.5)*sum;
     }
-    val = Teuchos::null;
-    return static_cast<Real>(0.5)*sum;
+    return static_cast<Real>(0);
   }
 
   void gradient_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
@@ -574,7 +592,12 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    return *z_param;
+    if ( z_param != Teuchos::null ) {
+      return *z_param;
+    }
+    else {
+      throw Exception::Zero(">>> QoI_AdvectionCost::gradient_3 is zero.");
+    }
   }
 
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -646,7 +669,12 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    return *v_param;
+    if ( z_param != Teuchos::null ) {
+      return *v_param;
+    }
+    else {
+      throw Exception::Zero(">>> QoI_AdvectionCost::HessVec_33 is zero.");
+    }
   }
 
 }; // QoI_Advection_Cost
@@ -676,6 +704,39 @@ public:
     const Real zero(0);
     hv[0] = zero;
     hv[1] = zero;
+  }
+
+}; // OBJ_SCALAR
+
+template <class Real>
+class StochasticStefanBoltzmannStdObjective3 : public ROL::ParametrizedStdObjective<Real> {
+private:
+  Real alpha0_;
+  Real alpha1_;
+  Real alpha2_;
+
+public:
+  StochasticStefanBoltzmannStdObjective3(Teuchos::ParameterList &parlist) {
+    alpha0_ = parlist.sublist("Problem").get("State Cost",1.0);
+    alpha1_ = parlist.sublist("Problem").get("Control Cost",1.0);
+    alpha2_ = parlist.sublist("Problem").get("Advection Cost",1.0);
+  }
+
+  Real value(const std::vector<Real> &x, Real &tol) {
+    return alpha0_*x[0] + alpha1_*x[1] + alpha2_*x[2];
+  }
+
+  void gradient(std::vector<Real> &g, const std::vector<Real> &x, Real &tol) {
+    g[0] = alpha0_;
+    g[1] = alpha1_;
+    g[2] = alpha2_;
+  }
+
+  void hessVec(std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol) {
+    const Real zero(0);
+    hv[0] = zero;
+    hv[1] = zero;
+    hv[2] = zero;
   }
 
 }; // OBJ_SCALAR

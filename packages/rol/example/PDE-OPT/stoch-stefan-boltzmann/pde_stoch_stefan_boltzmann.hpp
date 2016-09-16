@@ -58,6 +58,7 @@
 #include "Intrepid_CellTools.hpp"
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 template <class Real>
 class StochasticStefanBoltzmannPDE : public PDE<Real> {
@@ -86,6 +87,7 @@ private:
   Real H2OTemp_;
   Real advMag_;
   Real SBscale_;
+  Real nonLin_;
 
 public:
 
@@ -97,6 +99,8 @@ public:
     advMag_  = parlist.sublist("Problem").get("Advection Magnitude",6.3);
     bool useSB = parlist.sublist("Problem").get("Use Stefan-Boltzmann",true);
     SBscale_ = (useSB) ? static_cast<Real>(1) : static_cast<Real>(0);
+    bool useND = parlist.sublist("Problem").get("Use Nonlinear Conductivities",true);
+    nonLin_ = (useND) ? static_cast<Real>(1) : static_cast<Real>(0);
     // Finite element fields.
     int basisOrder = parlist.sublist("Problem").get("Basis Order",1);
     if (basisOrder == 1) {
@@ -739,7 +743,40 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_13): Hessian_13 is zero.");
+    if ( z_param != Teuchos::null ) {
+      // GET DIMENSIONS
+      int c = fe_vol_->gradN()->dimension(0);
+      int f = fe_vol_->gradN()->dimension(1);
+      int p = fe_vol_->gradN()->dimension(2);
+      int d = fe_vol_->gradN()->dimension(3);
+      // INITILAIZE HESSIAN
+      hess.resize(z_param->size(),Teuchos::null);
+      hess[0] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+      // EVALUATE STATE ON FE BASIS
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > L_eval =
+        Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      fe_vol_->evaluateValue(L_eval, l_coeff);
+      // COMPUTE CONSTANT PDE COEFFICIENTS
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > V
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      Teuchos::RCP<std::vector<Real> > one = Teuchos::rcp(new std::vector<Real>(z_param->size(), 1)); 
+      computeCoefficients(V,rhs,one);
+      // MULTIPLY V . grad(N)
+      Intrepid::FieldContainer<Real> V_gradN(c, f, p);
+      Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(V_gradN,
+                                                               *V,
+                                                               *(fe_vol_->gradNdetJ()));
+      // INTEGRATE (V . grad(U)) * N
+      Intrepid::FunctionSpaceTools::integrate<Real>(*hess[0],
+                                                    *L_eval,
+                                                    V_gradN,
+                                                    Intrepid::COMP_CPP, false);
+    }
+    else {
+      throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_13): Hessian_13 is zero.");
+    }
   }
 
   void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
@@ -755,7 +792,40 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_31): Hessian_31 is zero.");
+    if ( z_param != Teuchos::null ) {
+      // GET DIMENSIONS
+      int c = fe_vol_->gradN()->dimension(0);
+      int f = fe_vol_->gradN()->dimension(1);
+      int p = fe_vol_->gradN()->dimension(2);
+      int d = fe_vol_->gradN()->dimension(3);
+      // INITILAIZE HESSIAN
+      hess.resize(z_param->size(),Teuchos::null);
+      hess[0] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+      // EVALUATE STATE ON FE BASIS
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > L_eval =
+        Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      fe_vol_->evaluateValue(L_eval, l_coeff);
+      // COMPUTE CONSTANT PDE COEFFICIENTS
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > V
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      Teuchos::RCP<std::vector<Real> > one = Teuchos::rcp(new std::vector<Real>(z_param->size(), 1)); 
+      computeCoefficients(V,rhs,one);
+      // MULTIPLY V . grad(N)
+      Intrepid::FieldContainer<Real> V_gradN(c, f, p);
+      Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(V_gradN,
+                                                               *V,
+                                                               *(fe_vol_->gradNdetJ()));
+      // INTEGRATE (V . grad(U)) * N
+      Intrepid::FunctionSpaceTools::integrate<Real>(*hess[0],
+                                                    *L_eval,
+                                                    V_gradN,
+                                                    Intrepid::COMP_CPP, false);
+    }
+    else {
+      throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Hessian_31): Hessian_31 is zero.");
+    }
   }
 
   void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
@@ -833,53 +903,59 @@ private:
   /***************************************************************************/
   Real evaluateDiffusivity(const Real u, const std::vector<Real> & x, const int deriv = 0) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
+    const int size_w = 11, size_a = 9;
     if ( x[1] < xmid_ ) {
       // Water Thermal Conductivity: 0.5818 at 280K and 0.6797 at 370K
-      const Real c0 = static_cast<Real>(0.23)   + static_cast<Real>(0.02)  * param[0];
-      const Real c1 = static_cast<Real>(1.2e-3) + static_cast<Real>(1.e-4) * param[1];
+      std::vector<Real> param_w(size_w,0);
+      for (int i = 0; i < size_w; ++i) {
+        param_w[i] = 0.01*param[i];
+      }
+      std::vector<Real> c(3,0);
+      getWaterCoeff(c,param_w);
+      Real val = c[0] + nonLin_*(c[1] * u + c[2] * u * u);
+      const Real min = 0.1;
       if ( deriv == 1 ) {
-        return c1;
+        return (val < min ? static_cast<Real>(0) : nonLin_*(c[1] + static_cast<Real>(2)*c[2]*u));
       }
-      if ( deriv > 1 ) {
-        return static_cast<Real>(0);
+      if ( deriv == 2 ) {
+        return (val < min ? static_cast<Real>(0) : nonLin_*(static_cast<Real>(2)*c[2]));
       }
-      return c0 + c1 * u;
+      return (val < min ? min : c[0] + nonLin_*(c[1] * u + c[2] * u * u));
     }
     else {
       // Aluminum Thermal Conductivity: 236 at 273K and 240 at 400K
-      const Real c0 = static_cast<Real>(155)      + static_cast<Real>(2)      * param[2];
-      const Real c1 = static_cast<Real>(0.59)     + static_cast<Real>(0.02)   * param[3];
-      const Real c2 = static_cast<Real>(-1.4e-3)  + static_cast<Real>(2.e-5)  * param[4];
-      const Real c3 = static_cast<Real>(1.3e-6)   + static_cast<Real>(2.e-7)  * param[5];
-      const Real c4 = static_cast<Real>(-4.8e-10) + static_cast<Real>(2.e-12) * param[6];
+      std::vector<Real> param_a(size_a,0);
+      for (int i = 0; i < size_a; ++i) {
+        param_a[i] = param[size_w+i];
+      }
+      std::vector<Real> c(5,0);
+      getAluminumCoeff(c,param_a);
+      Real u2 = u*u, u3 = u2*u, u4 = u3*u;
+      Real val = c[0] + nonLin_*(c[1]*u + c[2]*u2 + c[3]*u3 + c[4]*u4);
+      const Real min = 100.0;
       if ( deriv == 1 ) {
-        Real u2 = u*u, u3 = u2*u;
-        return c1 + static_cast<Real>(2)*c2*u
-                  + static_cast<Real>(3)*c3*u2
-                  + static_cast<Real>(4)*c4*u3;
+        return (val < min ? static_cast<Real>(0) : 
+               nonLin_*(c[1] + static_cast<Real>(2)*c[2]*u
+                             + static_cast<Real>(3)*c[3]*u2
+                             + static_cast<Real>(4)*c[4]*u3));
       }
       if ( deriv == 2 ) {
-        Real u2 = u*u;
-        return static_cast<Real>(2)*c2 + static_cast<Real>(6)*c3*u
-                                       + static_cast<Real>(12)*c4*u2;
+        return (val < min ? static_cast<Real>(0) : 
+               nonLin_*(static_cast<Real>(2)*c[2] +  static_cast<Real>(6)*c[3]*u
+                                                  + static_cast<Real>(12)*c[4]*u2));
       }
-      Real u2 = u*u, u3 = u2*u, u4 = u3*u;
-      return c0 + c1*u + c2*u2 + c3*u3 + c4*u4;
+      return (val < min ? min : c[0] + nonLin_*(c[1]*u + c[2]*u2 + c[3]*u3 + c[4]*u4));
     }
   }
 
   void evaluateVelocity(std::vector<Real> &adv, const std::vector<Real> &x, const std::vector<Real> &z_param) const {
     if ( x[1] < xmid_ ) {
       const std::vector<Real> param = PDE<Real>::getParameter();
-      const Real quarter(0.25), half(0.5);
-      const Real x1  = xmid_ * (quarter * param[7] + half);
-      const Real det = (xmid_ - x1) * x1;
-      const Real a   = static_cast<Real>(-1) / det;
-      const Real b   = xmid_ / det;
-      //const Real m   = advMag_ + static_cast<Real>(0.5)*advMag_*param[8];
-      const Real m   = z_param[0];
-      const Real mag = m * (a * std::pow(x[1],2) + b * x[1]);
-      adv[0] = -mag;
+      const Real min = static_cast<Real>(0.1)*xmid_;
+      const Real max = static_cast<Real>(0.9)*xmid_;
+      const Real x1  = static_cast<Real>(0.5)*((max-min)*param[20] + (max+min));
+      const Real mag = ((x[1] <  x1) ? x[1]/x1 : (xmid_-x[1])/(xmid_-x1));
+      adv[0] = -z_param[0]*mag;
       adv[1] = static_cast<Real>(0);
     }
     else {
@@ -902,19 +978,19 @@ private:
     // c3 is the thermal convectivity of air (5), oil (40), and water (440)
     Real c1(0), c2(0), c3(0), sig(5.67e-8);
     if ( sideset == 2 ) {
-      c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[9]);
-      c2 = airTemp_             + static_cast<Real>(0.02*airTemp_) * param[10];
-      c3 = static_cast<Real>(5) + static_cast<Real>(0.5)           * param[11];
+      c1 = SBscale_ * sig * (static_cast<Real>(0.09) + static_cast<Real>(5.e-3) * param[21]);
+      c2 = airTemp_             + static_cast<Real>(0.02*airTemp_) * param[22];
+      c3 = static_cast<Real>(5) + static_cast<Real>(0.5)           * param[23];
     }
     else if ( sideset == 4 || sideset == 5 ) {
-      c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[12]);
-      c2 = engTemp_ + static_cast<Real>(0.1)*engTemp_ * param[13];
-      c3 = static_cast<Real>(40) + static_cast<Real>(2) * param[14];
+      c1 = SBscale_ * sig * (static_cast<Real>(0.09) + static_cast<Real>(5.e-3) * param[24]);
+      c2 = engTemp_ + static_cast<Real>(0.2)*engTemp_ * param[25];
+      c3 = static_cast<Real>(40) + static_cast<Real>(2) * param[26];
     }
     else if ( sideset == 1 ) {
-      c1 = SBscale_ * sig * (static_cast<Real>(1) + static_cast<Real>(0.5) * param[15]);
-      c2 = H2OTemp_ + static_cast<Real>(0.05)*H2OTemp_ * (param[16] + static_cast<Real>(1));
-      c3 = static_cast<Real>(440) + static_cast<Real>(20) * param[17];
+      c1 = SBscale_ * sig * (static_cast<Real>(0.09) + static_cast<Real>(5.e-3) * param[27]);
+      c2 = H2OTemp_ + static_cast<Real>(0.05)*H2OTemp_ * (param[28] + static_cast<Real>(1));
+      c3 = static_cast<Real>(440) + static_cast<Real>(20) * param[29];
     }
     if ( deriv == 1 ) {
       return c1 * static_cast<Real>(4) * std::pow(u,3) + c3;
@@ -930,7 +1006,7 @@ private:
                      const int deriv = 0, const int component = 1) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
     // c is the thermal convectivity of water (440)
-    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[18];
+    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[30];
     if ( deriv == 1 ) {
       return (component==1) ? c : -c;
     }
@@ -945,7 +1021,7 @@ private:
                      const int deriv = 0, const int component = 1) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
     // c is the thermal convectivity of water (440)
-    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[18];
+    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[31];
     if ( deriv == 1 ) {
       return (component==1) ? c : static_cast<Real>(0);
     }
@@ -1070,6 +1146,65 @@ private:
       }
     }
     return bdry_coeff;
+  }
+
+  /***************************************************************************/
+  /************** COMPUTE LEAST SQUARES COEFFICIENTS *************************/
+  /***************************************************************************/
+  void getAluminumCoeff(std::vector<Real> &c, const std::vector<Real> &param) const {
+    const std::vector<Real> Ta = {273, 300, 350, 400, 500, 600, 700, 800, 900};
+    const std::vector<Real> Ka = {236, 237, 240, 240, 237, 232, 226, 220, 213};
+    Teuchos::LAPACK<int,Real> lapack;
+    const char trans = 'N';
+    const int m = Ta.size();
+    const int n = 5;
+    const int nrhs = 1;
+    const int lda = m;
+    const int ldb = m;
+    std::vector<Real> A(m*n,1);
+    std::vector<Real> b(m,1);
+    for (int i = 0; i < m; ++i) {
+      b[i] = Ka[i] + param[i];
+      for (int j = 0; j < n; ++j) {
+        A[j*m + i] = std::pow(Ta[i],j);
+      }
+    }
+    const int lwork = n + m;
+    std::vector<Real> work(lwork,0);
+    int info;
+    lapack.GELS(trans,m,n,nrhs,&A[0],lda,&b[0],ldb,&work[0],lwork,&info);
+    c.clear(); c.resize(n,0);
+    for (int i = 0; i < n; ++i) {
+      c[i] = b[i];
+    }
+  }
+
+  void getWaterCoeff(std::vector<Real> &c, const std::vector<Real> &param) const {
+    const std::vector<Real> Tw = {270, 280, 290, 300, 310, 320, 330, 340, 350, 370, 400};
+    const std::vector<Real> Kw = {0.5551, 0.5818, 0.5918, 0.6084, 0.6233, 0.6367, 0.6485, 0.6587, 0.6673, 0.6797, 0.6864};
+    Teuchos::LAPACK<int,Real> lapack;
+    const char trans = 'N';
+    const int m = Tw.size();
+    const int n = 3;
+    const int nrhs = 1;
+    const int lda = m;
+    const int ldb = m;
+    std::vector<Real> A(m*n,1);
+    std::vector<Real> b(m,1);
+    for (int i = 0; i < m; ++i) {
+      b[i] = Kw[i] + param[i];
+      for (int j = 0; j < n; ++j) {
+        A[j*m + i] = std::pow(Tw[i],j);
+      }
+    }
+    const int lwork = n + m;
+    std::vector<Real> work(lwork,0);
+    int info;
+    lapack.GELS(trans,m,n,nrhs,&A[0],lda,&b[0],ldb,&work[0],lwork,&info);
+    c.clear(); c.resize(n,0);
+    for (int i = 0; i < n; ++i) {
+      c[i] = b[i];
+    }
   }
 
 }; // PDE_stefan_boltzmann
