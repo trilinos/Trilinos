@@ -4,9 +4,9 @@
 
 #include "ShyLUTacho_config.h"
 
-typedef double value_type;
-typedef int    ordinal_type;
-typedef int    size_type;
+typedef double ValueType;
+typedef int    OrdinalType;
+typedef int    SizeType;
 
 typedef Kokkos::Threads exec_space;
 

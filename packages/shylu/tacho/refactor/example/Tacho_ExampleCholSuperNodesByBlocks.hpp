@@ -68,31 +68,31 @@ namespace Tacho {
 
     // for simple test, let's use host space only here, for device it needs mirroring.
 
-    typedef CrsMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> CrsMatrixBaseHostType;
+    typedef CrsMatrixBase<ValueType,OrdinalType,SizeType,HostSpaceType> CrsMatrixBaseHostType;
     typedef CrsMatrixViewExt<CrsMatrixBaseHostType> CrsMatrixViewHostType;
 
-    typedef GraphTools<ordinal_type,size_type,HostSpaceType> GraphToolsHostType;
+    typedef GraphTools<OrdinalType,SizeType,HostSpaceType> GraphToolsHostType;
 
-    typedef GraphTools_Scotch<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_Scotch;
-    typedef GraphTools_CAMD<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_CAMD;
+    typedef GraphTools_Scotch<OrdinalType,SizeType,HostSpaceType> GraphToolsHostType_Scotch;
+    typedef GraphTools_CAMD<OrdinalType,SizeType,HostSpaceType> GraphToolsHostType_CAMD;
 
     typedef Kokkos::TaskPolicy<DeviceSpaceType> PolicyType;
 
     typedef TaskView<CrsMatrixViewHostType> CrsTaskViewHostType;
-    typedef CrsMatrixBase<CrsTaskViewHostType,ordinal_type,size_type,HostSpaceType> CrsHierBaseHostType;
+    typedef CrsMatrixBase<CrsTaskViewHostType,OrdinalType,SizeType,HostSpaceType> CrsHierBaseHostType;
     typedef CrsMatrixView<CrsHierBaseHostType> CrsHierViewHostType;
     typedef TaskView<CrsHierViewHostType> CrsTaskHierViewHostType;
 
-    typedef DenseMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> DenseMatrixBaseHostType;
+    typedef DenseMatrixBase<ValueType,OrdinalType,SizeType,HostSpaceType> DenseMatrixBaseHostType;
     typedef DenseMatrixView<DenseMatrixBaseHostType> DenseMatrixViewHostType;
 
     typedef TaskView<DenseMatrixViewHostType> DenseTaskViewHostType;
 
-    typedef DenseMatrixBase<DenseTaskViewHostType,ordinal_type,size_type,HostSpaceType> DenseHierBaseHostType;
+    typedef DenseMatrixBase<DenseTaskViewHostType,OrdinalType,SizeType,HostSpaceType> DenseHierBaseHostType;
     typedef DenseMatrixView<DenseHierBaseHostType> DenseHierViewHostType;
     typedef TaskView<DenseHierViewHostType> DenseTaskHierViewHostType;
 
-    typedef Kokkos::pair<size_type,size_type> range_type;
+    typedef Kokkos::pair<SizeType,SizeType> range_type;
     typedef Kokkos::Future<int,HostSpaceType> future_type;
 
 #ifdef HAVE_SHYLUTACHO_VTUNE
@@ -269,7 +269,7 @@ namespace Tacho {
     ///     input  - max_task_size
     ///     output - policy
     ///
-    const size_type max_task_size = (3*sizeof(CrsTaskViewHostType)+sizeof(PolicyType)+128);
+    const SizeType max_task_size = (3*sizeof(CrsTaskViewHostType)+sizeof(PolicyType)+128);
 
     timer.reset();
 
@@ -310,16 +310,16 @@ namespace Tacho {
                                          full);
         
         {
-          const size_type nblocks = HA_reordered.NumNonZeros();
-          Kokkos::View<size_type*,HostSpaceType> offs("offs", nblocks + 1);
+          const SizeType nblocks = HA_reordered.NumNonZeros();
+          Kokkos::View<SizeType*,HostSpaceType> offs("offs", nblocks + 1);
           offs(0) = 0;
-          for (size_type k=0;k<nblocks;++k) {
+          for (SizeType k=0;k<nblocks;++k) {
             const auto &block = HA_reordered.Value(k);
             offs(k+1) = offs(k) + block.NumRows();
           }
           rows = Kokkos::View<typename CrsMatrixViewHostType::row_view_type*,HostSpaceType>("RowViewsInBlocks", offs(nblocks));
           Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
-                               [&](const size_type k) {
+                               [&](const SizeType k) {
                                  auto &block = HA_reordered.Value(k);
                                  block.setRowViewArray(Kokkos::subview(rows, range_type(offs(k), offs(k+1))));
                                } );
@@ -332,9 +332,9 @@ namespace Tacho {
       typename CrsHierBaseHostType::value_type_array ax("ax", aj.dimension(0));
       {
         const auto range = S.RangeVector();        
-        const ordinal_type m = S.NumBlocks();
+        const OrdinalType m = S.NumBlocks();
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
-                             [&](const ordinal_type i) {
+                             [&](const OrdinalType i) {
                                const auto beg = ap(i);
                                const auto end = ap(i+1);
                                for (auto idx=beg;idx<end;++idx) {
@@ -347,29 +347,29 @@ namespace Tacho {
 
       // construct hierachical matrix
       {
-        const ordinal_type m = S.NumBlocks();
+        const OrdinalType m = S.NumBlocks();
         const auto nnz = aj.dimension(0);
-        const auto ap_begin = Kokkos::subview(ap, Kokkos::pair<ordinal_type,ordinal_type>(0,m));
-        const auto ap_end   = Kokkos::subview(ap, Kokkos::pair<ordinal_type,ordinal_type>(1,m+1));
+        const auto ap_begin = Kokkos::subview(ap, Kokkos::pair<OrdinalType,OrdinalType>(0,m));
+        const auto ap_end   = Kokkos::subview(ap, Kokkos::pair<OrdinalType,OrdinalType>(1,m+1));
         HA_factor = CrsHierBaseHostType("HA_factor", m, m, nnz, ap_begin, ap_end, aj, ax);
         HA_factor.setNumNonZeros();
       }
       
       // copy row view structure to block symbolic factors
       {
-        const size_type m = HA_reordered.NumRows();
+        const SizeType m = HA_reordered.NumRows();
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
-                             [&](const ordinal_type i) {
+                             [&](const OrdinalType i) {
                                const auto cols_a = HA_reordered.ColsInRow(i);
                                const auto vals_a = HA_reordered.ValuesInRow(i);
 
                                const auto cols_f = HA_factor.ColsInRow(i);
                                const auto vals_f = HA_factor.ValuesInRow(i);
                                
-                               const size_type nnz_in_a = HA_reordered.NumNonZerosInRow(i);
-                               const size_type nnz_in_f = HA_factor.NumNonZerosInRow(i);
+                               const SizeType nnz_in_a = HA_reordered.NumNonZerosInRow(i);
+                               const SizeType nnz_in_f = HA_factor.NumNonZerosInRow(i);
 
-                               for (size_type idx_a=0,idx_f=0;idx_a<nnz_in_a && idx_f<nnz_in_f;) {
+                               for (SizeType idx_a=0,idx_f=0;idx_a<nnz_in_a && idx_f<nnz_in_f;) {
                                  const auto j_a = cols_a(idx_a);
                                  const auto j_f = cols_f(idx_f);
                                  
@@ -404,23 +404,23 @@ namespace Tacho {
     ///    input  - HA_factor
     ///    output - mats, blks
     ///
-    Kokkos::View<value_type*,HostSpaceType> mats;
+    Kokkos::View<ValueType*,HostSpaceType> mats;
     Kokkos::View<DenseTaskViewHostType*,HostSpaceType> blks;
     
     timer.reset();
     {
-      const size_type nblocks = HA_factor.NumNonZeros();
+      const SizeType nblocks = HA_factor.NumNonZeros();
       { 
-        Kokkos::View<size_type*,HostSpaceType> offs("offs", nblocks + 1);
+        Kokkos::View<SizeType*,HostSpaceType> offs("offs", nblocks + 1);
         offs(0) = 0;
-        for (size_type k=0;k<nblocks;++k) {
+        for (SizeType k=0;k<nblocks;++k) {
           const auto &block = HA_factor.Value(k);
           offs(k+1) = offs(k) + block.NumRows()*block.NumCols();
         }
         
-        mats = Kokkos::View<value_type*,HostSpaceType>("MatsInBlocks", offs(nblocks));
+        mats = Kokkos::View<ValueType*,HostSpaceType>("MatsInBlocks", offs(nblocks));
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
-                             [&](const ordinal_type k) {
+                             [&](const OrdinalType k) {
                                auto &block = HA_factor.Value(k);
                                block.Flat().setExternalMatrix(block.NumRows(),
                                                               block.NumCols(),
@@ -430,20 +430,20 @@ namespace Tacho {
                              } );
       }
       if (mb) {
-        Kokkos::View<size_type*,HostSpaceType> offs("offs", nblocks + 1);
+        Kokkos::View<SizeType*,HostSpaceType> offs("offs", nblocks + 1);
         offs(0) = 0;
-        for (size_type k=0;k<nblocks;++k) {
+        for (SizeType k=0;k<nblocks;++k) {
           const auto &block = HA_factor.Value(k);
-          ordinal_type hm, hn;
+          OrdinalType hm, hn;
           DenseMatrixTools::getDimensionOfHierMatrix(hm, hn, block.Flat(), mb, mb);
           offs(k+1) = offs(k) + hm*hn;
         }
         
         blks = Kokkos::View<DenseTaskViewHostType*,HostSpaceType>("DenseBlocksInCrsBlocks", offs(nblocks));
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
-                             [&](const ordinal_type k) {
+                             [&](const OrdinalType k) {
                                auto &block = HA_factor.Value(k);
-                               ordinal_type hm, hn;
+                               OrdinalType hm, hn;
                                DenseMatrixTools::getDimensionOfHierMatrix(hm, hn, block.Flat(), mb, mb);
                                block.Hier().setExternalMatrix(hm, hn,
                                                               -1, -1,
@@ -464,9 +464,9 @@ namespace Tacho {
     }
 
     {
-      const size_type nblocks = HA_factor.NumNonZeros();
-      size_type nnz_blocks = 0, size_blocks = 0, max_blk_size = 0, max_blk_nrows = 0, max_blk_ncols = 0;
-      for (size_type k=0;k<nblocks;++k) {
+      const SizeType nblocks = HA_factor.NumNonZeros();
+      SizeType nnz_blocks = 0, size_blocks = 0, max_blk_size = 0, max_blk_nrows = 0, max_blk_ncols = 0;
+      for (SizeType k=0;k<nblocks;++k) {
         const auto &block = HA_factor.Value(k);
         nnz_blocks  += block.NumNonZeros();
         
@@ -544,13 +544,13 @@ namespace Tacho {
           << "real "
           << "general "
           << std::endl;
-      size_type nnz = 0, cnt = 0;
-      const size_type nnz_blk = HA_factor.NumNonZeros();
-      const value_type eps = 1.0e-11;
-      for (ordinal_type k=0;k<nnz_blk;++k) {
+      SizeType nnz = 0, cnt = 0;
+      const SizeType nnz_blk = HA_factor.NumNonZeros();
+      const ValueType eps = 1.0e-11;
+      for (OrdinalType k=0;k<nnz_blk;++k) {
         const auto blk = HA_factor.Value(k);
         const auto flat = blk.Flat();
-        const ordinal_type 
+        const OrdinalType 
           offm = blk.OffsetRows()+1,
           offn = blk.OffsetCols()+1,
           m = blk.NumRows(),
@@ -558,16 +558,16 @@ namespace Tacho {
         
         if (offm == offn) {
           // print upper part only
-          for (ordinal_type j=0;j<m;++j)
-            for (ordinal_type i=0;i<(j+1);++i,++cnt)
+          for (OrdinalType j=0;j<m;++j)
+            for (OrdinalType i=0;i<(j+1);++i,++cnt)
               if (std::abs(flat.Value(i,j)) > eps) {
                 out << (offm+i) << " " << (offn+j) << " " << flat.Value(i,j) << std::endl;
                 ++nnz;
               }
         } else {
           // print entire matrix
-          for (ordinal_type j=0;j<n;++j)
-            for (ordinal_type i=0;i<m;++i,++cnt)
+          for (OrdinalType j=0;j<n;++j)
+            for (OrdinalType i=0;i<m;++i,++cnt)
               if (std::abs(flat.Value(i,j)) > eps) {
                 out << (offm+i) << " " << (offn+j) << " " << flat.Value(i,j) << std::endl;          
                 ++nnz;
@@ -595,20 +595,20 @@ namespace Tacho {
       RR.createConfTo(BB);
       
       srand(time(NULL));
-      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-        for (ordinal_type i=0;i<m;++i)
-          XX.Value(i, rhs) = ((value_type)rand()/(RAND_MAX));
+      for (OrdinalType rhs=0;rhs<nrhs;++rhs) {
+        for (OrdinalType i=0;i<m;++i)
+          XX.Value(i, rhs) = ((ValueType)rand()/(RAND_MAX));
         
         // matvec
         HostSpaceType::execution_space::fence();
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
-                             [&](const ordinal_type i) {
+                             [&](const OrdinalType i) {
                                const auto nnz  = AA_reordered.NumNonZerosInRow(i);
                                const auto cols = AA_reordered.ColsInRow(i);
                                const auto vals = AA_reordered.ValuesInRow(i);
                                
-                               value_type tmp = 0;
-                               for (ordinal_type j=0;j<nnz;++j)
+                               ValueType tmp = 0;
+                               for (OrdinalType j=0;j<nnz;++j)
                                  tmp += vals(j)*XX.Value(cols(j), rhs);
                                BB.Value(i, rhs) = tmp;
                              } );
@@ -665,8 +665,8 @@ namespace Tacho {
         BB.showMe(out) << std::endl;
       }
       
-      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-        for (ordinal_type i=0;i<m;++i) {
+      for (OrdinalType rhs=0;rhs<nrhs;++rhs) {
+        for (OrdinalType i=0;i<m;++i) {
           {
             const auto val = Util::abs(XX.Value(i, rhs) - RR.Value(i, rhs));
             error += val*val;
