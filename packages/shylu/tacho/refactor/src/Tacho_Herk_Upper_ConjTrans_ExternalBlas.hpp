@@ -32,6 +32,8 @@ namespace Tacho {
          const ScalarType beta,
          DenseExecViewTypeC &C) {
     Stat r_val;
+
+    typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
     
     const ordinal_type n = C.NumRows();
     const ordinal_type k = A.NumRows();

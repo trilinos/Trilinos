@@ -34,6 +34,8 @@ namespace Tacho {
 
     Stat r_val;
 
+    typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
+
     const ordinal_type m = A.NumRows();
     const ordinal_type n = B.NumCols();
     r_val.flop = DenseFlopCount<typename DenseExecViewTypeA::value_type>::TrsmLower(m, n);    
