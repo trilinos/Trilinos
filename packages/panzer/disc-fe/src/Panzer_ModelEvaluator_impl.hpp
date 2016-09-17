@@ -341,6 +341,8 @@ panzer::ModelEvaluator<Scalar>::initializeNominalValues() const
     nomInArgs.setSupports(MEB::IN_ARG_t,true);
     nomInArgs.setSupports(MEB::IN_ARG_alpha,true);
     nomInArgs.setSupports(MEB::IN_ARG_beta,true);
+    nomInArgs.setSupports(MEB::IN_ARG_step_size,true);
+    nomInArgs.setSupports(MEB::IN_ARG_stage_number,true);
 
     Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_nom = Thyra::createMember(x_space_);
     Thyra::assign(x_dot_nom.ptr(),0.0);
@@ -348,6 +350,9 @@ panzer::ModelEvaluator<Scalar>::initializeNominalValues() const
     nomInArgs.set_t(t_init_);
     nomInArgs.set_alpha(0.0); // these have no meaning initially!
     nomInArgs.set_beta(0.0);
+    //TODO: is this needed?
+    nomInArgs.set_step_size(0.0);
+    nomInArgs.set_stage_number(1.0);
   }
 
   // setup parameter support -- for each scalar parameter we support the parameter itself and tangent vectors for x, xdot
@@ -472,6 +477,9 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
     ae_inargs.alpha = inArgs.get_alpha();
     ae_inargs.beta = inArgs.get_beta();
     ae_inargs.time = inArgs.get_t();
+
+    ae_inargs.step_size= inArgs.get_step_size();
+    ae_inargs.stage_number = inArgs.get_stage_number();
     ae_inargs.evaluate_transient_terms = true;
   }
 
@@ -845,6 +853,9 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
   ae_inargs.ghostedContainer_ = ghostedContainer_;        // we can reuse the ghosted container
   ae_inargs.alpha = 0.0;
   ae_inargs.beta = 1.0;
+  //TODO: is this really needed?
+  ae_inargs.step_size = 0.0;
+  ae_inargs.stage_number = 1.0;
   ae_inargs.evaluate_transient_terms = false;
   ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
   ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);

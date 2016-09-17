@@ -99,6 +99,8 @@ namespace panzer {
     double alpha;
     double beta;
     double time;
+    double step_size;
+    double stage_number;
     std::vector<double> gather_seeds; // generic gather seeds
     bool evaluate_transient_terms;
 

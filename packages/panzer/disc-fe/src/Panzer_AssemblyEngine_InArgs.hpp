@@ -63,6 +63,8 @@ namespace panzer {
        , alpha(Teuchos::ScalarTraits<double>::nan())   // also setup some painful and
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
+       , step_size(Teuchos::ScalarTraits<double>::nan())
+       , stage_number(Teuchos::ScalarTraits<double>::one())
        , evaluate_transient_terms(false)
        , first_sensitivities_name("")
        , second_sensitivities_name("")
@@ -75,6 +77,8 @@ namespace panzer {
        , alpha(Teuchos::ScalarTraits<double>::nan())   // also setup some painful and
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
+       , step_size(Teuchos::ScalarTraits<double>::nan())
+       , stage_number(Teuchos::ScalarTraits<double>::one())
        , evaluate_transient_terms(false)
        , first_sensitivities_name("")
        , second_sensitivities_name("")
@@ -88,6 +92,8 @@ namespace panzer {
     double alpha;
     double beta;
     double time;
+    double step_size;
+    double stage_number;
     std::vector<double> gather_seeds; // generic gather seeds
     bool evaluate_transient_terms;
     std::string first_sensitivities_name;
@@ -142,6 +148,8 @@ namespace panzer {
        << "  alpha         = " << in.alpha << "\n"
        << "  beta          = "  << in.beta << "\n"
        << "  time          = "  << in.time << "\n"
+       << "  step_size     = "  << in.step_size << "\n"
+       << "  stage_number  = "  << in.stage_number << "\n"
        << "  eval_tran     = " << in.evaluate_transient_terms << "\n"
        << "  1st sens_name = " << in.first_sensitivities_name << "\n"
        << "  2nd sens_name = " << in.second_sensitivities_name << "\n"
