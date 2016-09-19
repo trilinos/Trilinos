@@ -54,7 +54,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="pulp"/>
       <Parameter name="compute_metrics" type="string" value="true"/>
-      <Parameter name="num_global_parts" type="string" value="2"/>
+      <Parameter name="num_global_parts" type="int" value="2"/>
       <Parameter name="pulp_vert_imbalance" type="double" value="1.05"/>
       <Parameter name="pulp_verbose" type="string" value="true"/>
       <Parameter name="pulp_seed" type="string" value="1"/>

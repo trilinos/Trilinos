@@ -291,11 +291,6 @@ void Environment::getDefaultParameters(ParameterList & pl)
   // memory_procs
   pl.set("memory_procs", "0", "list of ranks that do memory profiling "
     "information", procs_Validator);
-
-  // random_seed - MDM - to check - is random seed supposed to be int?
-  // Then we could use getAnyIntValidator here
-  pl.set("random_seed", 111, "random seed",
-    Environment::getAnyDoubleValidator());
 }
 
 void Environment::commitParameters()

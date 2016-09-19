@@ -170,7 +170,7 @@ int main(int argc, char *argv[]){
     zoltan2_parameters.set("imbalance_tolerance", 1.0);
     zoltan2_parameters.set("num_global_parts", tcomm->getSize());
     zoltan2_parameters.set("algorithm", "multijagged");
-    zoltan2_parameters.set("mj_keep_part_boxes", 0);
+    zoltan2_parameters.set("mj_keep_part_boxes", "false");
     zoltan2_parameters.set("mj_recursion_depth", 3);
     RCP<xcrsGraph_problem_t> partition_problem;
     partition_problem  = RCP<xcrsGraph_problem_t> (new xcrsGraph_problem_t(ia.getRawPtr(),&zoltan2_parameters,tcomm));

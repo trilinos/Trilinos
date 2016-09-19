@@ -325,31 +325,22 @@ public:
     pl.set("partitioning_objective", "balance_object_weight",
       "objective of partitioning", partitioning_objective_Validator);
 
-    /* MDM - expect we will be using EnhancedNumberValidator for these types
-    #define LARGE_MAXIMUM 99999999.999999
-    RCP<Teuchos::EnhancedNumberValidator<double>> imbalance_tolerance_validator =
-      Teuchos::rcp(
-        new Teuchos::EnhancedNumberValidator<double>(1.0, LARGE_MAXIMUM) );
-    */
     pl.set("imbalance_tolerance", 1.1, "imbalance tolerance, ratio of "
       "maximum load over average load", Environment::getAnyDoubleValidator());
 
-    // MDM this should really be prefer int - or specifically prefer long long
-    // This will require some parameter updgrading - to do
-    // PartitioningSolution<Adapter>::setPartDistribution() currently has
-    // a coded conversion from double to int which requires this PREFER_DOUBLE
-    Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes typesNoDoubles;
-  //  typesNoDoubles.allowDouble(false);
-    RCP<Teuchos::AnyNumberParameterEntryValidator> tempValidator =
-      Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
-      Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE, typesNoDoubles) );
+    // num_global_parts >= 1
+    RCP<Teuchos::EnhancedNumberValidator<int>> num_global_parts_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(
+        1, Teuchos::EnhancedNumberTraits<int>::max()) ); // no maximum
+    pl.set("num_global_parts", 1, "global number of parts to compute "
+      "(0 means use the number of processes)", num_global_parts_Validator);
 
-    pl.set("num_global_parts", 0, "global number of parts to compute "
-      "(0 means use the number of processes)",
-      tempValidator);
-
+    // num_local_parts >= 0
+    RCP<Teuchos::EnhancedNumberValidator<int>> num_local_parts_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(
+        0, Teuchos::EnhancedNumberTraits<int>::max()) ); // no maximum
     pl.set("num_local_parts", 0, "number of parts to compute for this "
-      "process (0 means one)", tempValidator);
+      "process (0 means one)", num_local_parts_Validator);
 
     RCP<Teuchos::StringValidator> partitioning_approach_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(

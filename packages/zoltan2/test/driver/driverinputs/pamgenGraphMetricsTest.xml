@@ -56,7 +56,7 @@
       <Parameter name="timer_output_stream" type="string" value="std::cout"/>
       <Parameter name="debug_level" type="string" value="verbose_detailed_status"/>
       <Parameter name="imbalance_tolerance" type="double" value="1.1"/>
-      <Parameter name="num_global_parts" type="string" value="4"/>
+      <Parameter name="num_global_parts" type="int" value="4"/>
       <Parameter name="partitioning_approach" type="string" value="partition"/>
       <Parameter name="algorithm" type="string" value="scotch"/>
     </ParameterList>i

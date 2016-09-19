@@ -72,20 +72,17 @@ static string fnParams[NUMFN][3]={
 
 // Value value is any integer - a string is invalid
 
-#define NUMANYINT 8
+// Currently disabled
+// Expect we may remove this completely or change it's behavior
+// once decisions are made about whether number validators will accept strings
+/*
+#define NUMANYINT 0
 static string anyIntParams[NUMANYINT][3]={
-  {"num_global_parts", "12", "invalid_value"}, // were set up as double - need long long?
-  {"num_local_parts", "1", "invalid_value"}, // were set up as double - need long long?
-  {"random_seed", "9999", "invalid_value"}, // set up as double - possibly should be int?
-  {"mj_concurrent_part_count", "0", "invalid_value"},
-  {"mj_keep_part_boxes", "0", "invalid_value"},
-  {"mj_enable_rcb", "0", "invalid_value"},
-  {"mj_recursion_depth", "0", "invalid_value"},
-  {"mapping_type", "0", "invalid_value"}
 };
+*/
 
 // Value value is a particular string
-#define NUMSTR 25
+#define NUMSTR 22
 static string strParams[NUMSTR][3]={
   {"error_check_level", "basic_assertions", "invalid_assertion_request"},
   {"debug_level", "basic_status", "invalid_status"},
@@ -107,13 +104,26 @@ static string strParams[NUMSTR][3]={
   {"rectilinear", "true", "invalid_option"},
   {"symmetrize_input", "transpose", "invalid_option"},
   {"subset_graph", "true", "invalid_option"},
-  {"imbalance_tolerance", "1.1", "invalid_option"},
-  {"mj_minimum_migration_imbalance", "1.1", "invalid_option"},
-  {"pulp_vert_imbalance", "1.1", "invalid_option"},
-  {"pulp_edge_imbalance", "1.1", "invalid_option"},
-  {"scotch_imbalance_ratio", "1.1", "invalid_option"},
+  {"mj_enable_rcb", "false", "invalid_value"},
+  {"mj_keep_part_boxes", "false", "invalid_value"},
 };
 
+// Validators which need to be resolved
+//   EnhancedNumberValidator only accepts an int
+//   AnyNumberParameterEntryValidator accepts a string but does not recognize bad strings
+
+// {"num_global_parts", "1", "invalid_value"},                  // EnhancedNumberValidator
+// {"num_local_parts", "0", "invalid_value"},                   // EnhancedNumberValidator
+// {"mj_migration_option", "2", "invalid_value"},               // EnhancedNumberValidator
+
+// {"mj_concurrent_part_count", "0", "invalid_value"},          // AnyNumberParameterEntryValidator
+// {"mj_recursion_depth", "0", "invalid_value"},                // AnyNumberParameterEntryValidator
+// {"mapping_type", "0", "invalid_value"},                      // AnyNumberParameterEntryValidator
+// {"imbalance_tolerance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+// {"mj_minimum_migration_imbalance", "1.1", "invalid_option"}, // AnyNumberParameterEntryValidator
+// {"pulp_vert_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+// {"pulp_edge_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+// {"scotch_imbalance_ratio", "1.1", "invalid_option"},         // AnyNumberParameterEntryValidator
 
 template <typename T>
 int testInvalidValue( Teuchos::ParameterList &pl, 
@@ -163,14 +173,14 @@ int main(int argc, char *argv[])
   for (int i=0; i < NUMSTR; i++){
     myParams.set(strParams[i][0], strParams[i][1]);
   }
-
+/*
   for (int i=0; i < NUMANYINT; i++){
     istringstream iss(anyIntParams[i][1]);
     int paramValue;
     iss >> paramValue;
     myParams.set(anyIntParams[i][0], paramValue);
   }
-
+*/
   for (int i=0; i < NUMFN; i++){
     myParams.set(fnParams[i][0], fnParams[i][1]);
   }
@@ -208,6 +218,7 @@ int main(int argc, char *argv[])
     }
   }
 
+/*
   for (int i=0; i < NUMANYINT; i++){
     Teuchos::ParameterList badParams(origParams);
     int fail = 
@@ -217,6 +228,7 @@ int main(int argc, char *argv[])
       return 1;
     }
   }
+*/
 
   for (int i=0; i < NUMFN; i++){
     Teuchos::ParameterList badParams(origParams);

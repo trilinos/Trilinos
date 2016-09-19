@@ -648,7 +648,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     params->set("algorithm", "multijagged");
     if (test_boxes)
-        params->set("mj_keep_part_boxes", 1);
+        params->set("mj_keep_part_boxes", "true");
     if (rectilinear)
         params->set("rectilinear", "true");
 
@@ -754,7 +754,7 @@ int testFromDataFile(
 
     //params->set("timer_output_stream" , "std::cout");
     if (test_boxes)
-        params->set("mj_keep_part_boxes", 1);
+        params->set("mj_keep_part_boxes", "true");
     if (rectilinear)
         params->set("rectilinear", "true");
     params->set("algorithm", "multijagged");
@@ -1028,7 +1028,7 @@ int testFromSeparateDataFiles(
         params->set("migration_doMigration_type", int (migration_doMigration_type));
     }
     if (test_boxes)
-        params->set("mj_keep_part_boxes", 1);
+        params->set("mj_keep_part_boxes", "true");
     if (rectilinear)
         params->set("rectilinear", "true");
 

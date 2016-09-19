@@ -150,8 +150,6 @@ int main(int argc, char *argv[])
 
   all.set("error_check_level", "basic_assertions");
 
-  all.set("random_seed", .12121212);
-
   all.set("partitioning_objective", "minimize_cut_edge_weight");
 
   all.set("imbalance_tolerance", 1.2);

@@ -6386,16 +6386,18 @@ public:
         "processors to avoid migration",
         Environment::getAnyDoubleValidator());
 
+      RCP<Teuchos::EnhancedNumberValidator<int>> mj_migration_option_validator =
+        Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 2) );
       pl.set("mj_migration_option", 1, "Migration option, 0 for decision "
         "depending on the imbalance, 1 for forcing migration, 2 for "
-        "avoiding migration", Environment::getAnyIntValidator());
+        "avoiding migration", mj_migration_option_validator);
 
-      pl.set("mj_keep_part_boxes", -1, "Keep the part boundaries of the "
+      pl.set("mj_keep_part_boxes", "false", "Keep the part boundaries of the "
         "geometric partitioning: Truth values - 0 False, Otherwise True.",
-        Environment::getAnyIntValidator());
+        Environment::getTrueFalseValidator());
 
-      pl.set("mj_enable_rcb", 0, "Use MJ as RCB: Truth values - 0 False, "
-        "Otherwise True.", Environment::getAnyIntValidator());
+      pl.set("mj_enable_rcb", "false", "Use MJ as RCB: Truth values - 0 False, "
+        "Otherwise True.", Environment::getTrueFalseValidator());
 
       pl.set("mj_recursion_depth", -1, "Recursion depth for MJ: Must be "
         "greater than 0.", Environment::getAnyIntValidator());
