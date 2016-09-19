@@ -255,7 +255,7 @@ namespace Xpetra {
       if (numGlobalElements != Teuchos::OrdinalTraits<global_size_t>::invalid()) {
         TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % blkSize != 0, Exceptions::RuntimeError,
                                    "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_XPETRA_DEBUG
         // We have to do this check ourselves, as we don't necessarily construct the full Tpetra map
         global_size_t sumLocalElements;
         Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<global_size_t>(numLocalElements), Teuchos::outArg(sumLocalElements));
@@ -348,7 +348,7 @@ namespace Xpetra {
       if (numGlobalElements != Teuchos::OrdinalTraits<global_size_t>::invalid()) {
         TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % blkSize != 0, Exceptions::RuntimeError,
                                    "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_XPETRA_DEBUG
         // We have to do this check ourselves, as we don't necessarily construct the full Tpetra map
         global_size_t sumLocalElements, numLocalElements = elementList.size();
         Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, numLocalElements, Teuchos::outArg(sumLocalElements));
