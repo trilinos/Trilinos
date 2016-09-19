@@ -59,7 +59,7 @@ private:
   const Teuchos::RCP<PDE<Real> > pde_;
   Teuchos::RCP<Assembler<Real> > assembler_;
 
-  bool computeJ1_, computeJ2_, computeJ3_;
+  bool computeJ1_,  computeJ2_,  computeJ3_;
   bool computeH11_, computeH12_, computeH13_;
   bool computeH21_, computeH22_, computeH23_;
   bool computeH31_, computeH32_, computeH33_;
@@ -71,7 +71,8 @@ public:
                  Teuchos::ParameterList &parlist,
                  std::ostream &outStream = std::cout)
     : ROL::ParametrizedEqualityConstraint_SimOpt<Real>(),
-      pde_(pde), computeJ1_(true), computeJ2_(true), computeJ3_(true),
+      pde_(pde),
+      computeJ1_(true),  computeJ2_(true),  computeJ3_(true),
       computeH11_(true), computeH12_(true), computeH13_(true),
       computeH21_(true), computeH22_(true), computeH23_(true),
       computeH31_(true), computeH32_(true), computeH33_(true) {
@@ -82,7 +83,8 @@ public:
   PDE_Constraint(const Teuchos::RCP<PDE<Real> > &pde,
                  const Teuchos::RCP<Assembler<Real> > &assembler)
     : ROL::ParametrizedEqualityConstraint_SimOpt<Real>(),
-      pde_(pde), assembler_(assembler), computeJ1_(true), computeJ2_(true), computeJ3_(true),
+      pde_(pde), assembler_(assembler),
+      computeJ1_(true),  computeJ2_(true),  computeJ3_(true),
       computeH11_(true), computeH12_(true), computeH13_(true),
       computeH21_(true), computeH22_(true), computeH23_(true),
       computeH31_(true), computeH32_(true), computeH33_(true) {
@@ -90,11 +92,11 @@ public:
   }
 
   void setParameter(const std::vector<Real> &param) {
-    ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
     computeJ1_  = true; computeJ2_  = true; computeJ3_  = true;
     computeH11_ = true; computeH12_ = true; computeH13_ = true;
     computeH21_ = true; computeH22_ = true; computeH23_ = true;
     computeH31_ = true; computeH32_ = true; computeH33_ = true;
+    ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
     pde_->setParameter(param);
   }
 
@@ -144,6 +146,7 @@ public:
                  const ROL::Vector<Real> &v,
                  const ROL::Vector<Real> &u,
                  const ROL::Vector<Real> &z, Real &tol) {
+    jv.zero();
     try {
       if (computeJ1_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
@@ -176,6 +179,7 @@ public:
                  const ROL::Vector<Real> &u,
                  const ROL::Vector<Real> &z, Real &tol) {
     // Apply Jacobian of field controls to vector
+    jv.zero();
     int NotImplemented(0), IsZero(0);
     try {
       if (computeJ2_) {
@@ -222,7 +226,7 @@ public:
     if ( !computeJ3_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >  jvf = getField(jv);
       Teuchos::RCP<const std::vector<Real> > vp = getConstParameter(v);
-      assembler_->applyPDEJacobian3(jvf,vp);
+      assembler_->applyPDEJacobian3(jvf,vp,false);
     }
     // Zero Jacobian if all routines return Exception::Zero
     if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
@@ -231,7 +235,7 @@ public:
     // Default to finite differences if all routines return Exception::NotImplemented
     if ( NotImplemented == 2 ) {
       ROL::EqualityConstraint_SimOpt<Real>::applyJacobian_2(jv,v,u,z,tol);
-    }    
+    }
   }
 
 
@@ -239,6 +243,7 @@ public:
                         const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
+    ajv.zero();
     try {
       if (computeJ1_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
@@ -271,6 +276,7 @@ public:
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
     // Apply Jacobian of field controls to vector
+    ajv.zero();
     int NotImplemented(0), IsZero(0);
     try {
       if (computeJ2_) {
@@ -326,7 +332,7 @@ public:
     // Default to finite differences if all routines return Exception::NotImplemented
     if ( NotImplemented == 2 ) {
       ROL::EqualityConstraint_SimOpt<Real>::applyAdjointJacobian_2(ajv,v,u,z,tol);
-    }    
+    }
   }
 
 
@@ -335,6 +341,7 @@ public:
                         const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
+    ahwv.zero();
     try {
       if (computeH11_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > wf = getConstField(w);
@@ -369,6 +376,7 @@ public:
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
     // Apply Jacobian of field controls to vector
+    ahwv.zero();
     int NotImplemented(0), IsZero(0);
     try {
       if (computeH12_) {
@@ -417,7 +425,7 @@ public:
     if ( !computeH13_ ) {
       Teuchos::RCP<std::vector<Real> >        ahwvp = getParameter(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEHessian13(ahwvp,vf);
+      assembler_->applyPDEHessian13(ahwvp,vf,true);
     }
     // Zero Jacobian if all routines return Exception::Zero
     if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
@@ -436,6 +444,7 @@ public:
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
     // Apply Jacobian of field controls to vector
+    ahwv.zero();
     int NotImplemented(0), IsZero(0);
     try {
       if (computeH21_) {
@@ -505,6 +514,7 @@ public:
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
     // Apply Hessian wrt field controls to field control vector
+    ahwv.zero();
     int NotImplemented(0), IsZero(0);
     try {
       if (computeH22_) {
@@ -632,6 +642,7 @@ public:
                         const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
+    ijv.zero();
     try {
       if (computeJ1_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
@@ -655,6 +666,7 @@ public:
                                const ROL::Vector<Real> &v,
                                const ROL::Vector<Real> &u,
                                const ROL::Vector<Real> &z, Real &tol) {
+    iajv.zero();
     try {
       if (computeJ1_) {
         Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);

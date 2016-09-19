@@ -73,6 +73,7 @@ public:
 
   void gradient_1(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
                   const ROL::Vector<Real> &z, Real &tol ) {
+    g.zero();
     try {
       Teuchos::RCP<Tpetra::MultiVector<> >       gf = getField(g);
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
@@ -92,6 +93,7 @@ public:
   void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
                   const ROL::Vector<Real> &z, Real &tol ) {
     int NotImplemented(0), IsZero(0);
+    g.zero();
     // Compute control field gradient
     try {
       // Get state and control vectors
@@ -137,6 +139,7 @@ public:
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
              const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
+    hv.zero();
     try {
       Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
@@ -157,6 +160,7 @@ public:
   void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     int NotImplemented(0), IsZero(0);
+    hv.zero();
     // Compute state field/control field hessvec
     try {
       Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
@@ -205,6 +209,7 @@ public:
   void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     int NotImplemented(0), IsZero(0);
+    hv.zero();
     // Compute control field/state field hessvec
     try {
       // Get state and control vectors
@@ -256,6 +261,7 @@ public:
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
              const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
     int NotImplemented(0), IsZero(0);
+    hv.zero();
     // Compute control field/field hessvec
     try {
       Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);

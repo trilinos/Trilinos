@@ -522,7 +522,6 @@ public:
                          s,algo_state.snorm,fold,*(state->gradientVec),algo_state.iter,pObj);
     algo_state.nfval += TR_nfval_;
     algo_state.ngrad += TR_ngrad_;
-    algo_state.value  = fnew;
 
     // If step is accepted ...
     // Compute new gradient and update secant storage
@@ -586,6 +585,8 @@ public:
       // Update algorithm state
       (algo_state.iterateVec)->set(x);
     }
+    // Update algorithm state
+    algo_state.value  = fnew;
 
   }
 

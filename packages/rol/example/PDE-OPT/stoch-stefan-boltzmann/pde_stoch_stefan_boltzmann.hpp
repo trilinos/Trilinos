@@ -509,7 +509,7 @@ public:
         }
       }
     }
-    else{
+    else {
       throw Exception::Zero(">>> (StochasticStefanBoltzmannPDE::Jacobian_2): Jacobian_2 is zero.");
     }
 //    // APPLY DIRICHLET CONTROLS: Sideset 0

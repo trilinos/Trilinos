@@ -101,7 +101,7 @@ public:
     
     xmid_ = parlist.sublist("Geometry").get("Step height",0.5);
     Real height = parlist.sublist("Geometry").get("Channel height",1.0);
-    Real width  = parlist.sublist("Geometry").get("Channel width",8.0);
+    Real width  = parlist.sublist("Geometry").get("Channel width",5.0);
     vol_ = (height - xmid_) * width;
 
     int c = fe_->cubPts()->dimension(0);
@@ -326,7 +326,7 @@ public:
     exp_   = parlist.sublist("Problem").get("Use exponential control cost model",false);
     rate1_ = parlist.sublist("Problem").get("Exponential upper control cost rate",1.0);
     rate2_ = parlist.sublist("Problem").get("Exponential lower control cost rate",1.0);
-    Real w1 = parlist.sublist("Geometry").get("Channel width",8.0);
+    Real w1 = parlist.sublist("Geometry").get("Channel width",5.0);
     Real w2 = parlist.sublist("Geometry").get("Step width",1.0);
     area_ = w1 - w2;
     const int numLocSides = bdryCellLocIds_.size();

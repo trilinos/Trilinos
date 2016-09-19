@@ -1271,8 +1271,11 @@ public:
   }
 
   void applyPDEJacobian3(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
-                         const Teuchos::RCP<const std::vector<Real> > &v) const {
-    Jv->putScalar(static_cast<Real>(0));
+                         const Teuchos::RCP<const std::vector<Real> > &v,
+                         const bool zeroOut = true) const {
+    if ( zeroOut ) {
+      Jv->putScalar(static_cast<Real>(0));
+    }
     const size_t size = static_cast<size_t>(v->size());
     for (size_t i = 0; i < size; ++i) {
       Teuchos::ArrayView<const size_t> col(&i,1);
