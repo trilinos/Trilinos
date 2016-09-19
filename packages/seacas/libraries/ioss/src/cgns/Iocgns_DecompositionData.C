@@ -1121,6 +1121,13 @@ namespace Iocgns {
     communicate_block_data(TOPTR(file_conn), data, blk, blk.nodesPerEntity);
   }
 
+  DecompositionDataBase::~DecompositionDataBase()
+  {
+    for (auto &zone : m_structuredZones) {
+      delete zone;
+    }
+  }
+
   template void DecompositionDataBase::communicate_node_data(int *file_data, int *ioss_data,
                                                              size_t comp_count) const;
   template void DecompositionDataBase::communicate_node_data(int64_t *file_data, int64_t *ioss_data,

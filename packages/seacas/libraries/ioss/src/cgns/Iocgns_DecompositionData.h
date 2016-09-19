@@ -84,7 +84,7 @@ namespace Iocgns {
   public:
     DecompositionDataBase(MPI_Comm comm) {}
 
-    virtual ~DecompositionDataBase() {}
+    virtual ~DecompositionDataBase();
     virtual void decompose_model(int filePtr, CG_ZoneType_t common_zone_type) = 0;
     virtual size_t ioss_node_count() const = 0;
     virtual size_t ioss_elem_count() const = 0;
@@ -123,8 +123,6 @@ namespace Iocgns {
     std::vector<ZoneData>                     m_zones;
     std::vector<Ioss::BlockDecompositionData> m_elementBlocks;
     std::vector<Ioss::SetDecompositionData>   m_sideSets;
-
-    std::vector<Ioss::StructuredBlock *>      m_structuredBlocks;
     std::vector<Iocgns::StructuredZoneData *> m_structuredZones;
 
     // Maps nodes shared between zones.
