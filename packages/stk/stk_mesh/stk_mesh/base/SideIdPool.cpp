@@ -12,14 +12,12 @@ namespace mesh
 SideIdPool::SideIdPool(stk::mesh::BulkData &bulk) :
         mBulkData(bulk),
         mSuggestedIds(),
-        mNumIdsUsed(0),
-        mNumIdsRequested(0)
+        mNumIdsUsed(0)
 {
 }
 
 void SideIdPool::generate_initial_ids(unsigned numIdsNeeded)
 {
-    mNumIdsRequested = numIdsNeeded;
     mNumIdsUsed = 0;
     mBulkData.generate_new_ids(mBulkData.mesh_meta_data().side_rank(), 2*numIdsNeeded, mSuggestedIds);
 }
@@ -34,13 +32,12 @@ stk::mesh::EntityId SideIdPool::get_available_id()
 
 void SideIdPool::generate_additional_ids_collective(size_t num_additional_ids_needed)
 {
-    size_t num_available = mSuggestedIds.size() - mNumIdsRequested;
+    size_t num_available = mSuggestedIds.size() - mNumIdsUsed;
     
     bool need_additional_ids = num_additional_ids_needed > num_available;
     if(stk::is_true_on_any_proc(mBulkData.parallel(), need_additional_ids))
     {
-        mNumIdsRequested += num_additional_ids_needed;
-        size_t num_additional_to_request = 2*mNumIdsRequested - mSuggestedIds.size();
+        size_t num_additional_to_request = num_additional_ids_needed + mSuggestedIds.size();
         stk::mesh::EntityIdVector new_ids;
         mBulkData.generate_new_ids_given_reserved_ids(mBulkData.mesh_meta_data().side_rank(),
                                                       num_additional_to_request,

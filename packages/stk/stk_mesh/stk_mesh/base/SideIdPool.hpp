@@ -26,7 +26,6 @@ public:
     void clear()
     {
         mNumIdsUsed = 0;
-        mNumIdsRequested = 0;
         mSuggestedIds.clear();
     }
 
@@ -39,7 +38,6 @@ private:
     stk::mesh::BulkData &mBulkData;
     stk::mesh::EntityIdVector mSuggestedIds;
     size_t mNumIdsUsed;
-    size_t mNumIdsRequested;
 };
 
 }}
