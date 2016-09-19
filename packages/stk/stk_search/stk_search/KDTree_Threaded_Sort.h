@@ -6,9 +6,9 @@
 #include <cmath>
 
 #ifdef _OPENMP
-#include <omp.h>
-#ifndef __INTEL_COMPILER
-#include <parallel/algorithm>
+ #include <omp.h>
+#if !defined(__INTEL_COMPILER) && !defined(SALINAS_LINUX)
+ #include <parallel/algorithm>
 #endif
 #endif
 
@@ -150,7 +150,7 @@ namespace search {
     if(maxNumThread == 1 || inputVec.size()<10) {
       std::sort(inputVec.begin(), inputVec.end());
     } else {
-#ifndef __INTEL_COMPILER
+#if !defined(__INTEL_COMPILER) && !defined(SALINAS_LINUX)
       //  Use a gnu implementation if at all possible
       unsigned targetNumThread = ceil(double(inputVec.size())/10.0);
       if(targetNumThread < maxNumThread) {
