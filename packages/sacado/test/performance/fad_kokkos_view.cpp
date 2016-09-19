@@ -27,10 +27,12 @@
 // ***********************************************************************
 // @HEADER
 
+//#define SACADO_DISABLE_FAD_VIEW_SPEC
 #include "Sacado.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_Time.hpp"
 
 #include "impl/Kokkos_Timer.hpp"
 
@@ -161,21 +163,23 @@ struct SLMatVecDerivFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type i) const
   {
+    scalar_type cv = 0.0;
     scalar_type t[MaxP];
-    for (size_type k=0; k<p+1; ++k)
+    for (size_type k=0; k<p; ++k)
       t[k] = 0.0;
 
     for (size_type j=0; j<n; ++j) {
       scalar_type av = A(i,j,p);
       scalar_type bv = b(j,p);
-      t[p] += av*bv;
+      cv += av*bv;
       for (size_type k=0; k<p; ++k) {
         t[k] += A(i,j,k)*bv + av*b(j,k);
       }
     }
 
-    for (size_type k=0; k<p+1; ++k)
+    for (size_type k=0; k<p; ++k)
       c(i,k) = t[k];
+    c(i,p) = cv;
   }
 
 };
@@ -213,21 +217,30 @@ struct SMatVecDerivFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type i) const
   {
-    scalar_type t[p+1];
-    for (size_type k=0; k<p+1; ++k)
+    scalar_type cv = 0.0;
+    scalar_type t[p];
+    for (size_type k=0; k<p; ++k)
       t[k] = 0.0;
 
     for (size_type j=0; j<n; ++j) {
       const scalar_type av = A(i,j,p);
       const scalar_type bv = b(j,p);
-      t[p] += av*bv;
+      cv += av*bv;
+
+// Using simd here results in much better performance.  Othewise the compiler
+// appears to try and vectorize the j loop with gather instructions, which
+// doesn't work very well.
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#pragma simd
+#endif
       for (size_type k=0; k<p; ++k) {
         t[k] += A(i,j,k)*bv + av*b(j,k);
       }
     }
 
-    for (size_type k=0; k<p+1; ++k)
+    for (size_type k=0; k<p; ++k)
       c(i,k) = t[k];
+    c(i,p) = cv;
   }
 
 };
@@ -451,7 +464,7 @@ Perf
 do_time_analytic_s(const size_t m, const size_t n,
                    const size_t nloop, const bool check)
 {
-  typedef Kokkos::View<double***, ViewArgs...> ViewTypeA;
+  typedef Kokkos::View<double**[p+1], ViewArgs...> ViewTypeA;
   typedef Kokkos::View<double**,  ViewArgs...> ViewTypeB;
   typedef Kokkos::View<double**,  ViewArgs...> ViewTypeC;
   typedef typename ViewTypeA::execution_space execution_space;
