@@ -48,28 +48,44 @@
 
 namespace ROL {
 
+using Index = Intrepid2::Index;
+
 ///
 /// Function base class that defines the interface to Mini Solvers.
 ///
-template<template<typename S, Intrepid2::Index M> class MSFN, typename S, Intrepid2::Index M>
+template<template<typename S, Index M> class MSFN, typename S, Index M>
 class MiniTensor_Objective : public Objective<S>
 {
 public:
+
   // ROL interface
   virtual
   S
   value(Vector<S> const & x, S & tol) final;
 
   virtual
-  ~MiniTensor_Objective()
-  {
-    return;
-  }
+  void
+  gradient(Vector<S> & g, Vector<S> const & x, S & tol) final;
+
+  virtual
+  void
+  hessVec(Vector<S> & hv, Vector<S> const & v,
+      Vector<S> const & x, S & tol) final;
+
+  virtual
+  void
+  invHessVec(Vector<S> & hv, Vector<S> const & v,
+      Vector<S> const & x, S & tol) final;
+
+  virtual
+  ~MiniTensor_Objective() {}
 
 private:
   MSFN<S, M>
   minisolver_fn_;
 };
 } // namespace ROL
+
+#include "ROL_MiniTensor_Function_Def.hpp"
 
 #endif // ROL_MiniTensor_Function_hpp

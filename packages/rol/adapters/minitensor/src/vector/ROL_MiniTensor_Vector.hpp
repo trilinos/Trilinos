@@ -52,7 +52,7 @@ class MiniTensorVector : public Vector<T> {
 
 public:
 
-  MiniTensorVector(Intrepid2::Vector<T, N> & v) : vector_(v)
+  MiniTensorVector(Intrepid2::Vector<T, N> const & v) : vector_(v)
   {
     return;
   }
@@ -69,12 +69,18 @@ public:
     assert(dimension() == x.dimension());
 
     MiniTensorVector<T, N> const &
-    ex = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
 
     Intrepid2::Vector<T, N> const &
-    xval = ex.getVector();
+    xval = xe.getVector();
 
     vector_ = xval;
+  }
+
+  void
+  set(Intrepid2::Vector<T, N> const & x)
+  {
+    vector_ = x;
   }
 
   void
@@ -83,10 +89,10 @@ public:
     assert(dimension() == x.dimension());
 
     MiniTensorVector<T, N> const &
-    ex = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
 
     Intrepid2::Vector<T, N> const &
-    xval = ex.getVector();
+    xval = xe.getVector();
 
     auto const
     dim = xval.get_dimension();
@@ -102,10 +108,10 @@ public:
     assert(dimension() == x.dimension());
 
     MiniTensorVector<T, N> const &
-    ex = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
 
     Intrepid2::Vector<T, N> const &
-    xval = ex.getVector();
+    xval = xe.getVector();
 
     auto const
     dim = xval.get_dimension();
@@ -133,10 +139,10 @@ public:
   dot(Vector<T> const & x) const
   {
     MiniTensorVector<T, N> const &
-    ex = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
 
     Intrepid2::Vector<T, N> const &
-    xval = ex.getVector();
+    xval = xe.getVector();
 
     return Intrepid2::dot(vector_, xval);
   }
@@ -212,10 +218,10 @@ public:
   applyBinary(Elementwise::BinaryFunction<T> const & f, Vector<T> const & x)
   {
     MiniTensorVector<T, N> const &
-    ex = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
 
     Intrepid2::Vector<T, N> const &
-    xval = ex.getVector();
+    xval = xe.getVector();
 
     auto const
     dim  = vector_.get_dimension();
@@ -253,14 +259,13 @@ Intrepid2::Vector<T, N>
 MTfromROL(Vector<T> const & x)
 {
   MiniTensorVector<T, N> const &
-  ex = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+  xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
 
   Intrepid2::Vector<T, N> const &
-  xval = ex.getVector();
+  xval = xe.getVector();
 
   return xval;
 }
-
 
 } // namespace ROL
 

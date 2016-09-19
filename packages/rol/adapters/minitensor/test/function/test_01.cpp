@@ -112,7 +112,7 @@ public:
 
 };
 
-TEST(MiniTensor_ROL, FunctionAdaptor)
+TEST(MiniTensor_ROL, MT_Basics)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -125,21 +125,21 @@ TEST(MiniTensor_ROL, FunctionAdaptor)
   os = (print_output == true) ? std::cout : bhs;
 
   constexpr Intrepid2::Index
-  dimension{2};
+  DIM{2};
 
   Paraboloid<Real>
   p;
 
-  Intrepid2::Vector<Real, dimension> const
+  Intrepid2::Vector<Real, DIM> const
   x(0.0, 0.0);
 
   Real const
   f = p.value(x);
 
-  Intrepid2::Vector<Real, dimension> const
+  Intrepid2::Vector<Real, DIM> const
   df = p.gradient(x);
 
-  Intrepid2::Tensor<Real, dimension> const
+  Intrepid2::Tensor<Real, DIM> const
   ddf = p.hessian(x);
 
   os << "Point   : " << x << '\n';
@@ -147,8 +147,8 @@ TEST(MiniTensor_ROL, FunctionAdaptor)
   os << "Gradient: " << df << '\n';
   os << "Hessian : " << ddf << '\n';
 
-  Intrepid2::Tensor<Real, dimension> const
-  I = Intrepid2::identity<Real, dimension>(dimension);
+  Intrepid2::Tensor<Real, DIM> const
+  I = Intrepid2::identity<Real, DIM>(DIM);
 
   Real const
   error = std::sqrt(f) + Intrepid2::norm(df) + Intrepid2::norm(ddf - 2.0 * I);
@@ -156,3 +156,69 @@ TEST(MiniTensor_ROL, FunctionAdaptor)
   ASSERT_LE(error, Intrepid2::machine_epsilon<Real>());
 }
 
+TEST(MiniTensor_ROL, ROL_Gradient)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  DIM{2};
+
+  ROL::MiniTensor_Objective<Paraboloid, Real, DIM>
+  obj;
+
+  Intrepid2::Vector<Real, DIM>
+  xval(Intrepid2::RANDOM);
+
+  os << "xval:" << xval << '\n';
+
+  Intrepid2::Vector<Real, DIM>
+  dval(Intrepid2::RANDOM);
+
+  os << "dval:" << dval << '\n';
+
+  ROL::MiniTensorVector<Real, DIM>
+  x(xval);
+
+  ROL::MiniTensorVector<Real, DIM>
+  d(dval);
+
+  std::vector<std::vector<Real>>
+  grad_check = obj.checkGradient(x, d);
+
+  Real
+  error{1.0};
+
+  for (auto i = 0; i < grad_check.size(); ++i) {
+    if (i == 0) {
+      os << "\n";
+      os << std::right;
+      os << std::setw(20) << "Step size";
+      os << std::setw(20) << "grad'*dir";
+      os << std::setw(20) << "FD approx";
+      os << std::setw(20) << "abs error";
+      os << "\n";
+    }
+    os << std::scientific << std::setprecision(8) << std::right;
+    os << std::setw(20) << grad_check[i][0];
+    os << std::setw(20) << grad_check[i][1];
+    os << std::setw(20) << grad_check[i][2];
+    os << std::setw(20) << grad_check[i][3];
+    os << "\n";
+    error = std::min(error, grad_check[i][3] * grad_check[i][3]);
+  }
+
+  error = std::sqrt(error);
+
+  Real const
+  tol{1.0e-6};
+
+  ASSERT_LE(error, tol);
+}
