@@ -908,7 +908,7 @@ void Relaxation<MatrixType>::compute ()
           savedDiagOffsets_ = true;
         }
         crsMat->getLocalDiagCopy (*Diagonal_, diagOffsets_);
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_IFPACK2_DEBUG
         // Validate the fast-path diagonal against the slow-path diagonal.
         vector_type D_copy (A_->getRowMap ());
         A_->getLocalDiagCopy (D_copy);
@@ -920,7 +920,7 @@ void Relaxation<MatrixType>::compute ()
           err != STM::zero(), std::logic_error, "Ifpack2::Relaxation::compute: "
           "\"fast-path\" diagonal computation failed.  \\|D1 - D2\\|_inf = "
           << err << ".");
-#endif // HAVE_TPETRA_DEBUG
+#endif // HAVE_IFPACK2_DEBUG
       }
     }
 
@@ -1729,7 +1729,7 @@ void Relaxation<MatrixType>::MTGaussSeidel (
   RCP<const map_type> colMap = crsMat->getGraph ()->getColMap ();
 
 
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_IFPACK2_DEBUG
   {
     // The relation 'isSameAs' is transitive.  It's also a
     // collective, so we don't have to do a "shared" test for
@@ -1759,7 +1759,7 @@ void Relaxation<MatrixType>::MTGaussSeidel (
   // Forestall any compiler warnings for unused variables.
   (void) rangeMap;
   (void) rowMap;
-#endif // HAVE_TEUCHOS_DEBUG
+#endif // HAVE_IFPACK2_DEBUG
 
   // Fetch a (possibly cached) temporary column Map multivector
   // X_colMap, and a domain Map view X_domainMap of it.  Both have
@@ -1828,7 +1828,7 @@ void Relaxation<MatrixType>::MTGaussSeidel (
 
     X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_IFPACK2_DEBUG
     auto X_colMap_host_view = X_colMap->template getLocalView<Kokkos::HostSpace> ();
     auto X_domainMap_host_view = X_domainMap->template getLocalView<Kokkos::HostSpace> ();
 
@@ -1865,7 +1865,7 @@ void Relaxation<MatrixType>::MTGaussSeidel (
       << X_domainMap->getNumVectors ()
       << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
       "is broken.  Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
+#endif // HAVE_IFPACK2_DEBUG
 
     if (zeroInitialGuess) {
       // No need for an Import, since we're filling with zeros.
