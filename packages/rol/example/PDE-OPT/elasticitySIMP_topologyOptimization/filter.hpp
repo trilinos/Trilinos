@@ -398,7 +398,7 @@ public:
 
     // Assemble matrices.
     // Filter matrix = stiffness matrix plus mass matrix.
-    matA_ = Tpetra::rcp(new Tpetra::CrsMatrix<>(matAGraph_));
+    matA_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matAGraph_));
     int numLocalMatEntries = numLocalDofs*numLocalDofs;
     Teuchos::ArrayRCP<const Real> gradgradArrayRCP = gradgradMats_->getData();
     Teuchos::ArrayRCP<const Real> valvalArrayRCP = valvalMats_->getData();
@@ -414,7 +414,7 @@ public:
     }
     matA_->fillComplete();
     // B matrix.
-    matB_ = Tpetra::rcp(new Tpetra::CrsMatrix<>(matBGraph_));
+    matB_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matBGraph_));
     Teuchos::ArrayRCP<const Real> valArrayRCP = valMats_->getData();
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {

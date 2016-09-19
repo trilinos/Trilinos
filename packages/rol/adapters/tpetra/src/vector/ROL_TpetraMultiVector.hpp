@@ -155,7 +155,7 @@ class TpetraMultiVector : public Vector<Real> {
 private:
   const Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > tpetra_vec_;
   const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > map_;
-  const Teuchos::RCP<const Tpetra::Comm<int> > comm_;
+  const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
 protected:
   const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getMap(void) const {

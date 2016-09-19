@@ -392,7 +392,7 @@ public:
 
     // Assemble matrices.
     // Stiffness matrix A.
-    matA_ = Tpetra::rcp(new Tpetra::CrsMatrix<>(matGraph_));
+    matA_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matGraph_));
     int numLocalMatEntries = numLocalDofs*numLocalDofs;
     Teuchos::ArrayRCP<const Real> gradgradArrayRCP = gradgradMats_->getData();
     for (int i=0; i<numCells_; ++i) {
@@ -405,7 +405,7 @@ public:
     matA_->fillComplete();
 
     // Mass matrix M.
-    matM_ = Tpetra::rcp(new Tpetra::CrsMatrix<>(matGraph_));
+    matM_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matGraph_));
     Teuchos::ArrayRCP<const Real> valvalArrayRCP = valvalMats_->getData();
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
@@ -418,8 +418,8 @@ public:
 
     // Assemble vectors.
     // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
-    vecF_overlap_ = Tpetra::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
+    vecF_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
     for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
       for (int j=0; j<numLocalDofs; ++j) {
         vecF_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
@@ -430,7 +430,7 @@ public:
     Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
     // vecUd_ does not require assembly
-    vecUd_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
+    vecUd_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         if (vecUd_->getMap()->isNodeGlobalElement(cellDofs(myCellIds_[i],j))) {
@@ -454,7 +454,7 @@ public:
     Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
     matA_dirichlet_ = matA_->clone(node);
     matM_dirichlet_ = matM_->clone(node);
-    vecF_dirichlet_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_dirichlet_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
     Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
     Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
     std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
@@ -626,7 +626,7 @@ public:
   Real computeStateError(const Teuchos::RCP<const Tpetra::MultiVector<> > &soln) const {
 
     Teuchos::RCP<Tpetra::MultiVector<> > soln_overlap =
-      Tpetra::rcp(new Tpetra::MultiVector<>(vecF_overlap_->getMap(), 1, true));
+      Teuchos::rcp(new Tpetra::MultiVector<>(vecF_overlap_->getMap(), 1, true));
     Tpetra::Import<> importer(vecUd_->getMap(), soln_overlap->getMap());              // redistribution:
     soln_overlap->doImport(*soln, importer, Tpetra::REPLACE);                         // from the unique map to the overlap map
 

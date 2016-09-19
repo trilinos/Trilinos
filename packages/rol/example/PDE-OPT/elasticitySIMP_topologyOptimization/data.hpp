@@ -121,8 +121,8 @@ public:
     // v should be myCellMap_
     //
     /*
-    Teuchos::RCP<Tpetra::MultiVector<> > Ju_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > Ju_overlap = Teuchos::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Teuchos::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer(u->getMap(), u_overlap->getMap());
     u_overlap->doImport(*u, importer, Tpetra::REPLACE);
     //simply apply matrix to a vector, no need to apply EBC to the vec
@@ -182,15 +182,15 @@ public:
     #ifdef ROL_TIMERS
     Teuchos::TimeMonitor LocalTimer(*ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
     #endif
-    Teuchos::RCP<Tpetra::MultiVector<> > Jv_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > Jv_overlap = Teuchos::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Teuchos::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer(u->getMap(), u_overlap->getMap());
     u_overlap->doImport(*u, importer, Tpetra::REPLACE);
     //apply BC here, KU
     this->ApplyBCToVec (u_overlap);
     Teuchos::ArrayRCP<const Real> uData = u_overlap->get1dView();
 
-    Teuchos::RCP<Tpetra::MultiVector<> > v_local = Tpetra::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > v_local = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
     Tpetra::Export<> exporter1(v->getMap(), this->myCellMap_);
     v_local->doExport(*v, exporter1, Tpetra::REPLACE);
     Teuchos::ArrayRCP<const Real> vData = v_local->get1dView();
@@ -237,14 +237,14 @@ public:
     #ifdef ROL_TIMERS
     Teuchos::TimeMonitor LocalTimer(*ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
     #endif
-    Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Teuchos::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer1(u->getMap(), u_overlap->getMap());
     u_overlap->doImport(*u, importer1, Tpetra::REPLACE);
     //only apply BC to u
     this->ApplyBCToVec (u_overlap);
     Teuchos::ArrayRCP<const Real> uData = u_overlap->get1dView();
 
-    Teuchos::RCP<Tpetra::MultiVector<> > v_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > v_overlap = Teuchos::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer2(v->getMap(), v_overlap->getMap());
     v_overlap->doImport(*v, importer2, Tpetra::REPLACE);
     //ApplyBCToVec (v_overlap);
@@ -294,7 +294,7 @@ public:
     #ifdef ROL_TIMERS
     Teuchos::TimeMonitor LocalTimer(*ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
     #endif
-    Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > u_overlap = Teuchos::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer1(u->getMap(), u_overlap->getMap());
     u_overlap->doImport(*u, importer1, Tpetra::REPLACE);
     //only apply BC to U
@@ -302,11 +302,11 @@ public:
     Teuchos::ArrayRCP<const Real> uData = u_overlap->get1dView();
 
     Tpetra::Export<> exporter(v->getMap(), this->myCellMap_);
-    Teuchos::RCP<Tpetra::MultiVector<> > v_local = Tpetra::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > v_local = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
     v_local->doExport(*v, exporter, Tpetra::REPLACE);
     Teuchos::ArrayRCP<const Real> vData = v_local->get1dView();
 
-    Teuchos::RCP<Tpetra::MultiVector<> > w_overlap = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > w_overlap = Teuchos::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
     Tpetra::Import<> importer2(w->getMap(), w_overlap->getMap());
     w_overlap->doImport(*w, importer2, Tpetra::REPLACE);
     //ApplyBCToVec (w_overlap);

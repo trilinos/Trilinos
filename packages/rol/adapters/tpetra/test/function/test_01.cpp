@@ -75,7 +75,7 @@ typedef RCP<MV>            MVP;
 typedef RCP<SV>            SVP;
 
 
-int test(RCP<const Tpetra::Comm<int> > comm, int dim) {
+int test(RCP<const Teuchos::Comm<int> > comm, int dim) {
 
     // Get number of processes
     const int numProc = comm->getSize(); 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
         
         Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
 
-        RCP<const Tpetra::Comm<int> > comm = platform.getComm();
+        RCP<const Teuchos::Comm<int> > comm = platform.getComm();
 
 
         // Maximum dimension of test for a given process
