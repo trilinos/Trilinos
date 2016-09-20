@@ -51,10 +51,7 @@ T
 Function_Base<FunctionDerived, S, M>::
 value(FunctionDerived & f, Vector<T, N> const & x)
 {
-  Index const
-  dimension = x.get_dimension();
-
-  assert(dimension == DIMENSION);
+  assert(x.get_dimension() == DIMENSION);
 
   Vector<T, N> const
   r = residual(f, x);

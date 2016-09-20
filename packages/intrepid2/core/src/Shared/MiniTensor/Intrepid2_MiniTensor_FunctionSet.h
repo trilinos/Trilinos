@@ -525,10 +525,7 @@ public:
   T
   value(Vector<T, N> const & X)
   {
-    Index const
-    dimension = X.get_dimension();
-
-    assert(dimension == Base::DIMENSION);
+    assert(X.get_dimension() == Base::DIMENSION);
 
     T const &
     x = X(0);
@@ -590,10 +587,7 @@ public:
   T
   value(Vector<T, N> const & X)
   {
-    Index const
-    dimension = X.get_dimension();
-
-    assert(dimension == Base::DIMENSION);
+    assert(X.get_dimension() == Base::DIMENSION);
 
     T const &
     x = X(0);
@@ -652,10 +646,7 @@ public:
   T
   value(Vector<T, N> const & X)
   {
-    Index const
-    dimension = X.get_dimension();
-
-    assert(dimension == Base::DIMENSION);
+    assert(X.get_dimension() == Base::DIMENSION);
 
     T const &
     x = X(0);
@@ -872,6 +863,39 @@ public:
     return Base::hessian(*this, x);
   }
 
+};
+
+//
+// Function to test constraint interface.
+//
+template<typename S, Index M>
+class Identity : public Constraint_Base<Identity<S, M>, S, M>
+{
+public:
+
+  Identity() {}
+
+  static constexpr
+  char const * const
+  NAME{"Identity Map"};
+
+  using Base = Constraint_Base<Identity<S, M>, S, M>;
+
+  // Explicit value.
+  template<typename T, Index N>
+  Vector<T, N>
+  value(Vector<T, N> const & x)
+  {
+    return x;
+  }
+
+  // Default AD gradient.
+  template<typename T, Index N>
+  Matrix<T, M, N>
+  gradient(Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
 };
 
 } // namespace Intrepid2

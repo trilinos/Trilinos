@@ -503,4 +503,40 @@ TEST(Testing, Boundedness)
   ASSERT_EQ(minimizer.failed, false);
 }
 
+TEST(Testing, ConstraintIdentity)
+{
+  constexpr Index
+  num_rows{2};
+
+  constexpr Index
+  num_cols{2};
+
+  Identity<Real, num_rows>
+  id;
+
+  Vector<Real, num_cols> const
+  x(ZEROS);
+
+  Vector<Real, num_rows> const
+  f = id.value(x);
+
+  Matrix<Real, num_rows, num_cols> const
+  df = id.gradient(x);
+
+  std::cout << "Point   : " << x << '\n';
+  std::cout << "Value   : " << f << '\n';
+  std::cout << "Gradient: " << df << '\n';
+
+  Real
+  error{0.0};
+
+  for (Index i = 0; i < min(num_rows, num_cols); ++i) {
+    error += (df(i, i) - 1.0) * (df(i, i) - 1.0);
+  }
+
+  error = std::sqrt(error);
+
+  ASSERT_LE(error, machine_epsilon<Real>());
+}
+
 } // namespace Intrepid2
