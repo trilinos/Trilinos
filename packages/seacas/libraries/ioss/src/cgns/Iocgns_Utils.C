@@ -167,9 +167,10 @@ void Iocgns::Utils::add_sidesets(int cgnsFilePtr, Ioss::DatabaseIO *db)
   cgsize_t num_families = 0;
   cg_nfamilies(cgnsFilePtr, base, &num_families);
   for (cgsize_t family = 1; family <= num_families; family++) {
-    char     name[33];
-    cgsize_t num_bc  = 0;
-    cgsize_t num_geo = 0;
+    char        name[33];
+    CG_BCType_t bocotype;
+    cgsize_t    num_bc  = 0;
+    cgsize_t    num_geo = 0;
     cg_family_read(cgnsFilePtr, base, family, name, &num_bc, &num_geo);
 #if defined(IOSS_DEBUG_OUTPUT)
     std::cout << "Family " << family << " named " << name << " has " << num_bc << " BC, and "
@@ -177,9 +178,12 @@ void Iocgns::Utils::add_sidesets(int cgnsFilePtr, Ioss::DatabaseIO *db)
 #endif
     if (num_bc > 0) {
       // Create a sideset...
-      std::string    ss_name(name);
-      Ioss::SideSet *ss = new Ioss::SideSet(db, ss_name);
+      std::string ss_name(name); // Use name here before cg_fambc_read call overwrites it...
+
+      cg_fambc_read(cgnsFilePtr, base, family, 1, name, &bocotype);
+      auto *ss = new Ioss::SideSet(db, ss_name);
       ss->property_add(Ioss::Property("id", family));
+      ss->property_add(Ioss::Property("bc_type", bocotype));
       db->get_region()->add(ss);
     }
   }
@@ -244,9 +248,6 @@ size_t Iocgns::Utils::resolve_nodes(Ioss::Region &region, int my_processor)
                   size_t block_local_offset =
                       block->get_block_local_node_offset(index[0], index[1], index[2]);
                   block->m_globalIdMap.emplace_back(block_local_offset, owner_global_offset + 1);
-                  //		  std::cerr << "GLOBAL: " << block->name() << " " << global_offset <<
-                  //"
-                  //" << owner_global_offset+1 << "\n";
                 }
                 else {
                   size_t  local_offset = block->get_local_node_offset(index[0], index[1], index[2]);
@@ -318,7 +319,7 @@ void Iocgns::Utils::add_structured_boundary_conditions(int                    cg
 
   cgsize_t range[6];
   for (int ibc = 0; ibc < num_bcs; ibc++) {
-    char              boconame[32];
+    char              boconame[33];
     CG_BCType_t       bocotype;
     CG_PointSetType_t ptset_type;
     cgsize_t          npnts;
@@ -327,10 +328,10 @@ void Iocgns::Utils::add_structured_boundary_conditions(int                    cg
     int               ndataset;
 
     // All we really want from this is 'boconame'
-    cg_boco_info(cgnsFilePtr, base, zone, ibc + 1, boconame, &bocotype, &ptset_type, &npnts, NULL,
-                 &NormalListSize, &NormalDataType, &ndataset);
+    cg_boco_info(cgnsFilePtr, base, zone, ibc + 1, boconame, &bocotype, &ptset_type, &npnts,
+                 nullptr, &NormalListSize, &NormalDataType, &ndataset);
 
-    cg_boco_read(cgnsFilePtr, base, zone, ibc + 1, range, NULL);
+    cg_boco_read(cgnsFilePtr, base, zone, ibc + 1, range, nullptr);
 
     // There are some BC that are applied on an edge or a vertex;
     // Don't want those (yet?), so filter them out at this time...
@@ -344,16 +345,15 @@ void Iocgns::Utils::add_structured_boundary_conditions(int                    cg
       continue;
     }
     Ioss::SideSet *sset = block->get_database()->get_region()->get_sideset(boconame);
-    if (!sset) {
+    if (sset == nullptr) {
       // Need to create a new sideset since didn't see this earlier.
       auto *db = block->get_database();
       sset     = new Ioss::SideSet(db, boconame);
-      // TODO: Figure out an id...
-      //      sset->property_add(Ioss::Property("id", ?));
+      sset->property_add(Ioss::Property("id", ibc + 1)); // Not sure this is unique id...
       db->get_region()->add(sset);
     }
 
-    if (sset) {
+    if (sset != nullptr) {
       Ioss::IJK_t range_beg{{std::min(range[0], range[3]), std::min(range[1], range[4]),
                              std::min(range[2], range[5])}};
 
@@ -386,7 +386,23 @@ void Iocgns::Utils::add_structured_boundary_conditions(int                    cg
         sset->add(sb);
         sb->property_add(Ioss::Property("base", base));
         sb->property_add(Ioss::Property("zone", zone));
-        sb->property_add(Ioss::Property("section", ibc+1));
+        sb->property_add(Ioss::Property("section", ibc + 1));
+      }
+
+      // Set a property on the sideset specifying the boundary condition type (bocotype)
+      // In CGNS, the bocotype is an enum; we store it as the integer value of the enum.
+      if (sset->property_exists("bc_type")) {
+        // Check that the 'bocotype' value matches the value of the property.
+        auto old_bocotype = sset->get_property("bc_type").get_int();
+        if (old_bocotype != bocotype && bocotype != CG_FamilySpecified) {
+          IOSS_WARNING << "On sideset " << sset->name()
+                       << ", the boundary condition type was previously set to " << old_bocotype
+                       << " which does not match the current value of " << bocotype
+                       << ". It will keep the old value.\n";
+        }
+      }
+      else {
+        sset->property_add(Ioss::Property("bc_type", (int)bocotype));
       }
     }
     else {

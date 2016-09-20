@@ -39,6 +39,7 @@
 #include <Ioss_StructuredBlock.h>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 namespace Iocgns {
   class StructuredZoneData

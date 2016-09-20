@@ -471,7 +471,9 @@ namespace Iocgns {
     cgsize_t cell_dimension = 0;
     cgsize_t phys_dimension = 0;
     cg_base_read(cgnsFilePtr, base, basename, &cell_dimension, &phys_dimension);
-    std::cerr << "Physical dimension = " << phys_dimension << "\n";
+#if defined(IOSS_DEBUG_OUTPUT)
+    std::cout << "Physical dimension = " << phys_dimension << "\n";
+#endif
 
     Ioss::NodeBlock *nblock = new Ioss::NodeBlock(this, "nodeblock_1", num_node, phys_dimension);
     nblock->property_add(Ioss::Property("base", base));

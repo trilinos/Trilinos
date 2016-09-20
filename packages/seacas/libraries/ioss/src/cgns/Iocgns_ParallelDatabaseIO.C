@@ -82,8 +82,6 @@
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
 
-#define VAL(x) std::cerr << Ioss::trmclr::blue << #x << " = " << x << "\n" << Ioss::trmclr::normal
-
 namespace {
   CG_ZoneType_t check_zone_type(int cgnsFilePtr)
   {

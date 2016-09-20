@@ -20,7 +20,7 @@
 #include <assert.h>
 #include <mpi.h>
 
-#define IOSS_DEBUG_OUTPUT 1
+#define IOSS_DEBUG_OUTPUT 0
 namespace {
   int rank = 0;
 #define OUTPUT                                                                                     \
