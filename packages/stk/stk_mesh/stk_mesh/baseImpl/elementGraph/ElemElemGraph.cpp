@@ -1595,14 +1595,8 @@ stk::mesh::EntityId add_shared_side_to_element(stk::mesh::BulkData& bulkData, co
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
 
     // determine which element is active
-    stk::mesh::Permutation perm = stk::mesh::DEFAULT_PERMUTATION;
     int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
     int owning_proc = std::min(other_proc, bulkData.parallel_rank());
-
-    if(bulkData.parallel_rank() != owning_proc)
-    {
-        perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
-    }
 
     stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
 
@@ -1613,7 +1607,7 @@ stk::mesh::EntityId add_shared_side_to_element(stk::mesh::BulkData& bulkData, co
         stk::topology elem_top = bulkData.bucket(local_element).topology();
         stk::topology side_top = elem_top.side_topology(side_ord);
         add_parts.push_back(&bulkData.mesh_meta_data().get_topology_root_part(side_top));
-        side = impl::connect_side_to_element(bulkData, local_element, side_global_id, side_ord, perm, add_parts);
+        side = bulkData.declare_element_side(side_global_id, local_element, side_ord, add_parts);
         shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
     }
     else
@@ -1670,7 +1664,6 @@ void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
                                          const stk::mesh::PartVector& skinParts,
                                          std::vector<stk::mesh::sharing_info> &sharedModified)
 {
-    stk::mesh::SideConnector sideConnector = get_side_connector();
     stk::mesh::Entity element = m_idMapper.local_to_entity(localId);
     for(size_t i=0;i<exposedSides.size();++i)
     {
@@ -1680,8 +1673,7 @@ void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
         for(const GraphEdge & graphEdge : get_coincident_edges_for_element(localId))
             add_side_for_remote_edge(graphEdge, exposedSides[i], element, skinParts, sharedModified);
 
-        stk::mesh::Entity sideEntity = add_side_to_mesh({localId, exposedSides[i]}, skinParts);
-        sideConnector.connect_side_to_all_elements(sideEntity, element, exposedSides[i]);
+        add_side_to_mesh({localId, exposedSides[i]}, skinParts);
     }
 }
 
