@@ -46,6 +46,8 @@ INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
 
 SET(SOURCES "")
 FILE(GLOB SOURCES *.cpp)
+#disable because of dependency on data file not in Trilinos
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/readAttributes.cpp")
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_io_doc_tests
