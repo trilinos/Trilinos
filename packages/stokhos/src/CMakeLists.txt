@@ -611,6 +611,7 @@ IF (Stokhos_ENABLE_Sacado)
         Experimental::BlockVector
         Experimental::BlockMultiVector
         Experimental::BlockCrsMatrix
+        Details::getDiagCopyWithoutOffsets
         )
       SET(TPETRAEXT_ETI_CLASSES
         MatrixMatrix
