@@ -478,10 +478,7 @@ public:
   T
   value(Vector<T, N> const & x)
   {
-    Index const
-    dimension = x.get_dimension();
-
-    assert(dimension == Base::DIMENSION);
+    assert(x.get_dimension() == Base::DIMENSION);
 
     T const
     f = (x(0) * x(0) + x(1) * x(1));

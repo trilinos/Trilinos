@@ -59,6 +59,8 @@ main(int ac, char * av[])
 
 namespace Intrepid2 {
 
+namespace {
+
 //
 // Test the solution methods by themselves.
 //

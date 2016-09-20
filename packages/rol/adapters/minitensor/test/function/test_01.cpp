@@ -122,7 +122,7 @@ TEST(MiniTensor_ROL, ROL_Gradient)
   constexpr Intrepid2::Index
   DIM{2};
 
-  ROL::MiniTensor_Objective<Paraboloid, Real, DIM>
+  ROL::MiniTensor_Objective<Intrepid2::Paraboloid, Real, DIM>
   obj;
 
   Intrepid2::Vector<Real, DIM>
@@ -147,7 +147,7 @@ TEST(MiniTensor_ROL, ROL_Gradient)
   Real
   error{1.0};
 
-  for (auto i = 0; i < grad_check.size(); ++i) {
+  for (Intrepid2::Index i = 0; i < grad_check.size(); ++i) {
     if (i == 0) {
       os << "\n";
       os << std::right;
