@@ -161,7 +161,7 @@ public:
     dim = vector_.get_dimension();
 
     auto &&
-    mt_vector = Intrepid2::Vector<T, N>(dim);
+    mt_vector = Intrepid2::Vector<T, N>(dim, Intrepid2::ZEROS);
 
     Teuchos::RCP<MiniTensorVector>
     e = Teuchos::rcp(new MiniTensorVector(mt_vector));
