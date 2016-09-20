@@ -151,6 +151,54 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
 //
 //
 //
+template<typename ConstraintDerived, typename S, Index M>
+template<typename T, Index N>
+Vector<T, N>
+Constraint_Base<ConstraintDerived, S, M>::
+value(ConstraintDerived & c, Vector<T, N> const & x)
+{
+  return c.value(x);
+}
+
+template<typename ConstraintDerived, typename S, Index M>
+template<typename T, Index N>
+Matrix<T, M, N>
+Constraint_Base<ConstraintDerived, S, M>::
+gradient(ConstraintDerived & c, Vector<T, N> const & x)
+{
+  using AD = FAD<T, N>;
+
+  Index const
+  num_cols = x.get_dimension();
+
+  Vector<AD, N>
+  x_ad(num_cols);
+
+  for (Index i{0}; i < num_cols; ++i) {
+    x_ad(i) = AD(num_cols, i, x(i));
+  }
+
+  Vector<AD, M> const
+  r_ad = c.value(x_ad);
+
+  Index const
+  num_rows = r_ad.get_dimension();
+
+  Matrix<T, M, N>
+  Jacobian(num_rows, num_cols);
+
+  for (Index i{0}; i < num_rows; ++i) {
+    for (Index j{0}; j < num_cols; ++j) {
+      Jacobian(i, j) = r_ad(i).dx(j);
+    }
+  }
+
+  return Jacobian;
+}
+
+//
+//
+//
 template<typename T, Index N>
 template<typename STEP, typename FN>
 void

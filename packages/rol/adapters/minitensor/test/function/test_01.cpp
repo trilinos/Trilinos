@@ -40,6 +40,7 @@
 // @HEADER
 
 #include <gtest/gtest.h>
+#include "Intrepid2_MiniTensor_FunctionSet.h"
 #include <ROL_MiniTensor_Function.hpp>
 
 using Real = double;
@@ -62,56 +63,6 @@ main(int ac, char * av[])
   return retval;
 }
 
-//
-// Paraboloid of revolution
-//
-template<typename S, Intrepid2::Index M = 2>
-class Paraboloid : public Intrepid2::Function_Base<Paraboloid<S, M>, S, M>
-{
-public:
-
-  Paraboloid() {}
-
-  static constexpr
-  char const * const
-  NAME{"Paraboloid"};
-
-  using Base = Intrepid2::Function_Base<Paraboloid<S, M>, S, M>;
-
-  // Explicit value.
-  template<typename T, Intrepid2::Index N>
-  T
-  value(Intrepid2::Vector<T, N> const & x)
-  {
-    Intrepid2::Index const
-    dimension = x.get_dimension();
-
-    assert(dimension == Base::DIMENSION);
-
-    T const
-    f = (x(0) * x(0) + x(1) * x(1));
-
-    return f;
-  }
-
-  // Default AD gradient.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Vector<T, N>
-  gradient(Intrepid2::Vector<T, N> const & x)
-  {
-    return Base::gradient(*this, x);
-  }
-
-  // Default AD hessian.
-  template<typename T, Intrepid2::Index N>
-  Intrepid2::Tensor<T, N>
-  hessian(Intrepid2::Vector<T, N> const & x)
-  {
-    return Base::hessian(*this, x);
-  }
-
-};
-
 TEST(MiniTensor_ROL, MT_Basics)
 {
   bool const
@@ -127,7 +78,7 @@ TEST(MiniTensor_ROL, MT_Basics)
   constexpr Intrepid2::Index
   DIM{2};
 
-  Paraboloid<Real>
+  Intrepid2::Paraboloid<Real>
   p;
 
   Intrepid2::Vector<Real, DIM> const

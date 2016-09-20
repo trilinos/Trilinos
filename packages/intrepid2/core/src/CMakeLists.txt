@@ -86,6 +86,7 @@ IF (Intrepid2_ENABLE_Boost)
     Shared/MiniTensor/Intrepid2_MiniTensor_TensorBase.i.h
     Shared/MiniTensor/Intrepid2_MiniTensor_TensorBase.t.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Definitions.h
+    Shared/MiniTensor/Intrepid2_MiniTensor_FunctionSet.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Geometry.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Geometry.i.h
     Shared/MiniTensor/Intrepid2_MiniTensor_Geometry.t.h

@@ -105,6 +105,43 @@ public:
 };
 
 ///
+/// Constraint base class that defines the interface to Mini Solvers.
+///
+template<typename ConstraintDerived, typename S, Index M>
+struct Constraint_Base
+{
+public:
+  Constraint_Base()
+  {
+  }
+
+  ///
+  /// By default use merit function 0.5 dot(residual,residual)
+  /// as the target to optimize if only the residual is provided.
+  ///
+  template<typename T, Index N>
+  Vector<T, N>
+  value(ConstraintDerived & c, Vector<T, N> const & x);
+
+  ///
+  /// By default compute gradient with AD from value().
+  ///
+  template<typename T, Index N>
+  Matrix<T, M, N>
+  gradient(ConstraintDerived & c, Vector<T, N> const & x);
+
+  ///
+  /// Signal that something has gone horribly wrong.
+  ///
+  bool
+  failed{false};
+
+  static constexpr
+  Index
+  DIMENSION{M};
+};
+
+///
 /// Minimizer Struct
 ///
 template<typename T, Index N>
