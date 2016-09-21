@@ -160,3 +160,71 @@ TEST(MiniTensor_ROL, VectorAdaptor)
   ASSERT_EQ(Intrepid2::norm(checkvec), 0.0);
 }
 
+namespace {
+
+}
+
+TEST(MiniTensor_ROL, VectorValue)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  T const
+  epsilon{Intrepid2::machine_epsilon<T>()};
+
+  constexpr
+  Intrepid2::Index
+  N{4};
+
+  Intrepid2::Vector<T, N> const
+  x(Intrepid2::ONES);
+
+  os << "Intrepid2::Vector x     : " << x << '\n';
+
+  ROL::MiniTensorVector<T, N>
+  y(x);
+
+  os << "ROL::MiniTensorVector y : " << y << '\n';
+
+  T const
+  error0 = std::abs(y.norm() - Intrepid2::norm(x));
+
+  ASSERT_LE(error0, epsilon);
+
+  ROL::Vector<T> &
+  z = y;
+
+  Intrepid2::Vector<T, N> const
+  a = ROL::MTfromROL<T, N>(z);
+
+  os << "Intrepid2::Vector a     : " << a << '\n';
+
+  T const
+  error1 = Intrepid2::norm(x - a);
+
+  ASSERT_LE(error1, epsilon);
+
+  Intrepid2::Vector<T, N> const
+  b(Intrepid2::SEQUENCE);
+
+  os << "Intrepid2::Vector b     : " << b << '\n';
+
+  ROL::MTtoROL(b, z);
+
+  Intrepid2::Vector<T, N> const
+  c = ROL::MTfromROL<T, N>(z);
+
+  os << "Intrepid2::Vector c     : " << c << '\n';
+
+  T const
+  error2 = Intrepid2::norm(b - c);
+
+  ASSERT_LE(error2, epsilon);
+}

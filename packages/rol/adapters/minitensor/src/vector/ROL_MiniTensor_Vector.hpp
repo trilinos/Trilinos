@@ -247,6 +247,22 @@ public:
     return result;
   }
 
+  friend
+  std::istream &
+  operator>>(std::istream & is, MiniTensorVector & u)
+  {
+    is >> u.vector_;
+    return is;
+  }
+
+  friend
+  std::ostream &
+  operator<<(std::ostream & os, MiniTensorVector & u)
+  {
+    os << u.vector_;
+    return os;
+  }
+
 private:
 
   Intrepid2::Vector<T, N>
@@ -265,6 +281,17 @@ MTfromROL(Vector<T> const & x)
   xval = xe.getVector();
 
   return xval;
+}
+
+// Utility conversion
+template<typename T, Intrepid2::Index N>
+void
+MTtoROL(Intrepid2::Vector<T, N> const & xval, Vector<T> & x)
+{
+  MiniTensorVector<T, N> &
+  xe = Teuchos::dyn_cast<MiniTensorVector<T, N>>(x);
+
+  xe.set(xval);
 }
 
 } // namespace ROL
