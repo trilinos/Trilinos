@@ -902,32 +902,33 @@ Entity BulkData::create_and_connect_side(const stk::mesh::EntityId globalSideId,
 
 Entity BulkData::declare_element_side(Entity elem, const unsigned sideOrd, const stk::mesh::PartVector& parts)
 {
-    check_declare_element_side_inputs(*this, elem, sideOrd);
-
-    stk::mesh::Entity sideEntity = stk::mesh::get_side_entity_for_elem_side_pair(*this, elem, sideOrd);
-    if(is_valid(sideEntity))
-        change_entity_parts(sideEntity, parts, {});
-    else
-    {
-        stk::mesh::EntityId chosenId = select_side_id(elem, sideOrd);
-        ThrowRequireMsg(!is_valid(get_entity(mesh_meta_data().side_rank(), chosenId)),
-                        "Conflicting id in declare_elem_side, found pre-existing side with id " << chosenId
-                        << " not connected to requested element " << identifier(elem) << ", side " << sideOrd);
-        sideEntity = create_and_connect_side(chosenId, elem, sideOrd, parts);
-    }
-    return sideEntity;
+    stk::mesh::EntityId chosenId = select_side_id(elem, sideOrd);
+    return declare_element_side(chosenId, elem, sideOrd, parts);
 }
 
 Entity BulkData::declare_element_side(const stk::mesh::EntityId globalSideId,
                                       Entity elem,
-                                      const unsigned localSideId,
+                                      const unsigned sideOrd,
                                       const stk::mesh::PartVector& parts)
 {
-    check_declare_element_side_inputs(*this, elem, localSideId);
+    check_declare_element_side_inputs(*this, elem, sideOrd);
 
-    Entity side = get_entity(mesh_meta_data().side_rank(), globalSideId);
-    if(!is_valid(side))
-        side = create_and_connect_side(globalSideId, elem, localSideId, parts);
+    Entity side = stk::mesh::get_side_entity_for_elem_side_pair(*this, elem, sideOrd);
+    if(is_valid(side))
+    {
+        if(bucket(side).owned())
+            change_entity_parts(side, parts, {});
+    }
+    else
+    {
+        if(has_face_adjacent_element_graph())
+        {
+            ThrowRequireMsg(!is_valid(get_entity(mesh_meta_data().side_rank(), globalSideId)),
+                        "Conflicting id in declare_elem_side, found pre-existing side with id " << globalSideId
+                        << " not connected to requested element " << identifier(elem) << ", side " << sideOrd);
+        }
+        side = create_and_connect_side(globalSideId, elem, sideOrd, parts);
+    }
     return side;
 }
 
