@@ -61,7 +61,6 @@ int main(int argc, char* argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  bool success = true;
   string pass = "End Result: TEST PASSED";
   string fail = "End Result: TEST FAILED";
 
@@ -74,8 +73,8 @@ int main(int argc, char* argv[])
   //============================= Get Matrix
   string matrixFileName = "wathenSmall.mtx";
   Epetra_CrsMatrix *A;
-  Epetra_CrsMatrix *AHat;
-  int n = 0;
+  // Epetra_CrsMatrix *AHat;
+  // int n = 0;
 
   int err = EpetraExt::MatrixMarketFileToCrsMatrix(matrixFileName.c_str(), Comm, A);
   
@@ -85,7 +84,9 @@ int main(int argc, char* argv[])
       cout << fail << endl;
       exit(1);
     }
-  n = A->NumGlobalRows();
+
+  // not used
+  // n = A->NumGlobalRows();
 
   //=============================Partition/Distribute
   Teuchos::ParameterList isoList;
@@ -121,6 +122,5 @@ int main(int argc, char* argv[])
   cout << "Return value: " << serr << endl;
   if(serr == 0)
     cout << pass << endl;
-
-
+  return serr;
 }//end main
