@@ -94,6 +94,9 @@ private:
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysicalX_;         // x-component of gradient of FE basis in physical space
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysicalY_;         // y-component of gradient of FE basis in physical space
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysicalZ_;         // z-component of gradient of FE basis in physical space
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysicalXWeighted_; // x-component of gradient of FE basis in physical space weighted
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysicalYWeighted_; // y-component of gradient of FE basis in physical space weighted
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysicalZWeighted_; // z-component of gradient of FE basis in physical space weighted
   Teuchos::RCP<Intrepid::FieldContainer<Real> > divPhysical_;           // divergence of FE basis in physical space
   Teuchos::RCP<Intrepid::FieldContainer<Real> > valPhysicalWeighted_;   // value of FE basis in physical space multiplied by weighted cell measure
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysicalWeighted_;  // gradient of FE basis in physical space multiplied by weighted cell measure
@@ -124,33 +127,42 @@ public:
     sideTopo_ = Teuchos::null;
 
     // Allocate multidimensional arrays.
-    cubPoints_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(p_, d_));
-    cubWeights_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(p_));
-    cellJac_              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_, d_, d_));
-    cellJacInv_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_, d_, d_));
-    cellJacDet_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_));
-    cellWeightedMeasure_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_));
-    valReference_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(f_, p_));
-    gradReference_        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(f_, p_, d_));
-    valPhysical_          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
-    gradPhysical_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_, d_));
-    gradPhysicalX_        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
-    gradPhysicalY_        = Teuchos::null;
-    gradPhysicalZ_        = Teuchos::null;
+    cubPoints_               = Teuchos::rcp(new Intrepid::FieldContainer<Real>(p_, d_));
+    cubWeights_              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(p_));
+    cellJac_                 = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_, d_, d_));
+    cellJacInv_              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_, d_, d_));
+    cellJacDet_              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_));
+    cellWeightedMeasure_     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_));
+    valReference_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(f_, p_));
+    gradReference_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(f_, p_, d_));
+    valPhysical_             = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    gradPhysical_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_, d_));
+    gradPhysicalX_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    gradPhysicalY_           = Teuchos::null;
+    gradPhysicalZ_           = Teuchos::null;
     if (d_ > 1) {
-      gradPhysicalY_      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+      gradPhysicalY_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
     }
     if (d_ > 2) {
-      gradPhysicalZ_      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+      gradPhysicalZ_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
     }
-    divPhysical_          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
-    valPhysicalWeighted_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
-    gradPhysicalWeighted_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_, d_));
-    divPhysicalWeighted_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
-    gradgradMats_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
-    valvalMats_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
-    cubPointsPhysical_    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_, d_));
-    dofPoints_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(f_, d_));
+    gradPhysicalXWeighted_   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    gradPhysicalYWeighted_   = Teuchos::null;
+    gradPhysicalZWeighted_   = Teuchos::null;
+    if (d_ > 1) {
+      gradPhysicalYWeighted_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    }
+    if (d_ > 2) {
+      gradPhysicalZWeighted_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    }
+    divPhysical_             = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    valPhysicalWeighted_     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    gradPhysicalWeighted_    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_, d_));
+    divPhysicalWeighted_     = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, p_));
+    gradgradMats_            = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
+    valvalMats_              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, f_, f_));
+    cubPointsPhysical_       = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c_, p_, d_));
+    dofPoints_               = Teuchos::rcp(new Intrepid::FieldContainer<Real>(f_, d_));
 
     /*** START: Fill multidimensional arrays. ***/
 
@@ -195,11 +207,14 @@ public:
       for (int f=0; f<f_; ++f) {
         for (int p=0; p<p_; ++p) {
           (*gradPhysicalX_)(c,f,p) = (*gradPhysical_)(c,f,p,0);
+          (*gradPhysicalXWeighted_)(c,f,p) = (*gradPhysicalWeighted_)(c,f,p,0);
           if (d_ > 1) {
           (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
+          (*gradPhysicalYWeighted_)(c,f,p) = (*gradPhysicalWeighted_)(c,f,p,1);
           }
           if (d_ > 2) {
           (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
+          (*gradPhysicalZWeighted_)(c,f,p) = (*gradPhysicalWeighted_)(c,f,p,2);
           }
         }
       }
@@ -357,16 +372,16 @@ public:
                                                         *cellWeightedMeasure_,
                                                         *gradPhysical_);
 
-    // Extract individual (x, y, z) components of the gradients in physical space.
+    // Extract individual (x, y, z) components of the weighted gradients in physical space.
     for (int c=0; c<c_; ++c) {
       for (int f=0; f<f_; ++f) {
         for (int p=0; p<p_; ++p) {
           (*gradPhysicalX_)(c,f,p) = (*gradPhysical_)(c,f,p,0);
           if (d_ > 1) {
-	    (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
+	        (*gradPhysicalY_)(c,f,p) = (*gradPhysical_)(c,f,p,1);
           }
           if (d_ > 2) {
-	    (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
+	        (*gradPhysicalZ_)(c,f,p) = (*gradPhysical_)(c,f,p,2);
           }
         }
       }
@@ -493,7 +508,7 @@ public:
 
       \param  coord    [in]   - coordinate index (x=0, y=1, z=2)
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > dNd(const int & coord) const {
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > DND(const int & coord) const {
     if (coord == 0) {
       return gradPhysicalX_;
     }
@@ -505,7 +520,29 @@ public:
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> ERROR (PDEOPT::FE::dNd): Invalid coordinate argument!");
+        ">>> ERROR (PDEOPT::FE::DND): Invalid coordinate argument!");
+    }
+  }
+
+  /** \brief  Returns x, y or z component of the gradient of FE basis at
+              cubature points in physical space, multiplied by weighted
+              cell measures.
+
+      \param  coord    [in]   - coordinate index (x=0, y=1, z=2)
+  */
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > DNDdetJ(const int & coord) const {
+    if (coord == 0) {
+      return gradPhysicalXWeighted_;
+    }
+    else if (coord == 1) {
+      return gradPhysicalYWeighted_;
+    }
+    else if (coord == 2) {
+      return gradPhysicalZWeighted_;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> ERROR (PDEOPT::FE::DNDdetJ): Invalid coordinate argument!");
     }
   }
 

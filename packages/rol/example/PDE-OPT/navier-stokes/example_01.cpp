@@ -58,6 +58,7 @@
 
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
@@ -101,71 +102,119 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing Navier-Stokes equations.
     Teuchos::RCP<PDE_NavierStokes<RealT> > pde
       = Teuchos::rcp(new PDE_NavierStokes<RealT>(*parlist));
-    Teuchos::RCP<PDE_Constraint<RealT> > con
+    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
-    con->getAssembler()->printMeshData(*outStream);
-    // Initialize quadratic objective function.
-    std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
-    qoi_vec[0] = Teuchos::rcp(new QoI_L2Tracking_NavierStokes<RealT>(pde->getFE()));
-    qoi_vec[1] = Teuchos::rcp(new QoI_L2Penalty_NavierStokes<RealT>(pde->getFE()));
-    Teuchos::RCP<StdObjective_NavierStokes<RealT> > std_obj
-      = Teuchos::rcp(new StdObjective_NavierStokes<RealT>(*parlist));
-    Teuchos::RCP<PDE_Objective<RealT> > obj
-      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,con->getAssembler()));
+    // Get the assembler.
+    Teuchos::RCP<Assembler<RealT> > assembler
+      = (Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con))->getAssembler();
+    con->setSolveParameters(*parlist);
+    assembler->printMeshData(*outStream);
 
     // Create state vector and set to zeroes
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = con->getAssembler()->createStateVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
     u_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,con->getAssembler()));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
+    Teuchos::RCP<Tpetra::MultiVector<> > p_rcp = assembler->createStateVector();
+    p_rcp->randomize();
+    Teuchos::RCP<ROL::Vector<RealT> > pp
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
     // Create control vector and set to ones
-    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = con->getAssembler()->createControlVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = assembler->createControlVector();
     z_rcp->randomize();  //putScalar(1.0);
     Teuchos::RCP<ROL::Vector<RealT> > zp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,con->getAssembler()));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
     // Create residual vector and set to zeros
-    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = con->getAssembler()->createResidualVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = assembler->createResidualVector();
     r_rcp->putScalar(0.0);
     Teuchos::RCP<ROL::Vector<RealT> > rp
-      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,con->getAssembler()));
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
     // Create state direction vector and set to random
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = con->getAssembler()->createStateVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = assembler->createStateVector();
     du_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dup
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,con->getAssembler()));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
     // Create control direction vector and set to random
-    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = con->getAssembler()->createControlVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = assembler->createControlVector();
     dz_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > dzp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,con->getAssembler()));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
+    // Initialize quadratic objective function.
+    std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
+    qoi_vec[0] = Teuchos::rcp(new QoI_L2Tracking_NavierStokes<RealT>(pde->getVelocityFE(),
+                                                                     pde->getPressureFE(),
+                                                                     pde->getFieldHelper()));
+    qoi_vec[1] = Teuchos::rcp(new QoI_L2Penalty_NavierStokes<RealT>(pde->getVelocityFE(),
+                                                                    pde->getPressureFE(),
+                                                                    pde->getVelocityBdryFE(),
+                                                                    pde->getBdryCellLocIds(),
+                                                                    pde->getFieldHelper()));
+    Teuchos::RCP<StdObjective_NavierStokes<RealT> > std_obj
+      = Teuchos::rcp(new StdObjective_NavierStokes<RealT>(*parlist));
+    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
+      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
+    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > robj
+      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, pp, true, false));
+
+    up->zero();
+    zp->zero();
+    //z_rcp->putScalar(0.1);
+
     // Run derivative checks
-    obj->checkGradient(x,d,true,*outStream);
-    obj->checkHessVec(x,d,true,*outStream);
-    con->checkApplyJacobian(x,d,*up,true,*outStream);
-    con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
-    con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
-    con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
-    con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
+    bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
+    if ( checkDeriv ) {
+      obj->checkGradient(x,d,true,*outStream);
+      obj->checkHessVec(x,d,true,*outStream);
+      con->checkApplyJacobian(x,d,*up,true,*outStream);
+      con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
+      con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
+      con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
+      con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
+      robj->checkGradient(*zp,*dzp,true,*outStream);
+      robj->checkHessVec(*zp,*dzp,true,*outStream);
+    }
+    bool useCompositeStep = parlist->sublist("Problem").get("Full space",false);
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
+    if ( useCompositeStep ) {
+      algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
+      algo->run(x,*rp,*obj,*con,true,*outStream);
+    }
+    else {
+      algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+      algo->run(*zp,*robj,true,*outStream);
+    }
 
-    ROL::Algorithm<RealT> algo("Composite Step",*parlist,false);
-    algo.run(x,*rp,*obj,*con,true,*outStream);
+//z_rcp->putScalar(0.1);
+    RealT tol(1.e-8);
+    Teuchos::Array<RealT> res(1,0);
+    con->solve(*rp,*up,*zp,tol);
+    assembler->outputTpetraVector(u_rcp,"state.txt");
+    assembler->outputTpetraVector(z_rcp,"control.txt");
+    con->value(*rp,*up,*zp,tol);
+    r_rcp->norm2(res.view(0,1));
+    *outStream << "Residual Norm: " << res[0] << std::endl;
+    errorFlag += (res[0] > 1.e-6 ? 1 : 0);
+    assembler->outputTpetraData();
 
+return 0;
+/*
     RealT tol(1.e-8);
     con->solve(*rp,*up,*zp,tol);
-    con->getAssembler()->outputTpetraVector(u_rcp,"state.txt");
-    con->getAssembler()->outputTpetraVector(z_rcp,"control.txt");
-    con->getAssembler()->outputTpetraVector(u_rcp,"stateFS.txt");
-    con->getAssembler()->outputTpetraVector(z_rcp,"controlFS.txt");
+    assembler->outputTpetraVector(u_rcp,"state.txt");
+    assembler->outputTpetraVector(z_rcp,"control.txt");
+    assembler->outputTpetraVector(u_rcp,"stateFS.txt");
+    assembler->outputTpetraVector(z_rcp,"controlFS.txt");
 
     Teuchos::Array<RealT> res(1,0);
     con->value(*rp,*up,*zp,tol);
     r_rcp->norm2(res.view(0,1));
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
+*/
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

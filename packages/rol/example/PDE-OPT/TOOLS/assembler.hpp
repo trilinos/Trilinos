@@ -408,7 +408,7 @@ private:
       xshared->doImport(*x,importer,Tpetra::REPLACE);
       // Populate xcoeff
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-      int lfs = dofMgr_->getLocalFieldSize(0);
+      int lfs = dofMgr_->getLocalFieldSize();
       xcoeff = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs));
       Teuchos::ArrayRCP<const Real> xdata = xshared->get1dView();
       for (int i=0; i<numCells_; ++i) {
@@ -432,7 +432,7 @@ private:
       xshared->doImport(*x,importer,Tpetra::REPLACE);
       // Populate xcoeff
       Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-      int lfs = dofMgr_->getLocalFieldSize(0);
+      int lfs = dofMgr_->getLocalFieldSize();
       xcoeff = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs));
       Teuchos::ArrayRCP<const Real> xdata = xshared->get1dView();
       for (int i=0; i<numCells_; ++i) {
@@ -577,6 +577,7 @@ public:
 
   void setCellNodes(PDE<Real> &pde) const {
     // Set PDE cell nodes
+    pde.setFieldPattern(dofMgr_->getFieldPattern());
     pde.setCellNodes(volCellNodes_, bdryCellNodes_, bdryCellLocIds_);
   }
 
@@ -1249,6 +1250,7 @@ public:
       }
       solver_->setX(u);
       solver_->setB(r);
+outputTpetraVector(r, "rhs");
       solver_->solve();
     }
   }
@@ -2247,9 +2249,30 @@ public:
 
   void outputTpetraData() const {
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > matWriter;
-    matWriter.writeSparseFile("jacobian1", pde_matJ1_);
-    matWriter.writeSparseFile("jacobian2", pde_matJ2_);
-    matWriter.writeDenseFile("residual", pde_vecR_);
+    if (pde_matJ1_ != Teuchos::null) {
+      matWriter.writeSparseFile("jacobian1", pde_matJ1_);
+    }
+    else {
+      std::ofstream emptyfile;
+      emptyfile.open("jacobian1");
+      emptyfile.close();
+    }
+    if (pde_matJ2_ != Teuchos::null) {
+      matWriter.writeSparseFile("jacobian2", pde_matJ2_);
+    }
+    else {
+      std::ofstream emptyfile;
+      emptyfile.open("jacobian2");
+      emptyfile.close();
+    }
+    if (pde_vecR_ != Teuchos::null) {
+      matWriter.writeDenseFile("residual", pde_vecR_);
+    }
+    else {
+      std::ofstream emptyfile;
+      emptyfile.open("residual");
+      emptyfile.close();
+    }
   }
 
   void outputTpetraVector(const Teuchos::RCP<const Tpetra::MultiVector<> > &vec,

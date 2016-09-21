@@ -183,6 +183,9 @@ public:
                             const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                             const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) = 0;
 
+  virtual void setFieldPattern(const std::vector<std::vector<int> > & fieldPattern) {
+  }
+
 private:
   std::vector<Real> param_;
 

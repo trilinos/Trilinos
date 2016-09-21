@@ -59,141 +59,303 @@
 
 #include "Teuchos_RCP.hpp"
 
+template<class Real>
+class FieldHelper {
+  private:
+  const int numFields_, numDofs_;
+  const std::vector<int> numFieldDofs_;
+  const std::vector<std::vector<int> > fieldPattern_;
+
+  public:
+  FieldHelper(const int numFields, const int numDofs,
+              const std::vector<int> &numFieldDofs,
+              const std::vector<std::vector<int> > &fieldPattern)
+    : numFields_(numFields), numDofs_(numDofs),
+      numFieldDofs_(numFieldDofs), fieldPattern_(fieldPattern) {}
+
+  void splitFieldCoeff(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & U,
+                       const Teuchos::RCP<const Intrepid::FieldContainer<Real> >   & u_coeff) const {
+    U.resize(numFields_);
+    int  c = u_coeff->dimension(0);
+    for (int i=0; i<numFields_; ++i) {
+      U[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,numFieldDofs_[i]));
+      for (int j=0; j<c; ++j) {
+        for (int k=0; k<numFieldDofs_[i]; ++k) {
+          //U[i](j,k) = u_coeff(j,offset[i]+k);
+          (*U[i])(j,k) = (*u_coeff)(j,fieldPattern_[i][k]);
+        }
+      }
+    }
+  }
+
+  void combineFieldCoeff(Teuchos::RCP<Intrepid::FieldContainer<Real> >   & res,
+                         const std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & R) const {
+    int c = R[0]->dimension(0);  // number of cells
+    res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, numDofs_));        
+    for (int i=0; i<numFields_; ++i) {
+      for (int j=0; j<c; ++j) {
+        for (int k=0; k<numFieldDofs_[i]; ++k) {
+          (*res)(j,fieldPattern_[i][k]) = (*R[i])(j,k);
+        }
+      }
+    }
+  }
+
+  void combineFieldCoeff(Teuchos::RCP<Intrepid::FieldContainer<Real> >   & jac,
+                         const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > & J) const {
+    int c = J[0][0]->dimension(0);  // number of cells
+    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, numDofs_, numDofs_));        
+    for (int i=0; i<numFields_; ++i) {
+      for (int j=0; j<numFields_; ++j) {
+        for (int k=0; k<c; ++k) {
+          for (int l=0; l<numFieldDofs_[i]; ++l) {
+            for (int m=0; m<numFieldDofs_[j]; ++m) {
+              (*jac)(k,fieldPattern_[i][l],fieldPattern_[j][m]) = (*J[i][j])(k,l,m);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  int numFields(void) const {
+    return numFields_;
+  }
+
+};
+
 template <class Real>
 class PDE_NavierStokes : public PDE<Real> {
 private:
   // Finite element basis information
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
+  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrVel_;
+  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtrPrs_;
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
   // Cell cubature information
   Teuchos::RCP<Intrepid::Cubature<Real> > cellCub_;
+  Teuchos::RCP<Intrepid::Cubature<Real> > bdryCub_;
   // Cell node information
   Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
   std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   // Finite element definition
-  Teuchos::RCP<FE<Real> > fe_vol_;
+  Teuchos::RCP<FE<Real> > feVel_;
+  Teuchos::RCP<FE<Real> > fePrs_;
+  std::vector<Teuchos::RCP<FE<Real> > > feVelBdry_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
   std::vector<std::vector<int> > fidx_;
   // Coordinates of degrees freedom on boundary cells.
   // Indexing:  [sideset number][local side id](cell number, value at dof)
   std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellDofValues_;
+  // Field pattern, offsets, etc.
+  std::vector<std::vector<int> > fieldPattern_;  // local Field/DOF pattern; set from DOF manager 
+  int numFields_;                                // number of fields (equations in the PDE)
+  int numDofs_;                                  // total number of degrees of freedom for all (local) fields
+  std::vector<int> offset_;                      // for each field, a counting offset
+  std::vector<int> numFieldDofs_;                // for each field, number of degrees of freedom
+  
+  // Problem parameters.
+  Real viscosity_;
 
-  Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId) const {
-    return 0;
+  Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
+
+  Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId, int dir) const {
+    Real val = 0;
+    if ((sideset==4) && (dir==0)) {
+      val = 8*(coords[1]-0.5)*(1-coords[1]);
+    }
+    return val;
+  }
+
+  Real viscosityFunc(const std::vector<Real> & coords) const {
+    return viscosity_;
+  }
+
+  void computeViscosity(Teuchos::RCP<Intrepid::FieldContainer<Real> > &nu) const {
+    int c = feVel_->gradN()->dimension(0);
+    int p = feVel_->gradN()->dimension(2);
+    int d = feVel_->gradN()->dimension(3);
+    std::vector<Real> pt(d);
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        for ( int k = 0; k < d; ++k) {
+          pt[k] = (*feVel_->cubPts())(i,j,k);
+        }
+        // Compute spatially dependent viscosity
+        (*nu)(i,j) = viscosityFunc(pt);
+      }
+    }
   }
 
 public:
   PDE_NavierStokes(Teuchos::ParameterList &parlist) {
     // Finite element fields.
-    int basisOrder = parlist.sublist("PDE Navier-Stokes").get("Basis Order",1);
-    if (basisOrder == 1) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
-    }
-    else if (basisOrder == 2) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
-    }
-    basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
+    basisPtrVel_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+    basisPtrPrs_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
+    basisPtrs_.clear();
+    basisPtrs_.push_back(basisPtrVel_);  // Velocity X
+    basisPtrs_.push_back(basisPtrVel_);  // Velocity Y
+    basisPtrs_.push_back(basisPtrPrs_);  // Pressure
     // Quadrature rules.
-    shards::CellTopology cellType = basisPtr_->getBaseCellTopology();        // get the cell type from any basis
-    Intrepid::DefaultCubatureFactory<Real> cubFactory;                       // create cubature factory
-    int cubDegree = parlist.sublist("PDE Navier-Stokes").get("Cubature Degree",2); // set cubature degree, e.g., 2
-    cellCub_ = cubFactory.create(cellType, cubDegree);                       // create default cubature
+    shards::CellTopology cellType = basisPtrs_[0]->getBaseCellTopology();        // get the cell type from any basis
+    Intrepid::DefaultCubatureFactory<Real> cubFactory;                           // create cubature factory
+    int cubDegree = parlist.sublist("Problem").get("Cubature Degree", 4);        // set cubature degree, e.g., 4
+    cellCub_ = cubFactory.create(cellType, cubDegree);                           // create default cubature
+
+    int d = cellType.getDimension();
+    shards::CellTopology bdryCellType = cellType.getCellTopologyData(d-1, 0);
+    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",4); // set cubature degree, e.g., 4
+    bdryCub_ = cubFactory.create(bdryCellType, bdryCubDegree);
+
+    // Other problem parameters.
+    viscosity_ = parlist.sublist("Problem").get("Viscosity", 5e-3);
+
+    numDofs_ = 0;
+    numFields_ = basisPtrs_.size();
+    offset_.resize(numFields_);
+    numFieldDofs_.resize(numFields_);
+    for (int i=0; i<numFields_; ++i) {
+      if (i==0) {
+        offset_[i]  = 0;
+      }
+      else {
+        offset_[i]  = offset_[i-1] + basisPtrs_[i-1]->getCardinality();
+      }
+      numFieldDofs_[i] = basisPtrs_[i]->getCardinality();
+      numDofs_ += numFieldDofs_[i];
+    }
   }
 
   void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
                 const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                 const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                 const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    // GET DIMENSIONS
-    int c = u_coeff->dimension(0);
-    int p = cellCub_->getNumPoints();
-    int f = basisPtr_->getCardinality();
-    int d = cellCub_->getDimension();
-    // INITIALIZE RESIDUAL
-    res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-    // COMPUTE STIFFNESS TERM
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
+    // Retrieve dimensions.
+    int c  = u_coeff->dimension(0);
+    int p  = cellCub_->getNumPoints();
+    int fv = basisPtrVel_->getCardinality();
+    int fp = basisPtrPrs_->getCardinality();
+    int d  = cellCub_->getDimension();
+ 
+    // Initialize residuals.
+    Intrepid::FieldContainer<Real> velX_res(c, fv);
+    Intrepid::FieldContainer<Real> velY_res(c, fv);
+    Intrepid::FieldContainer<Real> pres_res(c, fp);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > R;
+    R.resize(numFields_);
+    R[0] = Teuchos::rcpFromRef(velX_res);
+    R[1] = Teuchos::rcpFromRef(velY_res);
+    R[2] = Teuchos::rcpFromRef(pres_res);
+
+    // Split u_coeff into components.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U;
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > Z;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    fieldHelper_->splitFieldCoeff(Z, z_coeff);
+
+    // Evaluate/interpolate finite element fields on cells.
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > nu =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > nuGradVelX_eval =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    fe_vol_->evaluateGradient(gradU_eval, u_coeff);
-    Intrepid::FunctionSpaceTools::integrate<Real>(*res, *gradU_eval, *(fe_vol_->gradNdetJ()), Intrepid::COMP_CPP, false);
-    // ADD CONTROL TERM TO RESIDUAL
-    if ( z_coeff != Teuchos::null ) {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
-        Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      fe_vol_->evaluateValue(valZ_eval, z_coeff);
-      Intrepid::FunctionSpaceTools::integrate<Real>(*res, *valZ_eval, *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, true);
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > nuGradVelY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVel_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valPres_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradVelX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradVelY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > divVel_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelDotgradVelX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelDotgradVelY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    feVel_->evaluateValue(valVelX_eval, U[0]);
+    feVel_->evaluateValue(valVelY_eval, U[1]);
+    fePrs_->evaluateValue(valPres_eval, U[2]);
+    feVel_->evaluateGradient(gradVelX_eval, U[0]);
+    feVel_->evaluateGradient(gradVelY_eval, U[1]);
+    computeViscosity(nu);
+
+    // Assemble the velocity vector and its divergence.
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        (*valVel_eval)(i,j,0) = (*valVelX_eval)(i,j);
+        (*valVel_eval)(i,j,1) = (*valVelY_eval)(i,j);
+        (*divVel_eval)(i,j)   = (*gradVelX_eval)(i,j,0) + (*gradVelY_eval)(i,j,1);
+      }
     }
-    // APPLY DIRICHLET CONDITIONS
+    // Negative pressure
+    Intrepid::RealSpaceTools<Real>::scale(*valPres_eval,static_cast<Real>(-1));
+
+    // Multiply velocity gradients with viscosity.
+    Intrepid::FunctionSpaceTools::tensorMultiplyDataData<Real>(*nuGradVelX_eval,
+                                                               *nu,
+                                                               *gradVelX_eval);
+    Intrepid::FunctionSpaceTools::tensorMultiplyDataData<Real>(*nuGradVelY_eval,
+                                                               *nu,
+                                                               *gradVelY_eval);
+
+    // Compute nonlinear terms in the Navier-Stokes equations.
+    Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*valVelDotgradVelX_eval, *valVel_eval, *gradVelX_eval);
+    Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*valVelDotgradVelY_eval, *valVel_eval, *gradVelY_eval);
+
+    /*** Evaluate weak form of the residual. ***/
+    // X component of velocity equation.
+    Intrepid::FunctionSpaceTools::integrate<Real>(velX_res,
+                                                  *nuGradVelX_eval,         // nu gradUX
+                                                  *(feVel_->gradNdetJ()),   // gradPhi
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velX_res,
+                                                  *valVelDotgradVelX_eval,  // (U . gradUX)
+                                                  *(feVel_->NdetJ()),       // Phi
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velX_res,
+                                                  *valPres_eval,            // p
+                                                  *(feVel_->DNDdetJ(0)),    // dPhi/dx
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    // Y component of velocity equation.
+    Intrepid::FunctionSpaceTools::integrate<Real>(velY_res,
+                                                  *nuGradVelY_eval,         // nu gradUY
+                                                  *(feVel_->gradNdetJ()),   // gradPhi
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velY_res,
+                                                  *valVelDotgradVelY_eval,  // (U . gradUY)
+                                                  *(feVel_->NdetJ()),       // Phi
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velY_res,
+                                                  *valPres_eval,            // p
+                                                  *(feVel_->DNDdetJ(1)),    // dPhi/dy
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    // Pressure equation.
+    Intrepid::FunctionSpaceTools::integrate<Real>(pres_res,
+                                                  *divVel_eval,             // divU
+                                                  *(fePrs_->NdetJ()),       // Phi
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::RealSpaceTools<Real>::scale(pres_res,static_cast<Real>(-1));
+
+    // APPLY DIRICHLET CONTROL
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        int numLocalSideIds = bdryCellLocIds_[i].size();
-        for (int j = 0; j < numLocalSideIds; ++j) {
-          int numCellsSide = bdryCellLocIds_[i][j].size();
-          int numBdryDofs = fidx_[j].size();
-          for (int k = 0; k < numCellsSide; ++k) {
-            int cidx = bdryCellLocIds_[i][j][k];
-            for (int l = 0; l < numBdryDofs; ++l) {
-              //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-              (*res)(cidx,fidx_[j][l]) = (*u_coeff)(cidx,fidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fidx_[j][l]);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    // GET DIMENSIONS
-    int c = u_coeff->dimension(0);
-    int f = basisPtr_->getCardinality();
-    // INITILAIZE JACOBIAN
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-    // COMPUTE STIFFNESS TERM
-    Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *(fe_vol_->gradN()), *(fe_vol_->gradNdetJ()), Intrepid::COMP_CPP, false);
-    // APPLY DIRICHLET CONDITIONS
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        int numLocalSideIds = bdryCellLocIds_[i].size();
-        for (int j = 0; j < numLocalSideIds; ++j) {
-          int numCellsSide = bdryCellLocIds_[i][j].size();
-          int numBdryDofs = fidx_[j].size();
-          for (int k = 0; k < numCellsSide; ++k) {
-            int cidx = bdryCellLocIds_[i][j][k];
-            for (int l = 0; l < numBdryDofs; ++l) {
-              //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-              for (int m = 0; m < f; ++m) {
-                (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
-              }
-              (*jac)(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    if ( z_coeff != Teuchos::null ) {
-      // GET DIMENSIONS
-      int c = u_coeff->dimension(0);
-      int f = basisPtr_->getCardinality();
-      // INITIALIZE JACOBIAN
-      jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
-      // ADD CONTROL TERM
-      Intrepid::FunctionSpaceTools::integrate<Real>(*jac, *(fe_vol_->N()), *(fe_vol_->NdetJ()), Intrepid::COMP_CPP, false);
-      // APPLY DIRICHLET CONDITIONS
-      int numSideSets = bdryCellLocIds_.size();
-      if (numSideSets > 0) {
-        for (int i = 0; i < numSideSets; ++i) {
+        // Changed by DR.
+        //if ((i==6) || (i==7)) {
+        if (i==6) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -202,8 +364,39 @@ public:
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                for (int m = 0; m < f; ++m) {
-                  (*jac)(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+                //for (int m=0; m < d; ++m) {
+                //  (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*Z[m])(cidx,fidx_[j][l]);
+                //}
+                (*R[0])(cidx,fidx_[j][l]) = (*U[0])(cidx,fidx_[j][l]) - (*Z[0])(cidx,fidx_[j][l]);
+                (*R[1])(cidx,fidx_[j][l]) = (*U[1])(cidx,fidx_[j][l]);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // APPLY DIRICHLET CONDITIONS
+    if (numSideSets > 0) {
+      for (int i = 0; i < numSideSets; ++i) {
+        // Changed by DR.
+        //if ((i==0) || (i==3) || (i==4) || (i==5)) {
+        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==7) || (i==8)) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fidx_[j].size();
+            // Added by DR.
+            if (i==7) {
+              numBdryDofs = 1;
+            } //
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fidx_[j][l],0);
+                //std::cout << "\n  i=" << i << "   cidx=" << cidx << "   j=" << j << "  l=" << l << "  " << fidx_[j][l] << " " << (*bdryCellDofValues_[i][j])(k,fidx_[j][l],1);
+                for (int m=0; m < d; ++m) {
+                  (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*bdryCellDofValues_[i][j])(k,fidx_[j][l],m);
                 }
               }
             }
@@ -211,9 +404,321 @@ public:
         }
       }
     }
-    else {
-      throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_2): Jacobian is zero.");
+
+    // Combine the residuals.
+    fieldHelper_->combineFieldCoeff(res, R);
+  }
+
+  void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // Retrieve dimensions.
+    int c  = u_coeff->dimension(0);
+    int p  = cellCub_->getNumPoints();
+    int fv = basisPtrVel_->getCardinality();
+    int fp = basisPtrPrs_->getCardinality();
+    int d  = cellCub_->getDimension();
+ 
+    // Initialize residuals.
+    Intrepid::FieldContainer<Real> velXvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> velYvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
+    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J;
+    J.resize(numFields_);
+    J[0].resize(numFields_);
+    J[1].resize(numFields_);
+    J[2].resize(numFields_);
+    J[0][0] = Teuchos::rcpFromRef(velXvelX_jac); J[0][1] = Teuchos::rcpFromRef(velXvelY_jac); J[0][2] = Teuchos::rcpFromRef(velXpres_jac);  
+    J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);  
+    J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);  
+
+    // Split u_coeff into components.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+
+    // Evaluate/interpolate finite element fields on cells.
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > nu =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > nuGradPhiX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > nuGradPhiY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVel_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradVelX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > ddxVelX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > ddyVelX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > ddxVelXPhiX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > ddyVelXPhiY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradVelY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > ddxVelY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > ddyVelY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > ddyVelYPhiY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > ddxVelYPhiX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelDotgradPhiX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelDotgradPhiY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    feVel_->evaluateValue(valVelX_eval, U[0]);
+    feVel_->evaluateValue(valVelY_eval, U[1]);
+    feVel_->evaluateGradient(gradVelX_eval, U[0]);
+    feVel_->evaluateGradient(gradVelY_eval, U[1]);
+    computeViscosity(nu);
+
+    // Assemble the velocity vector and its divergence.
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        (*valVel_eval)(i,j,0) = (*valVelX_eval)(i,j);
+        (*valVel_eval)(i,j,1) = (*valVelY_eval)(i,j);
+        (*ddxVelX_eval)(i,j)  = (*gradVelX_eval)(i,j,0);
+        (*ddyVelX_eval)(i,j)  = (*gradVelX_eval)(i,j,1);
+        (*ddxVelY_eval)(i,j)  = (*gradVelY_eval)(i,j,0);
+        (*ddyVelY_eval)(i,j)  = (*gradVelY_eval)(i,j,1);
+      }
     }
+
+    // Multiply velocity gradients with viscosity.
+    Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*nuGradPhiX_eval,
+                                                                *nu,
+                                                                *(feVel_->gradN()));
+    Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*nuGradPhiY_eval,
+                                                                *nu,
+                                                                *(feVel_->gradN()));
+
+    // Compute nonlinear terms in the Navier-Stokes equations.
+    Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(*valVelDotgradPhiX_eval, *valVel_eval, *(feVel_->gradN()));
+    Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(*valVelDotgradPhiY_eval, *valVel_eval, *(feVel_->gradN()));
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*ddxVelXPhiX_eval, *ddxVelX_eval, *(feVel_->N()));
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*ddyVelXPhiY_eval, *ddyVelX_eval, *(feVel_->N()));
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*ddxVelYPhiX_eval, *ddxVelY_eval, *(feVel_->N()));
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*ddyVelYPhiY_eval, *ddyVelY_eval, *(feVel_->N()));
+
+    // Negative pressure basis.
+    Intrepid::FieldContainer<Real> negPrsN(*(fePrs_->N()));
+    Intrepid::RealSpaceTools<Real>::scale(negPrsN,static_cast<Real>(-1));
+
+    /*** Evaluate weak form of the Jacobian. ***/
+    // X component of velocity equation.
+    Intrepid::FunctionSpaceTools::integrate<Real>(velXvelX_jac,
+                                                  *nuGradPhiX_eval,         // nu gradPsi
+                                                  *(feVel_->gradNdetJ()),   // gradPhi
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velXvelX_jac,
+                                                  *(feVel_->NdetJ()),       // Phi
+                                                  *valVelDotgradPhiX_eval,  // (U . gradPhiX)
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velXvelX_jac,
+                                                  *(feVel_->NdetJ()),       // Phi
+                                                  *ddxVelXPhiX_eval,        // (Phi . gradU)
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velXvelY_jac,
+                                                  *(feVel_->NdetJ()),       // Phi
+                                                  *ddyVelXPhiY_eval,        // (Phi . gradU)
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velXpres_jac,
+                                                  *(feVel_->DNDdetJ(0)),    // dPhi/dx
+                                                  negPrsN,                  // -Phi
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    // Y component of velocity equation.
+    Intrepid::FunctionSpaceTools::integrate<Real>(velYvelY_jac,
+                                                  *nuGradPhiY_eval,         // nu gradPsi
+                                                  *(feVel_->gradNdetJ()),   // gradPhi
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velYvelY_jac,
+                                                  *(feVel_->NdetJ()),       // Phi
+                                                  *valVelDotgradPhiY_eval,  // (U . gradPhiX)
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velYvelY_jac,
+                                                  *(feVel_->NdetJ()),       // Phi
+                                                  *ddyVelYPhiY_eval,        // (Phi . gradU)
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velYvelX_jac,
+                                                  *(feVel_->NdetJ()),       // Phi
+                                                  *ddxVelYPhiX_eval,        // (Phi . gradU)
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velYpres_jac,
+                                                  *(feVel_->DNDdetJ(1)),    // dPhi/dx
+                                                  negPrsN,                  // -Phi
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    // Pressure equation.
+    Intrepid::FunctionSpaceTools::integrate<Real>(presvelX_jac,
+                                                  *(fePrs_->NdetJ()),       // Phi
+                                                  *(feVel_->DND(0)),        // dPhi/dx
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(presvelY_jac,
+                                                  *(fePrs_->NdetJ()),       // Phi
+                                                  *(feVel_->DND(1)),        // dPhi/dx
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::RealSpaceTools<Real>::scale(presvelX_jac,static_cast<Real>(-1));
+    Intrepid::RealSpaceTools<Real>::scale(presvelY_jac,static_cast<Real>(-1));
+
+    // APPLY DIRICHLET CONDITIONS
+    int numSideSets = bdryCellLocIds_.size();
+    if (numSideSets > 0) {
+      for (int i = 0; i < numSideSets; ++i) {
+        // Changed by DR.
+        //if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6)) {
+        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6) || (i==7) || (i==8)) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fidx_[j].size();
+            // Added by DR.
+            if (i==7) {
+              numBdryDofs = 1;
+            } //
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                for (int m=0; m < fv; ++m) {
+                  for (int n=0; n < d; ++n) {
+                    for (int p=0; p < d; ++p) {
+                      (*J[n][p])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+                    }
+                    (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(1);
+                  }
+                }
+                for (int m=0; m < fp; ++m) {
+                  for (int n=0; n < d; ++n) {
+                    (*J[n][2])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Combine the jacobians.
+    fieldHelper_->combineFieldCoeff(jac, J);
+
+  }
+
+
+  void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
+                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    // Retrieve dimensions.
+    int c  = u_coeff->dimension(0);
+    int fv = basisPtrVel_->getCardinality();
+    int fp = basisPtrPrs_->getCardinality();
+    int d  = cellCub_->getDimension();
+
+    // Initialize residuals.
+    Intrepid::FieldContainer<Real> velXvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> velYvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
+    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J;
+    J.resize(numFields_);
+    J[0].resize(numFields_);
+    J[1].resize(numFields_);
+    J[2].resize(numFields_);
+    J[0][0] = Teuchos::rcpFromRef(velXvelX_jac); J[0][1] = Teuchos::rcpFromRef(velXvelY_jac); J[0][2] = Teuchos::rcpFromRef(velXpres_jac);
+    J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);
+    J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);
+
+    // APPLY DIRICHLET CONTROL
+    int numSideSets = bdryCellLocIds_.size();
+    if (numSideSets > 0) {
+      for (int i = 0; i < numSideSets; ++i) {
+        // Changed by DR.
+        //if ((i==6) || (i==7)) {
+        if (i==6) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+                for (int m=0; m < fv; ++m) {
+                  //for (int n=0; n < d; ++n) {
+                  //  (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+                  //}
+                  (*J[0][0])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // APPLY DIRICHLET CONDITIONS
+    if (numSideSets > 0) {
+      for (int i = 0; i < numSideSets; ++i) {
+        // Changed by DR.
+        //if ((i==0) || (i==3) || (i==4) || (i==5)) {
+        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==7) || (i==8)) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fidx_[j].size();
+            // Added by DR.
+            if (i==7) {
+              numBdryDofs = 1;
+            } //
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+                for (int m=0; m < fv; ++m) {
+                  for (int n=0; n < d; ++n) {
+                    (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(0);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Combine the jacobians.
+    fieldHelper_->combineFieldCoeff(jac, J);
+
   }
 
   void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -221,7 +726,129 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_11): Hessian is zero.");
+//    throw Exception::NotImplemented("");
+    // Retrieve dimensions.
+    int c  = u_coeff->dimension(0);
+    int p  = cellCub_->getNumPoints();
+    int fv = basisPtrVel_->getCardinality();
+    int fp = basisPtrPrs_->getCardinality();
+    int d  = cellCub_->getDimension();
+ 
+    // Initialize residuals.
+    Intrepid::FieldContainer<Real> velXvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> velYvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
+    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J;
+    J.resize(numFields_);
+    J[0].resize(numFields_);
+    J[1].resize(numFields_);
+    J[2].resize(numFields_);
+    J[0][0] = Teuchos::rcpFromRef(velXvelX_jac); J[0][1] = Teuchos::rcpFromRef(velXvelY_jac); J[0][2] = Teuchos::rcpFromRef(velXpres_jac);  
+    J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);  
+    J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);  
+
+    // Split u_coeff into components.
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > L;
+    fieldHelper_->splitFieldCoeff(L, l_coeff);
+
+    // Apply Dirichlet conditions
+    int numSideSets = bdryCellLocIds_.size();
+    if (numSideSets > 0) {
+      for (int i = 0; i < numSideSets; ++i) {
+        // Changed by DR.
+        //if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6)) {
+        if ((i==0) || (i==3) || (i==4) || (i==5) || (i==6) || (i==7)) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fidx_[j].size();
+            // Added by DR.
+            if (i==7) {
+              numBdryDofs = 1;
+            } //
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
+                for (int m=0; m < d; ++m) {
+                  (*L[m])(cidx,fidx_[j][l]) = static_cast<Real>(0);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Evaluate/interpolate finite element fields on cells.
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelX_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelY_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelXPhi_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valVelYPhi_eval =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, fv, p));
+    feVel_->evaluateValue(valVelX_eval, L[0]);
+    feVel_->evaluateValue(valVelY_eval, L[1]);
+
+    // Compute nonlinear terms in the Navier-Stokes equations.
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*valVelXPhi_eval, *valVelX_eval, *(feVel_->N()));
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*valVelYPhi_eval, *valVelY_eval, *(feVel_->N()));
+
+    /*** Evaluate weak form of the Hessian. ***/
+    // X component of velocity equation.
+    Intrepid::FunctionSpaceTools::integrate<Real>(velXvelX_jac,
+                                                  *valVelXPhi_eval,        // L Phi
+                                                  *(feVel_->DNDdetJ(0)),   // dPhi/dx
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velXvelX_jac,
+                                                  *(feVel_->DNDdetJ(0)),   // dPhi/dx
+                                                  *valVelXPhi_eval,        // L Phi
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velXvelY_jac,
+                                                  *(feVel_->DNDdetJ(1)),   // dPhi/dy
+                                                  *valVelXPhi_eval,        // L Phi
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velXvelY_jac,
+                                                  *valVelYPhi_eval,        // L Phi
+                                                  *(feVel_->DNDdetJ(0)),   // dPhi/dx
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    // Y component of velocity equation.
+    Intrepid::FunctionSpaceTools::integrate<Real>(velYvelY_jac,
+                                                  *valVelYPhi_eval,        // L Phi
+                                                  *(feVel_->DNDdetJ(1)),   // dPhi/dy
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velYvelY_jac,
+                                                  *(feVel_->DNDdetJ(1)),   // dPhi/dy
+                                                  *valVelYPhi_eval,        // L Phi
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velYvelX_jac,
+                                                  *(feVel_->DNDdetJ(0)),   // dPhi/dx
+                                                  *valVelYPhi_eval,        // L Phi
+                                                  Intrepid::COMP_CPP,
+                                                  false);
+    Intrepid::FunctionSpaceTools::integrate<Real>(velYvelX_jac,
+                                                  *valVelXPhi_eval,        // L Phi
+                                                  *(feVel_->DNDdetJ(1)),   // dPhi/dy
+                                                  Intrepid::COMP_CPP,
+                                                  true);
+
+    // Combine the Hessians.
+    fieldHelper_->combineFieldCoeff(hess, J);
+
   }
 
   void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -249,12 +876,73 @@ public:
   }
 
   void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
-    riesz = fe_vol_->stiffMat();
-    Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
+    // Retrieve dimensions.
+    int c  = feVel_->N()->dimension(0);
+    int fv = basisPtrVel_->getCardinality();
+    int fp = basisPtrPrs_->getCardinality();
+ 
+    // Initialize residuals.
+    Intrepid::FieldContainer<Real> velXvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> velYvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
+    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J;
+    J.resize(numFields_);
+    J[0].resize(numFields_);
+    J[1].resize(numFields_);
+    J[2].resize(numFields_);
+    J[0][0] = Teuchos::rcpFromRef(velXvelX_jac); J[0][1] = Teuchos::rcpFromRef(velXvelY_jac); J[0][2] = Teuchos::rcpFromRef(velXpres_jac);  
+    J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);  
+    J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);  
+
+    J[0][0] = feVel_->stiffMat();
+    Intrepid::RealSpaceTools<Real>::add(*(J[0][0]),*(feVel_->massMat()));
+    J[1][1] = feVel_->stiffMat();
+    Intrepid::RealSpaceTools<Real>::add(*(J[1][1]),*(feVel_->massMat()));
+    J[2][2] = fePrs_->massMat();
+
+    // Combine the jacobians.
+    fieldHelper_->combineFieldCoeff(riesz, J);
   }
 
   void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
-    riesz = fe_vol_->massMat();
+    // Retrieve dimensions.
+    int c  = feVel_->N()->dimension(0);
+    int fv = basisPtrVel_->getCardinality();
+    int fp = basisPtrPrs_->getCardinality();
+ 
+    // Initialize residuals.
+    Intrepid::FieldContainer<Real> velXvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velXpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> velYvelX_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYvelY_jac(c, fv, fv);
+    Intrepid::FieldContainer<Real> velYpres_jac(c, fv, fp);
+    Intrepid::FieldContainer<Real> presvelX_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> presvelY_jac(c, fp, fv);
+    Intrepid::FieldContainer<Real> prespres_jac(c, fp, fp);
+    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J;
+    J.resize(numFields_);
+    J[0].resize(numFields_);
+    J[1].resize(numFields_);
+    J[2].resize(numFields_);
+    J[0][0] = Teuchos::rcpFromRef(velXvelX_jac); J[0][1] = Teuchos::rcpFromRef(velXvelY_jac); J[0][2] = Teuchos::rcpFromRef(velXpres_jac);  
+    J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);  
+    J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);  
+
+    J[0][0] = feVel_->stiffMat();
+    Intrepid::RealSpaceTools<Real>::add(*(J[0][0]),*(feVel_->massMat()));
+    J[1][1] = feVel_->stiffMat();
+    Intrepid::RealSpaceTools<Real>::add(*(J[1][1]),*(feVel_->massMat()));
+    J[2][2] = fePrs_->massMat();
+
+    // Combine the jacobians.
+    fieldHelper_->combineFieldCoeff(riesz, J);
   }
 
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
@@ -268,11 +956,11 @@ public:
     bdryCellNodes_ = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
-    fe_vol_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
-    // Set local boundary DOFs.
-    fidx_ = fe_vol_->getBoundaryDofs();
+    feVel_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrVel_,cellCub_));
+    fePrs_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrPrs_,cellCub_));
+    fidx_ = feVel_->getBoundaryDofs();
     // Compute Dirichlet values at DOFs.
-    int d = basisPtr_->getBaseCellTopology().getDimension();
+    int d = basisPtrVel_->getBaseCellTopology().getDimension();
     int numSidesets = bdryCellLocIds_.size();
     bdryCellDofValues_.resize(numSidesets);
     for (int i=0; i<numSidesets; ++i) {
@@ -280,28 +968,65 @@ public:
       bdryCellDofValues_[i].resize(numLocSides);
       for (int j=0; j<numLocSides; ++j) {
         int c = bdryCellLocIds_[i][j].size();
-        int f = basisPtr_->getCardinality();
-        bdryCellDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+        int f = basisPtrVel_->getCardinality();
+        bdryCellDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
         Teuchos::RCP<Intrepid::FieldContainer<Real> > coords =
           Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
         if (c > 0) {
-          fe_vol_->computeDofCoords(coords, bdryCellNodes_[i][j]);
+          feVel_->computeDofCoords(coords, bdryCellNodes_[i][j]);
         }
         for (int k=0; k<c; ++k) {
           for (int l=0; l<f; ++l) {
             std::vector<Real> dofpoint(d);
+            //std::cout << "Sideset " << i << " LocalSide " << j << "  Cell " << k << "  Field " << l << "  Coord ";
             for (int m=0; m<d; ++m) {
               dofpoint[m] = (*coords)(k, l, m);
+              //std::cout << dofpoint[m] << "  ";
             }
-            (*bdryCellDofValues_[i][j])(k, l) = DirichletFunc(dofpoint, i, j);
+
+            for (int m=0; m<d; ++m) {
+              (*bdryCellDofValues_[i][j])(k, l, m) = DirichletFunc(dofpoint, i, j, m);
+              //std::cout << "  " << m << "-Value " << DirichletFunc(dofpoint, i, j, m);
+            }
+            //std::cout << std::endl;
           }
         }
       }
     }
+    // Construct control boundary FE
+    int sideset = 6;
+    int numLocSides = bdryCellNodes[sideset].size();
+    feVelBdry_.resize(numLocSides);
+    for (int j = 0; j < numLocSides; ++j) {
+      if (bdryCellNodes[sideset][j] != Teuchos::null) {
+        feVelBdry_[j] = Teuchos::rcp(new FE<Real>(bdryCellNodes[sideset][j],basisPtrVel_,bdryCub_,j));
+      }
+    }
   }
 
-  const Teuchos::RCP<FE<Real> > getFE(void) const {
-    return fe_vol_;
+  void setFieldPattern(const std::vector<std::vector<int> > & fieldPattern) {
+    fieldPattern_ = fieldPattern;
+    fieldHelper_ = Teuchos::rcp(new FieldHelper<Real>(numFields_, numDofs_, numFieldDofs_, fieldPattern_));
+  }
+
+  const Teuchos::RCP<FE<Real> > getVelocityFE(void) const {
+    return feVel_;
+  }
+
+  const Teuchos::RCP<FE<Real> > getPressureFE(void) const {
+    return fePrs_;
+  }
+
+  const std::vector<Teuchos::RCP<FE<Real> > > getVelocityBdryFE(void) const {
+    return feVelBdry_;
+  }
+
+  const std::vector<std::vector<int> > getBdryCellLocIds(const int sideset = 6) const {
+    return bdryCellLocIds_[sideset];
+  }
+
+  const Teuchos::RCP<FieldHelper<Real> > getFieldHelper(void) const {
+    return fieldHelper_;
   }
 
 }; // PDE_NavierStokes

@@ -210,6 +210,11 @@ public:
   }
 
 
+  int getLocalFieldSize() const {
+    return numLocalDofs_;
+  }
+
+
   int getLocalFieldSize(const int & fieldNumber) const {
     return (intrepidBasis_[fieldNumber])->getCardinality();
   }
