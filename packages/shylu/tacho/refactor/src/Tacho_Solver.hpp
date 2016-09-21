@@ -206,6 +206,7 @@ namespace Tacho {
       GraphToolsHostType::getGraph(rptr, cidx, _AA);
 
       GraphToolsHostType_Scotch S;
+      S.setVerbose(false);
       S.setGraph(_AA.NumRows(), rptr, cidx);
       S.setSeed();
       S.setTreeLevel();
@@ -430,14 +431,14 @@ namespace Tacho {
     }
 
     int getFactorizationAlgorithmVariant() const {
-      int variant = 0;
+      int variant = 0, two = Variant::Two, three = Variant::Three;
       if (_mb > 0) {
         const ordinal_type m = _PAA.NumRows();
         const ordinal_type hm = _maxrange/_mb + 1;
 
-        variant = (hm >= _algo_hier_minsize ? Variant::Three : Variant::Two);
+        variant = (hm >= _algo_hier_minsize ? three : two);
       } else {
-        variant = Variant::Two;
+        variant = two;
       }
       return variant;
     }
