@@ -52,197 +52,184 @@
 namespace Intrepid2 {
   
   namespace FunctorArrayTools {
-    template <typename outputFieldViewType, 
-              typename inputFieldViewType>
-    struct F_cloneFields{
-      outputFieldViewType _outputFields;
-      inputFieldViewType _inputFields;
+
+    template<typename outputViewType,
+             typename inputViewType,
+             int valRank>
+    struct F_clone {
+      /**/  outputViewType _output;
+      const inputViewType _input;
 
       KOKKOS_INLINE_FUNCTION
-      F_cloneFields(outputFieldViewType outputFields_,
-                    inputFieldViewType inputFields_)
-        : _outputFields(outputFields_), _inputFields(inputFields_) {}
-
+      F_clone(outputViewType output_,
+              inputViewType input_)
+        : _output(output_),
+          _input(input_) {}
+      
+      // clone data
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl,
-                      const ordinal_type bf,
-                      const ordinal_type pt) const {
-        const ordinal_type 
-          iend = _outputFields.dimension(3),
-          jend = _outputFields.dimension(4);
+      void
+      operator()(const ordinal_type cl,
+                 const ordinal_type pt) const {
+        switch (valRank) {
+        case 0: {
+          _output(cl, pt) = _input(pt);
+          break;
+        }
+        case 1: {
+          const ordinal_type iend = _output.dimension(2);
+          for (ordinal_type i=0;i<iend;++i)
+            _output(cl, pt, i) = _input(pt, i);
+          break;
+        }
+        case 2: {
+          const ordinal_type
+            iend = _output.dimension(2),
+            jend = _output.dimension(3);
+          for (ordinal_type i=0;i<iend;++i)
+            for (ordinal_type j=0;j<jend;++j)
+              _output(cl, pt, i, j) = _input(pt, i, j);
+          break;
+        }
+        }
+      }
 
-        for (ordinal_type i=0;i<iend;++i)
-          for (ordinal_type j=0;j<jend;++j)
-            _outputFields(cl, bf, pt, i, j) = _inputFields(bf, pt, i, j);        
+      // clone fields
+      KOKKOS_INLINE_FUNCTION
+      void
+      operator()(const ordinal_type cl,
+                 const ordinal_type bf,
+                 const ordinal_type pt) const {
+        switch (valRank) {
+        case 0: {
+          _output(cl, bf, pt) = _input(bf, pt);
+          break;
+        }
+        case 1: {
+          const ordinal_type iend = _output.dimension(3);
+          for (ordinal_type i=0;i<iend;++i)
+            _output(cl, bf, pt, i) = _input(bf, pt, i);
+          break;
+        }
+        case 2: {
+          const ordinal_type
+            iend = _output.dimension(3),
+            jend = _output.dimension(4);
+          for (ordinal_type i=0;i<iend;++i)
+            for (ordinal_type j=0;j<jend;++j)
+              _output(cl, bf, pt, i, j) = _input(bf, pt, i, j);
+          break;
+        }
+        }
       }
     };
-  } //namespace
-
-  template<typename SpT>
-  template<typename outputFieldValueType, class ...outputFieldProperties,
-           typename inputFieldValueType,  class ...inputFieldProperties>
-  void ArrayTools<SpT>::
-  cloneFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
-               const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields ) {
-
-    //static_assert
-    // - two memory space of input and output fields should be matched
-
-#ifdef HAVE_INTREPID2_DEBUG
-    {
-      INTREPID2_TEST_FOR_EXCEPTION( ( inputFields.rank() < 2 || inputFields.rank() > 4 ), std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::cloneFields): Input fields container must have rank 2, 3, or 4.");
-      INTREPID2_TEST_FOR_EXCEPTION( ( outputFields.rank() != (inputFields.rank()+1) ), std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::cloneFields): The rank of the input fields container must be one less than the rank of the output fields container.");
-      for (size_type i=0;i<inputFields.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i+1)), std::invalid_argument,
-                                        ">>> ERROR (ArrayTools::cloneFields): Dimensions of input and output fields containers do not match.");
-      }
-    }
-#endif
-
-    typedef Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFieldViewType;
-    typedef Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFieldViewType; 
-    typedef typename ExecSpace< typename inputFieldViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
-
-    typedef FunctorArrayTools::F_cloneFields<outputFieldViewType, inputFieldViewType> FunctorType; 
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-    range_policy_type policy( { 0, 0, 0 }, 
-                              { outputFields.dimension(0), outputFields.dimension(1), outputFields.dimension(2) } );
-    Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputFields) );
-  }
-  
-  namespace FunctorArrayTools {
-    template < typename outputFieldViewType , typename inputFactorsViewType , typename inputFieldViewType >
-    struct F_cloneScaleFields {
-      outputFieldViewType _outputFields;
-      inputFactorsViewType _inputFactors;
-      inputFieldViewType _inputFields;
-      
-      KOKKOS_INLINE_FUNCTION
-      F_cloneScaleFields(outputFieldViewType outputFields_,
-                         inputFactorsViewType inputFactors_,
-                         inputFieldViewType inputFields_)
-        : _outputFields(outputFields_), _inputFactors(inputFactors_), _inputFields(inputFields_) {}
-      
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl,
-                      const ordinal_type bf,
-                      const ordinal_type pt) const {
-        const ordinal_type iend  = _outputFields.dimension(3);
-        const ordinal_type jend  = _outputFields.dimension(4);
-        
-        const auto val = _inputFactors( cl, bf );
-        for (ordinal_type i=0;i<iend;++i)
-          for (ordinal_type j=0;j<jend;++j)
-            _outputFields( cl, bf, pt, i, j) = _inputFields(bf, pt, i, j)*val;
-      }
-    };
-  } //namespace
+  } 
   
   template<typename SpT>
-  template<typename outputFieldValueType, class ...outputFieldProperties,
-           typename inputFactorValueType, class ...inputFactorProperties,
-           typename inputFieldValueType,  class ...inputFieldProperties>
-
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties>
   void ArrayTools<SpT>::
-  cloneScaleFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
-                    const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors,
-                    const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields ) {
-    
-    // static assert
-#ifdef HAVE_INTREPID2_DEBUG
-    { 
-      INTREPID2_TEST_FOR_EXCEPTION( inputFactors.rank() != 2, std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::cloneScaleFields): The rank of the input factors container must be 2.");
-      INTREPID2_TEST_FOR_EXCEPTION( inputFields.rank() < 2 || inputFields.rank() > 4, std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::cloneScaleFields): Input fields container must have rank 2, 3, or 4.");
-      INTREPID2_TEST_FOR_EXCEPTION( outputFields.rank() != (inputFields.rank()+1), std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::cloneScaleFields): The rank of the input fields container must be one less than the rank of the output fields container.");
-      INTREPID2_TEST_FOR_EXCEPTION( inputFactors.dimension(0) != outputFields.dimension(0), std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::cloneScaleFields): Zeroth dimensions of input factors container and output fields container (numbers of integration domains) must agree!");
-      INTREPID2_TEST_FOR_EXCEPTION( inputFactors.dimension(1) != outputFields.dimension(1), std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::cloneScaleFields): First dimensions of input factors container and output fields container (numbers of fields) must agree!");
-      for (size_type i=0;i<inputFields.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i+1)), std::invalid_argument,
-                                        ">>> ERROR (ArrayTools::cloneScaleFields): Dimensions of input and output fields containers do not match.");
-      }
-    }
-#endif
-
-    typedef Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFieldViewType;
-    typedef Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactorsViewType;
-    typedef Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFieldViewType;
-    typedef FunctorArrayTools::F_cloneScaleFields<outputFieldViewType, inputFactorsViewType, inputFieldViewType> FunctorType;
-    typedef typename ExecSpace<typename inputFieldViewType::execution_space , SpT>::ExecSpaceType ExecSpaceType;
-
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-    range_policy_type policy( { 0, 0, 0 }, 
-                              { outputFields.dimension(0), outputFields.dimension(1), outputFields.dimension(2) } );
-    Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputFactors, inputFields) );
-  }
-
-  namespace FunctorArrayTools {
-    template < typename inoutFieldViewType , typename inputFactorsViewType >
-    struct F_scaleFields {
-      inoutFieldViewType _inoutFields;
-      inputFactorsViewType _inputFactors;
-
-
-      F_scaleFields(inoutFieldViewType inoutFields_,
-                    inputFactorsViewType inputFactors_)
-        : _inoutFields(inoutFields_), _inputFactors(inputFactors_) {}
-      
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl,
-                      const ordinal_type bf,
-                      const ordinal_type pt) const {
-        const ordinal_type iend  = _inoutFields.dimension(3);
-        const ordinal_type jend  = _inoutFields.dimension(4);
-
-        const auto val = _inputFactors( cl, bf );
-        for (ordinal_type i=0;i<iend;++i)
-          for (ordinal_type j=0;j<jend;++j)
-            _inoutFields(cl, bf, pt, i, j) *= val;
-      }
-    };
-    } //namespace
-
-  template<typename SpT>
-  template<typename inoutFieldValueType,  class ...inoutFieldProperties,
-           typename inputFactorValueType, class ...inputFactorProperties>
-
-  void ArrayTools<SpT>::
-  scaleFields( /**/  Kokkos::DynRankView<inoutFieldValueType, inoutFieldProperties...>  inoutFields,
-               const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors ) {
-
+  cloneFields( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+               const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inputFactors.rank() != 2, std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::scaleFields): The rank of the input factors container must be 2.");
-      INTREPID2_TEST_FOR_EXCEPTION( inoutFields.rank() < 3 || inoutFields.rank() > 5, std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::scaleFields): Input/output fields container must have rank 3, 4, or 5.");
-      INTREPID2_TEST_FOR_EXCEPTION( inputFactors.dimension(0) != inoutFields.dimension(0), std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::scaleFields): Zeroth dimensions of input factors container and input/output fields container (numbers of integration domains) must agree!");
-      INTREPID2_TEST_FOR_EXCEPTION( inputFactors.dimension(1) != inoutFields.dimension(1), std::invalid_argument,
-                                      ">>> ERROR (ArrayTools::scaleFields): First dimensions (number of fields) of input factors and input/output fields containers must agree!");
+      INTREPID2_TEST_FOR_EXCEPTION( ( input.rank() < 2 || input.rank() > 4 ), std::invalid_argument,
+                                      ">>> ERROR (ArrayTools::clone): Input fields container must have rank 2, 3, or 4.");
+      INTREPID2_TEST_FOR_EXCEPTION( ( output.rank() != (input.rank()+1) ), std::invalid_argument,
+                                      ">>> ERROR (ArrayTools::clone): The rank of the input fields container must be one less than the rank of the output fields container.");
+      for (size_type i=0;i<input.rank();++i) {
+        INTREPID2_TEST_FOR_EXCEPTION( (input.dimension(i) != output.dimension(i+1)), std::invalid_argument,
+                                        ">>> ERROR (ArrayTools::clone): Dimensions of input and output fields containers do not match.");
+      }
     }
 #endif
 
-    typedef Kokkos::DynRankView<inoutFieldValueType, inoutFieldProperties...>  inoutFieldViewType;
-    typedef Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactorsViewType;
-    typedef FunctorArrayTools::F_scaleFields<inoutFieldViewType, inputFactorsViewType> FunctorType;
-    typedef typename ExecSpace< typename inoutFieldViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
+    typedef Kokkos::DynRankView<outputValueType,outputProperties...> outputViewType;
+    typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
+    typedef typename ExecSpace< typename inputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
     
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
       < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-    range_policy_type policy( { 0, 0, 0 }, 
-                              { inoutFields.dimension(0), inoutFields.dimension(1), inoutFields.dimension(2) } );
-    Kokkos::Experimental::md_parallel_for( policy, FunctorType(inoutFields, inputFactors) );
+    
+    const ordinal_type
+      C = output.dimension(0),
+      F = output.dimension(1),
+      P = output.dimension(2);
+    
+    range_policy_type policy( { 0, 0, 0 },
+                              { C, F, P } );
+    const ordinal_type valRank = output.rank() - 3;
+    switch (valRank) {
+    case 0: {
+      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,0> FunctorType;
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      break;
+    }
+    case 1: {
+      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,1> FunctorType;
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      break;
+    }
+    case 2: {
+      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,2> FunctorType;
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      break;
+    }
+    }
   }
 
+  template<typename SpT>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties>
+  void ArrayTools<SpT>::
+  cloneData( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+             const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( ( input.rank() < 1 || input.rank() > 3 ), std::invalid_argument,
+                                    ">>> ERROR (ArrayTools::clone): Input fields container must have rank 1, 2, or 3.");
+      INTREPID2_TEST_FOR_EXCEPTION( ( output.rank() != (input.rank()+1) ), std::invalid_argument,
+                                    ">>> ERROR (ArrayTools::clone): The rank of the input fields container must be one less than the rank of the output fields container.");
+      for (size_type i=0;i<input.rank();++i) {
+        INTREPID2_TEST_FOR_EXCEPTION( (input.dimension(i) != output.dimension(i+1)), std::invalid_argument,
+                                      ">>> ERROR (ArrayTools::clone): Dimensions of input and output fields containers do not match.");
+      }
+    }
+#endif
+
+    typedef Kokkos::DynRankView<outputValueType,outputProperties...> outputViewType;
+    typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
+    typedef typename ExecSpace< typename inputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
+    
+    using range_policy_type = Kokkos::Experimental::MDRangePolicy
+      < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+    
+    const ordinal_type
+      C = output.dimension(0),
+      P = output.dimension(1);
+    
+    range_policy_type policy( { 0, 0 },
+                              { C, P } );
+    const ordinal_type valRank = output.rank() - 2;
+    switch (valRank) {
+    case 0: {
+      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,0> FunctorType;
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      break;
+    }
+    case 1: {
+      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,1> FunctorType;
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      break;
+    }
+    case 2: {
+      typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,2> FunctorType;
+      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      break;
+    }
+    }
+  }
+  
 } // end namespace Intrepid2
 
 #endif

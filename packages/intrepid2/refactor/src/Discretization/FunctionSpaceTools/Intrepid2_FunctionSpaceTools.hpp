@@ -57,6 +57,8 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
+#include "Intrepid2_Kernels.hpp"
+
 #include "Intrepid2_ArrayTools.hpp"
 #include "Intrepid2_RealSpaceTools.hpp"
 #include "Intrepid2_CellTools.hpp"
@@ -110,6 +112,8 @@ namespace Intrepid2 {
         |------|----------------------|--------------------------------------------------|
         \endcode
     */
+    // outputVals : CFP
+    // inputVals  :  FP
     template<typename outputValValueType, class ...outputValProperties,
              typename inputValValueType,     class ...inputValProperties>
     static void 
@@ -152,7 +156,9 @@ namespace Intrepid2 {
         |------|----------------------|--------------------------------------------------|
         \endcode
     */
-    
+    // outputVals     : CFPD
+    // jacobianInverse: C PDD 
+    // inputVals      :  FPD
     template<typename outputValValueType,       class ...outputValProperties,
              typename jacobianInverseValueType, class ...jacobianInverseProperties,
              typename inputValValueType,        class ...inputValProperties>
@@ -441,6 +447,9 @@ namespace Intrepid2 {
         \param  inDet        [in] - Input array containing determinants of cell Jacobians.
         \param  inWeights    [in] - Input integration weights.
     */
+    // outputVals   : CP
+    // intputDet    : CP
+    // inputWeights :  P
     template<typename outputValValueType,   class ...outputValProperties,
              typename inputDetValueType,    class ...inputDetPropertes,
              typename inputWeightValueType, class ...inputWeightPropertes>
@@ -564,10 +573,10 @@ namespace Intrepid2 {
         FunctionSpaceTools::scalarMultiplyDataField.
 
         \param  outVals     [out] - Output array with scaled field values.
-        \param  inMeasure    [in] - Input array containing weighted measures.
-        \param  inputVals       [in] - Input fields.
+        \param  inMeasure   [in]  - Input array containing weighted measures.
+        \param  inputVals   [in]  - Input fields.
     */
-    template<typename outputValValueType,       class ...outputValProperties,
+    template<typename outputValValueType,    class ...outputValProperties,
              typename inputMeasureValueType, class ...inputMeasureProperties,
              typename inputValValueType,     class ...inputValProperteis>
     static void 
