@@ -3731,7 +3731,7 @@ namespace Tpetra {
         // Get values & column indices by ref, just to avoid copy.
         Teuchos::Array<GO>& gblCols = (mapIter->second).first;
         Teuchos::Array<Scalar>& vals = (mapIter->second).second;
-        const LO numEnt = static_cast<LO> (numEntPerNonlocalRow[curPos]);
+        //const LO numEnt = static_cast<LO> (numEntPerNonlocalRow[curPos]);
         nonlocalMatrix->insertGlobalValues (gblRow, gblCols (), vals ());
       }
     }
