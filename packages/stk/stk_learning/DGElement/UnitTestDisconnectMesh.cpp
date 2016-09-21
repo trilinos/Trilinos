@@ -7,6 +7,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -18,6 +19,7 @@
 #include <stk_unit_test_utils/getOption.h>
 
 #include "stk_io/StkMeshIoBroker.hpp"
+#include <stdlib.h>
 
 class DisconnectMesh : public DGTetFixture {};
 
@@ -299,6 +301,194 @@ TEST_F(TOSDTWD, birds)
          }
 }
 
+TEST_F(TOSDTWD, expand_mesh)
+{
+    std::string temp_name = "temp_abc.g";
+
+    {
+        std::string exodusFileName = unitTestUtils::getOption("-i", "generated:10x10x10");
+        setup_mesh(exodusFileName, stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::MetaData newMetaData(get_meta().spatial_dimension());
+        stk::mesh::BulkData newBulkData(newMetaData, get_bulk().parallel());
+        disconnectMesh(get_meta(), get_bulk(), get_meta().universal_part(), newMetaData, newBulkData);
+        stk::unit_test_util::write_mesh_using_stk_io(temp_name, newBulkData);
+    }
+
+    {
+        stk::io::StkMeshIoBroker stkIo(get_comm());
+        stkIo.add_mesh_database(temp_name, stk::io::READ_MESH);
+        stkIo.create_input_mesh();
+
+        typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
+
+        CoordFieldType& field = stkIo.meta_data().declare_field<CoordFieldType>(stk::topology::NODE_RANK, "disp");
+
+        stk::mesh::put_field(field, stkIo.meta_data().universal_part());
+        stkIo.populate_bulk_data();
+
+        std::string results_name = unitTestUtils::getOption("-o", "output_results.g");
+        size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
+
+        stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/
+
+        std::vector<stk::mesh::Entity> elements;
+        stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::ELEM_RANK, elements);
+
+        CoordFieldType *coords = stkIo.meta_data().get_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates");
+
+        stk::mesh::PartVector elementBlocks;
+        const stk::mesh::PartVector parts = stkIo.meta_data().get_parts();
+        for(size_t i=0;i<parts.size();++i)
+        {
+            if(stk::mesh::impl::is_element_block(*parts[i]))
+            {
+                elementBlocks.push_back(parts[i]);
+            }
+        }
+
+        double xc = 0, yc = 0, zc = 0;
+        std::vector<std::vector<double> > element_centroid(elements.size());
+        std::vector<std::vector<double> > part_centroid(elementBlocks.size());
+        for(size_t i=0;i<part_centroid.size();++i)
+            part_centroid[i].resize(3);
+
+        std::vector<size_t> num_elements_in_part(elementBlocks.size(), 0);
+
+        for(size_t i = 0; i < elements.size(); i++)
+        {
+            unsigned num_nodes = stkIo.bulk_data().num_nodes(elements[i]);
+            const stk::mesh::Entity *nodes = stkIo.bulk_data().begin_nodes(elements[i]);
+            double exc = 0, eyc = 0, ezc = 0;
+            for(unsigned j = 0; j < num_nodes; ++j)
+            {
+                double *node_data = stk::mesh::field_data(*coords, nodes[j]);
+                exc += node_data[0];
+                eyc += node_data[1];
+                ezc += node_data[2];
+            }
+
+            exc /= num_nodes;
+            eyc /= num_nodes;
+            ezc /= num_nodes;
+            xc += exc;
+            yc += eyc;
+            zc += ezc;
+            element_centroid[i].resize(3);
+            element_centroid[i][0] = exc;
+            element_centroid[i][1] = eyc;
+            element_centroid[i][2] = ezc;
+
+            for(size_t j=0;j<elementBlocks.size();++j)
+            {
+                stk::mesh::Selector sel = *elementBlocks[j];
+                if(sel(stkIo.bulk_data().bucket(elements[i])))
+                {
+                    num_elements_in_part[j]++;
+                    part_centroid[j][0] += exc;
+                    part_centroid[j][1] += eyc;
+                    part_centroid[j][2] += ezc;
+                }
+            }
+        }
+
+        for(size_t j=0;j<elementBlocks.size();++j)
+        {
+            if(num_elements_in_part[j]>0)
+            {
+                part_centroid[j][0] = part_centroid[j][0] / num_elements_in_part[j] - xc;
+                part_centroid[j][1] = part_centroid[j][1] / num_elements_in_part[j] - yc;
+                part_centroid[j][2] = part_centroid[j][2] / num_elements_in_part[j] - zc;
+            }
+        }
+
+        xc /= elements.size();
+        yc /= elements.size();
+        zc /= elements.size();
+
+        for(size_t i = 0; i < element_centroid.size(); ++i)
+        {
+            element_centroid[i][0] -= xc;
+            element_centroid[i][1] -= yc;
+            element_centroid[i][2] -= zc;
+        }
+
+        std::cerr << "(x,y,z) centroid = (" << xc << ", " << yc << ", " << zc << ")\n";
+
+        double time = 0;
+        double scalar = 10;
+
+        std::vector<std::vector<double>> direct(elementBlocks.size());
+        for(size_t i=0;i<direct.size();++i)
+        {
+            direct[i].resize(3);
+            direct[i][0] = ((double) rand() / (RAND_MAX));
+            direct[i][1] = ((double) rand() / (RAND_MAX));
+            direct[i][2] = ((double) rand() / (RAND_MAX));
+            double mag = sqrt(direct[i][0]*direct[i][0] + direct[i][1]*direct[i][1] + direct[i][2]*direct[i][2]);
+            direct[i][0] /= mag;
+            direct[i][1] /= mag;
+            direct[i][2] /= mag;
+        }
+
+        for(size_t i = 0; i < elements.size(); i++)
+        {
+            unsigned num_nodes = stkIo.bulk_data().num_nodes(elements[i]);
+            const stk::mesh::Entity *nodes = stkIo.bulk_data().begin_nodes(elements[i]);
+
+            std::vector<double> direction = {0, 0, 0};
+            for(unsigned j = 0; j < num_nodes; ++j)
+            {
+                double *disp = stk::mesh::field_data(field, nodes[j]);
+                for(size_t j=0;j<elementBlocks.size();++j)
+                {
+                    stk::mesh::Selector sel = *elementBlocks[j];
+                    if(sel(stkIo.bulk_data().bucket(elements[i])))
+                    {
+                        disp[0] = scalar * direct[j][0];
+                        disp[1] = scalar * direct[j][1];
+                        disp[2] = scalar * direct[j][2];
+                    }
+                }
+//                    disp[0] = scalar * element_centroid[i][0];
+//                    disp[1] = scalar * element_centroid[i][1];
+//                    disp[2] = scalar * element_centroid[i][2];
+            }
+        }
+
+        stkIo.begin_output_step(fh, time);
+        stkIo.write_defined_output_fields(fh);
+        stkIo.end_output_step(fh);
+
+        // choose x direction
+//        std::vector<double> goWhere = { 1, 0, 0 };
+//        double scale = 10;
+//
+//        for(size_t i = 0; i < elements.size(); i++)
+//        {
+//            if(!sel(stkIo.bulk_data().bucket(elements[i])))
+//            {
+//                unsigned num_nodes = stkIo.bulk_data().num_nodes(elements[i]);
+//                const stk::mesh::Entity *nodes = stkIo.bulk_data().begin_nodes(elements[i]);
+//
+//                std::vector<double> direction = {0, 0, 0};
+//                for(unsigned j = 0; j < num_nodes; ++j)
+//                {
+//                    double *disp = stk::mesh::field_data(field, nodes[j]);
+//
+//                    disp[0] += scale * goWhere[0];
+//                    disp[1] += scale * goWhere[1];
+//                    disp[2] += scale * goWhere[2];
+//                }
+//            }
+//        }
+//
+//        time += delta_t;
+//        stkIo.begin_output_step(fh, time);
+//        stkIo.write_defined_output_fields(fh);
+//        stkIo.end_output_step(fh);
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void copyPartsToNewMesh(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
@@ -373,7 +563,9 @@ void copyFieldDataToNewMesh(const stk::mesh::MetaData &oldMeta,
                     for(size_t j = 0; j < bucket.size(); j++)
                     {
                         stk::mesh::Entity oldEntity = bucket[j];
-                        stk::mesh::Entity newEntity = oldToNewEntityMap.find(oldEntity)->second;
+                        const stk::mesh::EntityKey oldKey = oldBulkData.entity_key(oldEntity);
+                        // stk::mesh::Entity newEntity = oldToNewEntityMap.find(oldEntity)->second;
+                        stk::mesh::Entity newEntity = newBulkData.get_entity(oldKey);
                         void *oldData = stk::mesh::field_data(*oldFields[k], oldEntity);
                         void *newData = stk::mesh::field_data(*newFields[k], newEntity);
                         memcpy(newData, oldData, stk::mesh::field_bytes_per_entity(*oldFields[k], oldEntity));
@@ -478,6 +670,38 @@ void disconnectMesh(const stk::mesh::MetaData &oldMeta,
             node_ids[i] = node_counter + i + offset_this_proc + 1;
         node_counter += node_ids.size();
         stk::mesh::declare_element(newBulkData, parts, oldBulkData.identifier(element), node_ids);
+    }
+    newBulkData.modification_end();
+
+    // ===============================
+
+    stk::mesh::EntityVector sides;
+    stk::mesh::get_selected_entities(oldMeta.locally_owned_part(), oldBulkData.buckets(oldMeta.side_rank()), sides);
+
+    std::vector<std::pair<stk::mesh::EntityId, unsigned> > elemSides(sides.size());
+
+    for(size_t i=0;i<sides.size();++i)
+    {
+        const stk::mesh::Entity* elementA = oldBulkData.begin_elements(sides[i]);
+        const stk::mesh::ConnectivityOrdinal* ords = oldBulkData.begin_element_ordinals(sides[i]);
+        elemSides[i] = std::make_pair(oldBulkData.identifier(elementA[0]), static_cast<unsigned>(ords[0]));
+    }
+
+    newBulkData.modification_begin();
+
+    for(size_t i=0;i<elemSides.size();++i)
+    {
+        stk::mesh::Entity newElement = newBulkData.get_entity(stk::topology::ELEM_RANK, elemSides[i].first);
+        stk::mesh::OrdinalVector oldPartOrds;
+        oldBulkData.bucket(sides[i]).supersets(oldPartOrds);
+        stk::mesh::PartVector newParts;
+        for(size_t j=0; j<oldPartOrds.size(); j++)
+        {
+            stk::mesh::Part &newPart = newMeta.get_part(oldPartOrds[j]);
+            if(!stk::mesh::is_auto_declared_part(newPart))
+                newParts.push_back(&newPart);
+        }
+        newBulkData.declare_element_side(oldBulkData.identifier(sides[i]), newElement, elemSides[i].second, newParts);
     }
     newBulkData.modification_end();
 
