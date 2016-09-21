@@ -111,6 +111,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SCORECapf_zoltan      SCOREC/zoltan                     SS
   SCORECapf_stk         SCOREC/stk                        SS
   SCORECma              SCOREC/ma                         SS
+  SCORECpumi            SCOREC/pumi                       SS
   SCOREC                SCOREC                            SS
   Phalanx               packages/phalanx                  SS
   NOX                   packages/nox                      PS
@@ -150,6 +151,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECspr)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_stk)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_zoltan)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECma)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECpumi)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MOOCHO)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Sundance)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(CTrilinos)
