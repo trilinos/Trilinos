@@ -1833,7 +1833,8 @@ void RealSpaceTools<Scalar>::scale(ArrayScaled & scaledArray, const ArrayIn & in
 template<class Scalar>
 template<class ArrayScaled>
 void RealSpaceTools<Scalar>::scale(ArrayScaled & inoutScaledArray, const Scalar scalar) {
-  for (size_t i=0; i<inoutScaledArray.size(); i++) {
+  // Intrepid::FieldContainer has size type int
+  for (size_t i=0; i<(size_t)inoutScaledArray.size(); i++) {
     inoutScaledArray[i] *= scalar;
   }
 }
