@@ -1,4 +1,0 @@
-# use source
-export TRILINOS_BASE=$HOME/PROJECTS/Trilinos.base
-export TRILINOS_HOME=$TRILINOS_BASE/Trilinos
-/cygdrive/c/WINDOWS/system32/cmd.exe /K C:\\_mystuff\\PROJECTS\\_set_env_icl.bat
