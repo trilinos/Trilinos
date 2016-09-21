@@ -46,6 +46,7 @@
 #include <stk_search/OctTreeOps.hpp>
 
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 
 #include <stk_unit_test_utils/getOption.h>
 
@@ -123,22 +124,22 @@ inline void gatherResultstoProcZero(MPI_Comm comm, SearchResults& boxIdPairResul
     MPI_Comm_size(comm, &numProc);
 
     int procIdDestination = 0;
-    stk::CommAll gather(comm);
+    stk::CommSparse commSparse(comm);
     for (int phase=0; phase<2; ++phase)
     {
         if ( procId != procIdDestination )
         {
             for (size_t j=0;j<boxIdPairResults.size();++j)
             {
-                gather.send_buffer(procIdDestination).pack< std::pair<Ident, Ident> >(boxIdPairResults[j]);
+                commSparse.send_buffer(procIdDestination).pack< std::pair<Ident, Ident> >(boxIdPairResults[j]);
             }
         }
 
         if (phase == 0) { //allocation phase
-          gather.allocate_buffers( numProc / 4 );
+          commSparse.allocate_buffers();
         }
         else { // communication phase
-          gather.communicate();
+          commSparse.communicate();
         }
     }
 
@@ -146,7 +147,7 @@ inline void gatherResultstoProcZero(MPI_Comm comm, SearchResults& boxIdPairResul
     {
         for ( int p = 0 ; p < numProc ; ++p )
         {
-            stk::CommBuffer &buf = gather.recv_buffer( p );
+            stk::CommBuffer &buf = commSparse.recv_buffer( p );
             while ( buf.remaining() )
             {
                 std::pair<Ident, Ident> temp;
