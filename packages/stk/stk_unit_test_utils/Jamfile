@@ -87,6 +87,7 @@ install install-user-include
 explicit install-user-lib ;
 install install-user-lib
   : stk_unit_test_utils
+    comparisonUtils
   : <location>$(install-root)/stk/stk_unit_test_utils/lib
   ;
 
@@ -112,5 +113,16 @@ lib stk_unit_test_utils
   :
   :
     <include>$(stk_unit_test_utils-root)/..
+  ;
+
+lib comparisonUtils
+  :
+    [ ifdevbuild
+      $(stk_unit_test_utils-root)/comparison/stringAndNumberComparisons.cpp
+    ]   
+  :
+    [ ifuserbuild
+      <file>$(stk_unit_test_utils-root)/lib/libcomparisonUtils.a
+    ]   
   ;
 

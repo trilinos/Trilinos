@@ -6890,9 +6890,7 @@ void BulkData::delete_sides_on_all_procs(const stk::mesh::EntityVector& deletedS
                 {
                     procs.push_back( ec->proc );
                 }
-                std::sort( procs.begin() , procs.end() );
-                std::vector<int>::iterator iter = std::unique( procs.begin() , procs.end() );
-                procs.erase( iter , procs.end() );
+                stk::util::sort_and_unique(procs);
 
                 for(size_t proc_index = 0; proc_index < procs.size(); ++proc_index)
                 {
@@ -6966,9 +6964,7 @@ void BulkData::set_shared_owned_parts_and_ownership_on_comm_data(const std::vect
         modified_entities[i] = entity;
     }
 
-    std::sort(modified_entities.begin(), modified_entities.end(), stk::mesh::EntityLess(*this));
-    stk::mesh::EntityVector::iterator iter = std::unique(modified_entities.begin(), modified_entities.end());
-    modified_entities.resize(iter - modified_entities.begin());
+    stk::util::sort_and_unique(modified_entities, stk::mesh::EntityLess(*this));
 
     add_comm_list_entries_for_entities(modified_entities);
 }
