@@ -64,11 +64,13 @@ int main(int argc, char *argv[])
   bool verbose = false;
   try {
 
+#ifdef KOKKOS_HAVE_PTHREAD
     const size_t num_sockets = Kokkos::hwloc::get_available_numa_count();
     const size_t num_cores_per_socket =
       Kokkos::hwloc::get_available_cores_per_numa();
     const size_t num_threads_per_core =
       Kokkos::hwloc::get_available_threads_per_core();
+#endif
 
     // Setup command line options
     Teuchos::CommandLineProcessor CLP;
