@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Trilinos check-in test script that uses the SEMS modules
-# Time-stamp: <2016-09-22 12:15:25 mhoemme>
+# Time-stamp: <2016-09-22 15:10:10 mhoemme>
 #
 # DO NOT use this file without first reading it and editing some parts
 # as necessary!
@@ -405,6 +405,9 @@ fi
 echo "
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
 -D BUILD_SHARED_LIBS:BOOL=ON
+-D TPL_ENABLE_CUDA=${CUDA}
+  -D Kokkos_ENABLE_Cuda_UVM:BOOL=${CUDA}
+  -D Tpetra_INST_CUDA=${CUDA}
 -D Trilinos_ENABLE_OpenMP:BOOL=${OPENMP}
 -D Trilinos_SHOW_DEPRECATED_WARNINGS:BOOL=ON
 -D Trilinos_ENABLE_Fortran:BOOL=OFF
@@ -438,7 +441,9 @@ echo "
 # configuration options for all builds.
 #
 
-if [ "${HOST_COMPILER_CHAIN}" == "intel" ]; then
+if [ "${CUDA}" == "ON" ]; then
+  echo "-D CMAKE_CXX_FLAGS:STRING=\"-Wall\"" >> COMMON.config
+elif [ "${HOST_COMPILER_CHAIN}" == "intel" ]; then
   # Intel (<= 15?) needs a special flag to enable C++11.
   echo "-D Trilinos_CXX11_FLAGS:STRING=\"-std=c++11\"" >> COMMON.config
   # If you try to give the Intel compiler the --pedantic command-line
