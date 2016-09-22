@@ -120,61 +120,61 @@ copy(Teuchos::RCP<SolutionState<Scalar> > ss)
 template<class Scalar>
 bool SolutionState<Scalar>::operator< (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time_ < ss.metaData_->time_);
+  return (this->metaData_->getTime() < ss.metaData_->getTime());
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator<= (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time_ <= ss.metaData_->time_);
+  return (this->metaData_->getTime() <= ss.metaData_->getTime());
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator< (const Scalar& t) const
 {
-  return (this->metaData_->time_ < t);
+  return (this->metaData_->getTime() < t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator<= (const Scalar& t) const
 {
-  return (this->metaData_->time_ <= t);
+  return (this->metaData_->getTime() <= t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator> (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time_ > ss.metaData_->time_);
+  return (this->metaData_->getTime() > ss.metaData_->getTime());
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator>= (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time_ >= ss.metaData_->time_);
+  return (this->metaData_->getTime() >= ss.metaData_->getTime());
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator> (const Scalar& t) const
 {
-  return (this->metaData_->time_ > t);
+  return (this->metaData_->getTime() > t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator>= (const Scalar& t) const
 {
-  return (this->metaData_->time_ >= t);
+  return (this->metaData_->getTime() >= t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator== (const SolutionState<Scalar>& ss) const
 {
-  return (this->metaData_->time_ == ss.metaData_->time_);
+  return (this->metaData_->getTime() == ss.metaData_->getTime());
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator== (const Scalar& t) const
 {
-  return (this->metaData_->time_ == t);
+  return (this->metaData_->getTime() == t);
 }
 
 template<class Scalar>

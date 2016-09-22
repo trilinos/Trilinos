@@ -9,7 +9,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
