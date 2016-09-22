@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Trilinos check-in test script that uses the SEMS modules
-# Time-stamp: <2016-09-21 14:35:56 mhoemme>
+# Time-stamp: <2016-09-22 12:08:14 mhoemme>
 #
 # DO NOT use this file without first reading it and editing some parts
 # as necessary!
@@ -125,16 +125,17 @@ TPL_PATH=/projects/install/rhel6-x86_64/sems/tpl
 # Host compiler chain (clang, gcc, or intel).  This must match the
 # host compiler version (see below).
 
-HOST_COMPILER_CHAIN=intel
+HOST_COMPILER_CHAIN=clang
 #HOST_COMPILER_CHAIN=gcc
-#HOST_COMPILER_CHAIN=clang
+#HOST_COMPILER_CHAIN=intel
 
 # Host compiler version.  This must match the host compiler chain (see
 # above).
 
+HOST_COMPILER_VERSION=3.6.1
 #HOST_COMPILER_VERSION=4.7.2
-HOST_COMPILER_VERSION=15.0.2
-#HOST_COMPILER_VERSION=3.6.1
+#HOST_COMPILER_VERSION=5.3.0
+#HOST_COMPILER_VERSION=16.0.3
 
 # If you want to enable CUDA, set CUDA=ON right now.
 
@@ -162,8 +163,8 @@ fi
 # compiler wrappers invoke.
 
 MPI_IMPLEMENTATION=openmpi
-MPI_VERSION=1.8.7
-#MPI_VERSION=1.10.1
+#MPI_VERSION=1.8.7
+MPI_VERSION=1.10.1
 
 # The CUDA version always needs to be defined, even if not using CUDA.
 # This is because the SEMS module system always wants to load CUDA
@@ -171,14 +172,17 @@ MPI_VERSION=1.8.7
 CUDA_VERSION=7.5.18
 
 # Trilinos requires at least CMake 2.8.11.  3.x works fine.  In fact,
-# we recommend 3.3.2 if it is available, for best performance.  SEMS
-# doesn't currently provide CMake 3.x modules, though.
-CMAKE_VERSION=2.8.12
+# we recommend 3.3.2 if it is available, for best performance.
+CMAKE_VERSION=3.3.2
 
 # You don't need to set any of these.
+CMAKE_MODULE=sems-cmake/${CMAKE_VERSION}
 COMPILER_SUFFIX=${HOST_COMPILER_CHAIN}/${HOST_COMPILER_VERSION}
+COMPILER_MODULE=sems-${COMPILER_SUFFIX}
 CUDA_SUFFIX=cuda/${CUDA_VERSION}
+CUDA_MODULE=${CUDA_SUFFIX}
 MPI_SUFFIX=${MPI_IMPLEMENTATION}/${MPI_VERSION}
+MPI_MODULE=sems-${MPI_SUFFIX}
 
 #
 # Decisions about third-party libraries (TPLs)
@@ -201,52 +205,71 @@ MPI_SUFFIX=${MPI_IMPLEMENTATION}/${MPI_VERSION}
 # ("BoostLib" TPL).
 HAVE_BOOST=ON
 HAVE_BOOSTLIB=ON
-BOOST_SUFFIX=boost/1.58.0
-BOOST_MODULE=${BOOST_SUFFIX}/${COMPILER_SUFFIX}/base
-BOOST_PATH=${TPL_PATH}/${BOOST_MODULE}
+BOOST_VERSION=1.59.0
+BOOST_SUFFIX=boost/${BOOST_VERSION}
+BOOST_MODULE=sems-${BOOST_SUFFIX}
+BOOST_PATH=${TPL_PATH}/${BOOST_SUFFIX}/${COMPILER_SUFFIX}/base
 
 # SuperLU provides a single-MPI-process sparse LU factorization.
 HAVE_SUPERLU=ON
-SUPERLU_SUFFIX=superlu/4.3
-SUPERLU_MODULE=${SUPERLU_SUFFIX}/${COMPILER_SUFFIX}/base
-SUPERLU_PATH=${TPL_PATH}/${SUPERLU_MODULE}
+SUPERLU_VERSION=4.3
+SUPERLU_SUFFIX=superlu/${SUPERLU_VERSION}
+SUPERLU_MODULE=sems-${SUPERLU_SUFFIX}
+SUPERLU_PATH=${TPL_PATH}/${SUPERLU_SUFFIX}/${COMPILER_SUFFIX}/base
 
 # NetCDF implements parallel file I/O.
 HAVE_NETCDF=ON
-NETCDF_SUFFIX=netcdf/4.3.2
-NETCDF_MODULE=${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
-NETCDF_PATH=${TPL_PATH}/${NETCDF_MODULE}
+NETCDF_VERSION=4.3.2
+NETCDF_SUFFIX=netcdf/${NETCDF_VERSION}
+NETCDF_MODULE=sems-${NETCDF_SUFFIX}
+NETCDF_PATH=${TPL_PATH}/${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
 
 # HDF5 implements parallel file I/O.
 HAVE_HDF5=ON
-HDF5_SUFFIX=hdf5/1.8.12
-HDF5_MODULE=${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
-HDF5_PATH=${TPL_PATH}/${HDF5_MODULE}
+HDF5_VERSION=1.8.12
+HDF5_SUFFIX=hdf5/${HDF5_VERSION}
+HDF5_MODULE=sems-${HDF5_SUFFIX}
+HDF5_PATH=${TPL_PATH}/${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
 
 # zlib implements data compression.
-HAVE_ZLIB=ON
-ZLIB_SUFFIX=zlib/1.2.8
-ZLIB_MODULE=${ZLIB_SUFFIX}/${COMPILER_SUFFIX}/base
-ZLIB_PATH=${TPL_PATH}/${ZLIB_MODULE}
+HAVE_ZLIB=OFF
+ZLIB_VERSION=1.2.8
+ZLIB_SUFFIX=zlib/${ZLIB_VERSION}
+ZLIB_MODULE=sems-${ZLIB_SUFFIX}
+ZLIB_PATH=${TPL_PATH}/${ZLIB_SUFFIX}/${COMPILER_SUFFIX}/base
 
 # ParMETIS implements parallel graph partitioning.
 HAVE_PARMETIS=ON
-PARMETIS_SUFFIX=parmetis/4.0.3
-PARMETIS_MODULE=${PARMETIS_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
-PARMETIS_PATH=${TPL_PATH}/${PARMETIS_MODULE}
+PARMETIS_VERSION=4.0.3
+PARMETIS_SUFFIX=parmetis/${PARMETIS_VERSION}
+PARMETIS_MODULE=sems-${PARMETIS_SUFFIX}
+PARMETIS_PATH=${TPL_PATH}/${PARMETIS_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
 
 #
 # Load the modules
 #
 
+# Last error checking before we change the environment.
+if [ "${CUDA}" == 'ON' -a "${MPI_IMPLEMENTATION}" != 'openmpi' ]; then
+  echo "If you enable CUDA, this script only works with OpenMPI."
+fi
+if [ "${HOST_COMPILER_CHAIN}" != "gcc" -a "${HOST_COMPILER_CHAIN}" != "intel" -a "${HOST_COMPILER_CHAIN}" != "clang" ]; then
+  echo "I don't know about the host compiler called \"${HOST_COMPILER_CHAIN}\"."
+fi
+
 # We start by clearing any loaded modules.
 module purge
-# Trilinos' build system needs CMake >= 2.8.11.
-module load cmake/${CMAKE_VERSION}
+
+# The SEMS module system requires that this module be loaded.
+module load sems-env
+
+module load ${CMAKE_MODULE}
+module load ${COMPILER_MODULE}
+module load ${MPI_MODULE}
+
 if [ "${CUDA}" == "ON" ]; then
   # Load modules needed for CUDA builds.
-  module load ${CUDA_SUFFIX}
-  module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
+  module load ${CUDA_MODULE}
   # Set environment variables that Trilinos needs for building and
   # running with CUDA.  "nvcc_wrapper" is a script that makes NVCC
   # behave more like the other compilers.  Note that OMPI_CXX only
@@ -254,11 +277,6 @@ if [ "${CUDA}" == "ON" ]; then
   export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/config/nvcc_wrapper
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
-else
-  # The SEMS modules are set up in such a way that you have to load
-  # CUDA, even if you don't use it.
-  module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
-  module load ${CUDA_SUFFIX}
 fi
 
 # Load optional third-party libraries (TPLs).
@@ -274,15 +292,20 @@ module load ${PARMETIS_MODULE}
 #
 
 echo "module purge" > modules-used-by-checkin-tests
+echo "module load sems-env" >> modules-used-by-checkin-tests
 echo "module load cmake/${CMAKE_VERSION}" >> modules-used-by-checkin-tests
+
+echo "module load ${COMPILER_MODULE}" >> modules-used-by-checkin-tests
+echo "module load ${MPI_MODULE}" >> modules-used-by-checkin-tests
 if [ "${CUDA}" == "ON" ]; then
   echo "module load ${CUDA_SUFFIX}" >> modules-used-by-checkin-tests
-  echo "module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}" >> modules-used-by-checkin-tests
+  if [ "${MPI_IMPLEMENTATION}" != 'openmpi' ]; then
+    echo "If you enable CUDA, this script only works with OpenMPI."
+    exit -1
+  fi
   echo "export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/config/nvcc_wrapper" >> modules-used-by-checkin-tests
-else
-  echo "module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}" >> modules-used-by-checkin-tests
-  echo "module load ${CUDA_SUFFIX}" >> modules-used-by-checkin-tests
 fi
+
 echo "module load ${BOOST_MODULE}" >> modules-used-by-checkin-tests
 echo "module load ${SUPERLU_MODULE}" >> modules-used-by-checkin-tests
 echo "module load ${NETCDF_MODULE}" >> modules-used-by-checkin-tests
@@ -589,10 +612,17 @@ echo "
 #
 # Configuration options for serial release build
 #
+# Disable HDF5 and ParMETIS, since the SEMS installation of that TPL
+# seems to require MPI.  If ParMETIS is enabled, code that uses Zoltan
+# fails to link.  If HDF5 is enabled, EpetraExt's HDF5 interface fails
+# to build.  Perhaps I didn't pick up the right modules.
+#
 echo "
 -D CMAKE_BUILD_TYPE:STRING=RELEASE
 -D CMAKE_CXX_COMPILER:FILEPATH=\"${CXX}\"
 -D CMAKE_C_COMPILER:FILEPATH=\"${CC}\"
+-D TPL_ENABLE_HDF5=OFF
+-D TPL_ENABLE_ParMETIS=OFF
 " > SERIAL_RELEASE.config
 
 #-D TPL_ENABLE_Pthread:BOOL=ON
@@ -606,6 +636,8 @@ echo "
 -D CMAKE_BUILD_TYPE:STRING=RELEASE
 -D CMAKE_CXX_COMPILER:FILEPATH=\"${CXX}\"
 -D CMAKE_C_COMPILER:FILEPATH=\"${CC}\"
+-D TPL_ENABLE_HDF5=OFF
+-D TPL_ENABLE_ParMETIS=OFF
 " > SERIAL_RELEASE_STATIC.config
 
 #
@@ -615,6 +647,8 @@ echo "
 -D CMAKE_BUILD_TYPE:STRING=RELEASE
 -D CMAKE_CXX_COMPILER:FILEPATH=\"${CXX}\"
 -D CMAKE_C_COMPILER:FILEPATH=\"${CC}\"
+-D TPL_ENABLE_HDF5=OFF
+-D TPL_ENABLE_ParMETIS=OFF
 " > SERIAL_RELEASE_SS.config
 
 #
@@ -629,6 +663,8 @@ echo "
 -D Kokkos_ENABLE_Serial:BOOL=OFF
 -D Kokkos_ENABLE_OpenMP:BOOL=OFF
 -D Kokkos_ENABLE_Pthread:BOOL=ON
+-D TPL_ENABLE_HDF5=OFF
+-D TPL_ENABLE_ParMETIS=OFF
 " > SERIAL_DEBUG.config
 
 # This is where we actually invoke Trilinos' check-in test script.
