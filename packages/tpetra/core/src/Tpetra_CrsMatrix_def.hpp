@@ -3625,7 +3625,7 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> crs_matrix_type;
-    typedef LocalOrdinal LO;
+    //typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Teuchos::Array<GO>::size_type size_type;
     const char tfecfFuncName[] = "globalAssemble: "; // for exception macro
