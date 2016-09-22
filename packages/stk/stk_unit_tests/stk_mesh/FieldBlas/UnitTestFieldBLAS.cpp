@@ -146,7 +146,6 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
     unsigned int numPartBEntitiesUniversal = 0;
     numPartBEntitiesOwned = 0;
 
-    unsigned int numPartABEntities = 0;
     unsigned int numPartlessEntities = 0;
     numEntitiesOwned = 0;
 
@@ -172,14 +171,12 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
         if (bucket->member(*pPartB)) {
             numPartBEntitiesUniversal += bucketSize;
         }
-        if (bucket->member(*pPartA) && bucket->member(*pPartB)) {
-            numPartABEntities += bucketSize;
-        }
+        bool haveABEntities = bucket->member(*pPartA) && bucket->member(*pPartB);
+        EXPECT_TRUE( !haveABEntities);
         if (!bucket->member(*pPartA) && !bucket->member(*pPartB)) {
             numPartlessEntities += bucketSize;
         }
     }
-    EXPECT_EQ(0u, numPartABEntities);
     EXPECT_EQ(numEntitiesUniversal, numPartAEntitiesUniversal+numPartBEntitiesUniversal+numPartlessEntities);
 
     numEntitiesGlobal = 0;
