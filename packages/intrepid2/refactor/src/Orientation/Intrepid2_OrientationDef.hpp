@@ -198,7 +198,7 @@ namespace Intrepid2 {
   void
   Orientation::setEdgeOrientation(const ordinal_type numEdge, const ordinal_type edgeOrt[]) {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( 3 <= numEdge && numEdge <= 12 ), std::invalid_argument,
+    INTREPID2_TEST_FOR_ABORT( !( 3 <= numEdge && numEdge <= 12 ), 
                               ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): " \
                               "Invalid numEdge (3--12)");
 #endif
@@ -211,7 +211,7 @@ namespace Intrepid2 {
   void
   Orientation::getEdgeOrientation(ordinal_type *edgeOrt, const ordinal_type numEdge) const {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( 3 <= numEdge && numEdge <= 12 ), std::invalid_argument,
+    INTREPID2_TEST_FOR_ABORT( !( 3 <= numEdge && numEdge <= 12 ), 
                               ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): " \
                               "Invalid numEdge (3--12)");
 #endif
@@ -223,7 +223,7 @@ namespace Intrepid2 {
   void
   Orientation::setFaceOrientation(const ordinal_type numFace, const ordinal_type faceOrt[]) {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( 4 <= numFace && numFace <= 6 ), std::invalid_argument,
+    INTREPID2_TEST_FOR_ABORT( !( 4 <= numFace && numFace <= 6 ), 
                               ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
                               "Invalid numFace (4--6)");
 #endif
@@ -238,7 +238,7 @@ namespace Intrepid2 {
   void
   Orientation::getFaceOrientation(ordinal_type *faceOrt, const ordinal_type numFace) const {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( 4 <= numFace && numFace <= 6 ), std::invalid_argument,
+    INTREPID2_TEST_FOR_ABORT( !( 4 <= numFace && numFace <= 6 ), 
                               ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
                               "Invalid numFace (4--6)");
 #endif

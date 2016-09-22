@@ -412,7 +412,7 @@ namespace Intrepid2 {
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Cell dimension does not match.");
       const ordinal_type P = outputVals.dimension(1);
       INTREPID2_TEST_FOR_EXCEPTION( inputDet.dimension(1)      != P ||
-                                    intputWeights.dimension(1) != P, std::invalid_argument,
+                                    inputWeights.dimension(1) != P, std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Point dimension does not match.");
     }
 #endif

@@ -176,9 +176,9 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
       {
         const auto cellDim = cellTopo.getDimension();
-        INTREPID2_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument,
-                                      ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): " \
-                                      "The specified cell topology does not have a reference cell.");
+        // INTREPID2_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument,
+        //                               ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): " \
+        //                               "The specified cell topology does not have a reference cell.");
         
         INTREPID2_TEST_FOR_EXCEPTION( !( (1 <= cellDim) && (cellDim <= 2 ) ), std::invalid_argument,
                                       ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): " \

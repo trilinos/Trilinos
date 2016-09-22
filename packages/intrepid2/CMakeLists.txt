@@ -41,14 +41,18 @@ ELSE()
     OFF)
 ENDIF()   
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KokkosDynRankView
+  HAVE_INTREPID2_KOKKOS_DYNRANKVIEW
+  "Enable Kokkos DynRankView."
+  OFF)
+
 #
 # C) Add the libraries, tests, and examples
 #
-
-IF (Intrepid2_ENABLE_KokkosDynRankView)
-ADD_SUBDIRECTORY(refactor)
+IF (${PACKAGE_NAME}_ENABLE_KokkosDynRankView)
+  ADD_SUBDIRECTORY(refactor)
 ELSE()
-ADD_SUBDIRECTORY(core)
+  ADD_SUBDIRECTORY(core)
 ENDIF()
 
 #
