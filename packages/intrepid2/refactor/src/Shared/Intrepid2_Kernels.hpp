@@ -59,51 +59,55 @@ namespace Intrepid2 {
 
   template<int N, typename ViewType>
   class ViewAdapter {
+  public:
+    typedef typename ViewType::value_type value_type;
+    typedef typename ViewType::reference_type reference_type;
+    typedef typename ViewType::pointer_type pointer_type;
+
   private:
     const ordinal_type (&_i)[N];
     const ViewType &_v;
+    pointer_type _data;
 
   public:
     KOKKOS_INLINE_FUNCTION
     ViewAdapter(const ordinal_type (&idx_)[N],
                 const ViewType &v_)
-      : _i(idx_), _v(v_) {}
-
+      : _i(idx_), 
+        _v(v_), 
+        _data(_v.data() + ( ( N == 4 ? _v.stride_3()*_i[3] : 0) +
+                            ( N >= 3 ? _v.stride_2()*_i[2] : 0) +
+                            ( N >= 2 ? _v.stride_1()*_i[1] : 0) + 
+                            ( N >= 1 ? _v.stride_0()*_i[0] : 0) )) {}
+              
     KOKKOS_FORCEINLINE_FUNCTION
-    typename ViewType::reference_type
+    reference_type
     operator()() const {
-      switch (N) {
-      case 1: return _v(_i[0]                     );
-      case 2: return _v(_i[0], _i[1]              );
-      case 3: return _v(_i[0], _i[1], _i[2]       );
-      case 4: return _v(_i[0], _i[1], _i[2], _i[3]);
-      default:
-        INTREPID2_TEST_FOR_ABORT( true, ">>> ERROR (Vi): N > 4 is not supported" );
-      }
+      return _data[0];
     }
 
     KOKKOS_FORCEINLINE_FUNCTION
-    typename ViewType::reference_type
+    reference_type
     operator()(const ordinal_type i0) const {
       switch (N) {
-      case 1: return _v(_i[0],                      i0);
-      case 2: return _v(_i[0], _i[1],               i0);
-      case 3: return _v(_i[0], _i[1], _i[2],        i0);
-      case 4: return _v(_i[0], _i[1], _i[2], _i[3], i0);
+      case 1: return _data[i0*_v.stride_1()];
+      case 2: return _data[i0*_v.stride_2()];
+      case 3: return _data[i0*_v.stride_3()];
+      case 4: return _data[i0*_v.stride_4()];
       default:
         INTREPID2_TEST_FOR_ABORT( true, ">>> ERROR (Vi): N > 4 is not supported" );
       }
     }
 
     KOKKOS_FORCEINLINE_FUNCTION
-    typename ViewType::reference_type
+    reference_type
     operator()(const ordinal_type i0, 
                const ordinal_type i1) const {
       switch (N) {
-      case 1: return _v(_i[0],                      i0, i1);
-      case 2: return _v(_i[0], _i[1],               i0, i1);
-      case 3: return _v(_i[0], _i[1], _i[2],        i0, i1);
-      case 4: return _v(_i[0], _i[1], _i[2], _i[3], i0, i1);
+      case 1: return _data[i0*_v.stride_1() + i1*_v.stride_2()];
+      case 2: return _data[i0*_v.stride_2() + i1*_v.stride_3()];
+      case 3: return _data[i0*_v.stride_3() + i1*_v.stride_4()];
+      case 4: return _data[i0*_v.stride_4() + i1*_v.stride_5()];
       default:
         INTREPID2_TEST_FOR_ABORT( true, ">>> ERROR (Vi): N > 4 is not supported" );
       }

@@ -50,6 +50,8 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
+#include "Sacado.hpp"
+
 #include "Intrepid2_Types.hpp"
 #include "test_01.hpp"
 
@@ -82,14 +84,26 @@ int main(int argc, char *argv[]) {
   if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
 
   Kokkos::initialize();
-  
-  const int r_val = Intrepid2::Test::DynRankView_PerfTest01<double,Kokkos::Serial>(nworkset,
-                                                                                   C,
-                                                                                   P,
-                                                                                   D,
-                                                                                   verbose);
+
+  if (verbose) 
+    std::cout << "Testing datatype double\n";
+  const int r_val_double = Intrepid2::Test::DynRankView_PerfTest01
+    <double,Kokkos::Serial>(nworkset,
+                            C,
+                            P,
+                            D,
+                            verbose);
+
+  // if (verbose) 
+  //   std::cout << "Testing datatype Sacado::Fad::DFad<double>\n";
+  // const int r_val_fad_double = Intrepid2::Test::DynRankView_PerfTest01
+  //   <Sacado::Fad::DFad<double>,Kokkos::Serial>(nworkset,
+  //                                              C,
+  //                                              P,
+  //                                              D,
+  //                                              verbose);
   
   Kokkos::finalize();
   
-  return r_val;
+  return r_val_double;//  + r_val_fad_double;
 }

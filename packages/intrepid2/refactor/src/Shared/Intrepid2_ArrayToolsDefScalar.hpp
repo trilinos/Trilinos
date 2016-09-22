@@ -70,43 +70,48 @@ namespace Intrepid2 {
           _inputLeft(inputLeft_),
           _inputRight(inputRight_) {}
       
-      // md range policy for CP
+      // DataData
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cl,
                       const ordinal_type pt) const {
         const auto val = _inputLeft(cl , pt%_inputLeft.dimension(1));
         
-        const ordinal_type cp[2] = { cl, pt };
-        ViewAdapter<2,outputViewType> out(cp, _output);
-
+        //const ordinal_type cp[2] = { cl, pt };
+        //ViewAdapter<2,outputViewType> out(cp, _output);
+        auto out = Kokkos::subview(_output, cl, pt, Kokkos::ALL(), Kokkos::ALL());
         if (equalRank) {
-          ViewAdapter<2,inputRightViewType> right(cp, _inputRight);
+          //const ViewAdapter<2,inputRightViewType> right(cp, _inputRight);
+          const auto right = Kokkos::subview(_inputRight, cl, pt, Kokkos::ALL(), Kokkos::ALL());
           if (reciprocal) Kernels::inv_scalar_mult_mat(out, val, right);
           else            Kernels::    scalar_mult_mat(out, val, right);
         } else {
-          const ordinal_type p[1] = { pt };
-          ViewAdapter<1,inputRightViewType> right(p, _inputRight);
+          //const ordinal_type p[1] = { pt };
+          //const ViewAdapter<1,inputRightViewType> right(p, _inputRight);
+          const auto right = Kokkos::subview(_inputRight, pt, Kokkos::ALL(), Kokkos::ALL());
           if (reciprocal) Kernels::inv_scalar_mult_mat(out, val, right);
           else            Kernels::    scalar_mult_mat(out, val, right);
         } 
       }
       
-      // md range policy for CFP
+      // DataField
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cl,
                       const ordinal_type bf,
                       const ordinal_type pt) const {
         const auto val = _inputLeft(cl , pt%_inputLeft.dimension(1));
 
-        const ordinal_type cfp[3] = { cl, bf, pt };
-        ViewAdapter<3,outputViewType> out(cfp, _output);
+        //const ordinal_type cfp[3] = { cl, bf, pt };
+        //ViewAdapter<3,outputViewType> out(cfp, _output);
+        auto out = Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL());
         if (equalRank) {
-          ViewAdapter<3,inputRightViewType> right(cfp, _inputRight);          
+          //const ViewAdapter<3,inputRightViewType> right(cfp, _inputRight);          
+          auto right = Kokkos::subview(_inputRight, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL());
           if (reciprocal) Kernels::inv_scalar_mult_mat(out, val, right);
           else            Kernels::    scalar_mult_mat(out, val, right);          
         } else {
-          const ordinal_type fp[2] = { bf, pt };
-          ViewAdapter<2,inputRightViewType> right(fp, _inputRight);          
+          //const ordinal_type fp[2] = { bf, pt };
+          //const ViewAdapter<2,inputRightViewType> right(fp, _inputRight);          
+          auto right = Kokkos::subview(_inputRight, bf, pt, Kokkos::ALL(), Kokkos::ALL());
           if (reciprocal) Kernels::inv_scalar_mult_mat(out, val, right);
           else            Kernels::    scalar_mult_mat(out, val, right);
         } 
