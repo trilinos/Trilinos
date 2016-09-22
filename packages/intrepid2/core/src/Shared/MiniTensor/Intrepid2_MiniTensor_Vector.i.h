@@ -353,7 +353,7 @@ KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(T const & s0, T const & s1)
 {
   Vector < T, N, ES > &
-      self = (*this);
+  self = (*this);
 
   self.set_dimension(2);
 
@@ -371,7 +371,7 @@ KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(T const & s0, T const & s1, T const & s2)
 {
   Vector < T, N, ES > &
-      self = (*this);
+  self = (*this);
 
   self.set_dimension(3);
 
@@ -427,7 +427,7 @@ template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 T const &
 Vector<T, N, ES>::operator()(Index const i) const
-    {
+{
   return (*this)[i];
 }
 

@@ -33,6 +33,7 @@ IF (ROL_ENABLE_Boost AND ROL_ENABLE_Intrepid2)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
   APPEND_SET(HEADERS
     vector/ROL_MiniTensor_Vector.hpp
+    vector/ROL_MiniTensor_Vector_Def.hpp
   )
 ENDIF()
 

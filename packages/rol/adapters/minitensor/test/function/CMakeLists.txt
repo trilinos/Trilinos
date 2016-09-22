@@ -1,10 +1,20 @@
 IF(ROL_ENABLE_Intrepid2)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    MiniTensorFunctionInterface
+    test_01
     SOURCES test_01.cpp
     ARGS PrintItAll
     COMM serial mpi  
     PASS_REGULAR_EXPRESSION "PASSED"
     ADD_DIR_TO_NAME
     )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    test_02
+    SOURCES test_02.cpp
+    ARGS PrintItAll
+    COMM serial mpi  
+    PASS_REGULAR_EXPRESSION "PASSED"
+    ADD_DIR_TO_NAME
+    )
+
 ENDIF()

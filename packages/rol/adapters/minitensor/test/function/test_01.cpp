@@ -40,8 +40,8 @@
 // @HEADER
 
 #include <gtest/gtest.h>
-#include "Intrepid2_MiniTensor_FunctionSet.h"
-#include <ROL_MiniTensor_Function.hpp>
+#include <Intrepid2_MiniTensor_FunctionSet.h>
+#include "ROL_MiniTensor_Function.hpp"
 
 using Real = double;
 

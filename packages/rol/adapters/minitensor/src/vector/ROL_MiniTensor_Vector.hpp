@@ -47,205 +47,81 @@
 
 namespace ROL {
 
+///
+/// ROL container for MiniTensor Vector
+///
 template<typename T, Intrepid2::Index N>
 class MiniTensorVector : public Vector<T> {
 
 public:
 
-  MiniTensorVector(Intrepid2::Vector<T, N> const & v) : vector_(v)
-  {
-    return;
-  }
+  MiniTensorVector(Intrepid2::Vector<T, N> const & v);
 
   virtual
-  ~MiniTensorVector()
-  {
-    return;
-  }
+  ~MiniTensorVector();
 
+  //
+  // ROL's interface
+  //
+  virtual
   void
-  set(Vector<T> const & x)
-  {
-    assert(dimension() == x.dimension());
+  set(Vector<T> const & x) final;
 
-    MiniTensorVector<T, N> const &
-    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
-
-    Intrepid2::Vector<T, N> const &
-    xval = xe.getVector();
-
-    vector_ = xval;
-  }
-
+  virtual
   void
-  set(Intrepid2::Vector<T, N> const & x)
-  {
-    vector_ = x;
-  }
+  plus(Vector<T> const & x) final;
 
+  virtual
   void
-  plus(Vector<T> const & x)
-  {
-    assert(dimension() == x.dimension());
+  axpy(T const alpha, Vector<T> const & x) final;
 
-    MiniTensorVector<T, N> const &
-    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
-
-    Intrepid2::Vector<T, N> const &
-    xval = xe.getVector();
-
-    auto const
-    dim = xval.get_dimension();
-
-    for (Intrepid2::Index i{0}; i < dim; ++i) {
-      vector_(i) += xval(i);
-    }
-  }
-
+  virtual
   void
-  axpy(T const alpha, Vector<T> const & x)
-  {
-    assert(dimension() == x.dimension());
-
-    MiniTensorVector<T, N> const &
-    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
-
-    Intrepid2::Vector<T, N> const &
-    xval = xe.getVector();
-
-    auto const
-    dim = xval.get_dimension();
-
-    assert(vector_.get_dimension() == dim);
-
-    for (Intrepid2::Index i{0}; i < dim; ++i) {
-      vector_(i) += alpha * xval(i);
-    }
-  }
-
-  void
-  scale(T const alpha)
-  {
-    auto const
-    dim = vector_.get_dimension();
-
-    for (Intrepid2::Index i{0}; i < dim; ++i) {
-      vector_(i) *= alpha;
-    }
-  }
+  scale(T const alpha) final;
 
   virtual
   T
-  dot(Vector<T> const & x) const
-  {
-    MiniTensorVector<T, N> const &
-    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+  dot(Vector<T> const & x) const final;
 
-    Intrepid2::Vector<T, N> const &
-    xval = xe.getVector();
-
-    return Intrepid2::dot(vector_, xval);
-  }
-
+  virtual
   T
-  norm() const
-  {
-    return Intrepid2::norm(vector_);
-  }
+  norm() const final;
 
   virtual
   Teuchos::RCP<Vector<T>>
-  clone() const
-  {
-    auto const
-    dim = vector_.get_dimension();
+  clone() const final;
 
-    auto &&
-    mt_vector = Intrepid2::Vector<T, N>(dim, Intrepid2::ZEROS);
-
-    Teuchos::RCP<MiniTensorVector>
-    e = Teuchos::rcp(new MiniTensorVector(mt_vector));
-
-    return e;
-  }
-
-  Intrepid2::Vector<T, N>
-  getVector() const {
-    return vector_;
-  }
-
-  Intrepid2::Vector<T, N>
-  getVector()
-  {
-    return vector_;
-  }
-
+  virtual
   Teuchos::RCP<Vector<T>>
-  basis(int const i) const
-  {
-    auto const
-    dim = vector_.get_dimension();
+  basis(int const i) const final;
 
-    auto &&
-    mt_vector = Intrepid2::Vector<T, N>(dim, Intrepid2::ZEROS);
-
-    mt_vector(i) = 1.0;
-
-    Teuchos::RCP<MiniTensorVector>
-    e = Teuchos::rcp(new MiniTensorVector(mt_vector));
-
-    return e;
-  }
-
+  virtual
   int
-  dimension() const
-  {
-    return static_cast<int>(vector_.get_dimension());
-  }
+  dimension() const final;
 
+  virtual
   void
-  applyUnary(Elementwise::UnaryFunction<T> const & f)
-  {
-    auto const
-    dim  = vector_.get_dimension();
+  applyUnary(Elementwise::UnaryFunction<T> const & f) final;
 
-    for(Intrepid2::Index i{0}; i < dim; ++i) {
-      vector_(i) = f.apply(vector_(i));
-    }
-  }
-
+  virtual
   void
-  applyBinary(Elementwise::BinaryFunction<T> const & f, Vector<T> const & x)
-  {
-    MiniTensorVector<T, N> const &
-    xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+  applyBinary(Elementwise::BinaryFunction<T> const & f, Vector<T> const & x) final;
 
-    Intrepid2::Vector<T, N> const &
-    xval = xe.getVector();
-
-    auto const
-    dim  = vector_.get_dimension();
-
-    for(Intrepid2::Index i{0}; i < dim; ++i) {
-      vector_(i) = f.apply(vector_(i), xval(i));
-    }
-  }
-
+  virtual
   T
-  reduce(Elementwise::ReductionOp<T> & r) const
-  {
-    T
-    result = r.initialValue();
+  reduce(Elementwise::ReductionOp<T> & r) const final;
 
-    auto const
-    dim = vector_.get_dimension();
+  //
+  // Utilities
+  //
+  void
+  set(Intrepid2::Vector<T, N> const & x);
 
-    for(Intrepid2::Index i{0}; i < dim; ++i) {
-      r.reduce(vector_(i), result);
-    }
+  Intrepid2::Vector<T, N>
+  getVector() const;
 
-    return result;
-  }
+  Intrepid2::Vector<T, N>
+  getVector();
 
   friend
   std::istream &
@@ -269,31 +145,22 @@ private:
   vector_;
 }; // class MiniTensorVector
 
-// Utility conversion
+///
+/// Covert from ROL to MiniTensor
+///
 template<typename T, Intrepid2::Index N>
 Intrepid2::Vector<T, N>
-MTfromROL(Vector<T> const & x)
-{
-  MiniTensorVector<T, N> const &
-  xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+MTfromROL(Vector<T> const & x);
 
-  Intrepid2::Vector<T, N> const &
-  xval = xe.getVector();
-
-  return xval;
-}
-
-// Utility conversion
+//
+// Convert from MiniTensor to ROL
+//
 template<typename T, Intrepid2::Index N>
 void
-MTtoROL(Intrepid2::Vector<T, N> const & xval, Vector<T> & x)
-{
-  MiniTensorVector<T, N> &
-  xe = Teuchos::dyn_cast<MiniTensorVector<T, N>>(x);
-
-  xe.set(xval);
-}
+MTtoROL(Intrepid2::Vector<T, N> const & xval, Vector<T> & x);
 
 } // namespace ROL
+
+#include "ROL_MiniTensor_Vector_Def.hpp"
 
 #endif // ROL_MiniTensor_Vector_hpp

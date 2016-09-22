@@ -1,6 +1,6 @@
 IF(ROL_ENABLE_Intrepid2)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    MiniTensorVectorInterface
+    test_01
     SOURCES test_01.cpp
     ARGS PrintItAll
     COMM serial mpi  

@@ -39,86 +39,87 @@
 // ************************************************************************
 // @HEADER
 
+#include <gtest/gtest.h>
+#include "ROL_Algorithm.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_StatusTest.hpp"
+#include <Intrepid2_MiniTensor_FunctionSet.h>
+#include "ROL_MiniTensor_Function.hpp"
 
-namespace ROL {
+typedef double Real;
+using Real = double;
 
-using Index = Intrepid2::Index;
-
-//
-//
-//
-template<template<typename S, Index M> class MSFN, typename S, Index M>
-S
-MiniTensor_Objective<MSFN, S, M>::
-value(Vector<S> const & x, S &)
+int
+main(int ac, char * av[])
 {
-  Intrepid2::Vector<S, M> const
-  xval = MTfromROL<S, M>(x);
+  Kokkos::initialize();
 
-  return minisolver_fn_.value(xval);
+  // Disables elapsed time and output by default.
+  ::testing::GTEST_FLAG(print_time) = false;
+
+  ::testing::InitGoogleTest(&ac, av);
+
+  auto const
+  retval = RUN_ALL_TESTS();
+
+  Kokkos::finalize();
+
+  return retval;
 }
 
-//
-//
-//
-template<template<typename S, Index M> class MSFN, typename S, Index M>
-void
-MiniTensor_Objective<MSFN, S, M>::
-gradient(Vector<S> & g, Vector<S> const & x, S &)
+TEST(MiniTensor_ROL, Paraboloid)
 {
-  Intrepid2::Vector<S, M> const
-  xval = MTfromROL<S, M>(x);
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
 
-  Intrepid2::Vector<S, M> const
-  gval = minisolver_fn_.gradient(xval);
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
 
-  MTtoROL<S, M>(gval, g);
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  DIM{2};
+
+  ROL::MiniTensor_Objective<Intrepid2::Paraboloid, Real, DIM>
+  obj;
+
+  // Set parameters.
+  Teuchos::ParameterList
+  parlist;
+
+  parlist.sublist("Step").sublist("Line Search").sublist("Descent Method")
+      .set("Type", "Newton-Krylov");
+
+  parlist.sublist("Status Test").set("Gradient Tolerance", 10.e-12);
+  parlist.sublist("Status Test").set("Step Tolerance", 1.0e-14);
+  parlist.sublist("Status Test").set("Iteration Limit", 128);
+
+  // Define algorithm.
+  ROL::Algorithm<Real>
+  algo("Line Search", parlist);
+
+  // Set Initial Guess
+  Intrepid2::Vector<Real, DIM>
+  xval(Intrepid2::RANDOM);
+
+  ROL::MiniTensorVector<Real, DIM> x(xval);
+
+  // Run Algorithm
+  algo.run(x, obj, true, os);
+
+  Intrepid2::Vector<Real, DIM> const
+  sol = ROL::MTfromROL<Real, DIM>(x);
+
+  os << "Solution : " << sol << '\n';
+
+  Real const
+  epsilon{Intrepid2::machine_epsilon<Real>()};
+
+  Real const
+  error = Intrepid2::norm(sol);
+
+  ASSERT_LE(error, epsilon);
 }
 
-//
-//
-//
-template<template<typename S, Index M> class MSFN, typename S, Index M>
-void
-MiniTensor_Objective<MSFN, S, M>::
-hessVec(Vector<S> & hv, Vector<S> const & v, Vector<S> const & x, S &)
-{
-  Intrepid2::Vector<S, M> const
-  xval = MTfromROL<S, M>(x);
-
-  Intrepid2::Vector<S, M> const
-  vval = MTfromROL<S, M>(v);
-
-  Intrepid2::Tensor<S, M> const
-  H = minisolver_fn_.hessian(xval);
-
-  Intrepid2::Vector<S, M> const
-  hvval = H * vval;
-
-  MTtoROL<S, M>(hvval, hv);
-}
-
-//
-//
-//
-template<template<typename S, Index M> class MSFN, typename S, Index M>
-void
-MiniTensor_Objective<MSFN, S, M>::
-invHessVec(Vector<S> & hv, Vector<S> const & v, Vector<S> const & x, S &)
-{
-  Intrepid2::Vector<S, M> const
-  xval = MTfromROL<S, M>(x);
-
-  Intrepid2::Vector<S, M> const
-  vval = MTfromROL<S, M>(v);
-
-  Intrepid2::Tensor<S, M> const
-  H = minisolver_fn_.hessian(xval);
-
-  Intrepid2::Vector<S, M> const
-  hvval = Intrepid2::inverse(H) * vval;
-
-  MTtoROL<S, M>(hvval, hv);
-}
-
-} // namespace ROL

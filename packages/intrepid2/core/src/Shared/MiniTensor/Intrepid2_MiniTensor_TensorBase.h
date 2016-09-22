@@ -385,7 +385,6 @@ protected:
   ///
   Index
   dimension_{0};
-
 };
 
 ///

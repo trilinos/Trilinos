@@ -160,10 +160,6 @@ TEST(MiniTensor_ROL, VectorAdaptor)
   ASSERT_EQ(Intrepid2::norm(checkvec), 0.0);
 }
 
-namespace {
-
-}
-
 TEST(MiniTensor_ROL, VectorValue)
 {
   bool const

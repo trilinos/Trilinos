@@ -84,6 +84,7 @@ private:
   MSFN<S, M>
   minisolver_fn_;
 };
+
 } // namespace ROL
 
 #include "ROL_MiniTensor_Function_Def.hpp"
