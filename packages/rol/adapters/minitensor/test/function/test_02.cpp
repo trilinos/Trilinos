@@ -53,8 +53,7 @@ main(int ac, char * av[])
 {
   Kokkos::initialize();
 
-  // Disables elapsed time and output by default.
-  ::testing::GTEST_FLAG(print_time) = false;
+  ::testing::GTEST_FLAG(print_time) = (ac > 1) ? true : false;
 
   ::testing::InitGoogleTest(&ac, av);
 
