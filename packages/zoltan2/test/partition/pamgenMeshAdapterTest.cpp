@@ -209,7 +209,7 @@ int main(int narg, char *arg[]) {
     params.set("imbalance_tolerance", 1.1);
     params.set("num_global_parts", nParts);
     params.set("algorithm", "multijagged");
-    params.set("rectilinear", "true");
+    params.set("rectilinear", true); // bool parameter
   }
   else if (action == "scotch") {
     do_partitioning = true;

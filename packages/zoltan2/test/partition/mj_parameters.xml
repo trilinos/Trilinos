@@ -6,7 +6,7 @@
     <Parameter name="timer_output_stream" type ="string" value="std::cout" />
     
     <Parameter name="algorithm" type ="string" value="multijagged" />
-    <Parameter name="compute_metrics" type ="string" value="true" />
+    <Parameter name="compute_metrics" type ="bool" value="true" />
     <Parameter name="imbalance_tolerance" type ="double" value="1.0" />
 	
     <Parameter name="rectilinear_blocks" type ="string" value="0" />

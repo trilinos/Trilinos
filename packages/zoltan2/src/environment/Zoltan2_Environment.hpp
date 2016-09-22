@@ -124,11 +124,11 @@ public:
 
   /*! \brief Collect the paramaters specific to Environment
    */
-  static void getDefaultParameters(ParameterList & pl);
+  static void setParameterDefaultsAndValidators(ParameterList & pl);
 
   /*! \brief Exists to make setting up validators less cluttered
    */
-  static RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+  static RCP<Teuchos::StringToIntegralParameterEntryValidator<bool> >
     getTrueFalseValidator();
 
   /*! \brief Exists to make setting up validators less cluttered
@@ -590,13 +590,16 @@ public:
   /*! \brief Convert parameters of type 
    *  Teuchos::StringToIntegralParameterEntryValidator<int> to integer.
    *
+   *  Teuchos::StringToIntegralParameterEntryValidator<bool> to bool.
+   *
    * \param params  on input, a list of parameter, on return, all of the
    *                     StringToIntegral parameters have been converted
-   *                     to integer values.
+   *                     to integer values or bool values.
    *
    *    Given a parameter list, this function converts all of the entries that
    *    have valiator of type StringToIntegralParameterEntryValidator<int>
    *    from their string value to their int value.
+   *    Also StringToIntegralParameterEntryValidator<bool> to bool
    *
    */
 

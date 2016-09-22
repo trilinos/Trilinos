@@ -161,10 +161,10 @@ public:
 #endif
 
   // Set up validators which are general to all probloems
-  static void getDefaultParameters(ParameterList & pl)
+  static void setParameterDefaultsAndValidators(ParameterList & pl)
   {
-    pl.set("compute_metrics", "false", "Compute metrics after computing solution",
-      Environment::getTrueFalseValidator());
+    // bool parameter
+    pl.set("compute_metrics", false, "Compute metrics after computing solution");
 
     RCP<Teuchos::StringValidator> hypergraph_model_type_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
@@ -172,10 +172,11 @@ public:
     pl.set("hypergraph_model_type", "traditional", "construction type when "
       "creating a hypergraph model", hypergraph_model_type_Validator);
 
-    pl.set("subset_graph", "false", "If \"true\", the graph input is to be "
+    // bool parameter
+    pl.set("subset_graph", false, "If \"true\", the graph input is to be "
       "subsetted.  If a vertex neighbor is not a valid vertex, it will be "
       "omitted from the pList.  Otherwise, an invalid neighbor identifier "
-      "is considered an error.", Environment::getTrueFalseValidator());
+      "is considered an error.");
 
     RCP<Teuchos::StringValidator> symmetrize_input_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(

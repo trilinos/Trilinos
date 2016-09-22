@@ -571,9 +571,9 @@ private:
     bool distribute_points_on_cut_lines; //if partitioning can distribute points on same coordiante to different parts.
     mj_part_t max_concurrent_part_calculation; // how many parts we can calculate concurrently.
 
-    int mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
+    bool mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
     int mj_user_recursion_depth; //the recursion depth value provided by user.
-    int mj_keep_part_boxes; //if the boxes need to be kept.
+    bool mj_keep_part_boxes; //if the boxes need to be kept.
 
     int check_migrate_avoid_migration_option; //whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
     mj_scalar_t minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
@@ -1864,7 +1864,7 @@ AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::AlgMJ():
         coordinate_permutations(NULL), new_coordinate_permutations(NULL),
         assigned_part_ids(NULL), part_xadj(NULL), new_part_xadj(NULL),
         distribute_points_on_cut_lines(true), max_concurrent_part_calculation(1),
-        mj_run_as_rcb(0), mj_user_recursion_depth(0), mj_keep_part_boxes(0),
+        mj_run_as_rcb(false), mj_user_recursion_depth(0), mj_keep_part_boxes(false),
         check_migrate_avoid_migration_option(0), minimum_migration_imbalance(0.30),
         num_threads(1), total_num_cut(0), total_num_part(0), max_num_part_along_dim(0),
         max_num_cut_along_dim(0), max_num_total_part_along_dim(0), total_dim_num_reduce_all(0),
@@ -1909,7 +1909,7 @@ AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::get_global_box() const
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_to_keep_part_boxes(){
-  this->mj_keep_part_boxes = 1;
+  this->mj_keep_part_boxes = true;
 }
 
 
@@ -6313,11 +6313,11 @@ private:
     mj_part_t max_concurrent_part_calculation; // how many parts we can calculate concurrently.
     int check_migrate_avoid_migration_option; //whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
     mj_scalar_t minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
-    int mj_keep_part_boxes; //if the boxes need to be kept.
+    bool mj_keep_part_boxes; //if the boxes need to be kept.
 
     int num_threads;
 
-    int mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
+    bool mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
 
     ArrayRCP<mj_part_t> comXAdj_; //communication graph xadj
     ArrayRCP<mj_part_t> comAdj_; //communication graph adj.
@@ -6358,7 +6358,7 @@ public:
                         max_concurrent_part_calculation(1),
                         check_migrate_avoid_migration_option(0),
                         minimum_migration_imbalance(0.30),
-                        mj_keep_part_boxes(0), num_threads(1), mj_run_as_rcb(0),
+                        mj_keep_part_boxes(false), num_threads(1), mj_run_as_rcb(false),
                         comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
     {}
     ~Zoltan2_AlgMJ(){
@@ -6370,7 +6370,7 @@ public:
 
     /*! \brief Set up validators specific to this algorithm
      */
-    static void getDefaultParameters(ParameterList & pl)
+    static void setParameterDefaultsAndValidators(ParameterList & pl)
     {
       const bool bUnsorted = true; // this clarifies the flag is for unsrorted
       RCP<Zoltan2::IntegerRangeListValidator<int>> mj_parts_Validator =
@@ -6392,12 +6392,12 @@ public:
         "depending on the imbalance, 1 for forcing migration, 2 for "
         "avoiding migration", mj_migration_option_validator);
 
-      pl.set("mj_keep_part_boxes", "false", "Keep the part boundaries of the "
-        "geometric partitioning: Truth values - 0 False, Otherwise True.",
-        Environment::getTrueFalseValidator());
+      // bool parameter
+      pl.set("mj_keep_part_boxes", false, "Keep the part boundaries of the "
+        "geometric partitioning." );
 
-      pl.set("mj_enable_rcb", "false", "Use MJ as RCB: Truth values - 0 False, "
-        "Otherwise True.", Environment::getTrueFalseValidator());
+      // bool parameter
+      pl.set("mj_enable_rcb", false, "Use MJ as RCB.");
 
       pl.set("mj_recursion_depth", -1, "Recursion depth for MJ: Must be "
         "greater than 0.", Environment::getAnyIntValidator());
@@ -6647,9 +6647,9 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         this->distribute_points_on_cut_lines = true;
         this->max_concurrent_part_calculation = 1;
 
-        this->mj_run_as_rcb = 0;
+        this->mj_run_as_rcb = false;
         int mj_user_recursion_depth = -1;
-        this->mj_keep_part_boxes = 0;
+        this->mj_keep_part_boxes = false;
         this->check_migrate_avoid_migration_option = 0;
         this->minimum_migration_imbalance = 0.35;
 
@@ -6680,24 +6680,25 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         if (pe){
                 this->mj_keep_part_boxes = pe->getValue(&this->mj_keep_part_boxes);
         }else {
-                this->mj_keep_part_boxes = 0; // Set to invalid value
+                this->mj_keep_part_boxes = false; // Set to invalid value
         }
+
 
         // For now, need keep_part_boxes to do pointAssign and boxAssign.
         // pe = pl.getEntryPtr("keep_cuts");
         // if (pe){
         //      int tmp = pe->getValue(&tmp);
-        //      if (tmp) this->mj_keep_part_boxes = 1;
+        //      if (tmp) this->mj_keep_part_boxes = true;
         // }
 
         //need to keep part boxes if mapping type is geometric.
-        if (this->mj_keep_part_boxes == 0){
+        if (this->mj_keep_part_boxes == false){
                 pe = pl.getEntryPtr("mapping_type");
                 if (pe){
                         int mapping_type = -1;
                         mapping_type = pe->getValue(&mapping_type);
                         if (mapping_type == 0){
-                                mj_keep_part_boxes  = 1;
+                                mj_keep_part_boxes  = true;
                         }
                 }
         }
@@ -6707,7 +6708,7 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
         if (pe){
                 this->mj_run_as_rcb = pe->getValue(&this->mj_run_as_rcb);
         }else {
-                this->mj_run_as_rcb = 0; // Set to invalid value
+                this->mj_run_as_rcb = false; // Set to invalid value
         }
 
         pe = pl.getEntryPtr("mj_recursion_depth");
@@ -6717,10 +6718,10 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
                 mj_user_recursion_depth = -1; // Set to invalid value
         }
 
-        int val = 0;
+        bool val = false;
         pe = pl.getEntryPtr("rectilinear");
         if (pe) val = pe->getValue(&val);
-        if (val == 1){
+        if (val){
                 this->distribute_points_on_cut_lines = false;
         } else {
                 this->distribute_points_on_cut_lines = true;

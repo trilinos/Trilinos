@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   all.set("algorithm", "phg");
 
   all.set("symmetrize_input", "no");
-  all.set("subset_graph", "false");
+  all.set("subset_graph", false); // bool parameter
 
   try{
     Zoltan2::createValidatorList(all, validParameters);

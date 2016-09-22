@@ -81,8 +81,20 @@ static string anyIntParams[NUMANYINT][3]={
 };
 */
 
+// Value is a pure bool true/false type
+// Will test both true and false as valid - the only valid options
+// Will then test for a failure using set string
+#define NUMBOOL 5
+static string boolParams[NUMBOOL][2] = {
+  {"compute_metrics", "invalid_bool_setting"},
+  {"rectilinear", "invalid_bool_setting"},
+  {"subset_graph", "invalid_bool_setting"},
+  {"mj_enable_rcb", "invalid_bool_setting"},
+  {"mj_keep_part_boxes", "invalid_bool_setting"},
+};
+
 // Value value is a particular string
-#define NUMSTR 22
+#define NUMSTR 17
 static string strParams[NUMSTR][3]={
   {"error_check_level", "basic_assertions", "invalid_assertion_request"},
   {"debug_level", "basic_status", "invalid_status"},
@@ -95,17 +107,12 @@ static string strParams[NUMSTR][3]={
   {"memory_procs", "2-10", "not_a_valid_list_of_any_type"},
   {"order_method", "rcm", "invalid_method"},
   {"order_package", "amd", "invalid_package"},
-  {"compute_metrics", "true", "maybe"},
   {"partitioning_objective", "balance_object_weight", "invalid_objective"},
   {"partitioning_approach", "repartition", "invalid_approach"},
   {"objects_to_partition", "graph_vertices", "invalid_objects"},
   {"model", "graph", "invalid_model"},
   {"algorithm", "rcb", "invalid_algorithm"},
-  {"rectilinear", "true", "invalid_option"},
   {"symmetrize_input", "transpose", "invalid_option"},
-  {"subset_graph", "true", "invalid_option"},
-  {"mj_enable_rcb", "false", "invalid_value"},
-  {"mj_keep_part_boxes", "false", "invalid_value"},
 };
 
 // Validators which need to be resolved
@@ -170,6 +177,11 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList validParameters;
   Teuchos::ParameterList myParams("testParameterList");
 
+  for (int i=0; i < NUMBOOL; i++){
+    myParams.set(boolParams[i][0], true);   // validate true works
+    myParams.set(boolParams[i][0], false);  // validate false works
+  }
+
   for (int i=0; i < NUMSTR; i++){
     myParams.set(strParams[i][0], strParams[i][1]);
   }
@@ -207,6 +219,16 @@ int main(int argc, char *argv[])
   cout << myParams << endl;
 
   // Try invalid parameter values
+
+  for (int i=0; i < NUMBOOL; i++){
+    Teuchos::ParameterList badParams(origParams);
+    int fail =
+      testInvalidValue<string>(badParams, boolParams[i][0], boolParams[i][1]);
+    if (fail){
+      cout << "FAIL" << endl;
+      return 1;
+    }
+  }
 
   for (int i=0; i < NUMSTR; i++){
     Teuchos::ParameterList badParams(origParams);

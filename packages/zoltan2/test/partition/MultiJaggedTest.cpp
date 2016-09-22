@@ -648,9 +648,9 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     params->set("algorithm", "multijagged");
     if (test_boxes)
-        params->set("mj_keep_part_boxes", "true");
+        params->set("mj_keep_part_boxes", true); // bool parameter
     if (rectilinear)
-        params->set("rectilinear", "true");
+        params->set("rectilinear", true ); // bool parameter
 
     if(imbalance > 1)
         params->set("imbalance_tolerance", double(imbalance));
@@ -754,9 +754,9 @@ int testFromDataFile(
 
     //params->set("timer_output_stream" , "std::cout");
     if (test_boxes)
-        params->set("mj_keep_part_boxes", "true");
+        params->set("mj_keep_part_boxes", true); // bool parameter
     if (rectilinear)
-        params->set("rectilinear", "true");
+        params->set("rectilinear", true); // bool parameter
     params->set("algorithm", "multijagged");
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
@@ -1028,9 +1028,9 @@ int testFromSeparateDataFiles(
         params->set("migration_doMigration_type", int (migration_doMigration_type));
     }
     if (test_boxes)
-        params->set("mj_keep_part_boxes", "true");
+        params->set("mj_keep_part_boxes", true); // bool parameter
     if (rectilinear)
-        params->set("rectilinear", "true");
+        params->set("rectilinear", true); // bool parameter
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
     try {

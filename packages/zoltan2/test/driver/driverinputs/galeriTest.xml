@@ -43,7 +43,7 @@
   
   <ParameterList name="InputParameters">
     
-    <Parameter name="debug" type="bool" value="False" />
+    <Parameter name="debug" type="bool" value="false" />
     <!-- <Parameter name="distribute input" type="bool" value="False" /> -->
     
     <Parameter name="x" type="int" value="40"/>
@@ -65,8 +65,8 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="timer_output_stream" type="string" value="std::cout"/>
-      <Parameter name="rectilinear" type="string" value="yes"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="rectilinear" type="bool" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
      <ParameterList name="Metrics">
@@ -90,8 +90,8 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="timer_output_stream" type="string" value="std::cout"/>
-      <Parameter name="rectilinear" type="string" value="yes"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="rectilinear" type="bool" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
      <ParameterList name="Metrics">
@@ -115,7 +115,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="timer_output_stream" type="string" value="std::cout"/>
       <Parameter name="algorithm" type="string" value="rcb" />
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
      <ParameterList name="Metrics">
@@ -140,8 +140,8 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="multijagged"/>
-      <Parameter name="rectilinear" type="string" value="yes"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="rectilinear" type="bool" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
      <ParameterList name="Metrics">

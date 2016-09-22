@@ -20,7 +20,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="multijagged"/>
       <Parameter name="num_global_parts" type="int" value="1"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
     </ParameterList>
     
     <ParameterList name="Metrics">

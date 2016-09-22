@@ -22,7 +22,7 @@
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="rcb"/>
       <Parameter name="num_global_parts" type="int" value="2"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
       <Parameter name="partitioning_objective" type="string" 
                  value="multicriteria_minimize_total_weight"/>
       <!--Parameter name="partitioning_objective" type="string" 

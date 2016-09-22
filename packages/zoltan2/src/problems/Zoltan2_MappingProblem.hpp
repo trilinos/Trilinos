@@ -143,7 +143,7 @@ public:
 
   /*! \brief Set up validators specific to this Problem
   */
-  static void getDefaultParameters(ParameterList & pl)
+  static void setParameterDefaultsAndValidators(ParameterList & pl)
   {
     RCP<Teuchos::StringValidator> mapping_algorithm_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(

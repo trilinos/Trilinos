@@ -148,14 +148,14 @@ Environment::~Environment()
 // provides a generic validator to avoid clutter in the code in several places
 // this was originally accepting true/false/yes/no/1/0 - it has been simplified
 // so there may be a backwards compatibility issue for some setups
-RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+RCP<Teuchos::StringToIntegralParameterEntryValidator<bool> >
   Environment::getTrueFalseValidator()
 {
   return Teuchos::rcp(
-    new Teuchos::StringToIntegralParameterEntryValidator<int>(
+    new Teuchos::StringToIntegralParameterEntryValidator<bool>(
       Teuchos::tuple<std::string>("true", "false"),
       Teuchos::tuple<std::string>( "", "" ),
-      Teuchos::tuple<int>( 1, 0 ), "false") );
+      Teuchos::tuple<bool>( true, false ), "false") );
 }
 
 // provides a generic any double validator to avoid clutter
@@ -181,7 +181,7 @@ RCP<Teuchos::AnyNumberParameterEntryValidator>
   return int_string_validator;
 }
 
-void Environment::getDefaultParameters(ParameterList & pl)
+void Environment::setParameterDefaultsAndValidators(ParameterList & pl)
 {
   // these  parameters are generic to all environments - timers, debugging, etc
 
@@ -435,8 +435,9 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
 
   // Data type of these parameters will now change from string to int
 
-  std::string validatorName("StringIntegralValidator(int)");
-  typedef Teuchos::StringToIntegralParameterEntryValidator<int> s2i_t;
+  std::string validatorNameInt("StringIntegralValidator(int)");
+  std::string validatorNameBool("StringIntegralValidator(bool)");
+  typedef Teuchos::StringToIntegralParameterEntryValidator<int> s2int_t;
 
   while (next != params.end()){
 
@@ -450,12 +451,12 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
     }
     else{
       if ((entry.validator()).get()){
-        if (entry.validator()->getXMLTypeName() == validatorName){
+        if (entry.validator()->getXMLTypeName() == validatorNameInt){
           std::string dummy("");
           std::string &entryValue = entry.getValue<std::string>(&dummy);
-          RCP<const s2i_t> s2i =
-            Teuchos::rcp_dynamic_cast<const s2i_t>(entry.validator(), true);
-          int val = s2i->getIntegralValue(entryValue);
+          RCP<const s2int_t> s2int =
+            Teuchos::rcp_dynamic_cast<const s2int_t>(entry.validator(), true);
+          int val = s2int->getIntegralValue(entryValue);
           entry.setValue<int>(val);
         }
       }

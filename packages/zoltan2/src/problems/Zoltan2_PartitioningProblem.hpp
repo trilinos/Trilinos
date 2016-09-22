@@ -272,13 +272,13 @@ public:
 
   /*! \brief Set up validators specific to this Problem
   */
-  static void getDefaultParameters(ParameterList & pl)
+  static void setParameterDefaultsAndValidators(ParameterList & pl)
   {
-    Zoltan2_AlgMJ<Adapter>::getDefaultParameters(pl);
-    AlgPuLP<Adapter>::getDefaultParameters(pl);
-    AlgPTScotch<Adapter>::getDefaultParameters(pl);
-    AlgSerialGreedy<Adapter>::getDefaultParameters(pl);
-    AlgForTestingOnly<Adapter>::getDefaultParameters(pl);
+    Zoltan2_AlgMJ<Adapter>::setParameterDefaultsAndValidators(pl);
+    AlgPuLP<Adapter>::setParameterDefaultsAndValidators(pl);
+    AlgPTScotch<Adapter>::setParameterDefaultsAndValidators(pl);
+    AlgSerialGreedy<Adapter>::setParameterDefaultsAndValidators(pl);
+    AlgForTestingOnly<Adapter>::setParameterDefaultsAndValidators(pl);
 
     // This set up does not use tuple because we didn't have constructors
     // that took that many elements - Tuple will need to be modified and I
@@ -308,11 +308,11 @@ public:
     pl.set("algorithm", "random", "partitioning algorithm",
       algorithm_Validator);
 
-    pl.set("rectilinear", "false", "If true, then when a cut is made, all of the "
+    // bool parameter
+    pl.set("rectilinear", false, "If true, then when a cut is made, all of the "
       "dots located on the cut are moved to the same side of the cut. The "
       "resulting regions are then rectilinear. The resulting load balance may "
-      "not be as good as when the group of dots is split by the cut. ",
-      Environment::getTrueFalseValidator());
+      "not be as good as when the group of dots is split by the cut. ");
 
     RCP<Teuchos::StringValidator> partitioning_objective_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
@@ -367,8 +367,9 @@ public:
       "library will choose a computational model based on the algorithm or "
       "objective specified by the user.", model_Validator);
 
-    pl.set("remap_parts", "false", "remap part numbers to minimize migration "
-      "between old and new partitions", Environment::getTrueFalseValidator());
+    // bool parameter
+    pl.set("remap_parts", false, "remap part numbers to minimize migration "
+      "between old and new partitions");
 
     pl.set("mapping_type", -1, "Mapping of solution to the processors. -1 No"
       " Mapping, 0 coordinate mapping.", Environment::getAnyIntValidator());
@@ -1035,10 +1036,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         graphFlags_.set(SYMMETRIZE_INPUT_BIPARTITE);
     }
 
-    int sgParameter = 0;
+    bool sgParameter = false;
     pe = pl.getEntryPtr("subset_graph");
     if (pe)
-      sgParameter = pe->getValue<int>(&sgParameter);
+      sgParameter = pe->getValue(&sgParameter);
 
     if (sgParameter == 1)
         graphFlags_.set(BUILD_SUBSET_GRAPH);
