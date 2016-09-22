@@ -126,6 +126,17 @@ namespace MueLu {
     //Build final prolongator
     RCP<Matrix> finalP; // output
 
+    // Reuse pattern if available
+    RCP<ParameterList> APparams = rcp(new ParameterList);
+    if (coarseLevel.IsAvailable("AP reuse data", this)) {
+      GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
+
+      APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
+
+      if (APparams->isParameter("graph"))
+        finalP = APparams->get< RCP<Matrix> >("graph");
+    }
+
     const ParameterList& pL = GetParameterList();
     SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
     LO maxEigenIterations = as<LO>(pL.get<int>("sa: eigenvalue estimate num iterations"));
@@ -154,7 +165,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()));
+        finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
       }
 
     } else {
