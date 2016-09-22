@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Trilinos check-in test script that uses the SEMS modules
-# Time-stamp: <2016-09-22 15:10:10 mhoemme>
+# Time-stamp: <2016-09-22 15:47:09 mhoemme>
 #
 # DO NOT use this file without first reading it and editing some parts
 # as necessary!
@@ -117,6 +117,12 @@ TRILINOS_PATH=/scratch/prj/Trilinos/Trilinos
 # maintains a modules system.  Your computer must mount this directory
 # in order to load modules from it.
 TPL_PATH=/projects/install/rhel6-x86_64/sems/tpl
+
+# Whether to use ninja, instead of make, for builds.
+# The ninja binary must be in your PATH if you enable this option.
+
+USE_NINJA=ON
+#USE_NINJA=OFF
 
 #
 # Decisions about compilers
@@ -353,6 +359,13 @@ fi
 # Default configuration options for all builds
 ######################################################################
 
+if [ "${USE_NINJA}" == 'ON' ]; then
+  echo "-G Ninja" > COMMON.config
+else
+  # Do this so we can append to COMMON.config below.
+  rm -f COMMON.confg
+fi
+
 # Trilinos_ENABLE_EXPLICIT_INSTANTIATION: "Explict instantiation"
 # refers to C++ explicit template instantiation (ETI).  Enabling this
 # option almost always improves build time.
@@ -434,7 +447,12 @@ echo "
 -D TPL_ENABLE_BoostLib:BOOL=${HAVE_BOOSTLIB}
   -D BoostLib_INCLUDE_DIRS=${BOOST_PATH}/lib
   -D BoostLib_LIBRARY_DIRS=${BOOST_PATH}/lib
-" > COMMON.config
+" >> COMMON.config
+
+# ^^^ We append (>>) rather than overwrite (>) for COMMON.config only,
+# because we want the CMake generator option (-G Ninja) to come before
+# other arguments passed to CMake.  (At least it makes the resulting
+# CMake command easier to read.)
 
 #
 # Compiler-specific options to add to the list of default
