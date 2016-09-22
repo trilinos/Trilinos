@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Trilinos check-in test script that uses the SEMS modules
-# Time-stamp: <2016-09-22 15:47:09 mhoemme>
+# Time-stamp: <2016-09-22 15:56:59 mhoemme>
 #
 # DO NOT use this file without first reading it and editing some parts
 # as necessary!
@@ -118,11 +118,16 @@ TRILINOS_PATH=/scratch/prj/Trilinos/Trilinos
 # in order to load modules from it.
 TPL_PATH=/projects/install/rhel6-x86_64/sems/tpl
 
-# Whether to use ninja, instead of make, for builds.
-# The ninja binary must be in your PATH if you enable this option.
+# Whether to use ninja, instead of make, for builds.  The ninja binary
+# must be in your PATH if you enable this option.
+#
+# NOTE: This currently ONLY works if you run ninja by hand.  That is,
+# it only works if you only use the check-in test script with
+# --configure.  If you use --build (or --do-all or --local-do-all), it
+# won't work.  You'll have to use make in that case.
 
-USE_NINJA=ON
-#USE_NINJA=OFF
+#USE_NINJA=ON
+USE_NINJA=OFF
 
 #
 # Decisions about compilers
