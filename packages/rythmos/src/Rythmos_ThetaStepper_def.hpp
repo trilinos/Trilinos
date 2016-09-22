@@ -567,7 +567,6 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   {
 
-    typedef ScalarTraits<Scalar> ST;
     typedef typename ST::magnitudeType ScalarMag;
     typedef ScalarTraits<ScalarMag> SMT;
     

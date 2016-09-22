@@ -563,7 +563,6 @@ class Explicit5Stage3rdOrderKandG_RKBT :
       Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
       Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
 
-      Scalar one = ST::one();
       Scalar onefifth = ST::one()/(5*ST::one());
       Scalar onefourth = ST::one()/(4*ST::one());
       Scalar onethird = ST::one()/(3*ST::one());
