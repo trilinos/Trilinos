@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST( Map, replaceCommWithSubset )
                                              indexBase, origComm));
 
   // Create a new communicator that excludes Proc 0.
-  // This will exercise recomputing the index base.
+  // This will exercise recomputing the globally minimum global index.
   const int color = (myRank == 0) ? 0 : 1;
   const int key = 0;
   RCP<const Comm<int> > newComm = origComm->split (color, key);
@@ -147,10 +147,10 @@ TEUCHOS_UNIT_TEST( Map, replaceCommWithSubset )
             << "." << endl;
       }
 
-      if (newMap->getIndexBase () != as<global_ordinal_type> (numGidsPerProc)) {
+      if (newMap->getMinAllGlobalIndex () != as<global_ordinal_type> (numGidsPerProc)) {
         localSuccess = 0;
-        err << "New Map has index base " << newMap->getIndexBase ()
-            << ", but should have index base " << numGidsPerProc << "." << endl;
+        err << "New Map has globally min global index " << newMap->getMinAllGlobalIndex ()
+            << ", but should have " << numGidsPerProc << "." << endl;
       }
 
       ArrayView<const global_ordinal_type> myNewGids =
