@@ -505,6 +505,62 @@ public:
 };
 
 //
+//
+//
+template<typename S, Index M = 2>
+class Rosenbrock : public Function_Base<Rosenbrock<S, M>, S, M>
+{
+public:
+
+  Rosenbrock()
+  {
+  }
+
+  static constexpr
+  char const * const
+  NAME{"Rosenbrock's Function 2D"};
+
+  using Base = Function_Base<Rosenbrock<S, M>, S, M>;
+
+  // Explicit value.
+  template<typename T, Index N>
+  T
+  value(Vector<T, N> const & x)
+  {
+    T const
+    a = (a_ - x(0));
+
+    T const
+    b = (x(1) - x(0) * x(0));
+
+    return a * a + b_ * b * b;
+  }
+
+  // Default AD gradient.
+  template<typename T, Index N>
+  Vector<T, N>
+  gradient(Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
+
+  // Default AD hessian.
+  template<typename T, Index N>
+  Tensor<T, N>
+  hessian(Vector<T, N> const & x)
+  {
+    return Base::hessian(*this, x);
+  }
+
+private:
+  S
+  a_{1.0};
+
+  S
+  b_{100.0};
+};
+
+//
 // Beale's function
 //
 template<typename S, Index M = 2>

@@ -46,7 +46,6 @@
 #include <Intrepid2_MiniTensor_FunctionSet.h>
 #include "ROL_MiniTensor_Function.hpp"
 
-typedef double Real;
 using Real = double;
 
 int
@@ -123,3 +122,60 @@ TEST(MiniTensor_ROL, Paraboloid)
   ASSERT_LE(error, epsilon);
 }
 
+TEST(MiniTensor_ROL, Rosenbrock)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  DIM{2};
+
+  ROL::MiniTensor_Objective<Intrepid2::Rosenbrock, Real, DIM>
+  obj;
+
+  // Set parameters.
+  Teuchos::ParameterList
+  parlist;
+
+  parlist.sublist("Step").sublist("Line Search").sublist("Descent Method")
+      .set("Type", "Newton-Krylov");
+
+  parlist.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
+  parlist.sublist("Status Test").set("Step Tolerance", 1.0e-16);
+  parlist.sublist("Status Test").set("Iteration Limit", 128);
+
+  // Define algorithm.
+  ROL::Algorithm<Real>
+  algo("Line Search", parlist);
+
+  // Set Initial Guess
+  Intrepid2::Vector<Real, DIM>
+  xval(Intrepid2::RANDOM);
+
+  ROL::MiniTensorVector<Real, DIM> x(xval);
+
+  // Run Algorithm
+  algo.run(x, obj, true, os);
+
+  Intrepid2::Vector<Real, DIM> const
+  sol = ROL::MTfromROL<Real, DIM>(x);
+
+  os << "Solution : " << sol << '\n';
+
+  Real const
+  epsilon{2.0 * Intrepid2::machine_epsilon<Real>()};
+
+  xval.fill(Intrepid2::ONES);
+
+  Real const
+  error = Intrepid2::norm(sol - xval);
+
+  ASSERT_LE(error, epsilon);
+}
