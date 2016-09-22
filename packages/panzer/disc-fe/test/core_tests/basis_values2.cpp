@@ -68,8 +68,8 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-    const int num_cells = 4;
-    const int base_cell_dimension = 2;
+    const unsigned int num_cells = 4;
+    const unsigned int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 4;    
@@ -150,7 +150,7 @@ namespace panzer {
        TEST_EQUALITY(basis_values.basis_ref_scalar(0,i),1.0);
 
        // check basis values
-       for(int cell=0;cell<num_cells;cell++) {
+       for(unsigned int cell=0;cell<num_cells;cell++) {
 
           out << "wm = " << int_values.weighted_measure(cell,i) << " " << std::endl;;
           TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
@@ -170,8 +170,8 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-    const int num_cells = 4;
-    const int base_cell_dimension = 2;
+    const unsigned int num_cells = 4;
+    const unsigned int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 4;    
@@ -250,7 +250,7 @@ namespace panzer {
        TEST_EQUALITY(basis_values.grad_basis_ref(0,i,1),0.25*(x-1.0));
 
        // check basis values
-       for(int cell=0;cell<num_cells;cell++) {
+       for(unsigned int cell=0;cell<num_cells;cell++) {
 
           TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
 
@@ -274,8 +274,8 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-    const int num_cells = 4;
-    const int base_cell_dimension = 2;
+    const unsigned int num_cells = 4;
+    const unsigned int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 4;    
@@ -373,7 +373,7 @@ namespace panzer {
        TEST_EQUALITY(basis_values.curl_basis_ref_scalar(0,i),0.25);
 
        // check basis values
-       for(int cell=0;cell<num_cells;cell++) {
+       for(unsigned int cell=0;cell<num_cells;cell++) {
 
           TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
 
@@ -405,8 +405,8 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()));
 
-    const int num_cells = 4;
-    const int base_cell_dimension = 3;
+    const unsigned int num_cells = 4;
+    const unsigned int base_cell_dimension = 3;
     const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 4;    
@@ -496,7 +496,7 @@ namespace panzer {
        TEST_EQUALITY(basis_values.div_basis_ref(0,i),6.0);
 
        // check basis values
-       for(int cell=0;cell<num_cells;cell++) {
+       for(unsigned int cell=0;cell<num_cells;cell++) {
 
           TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
 
@@ -522,7 +522,7 @@ namespace panzer {
     PHX::MDField<double,Cell,BASIS> orientations 
         = af.buildStaticArray<double,Cell,BASIS>("orientations",num_cells, 4);
 
-    for(int cell=0;cell<num_cells;cell++) {
+    for(unsigned int cell=0;cell<num_cells;cell++) {
       double o0 = double(cell % 2); 
       double o1 = double(int(cell/2)); 
       orientations(cell,0) = 1.0;
@@ -547,7 +547,7 @@ namespace panzer {
        double weight = int_values.cub_weights(i);
 
        // check basis values
-       for(int cell=0;cell<num_cells;cell++) {
+       for(unsigned int cell=0;cell<num_cells;cell++) {
           double o0 = double(cell % 2); 
           double o1 = double(int(cell/2)); 
 
@@ -585,8 +585,8 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
 
-    const int num_cells = 4;
-    const int base_cell_dimension = 3;
+    const unsigned int num_cells = 4;
+    const unsigned int base_cell_dimension = 3;
     const panzer::CellData cell_data(num_cells,topo);
 
     const int cubature_degree = 4;    
@@ -719,7 +719,7 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-    const int num_cells = 20;
+    const unsigned int num_cells = 20;
     const panzer::CellData cell_data(num_cells,topo);
     const std::string basis_type = "Q2";
     const int cubature_degree = 2;    
@@ -799,7 +799,7 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-    const int num_cells = 20;
+    const unsigned int num_cells = 20;
     const panzer::CellData cell_data(num_cells,topo);
     const std::string basis_type = "Q2";
     const int cubature_degree = 2;    
@@ -878,8 +878,8 @@ namespace panzer {
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-    const int num_cells = 4;
-    const int base_cell_dimension = 2;
+    const unsigned int num_cells = 4;
+    const unsigned int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
 
     std::string cv_type = "volume";
@@ -949,7 +949,7 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_scalar.dimension(2),num_qp);
 
    // check basis values, control volume integration points are defined on physical cells
-    for(int cell=0;cell<num_cells;cell++) {
+    for(unsigned int cell=0;cell<num_cells;cell++) {
 
        for(unsigned int i=0;i<num_qp;i++) {
           double x = int_values_vol.ref_ip_coordinates(cell,i,0);

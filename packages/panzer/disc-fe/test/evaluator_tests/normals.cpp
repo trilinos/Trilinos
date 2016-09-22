@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
   fm->getFieldData<typename EvalType::ScalarT,EvalType>(normals);
 
   TEST_EQUALITY(normals.rank(),3);
-  TEST_EQUALITY(normals.size(),numCells*quadRule->num_points*dim);
+  TEST_EQUALITY((int)normals.size(),numCells*quadRule->num_points*dim);
   normals.print(out,false);
   for(int i=0;i<numCells;i++) {
 

@@ -63,7 +63,7 @@ PHX_EVALUATOR_CTOR(Sum,p)
   Teuchos::RCP<PHX::DataLayout> data_layout = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
 
-  TEUCHOS_ASSERT(value_names->size()<MAX_VALUES);
+  TEUCHOS_ASSERT(value_names->size()<(size_t)MAX_VALUES);
 
   // check if the user wants to scale each term independently
   auto local_scalars = Kokkos::View<double *,PHX::Device>("scalars",value_names->size());
