@@ -126,6 +126,7 @@ namespace MueLu {
     class Stage2ScalarFunctor {
     private:
       typedef typename MatrixType::ordinal_type LO;
+      typedef typename MatrixType::size_type    GO;
       typedef typename MatrixType::value_type   SC;
       typedef Kokkos::ArithTraits<SC>           ATS;
       typedef typename ATS::magnitudeType       magnitudeType;
@@ -141,7 +142,7 @@ namespace MueLu {
       { }
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const LO row, LO& dropped) const {
+      void operator()(const LO row, GO& dropped) const {
         auto rowView = kokkosMatrix.row (row);
         auto length = rowView.length;
 
@@ -309,9 +310,12 @@ namespace MueLu {
         typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
         typename entries_type::non_const_type        cols    ("entries",       realnnz);
 
+        typename decltype(kokkosMatrix)::size_type    kokkos_numDropped;
+
         Stage2ScalarFunctor<decltype(kokkosMatrix), decltype(ghostedDiag), decltype(rows), decltype(cols), decltype(bndNodes)>
           stage2Functor(kokkosMatrix, ghostedDiag, rows, cols, bndNodes, threshold);
-        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage2_reduce", numRows, stage2Functor, numDropped);
+        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage2_reduce", numRows, stage2Functor, kokkos_numDropped);
+        numDropped = kokkos_numDropped;
 
         boundaryNodes = bndNodes;
 
