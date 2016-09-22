@@ -132,7 +132,7 @@ namespace { // (anonymous)
   allocDualView (const size_t lclNumRows, const size_t numCols, const bool zeroOut = true)
   {
     typedef typename Tpetra::MultiVector<ST, LO, GO, NT>::dual_view_type dual_view_type;
-    const char* label = "MV::DualView";
+    const std::string label ("MV::DualView");
 
     if (zeroOut) {
       return dual_view_type (label, lclNumRows, numCols);
@@ -143,7 +143,7 @@ namespace { // (anonymous)
       // initial argument, just like Kokkos::View.  However, the hack
       // is harmless, since it does what the (currently nonexistent)
       // equivalent DualView constructor would have done anyway.
-      typename dual_view_type::t_dev d_view (Kokkos::ViewAllocateWithoutInitializing (label), lclNumRows, numCols);
+      typename dual_view_type::t_dev d_view (Kokkos::view_alloc (label, Kokkos::WithoutInitializing), lclNumRows, numCols);
 #ifdef HAVE_TPETRA_DEBUG
       // Filling with NaN is a cheap and effective way to tell if
       // downstream code is trying to use a MultiVector's data without
