@@ -134,16 +134,20 @@ namespace { // (anonymous)
     typedef typename Tpetra::MultiVector<ST, LO, GO, NT>::dual_view_type dual_view_type;
     const std::string label ("MV::DualView");
 
+    // FIXME (mfh 18 Feb 2015, 12 Apr 2015, 22 Sep 2016) Our separate
+    // creation of the DualView's Views works around
+    // Kokkos::DualView's current inability to accept an
+    // AllocationProperties initial argument (as Kokkos::View does).
+    // However, the work-around is harmless, since it does what the
+    // (currently nonexistent) equivalent DualView constructor would
+    // have done anyway.
+
+    typename dual_view_type::t_dev d_view;
     if (zeroOut) {
-      return dual_view_type (label, lclNumRows, numCols);
+      d_view = typename dual_view_type::t_dev (Kokkos::view_alloc (label), lclNumRows, numCols);
     }
     else {
-      // FIXME (mfh 18 Feb 2015, 12 Apr 2015) This is just a hack,
-      // until Kokkos::DualView accepts an AllocationProperties
-      // initial argument, just like Kokkos::View.  However, the hack
-      // is harmless, since it does what the (currently nonexistent)
-      // equivalent DualView constructor would have done anyway.
-      typename dual_view_type::t_dev d_view (Kokkos::view_alloc (label, Kokkos::WithoutInitializing), lclNumRows, numCols);
+      d_view = typename dual_view_type::t_dev (Kokkos::view_alloc (label, Kokkos::WithoutInitializing), lclNumRows, numCols);
 #ifdef HAVE_TPETRA_DEBUG
       // Filling with NaN is a cheap and effective way to tell if
       // downstream code is trying to use a MultiVector's data without
@@ -155,16 +159,27 @@ namespace { // (anonymous)
       const ST nan = Kokkos::Details::ArithTraits<ST>::nan ();
       KokkosBlas::fill (d_view, nan);
 #endif // HAVE_TPETRA_DEBUG
-      typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
-      // Even though the user doesn't care about the contents of the
-      // MultiVector, the device and host views are still out of sync.
-      // We prefer to work in device memory.  The way to ensure this
-      // happens is to mark the device view as modified.
-      dual_view_type dv (d_view, h_view);
-      dv.template modify<typename dual_view_type::t_dev::memory_space> ();
-
-      return dual_view_type (d_view, h_view);
     }
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (static_cast<size_t> (d_view.dimension_0 ()) != lclNumRows ||
+       static_cast<size_t> (d_view.dimension_1 ()) != numCols, std::logic_error,
+       "allocDualView: d_view's dimensions actual dimensions do not match "
+       "requested dimensions.  d_view is " << d_view.dimension_0 () << " x " <<
+       d_view.dimension_1 () << "; requested " << lclNumRows << " x " << numCols
+       << ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+    typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
+
+    dual_view_type dv (d_view, h_view);
+    // Whether or not the user cares about the initial contents of the
+    // MultiVector, the device and host views are out of sync.  We
+    // prefer to work in device memory.  The way to ensure this
+    // happens is to mark the device view as modified.
+    dv.template modify<typename dual_view_type::t_dev::memory_space> ();
+
+    return dv;
   }
 
   // Convert 1-D Teuchos::ArrayView to an unmanaged 1-D host Kokkos::View.
