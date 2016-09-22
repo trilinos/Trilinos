@@ -242,8 +242,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
 
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
-  /*
-  if (comm.NumProc() == 1) {
+  if (comm->NumProc() == 1) {
     RCP<ParameterList> pList =
       getParametersFromXmlFile("Tempus_BackwardEuler_CDR.xml");
     RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
@@ -251,17 +250,18 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
     const double left_end = model_pl->get<double>("left end");
     const double right_end = model_pl->get<double>("right end");
 
+    const Thyra::VectorBase<double>& x = *(solutions[solutions.size()-1]);
+    
     std::ofstream ftmp("Tempus_BackwardEuler_CDR-Solution.dat");
-    for (std::size_t n = 0; n < num_elements+1; n++) {
+    for (int n = 0; n < num_elements+1; n++) {
       const double dx = std::fabs(left_end-right_end) /
                         static_cast<double>(num_elements);
-      const double x_coord = left_end + static_cast<double>(n) * dx;
-      ftmp << x_coord << "   " <<  << std::endl;
+      const double x_coord = left_end + static_cast<double>(n) * dx; 
+      ftmp << x_coord << "   " <<  Thyra::get_ele(x,n) << std::endl;
     }
     ftmp.close();
   }
-  */
-
+  
 }
 
 } // namespace Tempus_Test

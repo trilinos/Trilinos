@@ -431,7 +431,7 @@ void CDR_Model<Scalar>::evalModelImpl(
               basis.wt*basis.dz*(
                                  alpha * basis.phi[i] * basis.phi[j] // transient
                                  + beta * (
-                                           a_/basis.dz*basis.dphide[j]*basis.phi[i] // convection
+                                           +a_/basis.dz*basis.dphide[j]*basis.phi[i] // convection
                                            +(1.0/(basis.dz*basis.dz))*basis.dphide[j]*basis.dphide[i] // diffusion
                                            +2.0*k_*basis.uu*basis.phi[j]*basis.phi[i] // source
                                            )
