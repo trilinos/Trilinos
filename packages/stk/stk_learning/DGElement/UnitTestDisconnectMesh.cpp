@@ -439,14 +439,14 @@ TEST_F(TOSDTWD, expand_mesh)
             for(unsigned j = 0; j < num_nodes; ++j)
             {
                 double *disp = stk::mesh::field_data(field, nodes[j]);
-                for(size_t j=0;j<elementBlocks.size();++j)
+                for(size_t k=0;k<elementBlocks.size();++k)
                 {
-                    stk::mesh::Selector sel = *elementBlocks[j];
+                    stk::mesh::Selector sel = *elementBlocks[k];
                     if(sel(stkIo.bulk_data().bucket(elements[i])))
                     {
-                        disp[0] = scalar * direct[j][0];
-                        disp[1] = scalar * direct[j][1];
-                        disp[2] = scalar * direct[j][2];
+                        disp[0] = scalar * direct[k][0];
+                        disp[1] = scalar * direct[k][1];
+                        disp[2] = scalar * direct[k][2];
                     }
                 }
 //                    disp[0] = scalar * element_centroid[i][0];
