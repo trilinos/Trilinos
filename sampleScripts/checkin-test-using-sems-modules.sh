@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Trilinos check-in test script that uses the SEMS modules
-# Time-stamp: <2016-09-22 12:08:14 mhoemme>
+# Time-stamp: <2016-09-22 12:15:25 mhoemme>
 #
 # DO NOT use this file without first reading it and editing some parts
 # as necessary!
@@ -291,19 +291,18 @@ module load ${PARMETIS_MODULE}
 # Generate the "modules-used-by-checkin-tests" file
 #
 
+# The first line doesn't append, so that we clear out the file.
 echo "module purge" > modules-used-by-checkin-tests
+# Subsequent lines append.
 echo "module load sems-env" >> modules-used-by-checkin-tests
-echo "module load cmake/${CMAKE_VERSION}" >> modules-used-by-checkin-tests
-
+echo "module load ${CMAKE_MODULE}" >> modules-used-by-checkin-tests
 echo "module load ${COMPILER_MODULE}" >> modules-used-by-checkin-tests
 echo "module load ${MPI_MODULE}" >> modules-used-by-checkin-tests
 if [ "${CUDA}" == "ON" ]; then
-  echo "module load ${CUDA_SUFFIX}" >> modules-used-by-checkin-tests
-  if [ "${MPI_IMPLEMENTATION}" != 'openmpi' ]; then
-    echo "If you enable CUDA, this script only works with OpenMPI."
-    exit -1
-  fi
+  echo "module load ${CUDA_MODULE}" >> modules-used-by-checkin-tests
   echo "export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/config/nvcc_wrapper" >> modules-used-by-checkin-tests
+  echo "export CUDA_LAUNCH_BLOCKING=1" >> modules-used-by-checkin-tests
+  echo "export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1" >> modules-used-by-checkin-tests
 fi
 
 echo "module load ${BOOST_MODULE}" >> modules-used-by-checkin-tests
