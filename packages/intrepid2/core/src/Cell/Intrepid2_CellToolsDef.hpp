@@ -2176,7 +2176,7 @@ void CellTools<Scalar>::getReferenceEdgeTangent(ArrayEdgeTangent &            re
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= edgeOrd) && (edgeOrd < (int)parentCell.getSubcellCount(1) ) ), std::invalid_argument,
 			      ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
   
-  TEUCHOS_TEST_FOR_EXCEPTION( !( refEdgeTangent.size() == spaceDim ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (int) refEdgeTangent.size() == spaceDim ), std::invalid_argument,
 			      ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
 #endif
   // Edge parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
@@ -2214,10 +2214,10 @@ void CellTools<Scalar>::getReferenceFaceTangents(ArrayFaceTangentU &           u
   TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(uTan) == 1)  && (getrank(vTan) == 1) ), std::invalid_argument,  
 			      ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): rank = 1 required for output arrays"); 
   
-  TEUCHOS_TEST_FOR_EXCEPTION( !( uTan.dimension(0) == spaceDim ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (int) uTan.dimension(0) == spaceDim ), std::invalid_argument,
 			      ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !( vTan.dimension(0) == spaceDim ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (int) vTan.dimension(0) == spaceDim ), std::invalid_argument,
 			      ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
 #endif
   
@@ -3183,7 +3183,7 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &   
   
   
   // Validate whichCell It can be either -1 (default value) or a valid cell ordinal.
-  TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < (int)cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): whichCell = -1 or a valid cell ordinal is required.");  
   
   // Validate points array: can be rank-2 (P,D) or rank-3 (C,P,D)

@@ -274,7 +274,7 @@ void getValues_HCURL_Args(ArrayScalar &                outputValues,
     case OPERATOR_VALUE:
       TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                           ">>> ERROR: (Intrepid2::getValues_HCURL_Args) rank = 3 required for outputValues when operator is VALUE");
-      TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (int) outputValues.dimension(2) == spaceDim ),
                           std::invalid_argument,
                           ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension when operator is VALUE.");
       break;
@@ -286,7 +286,7 @@ void getValues_HCURL_Args(ArrayScalar &                outputValues,
         TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3 ) ,
                             std::invalid_argument,
                             ">>> ERROR: (Intrepid2::getValues_HCURL_Args) rank = 3 required for outputValues in 3D when operator is CURL");
-        TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim),
+        TEUCHOS_TEST_FOR_EXCEPTION( !( (int) outputValues.dimension(2) == spaceDim),
                             std::invalid_argument,
                             ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension in 3D when operator is CURL.");
       }
@@ -308,7 +308,7 @@ void getValues_HCURL_Args(ArrayScalar &                outputValues,
                       std::invalid_argument, 
                       ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == basisCard ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (int) outputValues.dimension(0) == basisCard ),
                       std::invalid_argument,
                       ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
 
@@ -352,7 +352,7 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
       TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                           ">>> ERROR: (Intrepid2::getValues_HDIV_Args) rank = 3 required for outputValues when operator is VALUE.");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (int) outputValues.dimension(2) == spaceDim ),
                           std::invalid_argument,
                           ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 2 of outputValues must equal cell dimension for operator VALUE.");
       break;
@@ -371,7 +371,7 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
                       std::invalid_argument, 
                       ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == basisCard ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (int) outputValues.dimension(0) == basisCard ),
                       std::invalid_argument,
                       ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
 }

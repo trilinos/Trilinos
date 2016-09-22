@@ -1406,7 +1406,7 @@ void FunctionSpaceTools::evaluate(ArrayOutPointVals     & outPointVals,
                       ">>> ERROR (FunctionSpaceTools::evaluate): First dimensions (number of fields) of the coefficient and fields input containers must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( (outPointVals.dimension(0) != inFields.dimension(0) ), std::invalid_argument,
                       ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the input fields container and the output values container must agree!");
-  for (int i=1; i<outPointVals.rank(); i++) {
+  for (size_t i=1; i<outPointVals.rank(); i++) {
     std::string errmsg  = ">>> ERROR (FunctionSpaceTools::evaluate): Dimensions ";
     errmsg += (char)(48+i);
     errmsg += " and ";
