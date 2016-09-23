@@ -145,19 +145,6 @@ Environment::~Environment()
     memoryOutputFile_->close();
 }
 
-// provides a generic validator to avoid clutter in the code in several places
-// this was originally accepting true/false/yes/no/1/0 - it has been simplified
-// so there may be a backwards compatibility issue for some setups
-RCP<Teuchos::StringToIntegralParameterEntryValidator<bool> >
-  Environment::getTrueFalseValidator()
-{
-  return Teuchos::rcp(
-    new Teuchos::StringToIntegralParameterEntryValidator<bool>(
-      Teuchos::tuple<std::string>("true", "false"),
-      Teuchos::tuple<std::string>( "", "" ),
-      Teuchos::tuple<bool>( true, false ), "false") );
-}
-
 // provides a generic any double validator to avoid clutter
 RCP<Teuchos::AnyNumberParameterEntryValidator>
   Environment::getAnyDoubleValidator()

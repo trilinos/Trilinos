@@ -128,11 +128,6 @@ public:
 
   /*! \brief Exists to make setting up validators less cluttered
    */
-  static RCP<Teuchos::StringToIntegralParameterEntryValidator<bool> >
-    getTrueFalseValidator();
-
-  /*! \brief Exists to make setting up validators less cluttered
-   */
   static RCP<Teuchos::AnyNumberParameterEntryValidator>
     getAnyDoubleValidator();
 
