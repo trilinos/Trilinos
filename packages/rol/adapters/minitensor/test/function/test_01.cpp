@@ -41,6 +41,7 @@
 
 #include <gtest/gtest.h>
 #include <Intrepid2_MiniTensor_FunctionSet.h>
+#include "ROL_MiniTensor_EqualityConstraint.hpp"
 #include "ROL_MiniTensor_Function.hpp"
 
 using Real = double;
@@ -106,7 +107,7 @@ TEST(MiniTensor_ROL, MT_Basics)
   ASSERT_LE(error, Intrepid2::machine_epsilon<Real>());
 }
 
-TEST(MiniTensor_ROL, ROL_Gradient)
+TEST(MiniTensor_ROL, Objective)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -139,41 +140,132 @@ TEST(MiniTensor_ROL, ROL_Gradient)
 
   os << "dval:" << dval << '\n';
 
+  Intrepid2::Vector<Real, DIM>
+  vval(Intrepid2::RANDOM);
+
+  os << "vval:" << vval << '\n';
+
   ROL::MiniTensorVector<Real, DIM>
   x(xval);
 
   ROL::MiniTensorVector<Real, DIM>
   d(dval);
 
+  ROL::MiniTensorVector<Real, DIM>
+  v(dval);
+
   std::vector<std::vector<Real>>
-  grad_check = obj.checkGradient(x, d);
+  grad_check = obj.checkGradient(x, d, print_output, os);
+
+  std::vector<std::vector<Real>>
+  hess_check = obj.checkHessVec(x, v, print_output, os);
+
+  std::vector<Real>
+  symm_check = obj.checkHessSym(x, d, v, print_output, os);
 
   Real
-  error{1.0};
+  error1{1.0};
 
-  for (Intrepid2::Index i = 0; i < grad_check.size(); ++i) {
-    if (i == 0) {
-      os << "\n";
-      os << std::right;
-      os << std::setw(20) << "Step size";
-      os << std::setw(20) << "grad'*dir";
-      os << std::setw(20) << "FD approx";
-      os << std::setw(20) << "abs error";
-      os << "\n";
-    }
-    os << std::scientific << std::setprecision(8) << std::right;
-    os << std::setw(20) << grad_check[i][0];
-    os << std::setw(20) << grad_check[i][1];
-    os << std::setw(20) << grad_check[i][2];
-    os << std::setw(20) << grad_check[i][3];
-    os << "\n";
-    error = std::min(error, grad_check[i][3] * grad_check[i][3]);
-  }
-
-  error = std::sqrt(error);
+  Real
+  error2{1.0};
 
   Real const
-  tol{1.0e-6};
+  error3 = symm_check[3];
 
-  ASSERT_LE(error, tol);
+  for (Intrepid2::Index i = 0; i < grad_check.size(); ++i) {
+    error1 = std::min(error1, grad_check[i][3]);
+    error2 = std::min(error2, hess_check[i][3]);
+  }
+
+  Real const
+  epsilon{Intrepid2::machine_epsilon<Real>()};
+
+  Real const
+  tol{std::sqrt(epsilon)};
+
+  ASSERT_LE(error1, tol);
+  ASSERT_LE(error2, epsilon);
+  ASSERT_LE(error3, epsilon);
+}
+
+TEST(MiniTensor_ROL, EqualityConstraint)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  ROWS{2};
+
+  constexpr Intrepid2::Index
+  COLS{2};
+
+  using MSEC = Intrepid2::Identity<Real, ROWS>;
+
+  MSEC
+  msec;
+
+  ROL::MiniTensor_EqualityConstraint<MSEC, Real, ROWS, COLS>
+  constr(msec);
+
+  Intrepid2::Vector<Real, ROWS>
+  xval(Intrepid2::RANDOM);
+
+  os << "xval:" << xval << '\n';
+
+  Intrepid2::Vector<Real, ROWS>
+  vval(Intrepid2::RANDOM);
+
+  os << "vval:" << vval << '\n';
+
+  Intrepid2::Vector<Real, COLS>
+  vlval(Intrepid2::RANDOM);
+
+  os << "vlval:" << vlval << '\n';
+
+  Intrepid2::Vector<Real, COLS>
+  vcval(Intrepid2::RANDOM);
+
+  os << "vcval:" << vcval << '\n';
+
+  ROL::MiniTensorVector<Real, ROWS>
+  x(xval);
+
+  ROL::MiniTensorVector<Real, ROWS>
+  v(vval);
+
+  ROL::MiniTensorVector<Real, COLS>
+  vl(vlval);
+
+  ROL::MiniTensorVector<Real, COLS>
+  vc(vcval);
+
+  std::vector<std::vector<Real>>
+  jac_check = constr.checkApplyJacobian(x, v, vc, print_output, os);
+
+  std::vector<std::vector<Real>>
+  ajac_check = constr.checkApplyAdjointJacobian(x, vl, vc, x, print_output, os);
+
+  Real
+  error1{1.0};
+
+  Real
+  error2{1.0};
+
+  for (Intrepid2::Index i = 0; i < jac_check.size(); ++i) {
+    error1 = std::min(error1, jac_check[i][3]);
+    error2 = std::min(error2, jac_check[i][3]);
+  }
+
+  Real const
+  epsilon{Intrepid2::machine_epsilon<Real>()};
+
+  ASSERT_LE(error1, epsilon);
+  ASSERT_LE(error2, epsilon);
 }

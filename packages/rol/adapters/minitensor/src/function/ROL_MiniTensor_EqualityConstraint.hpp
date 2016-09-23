@@ -53,10 +53,17 @@ using Index = Intrepid2::Index;
 ///
 /// Function base class that defines the interface to Mini Solvers.
 ///
-template<template<typename S, Index M> class MSEC, typename S, Index M, Index N>
+template<typename MSEC, typename S, Index M, Index N>
 class MiniTensor_EqualityConstraint : public EqualityConstraint<S>
 {
 public:
+
+  MiniTensor_EqualityConstraint(MSEC & msec);
+
+  MiniTensor_EqualityConstraint() = delete;
+
+  virtual
+  ~MiniTensor_EqualityConstraint();
 
   // ROL interface
   virtual
@@ -73,11 +80,8 @@ public:
   applyAdjointJacobian(Vector<S> & ajv, Vector<S> const & v,
       Vector<S> const & x, S & tol) final;
 
-  virtual
-  ~MiniTensor_EqualityConstraint() {}
-
 private:
-  MSEC<S, M>
+  MSEC
   minisolver_ec_;
 };
 } // namespace ROL

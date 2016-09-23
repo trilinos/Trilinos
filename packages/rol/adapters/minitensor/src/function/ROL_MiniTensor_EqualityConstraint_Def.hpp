@@ -47,7 +47,27 @@ using Index = Intrepid2::Index;
 //
 //
 //
-template<template<typename S, Index M> class MSEC, typename S, Index M, Index N>
+template<typename MSEC, typename S, Index M, Index N>
+MiniTensor_EqualityConstraint<MSEC, S, M, N>::
+MiniTensor_EqualityConstraint(MSEC & msec) : minisolver_ec_(msec)
+{
+  return;
+}
+
+//
+//
+//
+template<typename MSEC, typename S, Index M, Index N>
+MiniTensor_EqualityConstraint<MSEC, S, M, N>::
+~MiniTensor_EqualityConstraint()
+{
+  return;
+}
+
+//
+//
+//
+template<typename MSEC, typename S, Index M, Index N>
 void
 MiniTensor_EqualityConstraint<MSEC, S, M, N>::
 value(Vector<S> & c, Vector<S> const & x, S &)
@@ -58,16 +78,13 @@ value(Vector<S> & c, Vector<S> const & x, S &)
   Intrepid2::Vector<S, M> const
   cval = minisolver_ec_.value(xval);
 
-  MiniTensorVector<S, M> &
-  ce = Teuchos::dyn_cast<MiniTensorVector<S, M>>(c);
-
-  ce.set(cval);
+  MTtoROL<S, M>(cval, c);
 }
 
 //
 //
 //
-template<template<typename S, Index M> class MSEC, typename S, Index M, Index N>
+template<typename MSEC, typename S, Index M, Index N>
 void
 MiniTensor_EqualityConstraint<MSEC, S, M, N>::
 applyJacobian(Vector<S> & jv, Vector<S> const & v, Vector<S> const & x, S &)
@@ -82,12 +99,32 @@ applyJacobian(Vector<S> & jv, Vector<S> const & v, Vector<S> const & x, S &)
   J = minisolver_ec_.gradient(xval);
 
   Intrepid2::Vector<S, M> const
-  jvval = J * vval;
+  jvval = Intrepid2::dot(J, vval);
 
-  MiniTensorVector<S, M> &
-  jve = Teuchos::dyn_cast<MiniTensorVector<S, M>>(jv);
+  MTtoROL<S, M>(jvval, jv);
+}
 
-  jve.set(jvval);
+//
+//
+//
+template<typename MSEC, typename S, Index M, Index N>
+void
+MiniTensor_EqualityConstraint<MSEC, S, M, N>::
+applyAdjointJacobian(Vector<S> & ajv, Vector<S> const & v, Vector<S> const & x, S &)
+{
+  Intrepid2::Vector<S, N> const
+  xval = MTfromROL<S, N>(x);
+
+  Intrepid2::Vector<S, M> const
+  vval = MTfromROL<S, M>(v);
+
+  Intrepid2::Matrix<S, M, N> const
+  J = minisolver_ec_.gradient(xval);
+
+  Intrepid2::Vector<S, N> const
+  ajvval = Intrepid2::dot(vval, J);
+
+  MTtoROL<S, M>(ajvval, ajv);
 }
 
 } // namespace ROL

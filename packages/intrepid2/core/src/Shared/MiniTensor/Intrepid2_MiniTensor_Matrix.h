@@ -630,8 +630,8 @@ matrix(Vector<S, M, ES> const & u, Vector<T, N, ES> const & v);
 ///
 template<typename T, Index M, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Matrix<T, N, M, ES>
-transpose(Matrix<T, M, N, ES> const & A);
+Matrix<T, M, N, ES>
+transpose(Matrix<T, N, M, ES> const & A);
 
 ///
 /// matrix adjoint
