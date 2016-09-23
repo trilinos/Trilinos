@@ -42,7 +42,7 @@
 
 #include "Panzer_FaceFieldPattern.hpp"
 
-#include "Intrepid2_CellTools.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Shards_CellTopology.hpp"
 
 namespace panzer {
