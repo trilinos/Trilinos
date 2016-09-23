@@ -95,10 +95,10 @@ namespace MueLuExamples {
     std::streambuf* oldbuffer = NULL;
 
 #ifdef HAVE_MUELU_TPETRA
-    typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
-    typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
-    typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
-    typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
+    typedef Tpetra::Operator<SC,LO,GO,NO> Tpetra_Operator;
+    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Tpetra_CrsMatrix;
+    typedef Tpetra::Vector<SC,LO,GO,NO> Tpetra_Vector;
+    typedef Tpetra::MultiVector<SC,LO,GO,NO> Tpetra_MultiVector;
     if (lib == Xpetra::UseTpetra) {
       if (myRank == 0) {
         // Redirect output
