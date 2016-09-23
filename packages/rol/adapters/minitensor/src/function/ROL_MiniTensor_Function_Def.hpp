@@ -47,7 +47,27 @@ using Index = Intrepid2::Index;
 //
 //
 //
-template<template<typename S, Index M> class MSFN, typename S, Index M>
+template<typename MSFN, typename S, Index M>
+MiniTensor_Objective<MSFN, S, M>::
+MiniTensor_Objective(MSFN & msfn) : minisolver_fn_(msfn)
+{
+  return;
+}
+
+//
+//
+//
+template<typename MSFN, typename S, Index M>
+MiniTensor_Objective<MSFN, S, M>::
+~MiniTensor_Objective()
+{
+  return;
+}
+
+//
+//
+//
+template<typename MSFN, typename S, Index M>
 S
 MiniTensor_Objective<MSFN, S, M>::
 value(Vector<S> const & x, S &)
@@ -61,7 +81,7 @@ value(Vector<S> const & x, S &)
 //
 //
 //
-template<template<typename S, Index M> class MSFN, typename S, Index M>
+template<typename MSFN, typename S, Index M>
 void
 MiniTensor_Objective<MSFN, S, M>::
 gradient(Vector<S> & g, Vector<S> const & x, S &)
@@ -78,7 +98,7 @@ gradient(Vector<S> & g, Vector<S> const & x, S &)
 //
 //
 //
-template<template<typename S, Index M> class MSFN, typename S, Index M>
+template<typename MSFN, typename S, Index M>
 void
 MiniTensor_Objective<MSFN, S, M>::
 hessVec(Vector<S> & hv, Vector<S> const & v, Vector<S> const & x, S &)
@@ -101,7 +121,7 @@ hessVec(Vector<S> & hv, Vector<S> const & v, Vector<S> const & x, S &)
 //
 //
 //
-template<template<typename S, Index M> class MSFN, typename S, Index M>
+template<typename MSFN, typename S, Index M>
 void
 MiniTensor_Objective<MSFN, S, M>::
 invHessVec(Vector<S> & hv, Vector<S> const & v, Vector<S> const & x, S &)

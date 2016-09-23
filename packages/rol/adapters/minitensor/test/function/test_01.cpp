@@ -121,8 +121,13 @@ TEST(MiniTensor_ROL, ROL_Gradient)
   constexpr Intrepid2::Index
   DIM{2};
 
-  ROL::MiniTensor_Objective<Intrepid2::Paraboloid, Real, DIM>
-  obj;
+  using MSFN = Intrepid2::Paraboloid<Real, DIM>;
+
+  MSFN
+  msfn(0.0, 0.0);
+
+  ROL::MiniTensor_Objective<MSFN, Real, DIM>
+  obj(msfn);
 
   Intrepid2::Vector<Real, DIM>
   xval(Intrepid2::RANDOM);

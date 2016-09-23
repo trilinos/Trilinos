@@ -53,10 +53,17 @@ using Index = Intrepid2::Index;
 ///
 /// Function base class that defines the interface to Mini Solvers.
 ///
-template<template<typename S, Index M> class MSFN, typename S, Index M>
+template<typename MSFN, typename S, Index M>
 class MiniTensor_Objective : public Objective<S>
 {
 public:
+
+  MiniTensor_Objective(MSFN & msfn);
+
+  MiniTensor_Objective() = delete;
+
+  virtual
+  ~MiniTensor_Objective();
 
   // ROL interface
   virtual
@@ -77,11 +84,8 @@ public:
   invHessVec(Vector<S> & hv, Vector<S> const & v,
       Vector<S> const & x, S & tol) final;
 
-  virtual
-  ~MiniTensor_Objective() {}
-
 private:
-  MSFN<S, M>
+  MSFN
   minisolver_fn_;
 };
 

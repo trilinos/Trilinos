@@ -465,7 +465,9 @@ class Paraboloid : public Function_Base<Paraboloid<S, M>, S, M>
 {
 public:
 
-  Paraboloid() {}
+  Paraboloid(S xc = 0.0, S yc = 0.0) : xc_(xc), yc_(yc)
+  {
+  }
 
   static constexpr
   char const * const
@@ -481,7 +483,13 @@ public:
     assert(x.get_dimension() == Base::DIMENSION);
 
     T const
-    f = (x(0) * x(0) + x(1) * x(1));
+    a = x(0) - xc_;
+
+    T const
+    b = x(1) - yc_;
+
+    T const
+    f = a * a + b * b;
 
     return f;
   }
@@ -502,6 +510,12 @@ public:
     return Base::hessian(*this, x);
   }
 
+private:
+  S
+  xc_{0.0};
+
+  S
+  yc_{0.0};
 };
 
 //
@@ -512,7 +526,7 @@ class Rosenbrock : public Function_Base<Rosenbrock<S, M>, S, M>
 {
 public:
 
-  Rosenbrock()
+  Rosenbrock(S a = 1.0, S b = 100.0) : a_(a), b_(b)
   {
   }
 

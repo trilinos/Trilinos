@@ -80,8 +80,16 @@ TEST(MiniTensor_ROL, Paraboloid)
   constexpr Intrepid2::Index
   DIM{2};
 
-  ROL::MiniTensor_Objective<Intrepid2::Paraboloid, Real, DIM>
-  obj;
+  using MSFN = Intrepid2::Paraboloid<Real, DIM>;
+
+  Intrepid2::Vector<Real, DIM>
+  min(0.0, 0.0);
+
+  MSFN
+  msfn(0.0, 0.0);
+
+  ROL::MiniTensor_Objective<MSFN, Real, DIM>
+  obj(msfn);
 
   // Set parameters.
   Teuchos::ParameterList
@@ -116,7 +124,7 @@ TEST(MiniTensor_ROL, Paraboloid)
   epsilon{Intrepid2::machine_epsilon<Real>()};
 
   Real const
-  error = Intrepid2::norm(sol);
+  error = Intrepid2::norm(sol - min);
 
   ASSERT_LE(error, epsilon);
 }
@@ -136,8 +144,19 @@ TEST(MiniTensor_ROL, Rosenbrock)
   constexpr Intrepid2::Index
   DIM{2};
 
-  ROL::MiniTensor_Objective<Intrepid2::Rosenbrock, Real, DIM>
-  obj;
+  using MSFN = Intrepid2::Rosenbrock<Real, DIM>;
+
+  Real const
+  a = 1.0;
+
+  Real const
+  b = 100.0;
+
+  MSFN
+  msfn(a, b);
+
+  ROL::MiniTensor_Objective<MSFN, Real, DIM>
+  obj(msfn);
 
   // Set parameters.
   Teuchos::ParameterList
@@ -171,7 +190,8 @@ TEST(MiniTensor_ROL, Rosenbrock)
   Real const
   epsilon{2.0 * Intrepid2::machine_epsilon<Real>()};
 
-  xval.fill(Intrepid2::ONES);
+  xval(0) = a;
+  xval(1) = a * a;
 
   Real const
   error = Intrepid2::norm(sol - xval);
