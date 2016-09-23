@@ -1834,7 +1834,8 @@ template<class Scalar>
 template<class ArrayScaled>
 void RealSpaceTools<Scalar>::scale(ArrayScaled & inoutScaledArray, const Scalar scalar) {
   // Intrepid::FieldContainer has size type int
-  for (size_t i=0; i<(size_t)inoutScaledArray.size(); i++) {
+  const int theSize = (int) inoutScaledArray.size();
+  for (int i=0; i<theSize; i++) {
     inoutScaledArray[i] *= scalar;
   }
 }
