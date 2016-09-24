@@ -474,6 +474,7 @@ void RBILUK<MatrixType>::compute ()
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
+    Teuchos::TimeMonitor timeMon (timer);
     this->isComputed_ = false;
 
     // MinMachNum should be officially defined, for now pick something a little

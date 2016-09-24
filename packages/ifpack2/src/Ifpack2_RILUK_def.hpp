@@ -113,7 +113,7 @@ RILUK<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     isAllocated_ = false;
     isInitialized_ = false;
     isComputed_ = false;
-    A_local_crs_ = Teuchos::null;
+    A_local_ = Teuchos::null;
     Graph_ = Teuchos::null;
 
     // The sparse triangular solvers get a triangular factor as their
@@ -537,9 +537,9 @@ void RILUK<MatrixType>::initialize ()
     isComputed_ = false;
     Graph_ = Teuchos::null;
 
-    RCP<const row_matrix_type> A_local = makeLocalFilter (A_);
+    A_local_ = makeLocalFilter (A_);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      A_local.is_null (), std::logic_error, "Ifpack2::RILUK::initialize: "
+      A_local_.is_null (), std::logic_error, "Ifpack2::RILUK::initialize: "
       "makeLocalFilter returned null; it failed to compute A_local.  "
       "Please report this bug to the Ifpack2 developers.");
 
@@ -550,15 +550,15 @@ void RILUK<MatrixType>::initialize ()
     // we just copy the input matrix if it's not a CrsMatrix.
     {
       RCP<const crs_matrix_type> A_local_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A_local);
+        rcp_dynamic_cast<const crs_matrix_type> (A_local_);
       if (A_local_crs.is_null ()) {
         // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
         // number of elements in each row of A_local, so that we can
         // create A_local_crs_nc using static profile.  The code below is
         // correct but potentially slow.
         RCP<crs_matrix_type> A_local_crs_nc =
-          rcp (new crs_matrix_type (A_local->getRowMap (),
-                                    A_local->getColMap (), 0));
+          rcp (new crs_matrix_type (A_local_->getRowMap (),
+                                    A_local_->getColMap (), 0));
         // FIXME (mfh 24 Jan 2014) This Import approach will only work
         // if A_ has a one-to-one row Map.  This is generally the case
         // with matrices given to Ifpack2.
@@ -567,21 +567,26 @@ void RILUK<MatrixType>::initialize ()
         // That way, the Import just implements a copy.
         typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
           node_type> import_type;
-        import_type import (A_local->getRowMap (), A_local->getRowMap ());
-        A_local_crs_nc->doImport (*A_local, import, Tpetra::REPLACE);
-        A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
+        import_type import (A_local_->getRowMap (), A_local_->getRowMap ());
+        A_local_crs_nc->doImport (*A_local_, import, Tpetra::REPLACE);
+        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
-      A_local_crs_ = A_local_crs;
       Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_local_crs->getCrsGraph (),
                                                             LevelOfFill_, 0));
+#ifdef IFPACK2_ILUK_EXPERIMENTAL
+      if (isExperimental_) A_local_crs_ = A_local_crs;
+#endif
     }
 
     if(!isExperimental_)
       {
         Graph_->initialize ();
         allocate_L_and_U ();
-        initAllValues (*A_local_crs_);
+        checkOrderingConsistency (*A_local_);
+        // Do not call initAllValues. compute() always calls initAllValues to
+        // fill L and U with possibly new numbers. initialize() is concerned
+        // only with the nonzero pattern.
       }
     else
       {
@@ -650,25 +655,46 @@ void RILUK<MatrixType>::initialize ()
   initializeTime_ += timer.totalElapsedTime ();
 }
 
+#ifdef IFPACK2_ILUK_EXPERIMENTAL
+// Basker needs to refresh numbers using A_local_crs_, not just A_local_.
+template<class MatrixType>
+void
+RILUK<MatrixType>::
+initLocalCrs ()
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
+  using Teuchos::rcp_const_cast;
+
+  RCP<crs_matrix_type> A_local_crs_nc = rcp_const_cast<crs_matrix_type> (A_local_crs_);
+  A_local_crs_ = rcp_dynamic_cast<const crs_matrix_type> (A_local_);
+  if (A_local_crs_.is_null ()) {
+    Teuchos::Array<local_ordinal_type> lclColInds;
+    Teuchos::Array<scalar_type> vals;
+    A_local_crs_nc->resumeFill();
+    for (size_t i = 0; i < A_local_crs_nc->getNodeNumRows(); ++i) {
+      size_t numEnt;
+      const auto nc = A_local_->getNumEntriesInLocalRow(i);
+      if (static_cast<size_t>(lclColInds.size()) < nc) {
+        lclColInds.resize(nc);
+        vals.resize(nc);
+      }
+      A_local_->getLocalRowCopy(i, lclColInds(), vals(), numEnt);
+      A_local_crs_nc->replaceLocalValues(i, lclColInds.view(0, numEnt), vals.view(0, numEnt));
+    }
+    A_local_crs_nc->fillComplete();
+  }
+  A_local_crs_ = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+}
+#endif
 
 template<class MatrixType>
 void
 RILUK<MatrixType>::
-initAllValues (const row_matrix_type& A)
+checkOrderingConsistency (const row_matrix_type& A)
 {
-  using Teuchos::ArrayRCP;
-  using Teuchos::Comm;
-  using Teuchos::ptr;
-  using Teuchos::RCP;
-  using Teuchos::REDUCE_SUM;
-  using Teuchos::reduceAll;
-  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
-
-  size_t NumIn = 0, NumL = 0, NumU = 0;
-  bool DiagFound = false;
-  size_t NumNonzeroDiags = 0;
-  size_t MaxNumEntries = A.getGlobalMaxNumRowEntries();
-
   // First check that the local row map ordering is the same as the local portion of the column map.
   // The extraction of the strictly lower/upper parts of A, as well as the factorization,
   // implicitly assume that this is the case.
@@ -687,7 +713,26 @@ initAllValues (const row_matrix_type& A)
                              "The ordering of the local GIDs in the row and column maps is not the same"
                              << std::endl << "at index " << indexOfInconsistentGID
                              << ".  Consistency is required, as all calculations are done with"
-                             << std::endl << "local indexing.");
+                             << std::endl << "local indexing.");  
+}
+
+template<class MatrixType>
+void
+RILUK<MatrixType>::
+initAllValues (const row_matrix_type& A)
+{
+  using Teuchos::ArrayRCP;
+  using Teuchos::Comm;
+  using Teuchos::ptr;
+  using Teuchos::RCP;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
+  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
+
+  size_t NumIn = 0, NumL = 0, NumU = 0;
+  bool DiagFound = false;
+  size_t NumNonzeroDiags = 0;
+  size_t MaxNumEntries = A.getGlobalMaxNumRowEntries();
 
   // Allocate temporary space for extracting the strictly
   // lower and upper parts of the matrix A.
@@ -798,8 +843,8 @@ initAllValues (const row_matrix_type& A)
   // must be the same as those of the original matrix, However if the
   // original matrix is a VbrMatrix, these two latter maps are
   // translation from a block map to a point map.
-  L_->fillComplete (L_->getColMap (), A_local_crs_->getRangeMap ());
-  U_->fillComplete (A_local_crs_->getDomainMap (), U_->getRowMap ());
+  L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
+  U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
 
   // At this point L and U have the values of A in the structure of L
   // and U, and diagonal vector D
@@ -832,9 +877,15 @@ void RILUK<MatrixType>::compute ()
   }
 
   Teuchos::Time timer ("RILUK::compute");
-  { //Start timing
-    if(! isExperimental_) {
+  if ( ! isExperimental_) {
+    // Start timing
+    Teuchos::TimeMonitor timeMon (timer);
+
     isComputed_ = false;
+
+    // Fill L and U with numbers. This supports nonzero pattern reuse by calling
+    // initialize() once and then compute() multiple times.
+    initAllValues (*A_local_);
 
     L_->resumeFill ();
     U_->resumeFill ();
@@ -965,8 +1016,8 @@ void RILUK<MatrixType>::compute ()
 
     // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
     // always one-to-one?
-    L_->fillComplete (L_->getColMap (), A_local_crs_->getRangeMap ());
-    U_->fillComplete (A_local_crs_->getDomainMap (), U_->getRowMap ());
+    L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
+    U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
 
     // Validate that the L and U factors are actually lower and upper triangular
 
@@ -992,6 +1043,8 @@ void RILUK<MatrixType>::compute ()
 #ifdef IFPACK2_ILUK_EXPERIMENTAL
     Teuchos::Time timerbasker ("RILUK::basercompute");
     {
+      // Start timing
+      Teuchos::TimeMonitor timeMon (timer);
       //
       if(basker_reuse == false)
         {
@@ -1015,7 +1068,6 @@ void RILUK<MatrixType>::compute ()
         r_ptr = new local_ordinal_type[(local_ordinal_type)A_local_crs_->getNodeNumRows()+1];
 
         //Still need to convert
-        //Lost on why Trilinos uses such odd types for row_ptrs
         for(local_ordinal_type bi = 0; bi < A_local_crs_->getNodeNumRows()+1; bi++)
           {
             r_ptr[bi] = (local_ordinal_type)kcsr.graph.row_map(bi);
@@ -1079,7 +1131,6 @@ void RILUK<MatrixType>::compute ()
        "Ifpack2::RILUK::compute: experimental not enabled");
 #endif
   }//end -- if experimental
-  }//end timing
 
   isComputed_ = true;
   ++numCompute_;
