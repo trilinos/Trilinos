@@ -217,8 +217,8 @@ int main(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
-    typedef Tpetra::CrsMatrix<SC,LO,GO>           tCrsMatrix;
-    typedef Tpetra::Operator<SC,LO,GO>            tOperator;
+    typedef Tpetra::CrsMatrix<SC,LO,GO,NO>        tCrsMatrix;
+    typedef Tpetra::Operator<SC,LO,GO,NO>         tOperator;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>      tMultiVector;
     typedef Tpetra::Map<LO,GO,NO>                 tMap;
     typedef Thyra::TpetraVectorSpace<SC,LO,GO,NO> THTP_Vs;
