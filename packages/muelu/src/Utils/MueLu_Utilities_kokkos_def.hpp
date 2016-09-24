@@ -348,14 +348,15 @@ namespace MueLu {
 
     MatrixType localMatrix;
     BNodesType boundaryNodes;
-    SC         tol;
+    typename ATS::mag_type tol;
 
   public:
     DetectDirichletFunctor(MatrixType localMatrix_, BNodesType boundaryNodes_, SC tol_) :
       localMatrix(localMatrix_),
-      boundaryNodes(boundaryNodes_),
-      tol(tol_)
-    { }
+      boundaryNodes(boundaryNodes_)
+    {
+      tol = ATS::magnitude(tol_);
+    }
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const LO row) const {
