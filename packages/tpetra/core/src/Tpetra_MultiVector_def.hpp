@@ -125,16 +125,29 @@ namespace { // (anonymous)
   /// \param numCols [in] Number of columns in the DualView.
   /// \param zeroOut [in] Whether to initialize all the entries of the
   ///   DualView to zero.  Kokkos does first-touch initialization.
+  /// \param allowPadding [in] Whether to give Kokkos the option to
+  ///   pad Views for alignment.
   ///
   /// \return The allocated Kokkos::DualView.
   template<class ST, class LO, class GO, class NT>
   typename Tpetra::MultiVector<ST, LO, GO, NT>::dual_view_type
-  allocDualView (const size_t lclNumRows, const size_t numCols, const bool zeroOut = true)
+  allocDualView (const size_t lclNumRows,
+                 const size_t numCols,
+                 const bool zeroOut = true,
+                 const bool allowPadding = false)
   {
+    using Kokkos::AllowPadding;
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
     typedef typename Tpetra::MultiVector<ST, LO, GO, NT>::dual_view_type dual_view_type;
+    typedef typename dual_view_type::t_dev dev_view_type;
+    // This needs to be a string and not a char*, if given as an
+    // argument to Kokkos::view_alloc.  This is because view_alloc
+    // also allows a raw pointer as its first argument.  See
+    // https://github.com/kokkos/kokkos/issues/434.
     const std::string label ("MV::DualView");
 
-    // FIXME (mfh 18 Feb 2015, 12 Apr 2015, 22 Sep 2016) Our separate
+    // NOTE (mfh 18 Feb 2015, 12 Apr 2015, 22 Sep 2016) Our separate
     // creation of the DualView's Views works around
     // Kokkos::DualView's current inability to accept an
     // AllocationProperties initial argument (as Kokkos::View does).
@@ -142,12 +155,28 @@ namespace { // (anonymous)
     // (currently nonexistent) equivalent DualView constructor would
     // have done anyway.
 
-    typename dual_view_type::t_dev d_view;
+    dev_view_type d_view;
     if (zeroOut) {
-      d_view = typename dual_view_type::t_dev (Kokkos::view_alloc (label), lclNumRows, numCols);
+      if (allowPadding) {
+        d_view = dev_view_type (view_alloc (label, AllowPadding),
+                                lclNumRows, numCols);
+      }
+      else {
+        d_view = dev_view_type (view_alloc (label),
+                                lclNumRows, numCols);
+      }
     }
     else {
-      d_view = typename dual_view_type::t_dev (Kokkos::view_alloc (label, Kokkos::WithoutInitializing), lclNumRows, numCols);
+      if (allowPadding) {
+        d_view = dev_view_type (view_alloc (label,
+                                            WithoutInitializing,
+                                            AllowPadding),
+                                lclNumRows, numCols);
+      }
+      else {
+        d_view = dev_view_type (view_alloc (label, WithoutInitializing),
+                                lclNumRows, numCols);
+      }
 #ifdef HAVE_TPETRA_DEBUG
       // Filling with NaN is a cheap and effective way to tell if
       // downstream code is trying to use a MultiVector's data without
@@ -177,7 +206,7 @@ namespace { // (anonymous)
     // MultiVector, the device and host views are out of sync.  We
     // prefer to work in device memory.  The way to ensure this
     // happens is to mark the device view as modified.
-    dv.template modify<typename dual_view_type::t_dev::memory_space> ();
+    dv.template modify<typename dev_view_type::memory_space> ();
 
     return dv;
   }
