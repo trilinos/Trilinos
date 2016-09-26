@@ -1270,7 +1270,7 @@ namespace MueLu {
     //     <ParameterList name="Matrix">
     //   </ParameterList>
     if (paramList.isSublist("Matrix")) {
-      blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", MasterList::getDefault<int>("number of equations"));
+      blockSize_ = paramList.sublist("Matrix").get<int>("PDE equations", MasterList::getDefault<int>("number of equations"));
       dofOffset_ = paramList.sublist("Matrix").get<GlobalOrdinal>("DOF offset", 0); // undocumented parameter allowing to define a DOF offset of the global dofs of an operator (defaul = 0)
     }
 
