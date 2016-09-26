@@ -168,6 +168,26 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     TEST_EQUALITY(b.rank(),0);
   }
 
+  // Test unmanaged view of double
+  {
+    Kokkos::View<double*> a("a",5*3);
+    using b_type = Kokkos::View<double**,Kokkos::MemoryUnmanaged>;
+    b_type b = createViewWithType<b_type>(a,a.data(),5,3);
+    TEST_EQUALITY(b.dimension_0(),5);
+    TEST_EQUALITY(b.dimension_1(),3);
+    TEST_EQUALITY(dimension_scalar(b),0);
+  }
+
+  // Test unmanaged view of Fad
+  {
+    Kokkos::View<FadType*> a("a",5*3,derivative_dim_plus_one);
+    using b_type = Kokkos::View<FadType**,Kokkos::MemoryUnmanaged>;
+    b_type b = createViewWithType<b_type>(a,a.data(),5,3);
+    TEST_EQUALITY(b.dimension_0(),5);
+    TEST_EQUALITY(b.dimension_1(),3);
+    TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
+  }
+
 }
 
 #endif
