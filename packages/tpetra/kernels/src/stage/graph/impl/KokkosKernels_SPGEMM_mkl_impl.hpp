@@ -23,7 +23,13 @@ namespace Impl{
   template <typename KernelHandle,
   typename in_row_index_view_type,
   typename in_nonzero_index_view_type,
-  typename in_nonzero_value_view_type>
+  typename in_nonzero_value_view_type,
+  typename bin_row_index_view_type,
+  typename bin_nonzero_index_view_type,
+  typename bin_nonzero_value_view_type,
+  typename cin_row_index_view_type,
+  typename cin_nonzero_index_view_type,
+  typename cin_nonzero_value_view_type>
   void mkl_apply(
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
@@ -34,13 +40,13 @@ namespace Impl{
       in_nonzero_value_view_type valuesA,
 
       bool transposeA,
-      in_row_index_view_type row_mapB,
-      in_nonzero_index_view_type entriesB,
-      in_nonzero_value_view_type valuesB,
+      bin_row_index_view_type row_mapB,
+      bin_nonzero_index_view_type entriesB,
+      bin_nonzero_value_view_type valuesB,
       bool transposeB,
-      typename in_row_index_view_type::non_const_type &row_mapC,
-      typename in_nonzero_index_view_type::non_const_type &entriesC,
-      typename in_nonzero_value_view_type::non_const_type &valuesC){
+      cin_row_index_view_type &row_mapC,
+      cin_nonzero_index_view_type &entriesC,
+      cin_nonzero_value_view_type &valuesC){
 
 #ifdef KERNELS_HAVE_MKL
 
@@ -148,15 +154,15 @@ namespace Impl{
           }
 
 
-          row_mapC = typename in_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
-          entriesC = typename in_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
-          valuesC = typename in_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
+          row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
+          entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
+          valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
 
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
+          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
           idx nnz = row_mapC(m) =  rows_end[m - 1];
 
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_nonzero_index_view_type::non_const_type , MyExecSpace> (nnz, columns, entriesC);
-          KokkosKernels::Experimental::Util::copy_vector<float *, typename in_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
+          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename cin_nonzero_index_view_type::non_const_type , MyExecSpace> (nnz, columns, entriesC);
+          KokkosKernels::Experimental::Util::copy_vector<float *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
         }
 
 
@@ -234,15 +240,15 @@ namespace Impl{
           }
           {
             Kokkos::Impl::Timer copy_time;
-            row_mapC = typename in_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
-            entriesC = typename in_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
-            valuesC = typename in_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
+            row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
+            entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
+            valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
 
-            KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
+            KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
             idx nnz = row_mapC(m) =  rows_end[m - 1];
 
-            KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
-            KokkosKernels::Experimental::Util::copy_vector<double *, typename in_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
+            KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
+            KokkosKernels::Experimental::Util::copy_vector<double *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
             double copy_time_d = copy_time.seconds();
             std::cout << "MKL COPYTIME:" << copy_time_d << std::endl;
           }

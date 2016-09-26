@@ -16,30 +16,34 @@ namespace Impl{
 
 
   template <typename KernelHandle,
-  typename in_row_index_view_type,
-  typename in_nonzero_index_view_type>
+  typename ain_row_index_view_type,
+  typename ain_nonzero_index_view_type,
+  typename bin_row_index_view_type,
+  typename bin_nonzero_index_view_type,
+  typename cin_row_index_view_type,
+  typename cin_nonzero_index_view_type>
   void cuSPARSE_symbolic(
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n,
       typename KernelHandle::nnz_lno_t k,
-      in_row_index_view_type row_mapA,
-      in_nonzero_index_view_type entriesA,
+      ain_row_index_view_type row_mapA,
+      ain_nonzero_index_view_type entriesA,
 
       bool transposeA,
-      in_row_index_view_type row_mapB,
-      in_nonzero_index_view_type entriesB,
+      bin_row_index_view_type row_mapB,
+      bin_nonzero_index_view_type entriesB,
       bool transposeB,
-      typename in_row_index_view_type::non_const_type &row_mapC,
-      typename in_nonzero_index_view_type::non_const_type &entriesC){
+      cin_row_index_view_type &row_mapC,
+      cin_nonzero_index_view_type &entriesC){
 
 #ifdef KERNELS_HAVE_CUSPARSE
 
-    typedef typename in_row_index_view_type::device_type device1;
-    typedef typename in_nonzero_index_view_type::device_type device2;
+    typedef typename ain_row_index_view_type::device_type device1;
+    typedef typename ain_nonzero_index_view_type::device_type device2;
 
     typedef typename KernelHandle::nnz_lno_t idx;
-    typedef typename in_row_index_view_type::non_const_type idx_array_type;
+    typedef typename ain_row_index_view_type::non_const_type idx_array_type;
 
 
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
@@ -52,7 +56,7 @@ namespace Impl{
     }
 
     if (Kokkos::Impl::is_same<idx, int>::value){
-      row_mapC = idx_array_type("rowMapC", m + 1);
+      row_mapC = cin_row_index_view_type("rowMapC", m + 1);
       const idx *a_xadj = row_mapA.ptr_on_device();
       const idx *b_xadj = row_mapB.ptr_on_device();
       idx *c_xadj = row_mapC.ptr_on_device();
@@ -93,7 +97,7 @@ namespace Impl{
           cudaMemcpy(&baseC, c_xadj, sizeof(int), cudaMemcpyDeviceToHost);
           nnzC -= baseC;
       }
-      entriesC = in_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"), nnzC);
+      entriesC = cin_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"), nnzC);
     }
     else {
       std::cerr << "CUSPARSE requires integer values" << std::endl;
@@ -109,37 +113,43 @@ namespace Impl{
 
 
   template <typename KernelHandle,
-  typename in_row_index_view_type,
-  typename in_nonzero_index_view_type,
-  typename in_nonzero_value_view_type>
+  typename ain_row_index_view_type,
+  typename ain_nonzero_index_view_type,
+  typename ain_nonzero_value_view_type,
+  typename bin_row_index_view_type,
+  typename bin_nonzero_index_view_type,
+  typename bin_nonzero_value_view_type,
+  typename cin_row_index_view_type,
+  typename cin_nonzero_index_view_type,
+  typename cin_nonzero_value_view_type>
   void cuSPARSE_apply(
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n,
       typename KernelHandle::nnz_lno_t k,
-      in_row_index_view_type row_mapA,
-      in_nonzero_index_view_type entriesA,
-      in_nonzero_value_view_type valuesA,
+      ain_row_index_view_type row_mapA,
+      ain_nonzero_index_view_type entriesA,
+      ain_nonzero_value_view_type valuesA,
 
       bool transposeA,
-      in_row_index_view_type row_mapB,
-      in_nonzero_index_view_type entriesB,
-      in_nonzero_value_view_type valuesB,
+      bin_row_index_view_type row_mapB,
+      bin_nonzero_index_view_type entriesB,
+      bin_nonzero_value_view_type valuesB,
       bool transposeB,
-      typename in_row_index_view_type::non_const_type &row_mapC,
-      typename in_nonzero_index_view_type::non_const_type &entriesC,
-      typename in_nonzero_value_view_type::non_const_type &valuesC){
+      cin_row_index_view_type &row_mapC,
+      cin_nonzero_index_view_type &entriesC,
+      cin_nonzero_value_view_type &valuesC){
 
 #ifdef KERNELS_HAVE_CUSPARSE
     typedef typename KernelHandle::nnz_lno_t idx;
-    typedef in_row_index_view_type idx_array_type;
+    typedef ain_row_index_view_type idx_array_type;
 
     typedef typename KernelHandle::nnz_scalar_t value_type;
 
 
-    typedef typename in_row_index_view_type::device_type device1;
-    typedef typename in_nonzero_index_view_type::device_type device2;
-    typedef typename in_nonzero_value_view_type::device_type device3;
+    typedef typename ain_row_index_view_type::device_type device1;
+    typedef typename ain_nonzero_index_view_type::device_type device2;
+    typedef typename ain_nonzero_value_view_type::device_type device3;
     std::cout << "RUNNING CUSParse" << std::endl;
 
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){

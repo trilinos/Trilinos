@@ -163,10 +163,9 @@ inline int get_suggested_vector__size(
   case Exec_QTHREADS:
     break;
   case Exec_CUDA:
-
+   
     suggested_vector_size_ = nnz / double (nr) + 0.5;
-
-    if (suggested_vector_size_ <= 3){
+    if (suggested_vector_size_ < 3){
       suggested_vector_size_ = 2;
     }
     else if (suggested_vector_size_ <= 6){
@@ -1433,6 +1432,30 @@ void copy_vector(
   Kokkos::parallel_for( my_exec_space(0,num_elements), CopyVector<from_vector, to_vector>(from, to));
 
 }
+
+
+template <typename from_vector, typename to_vector>
+struct CopyView{
+  from_vector from;
+  to_vector to;
+
+  CopyView(from_vector &from_, to_vector to_): from(from_), to(to_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i) const {
+    to(i) = from(i);
+  }
+};
+template <typename from_vector, typename to_vector, typename MyExecSpace>
+void copy_view(
+                size_t num_elements,
+                from_vector from, to_vector to){
+
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_for( my_exec_space(0,num_elements), CopyView<from_vector, to_vector>(from, to));
+
+}
+
 
 
 template<typename view_type>

@@ -2,7 +2,7 @@
 #ifndef _KOKKOSSPGEMMCUSP_HPP
 #define _KOKKOSSPGEMMCUSP_HPP
 
-#ifdef KERNELS_HAVE_CUSP
+#ifdef KERNELS_HAVE_CUSP1
 #include <cusp/multiply.h>
 #include <cusp/csr_matrix.h>
 #endif
@@ -32,33 +32,39 @@ struct CopyArrayToCuspArray{
 
 
 template <typename KernelHandle,
-  typename in_row_index_view_type,
-  typename in_nonzero_index_view_type,
-  typename in_nonzero_value_view_type>
+  typename ain_row_index_view_type,
+  typename ain_nonzero_index_view_type,
+  typename ain_nonzero_value_view_type,
+  typename bin_row_index_view_type,
+  typename bin_nonzero_index_view_type,
+  typename bin_nonzero_value_view_type,
+  typename cin_row_index_view_type,
+  typename cin_nonzero_index_view_type,
+  typename cin_nonzero_value_view_type>
 void CUSP_apply(
     KernelHandle *handle,
     typename KernelHandle::nnz_lno_t m,
     typename KernelHandle::nnz_lno_t n,
     typename KernelHandle::nnz_lno_t k,
-    in_row_index_view_type row_mapA,
-    in_nonzero_index_view_type entriesA,
-    in_nonzero_value_view_type valuesA,
+    ain_row_index_view_type row_mapA,
+    ain_nonzero_index_view_type entriesA,
+    ain_nonzero_value_view_type valuesA,
 
     bool transposeA,
-    in_row_index_view_type row_mapB,
-    in_nonzero_index_view_type entriesB,
-    in_nonzero_value_view_type valuesB,
+    bin_row_index_view_type row_mapB,
+    bin_nonzero_index_view_type entriesB,
+    bin_nonzero_value_view_type valuesB,
     bool transposeB,
-    typename in_row_index_view_type::non_const_type &row_mapC,
-    typename in_nonzero_index_view_type::non_const_type &entriesC,
-    typename in_nonzero_value_view_type::non_const_type &valuesC){
-#ifdef KERNELS_HAVE_CUSP
+    cin_row_index_view_type &row_mapC,
+    cin_nonzero_index_view_type &entriesC,
+    cin_nonzero_value_view_type &valuesC){
+#ifdef KERNELS_HAVE_CUSP1
   typedef typename KernelHandle::nnz_lno_t idx;
   typedef typename KernelHandle::nnz_scalar_t value_type;
 
-  typedef typename in_row_index_view_type::device_type device1;
-  typedef typename in_nonzero_index_view_type::device_type device2;
-  typedef typename in_nonzero_value_view_type::device_type device3;
+  typedef typename ain_row_index_view_type::device_type device1;
+  typedef typename ain_nonzero_index_view_type::device_type device2;
+  typedef typename ain_nonzero_value_view_type::device_type device3;
 
   std::cout << "RUNNING CUSP" << std::endl;
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
@@ -142,15 +148,15 @@ void CUSP_apply(
 
   std::cout << " C.column_indices.size():" <<  C.column_indices.size() << std::endl;
   std::cout << " C.values.size():" <<  C.values.size() << std::endl;
-  row_mapC = typename in_row_index_view_type::non_const_type("rowmapC", m + 1);
-  entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" ,  C.column_indices.size());
-  valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  C.values.size());
+  row_mapC = typename cin_row_index_view_type::non_const_type("rowmapC", m + 1);
+  entriesC = typename cin_nonzero_index_view_type::non_const_type ("EntriesC" ,  C.column_indices.size());
+  valuesC = typename cin_nonzero_value_view_type::non_const_type ("valuesC" ,  C.values.size());
 
-  Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<typename in_row_index_view_type::non_const_type,
+  Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<typename cin_row_index_view_type::non_const_type,
       idx >(row_mapC, (idx *) thrust::raw_pointer_cast(C.row_offsets.data())));
-  Kokkos::parallel_for (my_exec_space (0, C.column_indices.size()) , CopyArrayToCuspArray<typename in_nonzero_index_view_type::non_const_type,
+  Kokkos::parallel_for (my_exec_space (0, C.column_indices.size()) , CopyArrayToCuspArray<typename cin_nonzero_index_view_type::non_const_type,
       idx >(entriesC, (idx *) thrust::raw_pointer_cast(C.column_indices.data())));
-  Kokkos::parallel_for (my_exec_space (0, C.values.size()) , CopyArrayToCuspArray<typename in_nonzero_value_view_type::non_const_type,
+  Kokkos::parallel_for (my_exec_space (0, C.values.size()) , CopyArrayToCuspArray<typename cin_nonzero_value_view_type::non_const_type,
       value_type>(valuesC, (value_type *) thrust::raw_pointer_cast(C.values.data())));
 
 #else

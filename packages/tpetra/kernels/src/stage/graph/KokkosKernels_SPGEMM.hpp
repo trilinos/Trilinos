@@ -14,22 +14,25 @@ namespace Experimental{
 namespace Graph{
 
   template <typename KernelHandle,
-  typename lno_row_view_t_,
-  typename lno_nnz_view_t_>
-
+  typename alno_row_view_t_,
+  typename alno_nnz_view_t_,
+  typename blno_row_view_t_,
+  typename blno_nnz_view_t_,
+  typename clno_row_view_t_,
+  typename clno_nnz_view_t_>
   void spgemm_symbolic(
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n,
       typename KernelHandle::nnz_lno_t k,
-      lno_row_view_t_ row_mapA,
-      lno_nnz_view_t_ entriesA,
+      alno_row_view_t_ row_mapA,
+      alno_nnz_view_t_ entriesA,
       bool transposeA,
-      lno_row_view_t_ row_mapB,
-      lno_nnz_view_t_ entriesB,
+      blno_row_view_t_ row_mapB,
+      blno_nnz_view_t_ entriesB,
       bool transposeB,
-      typename lno_row_view_t_::non_const_type &row_mapC,
-      typename lno_nnz_view_t_::non_const_type &entriesC
+      clno_row_view_t_/*::non_const_type*/ &row_mapC,
+      clno_nnz_view_t_/*::non_const_type*/ &entriesC
       ){
 
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
@@ -39,8 +42,13 @@ namespace Graph{
     case SPGEMM_CUSPARSE:
       Impl::cuSPARSE_symbolic
       <spgemmHandleType,
-      lno_row_view_t_,
-      lno_nnz_view_t_>(sh, m,n,k,
+      alno_row_view_t_,
+      alno_nnz_view_t_,
+      blno_row_view_t_,
+      blno_nnz_view_t_,
+      clno_row_view_t_,
+      clno_nnz_view_t_
+      >(sh, m,n,k,
           row_mapA, entriesA, transposeA,
           row_mapB, entriesB, transposeB,
           row_mapC, entriesC);
@@ -60,8 +68,8 @@ namespace Graph{
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,
-      lno_row_view_t_, lno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
-      lno_row_view_t_, lno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
+      alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
+      blno_row_view_t_, blno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
       kspgemm (handle,m,n,k,row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);
       kspgemm.KokkosSPGEMM_symbolic(row_mapC, entriesC);
     }
@@ -79,34 +87,42 @@ namespace Graph{
 
 
   template <typename KernelHandle,
-    typename lno_row_view_t_,
-    typename lno_nnz_view_t_,
-    typename scalar_nnz_view_t_>
+    typename alno_row_view_t_,
+    typename alno_nnz_view_t_,
+    typename ascalar_nnz_view_t_,
+    typename blno_row_view_t_,
+    typename blno_nnz_view_t_,
+    typename bscalar_nnz_view_t_,
+    typename clno_row_view_t_,
+    typename clno_nnz_view_t_,
+    typename cscalar_nnz_view_t_>
   void spgemm_numeric(
 
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n,
       typename KernelHandle::nnz_lno_t k,
-      lno_row_view_t_ row_mapA,
-      lno_nnz_view_t_ entriesA,
-      scalar_nnz_view_t_ valuesA,
+      alno_row_view_t_ row_mapA,
+      alno_nnz_view_t_ entriesA,
+      ascalar_nnz_view_t_ valuesA,
 
       bool transposeA,
-      lno_row_view_t_ row_mapB,
-      lno_nnz_view_t_ entriesB,
-      scalar_nnz_view_t_ valuesB,
+      blno_row_view_t_ row_mapB,
+      blno_nnz_view_t_ entriesB,
+      bscalar_nnz_view_t_ valuesB,
       bool transposeB,
-      typename lno_row_view_t_::non_const_type &row_mapC,
-      typename lno_nnz_view_t_::non_const_type &entriesC,
-      typename scalar_nnz_view_t_::non_const_type &valuesC
+      clno_row_view_t_ &row_mapC,
+      clno_nnz_view_t_ &entriesC,
+      cscalar_nnz_view_t_ &valuesC
       ){
 
 
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
     spgemmHandleType *sh = handle->get_spgemm_handle();
     if (!sh->is_symbolic_called()){
-      spgemm_symbolic<KernelHandle,lno_row_view_t_, lno_nnz_view_t_>(
+      spgemm_symbolic<KernelHandle,alno_row_view_t_, alno_nnz_view_t_,
+		blno_row_view_t_, blno_nnz_view_t_,
+		clno_row_view_t_, clno_nnz_view_t_>(
           handle, m, n, k,
           row_mapA, entriesA, transposeA,
           row_mapB, entriesB, transposeB,
@@ -135,26 +151,32 @@ namespace Graph{
   }
 
   template <typename KernelHandle,
-    typename lno_row_view_t_,
-    typename lno_nnz_view_t_,
-    typename scalar_nnz_view_t_>
+    typename alno_row_view_t_,
+    typename alno_nnz_view_t_,
+    typename ascalar_nnz_view_t_,
+    typename blno_row_view_t_,
+    typename blno_nnz_view_t_,
+    typename bscalar_nnz_view_t_,
+    typename clno_row_view_t_,
+    typename clno_nnz_view_t_,
+    typename cscalar_nnz_view_t_>
   void spgemm_apply(
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n,
       typename KernelHandle::nnz_lno_t k,
-      lno_row_view_t_ row_mapA,
-      lno_nnz_view_t_ entriesA,
-      scalar_nnz_view_t_ valuesA,
+      alno_row_view_t_ row_mapA,
+      alno_nnz_view_t_ entriesA,
+      ascalar_nnz_view_t_ valuesA,
 
       bool transposeA,
-      lno_row_view_t_ row_mapB,
-      lno_nnz_view_t_ entriesB,
-      scalar_nnz_view_t_ valuesB,
+      blno_row_view_t_ row_mapB,
+      blno_nnz_view_t_ entriesB,
+      bscalar_nnz_view_t_ valuesB,
       bool transposeB,
-      typename lno_row_view_t_::non_const_type &row_mapC,
-      typename lno_nnz_view_t_::non_const_type &entriesC,
-      typename scalar_nnz_view_t_::non_const_type &valuesC
+      clno_row_view_t_ &row_mapC,
+      clno_nnz_view_t_ &entriesC,
+      cscalar_nnz_view_t_ &valuesC
       ){
 
 
@@ -162,9 +184,15 @@ namespace Graph{
     spgemmHandleType *sh = handle->get_spgemm_handle();
     if (!sh->is_numeric_called()){
       spgemm_numeric<KernelHandle,
-        lno_row_view_t_,
-        lno_nnz_view_t_,
-        scalar_nnz_view_t_>(
+        alno_row_view_t_,
+        alno_nnz_view_t_,
+        ascalar_nnz_view_t_, 
+        blno_row_view_t_,
+        blno_nnz_view_t_,
+        bscalar_nnz_view_t_, 
+        clno_row_view_t_,
+        clno_nnz_view_t_,
+        cscalar_nnz_view_t_>(
           handle, m, n, k,
           row_mapA, entriesA, valuesA, transposeA,
           row_mapB, entriesB, valuesB, transposeB,
@@ -175,7 +203,7 @@ namespace Graph{
 
     switch (sh->get_algorithm_type()){
     case SPGEMM_CUSPARSE:
-      valuesC = typename scalar_nnz_view_t_::non_const_type(Kokkos::ViewAllocateWithoutInitializing("valC"), entriesC.dimension_0());
+      valuesC = typename cscalar_nnz_view_t_::non_const_type(Kokkos::ViewAllocateWithoutInitializing("valC"), entriesC.dimension_0());
       std::cout << "SPGEMM_CUSPARSE" << std::endl;
       Impl::cuSPARSE_apply<spgemmHandleType>(
           sh,
@@ -187,9 +215,15 @@ namespace Graph{
     case SPGEMM_CUSP:
       std::cout << "SPGEMM_CUSP" << std::endl;
       Impl::CUSP_apply<spgemmHandleType,
-        lno_row_view_t_,
-        lno_nnz_view_t_,
-        scalar_nnz_view_t_>(
+        alno_row_view_t_,
+        alno_nnz_view_t_,
+        ascalar_nnz_view_t_,
+        blno_row_view_t_,
+        blno_nnz_view_t_,
+        bscalar_nnz_view_t_,
+        clno_row_view_t_,
+        clno_nnz_view_t_,
+        cscalar_nnz_view_t_ >(
           sh,
           m,n,k,
           row_mapA, entriesA, valuesA, transposeA,
@@ -217,8 +251,8 @@ namespace Graph{
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
       <KernelHandle,
-      lno_row_view_t_, lno_nnz_view_t_, scalar_nnz_view_t_,
-      lno_row_view_t_, lno_nnz_view_t_, scalar_nnz_view_t_>
+      alno_row_view_t_, alno_nnz_view_t_, ascalar_nnz_view_t_,
+      blno_row_view_t_, blno_nnz_view_t_,  bscalar_nnz_view_t_>
       kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
       kspgemm.KokkosSPGEMM_apply(row_mapC, entriesC, valuesC);
     }
