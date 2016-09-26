@@ -78,7 +78,7 @@ public:
 
   /*! \brief Set up validators specific to this algorithm
     */
-  static void setParameterDefaultsAndValidators(ParameterList & pl)
+  static void getValidParameters(ParameterList & pl)
   {
     RCP<Teuchos::EnhancedNumberValidator<int>> forTestingOnlyFlag_Validator =
       Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );

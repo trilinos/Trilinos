@@ -244,7 +244,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
 
   /*! \brief Set up validators specific to this algorithm
   */
-  static void setParameterDefaultsAndValidators(ParameterList & pl)
+  static void getValidParameters(ParameterList & pl)
   {
     RCP<Teuchos::StringValidator> color_choice_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(

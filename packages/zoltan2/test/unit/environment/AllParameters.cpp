@@ -70,31 +70,8 @@ static string fnParams[NUMFN][3]={
   {"memory_output_file", "memory.txt", "3.33"}
 };
 
-// Value value is any integer - a string is invalid
-
-// Currently disabled
-// Expect we may remove this completely or change it's behavior
-// once decisions are made about whether number validators will accept strings
-/*
-#define NUMANYINT 0
-static string anyIntParams[NUMANYINT][3]={
-};
-*/
-
-// Value is a pure bool true/false type
-// Will test both true and false as valid - the only valid options
-// Will then test for a failure using set string
-#define NUMBOOL 5
-static string boolParams[NUMBOOL][2] = {
-  {"compute_metrics", "invalid_bool_setting"},
-  {"rectilinear", "invalid_bool_setting"},
-  {"subset_graph", "invalid_bool_setting"},
-  {"mj_enable_rcb", "invalid_bool_setting"},
-  {"mj_keep_part_boxes", "invalid_bool_setting"},
-};
-
-// Value value is a particular string
-#define NUMSTR 17
+// Value is a particular string
+#define NUMSTR 31
 static string strParams[NUMSTR][3]={
   {"error_check_level", "basic_assertions", "invalid_assertion_request"},
   {"debug_level", "basic_status", "invalid_status"},
@@ -113,24 +90,26 @@ static string strParams[NUMSTR][3]={
   {"model", "graph", "invalid_model"},
   {"algorithm", "rcb", "invalid_algorithm"},
   {"symmetrize_input", "transpose", "invalid_option"},
+  {"symmetrize_input", "transpose", "invalid_option"},
+  {"mj_concurrent_part_count", "0", "invalid_value"},          // AnyNumberParameterEntryValidator
+  {"mj_recursion_depth", "0", "invalid_value"},                // AnyNumberParameterEntryValidator
+  {"mapping_type", "0", "invalid_value"},                      // AnyNumberParameterEntryValidator
+  {"imbalance_tolerance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+  {"mj_minimum_migration_imbalance", "1.1", "invalid_option"}, // AnyNumberParameterEntryValidator
+  {"pulp_vert_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+  {"pulp_edge_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
+  {"scotch_imbalance_ratio", "1.1", "invalid_option"},         // AnyNumberParameterEntryValidator
+  {"compute_metrics", "false", "invalid_bool_setting"},        // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"rectilinear", "false", "invalid_bool_setting"},            // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"subset_graph", "false", "invalid_bool_setting"},           // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"mj_enable_rcb", "true", "invalid_bool_setting"},           // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"mj_keep_part_boxes", "true", "invalid_bool_setting"}       // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+// These need to be resolved as EnhancedNumberValidator does not take string
+// However we want to use the min/max range feature
+//  {"num_global_parts", "1", "invalid_value"},                // EnhancedNumberValidator - currently no strings
+//  {"num_local_parts", "0", "invalid_value"},                 // EnhancedNumberValidator - currently no strings
+//  {"mj_migration_option", "2", "invalid_value"},             // EnhancedNumberValidator - currently no strings
 };
-
-// Validators which need to be resolved
-//   EnhancedNumberValidator only accepts an int
-//   AnyNumberParameterEntryValidator accepts a string but does not recognize bad strings
-
-// {"num_global_parts", "1", "invalid_value"},                  // EnhancedNumberValidator
-// {"num_local_parts", "0", "invalid_value"},                   // EnhancedNumberValidator
-// {"mj_migration_option", "2", "invalid_value"},               // EnhancedNumberValidator
-
-// {"mj_concurrent_part_count", "0", "invalid_value"},          // AnyNumberParameterEntryValidator
-// {"mj_recursion_depth", "0", "invalid_value"},                // AnyNumberParameterEntryValidator
-// {"mapping_type", "0", "invalid_value"},                      // AnyNumberParameterEntryValidator
-// {"imbalance_tolerance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
-// {"mj_minimum_migration_imbalance", "1.1", "invalid_option"}, // AnyNumberParameterEntryValidator
-// {"pulp_vert_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
-// {"pulp_edge_imbalance", "1.1", "invalid_option"},            // AnyNumberParameterEntryValidator
-// {"scotch_imbalance_ratio", "1.1", "invalid_option"},         // AnyNumberParameterEntryValidator
 
 template <typename T>
 int testInvalidValue( Teuchos::ParameterList &pl, 
@@ -159,6 +138,103 @@ int testInvalidValue( Teuchos::ParameterList &pl,
   return 0;
 }
 
+// this we can remove later
+// kept here temporarily for reference
+int testForIssue612()
+{
+  // Testing AnyNumberParameterEntryValidator
+
+  // Create a parameter list
+  Teuchos::ParameterList valid("valid parameter list");
+
+  // Create parameter using validator
+  typedef Teuchos::AnyNumberParameterEntryValidator validator_t;
+  Teuchos::RCP<const validator_t> anyNumVal = Teuchos::rcp(new validator_t);
+
+  ///////////////////////////////////////////////////////////////////
+  // Initial test:  set parameter to 0.5 in valid parameter list.
+  // Need to use the *expected* data type here.
+  std::cout << "set good default value" << std::endl;
+
+  std::string parameterName("parameterName");
+  try {
+    valid.set(parameterName, 5.0, "parameterDoc", anyNumVal);
+  }
+  catch (std::exception &e) {
+    std::cout << "FAIL  error setting good default value "
+              << e.what() << std::endl;
+    return -1;
+  }
+
+  double dd = valid.getEntry(parameterName).getValue<double>(&dd);
+  std::cout << "good default value <double> = " << dd << std::endl;
+
+  // User creates his own parameter list and passes things of various types.
+  // The user list must be validated against the valid list.
+  Teuchos::ParameterList user("user");
+
+  // This one should work
+  std::cout << "test good user value" << std::endl;
+  user.set(parameterName, "0.123");
+  try {
+    user.validateParametersAndSetDefaults(valid);
+  }
+  catch (std::exception &e) {
+    std::cout << "FAIL  " << e.what() << std::endl;
+    return -1;
+  }
+
+  dd = user.getEntry(parameterName).getValue<double>(&dd);
+  std::cout << "good user value <double> = " << dd << std::endl;
+
+  // This one should not work; the user's string is not a number
+  std::cout << "test bogus user value" << std::endl;
+  bool aok = false;
+
+  // MDM note - the fail point will now be on user.set
+  // std::stod will throw on this since we have added the validator
+  try {
+    user.set(parameterName, "bogus");
+  }
+  catch(std::exception &e) {
+    // correct behavior
+    std::cout << "Parameter list correctly rejected bogus user value."
+              << std::endl;
+    aok = true;
+  }
+
+  if (!aok) {
+    std::cout << "FAIL  parameter list accepted a bogus user value"
+              << std::endl;
+    return -1;
+  }
+
+  // Test the valid with a bogus default value.  This operation should also
+  // not work.  The validator should catch the bogus input.
+  std::cout << "set bogus default value" << std::endl;
+
+  std::string parameterNameToo("parameterNameToo");
+  aok = false;
+  try {
+    valid.set(parameterNameToo, "bogus", "parameterDoc", anyNumVal);
+  }
+  catch (std::exception &e) {
+    // correct behavior
+    std::cout << "Parameter list correctly rejected bogus default value."
+              << std::endl;
+    aok = true;
+  }
+
+  if (!aok) {
+    std::cout << "FAIL  parameter list accepted a bogus default value"
+              << std::endl;
+    return -1;
+  }
+
+  std::cout << "PASS" << std::endl;
+  return 0;
+}
+
   // Print out all the documentation
 
 int main(int argc, char *argv[])
@@ -172,27 +248,23 @@ int main(int argc, char *argv[])
   if (rank > 0)
     return 0;
 
+  // short term reference - to delete later
+  // this was an example proposed for issue #612
+  // just keeping it here as a reference point to be deleted in the future
+  int tempTest = testForIssue612();
+  if( tempTest != 0 ) {
+    return testForIssue612();
+  }
+
   // Create a valid parameter list.
 
   Teuchos::ParameterList validParameters;
   Teuchos::ParameterList myParams("testParameterList");
 
-  for (int i=0; i < NUMBOOL; i++){
-    myParams.set(boolParams[i][0], true);   // validate true works
-    myParams.set(boolParams[i][0], false);  // validate false works
-  }
-
   for (int i=0; i < NUMSTR; i++){
     myParams.set(strParams[i][0], strParams[i][1]);
   }
-/*
-  for (int i=0; i < NUMANYINT; i++){
-    istringstream iss(anyIntParams[i][1]);
-    int paramValue;
-    iss >> paramValue;
-    myParams.set(anyIntParams[i][0], paramValue);
-  }
-*/
+
   for (int i=0; i < NUMFN; i++){
     myParams.set(fnParams[i][0], fnParams[i][1]);
   }
@@ -219,17 +291,6 @@ int main(int argc, char *argv[])
   cout << myParams << endl;
 
   // Try invalid parameter values
-
-  for (int i=0; i < NUMBOOL; i++){
-    Teuchos::ParameterList badParams(origParams);
-    int fail =
-      testInvalidValue<string>(badParams, boolParams[i][0], boolParams[i][1]);
-    if (fail){
-      cout << "FAIL" << endl;
-      return 1;
-    }
-  }
-
   for (int i=0; i < NUMSTR; i++){
     Teuchos::ParameterList badParams(origParams);
     int fail = 
@@ -239,18 +300,6 @@ int main(int argc, char *argv[])
       return 1;
     }
   }
-
-/*
-  for (int i=0; i < NUMANYINT; i++){
-    Teuchos::ParameterList badParams(origParams);
-    int fail = 
-       testInvalidValue<string>(badParams, anyIntParams[i][0], anyIntParams[i][2]);
-    if (fail){
-      cout << "FAIL" << endl;
-      return 1;
-    }
-  }
-*/
 
   for (int i=0; i < NUMFN; i++){
     Teuchos::ParameterList badParams(origParams);

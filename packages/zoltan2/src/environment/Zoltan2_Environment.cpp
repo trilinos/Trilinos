@@ -145,6 +145,11 @@ Environment::~Environment()
     memoryOutputFile_->close();
 }
 
+RCP<Teuchos::BoolParameterEntryValidator> Environment::getBoolValidator()
+{
+  return Teuchos::rcp( new Teuchos::BoolParameterEntryValidator() );
+}
+
 // provides a generic any double validator to avoid clutter
 RCP<Teuchos::AnyNumberParameterEntryValidator>
   Environment::getAnyDoubleValidator()
@@ -168,7 +173,7 @@ RCP<Teuchos::AnyNumberParameterEntryValidator>
   return int_string_validator;
 }
 
-void Environment::setParameterDefaultsAndValidators(ParameterList & pl)
+void Environment::getValidParameters(ParameterList & pl)
 {
   // these  parameters are generic to all environments - timers, debugging, etc
 

@@ -74,24 +74,24 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // the new way loads from a series of static functions
 
   // The dummy adapter is arbitrary
-  // It allows us to keep the setParameterDefaultsAndValidators method in the class
+  // It allows us to keep the getValidParameters method in the class
   // However currently that has no template dependence
   typedef Zoltan2::BasicUserTypes<int, int, int> dummyTypes;
   typedef Zoltan2::BasicIdentifierAdapter< dummyTypes > dummyAdapter;
 
   // environment has some of it's own parameters to provide
-  Environment::setParameterDefaultsAndValidators(pList);
+  Environment::getValidParameters(pList);
 
   // Problem provides the base set of parameters for all problems
-  Zoltan2::Problem<dummyAdapter>::setParameterDefaultsAndValidators(pList);
+  Zoltan2::Problem<dummyAdapter>::getValidParameters(pList);
 
   // PartitioningProblem will also add parameters for each Algorithm
-  Zoltan2::PartitioningProblem<dummyAdapter>::setParameterDefaultsAndValidators(pList);
+  Zoltan2::PartitioningProblem<dummyAdapter>::getValidParameters(pList);
 
   // Other problems have their own unique parameters
-  Zoltan2::OrderingProblem<dummyAdapter>::setParameterDefaultsAndValidators(pList);
-  Zoltan2::MappingProblem<dummyAdapter>::setParameterDefaultsAndValidators(pList);
-  Zoltan2::ColoringProblem<dummyAdapter>::setParameterDefaultsAndValidators(pList);
+  Zoltan2::OrderingProblem<dummyAdapter>::getValidParameters(pList);
+  Zoltan2::MappingProblem<dummyAdapter>::getValidParameters(pList);
+  Zoltan2::ColoringProblem<dummyAdapter>::getValidParameters(pList);
 }
 
 /*! \brief  Create a parameter list that can validate a

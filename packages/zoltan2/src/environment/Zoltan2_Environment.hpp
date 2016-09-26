@@ -124,7 +124,11 @@ public:
 
   /*! \brief Collect the paramaters specific to Environment
    */
-  static void setParameterDefaultsAndValidators(ParameterList & pl);
+  static void getValidParameters(ParameterList & pl);
+
+  /*! \brief Exists to make setting up validators less cluttered
+   */
+  static RCP<Teuchos::BoolParameterEntryValidator> getBoolValidator();
 
   /*! \brief Exists to make setting up validators less cluttered
    */

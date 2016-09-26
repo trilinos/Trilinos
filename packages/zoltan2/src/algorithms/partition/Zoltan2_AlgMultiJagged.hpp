@@ -6370,7 +6370,7 @@ public:
 
     /*! \brief Set up validators specific to this algorithm
      */
-    static void setParameterDefaultsAndValidators(ParameterList & pl)
+    static void getValidParameters(ParameterList & pl)
     {
       const bool bUnsorted = true; // this clarifies the flag is for unsrorted
       RCP<Zoltan2::IntegerRangeListValidator<int>> mj_parts_Validator =
@@ -6394,10 +6394,11 @@ public:
 
       // bool parameter
       pl.set("mj_keep_part_boxes", false, "Keep the part boundaries of the "
-        "geometric partitioning." );
+        "geometric partitioning.", Environment::getBoolValidator());
 
       // bool parameter
-      pl.set("mj_enable_rcb", false, "Use MJ as RCB.");
+      pl.set("mj_enable_rcb", false, "Use MJ as RCB.",
+        Environment::getBoolValidator());
 
       pl.set("mj_recursion_depth", -1, "Recursion depth for MJ: Must be "
         "greater than 0.", Environment::getAnyIntValidator());

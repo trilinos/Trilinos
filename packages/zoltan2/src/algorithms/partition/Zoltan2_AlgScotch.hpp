@@ -64,7 +64,8 @@ namespace Zoltan2 {
 static inline void getScotchParameters(Teuchos::ParameterList & pl)
 {
   // bool parameter
-  pl.set("scotch_verbose", false, "verbose output");
+  pl.set("scotch_verbose", false, "verbose output",
+    Environment::getBoolValidator());
 
   RCP<Teuchos::EnhancedNumberValidator<int>> scotch_level_Validator =
     Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
@@ -77,7 +78,7 @@ static inline void getScotchParameters(Teuchos::ParameterList & pl)
 
   // bool parameter
   pl.set("scotch_ordering_default", true, "use default scotch ordering "
-    "strategy");
+    "strategy", Environment::getBoolValidator());
 
   pl.set("scotch_ordering_strategy", "", "scotch ordering - Dissection "
     "imbalance ratio");
@@ -113,7 +114,7 @@ public:
 
   /*! \brief Set up validators specific to this algorithm
   */
-  static void setParameterDefaultsAndValidators(ParameterList & pl)
+  static void getValidParameters(ParameterList & pl)
   {
     getScotchParameters(pl);
   }
@@ -301,7 +302,7 @@ public:
 
   /*! \brief Set up validators specific to this algorithm
   */
-  static void setParameterDefaultsAndValidators(ParameterList & pl)
+  static void getValidParameters(ParameterList & pl)
   {
     getScotchParameters(pl);
   }

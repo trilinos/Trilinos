@@ -127,7 +127,7 @@ public:
 
   /*! \brief Set up validators specific to this Problem
   */
-  static void setParameterDefaultsAndValidators(ParameterList & pl)
+  static void getValidParameters(ParameterList & pl)
   {
     RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(

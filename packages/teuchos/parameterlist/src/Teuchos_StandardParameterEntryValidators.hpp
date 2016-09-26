@@ -588,6 +588,110 @@ RCP<StringToIntegralParameterEntryValidator<IntegralType> >
     tuple<IntegralType>((IntegralType)1), "");
 }
 
+/** \brief Standard implementation of a BoolParameterEntryValidator that accepts
+ * bool values (true/false) or string values for bool ("true"/"false").
+ *
+ * Objects of this type are meant to be used as both abstract objects passed
+ * to <tt>Teuchos::ParameterList</tt> objects to be used to validate parameter
+ * types and values, and to be used by the code that reads parameter values.
+ * Having a single definition for the types of valids input and outputs for a
+ * parameter value makes it easier to write error-free validated code.
+ *
+ * Please see <tt>AnyNumberValidatorXMLConverter</tt> for documenation
+ * regarding the XML representation of this validator.
+ */
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolParameterEntryValidator
+ : public ParameterEntryValidator
+{
+public:
+
+  /** \name Constructors*/
+  //@{
+
+  BoolParameterEntryValidator();
+
+  //@}
+
+  /** \name Local non-virtual validated lookup functions */
+  //@{
+
+  /** \brief Get bool value from a parameter entry. */
+  bool getBool(
+    const ParameterEntry &entry, const std::string &paramName = "",
+    const std::string &sublistName = "", const bool activeQuery = true
+    ) const;
+
+  /** \brief Lookup parameter from a parameter list and return as a bool
+   * value.
+   */
+  bool getBool(
+    ParameterList &paramList, const std::string &paramName,
+    const int defaultValue
+    ) const;
+
+  //@}
+
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
+
+  /** \brief . */
+  const std::string getXMLTypeName() const;
+
+  /** \brief . */
+  void printDoc(
+    std::string const& docString,
+    std::ostream & out
+    ) const;
+
+  /** \brief . */
+  ValidStringsList
+  validStringValues() const;
+
+  /** \brief . */
+  void validate(
+    ParameterEntry const& entry,
+    std::string const& paramName,
+    std::string const& sublistName
+    ) const;
+
+  /** \brief . */
+  void validateAndModify(
+    std::string const& paramName,
+    std::string const& sublistName,
+    ParameterEntry * entry
+    ) const;
+
+
+  //@}
+
+private:
+
+  // ////////////////////////////
+  // Private data members
+
+  std::string acceptedTypesString_;
+
+  // ////////////////////////////
+  // Private member functions
+
+  void finishInitialization();
+
+  void throwTypeError(
+    ParameterEntry const& entry,
+    std::string const& paramName,
+    std::string const& sublistName
+    ) const;
+};
+
+// Nonmember helper functions
+
+
+/** \brief Nonmember constructor BoolParameterEntryValidator.
+ *
+ * \relates BoolParameterEntryValidator
+ */
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT RCP<BoolParameterEntryValidator>
+boolParameterEntryValidator();
 
 
 /** \brief Standard implementation of a ParameterEntryValidator that accepts
@@ -674,13 +778,25 @@ public:
   /** \name Local non-virtual validated lookup functions */
   //@{
 
-  /** \brief Get an integer value from a parameter entry. */
+  /** \brief Get an integer value from a parameter entry.
+   * HAVE_TEUCHOSCORE_CXX11 will call std::stoi
+   * otherwise we use std::atoi
+   * Note that std::stoi throws on badly formatted strings but
+   * some formats can be accepted, such as "1.1" becoming 1
+   */
   int getInt(
     const ParameterEntry &entry, const std::string &paramName = "",
     const std::string &sublistName = "", const bool activeQuery = true
     ) const;
 
   /** \brief Get a double value from a parameter entry. */
+
+  /** \brief Get a double value from a parameter entry.
+   * HAVE_TEUCHOSCORE_CXX11 will call std::stod
+   * otherwise we use std::atof
+   * Note that std::stod throws on badly formatted string but
+   * some formats can be accepted, such as "1.1x" becoming 1.1
+   */
   double getDouble(
     const ParameterEntry &entry, const std::string &paramName = "",
     const std::string &sublistName = "", const bool activeQuery = true

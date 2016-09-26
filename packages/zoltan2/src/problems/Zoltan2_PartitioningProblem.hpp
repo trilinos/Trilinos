@@ -272,13 +272,13 @@ public:
 
   /*! \brief Set up validators specific to this Problem
   */
-  static void setParameterDefaultsAndValidators(ParameterList & pl)
+  static void getValidParameters(ParameterList & pl)
   {
-    Zoltan2_AlgMJ<Adapter>::setParameterDefaultsAndValidators(pl);
-    AlgPuLP<Adapter>::setParameterDefaultsAndValidators(pl);
-    AlgPTScotch<Adapter>::setParameterDefaultsAndValidators(pl);
-    AlgSerialGreedy<Adapter>::setParameterDefaultsAndValidators(pl);
-    AlgForTestingOnly<Adapter>::setParameterDefaultsAndValidators(pl);
+    Zoltan2_AlgMJ<Adapter>::getValidParameters(pl);
+    AlgPuLP<Adapter>::getValidParameters(pl);
+    AlgPTScotch<Adapter>::getValidParameters(pl);
+    AlgSerialGreedy<Adapter>::getValidParameters(pl);
+    AlgForTestingOnly<Adapter>::getValidParameters(pl);
 
     // This set up does not use tuple because we didn't have constructors
     // that took that many elements - Tuple will need to be modified and I
@@ -312,7 +312,8 @@ public:
     pl.set("rectilinear", false, "If true, then when a cut is made, all of the "
       "dots located on the cut are moved to the same side of the cut. The "
       "resulting regions are then rectilinear. The resulting load balance may "
-      "not be as good as when the group of dots is split by the cut. ");
+      "not be as good as when the group of dots is split by the cut. ",
+      Environment::getBoolValidator());
 
     RCP<Teuchos::StringValidator> partitioning_objective_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
@@ -369,7 +370,7 @@ public:
 
     // bool parameter
     pl.set("remap_parts", false, "remap part numbers to minimize migration "
-      "between old and new partitions");
+      "between old and new partitions", Environment::getBoolValidator() );
 
     pl.set("mapping_type", -1, "Mapping of solution to the processors. -1 No"
       " Mapping, 0 coordinate mapping.", Environment::getAnyIntValidator());

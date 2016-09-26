@@ -79,7 +79,7 @@ public:
 
   /*! \brief Set up validators specific to this algorithm
   */
-  static void setParameterDefaultsAndValidators(ParameterList & pl)
+  static void getValidParameters(ParameterList & pl)
   {
     pl.set("pulp_vert_imbalance", 1.1, "vertex imbalance tolerance, ratio of "
       "maximum load over average load",
@@ -91,17 +91,19 @@ public:
 
     // bool parameter
     pl.set("pulp_lp_init", false, "perform label propagation-based "
-      "initialization");
+      "initialization", Environment::getBoolValidator() );
 
     // bool parameter
     pl.set("pulp_minimize_maxcut", false, "perform per-part max cut "
-      "minimization");
+      "minimization", Environment::getBoolValidator() );
 
     // bool parameter
-    pl.set("pulp_verbose", false, "verbose output");
+    pl.set("pulp_verbose", false, "verbose output",
+      Environment::getBoolValidator() );
 
     // bool parameter
-    pl.set("pulp_do_repart", false, "perform repartitioning");
+    pl.set("pulp_do_repart", false, "perform repartitioning",
+      Environment::getBoolValidator() );
 
     pl.set("pulp_seed", 0, "set pulp seed", Environment::getAnyIntValidator());
   }
