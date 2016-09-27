@@ -7,6 +7,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -340,7 +341,7 @@ TEST_F(TOSDTWD, expand_mesh)
         const stk::mesh::PartVector parts = stkIo.meta_data().get_parts();
         for(size_t i=0;i<parts.size();++i)
         {
-            if(stk::mesh::impl::is_element_block(*parts[i]))
+            if(stk::mesh::is_element_block(*parts[i]))
             {
                 elementBlocks.push_back(parts[i]);
             }

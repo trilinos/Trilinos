@@ -6,6 +6,7 @@
 #include <string>
 #include "BulkData.hpp"
 #include "MetaData.hpp"
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include "stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp"
 #include "stk_mesh/baseImpl/EquivalentEntityBlocks.hpp"
@@ -100,7 +101,7 @@ std::vector<std::string> get_messages_for_split_coincident_elements(const stk::m
         std::string blockNames;
         blockNames = "{";
         for (const stk::mesh::Part* part : elementParts) {
-            if (stk::mesh::impl::is_element_block(*part)) {
+            if (stk::mesh::is_element_block(*part)) {
                 blockNames += " " + part->name();
             }
         }

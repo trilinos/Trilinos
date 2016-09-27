@@ -1,4 +1,5 @@
 #include "EquivalentEntityBlocks.hpp"
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
@@ -6,11 +7,6 @@
 namespace stk {
 namespace mesh {
 namespace impl {
-
-bool is_element_block(const stk::mesh::Part &part)
-{
-    return (part.primary_entity_rank() == stk::topology::ELEMENT_RANK && part.id() > 0 );
-}
 
 bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, stk::mesh::Entity entity2)
 {
@@ -31,7 +27,7 @@ std::vector<PartOrdinal> get_element_block_part_ordinals(stk::mesh::Entity eleme
     bulkData.bucket(element).supersets(partOrdinals);
     std::vector<PartOrdinal> partOrdinalsElementBlock;
     for(PartOrdinal part_ordinal : partOrdinals)
-        if (stk::mesh::impl::is_element_block(bulkData.mesh_meta_data().get_part(part_ordinal)))
+        if (stk::mesh::is_element_block(bulkData.mesh_meta_data().get_part(part_ordinal)))
             partOrdinalsElementBlock.push_back(part_ordinal);
     return partOrdinalsElementBlock;
 }

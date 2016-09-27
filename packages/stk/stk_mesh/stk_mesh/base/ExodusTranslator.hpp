@@ -129,9 +129,7 @@ public:
     size_t get_global_num_entities_for_id(int setId, stk::mesh::EntityRank rank)
     {
         size_t numLocal = get_local_num_entitites_for_id_and_selector(setId, rank, mBulkData.mesh_meta_data().locally_owned_part());
-        size_t numGlobal = 0;
-        stk::all_reduce_sum(mBulkData.parallel(), &numLocal, &numGlobal, 1);
-        return numGlobal;
+        return stk::get_global_sum(mBulkData.parallel(), numLocal);
     }
 
     size_t get_global_num_distribution_factors_in_side_set(int setId) const
@@ -146,9 +144,7 @@ public:
         for(size_t i = 0; i < entities.size(); i++)
             numDF += mBulkData.num_nodes(entities[i]);
 
-        size_t globalNumDf = 0;
-        stk::all_reduce_sum(mBulkData.parallel(), &numDF, &globalNumDf, 1);
-        return globalNumDf;
+        return stk::get_global_sum(mBulkData.parallel(), numDF);
     }
 
     const stk::mesh::PartVector & get_node_set_parts() { return mNodeSetParts; }
@@ -220,7 +216,6 @@ private:
         cache_element_blocks();
         cache_side_sets();
         cache_node_sets();
-//        cache_faces();
     }
 
     void cache_element_blocks()
