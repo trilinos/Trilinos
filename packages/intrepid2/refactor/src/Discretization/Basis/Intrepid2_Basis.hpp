@@ -313,6 +313,12 @@ namespace Intrepid2 {
                                     ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
     }
 
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_Basis";
+    }
+
     /** \brief  Returns cardinality of the basis
 
         \return the number of basis functions in the basis
@@ -385,7 +391,11 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( subcDofOrd < 0 || subcDofOrd >= static_cast<ordinal_type>(tagToOrdinal_.dimension(2)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofOrdinal): subcDofOrd is out of range");
 #endif
-      const auto r_val = tagToOrdinal_(subcDim, subcOrd, subcDofOrd);
+      ordinal_type r_val = -1; 
+      if ( subcDim    < tagToOrdinal_.dimension(0) &&
+           subcOrd    < tagToOrdinal_.dimension(1) &&
+           subcDofOrd < tagToOrdinal_.dimension(2) )
+        r_val = tagToOrdinal_(subcDim, subcOrd, subcDofOrd);
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( r_val == -1, std::runtime_error,
                                     ">>> ERROR (Basis::getDofOrdinal): Invalid DoF tag is found.");

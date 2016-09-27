@@ -204,6 +204,13 @@ namespace Intrepid2 {
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
     }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HGRAD_HEX_C1_FEM";
+    }
+
   };
 }// namespace Intrepid2
 
