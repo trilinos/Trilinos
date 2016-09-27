@@ -39,9 +39,9 @@
 // Eric C. Cyr (eccyr@sandia.gov)
 // ***********************************************************************
 // @HEADER
-
+#include "Intrepid2_config.h"
 #if defined( HAVE_INTREPID2_KOKKOS_DYNRANKVIEW )
-#include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
 
 #include "Teuchos_Assert.hpp"
 #include "Intrepid2_CellTools.hpp"
@@ -58,7 +58,7 @@ namespace panzer {
   }
 
   const std::vector<int> &
-  Intrepid2FieldPattern::getSubcellIndices(int dim, int cellIndex) const    
+  Intrepid2FieldPattern::getSubcellIndices(int dim, int cellIndex) const
   {
     const int ord  = intrepidBasis_->getDofOrdinal(dim, cellIndex, 0);
     const int ndof = intrepidBasis_->getDofTag(ord)(3);
@@ -67,7 +67,7 @@ namespace panzer {
     subcellIndices_.clear();
 
     for (int i=0;i<ndof;++i)
-      subcellIndices.push_back(tag(dim, cellIndex, i));
+      subcellIndices_.push_back(tag(dim, cellIndex, i));
     
     return subcellIndices_;
   }

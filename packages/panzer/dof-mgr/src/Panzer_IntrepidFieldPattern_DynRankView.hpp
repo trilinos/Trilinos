@@ -140,7 +140,7 @@ namespace panzer {
   protected:
     Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > intrepidBasis_;
 
-    std::vector<int> subcellIndices_;
+    mutable std::vector<int> subcellIndices_;
   };
 
 }
