@@ -8,6 +8,8 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+
 #include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
 
@@ -118,12 +120,59 @@ public:
         fill_exodus_names(mElementBlockParts, names);
     }
 
+    size_t get_local_num_entities_for_id(int setId, stk::mesh::EntityRank rank)
+    {
+        stk::mesh::Selector localAndShared = mBulkData.mesh_meta_data().locally_owned_part() | mBulkData.mesh_meta_data().globally_shared_part();
+        return get_local_num_entitites_for_id_and_selector(setId, rank, localAndShared);
+    }
+
+    size_t get_global_num_entities_for_id(int setId, stk::mesh::EntityRank rank)
+    {
+        size_t numLocal = get_local_num_entitites_for_id_and_selector(setId, rank, mBulkData.mesh_meta_data().locally_owned_part());
+        size_t numGlobal = 0;
+        stk::all_reduce_sum(mBulkData.parallel(), &numLocal, &numGlobal, 1);
+        return numGlobal;
+    }
+
+    size_t get_global_num_distribution_factors_in_side_set(int setId) const
+    {
+        const stk::mesh::Part *part = get_exodus_part_of_rank(setId, mBulkData.mesh_meta_data().side_rank());
+        stk::mesh::Selector localAndShared = mBulkData.mesh_meta_data().locally_owned_part() | mBulkData.mesh_meta_data().globally_shared_part();
+
+        std::vector<stk::mesh::Entity> entities;
+        stk::mesh::get_selected_entities(*part & localAndShared, mBulkData.buckets(mBulkData.mesh_meta_data().side_rank()), entities);
+
+        size_t numDF=0;
+        for(size_t i = 0; i < entities.size(); i++)
+            numDF += mBulkData.num_nodes(entities[i]);
+
+        size_t globalNumDf = 0;
+        stk::all_reduce_sum(mBulkData.parallel(), &numDF, &globalNumDf, 1);
+        return globalNumDf;
+    }
 
     const stk::mesh::PartVector & get_node_set_parts() { return mNodeSetParts; }
     const stk::mesh::PartVector & get_side_set_parts() { return mSideSetParts; }
     const stk::mesh::PartVector & get_element_block_parts() { return mElementBlockParts; }
 
+    const stk::mesh::Part* get_exodus_part_of_rank(int id, stk::mesh::EntityRank rank) const
+    {
+        if(rank == stk::topology::NODE_RANK)
+            return get_exodus_part_from_map(mNodeSetParts, id);
+        if(rank == mBulkData.mesh_meta_data().side_rank())
+            return get_exodus_part_from_map(mSideSetParts, id);
+        if(rank == stk::topology::ELEM_RANK)
+            return get_exodus_part_from_map(mElementBlockParts, id);
+        return nullptr;
+    }
+
 private:
+    size_t get_local_num_entitites_for_id_and_selector(int setId, stk::mesh::EntityRank rank, stk::mesh::Selector sel)
+    {
+        const stk::mesh::Part *part = get_exodus_part_of_rank(setId, rank);
+        return stk::mesh::count_selected_entities(*part & sel, mBulkData.buckets(rank));
+    }
+
     template<typename ExodusPartMap, typename ExodusIdVector>
     void fill_exodus_ids(const ExodusPartMap& exodusParts, ExodusIdVector &exodusIds) const
     {
@@ -150,6 +199,21 @@ private:
         }
     }
 
+    template<typename ExodusPartMap, typename ExodusId>
+    const stk::mesh::Part* get_exodus_part_from_map(const ExodusPartMap& exodusParts, const ExodusId id) const
+    {
+        stk::mesh::Part *part = NULL;
+        typename ExodusPartMap::const_iterator iter = exodusParts.begin();
+        for(; iter != exodusParts.end(); iter++)
+        {
+            if((*iter)->id() == id)
+            {
+                part = *iter;
+                break;
+            }
+        }
+        return part;
+    }
 
     void cache_mesh_constructs()
     {
