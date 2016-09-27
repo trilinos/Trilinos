@@ -124,7 +124,7 @@ applyAdjointJacobian(Vector<S> & ajv, Vector<S> const & v, Vector<S> const & x, 
   Intrepid2::Vector<S, N> const
   ajvval = Intrepid2::dot(vval, J);
 
-  MTtoROL<S, M>(ajvval, ajv);
+  MTtoROL<S, N>(ajvval, ajv);
 }
 
 } // namespace ROL

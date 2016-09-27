@@ -975,8 +975,8 @@ public:
 //
 // A nonlinear function
 //
-template<typename S, Index M>
-class Nonlinear01 : public Constraint_Base<Identity<S, M>, S, M>
+template<typename S, Index M = 3>
+class Nonlinear01 : public Constraint_Base<Nonlinear01<S, M>, S, M>
 {
 public:
 
@@ -989,15 +989,24 @@ public:
   using Base = Constraint_Base<Nonlinear01<S, M>, S, M>;
 
   // Explicit value.
-  template<typename T, Index N>
+  template<typename T, Index N = 5>
   Vector<T, M>
   value(Vector<T, N> const & x)
   {
-    return x;
+    Vector<T, M>
+    c(ZEROS);
+
+    c(0) = dot(x, x) - 10.0;
+
+    c(1) = x(1) * x(2) - 5.0 * x(3) * x(4);
+
+    c(2) = x(0) * x(0) * x(0) + x(1) * x(1) * x(1) + 1.0;
+
+    return c;
   }
 
   // Default AD gradient.
-  template<typename T, Index N>
+  template<typename T, Index N = 5>
   Matrix<T, M, N>
   gradient(Vector<T, N> const & x)
   {

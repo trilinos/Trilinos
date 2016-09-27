@@ -188,7 +188,7 @@ TEST(MiniTensor_ROL, Objective)
   ASSERT_LE(error3, epsilon);
 }
 
-TEST(MiniTensor_ROL, EqualityConstraint)
+TEST(MiniTensor_ROL, EqualityConstraintId)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -214,43 +214,43 @@ TEST(MiniTensor_ROL, EqualityConstraint)
   ROL::MiniTensor_EqualityConstraint<MSEC, Real, ROWS, COLS>
   constr(msec);
 
-  Intrepid2::Vector<Real, ROWS>
+  Intrepid2::Vector<Real, COLS>
   xval(Intrepid2::RANDOM);
 
   os << "xval:" << xval << '\n';
 
-  Intrepid2::Vector<Real, ROWS>
+  Intrepid2::Vector<Real, COLS>
   vval(Intrepid2::RANDOM);
 
   os << "vval:" << vval << '\n';
 
+  Intrepid2::Vector<Real, ROWS>
+  jvval(Intrepid2::RANDOM);
+
+  os << "jvval:" << jvval << '\n';
+
   Intrepid2::Vector<Real, COLS>
-  vlval(Intrepid2::RANDOM);
+  ajvval(Intrepid2::RANDOM);
 
-  os << "vlval:" << vlval << '\n';
+  os << "ajvval:" << ajvval << '\n';
 
-  Intrepid2::Vector<Real, COLS>
-  vcval(Intrepid2::RANDOM);
-
-  os << "vcval:" << vcval << '\n';
-
-  ROL::MiniTensorVector<Real, ROWS>
+  ROL::MiniTensorVector<Real, COLS>
   x(xval);
 
-  ROL::MiniTensorVector<Real, ROWS>
+  ROL::MiniTensorVector<Real, COLS>
   v(vval);
 
-  ROL::MiniTensorVector<Real, COLS>
-  vl(vlval);
+  ROL::MiniTensorVector<Real, ROWS>
+  jv(jvval);
 
   ROL::MiniTensorVector<Real, COLS>
-  vc(vcval);
+  ajv(ajvval);
 
   std::vector<std::vector<Real>>
-  jac_check = constr.checkApplyJacobian(x, v, vc, print_output, os);
+  jac_check = constr.checkApplyJacobian(x, v, jv, print_output, os);
 
   std::vector<std::vector<Real>>
-  ajac_check = constr.checkApplyAdjointJacobian(x, vl, vc, x, print_output, os);
+  ajac_check = constr.checkApplyAdjointJacobian(x, jv, jv, ajv, print_output, os);
 
   Real
   error1{1.0};
@@ -264,8 +264,90 @@ TEST(MiniTensor_ROL, EqualityConstraint)
   }
 
   Real const
-  epsilon{Intrepid2::machine_epsilon<Real>()};
+  tol{1.0e-07};
 
-  ASSERT_LE(error1, epsilon);
-  ASSERT_LE(error2, epsilon);
+  ASSERT_LE(error1, tol);
+  ASSERT_LE(error2, tol);
+}
+
+TEST(MiniTensor_ROL, EqualityConstraint01)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  ROWS{3};
+
+  constexpr Intrepid2::Index
+  COLS{5};
+
+  using MSEC = Intrepid2::Nonlinear01<Real, ROWS>;
+
+  MSEC
+  msec;
+
+  ROL::MiniTensor_EqualityConstraint<MSEC, Real, ROWS, COLS>
+  constr(msec);
+
+  Intrepid2::Vector<Real, COLS>
+  xval(Intrepid2::RANDOM);
+
+  os << "xval:" << xval << '\n';
+
+  Intrepid2::Vector<Real, COLS>
+  vval(Intrepid2::RANDOM);
+
+  os << "vval:" << vval << '\n';
+
+  Intrepid2::Vector<Real, ROWS>
+  jvval(Intrepid2::RANDOM);
+
+  os << "jvval:" << jvval << '\n';
+
+  Intrepid2::Vector<Real, COLS>
+  ajvval(Intrepid2::RANDOM);
+
+  os << "ajvval:" << ajvval << '\n';
+
+  ROL::MiniTensorVector<Real, COLS>
+  x(xval);
+
+  ROL::MiniTensorVector<Real, COLS>
+  v(vval);
+
+  ROL::MiniTensorVector<Real, ROWS>
+  jv(jvval);
+
+  ROL::MiniTensorVector<Real, COLS>
+  ajv(ajvval);
+
+  std::vector<std::vector<Real>>
+  jac_check = constr.checkApplyJacobian(x, v, jv, print_output, os);
+
+  std::vector<std::vector<Real>>
+  ajac_check = constr.checkApplyAdjointJacobian(x, jv, jv, ajv, print_output, os);
+
+  Real
+  error1{1.0};
+
+  Real
+  error2{1.0};
+
+  for (Intrepid2::Index i = 0; i < jac_check.size(); ++i) {
+    error1 = std::min(error1, jac_check[i][3]);
+    error2 = std::min(error2, jac_check[i][3]);
+  }
+
+  Real const
+  tol{1.0e-07};
+
+  ASSERT_LE(error1, tol);
+  ASSERT_LE(error2, tol);
 }
