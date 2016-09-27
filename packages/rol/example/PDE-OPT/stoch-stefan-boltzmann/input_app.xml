@@ -3,7 +3,7 @@
   <ParameterList name="Problem">
     <Parameter name="Is problem nonsmooth?"               type="bool"    value="false" />
     <!-- OBJECTIVE FUNCTION -->
-    <Parameter name="Desired engine temperature"          type="double"  value="373.0" />
+    <Parameter name="Desired engine temperature"          type="double"  value="363.0" />
     <Parameter name="Use exponential engine cost model"   type="bool"    value="false" />
     <Parameter name="Exponential engine cost rate"        type="double"  value="0.1"   />
     <Parameter name="State Cost"                          type="double"  value="1e0"   />
@@ -11,20 +11,26 @@
     <Parameter name="Use exponential control cost model"  type="bool"    value="false" />
     <Parameter name="Exponential lower control cost rate" type="double"  value="0.1"   />
     <Parameter name="Exponential upper control cost rate" type="double"  value="0.01"  />
-    <Parameter name="Control Cost"                        type="double"  value="1e-1"   />
+    <Parameter name="Control Cost"                        type="double"  value="1e-1"  />
+    <Parameter name="Advection Cost"                      type="double"  value="1e-1"  />
     <!-- PDE COEFFICIENTS -->
-    <Parameter name="Engine: Ambient Temperature"         type="double"  value="450.0" />
-    <Parameter name="Air: Ambient Temperature"            type="double"  value="293.0" />
-    <Parameter name="Water: Ambient Temperature"          type="double"  value="303.0" />
-    <Parameter name="Advection Magnitude"                 type="double"  value="6.3"   />
-    <Parameter name="Use Stefan-Boltzmann"                type="bool"    value="true"  />
+    <Parameter name="Engine: Ambient Temperature"         type="double"  value="500.0"   />
+    <Parameter name="Air: Ambient Temperature"            type="double"  value="293.0"   />
+    <Parameter name="Water: Ambient Temperature"          type="double"  value="303.0"   />
+    <Parameter name="Lower Control Bound"                 type="double"  value="280.0"   />
+    <Parameter name="Upper Control Bound"                 type="double"  value="370.0"   />
+    <Parameter name="Advection Magnitude"                 type="double"  value="450.0"   />
+    <Parameter name="Lower Advection Bound"               type="double"  value="-1000.0" />
+    <Parameter name="Upper Advection Bound"               type="double"  value="1000.0"  />
+    <Parameter name="Use Stefan-Boltzmann"                type="bool"    value="true"    />
+    <Parameter name="Use Nonlinear Conductivities"        type="bool"    value="true"    />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Statistic Initial Guess"             type="double"  value="5.0"   />
-    <Parameter name="Number of Samples"                   type="int"     value="100"   />
+    <Parameter name="Number of Samples"                   type="int"     value="1000"  />
     <!-- OUTPUT -->
     <Parameter name="Check Derivatives"                   type="bool"    value="false" />
     <Parameter name="Print Mean Value State"              type="bool"    value="false" />
-    <Parameter name="Number of Output Samples"            type="int"     value="1000"  />
+    <Parameter name="Number of Output Samples"            type="int"     value="10000" />
     <!-- FINITE ELEMENT INFORMATION -->
     <Parameter name="Basis Order"                         type="int"     value="1"     />
     <Parameter name="Volume Cubature Degree"              type="int"     value="2"     />
@@ -38,13 +44,6 @@
     <Parameter name="Step height"            type="double"  value="0.5"  />
     <Parameter name="Step width"             type="double"  value="1.0"  />
     <Parameter name="Observation width"      type="double"  value="3.0"  />
-    <!--
-    <Parameter name="Observation region NX"  type="int"     value="20"   />
-    <Parameter name="Observation region NY"  type="int"     value="20"   />
-    <Parameter name="Laminar flow region NX" type="int"     value="20"   />
-    <Parameter name="Inflow region NX"       type="int"     value="20"   />
-    <Parameter name="Inflow region NY"       type="int"     value="20"   />
-    -->
     <Parameter name="Refinement level"       type="int"     value="14"    />
     <Parameter name="Partition type"         type="int"     value="1"    />
   </ParameterList>
