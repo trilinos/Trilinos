@@ -23,13 +23,8 @@ namespace {
   static std::string StorageLimit_name    = "Storage Limit";
   static int         StorageLimit_default = 1;
 
-  Teuchos::Array<std::string>
-    HistoryPolicies = Teuchos::tuple<std::string>(
-      Invalid_name,
-      KeepNewest_name,
-      Undo_name,
-      Static_name,
-      Unlimited_name);
+  std::vector<std::string> HistoryPolicies =
+    {Invalid_name, KeepNewest_name, Undo_name, Static_name, Unlimited_name};
 
   const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::StorageType> >
     StorageTypeValidator = Teuchos::rcp(
@@ -54,7 +49,7 @@ SolutionHistory<Scalar>::SolutionHistory(
 {
   using Teuchos::RCP;
   // Create history, an array of solution states.
-  history_ = rcp(new Teuchos::Array<RCP<SolutionState<Scalar> > >);
+  history_ = rcp(new std::vector<RCP<SolutionState<Scalar> > >);
 
   if (pList == Teuchos::null) {
     pList_       = Teuchos::null;
@@ -115,7 +110,7 @@ void SolutionHistory<Scalar>::addState(
   if (history_->size() == 0) {
     history_->push_back(state_);
   } else {
-    typename Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > >::iterator
+    typename std::vector<Teuchos::RCP<SolutionState<Scalar> > >::iterator
       state_it = history_->begin();
     for (; state_it < history_->end(); state_it++) {
       if (state_->getTime() < (*state_it)->getTime()) break;
@@ -146,12 +141,8 @@ void SolutionHistory<Scalar>::removeState(
       // << state_it->describe()
       );
 
-    // This is incorrect code. Teuchos::Array does not have an erase
-    // for a reverse iterator. Adding an exception for now. Need to
-    // remove Teuchos::Array and just use std::vector.
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                               "Tempus::SolutionHistory::removeState() - not implemented yet!");
-    //history_->erase(state_it);
+    // Need to be careful when erasing a reverse iterator.
+    history_->erase(std::next(state_it).base());
   }
   return;
 }
@@ -179,7 +170,8 @@ SolutionHistory<Scalar>::findState(const Scalar time) const
   auto state_it = history_->begin();
   // Linear search
   for ( ; state_it < history_->end(); ++state_it) {
-    if (abs((*state_it)->getTime()-time)/((*state_it)->getTime()) < relTol) break;
+    if (std::abs((*state_it)->getTime()-time)/((*state_it)->getTime()) < relTol)
+      break;
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(state_it == history_->end(), std::logic_error,

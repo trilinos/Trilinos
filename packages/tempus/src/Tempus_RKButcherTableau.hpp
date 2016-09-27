@@ -323,11 +323,11 @@ class Explicit4Stage4thOrder_RKBT :
                 << "    [  0   0   1   0  ]\n"
                 << "b = [ 1/6 1/3 1/3 1/6 ]'" << std::endl;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
-    Scalar onehalf = ST::one()/(2*ST::one());
-    Scalar onesixth = ST::one()/(6*ST::one());
-    Scalar onethird = ST::one()/(3*ST::one());
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar onehalf = one/(2*one);
+    const Scalar onesixth = one/(6*one);
+    const Scalar onethird = one/(3*one);
 
     int NumStages = 4;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
@@ -401,12 +401,12 @@ class Explicit3_8Rule_RKBT :
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
 
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
-    Scalar one_third    = as<Scalar>(ST::one()/(3*ST::one()));
-    Scalar two_third    = as<Scalar>(2*ST::one()/(3*ST::one()));
-    Scalar one_eighth   = as<Scalar>(ST::one()/(8*ST::one()));
-    Scalar three_eighth = as<Scalar>(3*ST::one()/(8*ST::one()));
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one_third    = as<Scalar>(one/(3*one));
+    const Scalar two_third    = as<Scalar>(2*one/(3*one));
+    const Scalar one_eighth   = as<Scalar>(one/(8*one));
+    const Scalar three_eighth = as<Scalar>(3*one/(8*one));
 
     // Fill A:
     A(0,0) = zero;
@@ -474,11 +474,11 @@ class Explicit4Stage3rdOrderRunge_RKBT :
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
 
-    Scalar one = ST::one();
-    Scalar onehalf = ST::one()/(2*ST::one());
-    Scalar onesixth = ST::one()/(6*ST::one());
-    Scalar twothirds = 2*ST::one()/(3*ST::one());
-    Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar onehalf = one/(2*one);
+    const Scalar onesixth = one/(6*one);
+    const Scalar twothirds = 2*one/(3*one);
+    const Scalar zero = ST::zero();
 
     // Fill A:
     A(0,0) = zero;
@@ -546,13 +546,13 @@ class Explicit5Stage3rdOrderKandG_RKBT :
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
 
-    Scalar one = ST::one();
-    Scalar onefifth = ST::one()/(5*ST::one());
-    Scalar onefourth = ST::one()/(4*ST::one());
-    Scalar onethird = ST::one()/(3*ST::one());
-    Scalar twothirds = 2*ST::one()/(3*ST::one());
-    Scalar threefourths = 3*ST::one()/(4*ST::one());
-    Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar onefifth = one/(5*one);
+    const Scalar onefourth = one/(4*one);
+    const Scalar onethird = one/(3*one);
+    const Scalar twothirds = 2*one/(3*one);
+    const Scalar threefourths = 3*one/(4*one);
+    const Scalar zero = ST::zero();
 
     // Fill A:
     A(0,0) = zero;
@@ -623,12 +623,12 @@ class Explicit3Stage3rdOrder_RKBT :
                 << "    [ -1   2   0  ]\n"
                 << "b = [ 1/6 4/6 1/6 ]'" << std::endl;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    Scalar one = ST::one();
-    Scalar two = Teuchos::as<Scalar>(2*ST::one());
-    Scalar zero = ST::zero();
-    Scalar onehalf = ST::one()/(2*ST::one());
-    Scalar onesixth = ST::one()/(6*ST::one());
-    Scalar foursixth = 4*ST::one()/(6*ST::one());
+    const Scalar one = ST::one();
+    const Scalar two = Teuchos::as<Scalar>(2*one);
+    const Scalar zero = ST::zero();
+    const Scalar onehalf = one/(2*one);
+    const Scalar onesixth = one/(6*one);
+    const Scalar foursixth = 4*one/(6*one);
 
     int NumStages = 3;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
@@ -691,12 +691,12 @@ class Explicit3Stage3rdOrderTVD_RKBT :
                   << "u^(n+1) = u^n/3 + 2 u2/2 + 2 dt L(u2)/3"
                   << std::endl;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
-    Scalar onehalf = ST::one()/(2*ST::one());
-    Scalar onefourth = ST::one()/(4*ST::one());
-    Scalar onesixth = ST::one()/(6*ST::one());
-    Scalar foursixth = 4*ST::one()/(6*ST::one());
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar onehalf = one/(2*one);
+    const Scalar onefourth = one/(4*one);
+    const Scalar onesixth = one/(6*one);
+    const Scalar foursixth = 4*one/(6*one);
 
     int NumStages = 3;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
@@ -754,12 +754,12 @@ class Explicit3Stage3rdOrderHeun_RKBT :
                 << "    [  0  2/3  0  ]\n"
                 << "b = [ 1/4  0  3/4 ]'" << std::endl;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
-    Scalar onethird = one/(3*one);
-    Scalar twothirds = 2*one/(3*one);
-    Scalar onefourth = one/(4*one);
-    Scalar threefourths = 3*one/(4*one);
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar onethird = one/(3*one);
+    const Scalar twothirds = 2*one/(3*one);
+    const Scalar onefourth = one/(4*one);
+    const Scalar threefourths = 3*one/(4*one);
 
     int NumStages = 3;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
@@ -817,9 +817,9 @@ class Explicit2Stage2ndOrderRunge_RKBT :
                 << "    [ 1/2  0  ]\n"
                 << "b = [  0   1  ]'" << std::endl;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
-    Scalar onehalf = ST::one()/(2*ST::one());
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar onehalf = one/(2*one);
 
     int NumStages = 2;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
@@ -864,9 +864,9 @@ class ExplicitTrapezoidal_RKBT :
                 << "    [  1   0  ]\n"
                 << "b = [ 1/2 1/2 ]'" << std::endl;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
-    Scalar onehalf = ST::one()/(2*ST::one());
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar onehalf = one/(2*one);
 
     int NumStages = 2;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
@@ -916,7 +916,7 @@ class SDIRK2Stage2ndOrder_RKBT :
 
     this->setDescription(Description.str());
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    Scalar one = ST::one();
+    const Scalar one = ST::one();
     gamma_default_ = Teuchos::as<Scalar>( (2*one - ST::squareroot(2*one))/(2*one) );
     gamma_ = gamma_default_;
 
@@ -942,8 +942,8 @@ class SDIRK2Stage2ndOrder_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
     A(0,0) = gamma_;
     A(0,1) = zero;
     A(1,0) = Teuchos::as<Scalar>( one - gamma_ );
@@ -1004,7 +1004,7 @@ class SDIRK2Stage3rdOrder_RKBT :
     thirdOrderAStable_ = true;
     secondOrderLStable_ = false;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    Scalar one = ST::one();
+    const Scalar one = ST::one();
     gamma_default_ = Teuchos::as<Scalar>( (3*one + ST::squareroot(3*one))/(6*one) );
     gamma_ = gamma_default_;
     this->setupData();
@@ -1036,8 +1036,8 @@ class SDIRK2Stage3rdOrder_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
     if (thirdOrderAStable_)
       gamma_ = gamma_default_;
     else if (secondOrderLStable_)
@@ -1114,8 +1114,8 @@ class DIRK2Stage3rdOrder_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
     A(0,0) = zero;
     A(0,1) = zero;
     A(1,0) = as<Scalar>( one/(3*one) );
@@ -1159,7 +1159,7 @@ class Implicit3Stage6thOrderKuntzmannButcher_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>( 5*one/(36*one) );
     A(0,1) = as<Scalar>( 2*one/(9*one) - ST::squareroot(15*one)/(15*one) );
     A(0,2) = as<Scalar>( 5*one/(36*one) - ST::squareroot(15*one)/(30*one) );
@@ -1220,18 +1220,18 @@ class Implicit4Stage8thOrderKuntzmannButcher_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
-    Scalar onehalf = as<Scalar>( one/(2*one) );
-    Scalar w1 = as<Scalar>( one/(8*one) - ST::squareroot(30*one)/(144*one) );
-    Scalar w2 = as<Scalar>( (one/(2*one))*ST::squareroot((15*one+2*one*ST::squareroot(30*one))/(35*one)) );
-    Scalar w3 = as<Scalar>( w2*(one/(6*one)+ST::squareroot(30*one)/(24*one)) );
-    Scalar w4 = as<Scalar>( w2*(one/(21*one)+5*one*ST::squareroot(30*one)/(168*one)) );
-    Scalar w5 = as<Scalar>( w2-2*w3 );
-    Scalar w1p = as<Scalar>( one/(8*one) + ST::squareroot(30*one)/(144*one) );
-    Scalar w2p = as<Scalar>( (one/(2*one))*ST::squareroot((15*one-2*one*ST::squareroot(30*one))/(35*one)) );
-    Scalar w3p = as<Scalar>( w2p*(one/(6*one)-ST::squareroot(30*one)/(24*one)) );
-    Scalar w4p = as<Scalar>( w2p*(one/(21*one)-5*one*ST::squareroot(30*one)/(168*one)) );
-    Scalar w5p = as<Scalar>( w2p-2*w3p );
+    const Scalar one = ST::one();
+    const Scalar onehalf = as<Scalar>( one/(2*one) );
+    const Scalar w1 = as<Scalar>( one/(8*one) - ST::squareroot(30*one)/(144*one) );
+    const Scalar w2 = as<Scalar>( (one/(2*one))*ST::squareroot((15*one+2*one*ST::squareroot(30*one))/(35*one)) );
+    const Scalar w3 = as<Scalar>( w2*(one/(6*one)+ST::squareroot(30*one)/(24*one)) );
+    const Scalar w4 = as<Scalar>( w2*(one/(21*one)+5*one*ST::squareroot(30*one)/(168*one)) );
+    const Scalar w5 = as<Scalar>( w2-2*w3 );
+    const Scalar w1p = as<Scalar>( one/(8*one) + ST::squareroot(30*one)/(144*one) );
+    const Scalar w2p = as<Scalar>( (one/(2*one))*ST::squareroot((15*one-2*one*ST::squareroot(30*one))/(35*one)) );
+    const Scalar w3p = as<Scalar>( w2p*(one/(6*one)-ST::squareroot(30*one)/(24*one)) );
+    const Scalar w4p = as<Scalar>( w2p*(one/(21*one)-5*one*ST::squareroot(30*one)/(168*one)) );
+    const Scalar w5p = as<Scalar>( w2p-2*w3p );
     A(0,0) = w1;
     A(0,1) = w1p-w3+w4p;
     A(0,2) = w1p-w3-w4p;
@@ -1289,9 +1289,9 @@ class Implicit2Stage4thOrderHammerHollingsworth_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
-    Scalar onequarter = as<Scalar>( one/(4*one) );
-    Scalar onehalf = as<Scalar>( one/(2*one) );
+    const Scalar one = ST::one();
+    const Scalar onequarter = as<Scalar>( one/(4*one) );
+    const Scalar onehalf = as<Scalar>( one/(2*one) );
     A(0,0) = onequarter;
     A(0,1) = as<Scalar>( onequarter-ST::squareroot(3*one)/(6*one) );
     A(1,0) = as<Scalar>( onequarter+ST::squareroot(3*one)/(6*one) );
@@ -1428,8 +1428,8 @@ class IRK2StageTheta_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
     A(0,0) = zero;
     A(0,1) = zero;
     A(1,0) = Teuchos::as<Scalar>( one - theta_ );
@@ -1497,8 +1497,8 @@ class Implicit1Stage2ndOrderGauss_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar onehalf = ST::one()/(2*ST::one());
-    Scalar one = ST::one();
+    const Scalar onehalf = ST::one()/(2*ST::one());
+    const Scalar one = ST::one();
     A(0,0) = onehalf;
     b(0) = one;
     c(0) = onehalf;
@@ -1536,12 +1536,12 @@ class Implicit2Stage4thOrderGauss_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
-    Scalar onehalf = as<Scalar>(one/(2*one));
-    Scalar three = as<Scalar>(3*one);
-    Scalar six = as<Scalar>(6*one);
-    Scalar onefourth = as<Scalar>(one/(4*one));
-    Scalar alpha = ST::squareroot(three)/six;
+    const Scalar one = ST::one();
+    const Scalar onehalf = as<Scalar>(one/(2*one));
+    const Scalar three = as<Scalar>(3*one);
+    const Scalar six = as<Scalar>(6*one);
+    const Scalar onefourth = as<Scalar>(one/(4*one));
+    const Scalar alpha = ST::squareroot(three)/six;
 
     A(0,0) = onefourth;
     A(0,1) = onefourth-alpha;
@@ -1587,15 +1587,15 @@ class Implicit3Stage6thOrderGauss_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
-    Scalar ten = as<Scalar>(10*one);
-    Scalar fifteen = as<Scalar>(15*one);
-    Scalar twentyfour = as<Scalar>(24*one);
-    Scalar thirty = as<Scalar>(30*one);
-    Scalar sqrt15over10 = as<Scalar>(ST::squareroot(fifteen)/ten);
-    Scalar sqrt15over15 = as<Scalar>(ST::squareroot(fifteen)/fifteen);
-    Scalar sqrt15over24 = as<Scalar>(ST::squareroot(fifteen)/twentyfour);
-    Scalar sqrt15over30 = as<Scalar>(ST::squareroot(fifteen)/thirty);
+    const Scalar one = ST::one();
+    const Scalar ten = as<Scalar>(10*one);
+    const Scalar fifteen = as<Scalar>(15*one);
+    const Scalar twentyfour = as<Scalar>(24*one);
+    const Scalar thirty = as<Scalar>(30*one);
+    const Scalar sqrt15over10 = as<Scalar>(ST::squareroot(fifteen)/ten);
+    const Scalar sqrt15over15 = as<Scalar>(ST::squareroot(fifteen)/fifteen);
+    const Scalar sqrt15over24 = as<Scalar>(ST::squareroot(fifteen)/twentyfour);
+    const Scalar sqrt15over30 = as<Scalar>(ST::squareroot(fifteen)/thirty);
 
     A(0,0) = as<Scalar>(5*one/(36*one));
     A(0,1) = as<Scalar>(2*one/(9*one))-sqrt15over15;
@@ -1644,8 +1644,8 @@ class Implicit1Stage1stOrderRadauA_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
-    Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
     A(0,0) = one;
     b(0) = one;
     c(0) = zero;
@@ -1683,8 +1683,8 @@ class Implicit2Stage3rdOrderRadauA_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>(one/(4*one));
     A(0,1) = as<Scalar>(-one/(4*one));
     A(1,0) = as<Scalar>(one/(4*one));
@@ -1729,8 +1729,8 @@ class Implicit3Stage5thOrderRadauA_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>(one/(9*one));
     A(0,1) = as<Scalar>( (-one-ST::squareroot(6*one))/(18*one) );
     A(0,2) = as<Scalar>( (-one+ST::squareroot(6*one))/(18*one) );
@@ -1778,7 +1778,7 @@ class Implicit1Stage1stOrderRadauB_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
+    const Scalar one = ST::one();
     A(0,0) = one;
     b(0) = one;
     c(0) = one;
@@ -1816,7 +1816,7 @@ class Implicit2Stage3rdOrderRadauB_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>( 5*one/(12*one) );
     A(0,1) = as<Scalar>( -one/(12*one) );
     A(1,0) = as<Scalar>( 3*one/(4*one) );
@@ -1868,7 +1868,7 @@ class Implicit3Stage5thOrderRadauB_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar one = ST::one();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>( (88*one-7*one*ST::squareroot(6*one))/(360*one) );
     A(0,1) = as<Scalar>( (296*one-169*one*ST::squareroot(6*one))/(1800*one) );
     A(0,2) = as<Scalar>( (-2*one+3*one*ST::squareroot(6*one))/(225*one) );
@@ -1918,8 +1918,8 @@ class Implicit2Stage2ndOrderLobattoA_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = zero;
     A(0,1) = zero;
     A(1,0) = as<Scalar>( one/(2*one) );
@@ -1963,8 +1963,8 @@ class Implicit3Stage4thOrderLobattoA_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = zero;
     A(0,1) = zero;
     A(0,2) = zero;
@@ -2030,8 +2030,8 @@ class Implicit4Stage6thOrderLobattoA_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = zero;
     A(0,1) = zero;
     A(0,2) = zero;
@@ -2090,8 +2090,8 @@ class Implicit2Stage2ndOrderLobattoB_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(2*one) );
     A(0,1) = zero;
     A(1,0) = as<Scalar>( one/(2*one) );
@@ -2135,8 +2135,8 @@ class Implicit3Stage4thOrderLobattoB_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(6*one) );
     A(0,1) = as<Scalar>( -one/(6*one) );
     A(0,2) = zero;
@@ -2189,8 +2189,8 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(12*one) );
     A(0,1) = as<Scalar>( (-one-ST::squareroot(5))/(24*one) );
     A(0,2) = as<Scalar>( (-one+ST::squareroot(5))/(24*one) );
@@ -2249,8 +2249,8 @@ class Implicit2Stage2ndOrderLobattoC_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(2*one) );
     A(0,1) = as<Scalar>( -one/(2*one) );
     A(1,0) = as<Scalar>( one/(2*one) );
@@ -2294,8 +2294,8 @@ class Implicit3Stage4thOrderLobattoC_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(6*one) );
     A(0,1) = as<Scalar>( -one/(3*one) );
     A(0,2) = as<Scalar>( one/(6*one) );
@@ -2348,8 +2348,8 @@ class Implicit4Stage6thOrderLobattoC_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(12*one) );
     A(0,1) = as<Scalar>( -ST::squareroot(5*one)/(12*one) );
     A(0,2) = as<Scalar>( ST::squareroot(5*one)/(12*one) );
@@ -2441,10 +2441,10 @@ class SDIRK5Stage5thOrder_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
-    Scalar sqrt6 = ST::squareroot(as<Scalar>(6*one));
-    Scalar gamma = as<Scalar>( (6*one - sqrt6) / (10*one) ); // diagonal
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar sqrt6 = ST::squareroot(as<Scalar>(6*one));
+    const Scalar gamma = as<Scalar>( (6*one - sqrt6) / (10*one) ); // diagonal
     A(0,0) = gamma;
     A(0,1) = zero;
     A(0,2) = zero;
@@ -2525,9 +2525,9 @@ class SDIRK5Stage4thOrder_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
-    Scalar onequarter = as<Scalar>( one/(4*one) );
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar onequarter = as<Scalar>( one/(4*one) );
     A(0,0) = onequarter;
     A(0,1) = zero;
     A(0,2) = zero;
@@ -2615,11 +2615,11 @@ class SDIRK3Stage4thOrder_RKBT :
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    Scalar zero = ST::zero();
-    Scalar one = ST::one();
-    Scalar pi = as<Scalar>(4*one)*std::atan(one);
-    Scalar gamma = as<Scalar>( one/ST::squareroot(3*one)*std::cos(pi/(18*one))+one/(2*one) );
-    Scalar delta = as<Scalar>( one/(6*one*std::pow(2*gamma-one,2*one)) );
+    const Scalar zero = ST::zero();
+    const Scalar one = ST::one();
+    const Scalar pi = as<Scalar>(4*one)*std::atan(one);
+    const Scalar gamma = as<Scalar>( one/ST::squareroot(3*one)*std::cos(pi/(18*one))+one/(2*one) );
+    const Scalar delta = as<Scalar>( one/(6*one*std::pow(2*gamma-one,2*one)) );
     A(0,0) = gamma;
     A(0,1) = zero;
     A(0,2) = zero;

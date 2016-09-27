@@ -5,7 +5,6 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-#include "Teuchos_Array.hpp"
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionState.hpp"
@@ -86,7 +85,7 @@ public:
   /// \name Accessor methods
   //@{
     /// Get underlining history
-    Teuchos::RCP<Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > > >
+    Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > >
       getHistory() const {return history_;}
 
     /// Subscript operator
@@ -159,7 +158,7 @@ public:
 protected:
 
   Teuchos::RCP<Teuchos::ParameterList>      pList_;
-  Teuchos::RCP<Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > > > history_;
+  Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history_;
   //Teuchos::RCP<InterpolatorBase<Scalar> >   interpolator;
   StorageType                               storageType;
   int                                       storageLimit;
@@ -173,7 +172,7 @@ protected:
  * \relates SolutionHistory.
  */
 template<class Scalar>
-Teuchos::RCP<SolutionHistory<Scalar> > 
+Teuchos::RCP<SolutionHistory<Scalar> >
 solutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
 

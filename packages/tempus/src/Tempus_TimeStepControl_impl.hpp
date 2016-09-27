@@ -44,9 +44,7 @@ namespace {
   static std::string stepType_name    = "Integrator Step Type";
   static std::string stepType_default = Variable_name;
 
-  Teuchos::Array<std::string> stepType_names = Teuchos::tuple<std::string>(
-      Constant_name,
-      Variable_name);
+  std::vector<std::string> stepType_names = {Constant_name, Variable_name};
 
   const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType> >
     stepTypeValidator = Teuchos::rcp(
