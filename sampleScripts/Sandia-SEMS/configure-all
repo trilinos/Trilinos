@@ -1,6 +1,6 @@
 #!/bin/bash
 
-
+-
 # This script is a generic build script for Trilinos using the SEMS provided modules at Sandia
 # It assumes you have the SEMS modules files as well as the Kokkos subcategory enabled
 # Assuming basic SEMS Module usage has been set up you can add the Kokkos modules through
@@ -9,6 +9,7 @@
 # A 'modules' file will be created which can be used to reload the same modules as used during configuration. 
 
 # Choose options below for configurations. 
+
 rm -f CMakeCache.txt;
 rm -rf CMakeFiles
 echo ""
@@ -50,62 +51,62 @@ MPI_SUFFIX=openmpi/1.8.7
 
 #Using Boost from sems
 BOOST_SUFFIX=boost/1.58.0
-BOOST_PATH=${TPL_PATH}/${BOOST_SUFFIX}/${COMPILER_SUFFIX}/base
 
 #SuperLU is not correctly installed in the sems modules so use your own
 SUPERLU_SUFFIX=superlu/4.3
-SUPERLU_PATH=${TPL_PATH}/${SUPERLU_SUFFIX}/${COMPILER_SUFFIX}/base
 
 #Using HDF5 from sems
 HDF5_SUFFIX=hdf5/1.8.12
-HDF5_PATH=${TPL_PATH}/${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
 
 #Using NetCDF from sems
 NETCDF_SUFFIX=netcdf/4.3.2
-NETCDF_PATH=${TPL_PATH}/${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/parallel
 
 #Zlib doesn't exist in the sems modules yet
 ZLIB_SUFFIX=zlib/1.2.8
-ZLIB_PATH=${TPL_PATH}/${ZLIB_SUFFIX}/${COMPILER_SUFFIX}/base
 
 #--------------------------------------------------
 #--------------------------------------------------
 
 module purge 
-module load cmake/2.8.12
-if [ "${CUDA}" == "ON" ]; then
-  module load ${CUDA_SUFFIX}
-  module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
+module load sems-env
+module load kokkos-env
+module load sems-cmake/3.5.2
+module load sems-${COMPILER_SUFFIX}
+if [ "${CUDA}" == 'ON' ]; then
+  module load kokkos-${CUDA_SUFFIX}
+  module load kokkos-${MPI_SUFFIX}/cuda
   export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/config/nvcc_wrapper
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 else
-  module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
-  module load ${CUDA_SUFFIX}
   unset OMPI_CXX
+  module load sems-${MPI_SUFFIX}
 fi
-module load ${BOOST_SUFFIX}/${COMPILER_SUFFIX}/base
-module load ${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
-module load ${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/parallel
-module load ${ZLIB_SUFFIX}/${COMPILER_SUFFIX}/base
+module load sems-${BOOST_SUFFIX}/base
+module load sems-${HDF5_SUFFIX}/parallel
+module load sems-${NETCDF_SUFFIX}/parallel
+module load sems-${ZLIB_SUFFIX}/base
 
 echo "module purge" > modules
-echo "module load cmake/2.8.12" >> modules
-if [ "${CUDA}" == "ON" ]; then
-  echo "module load ${CUDA_SUFFIX}" >> modules
-  echo "module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}" >> modules
-  echo "export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/config/nvcc_wrapper" >> modules
-  echo "export CUDA_LAUNCH_BLOCKING=1" >> modules
-  echo "export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1" >> modules
+echo "module load sems-env" >> modules
+echo "module load kokkos-env" >> modules
+echo "module load sems-cmake/3.5.2" >> modules
+echo "module load sems-${COMPILER_SUFFIX}" >> modules
+if [ "${CUDA}" == 'ON' ]; then
+echo "  module load kokkos-${CUDA_SUFFIX}" >> modules
+echo "  module load kokkos-${MPI_SUFFIX}/cuda" >> modules
+echo "  export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/config/nvcc_wrapper" >> modules
+echo "  export CUDA_LAUNCH_BLOCKING=1" >> modules
+echo "  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1" >> modules
 else
-  echo "module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}" >> modules
-  echo "module load ${CUDA_SUFFIX}" >> modules
-  echo "unset OMPI_CXX" >> modules
+echo "  unset OMPI_CXX" >> modules
+echo "  module load sems-${MPI_SUFFIX}" >> modules
 fi
-echo "module load ${BOOST_SUFFIX}/${COMPILER_SUFFIX}/base" >> modules
-echo "module load ${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}" >> modules
-echo "module load ${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/parallel" >> modules
-echo "module load ${ZLIB_SUFFIX}/${COMPILER_SUFFIX}/base" >> modules
+echo "module load sems-${BOOST_SUFFIX}/base" >> modules
+echo "module load sems-${HDF5_SUFFIX}/parallel" >> modules
+echo "module load sems-${NETCDF_SUFFIX}/parallel" >> modules
+echo "module load sems-${ZLIB_SUFFIX}/base" >> modules
+
 
 # CMAKE Command structured
 #
@@ -218,9 +219,6 @@ cmake \
 -D Trilinos_ENABLE_ShyLU=ON \
   -D ShyLU_ENABLE_TESTS:BOOL=${TESTS} \
   -D ShyLU_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
-  -D Trilinos_ENABLE_ShyLUBasker:STRING=ON \
-  -D Trilinos_ENABLE_ShyLUBDDC:STRING=ON \
-  -D Trilinos_ENABLE_ShyLUTacho:STRING=ON \
 -D Trilinos_ENABLE_Stokhos=ON \
   -D Stokhos_ENABLE_TESTS:BOOL=${TESTS} \
   -D Stokhos_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
