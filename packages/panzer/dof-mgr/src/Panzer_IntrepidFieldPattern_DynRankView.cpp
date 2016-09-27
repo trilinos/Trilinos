@@ -60,15 +60,16 @@ namespace panzer {
   const std::vector<int> &
   Intrepid2FieldPattern::getSubcellIndices(int dim, int cellIndex) const
   {
-    const int ord  = intrepidBasis_->getDofOrdinal(dim, cellIndex, 0);
-    const int ndof = intrepidBasis_->getDofTag(ord)(3);
-    const auto tag = intrepidBasis_->getAllDofOrdinal();
-
     subcellIndices_.clear();
 
-    for (int i=0;i<ndof;++i)
-      subcellIndices_.push_back(tag(dim, cellIndex, i));
-    
+    const int ord  = intrepidBasis_->getDofOrdinal(dim, cellIndex, 0);
+    if (ord >= 0) {
+      const int ndof = intrepidBasis_->getDofTag(ord)(3);
+      const auto tag = intrepidBasis_->getAllDofOrdinal();
+
+      for (int i=0;i<ndof;++i)
+        subcellIndices_.push_back(tag(dim, cellIndex, i));
+    }
     return subcellIndices_;
   }
 
