@@ -4577,8 +4577,14 @@ namespace Tpetra {
              "k_rowPtrs_.dimension_0() == 0.  This should never happen at this "
              "point.  Please report this bug to the Tpetra developers.");
 
-          // FIXME (mfh 26 Jun 2016) This assumes UVM.
-          const size_t numEnt = k_rowPtrs_[lclNumRows];
+          // Don't assume UVM.  Get a ("0-D") View of the last entry
+          // of k_rowPtrs_, get its host mirror View, and use that to
+          // get the number of entries.
+          auto lastEnt_d = Kokkos::subview (k_rowPtrs_, lclNumRows);
+          auto lastEnt_h = Kokkos::create_mirror_view (lastEnt_d);
+          Kokkos::deep_copy (lastEnt_h, lastEnt_d);
+          const auto numEnt = lastEnt_h ();
+
           k_lclInds1D_ = lcl_col_inds_type ("Tpetra::CrsGraph::lclind", numEnt);
         }
 
