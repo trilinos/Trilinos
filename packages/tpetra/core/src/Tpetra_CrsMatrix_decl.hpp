@@ -4361,11 +4361,11 @@ namespace Tpetra {
                                                typename CrsMatrixType::node_type>& domainExporter,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-                                                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-                                                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
-                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                                                               typename CrsMatrixType::node_type> >& rangeMap,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
     sourceMatrix->exportAndFillComplete (destMatrix,rowExporter,domainExporter,domainMap, rangeMap, params);
