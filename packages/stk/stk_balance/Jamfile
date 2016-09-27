@@ -1,0 +1,160 @@
+#---------------------------------------------------------------
+#    Copyright 2006 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <include>$(stk_balance-root)
+  : usage-requirements
+    <include>$(stk_balance-root)
+  : build-dir $(stk_balance-builddir)
+  ;
+
+#
+# SECTION 2: Development install
+#
+explicit install-serial-targets ;
+alias install-serial-targets
+  :
+  ;
+
+explicit install-targets ;
+alias install-targets
+  : stk_balance_unit_tester
+    stk_balance_integration_tester
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-jamfile
+                          install-user-include install-user-lib ;
+
+# This rule copies build-system related files for this product to the install-root.
+explicit install-user-jamfile ;
+install install-user-jamfile
+  : [ glob $(stk_balance-root)/Jamfile ]
+  : <location>$(install-root)/stk/stk_balance
+    <install-source-root>$(stk_balance-root)
+  ;
+
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_balance-root)/stk_balance : *.h *.hpp *.H ]
+  : <location>$(install-root)/stk/stk_balance/include <install-source-root>$(stk_balance-root)/stk_balance
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : stk_balance
+  : <location>$(install-root)/stk/stk_balance/lib
+  ;
+
+
+lib stk_balance
+  :
+    [ ifdevbuild [ glob $(stk_balance-root)/stk_balance/*.cpp $(stk_balance-root)/stk_balance/internal/*.cpp ] ]
+    /sierra/stk_io//stk_io
+    /sierra/stk_mesh//stk_mesh_base
+    /tpl/trilinos//teuchos
+    /tpl/trilinos//zoltan2
+    /sierra/stk_search//stk_search
+    /sierra/geometry_toolkit//geometry_toolkit
+    /mpi//mpi
+  :
+    <include>$(stk_balance-root)/stk_balance
+    [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance.a ]
+  :
+  :
+    <include>$(stk_balance-root)/stk_balance
+  ;
+
+lib stk_balance_test_utils
+  :
+    [ glob $(stk_balance-root)/test_utils/*.cpp ]
+    stk_balance
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_io//stk_io
+    /sierra/seacas//ioss
+    /sierra/seacas//nemesis
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+  ;
+
+#
+# SECTION 4: Build configuration
+#
+
+exe stk_balance_unit_tester
+  :
+    [ glob
+      $(stk_balance-root)/unit_tests/*.cpp
+      $(stk_balance-root)/doc_tests/*.cpp
+    ]
+    stk_balance_test_utils
+    stk_balance
+    /sierra/seacas//ioss
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_util//stk_util_parallel
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe stk_balance_integration_tester
+  :
+    [ glob
+      $(stk_balance-root)/integration_tests/*.cpp
+    ]
+    stk_balance_test_utils
+    stk_balance
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/geometry_toolkit//geometry_toolkit
+    /sierra/seacas//ioss
+    /tpl/gtest//gtest
+    /mpi//mpi
+  :
+    <tag>@sierra-exec-tag
+  ;
+
