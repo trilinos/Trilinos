@@ -40,8 +40,6 @@
 #include <unit_tests/UnitTestUtils.hpp>
 #include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
 
-#include <exodusMeshInterface.h>
-
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_unit_test_utils/getOption.h>
 
