@@ -51,10 +51,7 @@
 #include "Kokkos_DynRankView.hpp"
 
 #include "Intrepid2_config.h"
-#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
-#include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
-#include "Intrepid2_HCURL_HEX_I1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 
 #include "PanzerCore_config.hpp"
 
@@ -64,7 +61,7 @@
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 
 #include "CartesianConnManager.hpp"
-
+#define myout std::cout 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
@@ -75,11 +72,9 @@ namespace unit_test {
 
 typedef CartesianConnManager<int,Ordinal64>::Triplet<Ordinal64> Triplet;
 
-template <typename Intrepid2Type>
-RCP<const panzer::FieldPattern> buildFieldPattern()
+RCP<const panzer::FieldPattern> buildFieldPattern(RCP<Intrepid2::Basis<PHX::Device,double,double> > basis)
 {
   // build a geometric pattern from a single basis
-  RCP<Intrepid2::Basis<PHX::Device,double,double> > basis = rcp(new Intrepid2Type);
   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
   return pattern;
 }
@@ -92,7 +87,7 @@ std::string getElementBlock(const Triplet & element,
   return connManager.getBlockId(localElmtId);
 }
 
-TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, threed)
 {
   typedef CartesianConnManager<int,Ordinal64> CCM;
   typedef panzer::DOFManager<int,Ordinal64> DOFManager;
@@ -108,20 +103,20 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
   int rank = comm.getRank(); // processor rank
 
   // mesh description
-  Ordinal64 nx = 10, ny = 7, nz = 4;
-  int px = np, py = 1, pz = 1;
-  int bx =  1, by = 2, bz = 1;
+  Ordinal64 nx = 10, ny = 7;//, nz = 4;
+  int px = np, py = 1;//, pz = 1;
+  int bx =  1, by = 2;//, bz = 1;
 
   // build velocity, temperature and pressure fields
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device,double,double> >();
-  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device,double,double> >();
-  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device,double,double> >();
-  RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::Device,double,double> >();
-  RCP<const panzer::FieldPattern> pattern_E = buildFieldPattern<Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::Device,double,double> >();
+  const int poly_U = 4, poly_P = 1, poly_T = 3;
 
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_U )) );
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_P )) );
+  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_T )) );
+  
   // build the topology
   RCP<CCM> connManager = rcp(new CCM);
-  connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
+  connManager->initialize(comm,nx,ny,px,py,bx,by);
 
   // build the dof manager, and assocaite with the topology
   RCP<DOFManager> dofManager = rcp(new DOFManager);
@@ -131,25 +126,17 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
   dofManager->addField("TEMPERATURE",pattern_T);
 
   // add velocity (U) and PRESSURE fields to the MHD element block
-  dofManager->addField("eblock-0_0_0","UX",pattern_U);
-  dofManager->addField("eblock-0_0_0","UY",pattern_U);
-  dofManager->addField("eblock-0_0_0","UZ",pattern_U);
-  dofManager->addField("eblock-0_0_0","PRESSURE",pattern_P);
-  dofManager->addField("eblock-0_0_0","B",pattern_B);
-  dofManager->addField("eblock-0_0_0","E",pattern_E);
+  dofManager->addField("eblock-0_0","UX",pattern_U);
+  dofManager->addField("eblock-0_0","UY",pattern_U);
+  dofManager->addField("eblock-0_0","PRESSURE",pattern_P);
 
   // add velocity (U) fields to the solid element block
-  dofManager->addField("eblock-0_1_0","UX",pattern_U);
-  dofManager->addField("eblock-0_1_0","UY",pattern_U);
-  dofManager->addField("eblock-0_1_0","UZ",pattern_U);
+  dofManager->addField("eblock-0_1","UX",pattern_U);
+  dofManager->addField("eblock-0_1","UY",pattern_U);
 
   // int temp_num = dofManager->getFieldNum("TEMPERATURE");
   int ux_num   = dofManager->getFieldNum("UX");
   int uy_num   = dofManager->getFieldNum("UY");
-  // int uz_num   = dofManager->getFieldNum("UZ");
-  // int p_num    = dofManager->getFieldNum("PRESSURE");
-  // int b_num    = dofManager->getFieldNum("B");
-  // int e_num    = dofManager->getFieldNum("E");
 
   // build global unknowns (useful comment!)
   dofManager->buildGlobalUnknowns();
@@ -157,18 +144,18 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
   // print out some diagnostic information 
   ///////////////////////////////////////////////////////////
 
-  dofManager->printFieldInformation(out); 
+  dofManager->printFieldInformation(myout); 
 
-  out << std::endl << "Load balancing: " << printUGILoadBalancingInformation(*dofManager) << std::endl;
+  myout << std::endl << "Load balancing: " << printUGILoadBalancingInformation(*dofManager) << std::endl;
 
-  out << std::endl << "Mesh Topology: " << std::endl;
-  printMeshTopology(out,*dofManager);
+  myout << std::endl << "Mesh Topology: " << std::endl;
+  printMeshTopology(myout,*dofManager);
 
   auto myOffset   = connManager->getMyOffsetTriplet();
   auto myElements = connManager->getMyElementsTriplet();
 
-  out << "My Offset   = " << myOffset.x << " " << myOffset.y << " " << myOffset.z << std::endl;
-  out << "My myElements = " << myElements.x << " " << myElements.y << " " << myElements.z << std::endl;
+  myout << "My Offset   = " << myOffset.x << " " << myOffset.y << " " << myOffset.z << std::endl;
+  myout << "My myElements = " << myElements.x << " " << myElements.y << " " << myElements.z << std::endl;
 
   // check sharing locally on this processor
   {
@@ -178,32 +165,28 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
     element.y = myOffset.y + myElements.y/2-1;
     element.z = myOffset.z + myElements.z/2-1;
 
-    out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
+    myout << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
 
     int localElmtId    = connManager->computeLocalElementIndex(element);
     int localElmtId_px = connManager->computeLocalElementIndex(Triplet(element.x+1,element.y,element.z));
     int localElmtId_py = connManager->computeLocalElementIndex(Triplet(element.x,element.y+1,element.z));
-    int localElmtId_pz = connManager->computeLocalElementIndex(Triplet(element.x,element.y,element.z+1));
 
     TEST_ASSERT(localElmtId>=0);
     TEST_ASSERT(localElmtId_px>=0);
     TEST_ASSERT(localElmtId_py>=0);
-    TEST_ASSERT(localElmtId_pz>=0);
 
     std::string eblock    = getElementBlock(element,*connManager);
     std::string eblock_px = getElementBlock(Triplet(element.x+1,element.y,element.z),*connManager);
     std::string eblock_py = getElementBlock(Triplet(element.x,element.y+1,element.z),*connManager);
-    std::string eblock_pz = getElementBlock(Triplet(element.x,element.y,element.z+1),*connManager);
 
-    std::vector<Ordinal64> gids, gids_px, gids_py, gids_pz;
+    std::vector<Ordinal64> gids, gids_px, gids_py;
 
     dofManager->getElementGIDs(   localElmtId,   gids);
     dofManager->getElementGIDs(localElmtId_px,gids_px);
     dofManager->getElementGIDs(localElmtId_py,gids_py);
-    dofManager->getElementGIDs(localElmtId_pz,gids_pz);
 
     {
-      out << "Elements " << localElmtId << " " << localElmtId_px << std::endl;
+      myout << "Elements " << localElmtId << " " << localElmtId_px << std::endl;
       auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,ux_num,2,1); // +x
       auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_px,ux_num,2,3); // -x
 
@@ -223,7 +206,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
     }
 
     {
-      out << "Elements " << localElmtId << " " << localElmtId_py << std::endl;
+      myout << "Elements " << localElmtId << " " << localElmtId_py << std::endl;
       auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,ux_num,2,2); // +y
       auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_py,ux_num,2,0); // -y
 
@@ -241,26 +224,6 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
       for(std::size_t i=0;i<gid_sub.size();i++)
         TEST_EQUALITY(gid_sub[i],gid_sub_py[i]);
     }
-
-    {
-      out << "Elements " << localElmtId << " " << localElmtId_pz << std::endl;
-      auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,ux_num,2,5); // +z
-      auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_pz,ux_num,2,4); // -z
-
-      TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
-
-      std::vector<Ordinal64> gid_sub, gid_sub_pz;
-      for(std::size_t i=0;i<offsets.first.size();i++) {
-        gid_sub.push_back(gids[offsets.first[i]]);
-        gid_sub_pz.push_back(gids_pz[offsets_n.first[i]]);
-      }
-
-      std::sort(gid_sub.begin(),gid_sub.end());
-      std::sort(gid_sub_pz.begin(),gid_sub_pz.end());
-
-      for(std::size_t i=0;i<gid_sub.size();i++)
-        TEST_EQUALITY(gid_sub[i],gid_sub_pz[i]);
-    }
   }
 
   // assuming a 1d partition, check shared boundaries between processors
@@ -268,12 +231,10 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
     Triplet element_l;
     element_l.x = myOffset.x;
     element_l.y = myOffset.y + myElements.y/2;
-    element_l.z = myOffset.z + myElements.z/2;
 
     Triplet element_r;
     element_r.x = myOffset.x + myElements.x-1;
     element_r.y = myOffset.y + myElements.y/2;
-    element_r.z = myOffset.z + myElements.z/2;
 
     int localElmtId_l    = connManager->computeLocalElementIndex(element_l);
     int localElmtId_r    = connManager->computeLocalElementIndex(element_r);
@@ -293,7 +254,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
 
     TEST_EQUALITY(offsets_l.first.size(),offsets_r.first.size());
 
-    out << "Elements L/R " << localElmtId_l << " " << localElmtId_r << std::endl;
+    myout << "Elements L/R " << localElmtId_l << " " << localElmtId_r << std::endl;
     std::vector<Ordinal64> gid_sub_l, gid_sub_r;
     for(std::size_t i=0;i<offsets_l.first.size();i++) {
       gid_sub_l.push_back(gids_l[offsets_l.first[i]]);
