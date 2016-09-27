@@ -5,7 +5,7 @@
     <Parameter name="Check derivatives"           type="bool"    value="false" />
     <Parameter name="Number of output samples"    type="int"     value="1"     />
     <!-- STOCHASTIC INFORMATION -->
-    <Parameter name="Number of samples"           type="int"     value="1"     />
+    <Parameter name="Number of samples"           type="int"     value="4"     />
     <!-- PROBLEM INFORMATION -->
     <Parameter name="Control penalty parameter"   type="double"  value="1e-6"  />
     <Parameter name="Viscosity"                   type="double"  value="5e-3"  />
