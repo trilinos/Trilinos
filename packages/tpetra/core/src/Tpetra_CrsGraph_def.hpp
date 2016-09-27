@@ -61,6 +61,101 @@
 #include <utility>
 
 namespace Tpetra {
+  namespace Details {
+    namespace Impl {
+
+      template<class LO, class GO, class DT, class OffsetType, class NumEntType>
+      class ConvertColumnIndicesFromGlobalToLocal {
+      public:
+        ConvertColumnIndicesFromGlobalToLocal (const ::Kokkos::View<LO*, DT>& lclColInds,
+                                               const ::Kokkos::View<const GO*, DT>& gblColInds,
+                                               const ::Kokkos::View<const OffsetType*, DT>& ptr,
+                                               const ::Tpetra::Details::LocalMap<LO, GO, DT>& lclColMap,
+                                               const ::Kokkos::View<const NumEntType*, DT>& numRowEnt) :
+          lclColInds_ (lclColInds),
+          gblColInds_ (gblColInds),
+          ptr_ (ptr),
+          lclColMap_ (lclColMap),
+          numRowEnt_ (numRowEnt)
+        {}
+
+        KOKKOS_FUNCTION void
+        operator () (const LO& lclRow, OffsetType& curNumBad) const
+        {
+          const OffsetType offset = ptr_(lclRow);
+          // NOTE (mfh 26 Jun 2016) It's always legal to cast the number
+          // of entries in a row to LO, as long as the row doesn't have
+          // too many duplicate entries.
+          const LO numEnt = static_cast<LO> (numRowEnt_(lclRow));
+          for (LO j = 0; j < numEnt; ++j) {
+            const GO gid = gblColInds_(offset + j);
+            const LO lid = lclColMap_.getLocalElement (gid);
+            lclColInds_(offset + j) = lid;
+            if (lid == ::Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+              ++curNumBad;
+            }
+          }
+        }
+
+        static OffsetType
+        run (const ::Kokkos::View<LO*, DT>& lclColInds,
+             const ::Kokkos::View<const GO*, DT>& gblColInds,
+             const ::Kokkos::View<const OffsetType*, DT>& ptr,
+             const ::Tpetra::Details::LocalMap<LO, GO, DT>& lclColMap,
+             const ::Kokkos::View<const NumEntType*, DT>& numRowEnt)
+        {
+          typedef ::Kokkos::RangePolicy<typename DT::execution_space, LO> range_type;
+          typedef ConvertColumnIndicesFromGlobalToLocal<LO, GO, DT, OffsetType, NumEntType> functor_type;
+
+          const LO lclNumRows = ptr.dimension_0 () == 0 ?
+            static_cast<LO> (0) : static_cast<LO> (ptr.dimension_0 () - 1);
+          OffsetType numBad = 0;
+          // Count of "bad" column indices is a reduction over rows.
+          ::Kokkos::parallel_reduce (range_type (0, lclNumRows),
+                                     functor_type (lclColInds, gblColInds, ptr,
+                                                   lclColMap, numRowEnt),
+                                     numBad);
+          return numBad;
+        }
+
+      private:
+        ::Kokkos::View<LO*, DT> lclColInds_;
+        ::Kokkos::View<const GO*, DT> gblColInds_;
+        ::Kokkos::View<const OffsetType*, DT> ptr_;
+        ::Tpetra::Details::LocalMap<LO, GO, DT> lclColMap_;
+        ::Kokkos::View<const NumEntType*, DT> numRowEnt_;
+      };
+
+    } // namespace Impl
+
+    /// \brief Convert a (StaticProfile) CrsGraph's global column
+    ///   indices into local column indices.
+    ///
+    /// \param lclColInds [out] On output: The graph's local column
+    ///   indices.  This may alias gblColInds, if LO == GO.
+    /// \param gblColInds [in] On input: The graph's global column
+    ///   indices.  This may alias lclColInds, if LO == GO.
+    /// \param ptr [in] The graph's row offsets.
+    /// \param lclColMap [in] "Local" (threaded-kernel-worthy) version
+    ///   of the column Map.
+    /// \param numRowEnt [in] Array with number of entries in each row.
+    ///
+    /// \return the number of "bad" global column indices (that don't
+    ///   live in the column Map on the calling process).
+    template<class LO, class GO, class DT, class OffsetType, class NumEntType>
+    OffsetType
+    convertColumnIndicesFromGlobalToLocal (const Kokkos::View<LO*, DT>& lclColInds,
+                                           const Kokkos::View<const GO*, DT>& gblColInds,
+                                           const Kokkos::View<const OffsetType*, DT>& ptr,
+                                           const LocalMap<LO, GO, DT>& lclColMap,
+                                           const Kokkos::View<const NumEntType*, DT>& numRowEnt)
+    {
+      using Impl::ConvertColumnIndicesFromGlobalToLocal;
+      typedef ConvertColumnIndicesFromGlobalToLocal<LO, GO, DT, OffsetType, NumEntType> impl_type;
+      return impl_type::run (lclColInds, gblColInds, ptr, lclColMap, numRowEnt);
+    }
+
+  } // namespace Details
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
@@ -4435,11 +4530,15 @@ namespace Tpetra {
     using Teuchos::Array;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+    typedef device_type DT;
+    typedef typename local_graph_type::row_map_type::non_const_value_type offset_type;
+    typedef decltype (k_numRowEntries_) row_entries_type;
+    typedef typename row_entries_type::non_const_value_type num_ent_type;
     typedef typename local_graph_type::entries_type::non_const_type
       lcl_col_inds_type;
     typedef Kokkos::View<GO*, typename lcl_col_inds_type::array_layout,
       device_type> gbl_col_inds_type;
-    typedef decltype (k_numRowEntries_) row_entries_type;
+
     const char tfecfFuncName[] = "makeIndicesLocal: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4466,6 +4565,8 @@ namespace Tpetra {
         // GO to LO.  Otherwise, we'll just allocate a new buffer.
         constexpr bool LO_GO_same = std::is_same<LO, GO>::value;
         if (nodeNumAllocated_ && LO_GO_same) {
+          // This prevents a build error (illegal assignment) if
+          // LO_GO_same is _not_ true.
           k_lclInds1D_ = Kokkos::Impl::if_c<LO_GO_same,
             t_GlobalOrdinal_1D,
             lcl_col_inds_type>::select (k_gblInds1D_, k_lclInds1D_);
@@ -4481,31 +4582,30 @@ namespace Tpetra {
           k_lclInds1D_ = lcl_col_inds_type ("Tpetra::CrsGraph::lclind", numEnt);
         }
 
-        // FIXME (mfh 26 Jun 2016) Convert to a Kokkos parallel_reduce
-        // functor (reduce over error code).  Use LocalMap for
-        // global-to-local index conversions in the parallel loop.
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          // FIXME (mfh 26 Jun 2016) This assumes UVM (for k_rowPtrs_).
-          const size_t offset = k_rowPtrs_(lclRow);
-          // NOTE (mfh 26 Jun 2016) It's always legal to cast the
-          // number of entries in a row to LO, as long as the row
-          // doesn't have too many duplicate entries.
-          const LO numEnt = static_cast<LO> (h_numRowEnt(lclRow));
-          for (LO j = 0; j < numEnt; ++j) {
-            // FIXME (mfh 26 Jun 2016) This assumes UVM (for k_gblInds1D_).
-            const GO gid = k_gblInds1D_(offset + j);
-            const LO lid = colMap.getLocalElement (gid);
-            // FIXME (mfh 26 Jun 2016) This assumes UVM (for k_lclInds1D_).
-            k_lclInds1D_(offset + j) = lid;
-#ifdef HAVE_TPETRA_DEBUG
-            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-              (lid == Teuchos::OrdinalTraits<LO>::invalid(), std::logic_error,
-               "In local row " << lclRow << ", global column " << gid << " is "
-               "not in the column Map.  This should never happen.  Please "
-               "report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-          }
-        }
+        auto lclColMap = colMap.getLocalMap ();
+        // This is a "device mirror" of the host View h_numRowEnt.
+        //
+        // NOTE (mfh 27 Sep 2016) Currently, the right way to get a
+        // Device instance is to use its default constructor.  See the
+        // following Kokkos issue:
+        //
+        // https://github.com/kokkos/kokkos/issues/442
+        auto k_numRowEnt = Kokkos::create_mirror_view (device_type (), h_numRowEnt);
+
+        using Details::convertColumnIndicesFromGlobalToLocal;
+        const size_t numBad =
+          convertColumnIndicesFromGlobalToLocal<LO, GO, DT, offset_type, num_ent_type> (k_lclInds1D_,
+                                                                                        k_gblInds1D_,
+                                                                                        k_rowPtrs_,
+                                                                                        lclColMap,
+                                                                                        k_numRowEnt);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (numBad != 0, std::runtime_error, "When converting column indices "
+           "from global to local, we encountered " << numBad
+           << "ind" << (numBad != static_cast<size_t> (1) ? "ices" : "ex")
+           << " that do" << (numBad != static_cast<size_t> (1) ? "es" : "")
+           << " not live in the column Map on this process.");
+
         // We've converted column indices from global to local, so we
         // can deallocate the global column indices (which we know are
         // in 1-D storage, because the graph has static profile).
