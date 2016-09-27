@@ -73,7 +73,7 @@ typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tmatrix_t;
 typedef Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> xmatrix_t;
 
 void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
-    const zgno_t *rowIds, const zlno_t *offsets, const zgno_t *colIds)
+    const zgno_t *rowIds, const zoffset_t *offsets, const zgno_t *colIds)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -113,7 +113,7 @@ int verifyInputAdapter(
   gfail = globalFail(comm, fail);
 
   const zgno_t *rowIds=NULL, *colIds=NULL;
-  const zlno_t *offsets=NULL;
+  const zoffset_t *offsets=NULL;
   size_t nrows=0;
 
   if (!gfail){
