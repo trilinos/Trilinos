@@ -150,7 +150,7 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
 //
 template<typename ConstraintDerived, typename S, Index M>
 template<typename T, Index N>
-Vector<T, N>
+Vector<T, M>
 Constraint_Base<ConstraintDerived, S, M>::
 value(ConstraintDerived & c, Vector<T, N> const & x)
 {

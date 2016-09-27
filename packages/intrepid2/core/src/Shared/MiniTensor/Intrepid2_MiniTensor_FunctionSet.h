@@ -936,7 +936,11 @@ public:
 };
 
 //
-// Function to test constraint interface.
+// Functions to test constraint interface.
+//
+
+//
+// Identity
 //
 template<typename S, Index M>
 class Identity : public Constraint_Base<Identity<S, M>, S, M>
@@ -953,7 +957,40 @@ public:
 
   // Explicit value.
   template<typename T, Index N>
-  Vector<T, N>
+  Vector<T, M>
+  value(Vector<T, N> const & x)
+  {
+    return x;
+  }
+
+  // Default AD gradient.
+  template<typename T, Index N>
+  Matrix<T, M, N>
+  gradient(Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
+};
+
+//
+// A nonlinear function
+//
+template<typename S, Index M>
+class Nonlinear01 : public Constraint_Base<Identity<S, M>, S, M>
+{
+public:
+
+  Nonlinear01() {}
+
+  static constexpr
+  char const * const
+  NAME{"Nonlinear map 01"};
+
+  using Base = Constraint_Base<Nonlinear01<S, M>, S, M>;
+
+  // Explicit value.
+  template<typename T, Index N>
+  Vector<T, M>
   value(Vector<T, N> const & x)
   {
     return x;

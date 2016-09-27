@@ -116,11 +116,9 @@ public:
   }
 
   ///
-  /// By default use merit function 0.5 dot(residual,residual)
-  /// as the target to optimize if only the residual is provided.
   ///
   template<typename T, Index N>
-  Vector<T, N>
+  Vector<T, M>
   value(ConstraintDerived & c, Vector<T, N> const & x);
 
   ///
