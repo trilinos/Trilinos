@@ -39,9 +39,7 @@ public:
 class BalanceSettings
 {
 public:
-    BalanceSettings():
-    fifteen(15),
-    onePlus(1.05){}
+    BalanceSettings() {}
     virtual ~BalanceSettings() {}
 
     enum GraphOption
@@ -50,11 +48,11 @@ public:
         COLORING
     };
 
-    virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const = 0;
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const = 0;
-    virtual int getGraphVertexWeight(stk::topology type) const = 0;
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const = 0;
-    virtual GraphOption getGraphOption() const = 0;
+    virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const { return 1;}
+    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1; }
+    virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
+    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const { return 1; }
+    virtual GraphOption getGraphOption() const { return BalanceSettings::LOADBALANCE; }
 
 
     // Graph (parmetis) based options only
@@ -63,7 +61,7 @@ public:
     virtual double getToleranceForParticleSearch() const { return 0.0; }
     virtual double getGraphEdgeWeightForSearch() const { return 1.0; }
     virtual bool getEdgesForParticlesUsingSearch() const { return false; }
-    virtual double getVertexWeightMultiplierForVertexInSearch() const { return fifteen; }
+    virtual double getVertexWeightMultiplierForVertexInSearch() const { return 15; }
 
     virtual bool isIncrementalRebalance() const { return false; }
     virtual bool isMultiCriteriaRebalance() const { return false; }
@@ -72,7 +70,7 @@ public:
     virtual bool fieldSpecifiedVertexWeights() const { return false; }
     virtual std::vector<double> getVertexWeights() const { return std::vector<double>(); }
 
-    virtual double getImbalanceTolerance() const { return onePlus; }
+    virtual double getImbalanceTolerance() const { return 1.05; }
 
     virtual void setDecompMethod(const std::string& method) {}
     virtual std::string getDecompMethod() const { return std::string("parmetis"); }
@@ -91,9 +89,6 @@ public:
 
     // experimental
     virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return false; }
-private:
-    unsigned fifteen;
-    double onePlus;
 };
 
 class ColoringSettings : public BalanceSettings
@@ -267,7 +262,7 @@ public:
     virtual void setToleranceForFaceSearch(double tol) { mToleranceForFaceSearch = tol; }
     virtual void setToleranceForParticleSearch(double tol) { mToleranceForParticleSearch = tol; }
 
-private:
+protected:
     int getConnectionTableIndex(stk::topology elementTopology) const
     {
         int tableIndex = -1;
