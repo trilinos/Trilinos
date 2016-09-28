@@ -8,7 +8,18 @@ IF (Intrepid2_ENABLE_KokkosDynRankView)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tGeometricAggFieldPattern.cpp
   SOURCES tGeometricAggFieldPattern.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 1
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tFieldPattern
+  SOURCES tFieldPattern.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tFieldAggPattern
+  SOURCES tFieldAggPattern.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   )
 
