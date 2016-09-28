@@ -56,12 +56,14 @@ using Index = Intrepid2::Index;
 template<typename T, Index N>
 class MiniTensor_BoundConstraint: public BoundConstraint<T> {
 
-  MiniTensor_BoundConstraint(Intrepid2::Bounds<T, N> const & msb);
+public:
 
-private:
+  MiniTensor_BoundConstraint() = delete;
 
-  Intrepid2::Bounds<T, N>
-  bounds_;
+      MiniTensor_BoundConstraint(
+      MiniTensorVector<T, N> & lo,
+      MiniTensorVector<T, N> & hi
+  );
 };
 
 } // namespace ROL

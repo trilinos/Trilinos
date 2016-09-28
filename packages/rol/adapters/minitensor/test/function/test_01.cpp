@@ -41,6 +41,7 @@
 
 #include <gtest/gtest.h>
 #include <Intrepid2_MiniTensor_FunctionSet.h>
+#include "ROL_MiniTensor_BoundConstraint.hpp"
 #include "ROL_MiniTensor_EqualityConstraint.hpp"
 #include "ROL_MiniTensor_Function.hpp"
 
@@ -342,7 +343,7 @@ TEST(MiniTensor_ROL, EqualityConstraint01)
 
   for (Intrepid2::Index i = 0; i < jac_check.size(); ++i) {
     error1 = std::min(error1, jac_check[i][3]);
-    error2 = std::min(error2, jac_check[i][3]);
+    error2 = std::min(error2, ajac_check[i][3]);
   }
 
   Real const
@@ -350,4 +351,62 @@ TEST(MiniTensor_ROL, EqualityConstraint01)
 
   ASSERT_LE(error1, tol);
   ASSERT_LE(error2, tol);
+}
+
+TEST(MiniTensor_ROL, BoundConstraint)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  DIM{16};
+
+  Intrepid2::Vector<Real, DIM>
+  lo_mt(Intrepid2::ONES);
+
+  lo_mt *= -0.5;
+
+  os << "Lower bound:" << lo_mt << '\n';
+
+  Intrepid2::Vector<Real, DIM>
+  hi_mt(Intrepid2::ONES);
+
+  hi_mt *= 0.5;
+
+  os << "Upper bound:" << hi_mt << '\n';
+
+  Intrepid2::Vector<Real, DIM>
+  x_mt(Intrepid2::RANDOM);
+
+  os << "Initial x  :" << x_mt << '\n';
+
+  ROL::MiniTensorVector<Real, DIM>
+  lo_rol(lo_mt);
+
+  ROL::MiniTensorVector<Real, DIM>
+  hi_rol(hi_mt);
+
+  ROL::MiniTensorVector<Real, DIM>
+  x_rol(x_mt);
+
+  ROL::MiniTensor_BoundConstraint<Real, DIM>
+  rol_bounds(lo_rol, hi_rol);
+
+  rol_bounds.project(x_rol);
+
+  x_mt = ROL::MTfromROL<Real, DIM>(x_rol);
+
+  os << "Pruned x   :" << x_mt << '\n';
+
+  bool const
+  is_feasible = rol_bounds.isFeasible(x_rol);
+
+  ASSERT_EQ(is_feasible, true);
 }

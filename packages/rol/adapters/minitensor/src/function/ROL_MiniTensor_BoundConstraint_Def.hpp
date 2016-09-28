@@ -46,7 +46,12 @@ using Index = Intrepid2::Index;
 
 template<typename T, Index N>
 MiniTensor_BoundConstraint<T, N>::
-MiniTensor_BoundConstraint(Intrepid2::Bounds<T, N> const & msb) : bounds_(msb)
+MiniTensor_BoundConstraint(
+    MiniTensorVector<T, N> & lo,
+    MiniTensorVector<T, N> & hi
+) : BoundConstraint<T>(
+      Teuchos::rcp<MiniTensorVector<T, N>>(&lo, false),
+      Teuchos::rcp<MiniTensorVector<T, N>>(&hi, false))
 {
   return;
 }
