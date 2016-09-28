@@ -64,6 +64,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Add the libraries, tests, and examples
 ADD_SUBDIRECTORY(src)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_TEST_DIRECTORIES(example)
 
 #
 # Add the Parameter List documentation
