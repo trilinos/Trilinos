@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
      << "ff = " << ff << endl;
   fb.close();
 
-
   // Construct an MDComm
   Teuchos::RCP< const Domi::MDComm > mdComm =
     Teuchos::rcp(new MDComm(comm,             // Teuchos Comm
@@ -205,17 +204,17 @@ int main(int argc, char *argv[])
         if (va(i,j) < 0.0) jj = j;
         // X-component
         ua_new(i,j) = ua(i,j) + delta_t *
-          (ua(i+1,j) - 2 * ua(i,j) + ua(i-1,j)) / (delta_x * delta_x) +
-          (ua(i,j+1) - 2 * ua(1,j) + ua(i,j-1)) / (delta_y * delta_y) -
-          Re * ua(i,j) * (ua(ii,j) - ua(ii-1,j)) / delta_x -
-          Re * va(i,j) * (ua(i,jj) - ua(i,jj-1)) / delta_y;
+          ((ua(i+1,j) - 2 * ua(i,j) + ua(i-1,j)) / (delta_x * delta_x) +
+           (ua(i,j+1) - 2 * ua(1,j) + ua(i,j-1)) / (delta_y * delta_y) -
+           Re * ua(i,j) * (ua(ii,j) - ua(ii-1,j)) / delta_x -
+           Re * va(i,j) * (ua(i,jj) - ua(i,jj-1)) / delta_y);
 
         // Y-component
         va_new(i,j) = va(i,j) + delta_t *
-          (va(i+1,j) - 2 * va(i,j) + va(i-1,j)) / (delta_x * delta_x) +
-          (va(i,j+1) - 2 * va(1,j) + va(i,j-1)) / (delta_y * delta_y) -
-          Re * ua(i,j) * (va(ii,j) - va(ii-1,j)) / delta_x -
-          Re * va(i,j) * (va(i,jj) - va(i,jj-1)) / delta_y;
+          ((va(i+1,j) - 2 * va(i,j) + va(i-1,j)) / (delta_x * delta_x) +
+           (va(i,j+1) - 2 * va(1,j) + va(i,j-1)) / (delta_y * delta_y) -
+           Re * ua(i,j) * (va(ii,j) - va(ii-1,j)) / delta_x -
+           Re * va(i,j) * (va(i,jj) - va(i,jj-1)) / delta_y);
       }
     }
 
