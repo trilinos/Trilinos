@@ -135,8 +135,9 @@ public:
   ///
   /// 3rd-order tensor simple destructor
   ///
+  virtual
   KOKKOS_INLINE_FUNCTION
-  ~Tensor3();
+  ~Tensor3() final;
 
   ///
   /// Indexing for constant 3rd-order tensor

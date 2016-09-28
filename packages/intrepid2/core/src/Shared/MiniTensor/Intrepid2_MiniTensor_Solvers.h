@@ -140,6 +140,21 @@ public:
 };
 
 ///
+/// Bounds constraint
+///
+template<typename T, Index N>
+struct Bounds
+{
+  Bounds(Vector<T, N> const & l, Vector<T, N> const & u);
+
+  Vector<T, N>
+  lower;
+
+  Vector<T, N>
+  upper;
+};
+
+///
 /// Minimizer Struct
 ///
 template<typename T, Index N>

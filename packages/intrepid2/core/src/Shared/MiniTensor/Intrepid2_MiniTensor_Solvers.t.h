@@ -157,6 +157,9 @@ value(ConstraintDerived & c, Vector<T, N> const & x)
   return c.value(x);
 }
 
+//
+//
+//
 template<typename ConstraintDerived, typename S, Index M>
 template<typename T, Index N>
 Matrix<T, M, N>
@@ -191,6 +194,16 @@ gradient(ConstraintDerived & c, Vector<T, N> const & x)
   }
 
   return Jacobian;
+}
+
+//
+//
+//
+template<typename T, Index N>
+Bounds<T, N>::
+Bounds(Vector<T, N> const & l, Vector<T, N> const & u) : lower(l), upper(u)
+{
+  return;
 }
 
 //
@@ -326,7 +339,7 @@ continueSolve() const
 
   if (exceeds_max_iter == true) return false;
 
-  // Last check for convergence.
+  // Lastly check for convergence.
   bool const
   continue_solve = (converged == false);
 

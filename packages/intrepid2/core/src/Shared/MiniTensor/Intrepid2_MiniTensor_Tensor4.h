@@ -141,8 +141,9 @@ public:
   ///
   /// 4th-order tensor simple destructor
   ///
+  virtual
   KOKKOS_INLINE_FUNCTION
-  ~Tensor4();
+  ~Tensor4() final;
 
   ///
   /// Indexing for constant 4th-order tensor

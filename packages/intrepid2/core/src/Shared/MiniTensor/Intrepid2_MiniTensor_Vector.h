@@ -266,8 +266,9 @@ public:
   ///
   /// Simple destructor
   ///
+  virtual
   KOKKOS_INLINE_FUNCTION
-  ~Vector();
+  ~Vector() final;
 
   ///
   /// Indexing for constant vector

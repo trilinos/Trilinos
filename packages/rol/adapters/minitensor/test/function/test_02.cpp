@@ -179,7 +179,8 @@ TEST(MiniTensor_ROL, Rosenbrock)
   Intrepid2::Vector<Real, DIM>
   xval(Intrepid2::RANDOM);
 
-  ROL::MiniTensorVector<Real, DIM> x(xval);
+  ROL::MiniTensorVector<Real, DIM>
+  x(xval);
 
   // Run Algorithm
   algo.run(x, obj, true, os);

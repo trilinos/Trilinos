@@ -287,8 +287,9 @@ public:
   ///
   /// Simple destructor
   ///
+  virtual
   KOKKOS_INLINE_FUNCTION
-  ~Tensor();
+  ~Tensor() final;
 
   ///
   /// Indexing for constant tensor
