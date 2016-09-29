@@ -40,8 +40,10 @@ public:
         return data[component];
     }
 
-    void set_values_to(const T& value) {
-        
+    void set_values_to(const StkMeshAdapter& ngpMesh, const T& value) {
+        // ngp::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const StkMeshAdapter::MeshIndex& n) {
+        //     *stk::mesh::field_data(*field, n) = value;
+        // });
     }
 
     void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field_in)

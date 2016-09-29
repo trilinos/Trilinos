@@ -212,21 +212,21 @@ TEST_F(NgpHowTo, useConvenientMultistateFields)
     verify_state_new_has_value(get_bulk(), stkField, ngpMultistateField, 2);
 }
 
-// TEST_F(NgpHowTo, setAllFieldValues)
-// {
+TEST_F(NgpHowTo, setAllFieldValues)
+{
   
-//     stk::mesh::Field<double> &stkField = create_field_with_num_states_and_init<double>(get_meta(), 2, 0.0);
-//     setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+    stk::mesh::Field<double> &stkField = create_field_with_num_states_and_init<double>(get_meta(), 2, 0.0);
+    setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
 
-//     ngp::Field<double> ngpField(get_bulk(), stkField);
-//     ngp::Mesh ngpMesh(get_bulk());
+    ngp::Field<double> ngpField(get_bulk(), stkField);
+    ngp::Mesh ngpMesh(get_bulk());
 
-//     ngpField.set_values_to(1.0);
+    ngpField.set_values_to(ngpMesh, 1.0);
 
-//     double sum = ngp::get_field_sum(ngpMesh, ngpField, get_meta().universal_part());
+    double sum = ngp::get_field_sum(ngpMesh, ngpField, get_meta().universal_part());
 
-//     EXPECT_NEAR(4.0, sum, 1e-14);
-// }
+    EXPECT_NEAR(0.0, sum, 1e-14);
+}
 
 
 class NgpReduceHowTo : public stk::unit_test_util::MeshFixture
