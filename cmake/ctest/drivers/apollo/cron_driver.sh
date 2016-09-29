@@ -21,12 +21,13 @@ export TDD_CTEST_TEST_TYPE=${JENKINS_JOB_TYPE}
 
 # Machine specific environment
 #
-source /projects/modulefiles/utils/sems-modules-init.sh
-source /projects/modulefiles/utils/kokkos-modules-init.sh
+module purge
+module load sems-env
+module load kokkos-env
 
-module load python/2.7.9
-module load cmake/2.8.12
-module load git/2.1.3
+module load sems-python/2.7.9
+module load sems-cmake/2.8.12
+module load sems-git/2.1.3
 
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
@@ -42,19 +43,18 @@ export OMP_NUM_THREADS=2
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 
 if [ "${JENKINS_DO_CUDA}" == 'ON' ]; then
-  module load ${CUDA_SUFFIX}
-  module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
+  module load kokkos-${CUDA_SUFFIX}
+  module load kokkos-${MPI_SUFFIX}/cuda
   export OMPI_CXX=$WORKSPACE/Trilinos/packages/kokkos/config/nvcc_wrapper
 else
-  module load $SEMS_MODULE_ROOT/rhel6-x86_64/sems/compiler/${COMPILER_SUFFIX}/${MPI_SUFFIX}
+  module load sems-${MPI_SUFFIX}
 fi
 
-module swap ${COMPILER_SUFFIX}/base ${COMPILER_SUFFIX}/base
 
-module load ${BOOST_SUFFIX}/${COMPILER_SUFFIX}/base
-module load ${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
-module load ${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/parallel
-module load ${ZLIB_SUFFIX}/${COMPILER_SUFFIX}/base
+module load sems-${BOOST_SUFFIX}/base
+module load sems-${HDF5_SUFFIX}/parallel
+module load sems-${NETCDF_SUFFIX}/parallel
+module load sems-${ZLIB_SUFFIX}/base
 
 module list
 
