@@ -119,14 +119,13 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
       tfp.subcellIndices[0].resize(4);
       tfp[0][0].push_back(0); tfp[0][1].push_back(1); tfp[0][2].push_back(2); tfp[0][3].push_back(3);
 
-      // edge
+      // edge and interior
       tfp.subcellIndices[1].resize(4);
-      tfp[1][0].push_back(4); tfp[1][1].push_back(5); tfp[1][2].push_back(6); tfp[1][3].push_back(7);
-
-      // interior
       tfp.subcellIndices[2].resize(1);
-      tfp[2][0].push_back(8); 
-
+      if (order > 1) {
+        tfp[1][0].push_back(4); tfp[1][1].push_back(5); tfp[1][2].push_back(6); tfp[1][3].push_back(7);
+        tfp[2][0].push_back(8); 
+      }
       TEST_ASSERT(gfp.equals(tfp));
    }
 }

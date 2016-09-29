@@ -199,23 +199,26 @@ void FieldAggPattern::mergeFieldPatterns(int dim,int subcell)
    // make sure that the geometric IDs count is equal to the maxDOFs
    const std::vector<int> & geomIndices = getGeometricAggFieldPattern()->getSubcellIndices(dim,subcell);
 
-   // a single geometric entity is assigned to field pattern and it has to be size 1
-   TEUCHOS_ASSERT(geomIndices.size()==1);
+   // a single geometric entity is assigned
+   // indices size should be either 1 or 0.
+   TEUCHOS_ASSERT(geomIndices.size()<=1);
 
-   const int geomIndex = geomIndices[0];
-
-   numFields_[geomIndex] = 0; // no fields initially      
-
-   std::vector<std::pair<int,FPPtr> >::const_iterator itr;
-   for(itr=patterns_.begin();itr!=patterns_.end();++itr) {
-     std::size_t fieldSize = itr->second->getSubcellIndices(dim,subcell).size();
+   if (geomIndices.size() > 0) {
+     const int geomIndex = geomIndices[0];
      
-     // add field ID if their are enough in current pattern 
-     for (std::size_t i=0;i<fieldSize;++i)
-       fieldIds_.push_back(itr->first);
-     numFields_[geomIndex]+=fieldSize;
+     numFields_[geomIndex] = 0; // no fields initially      
+
+     std::vector<std::pair<int,FPPtr> >::const_iterator itr;
+     for(itr=patterns_.begin();itr!=patterns_.end();++itr) {
+       std::size_t fieldSize = itr->second->getSubcellIndices(dim,subcell).size();
+       
+       // add field ID if their are enough in current pattern 
+       for (std::size_t i=0;i<fieldSize;++i)
+         fieldIds_.push_back(itr->first);
+       numFields_[geomIndex]+=fieldSize;
+     }
+     TEUCHOS_ASSERT(numFields_[geomIndex]>=0);
    }
-   TEUCHOS_ASSERT(numFields_[geomIndex]>=0);
 }
 
 void FieldAggPattern::buildFieldPatternData()
@@ -233,13 +236,16 @@ void FieldAggPattern::buildFieldPatternData()
 
       // loop through sub cells
       for(int sc=0;sc<numSubcell;sc++) {
-         // a single geometric entity is assigned to field pattern and it has to be size 1
+         // a single geometric entity is assigned to field pattern 
+        // geomIds size should be either 0 or 1.
          const std::vector<int> & geomIds = geomIdsPattern->getSubcellIndices(d,sc);
-         TEUCHOS_ASSERT(geomIds.size()==1);
-         const int geomId = geomIds[0];
-         const int numFields = numFields_[geomId];
-         for(int k=0;k<numFields;k++,nextIndex++) 
-           patternData_[d][sc].push_back(nextIndex);
+         TEUCHOS_ASSERT(geomIds.size()<=1);
+         if (geomIds.size() > 0) {
+           const int geomId = geomIds[0];
+           const int numFields = numFields_[geomId];
+           for(int k=0;k<numFields;k++,nextIndex++) 
+             patternData_[d][sc].push_back(nextIndex);
+         }
       }
    }
 }

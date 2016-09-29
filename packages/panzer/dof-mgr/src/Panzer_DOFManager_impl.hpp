@@ -690,8 +690,10 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
     for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
       for(int j=0; j<numFields_; ++j){
         if(editnonoverlap[j][i]!=0){
+          // editnonoverlap[j][i]=myOffset+which_id;
+          int ndof = Teuchos::as<int>(editnonoverlap[j][i]);
           editnonoverlap[j][i]=myOffset+which_id;
-          which_id++;
+          which_id+=ndof;
         }
         else{
           editnonoverlap[j][i]=-1;
@@ -718,7 +720,9 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
     // use exporter to save on communication setup costs
     overlap_mv.doImport(*non_overlap_mv,*exp,Tpetra::REPLACE);
 #endif
-  }
+  } 
+
+  //std::cout << Teuchos::describe(*non_overlap_mv,Teuchos::VERB_EXTREME)  << std::endl;
 
   return non_overlap_mv;
 }
@@ -776,6 +780,7 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildTaggedMultiVector::allocate_tagged_multivector");
 
     overlap_mv = Tpetra::createMultiVector<GO>(overlapmap,(size_t)numFields_);
+    overlap_mv->putScalar(0); // if tpetra is not initialized with zeros
   }
 
   /* 5.  Iterate through all local elements again, checking with the FP
@@ -785,6 +790,8 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildTaggedMultiVector::fill_tagged_multivector");
 
+    // temporary working vector to fill each row in tagged array
+    std::vector<int> working(overlap_mv->getNumVectors());
     ArrayRCP<ArrayRCP<GO> > edittwoview = overlap_mv->get2dViewNonConst();
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
       // there has to be a field pattern assocaited with the block
@@ -800,16 +807,29 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
         int offset=0;
         for (int c = 0; c < connSize; ++c) {
           size_t lid = overlapmap->getLocalElement(elmtConn[c]);
+
+          for(std::size_t i=0;i<working.size();i++) 
+            working[i] = 0;
           for (int n = 0; n < numFields[c]; ++n) {
             int whichField = fieldIds[offset];
             //Row will be lid. column will be whichField.
             //Shove onto local ordering
-            edittwoview[whichField][lid]=1;
+            working[whichField]++;
             offset++;
           }
+          for(std::size_t i=0;i<working.size();i++) 
+            edittwoview[i][lid] = working[i];
+ 
         }
       }
     }
+    
+    // // verbose output for inspecting overlap_mv
+    // for(int i=0;i<overlap_mv->getLocalLength(); i++) {
+    //   for(int j=0;j<overlap_mv->getNumVectors() ; j++)
+    //     std::cout << edittwoview[j][i] << " ";
+    //   std::cout << std::endl;
+    // }
   }
  
   return overlap_mv;
