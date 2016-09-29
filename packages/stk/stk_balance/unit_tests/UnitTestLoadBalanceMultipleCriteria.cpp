@@ -11,54 +11,6 @@
 
 namespace
 {
-
-class MultipleCriteriaSettings : public stk::balance::GraphCreationSettings
-{
-public:
-    MultipleCriteriaSettings(stk::mesh::BulkData &stkMeshBulkData,
-                              const std::vector<stk::mesh::Field<double>*> critFields,
-                              const double default_weight = 0.0)
-      : m_stkMeshBulkData(stkMeshBulkData),
-        m_critFields(critFields), m_defaultWeight(default_weight)
-    { }
-    virtual ~MultipleCriteriaSettings() = default;
-
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool fieldSpecifiedVertexWeights() const { return true; }
-    virtual bool includeSearchResultsInGraph() const { return false; }
-    virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-    virtual double getImbalanceTolerance() const { return 1.05; }
-    virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
-    virtual std::string getDecompMethod() const { return method; }
-    virtual int getNumCriteria() const { return m_critFields.size(); }
-    virtual bool isMultiCriteriaRebalance() const { return true;}
-
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
-    {
-        ThrowRequireWithSierraHelpMsg(criteria_index>=0 && static_cast<size_t>(criteria_index)<m_critFields.size());
-        const double *weight = stk::mesh::field_data(*m_critFields[criteria_index], entity);
-        if(weight != nullptr)
-        {
-            ThrowRequireWithSierraHelpMsg(*weight >= 0);
-            return *weight;
-        }
-        else
-        {
-            return m_defaultWeight;
-        }
-    }
-
-protected:
-    MultipleCriteriaSettings() = default;
-    MultipleCriteriaSettings(const MultipleCriteriaSettings&) = delete;
-    MultipleCriteriaSettings& operator=(const MultipleCriteriaSettings&) = delete;
-
-    const stk::mesh::BulkData & m_stkMeshBulkData;
-    const std::vector<stk::mesh::Field<double>*> m_critFields;
-    const double m_defaultWeight;
-    std::string method = std::string("rcb");
-};
-
 void set_criteria_on_mesh(std::vector<stk::mesh::Field<double>*> critFields, const stk::mesh::BulkData& bulkData)
 {
     const stk::mesh::BucketVector& buckets = bulkData.buckets(stk::topology::ELEM_RANK);
@@ -137,7 +89,7 @@ public:
 
             os << "Before - Proc " << get_bulk().parallel_rank() << " Sum weight1: " << weight1 << " and weight2: " << weight2 << std::endl;
 
-            MultipleCriteriaSettings graphSettings(get_bulk(), critFields);
+            stk::balance::MultipleCriteriaSettings graphSettings(critFields);
             graphSettings.setDecompMethod(decompMethod);
             os << "decomp method: " << graphSettings.getDecompMethod() << std::endl;
             stk::balance::balanceStkMesh(graphSettings, get_bulk());

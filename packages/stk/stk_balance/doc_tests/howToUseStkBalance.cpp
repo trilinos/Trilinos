@@ -262,10 +262,10 @@ protected:
 
 //END_RCB_FIELD_SETTINGS
 
-void set_vertex_weights(const stk::mesh::BulkData& bulk, stk::mesh::Field<double>& weightField)
+void set_vertex_weights(const stk::mesh::BulkData& bulk, stk::mesh::Selector selector, stk::mesh::Field<double>& weightField)
 {
     stk::mesh::EntityVector elements;
-    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, elements);
+    stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::ELEM_RANK), elements);
     for(stk::mesh::Entity element : elements)
     {
         if(bulk.bucket(element).owned())
@@ -284,7 +284,7 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithFieldSpecifiedVertexWeights)
         stk::mesh::Field<double> &weightField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights");
         stk::mesh::put_field(weightField, get_meta().universal_part());
         setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
-        set_vertex_weights(get_bulk(), weightField);
+        set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
 
         FieldVertexWeightSettings balanceSettings(weightField);
         stk::balance::balanceStkMesh(balanceSettings, get_bulk());
@@ -301,7 +301,7 @@ TEST_F(StkBalanceHowTo, DISABLED_UseRebalanceWithFieldSpecifiedVertexWeightsOnLo
         stk::mesh::Field<double> &weightField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights");
         stk::mesh::put_field(weightField, get_meta().locally_owned_part());
         setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
-        set_vertex_weights(get_bulk(), weightField);
+        set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
 
         FieldVertexWeightSettings balanceSettings(weightField);
         stk::balance::balanceStkMesh(balanceSettings, get_bulk());
@@ -310,4 +310,185 @@ TEST_F(StkBalanceHowTo, DISABLED_UseRebalanceWithFieldSpecifiedVertexWeightsOnLo
     }
 }
 
+
+//BEGIN_MULTICRITERIA_SELECTOR_SETTINGS
+class MultipleCriteriaSelectorSettings : public ParmetisSettings
+{
+public:
+    MultipleCriteriaSelectorSettings() { }
+    virtual ~MultipleCriteriaSelectorSettings() = default;
+
+    virtual bool isMultiCriteriaRebalance() const { return true;}
+    virtual bool fieldSpecifiedVertexWeights() const { return true; }
+
+protected:
+    MultipleCriteriaSelectorSettings(const MultipleCriteriaSelectorSettings&) = delete;
+    MultipleCriteriaSelectorSettings& operator=(const MultipleCriteriaSelectorSettings&) = delete;
+};
+
+//END_MULTICRITERIA_SELECTOR_SETTINGS
+
+void put_elements_in_different_parts(stk::mesh::BulkData &bulk, stk::mesh::Part &part1, stk::mesh::Part &part2)
+{
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+    bulk.modification_begin();
+    for(stk::mesh::Entity element : elements)
+    {
+        stk::mesh::EntityId id = bulk.identifier(element);
+        if(id%2 == 0)
+            bulk.change_entity_parts(element, stk::mesh::PartVector{&part1});
+        else
+            bulk.change_entity_parts(element, stk::mesh::PartVector{&part2});
+    }
+    bulk.modification_end();
+}
+
+void verify_mesh_balanced_wrt_selectors(const stk::mesh::BulkData& bulk, const std::vector<stk::mesh::Selector> &selectors)
+{
+    std::vector<size_t> counts;
+    for(const stk::mesh::Selector sel : selectors)
+    {
+        stk::mesh::EntityVector elements;
+        size_t num_elements = stk::mesh::count_selected_entities(sel, bulk.buckets(stk::topology::ELEM_RANK));
+        counts.clear();
+        stk::mesh::comm_mesh_counts(bulk, counts, &sel);
+
+        size_t goldNumElements = counts[stk::topology::ELEM_RANK]/bulk.parallel_size();
+
+        EXPECT_EQ(goldNumElements, num_elements);
+    }
+}
+
+//BEGIN_BALANCE_TEST_5
+TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithSelectors)
+{
+    if(stk::parallel_machine_size(get_comm()) == 2)
+    {
+        stk::mesh::Part &part1 = get_meta().declare_part("madeup_part_1", stk::topology::ELEM_RANK);
+        stk::mesh::Part &part2 = get_meta().declare_part("part_2", stk::topology::ELEM_RANK);
+        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+
+        put_elements_in_different_parts(get_bulk(), part1, part2);
+
+        std::vector<stk::mesh::Selector> selectors = { part1, part2 };
+
+        MultipleCriteriaSelectorSettings balanceSettings;
+        stk::balance::balanceStkMesh(balanceSettings, get_bulk(), selectors);
+
+        verify_mesh_balanced_wrt_selectors(get_bulk(), selectors);
+    }
+}
+//END_BALANCE_TEST_5
+
+//BEGIN_MULTICRITERIA_FIELD_SETTINGS
+class MultipleCriteriaFieldSettings : public ParmetisSettings
+{
+public:
+    MultipleCriteriaFieldSettings(const std::vector<stk::mesh::Field<double>*> critFields,
+                                  const double default_weight = 0.0)
+      : m_critFields(critFields), m_defaultWeight(default_weight)
+    { }
+    virtual ~MultipleCriteriaFieldSettings() = default;
+
+    virtual bool fieldSpecifiedVertexWeights() const { return true; }
+    virtual int getNumCriteria() const { return m_critFields.size(); }
+    virtual bool isMultiCriteriaRebalance() const { return true;}
+
+    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
+    {
+        ThrowRequireWithSierraHelpMsg(criteria_index>=0 && static_cast<size_t>(criteria_index)<m_critFields.size());
+        const double *weight = stk::mesh::field_data(*m_critFields[criteria_index], entity);
+        if(weight != nullptr)
+        {
+            ThrowRequireWithSierraHelpMsg(*weight >= 0);
+            return *weight;
+        }
+        else
+        {
+            return m_defaultWeight;
+        }
+    }
+
+protected:
+    MultipleCriteriaFieldSettings() = default;
+    MultipleCriteriaFieldSettings(const MultipleCriteriaFieldSettings&) = delete;
+    MultipleCriteriaFieldSettings& operator=(const MultipleCriteriaFieldSettings&) = delete;
+
+    const std::vector<stk::mesh::Field<double>*> m_critFields;
+    const double m_defaultWeight;
+};
+//END_MULTICRITERIA_FIELD_SETTINGS
+
+void verify_mesh_balanced_wrt_fields(const stk::mesh::BulkData& bulk, const std::vector<stk::mesh::Field<double>*> &critFields)
+{
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+
+    std::vector<double> sums(critFields.size(),0);
+
+    for(size_t i=0;i<critFields.size();++i)
+    {
+        for(stk::mesh::Entity element : elements)
+        {
+            double *data = stk::mesh::field_data(*critFields[i], element);
+            sums[i] += *data;
+        }
+    }
+
+    std::vector<size_t> counts;
+    stk::mesh::comm_mesh_counts(bulk, counts);
+
+    double gold_value = static_cast<double>(counts[stk::topology::ELEM_RANK]/bulk.parallel_size());
+    double gold_value_per_field = static_cast<double>(gold_value/critFields.size());
+
+    for(size_t i=0;i<sums.size();++i)
+        EXPECT_EQ(gold_value_per_field, sums[i]);
+}
+
+void set_vertex_weights_checkerboard(stk::mesh::BulkData& bulk, stk::mesh::Selector selector, stk::mesh::Field<double> &weightField1, stk::mesh::Field<double> &weightField2)
+{
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::ELEM_RANK), elements);
+    for(stk::mesh::Entity element : elements)
+    {
+        double *data1 = stk::mesh::field_data(weightField1, element);
+        double *data2 = stk::mesh::field_data(weightField2, element);
+        stk::mesh::EntityId id = bulk.identifier(element);
+        if(id%2==0)
+        {
+            *data1 = 1.0;
+            *data2 = 0.0;
+        }
+        else
+        {
+            *data1 = 0.0;
+            *data2 = 1.0;
+        }
+    }
+}
+
+//BEGIN_BALANCE_TEST_6
+TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithFields)
+{
+    if(stk::parallel_machine_size(get_comm()) == 2)
+    {
+        stk::mesh::Field<double> &weightField1 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights1");
+        stk::mesh::put_field(weightField1, get_meta().universal_part());
+
+        stk::mesh::Field<double> &weightField2 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights2");
+        stk::mesh::put_field(weightField2, get_meta().universal_part());
+
+        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+
+        set_vertex_weights_checkerboard(get_bulk(), get_meta().locally_owned_part(), weightField1, weightField2);
+
+        std::vector<stk::mesh::Field<double>*> critFields = { &weightField1, &weightField2 };
+        MultipleCriteriaFieldSettings balanceSettings(critFields);
+        stk::balance::balanceStkMesh(balanceSettings, get_bulk());
+
+        verify_mesh_balanced_wrt_fields(get_bulk(), critFields);
+    }
+}
+//END_BALANCE_TEST_6
 }

@@ -165,9 +165,6 @@ public:
         return edgeWeightForSearch;
     }
 
-
-
-
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
     {
         const double noConnection = 0;
@@ -434,6 +431,50 @@ protected:
     const DoubleFieldType &m_weightField;
     const double m_defaultWeight;
     std::string method = std::string("parmetis");
+};
+
+class MultipleCriteriaSettings : public stk::balance::GraphCreationSettings
+{
+public:
+    MultipleCriteriaSettings(const std::vector<stk::mesh::Field<double>*> critFields,
+                             const double default_weight = 0.0)
+      : m_critFields(critFields), m_defaultWeight(default_weight)
+    { }
+    virtual ~MultipleCriteriaSettings() = default;
+
+    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
+    virtual bool fieldSpecifiedVertexWeights() const { return true; }
+    virtual bool includeSearchResultsInGraph() const { return false; }
+    virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
+    virtual double getImbalanceTolerance() const { return 1.05; }
+    virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
+    virtual std::string getDecompMethod() const { return method; }
+    virtual int getNumCriteria() const { return m_critFields.size(); }
+    virtual bool isMultiCriteriaRebalance() const { return true;}
+
+    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
+    {
+        ThrowRequireWithSierraHelpMsg(criteria_index>=0 && static_cast<size_t>(criteria_index)<m_critFields.size());
+        const double *weight = stk::mesh::field_data(*m_critFields[criteria_index], entity);
+        if(weight != nullptr)
+        {
+            ThrowRequireWithSierraHelpMsg(*weight >= 0);
+            return *weight;
+        }
+        else
+        {
+            return m_defaultWeight;
+        }
+    }
+
+protected:
+    MultipleCriteriaSettings() = default;
+    MultipleCriteriaSettings(const MultipleCriteriaSettings&) = delete;
+    MultipleCriteriaSettings& operator=(const MultipleCriteriaSettings&) = delete;
+
+    const std::vector<stk::mesh::Field<double>*> m_critFields;
+    const double m_defaultWeight;
+    std::string method = std::string("rcb");
 };
 
 class GraphEdge
