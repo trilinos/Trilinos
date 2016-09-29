@@ -838,14 +838,6 @@ initAllValues (const row_matrix_type& A)
     }
   }
 
-  // The domain of L and the range of U are exactly their own row maps
-  // (there is no communication).  The domain of U and the range of L
-  // must be the same as those of the original matrix, However if the
-  // original matrix is a VbrMatrix, these two latter maps are
-  // translation from a block map to a point map.
-  L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
-  U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
-
   // At this point L and U have the values of A in the structure of L
   // and U, and diagonal vector D
 
@@ -886,9 +878,6 @@ void RILUK<MatrixType>::compute ()
     // Fill L and U with numbers. This supports nonzero pattern reuse by calling
     // initialize() once and then compute() multiple times.
     initAllValues (*A_local_);
-
-    L_->resumeFill ();
-    U_->resumeFill ();
 
     // MinMachNum should be officially defined, for now pick something a little
     // bigger than IEEE underflow value
@@ -1014,6 +1003,11 @@ void RILUK<MatrixType>::compute ()
       }
     }
 
+    // The domain of L and the range of U are exactly their own row maps
+    // (there is no communication).  The domain of U and the range of L
+    // must be the same as those of the original matrix, However if the
+    // original matrix is a VbrMatrix, these two latter maps are
+    // translation from a block map to a point map.
     // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
     // always one-to-one?
     L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
