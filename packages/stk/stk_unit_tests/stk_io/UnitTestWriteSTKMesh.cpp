@@ -26,7 +26,7 @@
 #include <stk_util/environment/memory_util.hpp>
 
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_unit_test_utils/getOption.h>
+#include <stk_unit_test_utils/GetMeshSpec.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>
 
@@ -235,14 +235,9 @@ TEST(StkIo, check_memory)
 
     if(stk::parallel_machine_size(comm) == 1)
     {
-        std::string dimension = unitTestUtils::getOption("--dim", "10");
-        const int dim = std::atoi(dimension.c_str());
-
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulkData(meta, comm);
-        std::ostringstream os;
-        os << "generated:" << dim << "x" << dim << "x" << dim;
-        std::string filename = os.str();
+        std::string filename = stk::unit_test_util::get_mesh_spec("--dim");
 
         size_t current_usage2 = 0, hwm_usage2 = 0;
         {

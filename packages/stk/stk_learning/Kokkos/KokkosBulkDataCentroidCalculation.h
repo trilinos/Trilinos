@@ -186,10 +186,10 @@ struct MyApp {
       hostCentroid(meta.declare_field<CoordFieldType>(stk::topology::ELEM_RANK, "hostCentroid")),
       coords(nullptr)
     {
-        num_repeat = unitTestUtils::get_command_line_option<int>("-n", "1");
-        dim = unitTestUtils::get_command_line_option<size_t>("-d", "10");
-        choice = unitTestUtils::get_command_line_option<int>("-c", "0");
-        teamSize = unitTestUtils::get_command_line_option<int>("-t", "512");
+        num_repeat = stk::unit_test_util::get_command_line_option<int>("-n", 1);
+        dim = stk::unit_test_util::get_command_line_option<size_t>("-d", 10);
+        choice = stk::unit_test_util::get_command_line_option<int>("-c", 0);
+        teamSize = stk::unit_test_util::get_command_line_option<int>("-t", 512);
     
         std::ostringstream os;
         os << "generated:" << dim << "x" << dim << "x" << dim << std::endl;

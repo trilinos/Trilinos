@@ -295,10 +295,10 @@ inline void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const 
 
 inline void fillDomainBoxes(MPI_Comm comm, std::vector<FloatBox>& domainBoxes)
 {
-    std::string filename = unitTestUtils::getOption("-i", "input.exo");
+    std::string filename = stk::unit_test_util::get_option("-i", "input.exo");
     fillBoxesUsingSidesetsFromFile(comm, filename, domainBoxes);
 
-    std::string exodusFilename = unitTestUtils::getOption("-o", "boxes.exo");
+    std::string exodusFilename = stk::unit_test_util::get_option("-o", "boxes.exo");
     if ( exodusFilename != "skip" )
     {
         writeExodusFileUsingBoxes(domainBoxes, exodusFilename);

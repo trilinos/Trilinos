@@ -139,7 +139,7 @@ private:
 
 void declare_animation_field(stk::mesh::MetaData &metaData, std::string &animationFile)
 {
-    animationFile = unitTestUtils::getOption("-animationFile", "");
+    animationFile = stk::unit_test_util::get_option("-animationFile", "");
 
     if("" != animationFile)
     {
@@ -603,7 +603,7 @@ protected:
     }
     std::string get_mesh_spec()
     {
-        return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
     }
 
     std::string animationFile = "";
@@ -619,7 +619,7 @@ protected:
     }
     std::string get_mesh_spec()
     {
-        return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
     }
 };
 

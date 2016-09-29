@@ -1268,14 +1268,7 @@ TEST(ElementGraph, compare_performance_create_faces)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    std::string dimension = unitTestUtils::getOption("--xdim", "none");
-
-    int xdim = 3;
-    if ( dimension != "none")
-    {
-        xdim = std::atoi(dimension.c_str());
-    }
-
+    int xdim = stk::unit_test_util::get_command_line_option("--xdim", 3);
     int ydim = xdim;
     int zdim = xdim * stk::parallel_machine_size(comm);
 
@@ -1418,15 +1411,8 @@ TEST(ElementGraph, test_element_death)
 
     if(stk::parallel_machine_size(comm) <= 2)
     {
-        std::string dimension = unitTestUtils::getOption("--zdim", "none");
-
         //IO error when this is <4.  Shared face being attached to the wrong element
-        int xdim = 4;
-        if(dimension != "none")
-        {
-            xdim = std::atoi(dimension.c_str());
-        }
-
+        int xdim = stk::unit_test_util::get_command_line_option("--zdim", 4);
         int ydim = xdim;
         int zdim = xdim; //  * stk::parallel_machine_size(comm);
 

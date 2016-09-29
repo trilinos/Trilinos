@@ -65,8 +65,8 @@ protected:
 
 TEST_F(TOSDTWD, disconnect_mesh)
 {
-    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:10x10x10");
-    std::string mesh_name = unitTestUtils::getOption("-o", "blown_up.g");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:10x10x10");
+    std::string mesh_name = stk::unit_test_util::get_option("-o", "blown_up.g");
 
     {
         setup_mesh(exodusFileName, stk::mesh::BulkData::NO_AUTO_AURA);
@@ -79,45 +79,16 @@ TEST_F(TOSDTWD, disconnect_mesh)
 
 TEST_F(TOSDTWD, birds)
 {
-    std::string velocityx = unitTestUtils::getOption("-vx", "10");
-    std::string velocityy = unitTestUtils::getOption("-vy", "10");
-    std::string steps = unitTestUtils::getOption("-steps", "100");
-    std::string ax = unitTestUtils::getOption("-ax", "0");
-    std::string ay = unitTestUtils::getOption("-ay", "9.8");
-    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:10x10x10");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:10x10x10");
     std::string results_name = "output_results.g";
 
-    double velx = 10;
-    {
-        std::istringstream is(velocityx);
-        is >> velx;
-    }
+    double velx = stk::unit_test_util::get_command_line_option("-vx", 10.0);
+    double vely = stk::unit_test_util::get_command_line_option("-vy", 10.0);
+    unsigned int num_steps = stk::unit_test_util::get_command_line_option("-steps", 100u);
+    double accelx = stk::unit_test_util::get_command_line_option("-ax", 0.0);
+    double accely = stk::unit_test_util::get_command_line_option("-ay", 9.8);
 
-    double vely = 10;
-    {
-        std::istringstream is(velocityy);
-        is >> vely;
-    }
-
-    unsigned int num_steps;
-    {
-        std::istringstream is(steps);
-        is >> num_steps;
-    }
-
-    double accelx = 0;
-    {
-        std::istringstream is(ax);
-        is >> accelx;
-    }
-
-    double accely = 9.8;
-    {
-        std::istringstream is(ay);
-        is >> accely;
-    }
-
-    std::cerr << "Using (vx,vy) and (gx,gy) of (" << velx << ", " << vely << ") and (" << ax << ", " << ay << ")" << std::endl;
+    std::cerr << "Using (vx,vy) and (gx,gy) of (" << velx << ", " << vely << ") and (" << accelx << ", " << accely << ")" << std::endl;
 
     {
            stk::io::StkMeshIoBroker stkIo(get_comm());
@@ -307,7 +278,7 @@ TEST_F(TOSDTWD, expand_mesh)
     std::string temp_name = "temp_abc.g";
 
     {
-        std::string exodusFileName = unitTestUtils::getOption("-i", "generated:10x10x10");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:10x10x10");
         setup_mesh(exodusFileName, stk::mesh::BulkData::NO_AUTO_AURA);
         stk::mesh::MetaData newMetaData(get_meta().spatial_dimension());
         stk::mesh::BulkData newBulkData(newMetaData, get_bulk().parallel());
@@ -327,7 +298,7 @@ TEST_F(TOSDTWD, expand_mesh)
         stk::mesh::put_field(field, stkIo.meta_data().universal_part());
         stkIo.populate_bulk_data();
 
-        std::string results_name = unitTestUtils::getOption("-o", "output_results.g");
+        std::string results_name = stk::unit_test_util::get_option("-o", "output_results.g");
         size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
 
         stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/

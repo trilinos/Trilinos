@@ -195,7 +195,7 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBo
     StkBoxVector stkBoxes(domainBoxes.size());
     fillStkBoxesUsingFloatBoxes(domainBoxes, procId, stkBoxes);
 
-    std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
+    std::string rangeBoxComm = stk::unit_test_util::get_option("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
     double startTime = stk::wall_time();
@@ -231,7 +231,7 @@ void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domain
         searchBoxPairs[i] = std::make_pair(domainBoxes[i], domainBoxId);
     }
 
-    std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
+    std::string rangeBoxComm = stk::unit_test_util::get_option("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
     double startTime = stk::wall_time();

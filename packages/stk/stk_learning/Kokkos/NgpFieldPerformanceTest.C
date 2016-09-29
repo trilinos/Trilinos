@@ -91,7 +91,7 @@ protected:
     void verify_averaged_centroids_are_center_of_mesh()
     {
         std::vector<double> average = get_centroid_average(get_bulk(), *centroid);
-        double meshCenter = unitTestUtils::get_command_line_option<double>("-dim", "20") / 2.0;
+        double meshCenter = stk::unit_test_util::get_command_line_option<double>("-dim", 20) / 2.0;
         for(size_t dim = 0; dim < 3; dim++)
             EXPECT_EQ(meshCenter, average[dim]);
     }

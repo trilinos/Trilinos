@@ -88,14 +88,14 @@ struct Options
      void setSphereFile()
      {
          std::string optionString = "-sphere";
-         mSphereFile = unitTestUtils::getOption(optionString, "NO_FILE_SPECIFIED");
+         mSphereFile = stk::unit_test_util::get_option(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mSphereFile);
      }
 
      void setVolumeFile()
      {
          std::string optionString = "-volume";
-         mVolumeFile = unitTestUtils::getOption(optionString, "NO_FILE_SPECIFIED");
+         mVolumeFile = stk::unit_test_util::get_option(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mVolumeFile);
      }
 
@@ -103,7 +103,7 @@ struct Options
      {
          std::string optionString = "-method";
          mSearchMethod = BOOST_RTREE;
-         std::string searchString = unitTestUtils::getOption(optionString, "boost");
+         std::string searchString = stk::unit_test_util::get_option(optionString, "boost");
          if ( searchString == "octree")
          {
              mSearchMethod = OCTREE;
@@ -118,7 +118,7 @@ struct Options
      {
          std::string optionString = "-rangeBoxComm";
          mCommunicateRangeBoxes = true;
-         if ( unitTestUtils::getOption(optionString, "yes") == "no" )
+         if ( stk::unit_test_util::get_option(optionString, "yes") == "no" )
          {
              mCommunicateRangeBoxes = false;
          }
@@ -128,7 +128,7 @@ struct Options
      {
          std::string optionString = "-sb";
          mSpheresFirstThenBoxes = false;
-         if ( unitTestUtils::getOption(optionString, "no" ) == "yes" )
+         if ( stk::unit_test_util::get_option(optionString, "no" ) == "yes" )
          {
              mSpheresFirstThenBoxes = true;
          }
@@ -138,7 +138,7 @@ struct Options
      {
          mTestToGetGoldResults = false;
          std::string optionString = "-getGold";
-         if ( unitTestUtils::getOption(optionString, "no") == "yes" )
+         if ( stk::unit_test_util::get_option(optionString, "no") == "yes" )
          {
              mTestToGetGoldResults = true;
          }

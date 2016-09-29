@@ -1198,7 +1198,7 @@ TEST(LoadBalance, createNewMeshFromPart_writeFilesTillWeDontNeedThisTestAsADrive
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
         stk::mesh::MetaData &meta = stkMeshBulkData.mesh_meta_data();
         const unsigned spatialDim = meta.spatial_dimension();
-        const std::string blockName = unitTestUtils::getOption("-b", "block_1");
+        const std::string blockName = stk::unit_test_util::get_option("-b", "block_1");
 
         stk::mesh::Part &outputPart = *meta.get_part(blockName);
 
@@ -1554,7 +1554,7 @@ void writeParFiles(stk::io::StkMeshIoBroker &ioBroker, const std::string &output
 
 void fillIoBroker(MPI_Comm communicator, const std::string &generatedMeshSpec, stk::io::StkMeshIoBroker &ioBroker)
 {
-    std::string doDecomp = unitTestUtils::getOption("-decomp", "no");
+    std::string doDecomp = stk::unit_test_util::get_option("-decomp", "no");
 
     if ( doDecomp != "no")
     {
@@ -1563,7 +1563,7 @@ void fillIoBroker(MPI_Comm communicator, const std::string &generatedMeshSpec, s
         ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
     }
 
-    std::string useLargeInt = unitTestUtils::getOption("-lint", "no");
+    std::string useLargeInt = stk::unit_test_util::get_option("-lint", "no");
     if(useLargeInt != "no")
     {
         ioBroker.property_add(Ioss::Property("INTEGER_SIZE_API", 8));

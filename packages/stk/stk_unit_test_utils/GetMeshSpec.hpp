@@ -10,7 +10,7 @@ inline
 std::string get_mesh_spec(const std::string &optionName)
 {
     std::string meshSpec("generated:");
-    std::string dim = unitTestUtils::getOption(optionName, "20");
+    std::string dim = stk::unit_test_util::get_option(optionName, "20");
     meshSpec += dim+"x"+dim+"x"+dim;
     return meshSpec;
 }

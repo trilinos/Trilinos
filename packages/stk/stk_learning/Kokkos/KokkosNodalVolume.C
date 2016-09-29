@@ -430,7 +430,7 @@ protected:
 
     int get_num_repeat()
     {
-        return unitTestUtils::get_command_line_option<int>("-n", "20");
+        return stk::unit_test_util::get_command_line_option<int>("-n", 20);
     }
 
     void test_nodal_volume_stkmesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)

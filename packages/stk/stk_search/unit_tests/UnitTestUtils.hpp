@@ -105,7 +105,7 @@ std::pair<VolumeType, Ident> generateBoundingVolume(double x, double y, double z
 
 inline size_t getGoldValueForTest()
 {
-    std::string goldValue = unitTestUtils::getOption("-gold");
+    std::string goldValue = stk::unit_test_util::get_option("-gold");
     if ( goldValue == "skip" ) return 0u;
     std::istringstream ss(goldValue);
     size_t goldValueNumber=0;

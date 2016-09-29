@@ -362,37 +362,33 @@ protected:
 // -----------------------------
 // EPP=Element Per Proc
 
+int get_num_local_elements_from_cmdline()
+{
+    return stk::unit_test_util::get_command_line_option<int>("-nLocal", 100);
+}
 
 TEST_F(RebalanceParticleMesh, UnevenParticles2ProcWithAura)
 {
-    if (2 == stk::parallel_machine_size(get_comm())) {
-        const int numLocalElements = unitTestUtils::get_command_line_option<int>("-nLocal", "100");
-        run_stk_particle_rebalance_test(numLocalElements, stk::mesh::BulkData::AutomaticAuraOption::AUTO_AURA);
-    }
+    if (2 == stk::parallel_machine_size(get_comm()))
+        run_stk_particle_rebalance_test(get_num_local_elements_from_cmdline(), stk::mesh::BulkData::AutomaticAuraOption::AUTO_AURA);
 }
 
 TEST_F(RebalanceParticleMesh, UnevenElementWeights2ProcWithAura)
 {
-    if (2 == stk::parallel_machine_size(get_comm())) {
-        const int numLocalElements = unitTestUtils::get_command_line_option<int>("-nLocal", "100");
-        run_stk_rebalance_test(numLocalElements, stk::mesh::BulkData::AutomaticAuraOption::AUTO_AURA);
-    }
+    if (2 == stk::parallel_machine_size(get_comm()))
+        run_stk_rebalance_test(get_num_local_elements_from_cmdline(), stk::mesh::BulkData::AutomaticAuraOption::AUTO_AURA);
 }
 
 TEST_F(RebalanceParticleMesh, UnevenParticles2ProcWithoutAura)
 {
-    if (2 == stk::parallel_machine_size(get_comm())) {
-        const int numLocalElements = unitTestUtils::get_command_line_option<int>("-nLocal", "100");
-        run_stk_particle_rebalance_test(numLocalElements, stk::mesh::BulkData::AutomaticAuraOption::NO_AUTO_AURA);
-    }
+    if (2 == stk::parallel_machine_size(get_comm()))
+        run_stk_particle_rebalance_test(get_num_local_elements_from_cmdline(), stk::mesh::BulkData::AutomaticAuraOption::NO_AUTO_AURA);
 }
 
 TEST_F(RebalanceParticleMesh, UnevenElementWeights2ProcWithoutAura)
 {
-    if (2 == stk::parallel_machine_size(get_comm())) {
-        const int numLocalElements = unitTestUtils::get_command_line_option<int>("-nLocal", "100");
-        run_stk_rebalance_test(numLocalElements, stk::mesh::BulkData::AutomaticAuraOption::NO_AUTO_AURA);
-    }
+    if (2 == stk::parallel_machine_size(get_comm()))
+        run_stk_rebalance_test(get_num_local_elements_from_cmdline(), stk::mesh::BulkData::AutomaticAuraOption::NO_AUTO_AURA);
 }
 
 }

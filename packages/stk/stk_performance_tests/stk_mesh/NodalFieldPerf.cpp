@@ -76,7 +76,7 @@ void createNodalVectorFields(stk::mesh::MetaData& meshMetaData)
 
 void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh::FieldDataManager *fieldDataManager)
 {
-    std::string exodusFileName = unitTestUtils::getOption("-i", "NO_FILE_SPECIFIED");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "NO_FILE_SPECIFIED");
     ASSERT_NE(exodusFileName, "NO_FILE_SPECIFIED");
 
     exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
@@ -109,8 +109,6 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh
 
 void timeFieldOperations(stk::mesh::MetaData &stkMeshMetaData, stk::mesh::BulkData &stkMeshBulkData, double alpha, double beta, double gamma)
 {
-    std::string numIterationsString = unitTestUtils::getOption("-numIter", "1");
-    const int numIterations = std::atoi(numIterationsString.c_str());
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "disp");
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &vel_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "vel");
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &acc_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "acc");
@@ -119,6 +117,7 @@ void timeFieldOperations(stk::mesh::MetaData &stkMeshMetaData, stk::mesh::BulkDa
     const stk::mesh::BucketVector& allNodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
     const size_t numNodeBuckets = allNodeBuckets.size();
 
+    const int numIterations = stk::unit_test_util::get_command_line_option("-numIter", 1);
     std::cerr << "Starting timer for " << numIterations << " iterations of nodal addition (vec4 = vec1 + vec2 + vec3) test." << std::endl;
     double startTime = stk::cpu_time();
     double startWallTime = stk::wall_time();
@@ -189,8 +188,6 @@ void test1ToNSumOfNodalFields(stk::mesh::ContiguousFieldDataManager *fieldDataMa
     double beta = 0.3333333;
     double gamma = 3.14159;
 
-    std::string numIterationsString = unitTestUtils::getOption("-numIter", "1");
-    const int numIterations = std::atoi(numIterationsString.c_str());
 
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "disp");
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &vel_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "vel");
@@ -205,6 +202,7 @@ void test1ToNSumOfNodalFields(stk::mesh::ContiguousFieldDataManager *fieldDataMa
     size_t numNodes = numBytesForField / numBytesPerEntity;
     size_t nodeLoopEnd = 3 * numNodes;
 
+    const int numIterations = stk::unit_test_util::get_command_line_option("-numIter", 1);
     std::cerr << "Starting timer for " << numIterations << " iterations of nodal addition (vec4 = vec1 + vec2 + vec3) test." << std::endl;
     double startTime = stk::cpu_time();
     double startWallTime = stk::wall_time();

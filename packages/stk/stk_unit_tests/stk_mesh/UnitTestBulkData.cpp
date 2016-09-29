@@ -3081,7 +3081,7 @@ TEST(BulkData, ModificationEnd)
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
         stk::unit_test_util::BulkDataTester *stkMeshBulkData = new stk::unit_test_util::BulkDataTester(stkMeshMetaData, communicator);
 
-        std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x4");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x4");
 
         // STK IO module will be described in separate chapter.
         // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
@@ -3162,7 +3162,7 @@ TEST(BulkData, set_parallel_owner_rank_but_not_comm_lists)
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::unit_test_util::BulkDataTester mesh(stkMeshMetaData, communicator);
-    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x1|sideset:xXyYzZ");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x1|sideset:xXyYzZ");
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
         exodusFileReader.set_bulk_data(mesh);
@@ -3217,7 +3217,7 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::unit_test_util::BulkDataTester mesh(stkMeshMetaData, communicator);
-    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x3");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x3");
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
         exodusFileReader.set_bulk_data(mesh);
@@ -3263,7 +3263,7 @@ TEST(BulkData, verify_closure_count_is_correct)
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
         stk::unit_test_util::BulkDataTester *stkMeshBulkData = new stk::unit_test_util::BulkDataTester(stkMeshMetaData, communicator);
 
-        std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x2");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x2");
 
         // STK IO module will be described in separate chapter.
         // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
