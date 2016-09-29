@@ -152,6 +152,12 @@ post-smoothing, and SuperLU for coarse system solver.
   \end{center}
 \end{table}
 
+In certain cases, the user may want to do no smoothing on a particular level, or do no solve on the coarsest level.
+\begin{itemize}
+  \item To skip smoothing, use the option \verb!smoother: pre or post! with value \verb!none!.
+  \item To skip the coarse grid solve, use the option \verb!coarse: type! with value \verb!none!.
+\end{itemize}
+
 \input{options_smoothing_and_coarse}
 
 % ==================== AGGREGATION ====================
