@@ -4,6 +4,7 @@
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
 #include <ngp/NgpMesh.hpp>
+#include <ngp/NgpForEachEntity.hpp>
 
 namespace ngp {
 
@@ -40,10 +41,13 @@ public:
         return data[component];
     }
 
-    void set_values_to(const StkMeshAdapter& ngpMesh, const T& value) {
-        // ngp::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const StkMeshAdapter::MeshIndex& n) {
-        //     *stk::mesh::field_data(*field, n) = value;
-        // });
+    void set_all(const StkMeshAdapter& ngpMesh, const T& value)
+    {
+        ngp::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const StkMeshAdapter::MeshIndex& entity) {
+            T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, *entity.bucket, entity.bucketOrd));
+            *fieldPtr = value;
+
+        });
     }
 
     void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field_in)
@@ -174,6 +178,13 @@ public:
     T& get(MeshIndex entity, int component) const
     {
         return deviceData(get_index(entity.bucket->bucket_id(), entity.bucketOrd)+component);
+    }
+
+    template <typename Mesh> STK_FUNCTION
+    void set_all(const Mesh& ngpMesh, const T& value)
+    {
+        Kokkos::deep_copy(hostData, value);
+        Kokkos::deep_copy(deviceData, value);
     }
 
     STK_FUNCTION

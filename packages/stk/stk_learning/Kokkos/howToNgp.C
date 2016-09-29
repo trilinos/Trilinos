@@ -221,11 +221,11 @@ TEST_F(NgpHowTo, setAllFieldValues)
     ngp::Field<double> ngpField(get_bulk(), stkField);
     ngp::Mesh ngpMesh(get_bulk());
 
-    ngpField.set_values_to(ngpMesh, 1.0);
+    ngpField.set_all(ngpMesh, 1.0);
 
     double sum = ngp::get_field_sum(ngpMesh, ngpField, get_meta().universal_part());
 
-    EXPECT_NEAR(0.0, sum, 1e-14);
+    EXPECT_NEAR(4.0, sum, 1e-14);
 }
 
 
