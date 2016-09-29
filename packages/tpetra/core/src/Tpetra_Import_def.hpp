@@ -337,15 +337,15 @@ namespace Tpetra {
     ImportData_->exportPIDs_ = Teuchos::Array<int>(userExportPIDs.size(),0);
     ImportData_->exportLIDs_ = Teuchos::Array<int>(userExportPIDs.size(),0);
 
-    bool isLocallyComplete = true;
+    bool locallyComplete = true;
     for(size_type i=0; i<userExportPIDs.size(); i++)  {
       if (userExportPIDs[i] == -1) {
-        isLocallyComplete = false;
+        locallyComplete = false;
       }
       ImportData_->exportPIDs_[i] = userExportPIDs[i];
       ImportData_->exportLIDs_[i] = userExportLIDs[i];
     }
-    ImportData_->isLocallyComplete_ = isLocallyComplete;
+    ImportData_->isLocallyComplete_ = locallyComplete;
 
     ImportData_->distributor_.createFromSendsAndRecvs(ImportData_->exportPIDs_,remoteProcIDs);
 
@@ -395,13 +395,13 @@ namespace Tpetra {
     }
     ImportData_ = rcp (new data_type (source, target, out_, plist));
 
-    bool isLocallyComplete = true;
+    bool locallyComplete = true;
     for (Teuchos::Array<int>::size_type i = 0; i < exportPIDs.size (); ++i) {
       if (exportPIDs[i] == -1) {
-        isLocallyComplete = false;
+        locallyComplete = false;
       }
     }
-    ImportData_->isLocallyComplete_ = isLocallyComplete;
+    ImportData_->isLocallyComplete_ = locallyComplete;
 
     ImportData_->numSameIDs_ = numSameIDs;
     ImportData_->permuteToLIDs_.swap (permuteToLIDs);
