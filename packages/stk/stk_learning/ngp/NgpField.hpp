@@ -40,6 +40,10 @@ public:
         return data[component];
     }
 
+    void set_values_to(const T& value) {
+        
+    }
+
     void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field_in)
     {
     }
