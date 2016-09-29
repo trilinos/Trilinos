@@ -97,11 +97,6 @@ public:
     void swap_data(StkFieldAdapter<T> &sf)
     {
     }
-    //TODO: delete and work with SM to replace usage
-    StkFieldAdapter<T> get_non_const_field() const
-    {
-        return stkFieldAdapter;
-    }
 private:
     StkFieldAdapter<T> stkFieldAdapter;
 };
@@ -364,13 +359,6 @@ public:
         sf = staticField;
         staticField = tmp;
         constDeviceData = staticField.deviceData;
-    }
-
-    //TODO: delete and work with SM to replace usage
-    STK_FUNCTION
-    StaticField<T> get_non_const_field() const
-    {
-        return staticField;
     }
 
 private:
