@@ -53,15 +53,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
-    Kokkos::InitArguments init_args;
-    char *num_threads_string = std::getenv("OMP_NUM_THREADS");
-    init_args.num_threads = std::atoi(num_threads_string);
-    Kokkos::initialize(init_args);
-    Kokkos::OpenMP::print_configuration( std::cout );
-#else
     Kokkos::initialize(argc, argv);
-#endif
 
     testing::InitGoogleTest(&argc, argv);
 
