@@ -296,7 +296,7 @@ namespace Tpetra {
   /// <li> modify(): Mark data in a memory space as modified (or about
   ///      to be modified) </li>
   /// <li> sync(): If data in the target memory space are least
-  ///      recently modified compared witht he other space, copy data
+  ///      recently modified compared with the other space, copy data
   ///      to the target memory space </li>
   /// <li> getLocalView(): Return a Kokkos::View of the data in a
   ///      given memory space </li>
