@@ -95,18 +95,18 @@ TEST(MiniTensor_ROL, Paraboloid)
 
   // Set parameters.
   Teuchos::ParameterList
-  parlist;
+  params;
 
-  parlist.sublist("Step").sublist("Line Search").sublist("Descent Method")
+  params.sublist("Step").sublist("Line Search").sublist("Descent Method")
       .set("Type", "Newton-Krylov");
 
-  parlist.sublist("Status Test").set("Gradient Tolerance", 10.e-12);
-  parlist.sublist("Status Test").set("Step Tolerance", 1.0e-14);
-  parlist.sublist("Status Test").set("Iteration Limit", 128);
+  params.sublist("Status Test").set("Gradient Tolerance", 10.e-12);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-14);
+  params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Define algorithm.
   ROL::Algorithm<Real>
-  algo("Line Search", parlist);
+  algo("Line Search", params);
 
   // Set Initial Guess
   Intrepid2::Vector<Real, DIM>
@@ -162,18 +162,18 @@ TEST(MiniTensor_ROL, Rosenbrock)
 
   // Set parameters.
   Teuchos::ParameterList
-  parlist;
+  params;
 
-  parlist.sublist("Step").sublist("Line Search").sublist("Descent Method")
+  params.sublist("Step").sublist("Line Search").sublist("Descent Method")
       .set("Type", "Newton-Krylov");
 
-  parlist.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
-  parlist.sublist("Status Test").set("Step Tolerance", 1.0e-16);
-  parlist.sublist("Status Test").set("Iteration Limit", 128);
+  params.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Define algorithm.
   ROL::Algorithm<Real>
-  algo("Line Search", parlist);
+  algo("Line Search", params);
 
   // Set Initial Guess
   Intrepid2::Vector<Real, DIM>

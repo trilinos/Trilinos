@@ -53,4 +53,16 @@ IF (ROL_ENABLE_Boost AND ROL_ENABLE_Intrepid2)
   )
 ENDIF()
 
+#
+# solver headers
+#
+
+IF (ROL_ENABLE_Boost AND ROL_ENABLE_Intrepid2)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sol)
+  APPEND_SET(HEADERS
+    sol/ROL_MiniTensor_MiniSolver.hpp
+    sol/ROL_MiniTensor_MiniSolver_Def.hpp
+  )
+ENDIF()
+
 INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})

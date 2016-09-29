@@ -161,13 +161,7 @@ template<typename T, Index N>
 struct Minimizer
 {
 public:
-  Minimizer()
-  {
-    constexpr bool
-    is_fad = Sacado::IsADType<T>::value == true;
-
-    static_assert(is_fad == false, "AD types not allowed for type T");
-  }
+  Minimizer();
 
   template<typename STEP, typename FN>
   void
@@ -188,13 +182,7 @@ private:
 
   template<typename FN>
   void
-  recordFinals(FN & fn, Vector<T, N> const & x)
-  {
-    final_soln = x;
-    final_value = fn.value(x);
-    final_gradient = fn.gradient(x);
-    final_hessian = fn.hessian(x);
-  }
+  recordFinals(FN & fn, Vector<T, N> const & x);
 
 public:
   Index
