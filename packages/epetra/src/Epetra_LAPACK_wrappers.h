@@ -173,7 +173,7 @@
 #define DGGEV_F77   F77_BLAS_MANGLE(dggev,DGGEV)
 #define DGGLSE_F77  F77_BLAS_MANGLE(dgglse,DGGLSE)
 
-#ifdef HAVE_LAPACK_GSSVD3
+#ifdef HAVE_EPETRA_LAPACK_GSSVD3
 #define DGGSVD_F77  F77_BLAS_MANGLE(dggsvd3,DGGSVD)
 #else
 #define DGGSVD_F77  F77_BLAS_MANGLE(dggsvd,DGGSVD)
@@ -234,7 +234,7 @@
 #define SGGEV_F77   F77_BLAS_MANGLE(sggev,SGGEV)
 #define SGGLSE_F77  F77_BLAS_MANGLE(sgglse,SGGLSE)
 
-#ifdef HAVE_LAPACK_GSSVD3
+#ifdef HAVE_EPETRA_LAPACK_GSSVD3
 #define SGGSVD_F77  F77_BLAS_MANGLE(sggsvd3,SGGSVD)
 #else
 #define SGGSVD_F77  F77_BLAS_MANGLE(sggsvd,SGGSVD)
@@ -317,7 +317,7 @@ extern "C" {
   void PREFIX DGGSVD_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, const int * m, const int * n, const int * p, int * k, int * l,
 			 double * a, const int * lda, double * b, const int * ldb, double * alpha, double * beta,
 			 double * u, const int * ldu, double * v, const int * ldv, double * q, const int * ldq, double * work,
-    #ifdef HAVE_LAPACK_GSSVD3
+    #ifdef HAVE_EPETRA_LAPACK_GSSVD3
 			 const int * lwork,
     #endif
 			 int * iwork, int * info);
@@ -425,7 +425,7 @@ extern "C" {
   void PREFIX SGGSVD_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, const int * m, const int * n, const int * p, int * k, int * l,
 			 float * a, const int * lda, float * b, const int * ldb, float * alpha, float * beta,
 			 float * u, const int * ldu, float * v, const int * ldv, float * q, const int * ldq, float * work,
-    #ifdef HAVE_LAPACK_GSSVD3
+    #ifdef HAVE_EPETRA_LAPACK_GSSVD3
 			 const int * lwork,
     #endif
 			 int * iwork, int * info);
