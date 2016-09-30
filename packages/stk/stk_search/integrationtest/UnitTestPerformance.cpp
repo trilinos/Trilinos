@@ -47,11 +47,11 @@ namespace
 {
 
 void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod search);
-void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod search);
+void runStkSearchTestUsingFloatAABoxes(stk::search::SearchMethod search);
 void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm);
-void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
+void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
-void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
+void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
                 stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
 
 TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
@@ -149,36 +149,37 @@ TEST(Performance, stkSearchUsingOcttreeUsingStkAABoxes)
     runStkSearchTestUsingStkAABoxes(stk::search::OCTREE);
 }
 
-TEST(Performance, stkSearchUsingBoostUsingGtkAABoxes)
+TEST(Performance, stkSearchUsingBoostUsingFloatAABoxes)
 {
-    runStkSearchTestUsingGtkAABoxes(stk::search::BOOST_RTREE);
+    runStkSearchTestUsingFloatAABoxes(stk::search::BOOST_RTREE);
 }
 
-TEST(Performance, stkSearchUsingOcttreeUsingGtkAABoxes)
+TEST(Performance, stkSearchUsingOcttreeUsingFloatAABoxes)
 {
-    runStkSearchTestUsingGtkAABoxes(stk::search::OCTREE);
+    runStkSearchTestUsingFloatAABoxes(stk::search::OCTREE);
 }
 
-TEST(Performance, gtkSearchUsingOcttreeUsingGtkAABoxes)
+TEST(Performance, stkSearchUsingKdtreeUsingFloatAABoxes)
 {
-    runStkSearchTestUsingGtkAABoxes(stk::search::OCTREE);
+    //Change OCTREE to KDTREE
+    runStkSearchTestUsingFloatAABoxes(stk::search::OCTREE);
 }
 
 
-void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod searchMethod)
+void runStkSearchTestUsingFloatAABoxes(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<GtkBox> domainBoxes;
+    std::vector<FloatBox> domainBoxes;
     fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
-    testStkSearchUsingGtkAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
+    testStkSearchUsingFloatAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
 }
 
 void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<GtkBox> domainBoxes;
+    std::vector<FloatBox> domainBoxes;
     fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
@@ -186,13 +187,13 @@ void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
 }
 
 
-void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
+void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
     int procId = stk::parallel_machine_rank(comm);
 
     StkBoxVector stkBoxes(domainBoxes.size());
-    fillStkBoxesUsingGtkBoxes(domainBoxes, procId, stkBoxes);
+    fillStkBoxesUsingFloatBoxes(domainBoxes, procId, stkBoxes);
 
     std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
@@ -218,12 +219,12 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     }
 }
 
-void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
+void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
     int procId = stk::parallel_machine_rank(comm);
 
-    GtkBoxVector searchBoxPairs(domainBoxes.size());
+    FlaotBoxVector searchBoxPairs(domainBoxes.size());
     for(size_t i=0;i<domainBoxes.size();i++)
     {
         Ident domainBoxId(i, procId);
@@ -259,13 +260,13 @@ TEST(Performance, getGoldResults)
     MPI_Comm comm = MPI_COMM_WORLD;
     int procId = stk::parallel_machine_rank(comm);
 
-    std::vector<GtkBox> domainBoxes;
+    std::vector<FloatBox> domainBoxes;
     fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
 
     StkBoxVector stkBoxes(domainBoxes.size());
-    fillStkBoxesUsingGtkBoxes(domainBoxes, procId, stkBoxes);
+    fillStkBoxesUsingFloatBoxes(domainBoxes, procId, stkBoxes);
 
     double startTime = stk::wall_time();
     for (size_t i=0;i<stkBoxes.size();++i)

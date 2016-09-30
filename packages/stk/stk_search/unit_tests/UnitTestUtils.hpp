@@ -55,10 +55,10 @@ typedef stk::search::Box<double> StkBox;
 typedef std::pair<StkBox,Ident> StkBoxWithId;
 typedef std::vector< StkBoxWithId > StkBoxVector;
 
-typedef stk::search::Box<float> GtkBox;
+typedef stk::search::Box<float> FloatBox;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
-typedef std::pair<GtkBox,Ident> BoxWithId;
-typedef std::vector< BoxWithId > GtkBoxVector;
+typedef std::pair<FloatBox,Ident> BoxWithId;
+typedef std::vector< BoxWithId > FlaotBoxVector;
 
 
 template<class VolumeType>

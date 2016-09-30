@@ -82,7 +82,7 @@ inline void findBoundingBoxCoordinates(const std::vector<double> &coordinates, s
 }
 
 
-inline void createBoundingBoxesForSidesInSidesets(const stk::mesh::BulkData& bulk, std::vector<GtkBox>& domainBoxes)
+inline void createBoundingBoxesForSidesInSidesets(const stk::mesh::BulkData& bulk, std::vector<FloatBox>& domainBoxes)
 {
     stk::mesh::ExodusTranslator exoTranslator(bulk);
     size_t numberBoundingBoxes = 0;
@@ -130,7 +130,7 @@ inline void createBoundingBoxesForSidesInSidesets(const stk::mesh::BulkData& bul
     ThrowRequireMsg(boxCounter == numberBoundingBoxes, "Program error. Please contact sierra-help for support");
 }
 
-inline void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<GtkBox> &domainBoxes)
+inline void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<FloatBox> &domainBoxes)
 {
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, comm);
@@ -194,7 +194,7 @@ inline void setHexCoordinates(const double &xmin, const double &ymin, const doub
     hexCoordinates[3*ordering[7]+2] = zmax;
 }
 
-inline void putCoordinatesInFile(const int exoid, const std::vector<GtkBox>& boxes)
+inline void putCoordinatesInFile(const int exoid, const std::vector<FloatBox>& boxes)
 {
     const int num_nodes_per_element = 8;
     const int spatialDim = 3;
@@ -256,7 +256,7 @@ inline void fillNumElementsPerBlock(const int num_elements, std::vector<int> &nu
     }
 }
 
-inline void writeExodusFileUsingBoxes(const std::vector<GtkBox>& boxes, const std::string &filename)
+inline void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const std::string &filename)
 {
     if ( boxes.size() == 0 )
     {
@@ -293,7 +293,7 @@ inline void writeExodusFileUsingBoxes(const std::vector<GtkBox>& boxes, const st
     ex_close(exoid);
 }
 
-inline void fillDomainBoxes(MPI_Comm comm, std::vector<GtkBox>& domainBoxes)
+inline void fillDomainBoxes(MPI_Comm comm, std::vector<FloatBox>& domainBoxes)
 {
     std::string filename = unitTestUtils::getOption("-i", "input.exo");
     fillBoxesUsingSidesetsFromFile(comm, filename, domainBoxes);
@@ -305,7 +305,7 @@ inline void fillDomainBoxes(MPI_Comm comm, std::vector<GtkBox>& domainBoxes)
     }
 }
 
-inline void fillStkBoxesUsingGtkBoxes(const std::vector<GtkBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
+inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
 {
     for (size_t i=0;i<domainBoxes.size();i++)
     {
@@ -316,7 +316,7 @@ inline void fillStkBoxesUsingGtkBoxes(const std::vector<GtkBox> &domainBoxes, co
     }
 }
 
-inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, GtkBoxVector& domainBoxes)
+inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FlaotBoxVector& domainBoxes)
 {
     stk::mesh::EntityVector elements;
     stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
@@ -343,7 +343,7 @@ inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkD
         findBoundingBoxCoordinates(coordinates, boxCoordinates);
         unsigned id = bulk.identifier(elements[i]);
         Ident domainBoxId(id, bulk.parallel_rank());
-        domainBoxes[i] = std::make_pair(GtkBox(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
+        domainBoxes[i] = std::make_pair(FloatBox(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
                                                 boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]),
                                                 domainBoxId);
 
@@ -351,7 +351,7 @@ inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkD
 }
 
 inline void fillBoxesUsingElementBlocksFromFile(
-        MPI_Comm comm, const std::string& volumeFilename, GtkBoxVector &domainBoxes)
+        MPI_Comm comm, const std::string& volumeFilename, FlaotBoxVector &domainBoxes)
 {
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, comm);
@@ -393,7 +393,7 @@ inline void fillBoundingVolumesUsingNodesFromFile(
 }
 
 inline void fillBoundingVolumesUsingNodesFromFile(
-        MPI_Comm comm, const std::string& sphereFilename, GtkBoxVector &spheres)
+        MPI_Comm comm, const std::string& sphereFilename, FlaotBoxVector &spheres)
 {
     const int spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
@@ -420,13 +420,13 @@ inline void fillBoundingVolumesUsingNodesFromFile(
 
         double radius=1e-5;
         unsigned id = bulk.identifier(node);
-        GtkBox box(x-radius, y-radius, z-radius, x+radius, y+radius, z+radius);
+        FloatBox box(x-radius, y-radius, z-radius, x+radius, y+radius, z+radius);
         spheres[i] = std::make_pair(box, Ident(id, bulk.parallel_rank()));
     }
 }
 
 template <typename Identifier>
-inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domain, std::vector< std::pair<GtkBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
+inline void kdtree_search(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
     //change this BOOST_RTREE to KDTREE once it's available.
     //Also this function and the ones below can likely go away at that time.
@@ -452,11 +452,11 @@ inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
 }
 
 template <typename Identifier>
-inline void coarse_search_new(std::vector< std::pair<GtkBox, Identifier> >& local_domain, std::vector< std::pair<GtkBox, Identifier> >& local_range, NewSearchMethod algorithm, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
+inline void coarse_search_new(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, NewSearchMethod algorithm, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
     if ( algorithm == GTK )
     {
-        gtk_search(local_domain, local_range, comm, searchResults);
+        kdtree_search(local_domain, local_range, comm, searchResults);
     }
     else if ( algorithm == OCTREE )
     {

@@ -904,7 +904,7 @@ TEST(LoadBalance, checkBBOnFace)
         ASSERT_EQ(1u, faceBuckets.size());
         ASSERT_EQ(1u, faceBuckets[0]->size());
 
-        GtkBox goldFaceBoundingBox(-0.1, -0.1, -0.1, 0.1, 1.1, 1.1);
+        FloatBox goldFaceBoundingBox(-0.1, -0.1, -0.1, 0.1, 1.1, 1.1);
         BoxVectorWithStkId faceBoundingBoxesWithIdents;
         stk::mesh::Entity face = (*faceBuckets[0])[0];
         const double eps = 0.1;
@@ -912,7 +912,7 @@ TEST(LoadBalance, checkBBOnFace)
         stk::balance::internal::addBoxForFace(stkMeshBulkData, face, eps, faceBoundingBoxesWithIdents, coord);
 
         ASSERT_EQ(1u, faceBoundingBoxesWithIdents.size());
-        GtkBox resultBox = faceBoundingBoxesWithIdents[0].first;
+        FloatBox resultBox = faceBoundingBoxesWithIdents[0].first;
         EXPECT_EQ(goldFaceBoundingBox, resultBox);
 
         unsigned numElements = stkMeshBulkData.num_elements(face);
@@ -949,7 +949,6 @@ TEST(LoadBalance, doOneElementSearch)
         EXPECT_EQ(goldNumFaceBoxes, faceBoxes.size());
 
         StkSearchResults searchResults;
-//        gtk_search(faceBoxes, faceBoxes, communicator, searchResults);
         stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::BOOST_RTREE, communicator, searchResults);
 
         size_t numNonSelfFaceInteractions = 24u;
@@ -1059,7 +1058,7 @@ TEST(LoadBalance, doSearch)
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
         stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, eps, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
 
-        std::vector<GtkBox> faceItems(faceBoxes.size());
+        std::vector<FloatBox> faceItems(faceBoxes.size());
         for(size_t i = 0; i < faceBoxes.size(); i++)
         {
             faceItems[i] = faceBoxes[i].first;
@@ -1074,7 +1073,7 @@ TEST(LoadBalance, doSearch)
         }
 
         StkSearchResults searchResults;
-        gtk_search(faceBoxes, faceBoxes, communicator, searchResults);
+        kdtree_search(faceBoxes, faceBoxes, communicator, searchResults);
 
         StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
         searchResults.resize(iter - searchResults.begin());
