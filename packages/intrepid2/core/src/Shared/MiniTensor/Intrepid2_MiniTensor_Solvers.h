@@ -55,6 +55,9 @@ using FAD = Sacado::Fad::SLFad<T, N>;
 
 ///
 /// Function base class that defines the interface to Mini Solvers.
+/// The dimensions M and N are different in case vectors are passed
+/// to the methods that have different capacity. They must have
+/// dimension N.
 ///
 template<typename FunctionDerived, typename S, Index M>
 struct Function_Base
@@ -107,7 +110,7 @@ public:
 ///
 /// Constraint base class that defines the interface to Mini Solvers.
 ///
-template<typename ConstraintDerived, typename S, Index M>
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
 struct Constraint_Base
 {
 public:
@@ -118,14 +121,14 @@ public:
   ///
   ///
   template<typename T, Index N>
-  Vector<T, M>
+  Vector<T, NC>
   value(ConstraintDerived & c, Vector<T, N> const & x);
 
   ///
   /// By default compute gradient with AD from value().
   ///
   template<typename T, Index N>
-  Matrix<T, M, N>
+  Matrix<T, NC, NV>
   gradient(ConstraintDerived & c, Vector<T, N> const & x);
 
   ///
@@ -136,7 +139,11 @@ public:
 
   static constexpr
   Index
-  DIMENSION{M};
+  NUM_CONSTR{NC};
+
+  static constexpr
+  Index
+  NUM_VAR{NV};
 };
 
 ///

@@ -148,47 +148,50 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
 //
 //
 //
-template<typename ConstraintDerived, typename S, Index M>
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
 template<typename T, Index N>
-Vector<T, M>
-Constraint_Base<ConstraintDerived, S, M>::
+Vector<T, NC>
+Constraint_Base<ConstraintDerived, S, NC, NV>::
 value(ConstraintDerived & c, Vector<T, N> const & x)
 {
+  assert(x.get_dimension() == NUM_VAR);
   return c.value(x);
 }
 
 //
 //
 //
-template<typename ConstraintDerived, typename S, Index M>
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
 template<typename T, Index N>
-Matrix<T, M, N>
-Constraint_Base<ConstraintDerived, S, M>::
+Matrix<T, NC, NV>
+Constraint_Base<ConstraintDerived, S, NC, NV>::
 gradient(ConstraintDerived & c, Vector<T, N> const & x)
 {
   using AD = FAD<T, N>;
 
   Index const
-  num_cols = x.get_dimension();
+  num_var = x.get_dimension();
+
+  assert(num_var == NUM_VAR);
 
   Vector<AD, N>
-  x_ad(num_cols);
+  x_ad(num_var);
 
-  for (Index i{0}; i < num_cols; ++i) {
-    x_ad(i) = AD(num_cols, i, x(i));
+  for (Index i{0}; i < num_var; ++i) {
+    x_ad(i) = AD(num_var, i, x(i));
   }
 
-  Vector<AD, M> const
+  Vector<AD, NC> const
   r_ad = c.value(x_ad);
 
   Index const
-  num_rows = r_ad.get_dimension();
+  num_constr = r_ad.get_dimension();
 
-  Matrix<T, M, N>
-  Jacobian(num_rows, num_cols);
+  Matrix<T, NC, NV>
+  Jacobian(num_constr, num_var);
 
-  for (Index i{0}; i < num_rows; ++i) {
-    for (Index j{0}; j < num_cols; ++j) {
+  for (Index i{0}; i < num_constr; ++i) {
+    for (Index j{0}; j < num_var; ++j) {
       Jacobian(i, j) = r_ad(i).dx(j);
     }
   }

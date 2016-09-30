@@ -202,49 +202,49 @@ TEST(MiniTensor_ROL, EqualityConstraintId)
   os = (print_output == true) ? std::cout : bhs;
 
   constexpr Intrepid2::Index
-  ROWS{2};
+  NUM_CONSTR{2};
 
   constexpr Intrepid2::Index
-  COLS{2};
+  NUM_VAR{2};
 
-  using MSEC = Intrepid2::Identity<Real, ROWS>;
+  using MSEC = Intrepid2::Identity<Real, NUM_CONSTR, NUM_VAR>;
 
   MSEC
   msec;
 
-  ROL::MiniTensor_EqualityConstraint<MSEC, Real, ROWS, COLS>
+  ROL::MiniTensor_EqualityConstraint<MSEC, Real, NUM_CONSTR, NUM_VAR>
   constr(msec);
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   xval(Intrepid2::RANDOM);
 
   os << "xval:" << xval << '\n';
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   vval(Intrepid2::RANDOM);
 
   os << "vval:" << vval << '\n';
 
-  Intrepid2::Vector<Real, ROWS>
+  Intrepid2::Vector<Real, NUM_CONSTR>
   jvval(Intrepid2::RANDOM);
 
   os << "jvval:" << jvval << '\n';
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   ajvval(Intrepid2::RANDOM);
 
   os << "ajvval:" << ajvval << '\n';
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   x(xval);
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   v(vval);
 
-  ROL::MiniTensorVector<Real, ROWS>
+  ROL::MiniTensorVector<Real, NUM_CONSTR>
   jv(jvval);
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   ajv(ajvval);
 
   std::vector<std::vector<Real>>
@@ -284,49 +284,49 @@ TEST(MiniTensor_ROL, EqualityConstraint01)
   os = (print_output == true) ? std::cout : bhs;
 
   constexpr Intrepid2::Index
-  ROWS{3};
+  NUM_CONSTR{3};
 
   constexpr Intrepid2::Index
-  COLS{5};
+  NUM_VAR{5};
 
-  using MSEC = Intrepid2::Nonlinear01<Real, ROWS>;
+  using MSEC = Intrepid2::Nonlinear01<Real, NUM_CONSTR, NUM_VAR>;
 
   MSEC
   msec;
 
-  ROL::MiniTensor_EqualityConstraint<MSEC, Real, ROWS, COLS>
+  ROL::MiniTensor_EqualityConstraint<MSEC, Real, NUM_CONSTR, NUM_VAR>
   constr(msec);
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   xval(Intrepid2::RANDOM);
 
   os << "xval:" << xval << '\n';
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   vval(Intrepid2::RANDOM);
 
   os << "vval:" << vval << '\n';
 
-  Intrepid2::Vector<Real, ROWS>
+  Intrepid2::Vector<Real, NUM_CONSTR>
   jvval(Intrepid2::RANDOM);
 
   os << "jvval:" << jvval << '\n';
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   ajvval(Intrepid2::RANDOM);
 
   os << "ajvval:" << ajvval << '\n';
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   x(xval);
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   v(vval);
 
-  ROL::MiniTensorVector<Real, ROWS>
+  ROL::MiniTensorVector<Real, NUM_CONSTR>
   jv(jvval);
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   ajv(ajvval);
 
   std::vector<std::vector<Real>>
