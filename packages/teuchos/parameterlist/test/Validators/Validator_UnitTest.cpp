@@ -82,6 +82,30 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
 	TEST_THROW(intList->set("Double Parameter", 5.0, "double parameter", intVali),
     Exceptions::InvalidParameterType);
 
+  // Test String Conversions with int
+  RCP<ParameterList> validList = rcp(new ParameterList("Valid List"));
+  RCP<ParameterList> userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(validList->set("Int Parameter", 4, "int parameter",
+    intVali));
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  TEST_NOTHROW(userList->set("Int Parameter", "xx4"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+#endif
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Int Parameter", 4));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  TEST_NOTHROW(userList->set("Int Parameter", "8"));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  int readInt = userList->getEntry("Int Parameter").getValue<int>(&readInt);
+  TEST_ASSERT(readInt == 8);
+
+  // check string can generate out of range
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Int Parameter", "20"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidParameterType);
+
 	/*
 	 * Testing Short Validator.
 	 */
@@ -106,6 +130,30 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
 	TEST_THROW(shortList->set("Short Parameter", (short)11),
     Exceptions::InvalidParameterValue);
 	TEST_THROW(shortList->set("Double Parameter", 5.0, "double parameter", shortVali),
+    Exceptions::InvalidParameterType);
+
+  // Test String Conversions with short
+  validList = rcp(new ParameterList("Valid List"));
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(validList->set("Short Parameter", (short)4, "short parameter",
+    shortVali));
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  TEST_NOTHROW(userList->set("Short Parameter", "xx4"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+#endif
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Short Parameter", (short)4));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  TEST_NOTHROW(userList->set("Short Parameter", "8"));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  short readShort = userList->getEntry("Short Parameter").getValue<short>(&readShort);
+  TEST_ASSERT(readShort == 8);
+
+  // check string can generate out of range
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Short Parameter", "20"));
+  TEST_THROW(userList->validateParameters(*validList),
     Exceptions::InvalidParameterType);
 
 	/*
@@ -135,6 +183,30 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
 	TEST_THROW(floatList->set("Int Parameter", 5, "int parameter", floatVali),
     Exceptions::InvalidParameterType);
 
+  // Test String Conversions with float
+  validList = rcp(new ParameterList("Valid List"));
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(validList->set("Float Parameter", (float)4.0, "float parameter",
+    floatVali));
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  TEST_NOTHROW(userList->set("Float Parameter", "xx4"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+#endif
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Float Parameter", (float)8.0));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  TEST_NOTHROW(userList->set("Float Parameter", "8.0"));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  float readFloat = userList->getEntry("Float Parameter").getValue<float>(&readFloat);
+  TEST_ASSERT(readFloat == 8.0);
+
+  // check string can generate out of range
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Float Parameter", "20.0"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidParameterType);
+
 	/*
 	 * Testing Double Validator.
 	 */
@@ -160,6 +232,30 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
 	TEST_THROW(doubleList->set("Double Parameter", (double)11.0),
     Exceptions::InvalidParameterValue);
 	TEST_THROW(doubleList->set("Int Parameter", 5, "int parameter", doubleVali),
+    Exceptions::InvalidParameterType);
+
+  // Test String Conversions with double
+  validList = rcp(new ParameterList("Valid List"));
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(validList->set("Double Parameter", 4.0, "double parameter",
+    doubleVali));
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  TEST_NOTHROW(userList->set("Double Parameter", "xx4"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+#endif
+  userList = rcp(new ParameterList("Valid List"));
+  TEST_NOTHROW(userList->set("Double Parameter", 8.0));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  TEST_NOTHROW(userList->set("Double Parameter", "8.0"));
+  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
+  double readDouble = userList->getEntry("Double Parameter").getValue<double>(&readDouble);
+  TEST_ASSERT(readDouble == 8.0);
+
+  // check string can generate out of range
+  userList = rcp(new ParameterList("User List"));
+  TEST_NOTHROW(userList->set("Double Parameter", "20.0"));
+  TEST_THROW(userList->validateParameters(*validList),
     Exceptions::InvalidParameterType);
  }
 
@@ -331,16 +427,12 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, boolValidator)
   // Default values for parameters are bool
   validList->set("boolOne", true, "doc", boolValidator);
   validList->set("boolTwo", false, "doc", boolValidator);
-  bool defOne = validList->getEntry("boolOne").getValue<bool>(&defOne);
-  bool defTwo = validList->getEntry("boolTwo").getValue<bool>(&defTwo);
+  bool defOne = validList->getEntry("boolOne").getValue(&defOne);
+  bool defTwo = validList->getEntry("boolTwo").getValue(&defTwo);
 
   // Create user parameter list
   userList->set("boolOne", false);   // User can provide bool value...
   userList->set("boolTwo", "true");  // or string "true"/"false"
-  TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
-
-  defOne = validList->getEntry("boolOne").getValue(&defOne);
-  defTwo = validList->getEntry("boolTwo").getValue(&defTwo);
   TEST_NOTHROW(userList->validateParametersAndSetDefaults(*validList));
 }
 

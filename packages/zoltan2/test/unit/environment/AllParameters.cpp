@@ -71,7 +71,7 @@ static string fnParams[NUMFN][3]={
 };
 
 // Value is a particular string
-#define NUMSTR 31
+#define NUMSTR 34
 static string strParams[NUMSTR][3]={
   {"error_check_level", "basic_assertions", "invalid_assertion_request"},
   {"debug_level", "basic_status", "invalid_status"},
@@ -103,12 +103,10 @@ static string strParams[NUMSTR][3]={
   {"rectilinear", "false", "invalid_bool_setting"},            // BoolParameterEntryValidator - accepts true/false/"true"/"false"
   {"subset_graph", "false", "invalid_bool_setting"},           // BoolParameterEntryValidator - accepts true/false/"true"/"false"
   {"mj_enable_rcb", "true", "invalid_bool_setting"},           // BoolParameterEntryValidator - accepts true/false/"true"/"false"
-  {"mj_keep_part_boxes", "true", "invalid_bool_setting"}       // BoolParameterEntryValidator - accepts true/false/"true"/"false"
-// These need to be resolved as EnhancedNumberValidator does not take string
-// However we want to use the min/max range feature
-//  {"num_global_parts", "1", "invalid_value"},                // EnhancedNumberValidator - currently no strings
-//  {"num_local_parts", "0", "invalid_value"},                 // EnhancedNumberValidator - currently no strings
-//  {"mj_migration_option", "2", "invalid_value"},             // EnhancedNumberValidator - currently no strings
+  {"mj_keep_part_boxes", "true", "invalid_bool_setting"},      // BoolParameterEntryValidator - accepts true/false/"true"/"false"
+  {"num_global_parts", "1", "invalid_value"},                  // EnhancedNumberValidator
+  {"num_local_parts", "0", "invalid_value"},                   // EnhancedNumberValidator
+  {"mj_migration_option", "2", "invalid_value"},               // EnhancedNumberValidator
 };
 
 template <typename T>
@@ -253,7 +251,7 @@ int main(int argc, char *argv[])
   // just keeping it here as a reference point to be deleted in the future
   int tempTest = testForIssue612();
   if( tempTest != 0 ) {
-    return testForIssue612();
+    return tempTest;
   }
 
   // Create a valid parameter list.
