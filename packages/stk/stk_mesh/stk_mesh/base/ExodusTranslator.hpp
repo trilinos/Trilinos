@@ -53,10 +53,7 @@ class ExodusTranslator
 public:
     typedef int64_t IdType;
 
-    ExodusTranslator(const stk::mesh::BulkData& b) : mBulkData(b)
-    {
-        cache_mesh_constructs();
-    }
+    ExodusTranslator(const stk::mesh::BulkData& b) : mBulkData(b) {}
 
     size_t get_number_global_entities(stk::mesh::EntityRank rank) const
     {
@@ -77,47 +74,47 @@ public:
 
     size_t get_number_element_blocks() const
     {
-        return mElementBlockParts.size();
+        return get_element_block_parts().size();
     }
 
     size_t get_number_node_sets() const
     {
-        return mNodeSetParts.size();
+        return get_node_set_parts().size();
     }
 
     size_t get_number_side_sets() const
     {
-        return mSideSetParts.size();
+        return get_side_set_parts().size();
     }
 
     void fill_node_set_ids(std::vector<IdType> &ids) const
     {
-        fill_exodus_ids(mNodeSetParts, ids);
+        fill_exodus_ids(get_node_set_parts(), ids);
     }
 
     void fill_node_set_names(std::vector<std::string> &names) const
     {
-        fill_exodus_names(mNodeSetParts, names);
+        fill_exodus_names(get_node_set_parts(), names);
     }
 
     void fill_side_set_ids(std::vector<IdType> &ids) const
     {
-        fill_exodus_ids(mSideSetParts, ids);
+        fill_exodus_ids(get_side_set_parts(), ids);
     }
 
     void fill_side_set_names(std::vector<std::string> &names) const
     {
-        fill_exodus_names(mSideSetParts, names);
+        fill_exodus_names(get_side_set_parts(), names);
     }
 
     void fill_element_block_ids(std::vector<IdType> &ids) const
     {
-        fill_exodus_ids(mElementBlockParts, ids);
+        fill_exodus_ids(get_element_block_parts(), ids);
     }
 
     void fill_element_block_names(std::vector<std::string> &names) const
     {
-        fill_exodus_names(mElementBlockParts, names);
+        fill_exodus_names(get_element_block_parts(), names);
     }
 
     size_t get_local_num_entities_for_id(int setId, stk::mesh::EntityRank rank)
@@ -147,18 +144,44 @@ public:
         return stk::get_global_sum(mBulkData.parallel(), numDF);
     }
 
-    const stk::mesh::PartVector & get_node_set_parts() { return mNodeSetParts; }
-    const stk::mesh::PartVector & get_side_set_parts() { return mSideSetParts; }
-    const stk::mesh::PartVector & get_element_block_parts() { return mElementBlockParts; }
+    stk::mesh::PartVector get_element_block_parts() const
+    {
+        stk::mesh::PartVector elementBlockParts;
+        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
+        for(size_t i = 0; i < parts.size(); i++)
+            if(is_element_block(*parts[i]))
+                elementBlockParts.push_back(parts[i]);
+        return elementBlockParts;
+    }
+
+    stk::mesh::PartVector get_side_set_parts() const
+    {
+        stk::mesh::PartVector sideParts;
+        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
+        for(size_t i = 0; i < parts.size(); i++)
+            if(is_side_set(*parts[i]))
+                sideParts.push_back(parts[i]);
+        return sideParts;
+    }
+
+    stk::mesh::PartVector get_node_set_parts() const
+    {
+        stk::mesh::PartVector nodeParts;
+        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
+        for(size_t i = 0; i < parts.size(); i++)
+            if(is_node_set(*parts[i]))
+                nodeParts.push_back(parts[i]);
+        return nodeParts;
+    }
 
     const stk::mesh::Part* get_exodus_part_of_rank(int id, stk::mesh::EntityRank rank) const
     {
         if(rank == stk::topology::NODE_RANK)
-            return get_exodus_part_from_map(mNodeSetParts, id);
+            return get_exodus_part_from_map(get_node_set_parts(), id);
         if(rank == mBulkData.mesh_meta_data().side_rank())
-            return get_exodus_part_from_map(mSideSetParts, id);
+            return get_exodus_part_from_map(get_side_set_parts(), id);
         if(rank == stk::topology::ELEM_RANK)
-            return get_exodus_part_from_map(mElementBlockParts, id);
+            return get_exodus_part_from_map(get_element_block_parts(), id);
         return nullptr;
     }
 
@@ -211,50 +234,8 @@ private:
         return part;
     }
 
-    void cache_mesh_constructs()
-    {
-        cache_element_blocks();
-        cache_side_sets();
-        cache_node_sets();
-    }
-
-    void cache_element_blocks()
-    {
-        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
-        for(size_t i = 0; i < parts.size(); i++)
-            if(is_element_block(*parts[i]))
-                mElementBlockParts.push_back(parts[i]);
-    }
-
-    void cache_side_sets()
-    {
-        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
-        for(size_t i = 0; i < parts.size(); i++)
-        {
-            if(is_side_set(*parts[i]))
-            {
-                mSideSetParts.push_back(parts[i]);
-            }
-        }
-    }
-
-    void cache_node_sets()
-    {
-        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
-        for(size_t i = 0; i < parts.size(); i++)
-        {
-            if(is_node_set(*parts[i]))
-            {
-                mNodeSetParts.push_back(parts[i]);
-            }
-        }
-    }
-
 private:
     const stk::mesh::BulkData& mBulkData;
-    stk::mesh::PartVector mElementBlockParts;
-    stk::mesh::PartVector mSideSetParts;
-    stk::mesh::PartVector mNodeSetParts;
 };
 
 }
