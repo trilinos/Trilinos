@@ -81,6 +81,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable Additive Variant."
   NO)
 
+# cmake option to enable building of MueLu Tutorial
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Tutorial
+  ""
+  "Enable MueLu tutorial."
+  YES)
+
 # Split ETI cpp files
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES
