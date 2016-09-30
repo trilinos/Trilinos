@@ -33,7 +33,7 @@
 #include <Epetra_Map.h>
 
 #include <amesos_btf_decl.h>
-#include <amesos_amd.h>
+#include <trilinos_amd.h>
 
 using std::vector;
 
@@ -93,7 +93,7 @@ operator()( OriginalTypeRef orig )
 
   // Call AMD permutation.
 
-  int ret = amesos_amd_order( n, &Ap[0], &Ai[0], &perm_[0], control, info );
+  int ret = trilinos_amd_order( n, &Ap[0], &Ai[0], &perm_[0], control, info );
 
   if( debug_ ) {
     std::cout << "-----------------------------------------\n";

@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === amesos_amd_global ========================================================== */
+/* === trilinos_amd_global ========================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -42,23 +42,23 @@
 #ifndef NMALLOC
 #ifdef MATLAB_MEX_FILE
 /* MATLAB mexFunction: */
-void *(*amesos_amd_malloc) (size_t) = mxMalloc ;
-void (*amesos_amd_free) (void *) = mxFree ;
-void *(*amesos_amd_realloc) (void *, size_t) = mxRealloc ;
-void *(*amesos_amd_calloc) (size_t, size_t) = mxCalloc ;
+void *(*trilinos_amd_malloc) (size_t) = mxMalloc ;
+void (*trilinos_amd_free) (void *) = mxFree ;
+void *(*trilinos_amd_realloc) (void *, size_t) = mxRealloc ;
+void *(*trilinos_amd_calloc) (size_t, size_t) = mxCalloc ;
 #else
 /* standard ANSI-C: */
-void *(*amesos_amd_malloc) (size_t) = malloc ;
-void (*amesos_amd_free) (void *) = free ;
-void *(*amesos_amd_realloc) (void *, size_t) = realloc ;
-void *(*amesos_amd_calloc) (size_t, size_t) = calloc ;
+void *(*trilinos_amd_malloc) (size_t) = malloc ;
+void (*trilinos_amd_free) (void *) = free ;
+void *(*trilinos_amd_realloc) (void *, size_t) = realloc ;
+void *(*trilinos_amd_calloc) (size_t, size_t) = calloc ;
 #endif
 #else
 /* no memory manager defined at compile-time; you MUST define one at run-time */
-void *(*amesos_amd_malloc) (size_t) = NULL ;
-void (*amesos_amd_free) (void *) = NULL ;
-void *(*amesos_amd_realloc) (void *, size_t) = NULL ;
-void *(*amesos_amd_calloc) (size_t, size_t) = NULL ;
+void *(*trilinos_amd_malloc) (size_t) = NULL ;
+void (*trilinos_amd_free) (void *) = NULL ;
+void *(*trilinos_amd_realloc) (void *, size_t) = NULL ;
+void *(*trilinos_amd_calloc) (size_t, size_t) = NULL ;
 #endif
 
 /* ========================================================================= */
@@ -69,16 +69,16 @@ void *(*amesos_amd_calloc) (size_t, size_t) = NULL ;
  * routine used by AMD.  If NULL, no printing occurs.  
  *
  * If -DNPRINT is defined at compile-time, stdio.h is not included.  Printing
- * can then be enabled at run-time by setting amesos_amd_printf to a non-NULL function.
+ * can then be enabled at run-time by setting trilinos_amd_printf to a non-NULL function.
  */
 
 #ifndef NPRINT
 #ifdef MATLAB_MEX_FILE
-int (*amesos_amd_printf) (const char *, ...) = mexPrintf ;
+int (*trilinos_amd_printf) (const char *, ...) = mexPrintf ;
 #else
 #include <stdio.h>
-int (*amesos_amd_printf) (const char *, ...) = printf ;
+int (*trilinos_amd_printf) (const char *, ...) = printf ;
 #endif
 #else
-int (*amesos_amd_printf) (const char *, ...) = NULL ;
+int (*trilinos_amd_printf) (const char *, ...) = NULL ;
 #endif

@@ -17,7 +17,7 @@
  * This input condition is NOT checked.  This routine is not user-callable.
  */
 
-#include "amesos_amd_internal.h"
+#include "trilinos_amd_internal.h"
 
 /* ========================================================================= */
 /* === AMD_preprocess ====================================================== */

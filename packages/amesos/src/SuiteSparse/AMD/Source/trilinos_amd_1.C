@@ -25,7 +25,7 @@
  * is performed (this was done in AMD_valid).
  */
 
-#include "amesos_amd_internal.h"
+#include "trilinos_amd_internal.h"
 
 GLOBAL void AMD_1
 (

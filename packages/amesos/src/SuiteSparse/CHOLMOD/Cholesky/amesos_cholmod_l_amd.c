@@ -37,7 +37,7 @@
 #define DLONG 1
 
 #include "amesos_cholmod_internal.h"
-#include "amesos_amd.h"
+#include "trilinos_amd.h"
 #include "amesos_cholmod_cholesky.h"
 
 #if (!defined (AMD_VERSION) || (AMD_VERSION < AMD_VERSION_CODE (2,0)))
@@ -174,20 +174,20 @@ int CHOLMOD(amd)
 
     /* AMD_2 does not use amd_malloc and amd_free, but set these pointers just
      * be safe. */
-    amesos_amd_malloc = Common->malloc_memory ;
-    amesos_amd_free = Common->free_memory ;
-    amesos_amd_calloc = Common->calloc_memory ;
-    amesos_amd_realloc = Common->realloc_memory ;
+    trilinos_amd_malloc = Common->malloc_memory ;
+    trilinos_amd_free = Common->free_memory ;
+    trilinos_amd_calloc = Common->calloc_memory ;
+    trilinos_amd_realloc = Common->realloc_memory ;
 
     /* AMD_2 doesn't print anything either, but future versions might,
      * so set the amd_printf pointer too. */
-    amesos_amd_printf = Common->print_function ;
+    trilinos_amd_printf = Common->print_function ;
 
 #ifdef LONG
-    amesos_amd_l2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
+    trilinos_amd_l2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
 	    Degree, Wi, Control, Info) ;
 #else
-    amesos_amd_2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
+    trilinos_amd_2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
 	    Degree, Wi, Control, Info) ;
 #endif
 

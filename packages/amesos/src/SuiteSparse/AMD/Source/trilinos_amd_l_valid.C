@@ -34,7 +34,10 @@
  * AMD_OK_BUT_JUMBLED).
  */
 
-#include "amesos_amd_internal.h"
+/* This file should make the long int version of AMD */
+#define DLONG 1
+
+#include "trilinos_amd_internal.h"
 
 GLOBAL Int AMD_valid
 (

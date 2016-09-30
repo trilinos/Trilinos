@@ -11,7 +11,7 @@
 
 /* Post-ordering of a supernodal elimination tree.  */
 
-#include "amesos_amd_internal.h"
+#include "trilinos_amd_internal.h"
 
 GLOBAL Int AMD_post_tree
 (

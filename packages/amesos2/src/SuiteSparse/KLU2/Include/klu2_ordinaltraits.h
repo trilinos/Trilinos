@@ -93,7 +93,7 @@ struct KLU_OrdinalTraits<int>
     static inline int amd_order (int n, int *Ap, int *Ai, int *P,
         double *Control, double *Info)
     {
-        return (amesos_amd_order(n, Ap, Ai, P, Control, Info)) ;
+        return (trilinos_amd_order(n, Ap, Ai, P, Control, Info)) ;
     }
 
     static inline int colamd (int n_row, int n_col, int Alen, int *A, int *p,
@@ -129,7 +129,7 @@ struct KLU_OrdinalTraits<long int>
     static inline long int amd_order (long int n, long int *Ap, long int *Ai, long int *P,
         double *Control, double *Info)
     {
-        return (amesos_amd_l_order(n, Ap, Ai, P, Control, Info)) ;
+        return (trilinos_amd_l_order(n, Ap, Ai, P, Control, Info)) ;
     }
 
     static inline long int colamd (long int n_row, long int n_col, long int Alen, long int *A,

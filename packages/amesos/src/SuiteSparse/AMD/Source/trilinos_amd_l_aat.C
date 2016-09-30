@@ -16,7 +16,10 @@
  * checked).
  */
 
-#include "amesos_amd_internal.h"
+/* This file should make the long int version of AMD */
+#define DLONG 1
+
+#include "trilinos_amd_internal.h"
 
 GLOBAL size_t AMD_aat	/* returns nz in A+A' */
 (

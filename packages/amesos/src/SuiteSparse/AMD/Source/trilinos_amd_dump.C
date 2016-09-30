@@ -10,11 +10,11 @@
 /* ------------------------------------------------------------------------- */
 
 /* Debugging routines for AMD.  Not used if NDEBUG is not defined at compile-
- * time (the default).  See comments in amesos_amd_internal.h on how to enable
+ * time (the default).  See comments in trilinos_amd_internal.h on how to enable
  * debugging.  Not user-callable.
  */
 
-#include "amesos_amd_internal.h"
+#include "trilinos_amd_internal.h"
 
 #ifndef NDEBUG
 

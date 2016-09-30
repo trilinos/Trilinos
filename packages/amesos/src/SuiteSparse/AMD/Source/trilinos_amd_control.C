@@ -14,7 +14,7 @@
  * printed instead.
  */
 
-#include "amesos_amd_internal.h"
+#include "trilinos_amd_internal.h"
 
 GLOBAL void AMD_control
 (

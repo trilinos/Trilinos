@@ -1,5 +1,5 @@
 /* ========================================================================= */
-/* === amesos_amd_internal.h ====================================================== */
+/* === trilinos_amd_internal.h ====================================================== */
 /* ========================================================================= */
 
 /* ------------------------------------------------------------------------- */
@@ -18,14 +18,14 @@
  *	-DNPRINT
  *
  *	    Disable all printing.  stdio.h will not be included.  Printing can
- *	    be re-enabled at run-time by setting the global pointer amesos_amd_printf
+ *	    be re-enabled at run-time by setting the global pointer trilinos_amd_printf
  *	    to printf (or mexPrintf for a MATLAB mexFunction).
  *
  *	-DNMALLOC
  *
  *	    No memory manager is defined at compile-time.  You MUST define the
- *	    function pointers amesos_amd_malloc, amesos_amd_free, amesos_amd_realloc, and
- *	    amesos_amd_calloc at run-time for AMD to work properly.
+ *	    function pointers trilinos_amd_malloc, trilinos_amd_free, trilinos_amd_realloc, and
+ *	    trilinos_amd_calloc at run-time for AMD to work properly.
  */
 
 /* ========================================================================= */
@@ -170,20 +170,20 @@
 #define ID  UF_long_id
 #define Int_MAX UF_long_max
 
-#define AMD_order amesos_amd_l_order
-#define AMD_defaults amesos_amd_l_defaults
-#define AMD_control amesos_amd_l_control
-#define AMD_info amesos_amd_l_info
-#define AMD_1 amesos_amd_l1
-#define AMD_2 amesos_amd_l2
-#define AMD_valid amesos_amd_l_valid
-#define AMD_aat amesos_amd_l_aat
-#define AMD_postorder amesos_amd_l_postorder
-#define AMD_post_tree amesos_amd_l_post_tree
-#define AMD_dump amesos_amd_l_dump
-#define AMD_debug amesos_amd_l_debug
-#define AMD_debug_init amesos_amd_l_debug_init
-#define AMD_preprocess amesos_amd_l_preprocess
+#define AMD_order trilinos_amd_l_order
+#define AMD_defaults trilinos_amd_l_defaults
+#define AMD_control trilinos_amd_l_control
+#define AMD_info trilinos_amd_l_info
+#define AMD_1 trilinos_amd_l1
+#define AMD_2 trilinos_amd_l2
+#define AMD_valid trilinos_amd_l_valid
+#define AMD_aat trilinos_amd_l_aat
+#define AMD_postorder trilinos_amd_l_postorder
+#define AMD_post_tree trilinos_amd_l_post_tree
+#define AMD_dump trilinos_amd_l_dump
+#define AMD_debug trilinos_amd_l_debug
+#define AMD_debug_init trilinos_amd_l_debug_init
+#define AMD_preprocess trilinos_amd_l_preprocess
 
 #else
 
@@ -191,20 +191,20 @@
 #define ID "%d"
 #define Int_MAX INT_MAX
 
-#define AMD_order amesos_amd_order
-#define AMD_defaults amesos_amd_defaults
-#define AMD_control amesos_amd_control
-#define AMD_info amesos_amd_info
-#define AMD_1 amesos_amd_1
-#define AMD_2 amesos_amd_2
-#define AMD_valid amesos_amd_valid
-#define AMD_aat amesos_amd_aat
-#define AMD_postorder amesos_amd_postorder
-#define AMD_post_tree amesos_amd_post_tree
-#define AMD_dump amesos_amd_dump
-#define AMD_debug amesos_amd_debug
-#define AMD_debug_init amesos_amd_debug_init
-#define AMD_preprocess amesos_amd_preprocess
+#define AMD_order trilinos_amd_order
+#define AMD_defaults trilinos_amd_defaults
+#define AMD_control trilinos_amd_control
+#define AMD_info trilinos_amd_info
+#define AMD_1 trilinos_amd_1
+#define AMD_2 trilinos_amd_2
+#define AMD_valid trilinos_amd_valid
+#define AMD_aat trilinos_amd_aat
+#define AMD_postorder trilinos_amd_postorder
+#define AMD_post_tree trilinos_amd_post_tree
+#define AMD_dump trilinos_amd_dump
+#define AMD_debug trilinos_amd_debug
+#define AMD_debug_init trilinos_amd_debug_init
+#define AMD_preprocess trilinos_amd_preprocess
 
 #endif
 
@@ -213,13 +213,13 @@
 /* ========================================================================= */
 
 /* All output goes through the PRINTF macro.  */
-#define PRINTF(params) { if (amesos_amd_printf != NULL) (void) amesos_amd_printf params ; }
+#define PRINTF(params) { if (trilinos_amd_printf != NULL) (void) trilinos_amd_printf params ; }
 
 /* ------------------------------------------------------------------------- */
 /* AMD routine definitions (user-callable) */
 /* ------------------------------------------------------------------------- */
 
-#include "amesos_amd.h"
+#include "trilinos_amd.h"
 
 /* ------------------------------------------------------------------------- */
 /* AMD routine definitions (not user-callable) */

@@ -310,10 +310,10 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     }
 
     /* AMD memory management routines */
-    amesos_amd_malloc  = Common->malloc_memory ;
-    amesos_amd_free    = Common->free_memory ;
-    amesos_amd_calloc  = Common->calloc_memory ;
-    amesos_amd_realloc = Common->realloc_memory ;
+    trilinos_amd_malloc  = Common->malloc_memory ;
+    trilinos_amd_free    = Common->free_memory ;
+    trilinos_amd_calloc  = Common->calloc_memory ;
+    trilinos_amd_realloc = Common->realloc_memory ;
 
     /* ---------------------------------------------------------------------- */
     /* allocate workspace for BTF permutation */

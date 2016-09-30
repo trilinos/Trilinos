@@ -41,7 +41,7 @@
 #define _TKLU_H
 
 
-#include "amesos_amd.h"
+#include "trilinos_amd.h"
 #include "amesos_colamd.h"
 #include "amesos_btf_decl.h"
 

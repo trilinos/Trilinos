@@ -13,10 +13,7 @@
  * documentation.
  */
 
-/* This file should make the long int version of AMD */
-#define DLONG 1
-
-#include "amesos_amd_internal.h"
+#include "trilinos_amd_internal.h"
 
 /* ========================================================================= */
 /* === AMD_order =========================================================== */
@@ -93,15 +90,15 @@ GLOBAL Int AMD_order
     }
 
     /* allocate two size-n integer workspaces */
-    Len = amesos_amd_malloc (n * sizeof (Int)) ;
-    Pinv = amesos_amd_malloc (n * sizeof (Int)) ;
+    Len = trilinos_amd_malloc (n * sizeof (Int)) ;
+    Pinv = trilinos_amd_malloc (n * sizeof (Int)) ;
     mem += n ;
     mem += n ;
     if (!Len || !Pinv)
     {
 	/* :: out of memory :: */
-	amesos_amd_free (Len) ;
-	amesos_amd_free (Pinv) ;
+	trilinos_amd_free (Len) ;
+	trilinos_amd_free (Pinv) ;
 	if (info) Info [AMD_STATUS] = AMD_OUT_OF_MEMORY ;
 	return (AMD_OUT_OF_MEMORY) ;
     }
@@ -110,17 +107,17 @@ GLOBAL Int AMD_order
     {
 	/* sort the input matrix and remove duplicate entries */
 	AMD_DEBUG1 (("Matrix is jumbled\n")) ;
-	Rp = amesos_amd_malloc ((n+1) * sizeof (Int)) ;
-	Ri = amesos_amd_malloc (MAX (nz,1) * sizeof (Int)) ;
+	Rp = trilinos_amd_malloc ((n+1) * sizeof (Int)) ;
+	Ri = trilinos_amd_malloc (MAX (nz,1) * sizeof (Int)) ;
 	mem += (n+1) ;
 	mem += MAX (nz,1) ;
 	if (!Rp || !Ri)
 	{
 	    /* :: out of memory :: */
-	    amesos_amd_free (Rp) ;
-	    amesos_amd_free (Ri) ;
-	    amesos_amd_free (Len) ;
-	    amesos_amd_free (Pinv) ;
+	    trilinos_amd_free (Rp) ;
+	    trilinos_amd_free (Ri) ;
+	    trilinos_amd_free (Len) ;
+	    trilinos_amd_free (Pinv) ;
 	    if (info) Info [AMD_STATUS] = AMD_OUT_OF_MEMORY ;
 	    return (AMD_OUT_OF_MEMORY) ;
 	}
@@ -164,16 +161,16 @@ GLOBAL Int AMD_order
     ok = ok && (slen < Int_MAX) ;	/* S[i] for Int i must be OK */
     if (ok)
     {
-	S = amesos_amd_malloc (slen * sizeof (Int)) ;
+	S = trilinos_amd_malloc (slen * sizeof (Int)) ;
     }
     AMD_DEBUG1 (("slen %g\n", (double) slen)) ;
     if (!S)
     {
 	/* :: out of memory :: (or problem too large) */
-	amesos_amd_free (Rp) ;
-	amesos_amd_free (Ri) ;
-	amesos_amd_free (Len) ;
-	amesos_amd_free (Pinv) ;
+	trilinos_amd_free (Rp) ;
+	trilinos_amd_free (Ri) ;
+	trilinos_amd_free (Len) ;
+	trilinos_amd_free (Pinv) ;
 	if (info) Info [AMD_STATUS] = AMD_OUT_OF_MEMORY ;
 	return (AMD_OUT_OF_MEMORY) ;
     }
@@ -193,11 +190,11 @@ GLOBAL Int AMD_order
     /* free the workspace */
     /* --------------------------------------------------------------------- */
 
-    amesos_amd_free (Rp) ;
-    amesos_amd_free (Ri) ;
-    amesos_amd_free (Len) ;
-    amesos_amd_free (Pinv) ;
-    amesos_amd_free (S) ;
+    trilinos_amd_free (Rp) ;
+    trilinos_amd_free (Ri) ;
+    trilinos_amd_free (Len) ;
+    trilinos_amd_free (Pinv) ;
+    trilinos_amd_free (S) ;
     if (info) Info [AMD_STATUS] = status ;
     return (status) ;	    /* successful ordering */
 }

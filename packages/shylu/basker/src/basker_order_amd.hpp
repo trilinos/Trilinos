@@ -7,7 +7,7 @@
 //This can be done to user the smaller domains
 
 #ifdef HAVE_AMESOS
-#include "amesos_amd.h"
+#include "trilinos_amd.h"
 #include "amesos_colamd.h"
 #include "amesos_ccolamd.h"
 #endif
@@ -109,7 +109,7 @@ namespace BaskerNS
   {
 
     double amd_info[AMD_INFO];
-    amesos_amd(M.ncol, &(M.col_ptr(0)), 
+    trilinos_amd(M.ncol, &(M.col_ptr(0)), 
 	       &(M.row_idx(0)), &(p(0)),
 	       NULL, amd_info);
 

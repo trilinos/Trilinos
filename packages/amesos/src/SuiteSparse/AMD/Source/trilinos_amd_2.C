@@ -13,11 +13,8 @@
  * by a postordering (via depth-first search) of the assembly tree using the
  * AMD_postorder routine.
  */
- 
-/* This file should make the long int version of AMD */
-#define DLONG 1
 
-#include "amesos_amd_internal.h"
+#include "trilinos_amd_internal.h"
 
 /* ========================================================================= */
 /* === clear_flag ========================================================== */
@@ -603,7 +600,7 @@ GLOBAL void AMD_2
     }
     else
     {
-	dense = alpha * sqrt ((double) n) ;
+	dense = (int) ( alpha * sqrt ((double) n) ) ;
     }
     dense = MAX (16, dense) ;
     dense = MIN (n,  dense) ;

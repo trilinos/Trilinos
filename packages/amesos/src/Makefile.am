@@ -211,19 +211,19 @@ endif
 
 
 PARAKLETE_KLU_COMMON = \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_1.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_2.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_aat.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_control.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_defaults.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_dump.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_global.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_info.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_order.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_postorder.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_post_tree.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_preprocess.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_valid.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_1.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_2.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_aat.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_control.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_defaults.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_dump.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_global.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_info.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_order.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_postorder.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_post_tree.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_preprocess.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_valid.c \
 	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd.c \
 	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_global.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_common.c \
@@ -236,8 +236,8 @@ PARAKLETE_KLU_COMMON = \
 	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_postorder.c
 
 PARAKLETE_KLU_COMMON_H = \
-	$(srcdir)/SuiteSparse/AMD/Include/amesos_amd.h \
-	$(srcdir)/SuiteSparse/AMD/Include/amesos_amd_internal.h \
+	$(srcdir)/SuiteSparse/AMD/Include/trilinos_amd.h \
+	$(srcdir)/SuiteSparse/AMD/Include/trilinos_amd_internal.h \
 	$(srcdir)/SuiteSparse/COLAMD/Include/amesos_colamd.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_check.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_core.h \
@@ -320,14 +320,14 @@ PARAKLETE = \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_csymamd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_metis.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_postorder.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c \
-	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l1.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l2.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_aat.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_order.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_postorder.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_post_tree.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_preprocess.c \
+	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_valid.c \
 	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c \
 	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c \
 	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c \

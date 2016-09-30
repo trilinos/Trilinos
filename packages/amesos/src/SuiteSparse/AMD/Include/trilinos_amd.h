@@ -47,7 +47,7 @@ extern "C" {
 /* define UF_long */
 #include "amesos_UFconfig.h"
 
-int amesos_amd_order		    /* returns AMD_OK, AMD_OK_BUT_JUMBLED,
+int trilinos_amd_order		    /* returns AMD_OK, AMD_OK_BUT_JUMBLED,
 			     * AMD_INVALID, or AMD_OUT_OF_MEMORY */
 (
     int n,		    /* A is n-by-n.  n must be >= 0. */
@@ -58,7 +58,7 @@ int amesos_amd_order		    /* returns AMD_OK, AMD_OK_BUT_JUMBLED,
     double Info [ ]	    /* output Info statistics, of size AMD_INFO */
 ) ;
 
-UF_long amesos_amd_l_order	    /* see above for description of arguments */
+UF_long trilinos_amd_l_order	    /* see above for description of arguments */
 (
     UF_long n,
     const UF_long Ap [ ],
@@ -89,7 +89,7 @@ UF_long amesos_amd_l_order	    /* see above for description of arguments */
  * of nonzero entries in column j are stored in Ai [Ap [j] ... Ap [j+1]-1].
  *
  * If the row indices appear in ascending order in each column, and there
- * are no duplicate entries, then amesos_amd_order is slightly more efficient in
+ * are no duplicate entries, then trilinos_amd_order is slightly more efficient in
  * terms of time and memory usage.  If this condition does not hold, a copy
  * of the matrix is created (where these conditions do hold), and the copy is
  * ordered.  This feature is new to v2.0 (v1.2 and earlier required this
@@ -228,15 +228,15 @@ UF_long amesos_amd_l_order	    /* see above for description of arguments */
 /* direct interface to AMD */
 /* ------------------------------------------------------------------------- */
 
-/* amesos_amd_2 is the primary AMD ordering routine.  It is not meant to be
+/* trilinos_amd_2 is the primary AMD ordering routine.  It is not meant to be
  * user-callable because of its restrictive inputs and because it destroys
  * the user's input matrix.  It does not check its inputs for errors, either.
  * However, if you can work with these restrictions it can be faster than
- * amesos_amd_order and use less memory (assuming that you can create your own copy
- * of the matrix for AMD to destroy).  Refer to AMD/Source/amesos_amd_2.c for a
+ * trilinos_amd_order and use less memory (assuming that you can create your own copy
+ * of the matrix for AMD to destroy).  Refer to AMD/Source/trilinos_amd_2.c for a
  * description of each parameter. */
 
-void amesos_amd_2
+void trilinos_amd_2
 (
     int n,
     int Pe [ ],
@@ -255,7 +255,7 @@ void amesos_amd_2
     double Info [ ]
 ) ;
 
-void amesos_amd_l2
+void trilinos_amd_l2
 (
     UF_long n,
     UF_long Pe [ ],
@@ -275,20 +275,20 @@ void amesos_amd_l2
 ) ;
 
 /* ------------------------------------------------------------------------- */
-/* amesos_amd_valid */
+/* trilinos_amd_valid */
 /* ------------------------------------------------------------------------- */
 
 /* Returns AMD_OK or AMD_OK_BUT_JUMBLED if the matrix is valid as input to
  * amd_order; the latter is returned if the matrix has unsorted and/or
  * duplicate row indices in one or more columns.  Returns AMD_INVALID if the
- * matrix cannot be passed to amesos_amd_order.  For amesos_amd_order, the matrix must also
+ * matrix cannot be passed to trilinos_amd_order.  For trilinos_amd_order, the matrix must also
  * be square.  The first two arguments are the number of rows and the number
  * of columns of the matrix.  For its use in AMD, these must both equal n.
  *
  * NOTE: this routine returned TRUE/FALSE in v1.2 and earlier.
  */
 
-int amesos_amd_valid
+int trilinos_amd_valid
 (
     int n_row,		    /* # of rows */
     int n_col,		    /* # of columns */
@@ -296,7 +296,7 @@ int amesos_amd_valid
     const int Ai [ ]	    /* row indices, of size Ap [n_col] */
 ) ;
 
-UF_long amesos_amd_l_valid
+UF_long trilinos_amd_l_valid
 (
     UF_long n_row,
     UF_long n_col,
@@ -315,27 +315,27 @@ UF_long amesos_amd_l_valid
 #define EXTERN extern
 #endif
 
-EXTERN void *(*amesos_amd_malloc) (size_t) ;		    /* pointer to malloc */
-EXTERN void (*amesos_amd_free) (void *) ;		    /* pointer to free */
-EXTERN void *(*amesos_amd_realloc) (void *, size_t) ;	    /* pointer to realloc */
-EXTERN void *(*amesos_amd_calloc) (size_t, size_t) ;	    /* pointer to calloc */
-EXTERN int (*amesos_amd_printf) (const char *, ...) ;	    /* pointer to printf */
+EXTERN void *(*trilinos_amd_malloc) (size_t) ;		    /* pointer to malloc */
+EXTERN void (*trilinos_amd_free) (void *) ;		    /* pointer to free */
+EXTERN void *(*trilinos_amd_realloc) (void *, size_t) ;	    /* pointer to realloc */
+EXTERN void *(*trilinos_amd_calloc) (size_t, size_t) ;	    /* pointer to calloc */
+EXTERN int (*trilinos_amd_printf) (const char *, ...) ;	    /* pointer to printf */
 
 /* ------------------------------------------------------------------------- */
 /* AMD Control and Info arrays */
 /* ------------------------------------------------------------------------- */
 
-/* amesos_amd_defaults:  sets the default control settings */
-void amesos_amd_defaults   (double Control [ ]) ;
-void amesos_amd_l_defaults (double Control [ ]) ;
+/* trilinos_amd_defaults:  sets the default control settings */
+void trilinos_amd_defaults   (double Control [ ]) ;
+void trilinos_amd_l_defaults (double Control [ ]) ;
 
-/* amesos_amd_control: prints the control settings */
-void amesos_amd_control    (double Control [ ]) ;
-void amesos_amd_l_control  (double Control [ ]) ;
+/* trilinos_amd_control: prints the control settings */
+void trilinos_amd_control    (double Control [ ]) ;
+void trilinos_amd_l_control  (double Control [ ]) ;
 
-/* amesos_amd_info: prints the statistics */
-void amesos_amd_info       (double Info [ ]) ;
-void amesos_amd_l_info     (double Info [ ]) ;
+/* trilinos_amd_info: prints the statistics */
+void trilinos_amd_info       (double Info [ ]) ;
+void trilinos_amd_l_info     (double Info [ ]) ;
 
 #define AMD_CONTROL 5	    /* size of Control array */
 #define AMD_INFO 20	    /* size of Info array */

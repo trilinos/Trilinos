@@ -11,10 +11,7 @@
 
 /* Perform a postordering (via depth-first search) of an assembly tree. */
 
-/* This file should make the long int version of AMD */
-#define DLONG 1
-
-#include "amesos_amd_internal.h"
+#include "trilinos_amd_internal.h"
 
 GLOBAL void AMD_postorder
 (

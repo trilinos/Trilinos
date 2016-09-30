@@ -148,8 +148,8 @@ ENDIF()
 #
 
 SET(PARAKLETE_KLU_COMMON_H
-  SuiteSparse/AMD/Include/amesos_amd.h
-  SuiteSparse/AMD/Include/amesos_amd_internal.h
+  SuiteSparse/AMD/Include/trilinos_amd.h
+  SuiteSparse/AMD/Include/trilinos_amd_internal.h
   SuiteSparse/COLAMD/Include/amesos_colamd.h
   SuiteSparse/CHOLMOD/Include/amesos_cholmod_check.h
   SuiteSparse/CHOLMOD/Include/amesos_cholmod_core.h
@@ -161,27 +161,27 @@ SET(PARAKLETE_KLU_COMMON_H
   )
 
 SET(PARAKLETE_KLU_COMMON
-  SuiteSparse/AMD/Source/amesos_amd_1.c
-  SuiteSparse/AMD/Source/amesos_amd_2.c
-  SuiteSparse/AMD/Source/amesos_amd_aat.c
-  SuiteSparse/AMD/Source/amesos_amd_control.c
-  SuiteSparse/AMD/Source/amesos_amd_defaults.c
-  SuiteSparse/AMD/Source/amesos_amd_dump.c
-  SuiteSparse/AMD/Source/amesos_amd_global.c
-  SuiteSparse/AMD/Source/amesos_amd_info.c
-  SuiteSparse/AMD/Source/amesos_amd_order.c
-  SuiteSparse/AMD/Source/amesos_amd_postorder.c
-  SuiteSparse/AMD/Source/amesos_amd_post_tree.c
-  SuiteSparse/AMD/Source/amesos_amd_preprocess.c
-  SuiteSparse/AMD/Source/amesos_amd_valid.c
-  SuiteSparse/AMD/Source/amesos_amd_l1.c
-  SuiteSparse/AMD/Source/amesos_amd_l2.c
-  SuiteSparse/AMD/Source/amesos_amd_l_aat.c
-  SuiteSparse/AMD/Source/amesos_amd_l_order.c
-  SuiteSparse/AMD/Source/amesos_amd_l_postorder.c
-  SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c
-  SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c
-  SuiteSparse/AMD/Source/amesos_amd_l_valid.c
+  SuiteSparse/AMD/Source/trilinos_amd_1.c
+  SuiteSparse/AMD/Source/trilinos_amd_2.c
+  SuiteSparse/AMD/Source/trilinos_amd_aat.c
+  SuiteSparse/AMD/Source/trilinos_amd_control.c
+  SuiteSparse/AMD/Source/trilinos_amd_defaults.c
+  SuiteSparse/AMD/Source/trilinos_amd_dump.c
+  SuiteSparse/AMD/Source/trilinos_amd_global.c
+  SuiteSparse/AMD/Source/trilinos_amd_info.c
+  SuiteSparse/AMD/Source/trilinos_amd_order.c
+  SuiteSparse/AMD/Source/trilinos_amd_postorder.c
+  SuiteSparse/AMD/Source/trilinos_amd_post_tree.c
+  SuiteSparse/AMD/Source/trilinos_amd_preprocess.c
+  SuiteSparse/AMD/Source/trilinos_amd_valid.c
+  SuiteSparse/AMD/Source/trilinos_amd_l1.c
+  SuiteSparse/AMD/Source/trilinos_amd_l2.c
+  SuiteSparse/AMD/Source/trilinos_amd_l_aat.c
+  SuiteSparse/AMD/Source/trilinos_amd_l_order.c
+  SuiteSparse/AMD/Source/trilinos_amd_l_postorder.c
+  SuiteSparse/AMD/Source/trilinos_amd_l_post_tree.c
+  SuiteSparse/AMD/Source/trilinos_amd_l_preprocess.c
+  SuiteSparse/AMD/Source/trilinos_amd_l_valid.c
   SuiteSparse/COLAMD/Source/amesos_colamd.c
   SuiteSparse/COLAMD/Source/amesos_colamd_l.c
   SuiteSparse/COLAMD/Source/amesos_colamd_global.c
@@ -402,14 +402,14 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
     SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_csymamd.c
     SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_metis.c
     SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c
-    SuiteSparse/AMD/Source/amesos_amd_l1.c
-    SuiteSparse/AMD/Source/amesos_amd_l2.c
-    SuiteSparse/AMD/Source/amesos_amd_l_aat.c
-    SuiteSparse/AMD/Source/amesos_amd_l_order.c
-    SuiteSparse/AMD/Source/amesos_amd_l_postorder.c
-    SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c
-    SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c
-    SuiteSparse/AMD/Source/amesos_amd_l_valid.c
+    SuiteSparse/AMD/Source/trilinos_amd_l1.c
+    SuiteSparse/AMD/Source/trilinos_amd_l2.c
+    SuiteSparse/AMD/Source/trilinos_amd_l_aat.c
+    SuiteSparse/AMD/Source/trilinos_amd_l_order.c
+    SuiteSparse/AMD/Source/trilinos_amd_l_postorder.c
+    SuiteSparse/AMD/Source/trilinos_amd_l_post_tree.c
+    SuiteSparse/AMD/Source/trilinos_amd_l_preprocess.c
+    SuiteSparse/AMD/Source/trilinos_amd_l_valid.c
     SuiteSparse/CAMD/Source/amesos_camd_global.c
     SuiteSparse/CAMD/Source/amesos_camd_l2.c
     SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c
