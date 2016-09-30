@@ -100,7 +100,6 @@ lib stk_balance
     /tpl/trilinos//teuchos
     /tpl/trilinos//zoltan2
     /sierra/stk_search//stk_search
-    /sierra/geometry_toolkit//geometry_toolkit
     /mpi//mpi
   :
     <include>$(stk_balance-root)/stk_balance
@@ -150,7 +149,6 @@ exe stk_balance_integration_tester
     stk_balance_test_utils
     stk_balance
     /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /sierra/geometry_toolkit//geometry_toolkit
     /sierra/seacas//ioss
     /tpl/gtest//gtest
     /mpi//mpi

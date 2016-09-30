@@ -6,8 +6,6 @@
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
 
-#include <Geom_BoundingBoxUtilities.h>
-
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
@@ -32,7 +30,7 @@
 
 typedef stk::search::IdentProc<stk::mesh::EntityId, int> StkMeshIdent;
 typedef std::vector<std::pair<StkMeshIdent, StkMeshIdent> > StkSearchResults;
-typedef std::pair< gtk::AxisAlignedBB, StkMeshIdent> BoxWithStkId;
+typedef std::pair<stk::search::Box<float>, StkMeshIdent> BoxWithStkId;
 typedef std::vector< BoxWithStkId > GtkBoxVectorWithStkId;
 
 

@@ -177,7 +177,7 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
     double minX = *std::min_element(&coords[0], &coords[numNodes]);
     double minY = *std::min_element(&coords[numNodes], &coords[2 * numNodes]);
     double minZ = *std::min_element(&coords[2 * numNodes], &coords[3 * numNodes]);
-    gtk::AxisAlignedBB faceBox(minX - eps, minY - eps, minZ - eps, maxX + eps, maxY + eps, maxZ + eps);
+    stk::search::Box<float> faceBox(minX - eps, minY - eps, minZ - eps, maxX + eps, maxY + eps, maxZ + eps);
     StkMeshIdent id(elementId, stkMeshBulkData.parallel_rank());
     faceBoxes.push_back(std::make_pair(faceBox, id));
 }
@@ -213,7 +213,7 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const Balanc
                 double *xyz = static_cast<double *>(stk::mesh::field_data(*coord, *node));
                 double eps = balanceSettings.getParticleRadius(bucket[j]) * balanceSettings.getToleranceForParticleSearch();
 
-                gtk::AxisAlignedBB box(xyz[0] - eps, xyz[1] - eps, xyz[2] - eps, xyz[0] + eps, xyz[1] + eps, xyz[2] + eps);
+                stk::search::Box<float> box(xyz[0] - eps, xyz[1] - eps, xyz[2] - eps, xyz[0] + eps, xyz[1] + eps, xyz[2] + eps);
 
                 unsigned int val1 = stkMeshBulkData.identifier(bucket[j]);
                 int val2 = stkMeshBulkData.parallel_rank();
