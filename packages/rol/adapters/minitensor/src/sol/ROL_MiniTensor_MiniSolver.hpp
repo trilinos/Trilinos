@@ -66,7 +66,18 @@ public:
   solve(
       std::string const & algoname,
       Teuchos::ParameterList & params,
-      FN & fn, Intrepid2::Vector<T, N> & soln);
+      FN & fn,
+      Intrepid2::Vector<T, N> & soln);
+
+  template<typename FN, typename CN, Index NC>
+  void
+  solve(
+      std::string const & algoname,
+      Teuchos::ParameterList & params,
+      FN & fn,
+      CN & cn,
+      Intrepid2::Vector<T, N> & soln,
+      Intrepid2::Vector<T, NC> & cv);
 
   void
   printReport(std::ostream & os);

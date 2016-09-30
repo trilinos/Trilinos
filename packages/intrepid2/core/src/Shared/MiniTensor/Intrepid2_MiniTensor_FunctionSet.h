@@ -1017,4 +1017,55 @@ public:
   }
 };
 
+//
+// Circumference feasible region
+//
+template<typename S, Index NC = 1, Index NV = 2>
+class Circumference : public Constraint_Base<Circumference<S, NC, NV>, S, NC, NV>
+{
+public:
+
+  Circumference(S const r, S const xc = S(0.0), S const yc = S(0.0)) : r_(r)
+  {
+    c_(0) = xc;
+    c_(1) = yc;
+  }
+
+  static constexpr
+  char const * const
+  NAME{"Nonlinear map 01"};
+
+  using Base = Constraint_Base<Circumference<S, NC, NV>, S, NC, NV>;
+
+  // Explicit value.
+  template<typename T, Index N = 5>
+  Vector<T, NC>
+  value(Vector<T, N> const & x)
+  {
+    assert(x.get_dimension() == NV);
+
+    Vector<T, NC>
+    f(ZEROS);
+
+    f(0) = norm_square(x - c_) - r_ * r_;
+
+    return f;
+  }
+
+  // Default AD gradient.
+  template<typename T, Index N = 5>
+  Matrix<T, NC, NV>
+  gradient(Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
+
+private:
+  S
+  r_{0.0};
+
+  Vector<S, NV>
+  c_;
+};
+
 } // namespace Intrepid2

@@ -65,7 +65,7 @@ main(int ac, char * av[])
   return retval;
 }
 
-TEST(MiniTensor_ROL, MiniSolver_Rosenbrock)
+TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -120,6 +120,94 @@ TEST(MiniTensor_ROL, MiniSolver_Rosenbrock)
 
   Intrepid2::Vector<Real, DIM>
   soln(a, a * a);
+
+  Real const
+  error = Intrepid2::norm(soln - x);
+
+  ASSERT_LE(error, tol);
+}
+
+TEST(MiniTensor_ROL, Paraboloid_EqConstraint)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  NUM_VAR{2};
+
+  constexpr Intrepid2::Index
+  NUM_CONSTR{1};
+
+  Real const
+  a = 2.0;
+
+  Real const
+  b = 0.0;
+
+  Real const
+  r = 1.0;
+
+  // Function to optimize
+  Intrepid2::Paraboloid<Real, NUM_VAR>
+  fn;
+
+  // Constraint that defines the feasible region
+  Intrepid2::Circumference<Real, NUM_CONSTR, NUM_VAR>
+  constr(r, a, b);
+
+  // Define algorithm.
+  std::string const
+  algoname{"Composite Step"};
+
+  // Set parameters.
+  Teuchos::ParameterList
+  params;
+
+  params.sublist("Step").sublist(algoname).
+    sublist("Optimality System Solver").set("Nominal Relative Tolerance",1.e-8);
+
+  params.sublist("Step").sublist(algoname).
+    sublist("Optimality System Solver").set("Fix Tolerance",true);
+
+  params.sublist("Step").sublist(algoname).
+    sublist("Tangential Subproblem Solver").set("Iteration Limit",128);
+
+  params.sublist("Step").sublist(algoname).
+    sublist("Tangential Subproblem Solver").set("Relative Tolerance",1e-6);
+
+  params.sublist("Step").sublist(algoname).set("Output Level",0);
+  params.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+  params.sublist("Status Test").set("Constraint Tolerance",1.e-12);
+  params.sublist("Status Test").set("Step Tolerance",1.e-18);
+  params.sublist("Status Test").set("Iteration Limit",128);
+
+  // Set initial guess
+  Intrepid2::Vector<Real, NUM_VAR>
+  x(Intrepid2::RANDOM);
+
+  // Set constraint vector
+  Intrepid2::Vector<Real, NUM_CONSTR>
+  c(Intrepid2::RANDOM);
+
+  ROL::MiniTensor_Minimizer<Real, NUM_VAR>
+  minimizer;
+
+  minimizer.solve(algoname, params, fn, constr, x, c);
+
+  minimizer.printReport(os);
+
+  Real const
+  tol{0.04};
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  soln(1.0, 0.0);
 
   Real const
   error = Intrepid2::norm(soln - x);

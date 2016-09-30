@@ -215,26 +215,26 @@ TEST(MiniTensor_ROL, NLLS01)
   os = (print_output == true) ? std::cout : bhs;
 
   constexpr Intrepid2::Index
-  ROWS{3};
+  NUM_CONSTR{3};
 
   constexpr Intrepid2::Index
-  COLS{5};
+  NUM_VAR{5};
 
-  using MSEC = Intrepid2::Nonlinear01<Real, ROWS>;
+  using MSEC = Intrepid2::Nonlinear01<Real, NUM_CONSTR>;
 
   MSEC
   msec;
 
-  ROL::MiniTensor_EqualityConstraint<MSEC, Real, ROWS, COLS>
+  ROL::MiniTensor_EqualityConstraint<MSEC, Real, NUM_CONSTR, NUM_VAR>
   constr(msec);
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   xval(Intrepid2::ZEROS);
 
-  Intrepid2::Vector<Real, ROWS>
+  Intrepid2::Vector<Real, NUM_CONSTR>
   cval(Intrepid2::ZEROS);
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   solval(Intrepid2::ZEROS);
 
   // Set initial guess.
@@ -260,13 +260,13 @@ TEST(MiniTensor_ROL, NLLS01)
   Real const
   tol{1.0e-08};
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   x(xval);
 
-  ROL::MiniTensorVector<Real, ROWS>
+  ROL::MiniTensorVector<Real, NUM_CONSTR>
   c(cval);
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   sol(solval);
 
   Teuchos::RCP<ROL::EqualityConstraint<Real>>
@@ -295,8 +295,8 @@ TEST(MiniTensor_ROL, NLLS01)
 
   algo.run(x, nlls, true, os);
 
-  Intrepid2::Vector<Real, COLS>
-  xfinal = ROL::MTfromROL<Real, COLS>(x);
+  Intrepid2::Vector<Real, NUM_VAR>
+  xfinal = ROL::MTfromROL<Real, NUM_VAR>(x);
 
   os << "\nfinal x : " << xfinal << "\n";
 
@@ -317,7 +317,7 @@ TEST(MiniTensor_ROL, NLLS01)
 
   algo.run(x, gnnlls, true, os);
 
-  xfinal = ROL::MTfromROL<Real, COLS>(x);
+  xfinal = ROL::MTfromROL<Real, NUM_VAR>(x);
 
   os << "\nfinal x : " << xfinal << "\n";
 
