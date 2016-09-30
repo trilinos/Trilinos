@@ -81,6 +81,32 @@ struct is_ViewMPVectorContiguous< Kokkos::View<D,P...> , Args... > {
 
 namespace Kokkos {
 
+template <typename T, typename ... P>
+struct is_view_mp_vector< View<T,P...> > {
+  typedef View<T,P...> view_type;
+  static const bool value =
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewMPVectorContiguous >::value;
+};
+
+template <typename T, typename ... P>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_mp_vector< View<T,P...> >::value, unsigned >::type
+dimension_scalar(const View<T,P...>& view) {
+  return view.implementation_map().dimension_scalar();
+}
+
+template <typename D, typename ... P>
+struct FlatArrayType< View<D,P...>,
+                      typename std::enable_if< is_view_mp_vector< View<D,P...> >::value >::type > {
+  typedef View<D,P...> view_type;
+  typedef typename view_type::traits::dimension dimension;
+  typedef typename view_type::array_type::value_type flat_value_type;
+  typedef typename Kokkos::Experimental::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
+  typedef View<flat_data_type,P...> type;
+};
+
 // Overload of deep_copy for MP::Vector views intializing to a constant scalar
 template< class DT, class ... DP >
 void deep_copy(
@@ -148,36 +174,20 @@ void deep_copy( const View<DT,DP...> & dst ,
       unsigned(ViewTraits<ST,SP...>::rank) )
     , "Deep copy destination and source must have same rank" );
 
+  // Note ETP 09/29/2016:  Use FlatArrayType instead of array_type to work
+  // around issue where dst and src are rank-1, but have differing layouts.
+  // Kokkos' deep_copy() doesn't work in this case because the array_type
+  // will be rank-2.  It should be possible to make deep_copy() work there,
+  // but this seems easier.
+
+  // Kokkos::deep_copy(
+  //   typename View<DT,DP...>::array_type( dst ) ,
+  //   typename View<ST,SP...>::array_type( src ) );
+
   Kokkos::deep_copy(
-    typename View<DT,DP...>::array_type( dst ) ,
-    typename View<ST,SP...>::array_type( src ) );
+    typename FlatArrayType< View<DT,DP...> >::type( dst ) ,
+    typename FlatArrayType< View<ST,SP...> >::type( src ) );
 }
-
-template <typename T, typename ... P>
-struct is_view_mp_vector< View<T,P...> > {
-  typedef View<T,P...> view_type;
-  static const bool value =
-    std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewMPVectorContiguous >::value;
-};
-
-template <typename T, typename ... P>
-KOKKOS_INLINE_FUNCTION
-constexpr typename
-std::enable_if< is_view_mp_vector< View<T,P...> >::value, unsigned >::type
-dimension_scalar(const View<T,P...>& view) {
-  return view.implementation_map().dimension_scalar();
-}
-
-template <typename D, typename ... P>
-struct FlatArrayType< View<D,P...>,
-                      typename std::enable_if< is_view_mp_vector< View<D,P...> >::value >::type > {
-  typedef View<D,P...> view_type;
-  typedef typename view_type::traits::dimension dimension;
-  typedef typename view_type::array_type::value_type flat_value_type;
-  typedef typename Kokkos::Experimental::Impl::ViewDataType< flat_value_type , dimension >::type flat_data_type;
-  typedef View<flat_data_type,P...> type;
-};
 
 } // namespace Kokkos
 
