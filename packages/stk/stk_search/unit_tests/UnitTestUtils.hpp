@@ -40,8 +40,6 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
-#include <Geom_Specialized_Searches.h>
-
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/OctTreeOps.hpp>
 

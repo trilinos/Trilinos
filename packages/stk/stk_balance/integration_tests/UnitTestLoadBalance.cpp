@@ -905,7 +905,7 @@ TEST(LoadBalance, checkBBOnFace)
         ASSERT_EQ(1u, faceBuckets[0]->size());
 
         GtkBox goldFaceBoundingBox(-0.1, -0.1, -0.1, 0.1, 1.1, 1.1);
-        GtkBoxVectorWithStkId faceBoundingBoxesWithIdents;
+        BoxVectorWithStkId faceBoundingBoxesWithIdents;
         stk::mesh::Entity face = (*faceBuckets[0])[0];
         const double eps = 0.1;
         const stk::mesh::FieldBase * coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK,"coordinates");
@@ -940,7 +940,7 @@ TEST(LoadBalance, doOneElementSearch)
         fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
 
-        GtkBoxVectorWithStkId faceBoxes;
+        BoxVectorWithStkId faceBoxes;
         const double eps = 0.1;
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
         stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, eps, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
@@ -949,7 +949,8 @@ TEST(LoadBalance, doOneElementSearch)
         EXPECT_EQ(goldNumFaceBoxes, faceBoxes.size());
 
         StkSearchResults searchResults;
-        gtk_search(faceBoxes, faceBoxes, communicator, searchResults);
+//        gtk_search(faceBoxes, faceBoxes, communicator, searchResults);
+        stk::search::coarse_search(faceBoxes, faceBoxes, stk::search::BOOST_RTREE, communicator, searchResults);
 
         size_t numNonSelfFaceInteractions = 24u;
         size_t numSelfInteractions = goldNumFaceBoxes;
@@ -1053,7 +1054,7 @@ TEST(LoadBalance, doSearch)
         fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
         stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
 
-        GtkBoxVectorWithStkId faceBoxes;
+        BoxVectorWithStkId faceBoxes;
         const double eps = 0.1;
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
         stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, eps, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());

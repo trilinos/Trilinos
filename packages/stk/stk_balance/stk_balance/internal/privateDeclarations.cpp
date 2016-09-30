@@ -159,7 +159,7 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
                     const stk::mesh::FieldBase* coord,
                     const double eps,
                     stk::mesh::EntityId elementId,
-                    GtkBoxVectorWithStkId& faceBoxes)
+                    BoxVectorWithStkId& faceBoxes)
 {
     unsigned dim = stkMeshBulkData.mesh_meta_data().spatial_dimension();
     std::vector<double> coords(dim * numNodes, 0);
@@ -182,7 +182,7 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
     faceBoxes.push_back(std::make_pair(faceBox, id));
 }
 
-void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, GtkBoxVectorWithStkId &faceBoxes, const stk::mesh::FieldBase* coord)
+void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, BoxVectorWithStkId &faceBoxes, const stk::mesh::FieldBase* coord)
 {
 
     unsigned numElements = stkMeshBulkData.num_elements(face);
@@ -198,7 +198,7 @@ void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face,
     }
 }
 
-void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, GtkBoxVectorWithStkId &boxes)
+void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &boxes)
 {
     const stk::mesh::BucketVector &elementBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
 
@@ -226,7 +226,7 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const Balanc
 
 }
 
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps, const stk::mesh::FieldBase* coord, GtkBoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector)
+void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector)
 {
     stk::mesh::Part & skinPart = stkMeshBulkData.mesh_meta_data().declare_part("SkinPart", stk::topology::FACE_RANK);
     stk::mesh::PartVector addParts(1,&skinPart);
@@ -291,7 +291,7 @@ void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const B
 
     const stk::mesh::FieldBase* coord = get_coordinate_field(stkMeshBulkData.mesh_meta_data(), balanceSettings.getCoordinateFieldName());
 
-    GtkBoxVectorWithStkId faceBoxes;
+    BoxVectorWithStkId faceBoxes;
     fillFaceBoxesWithIds(stkMeshBulkData, balanceSettings.getToleranceForFaceSearch(), coord, faceBoxes, searchSelector);
 
     if ( balanceSettings.getEdgesForParticlesUsingSearch() )

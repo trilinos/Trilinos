@@ -31,7 +31,7 @@
 typedef stk::search::IdentProc<stk::mesh::EntityId, int> StkMeshIdent;
 typedef std::vector<std::pair<StkMeshIdent, StkMeshIdent> > StkSearchResults;
 typedef std::pair<stk::search::Box<float>, StkMeshIdent> BoxWithStkId;
-typedef std::vector< BoxWithStkId > GtkBoxVectorWithStkId;
+typedef std::vector< BoxWithStkId > BoxVectorWithStkId;
 
 
 namespace stk
@@ -48,9 +48,9 @@ inline unsigned get_index(const int second_dim, const int third_dim, const int f
 
 void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData,  const stk::mesh::FieldBase* coord, stk::mesh::Entity entityOfConcern, double *elementCentroid);
 
-void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, GtkBoxVectorWithStkId &faceBoxes, const stk::mesh::FieldBase* coord);
+void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face, const double eps, BoxVectorWithStkId &faceBoxes, const stk::mesh::FieldBase* coord);
 
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps, const stk::mesh::FieldBase* coord, GtkBoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector);
+void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const double eps, const stk::mesh::FieldBase* coord, BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector);
 
 void createGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData, const BalanceSettings &balanceSettings,
                                    std::vector<GraphEdge>& graphEdges, const stk::mesh::Selector& searchSelector);

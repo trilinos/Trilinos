@@ -428,82 +428,9 @@ inline void fillBoundingVolumesUsingNodesFromFile(
 template <typename Identifier>
 inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domain, std::vector< std::pair<GtkBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
-    int num_procs = -1;
-    int proc_id   = -1;
-    MPI_Comm_rank(comm, &proc_id);
-    MPI_Comm_size(comm, &num_procs);
-
-    std::vector<stk::search::Box<float> > rangeBoxes(local_range.size());
-    std::vector<stk::search::Box<float> > domainBoxes(local_domain.size());
-
-    for (size_t i=0;i<local_domain.size();i++)
-    {
-        domainBoxes[i] = local_domain[i].first;
-    }
-
-    for (size_t i=0;i<local_range.size();i++)
-    {
-        rangeBoxes[i] = local_range[i].first;
-    }
-
-    std::vector<int> ghost_indices;
-    std::vector<int> ghost_procs;
-    gtk::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
-
-    std::vector< std::vector<stk::search::Box<float> > > send_list(num_procs);
-    std::vector< std::vector<stk::search::Box<float> > > recv_list(num_procs);
-
-    // i am sending proc 'ghost proc[i]' my range box 'ghost_indices[i]'
-    // ghost_indices.size() is total number of communications that need to occur with all procs
-    typedef typename Identifier::ident_type GlobalIdType;
-    std::vector< std::vector<GlobalIdType> > send_indices(num_procs);
-    std::vector< std::vector<GlobalIdType> > recv_indices(num_procs);
-
-    for (size_t i=0;i<ghost_indices.size();i++)
-    {
-        send_list[ghost_procs[i]].push_back(rangeBoxes[ghost_indices[i]]);
-        GlobalIdType id = local_range[ghost_indices[i]].second.id();
-        send_indices[ghost_procs[i]].push_back(id);
-    }
-
-    stk::parallel_data_exchange_t(send_indices, recv_indices, comm );
-    stk::parallel_data_exchange_t(send_list, recv_list, comm);
-
-    for (size_t i=0;i<recv_list.size();i++)
-    {
-        for (size_t j=0;j<recv_list[i].size();j++)
-        {
-            rangeBoxes.push_back(recv_list[i][j]);
-            local_range.push_back(std::make_pair(recv_list[i][j], Identifier(recv_indices[i][j], i)));
-        }
-    }
-
-    std::vector<int> interaction_list;
-    std::vector<int> first_interaction;
-    std::vector<int> last_interaction;
-
-    gtk::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
-
-    typedef std::vector <std::pair<Identifier,Identifier> > localJunk;
-    typedef std::set <std::pair<Identifier,Identifier> > localJunkSet;
-    localJunk localResults;
-    localResults.reserve(domainBoxes.size());
-
-    for (size_t i=0;i<domainBoxes.size();i++)
-    {
-        Identifier box1_ident = local_domain[i].second;
-        for (int j=first_interaction[i];j<last_interaction[i];j++)
-        {
-            Identifier box2_ident = local_range[interaction_list[j]].second;
-            localResults.push_back(std::make_pair(box1_ident, box2_ident));
-        }
-    }
-
-    localJunk tmp;
-    tmp.reserve(localResults.size());
-    stk::search::communicateVector(comm, localResults, tmp);
-    searchResults=tmp;
-    std::sort(searchResults.begin(), searchResults.end());
+    //change this BOOST_RTREE to KDTREE once it's available.
+    //Also this function and the ones below can likely go away at that time.
+    stk::search::coarse_search(local_domain, local_range, stk::search::BOOST_RTREE, comm, searchResults);
 }
 
 enum NewSearchMethod { BOOST_RTREE, OCTREE, GTK };
