@@ -40,6 +40,7 @@ void run_samples(
   const Teuchos::Array< Teuchos::Array<double> >& points,
   Teuchos::Array<double>& responses,
   Teuchos::Array<int>& iterations,
+  Teuchos::Array<int>& ensemble_iterations,
   Kokkos::Example::FENL::Perf& perf_total)
 {
   typedef typename CoeffFunctionType::RandomVariableView RV;
@@ -69,6 +70,7 @@ void run_samples(
 
     responses[sample] = response;
     iterations[sample] = perf.cg_iter_count;
+    ensemble_iterations[sample] = perf.cg_iter_count;
 
     if (cmd.PRINT_ITS && 0 == comm.getRank()) {
       std::cout << sample << " : " << perf.cg_iter_count << " ( ";
@@ -99,6 +101,7 @@ void run_samples(
   const Teuchos::Array< Teuchos::Array<double> >& points,
   Teuchos::Array<double>& responses,
   Teuchos::Array<int>& iterations,
+  Teuchos::Array<int>& ensemble_iterations,
   Kokkos::Example::FENL::Perf& perf_total)
 {
   using Teuchos::Array;
@@ -139,18 +142,23 @@ void run_samples(
             bc_lower_value , bc_upper_value ,
             response);
 
-    // Save response -- note currently all samples within an ensemble
-    // get the same number of iterations
+    // Save response and iterations
+    const int ensemble_it_size = perf.ensemble_cg_iter_count.size();
     for (int qp=0; qp<VectorSize; ++qp) {
       responses[groups[group][qp]] = response.coeff(qp);
-      iterations[groups[group][qp]] = perf.cg_iter_count;
+      if (ensemble_it_size == VectorSize)
+        iterations[groups[group][qp]] = perf.ensemble_cg_iter_count[qp];
+      else
+        iterations[groups[group][qp]] = perf.cg_iter_count;
+      ensemble_iterations[groups[group][qp]] = perf.cg_iter_count;
     }
 
     if (cmd.PRINT_ITS && 0 == comm.getRank()) {
-      std::cout << group << " : " << perf.cg_iter_count << " ( ";
+      std::cout << group << " : " << perf.cg_iter_count << " [ ";
       for (int qp=0; qp<VectorSize; ++qp)
-        std::cout << groups[group][qp] << " ";
-      std::cout << ")";
+        std::cout << "(" << groups[group][qp] << ","
+                  << iterations[groups[group][qp]] << ") ";
+      std::cout << "]";
       std::cout << " ( ";
       for (int i=0; i<dim; ++i)
         std::cout << hrv(i) << " ";
@@ -242,11 +250,12 @@ void run_stokhos(
 
   // Evaluate response at each quadrature point
   Array<double> responses(num_quad_points);
-  Array<int> iterations(num_quad_points);
+  Array<int> iterations(num_quad_points), ensemble_iterations(num_quad_points);
   run_samples(comm, problem, coeff_function, grouper,
               fenlParams, cmd,
               bc_lower_value, bc_upper_value,
-              quad_points, responses, iterations, perf_total);
+              quad_points, responses, iterations, ensemble_iterations,
+              perf_total);
 
   // Integrate responses into PCE
   for (int qp=0; qp<num_quad_points; ++qp) {
@@ -260,7 +269,50 @@ void run_stokhos(
 
   perf_total.response_mean = response_pce.mean();
   perf_total.response_std_dev = response_pce.standard_deviation();
+
+  // Compute efficiency
+  double R_num = 0.0;
+  double R_denom = 0.0;
+  for (int i=0; i<num_quad_points; ++i) {
+    R_num += ensemble_iterations[i];
+    R_denom += iterations[i];
+  }
+  double R = R_num / R_denom;
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "R_total = " << R << std::endl;
+    std::cout << "Total samples = " << perf_total.uq_count << std::endl;
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+  }
 }
+
+#ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
+class TasmanianSurrogate {
+public:
+  TasmanianSurrogate(const int min_level) : m_min_level(min_level) {}
+  void setTasmanian(const Teuchos::RCP<const TasGrid::TasmanianSparseGrid>& tas,
+                    const int index) {
+    m_tas = tas;
+    m_index = index;
+    const int ny = m_tas->getNumOutputs();
+    m_y.resize(ny);
+  }
+  void setLevel(const int level) { m_level = level; }
+  int evaluate(const Teuchos::Array<double>& x) const {
+    if (m_level < m_min_level)
+      return 1;
+    m_tas->evaluate(x.getRawPtr(), m_y.getRawPtr());
+    return static_cast<int>(m_y[m_index]);
+  }
+
+private:
+  Teuchos::RCP<const TasGrid::TasmanianSparseGrid> m_tas;
+  mutable Teuchos::Array<double> m_y;
+  int m_index;
+  int m_min_level;
+  int m_level;
+};
+#endif
 
 template< class ProblemType, class CoeffFunctionType >
 void run_tasmanian(
@@ -283,7 +335,7 @@ void run_tasmanian(
 
   // Algorithmic parameters
   const int dim = cmd.USE_UQ_DIM;
-  const int qoi = 2;
+  const int qoi = 3;
   const int initial_level = cmd.USE_UQ_INIT_LEVEL;
   const int max_level = cmd.USE_UQ_MAX_LEVEL;
   const int max_order = 1;
@@ -292,13 +344,32 @@ void run_tasmanian(
   const TasGrid::TypeRefinement refinement = TasGrid::refine_classic;
   const int qoi_to_refine = 0;
 
+  // For studying efficiency of ensemble propagation
+  std::vector<double> R_level;
+  double R_total_num, R_total_denom, R_total;
+
   // Create the initial grid
   sparseGrid.makeLocalPolynomialGrid(dim, qoi, initial_level, max_order, rule);
   int num_new_points = sparseGrid.getNumNeeded();
 
+  // Check for Tasmanian-based surrogate grouping
+  typedef Kokkos::Example::FENL::SurrogateGrouping<double,TasmanianSurrogate> TasGrouper;
+  Teuchos::RCP<TasGrouper> tas_grouper =
+    Teuchos::rcp_dynamic_cast<TasGrouper>(grouper);
+  if (tas_grouper != Teuchos::null)
+    tas_grouper->getSurrogate()->setTasmanian(Teuchos::rcpFromRef(sparseGrid),
+                                              2);
+
   perf_total.uq_count = num_new_points;
   int level = initial_level;
+  R_total_num = 0.0;
+  R_total_denom = 0.0;
+  bool reached_max_samples = false;
   while (num_new_points > 0 && level <= max_level) {
+
+    // Set level in grouper
+    if (tas_grouper != Teuchos::null)
+    tas_grouper->getSurrogate()->setLevel(level);
 
     if (cmd.PRINT_ITS && 0 == comm.getRank()) {
       std::cout << "Tasmanian grid level " << level
@@ -319,17 +390,30 @@ void run_tasmanian(
 
     // Evaluate response on those points
     Array<double> responses(num_new_points);
-    Array<int> iterations(num_new_points);
+    Array<int> iterations(num_new_points), ensemble_iterations(num_new_points);
     run_samples(comm, problem, coeff_function, grouper,
                 fenlParams, cmd,
                 bc_lower_value, bc_upper_value,
-                quad_points, responses, iterations, perf_total);
+                quad_points, responses, iterations, ensemble_iterations,
+                perf_total);
+
+    // Compute efficiency
+    double R_num = 0.0;
+    double R_denom = 0.0;
+    for (int i=0; i<num_new_points; ++i) {
+      R_num += ensemble_iterations[i];
+      R_denom += iterations[i];
+    }
+    R_level.push_back( R_num / R_denom );
+    R_total_num += R_num;
+    R_total_denom += R_denom;
 
     // Load responses back into Tasmanian
     Array<double> tas_responses(qoi*num_new_points);
     for (int i=0; i<num_new_points; ++i) {
       tas_responses[i*qoi]   = responses[i];              // for mean
       tas_responses[i*qoi+1] = responses[i]*responses[i]; // for variance
+      tas_responses[i*qoi+2] = iterations[i];             // solver iterations
     }
     sparseGrid.loadNeededPoints(&tas_responses[0]);
 
@@ -338,13 +422,30 @@ void run_tasmanian(
 
     // Get the number of new points
     num_new_points = sparseGrid.getNumNeeded();
+
+    if (static_cast<int>(perf_total.uq_count) + num_new_points > cmd.USE_UQ_MAX_SAMPLES) {
+      reached_max_samples = true;
+      break;
+    }
+
     perf_total.uq_count += num_new_points;
     ++level;
   }
+  R_total = R_total_num / R_total_denom;
 
-  if (level > max_level && comm.getRank() == 0)
+  if (((level > max_level) || reached_max_samples) && comm.getRank() == 0)
     std::cout << "Warning:  Tasmanian did not achieve refinement tolerance "
               << tol << std::endl;
+
+  if (cmd.PRINT_ITS && 0 == comm.getRank()) {
+    std::cout << "R_level = ";
+    for (int l=0; l<level-1; ++l)
+      std::cout << R_level[l] << " ";
+    std::cout << std::endl << "R_total = " << R_total << std::endl;
+    std::cout << "Total samples = " << perf_total.uq_count << std::endl;
+    std::cout << "Total solve time (s) = " << perf_total.cg_total_time
+              << std::endl;
+  }
 
   // Compute mean and standard deviation of response
   double s[qoi];
@@ -393,11 +494,12 @@ void run_file(
 
   // Evaluate response at each quadrature point
   Array<double> responses(num_quad_points);
-  Array<int> iterations(num_quad_points);
+  Array<int> iterations(num_quad_points), ensemble_iterations(num_quad_points);
   run_samples(comm, problem, coeff_function, grouper,
               fenlParams, cmd,
               bc_lower_value, bc_upper_value,
-              quad_points, responses, iterations, perf_total);
+              quad_points, responses, iterations, ensemble_iterations,
+              perf_total);
 
   // Write responses to file, including solver iterations
   if (comm.getRank() == 0) {
@@ -451,6 +553,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const bool kl_exp = cmd.USE_EXPONENTIAL;
   const double kl_exp_shift = cmd.USE_EXP_SHIFT;
   const double kl_exp_scale = cmd.USE_EXP_SCALE;
+  const bool kl_disc_exp_scale = cmd.USE_DISC_EXP_SCALE;
 
   int nelem[3] = { cmd.USE_FIXTURE_X,
                    cmd.USE_FIXTURE_Y,
@@ -474,7 +577,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
     typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, kl_dim,
-                              kl_exp, kl_exp_shift, kl_exp_scale );
+                              kl_exp, kl_exp_shift, kl_exp_scale,
+                              kl_disc_exp_scale );
 
     // Problem setup
     typedef Problem< Scalar, Device , BoxElemPart::ElemLinear > ProblemType;
@@ -487,12 +591,20 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     else if (cmd.USE_GROUPING == GROUPING_MAX_ANISOTROPY) {
       typedef ExponentialKLCoefficient< double, double, Device > DKL;
       DKL diff_coeff( kl_mean, kl_variance, kl_correlation, kl_dim,
-                      kl_exp, kl_exp_shift, kl_exp_scale);
+                      kl_exp, kl_exp_shift, kl_exp_scale, kl_disc_exp_scale );
       typedef typename ProblemType::FixtureType Mesh;
       grouper =
         rcp(new Kokkos::Example::FENL::MaxAnisotropyGrouping<double,Mesh,DKL>(
               comm, problem.fixture, diff_coeff));
     }
+#ifdef HAVE_TRILINOSCOUPLINGS_TASMANIAN
+    else if (cmd.USE_GROUPING == GROUPING_TASMANIAN_SURROGATE) {
+      const int min_level = cmd.TAS_GROUPING_INITIAL_LEVEL;
+      RCP<TasmanianSurrogate> s = rcp(new TasmanianSurrogate(min_level));
+      grouper =
+        rcp(new Kokkos::Example::FENL::SurrogateGrouping<double,TasmanianSurrogate>(s, cmd.PRINT_ITS, comm->getRank()));
+    }
+#endif
 
     if (cmd.USE_UQ_SAMPLING == SAMPLING_STOKHOS)
       run_stokhos(*comm, problem, diffusion_coefficient, grouper,
@@ -512,7 +624,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     typedef double Scalar;
     typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, kl_dim,
-                              kl_exp, kl_exp_shift, kl_exp_scale );
+                              kl_exp, kl_exp_shift, kl_exp_scale,
+                              kl_disc_exp_scale);
 
     // Problem setup
     Problem< Scalar, Device , BoxElemPart::ElemLinear > problem(

@@ -83,6 +83,18 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
+template <typename S>
+struct EnsembleTraits< Sacado::MP::Vector<S> > {
+  static const int size = S::static_size;
+  typedef typename S::value_type value_type;
+  static const value_type& coeff(const Sacado::MP::Vector<S>& x, int i) {
+    return x.fastAccessCoeff(i);
+  }
+  static value_type& coeff(Sacado::MP::Vector<S>& x, int i) {
+    return x.fastAccessCoeff(i);
+  }
+};
+
 #if defined( KOKKOS_HAVE_CUDA )
 
 #if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
