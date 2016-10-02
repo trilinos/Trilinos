@@ -7,32 +7,46 @@
 #endif
 
 
-#include "temp_move_to_stk_search/MortonLBVH_Search.hpp"
 #include <stk_search/OctTreeOps.hpp>
 #include "stk_util/environment/WallTime.hpp"
 #include "stk_search/KDTree_BoundingBox.hpp"
 #include <stk_search/CommonSearchUtil.hpp>
+#include <stk_search/Sphere.hpp>
 
 
 namespace stk {
   namespace search {
-    //
-    //  Wrapping of the KDTree search for use in the general STK coarse_search algorithm.  Find the overlaps between
-    //  boxes in domain and boxes in range
-    //
-    template <typename DomainIdentifier, typename RangeIdentifier, typename DomainBoxType, typename RangeBoxType>
+
+
+   template <typename DomainIdentifier, typename RangeIdentifier, typename DomainBoxType, typename RangeBoxType>
       inline void kdtree_search(std::vector< std::pair<DomainBoxType, DomainIdentifier> > const & local_domain,
                                 std::vector< std::pair<RangeBoxType,  RangeIdentifier > > const & local_range,
                                 MPI_Comm comm,
                                 std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
                                 bool communicateRangeBoxInfo=true)
     {
+      std::cerr << "kdtree_search(..) does not support non-box search types yet" << std::endl;
+      std::abort();
+    }
+
+
+    //
+    //  Wrapping of the KDTree search for use in the general STK coarse_search algorithm.  Find the overlaps between
+    //  boxes in domain and boxes in range
+    //
+    template <typename DomainIdentifier, typename RangeIdentifier, typename DomainBoxType, typename RangeBoxType>
+    inline void kdtree_search(std::vector< std::pair<stk::search::Box<DomainBoxType>, DomainIdentifier> > const & local_domain,
+                              std::vector< std::pair<stk::search::Box<RangeBoxType>,  RangeIdentifier > > const & local_range,
+                               MPI_Comm comm,
+                               std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
+                               bool communicateRangeBoxInfo=true)
+    {
       int num_procs = -1;
       int proc_id   = -1;
       MPI_Comm_rank(comm, &proc_id);
       MPI_Comm_size(comm, &num_procs);
 
-      std::vector<RangeBoxType> rangeBoxes( local_range.size() );
+      std::vector<stk::search::Box<RangeBoxType> > rangeBoxes( local_range.size() );
 
       std::vector<RangeIdentifier> rangeGhostIdentifiers;
 
@@ -46,7 +60,7 @@ namespace stk {
 
       if ((local_domain.size() > 0) && (rangeBoxes.size() > 0)) {
 
-        const stk::search::ProximitySearchTree_T<RangeBoxType> proxSearch(rangeBoxes);
+        const stk::search::ProximitySearchTree_T<stk::search::Box<RangeBoxType> > proxSearch(rangeBoxes);
         const unsigned numBoxDomain = local_domain.size();
 
 #ifdef _OPENMP
