@@ -58,6 +58,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef SEACAS_HAVE_KOKKOS
+#include <Kokkos_Core.hpp> // for Kokkos::View
+#endif
+
 #ifndef NO_XDMF_SUPPORT
 #include <xdmf/Ioxf_Initializer.h>
 #endif
@@ -100,13 +104,33 @@ namespace {
   };
 
   // Data space shared by most field input/output routines...
-  std::vector<char> data;
-  size_t            max_field_size = 0;
-  int               rank           = 0;
-  int64_t           data_read      = 0;
-  int64_t           data_write     = 0;
-  double            time_read      = 0.0;
-  double            time_write     = 0.0;
+  std::vector<char>    data;
+  std::vector<int>     data_int;
+  std::vector<int64_t> data_int64;
+  std::vector<double>  data_double;
+  std::vector<Complex> data_complex;
+#ifdef SEACAS_HAVE_KOKKOS
+  Kokkos::View<char *>    data_view_char;
+  Kokkos::View<int *>     data_view_int;
+  Kokkos::View<int64_t *> data_view_int64;
+  Kokkos::View<double *>  data_view_double;
+  // Kokkos::View<Kokkos_Complex *> data_view_complex cannot be a global variable,
+  // Since Kokkos::initialize() has not yet been called. Also, a Kokkos:View cannot
+  // have type std::complex entities.
+  Kokkos::View<char **>    data_view_2D_char;
+  Kokkos::View<int **>     data_view_2D_int;
+  Kokkos::View<int64_t **> data_view_2D_int64;
+  Kokkos::View<double **>  data_view_2D_double;
+// Kokkos::View<Kokkos_Complex **> data_view_2D_complex cannot be a global variable,
+// Since Kokkos::initialize() has not yet been called. Also, a Kokkos:View cannot
+// have type std::complex entities.
+#endif
+  size_t  max_field_size = 0;
+  int     rank           = 0;
+  int64_t data_read      = 0;
+  int64_t data_write     = 0;
+  double  time_read      = 0.0;
+  double  time_write     = 0.0;
 
   void show_step(int istep, double time);
 
@@ -134,7 +158,8 @@ namespace {
                            Ioss::Field::RoleType role, const IOShell::Interface &interface);
 
   void transfer_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                           Ioss::Field::RoleType role, const std::string &prefix = "");
+                           Ioss::Field::RoleType role, const IOShell::Interface &interface,
+                           const std::string &prefix = "");
 
   void transfer_properties(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge);
 
@@ -144,9 +169,10 @@ namespace {
                         Ioss::Field::RoleType role);
 
   void transform_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                            Ioss::Field::RoleType role);
+                            Ioss::Field::RoleType role, const IOShell::Interface &interface);
   void transfer_field_data_internal(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                                    const std::string &field_name);
+                                    const std::string &       field_name,
+                                    const IOShell::Interface &interface);
 
   void file_copy(IOShell::Interface &interface);
 
@@ -167,6 +193,19 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
+#ifdef SEACAS_HAVE_KOKKOS
+  Kokkos::initialize(argc, argv);
+
+  data_view_char      = Kokkos::View<char *>("view_char", 0);
+  data_view_int       = Kokkos::View<int *>("view_int", 0);
+  data_view_int64     = Kokkos::View<int64_t *>("view_int64", 0);
+  data_view_double    = Kokkos::View<double *>("view_double", 0);
+  data_view_2D_char   = Kokkos::View<char **>("view_2D_char", 0, 0);
+  data_view_2D_int    = Kokkos::View<int **>("view_2D_int", 0, 0);
+  data_view_2D_int64  = Kokkos::View<int64_t **>("view_2D_int64", 0, 0);
+  data_view_2D_double = Kokkos::View<double **>("view_2D_double", 0, 0);
+#endif
+
   IOShell::Interface interface;
   bool               success = interface.parse_options(argc, argv);
   if (!success) {
@@ -184,6 +223,12 @@ int main(int argc, char *argv[])
   OUTPUT << "Input:    '" << in_file << "', Type: " << interface.inFiletype << '\n';
   OUTPUT << "Output:   '" << out_file << "', Type: " << interface.outFiletype << '\n';
   OUTPUT << '\n';
+
+#ifdef SEACAS_HAVE_KOKKOS
+  OUTPUT << "Kokkos default execution space configuration:" << std::endl;
+  Kokkos::DefaultExecutionSpace::print_configuration(std::cout, false);
+  OUTPUT << std::endl;
+#endif
 
   double begin = timer();
   file_copy(interface);
@@ -210,6 +255,11 @@ int main(int argc, char *argv[])
   }
 
   OUTPUT << "\n" << codename << " execution successful.\n";
+
+#ifdef SEACAS_HAVE_KOKKOS
+  Kokkos::finalize();
+#endif
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
@@ -466,8 +516,8 @@ namespace {
               Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 
               if (ofb != nullptr) {
-                transfer_field_data(ifb, ofb, Ioss::Field::MESH);
-                transfer_field_data(ifb, ofb, Ioss::Field::ATTRIBUTE);
+                transfer_field_data(ifb, ofb, Ioss::Field::MESH, interface);
+                transfer_field_data(ifb, ofb, Ioss::Field::ATTRIBUTE, interface);
               }
             }
           }
@@ -574,7 +624,7 @@ namespace {
         output_region.begin_state(ostep);
         region.begin_state(istep);
 
-        transfer_field_data(&region, &output_region, Ioss::Field::TRANSIENT);
+        transfer_field_data(&region, &output_region, Ioss::Field::TRANSIENT, interface);
 
         transfer_field_data(region.get_node_blocks(), output_region, Ioss::Field::TRANSIENT,
                             interface);
@@ -606,7 +656,7 @@ namespace {
             // Find matching output sideset
             Ioss::SideSet *ofs = output_region.get_sideset(name);
             if (ofs != nullptr) {
-              transfer_field_data(ifs, ofs, Ioss::Field::TRANSIENT);
+              transfer_field_data(ifs, ofs, Ioss::Field::TRANSIENT, interface);
 
               Ioss::SideBlockContainer fbs = ifs->get_side_blocks();
               for (auto ifb : fbs) {
@@ -619,7 +669,7 @@ namespace {
 
                 Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
                 if (ofb != nullptr) {
-                  transfer_field_data(ifb, ofb, Ioss::Field::TRANSIENT);
+                  transfer_field_data(ifb, ofb, Ioss::Field::TRANSIENT, interface);
                 }
               }
             }
@@ -969,7 +1019,7 @@ namespace {
   }
 
   void transform_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                            Ioss::Field::RoleType role)
+                            Ioss::Field::RoleType role, const IOShell::Interface &interface)
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
@@ -982,6 +1032,8 @@ namespace {
 
       assert(oge->field_exists(out_field_name));
 
+      int basic_type = ige->get_field(field_name).get_type();
+
       size_t isize = ige->get_field(field_name).get_size();
       size_t osize = oge->get_field(out_field_name).get_size();
       assert(isize == osize);
@@ -990,16 +1042,158 @@ namespace {
       data_read += isize;
       data_write += isize;
       double t1 = timer();
-      ige->get_field_data(field_name, &data[0], isize);
+
+      switch (interface.data_storage_type) {
+      case 1: ige->get_field_data(field_name, &data[0], isize); break;
+      case 2:
+        if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+          ige->get_field_data(field_name, data);
+        }
+        else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+          ige->get_field_data(field_name, data_int);
+        }
+        else if (basic_type == Ioss::Field::INT64) {
+          ige->get_field_data(field_name, data_int64);
+        }
+        else if (basic_type == Ioss::Field::REAL) {
+          ige->get_field_data(field_name, data_double);
+        }
+        else if (basic_type == Ioss::Field::COMPLEX) {
+          ige->get_field_data(field_name, data_complex);
+        }
+        else {
+        }
+        break;
+#ifdef SEACAS_HAVE_KOKKOS
+      case 3:
+        if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+          ige->get_field_data<char>(field_name, data_view_char);
+        }
+        else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+          ige->get_field_data<int>(field_name, data_view_int);
+        }
+        else if (basic_type == Ioss::Field::INT64) {
+          ige->get_field_data<int64_t>(field_name, data_view_int64);
+        }
+        else if (basic_type == Ioss::Field::REAL) {
+          ige->get_field_data<double>(field_name, data_view_double);
+        }
+        else if (basic_type == Ioss::Field::COMPLEX) {
+          // Since data_view_complex cannot be a global variable.
+          ige->get_field_data(field_name, &data[0], isize);
+        }
+        else {
+        }
+        break;
+      case 4:
+        if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+          ige->get_field_data<char>(field_name, data_view_2D_char);
+        }
+        else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+          ige->get_field_data<int>(field_name, data_view_2D_int);
+        }
+        else if (basic_type == Ioss::Field::INT64) {
+          ige->get_field_data<int64_t>(field_name, data_view_2D_int64);
+        }
+        else if (basic_type == Ioss::Field::REAL) {
+          ige->get_field_data<double>(field_name, data_view_2D_double);
+        }
+        else if (basic_type == Ioss::Field::COMPLEX) {
+          // Since data_view_complex cannot be a global variable.
+          ige->get_field_data(field_name, &data[0], isize);
+        }
+        else {
+        }
+        break;
+#endif
+      default:
+        if (field_name == "mesh_model_coordinates") {
+          std::cerr << "data_storage option not recognized.";
+        }
+        return;
+      }
+
       double t2 = timer();
-      oge->put_field_data(out_field_name, &data[0], osize);
+
+      switch (interface.data_storage_type) {
+      case 1: oge->put_field_data(out_field_name, &data[0], osize); break;
+      case 2:
+        if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+          oge->put_field_data(field_name, data);
+        }
+        else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+          oge->put_field_data(field_name, data_int);
+        }
+        else if (basic_type == Ioss::Field::INT64) {
+          oge->put_field_data(field_name, data_int64);
+        }
+        else if (basic_type == Ioss::Field::REAL) {
+          oge->put_field_data(field_name, data_double);
+        }
+        else if (basic_type == Ioss::Field::COMPLEX) {
+          oge->put_field_data(field_name, data_complex);
+        }
+        else {
+        }
+        break;
+#ifdef SEACAS_HAVE_KOKKOS
+      case 3:
+        if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+          oge->put_field_data<char>(field_name, data_view_char);
+        }
+        else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+          oge->put_field_data<int>(field_name, data_view_int);
+        }
+        else if (basic_type == Ioss::Field::INT64) {
+          oge->put_field_data<int64_t>(field_name, data_view_int64);
+        }
+        else if (basic_type == Ioss::Field::REAL) {
+          oge->put_field_data<double>(field_name, data_view_double);
+        }
+        else if (basic_type == Ioss::Field::COMPLEX) {
+          // Since data_view_complex cannot be a global variable.
+          oge->put_field_data(out_field_name, &data[0], osize);
+        }
+        else {
+        }
+        break;
+      case 4:
+        if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+          oge->put_field_data<char>(field_name, data_view_2D_char);
+        }
+        else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+          oge->put_field_data<int>(field_name, data_view_2D_int);
+        }
+        else if (basic_type == Ioss::Field::INT64) {
+          oge->put_field_data<int64_t>(field_name, data_view_2D_int64);
+        }
+        else if (basic_type == Ioss::Field::REAL) {
+          oge->put_field_data<double>(field_name, data_view_2D_double);
+        }
+        else if (basic_type == Ioss::Field::COMPLEX) {
+          // Since data_view_complex cannot be a global variable.
+          oge->put_field_data(out_field_name, &data[0], osize);
+        }
+        else {
+        }
+        break;
+        return;
+#endif
+      default:
+        if (field_name == "mesh_model_coordinates") {
+          std::cerr << "data_storage option not recognized.";
+        }
+        return;
+      }
+
       time_write += timer() - t2;
       time_read += t2 - t1;
     }
   }
 
   void transfer_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                           Ioss::Field::RoleType role, const std::string &prefix)
+                           Ioss::Field::RoleType role, const IOShell::Interface &interface,
+                           const std::string &prefix)
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
@@ -1012,7 +1206,7 @@ namespace {
       for (const auto &field_name : state_fields) {
         assert(oge->field_exists(field_name));
         if (field_name == "ids") {
-          transfer_field_data_internal(ige, oge, field_name);
+          transfer_field_data_internal(ige, oge, field_name, interface);
           break;
         }
       }
@@ -1031,19 +1225,21 @@ namespace {
           (prefix.length() == 0 ||
            std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
         assert(oge->field_exists(field_name));
-        transfer_field_data_internal(ige, oge, field_name);
+        transfer_field_data_internal(ige, oge, field_name, interface);
       }
     }
   }
 
   void transfer_field_data_internal(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                                    const std::string &field_name)
+                                    const std::string &       field_name,
+                                    const IOShell::Interface &interface)
   {
 
     size_t isize = ige->get_field(field_name).get_size();
     if (isize != oge->get_field(field_name).get_size()) {
       assert(isize == oge->get_field(field_name).get_size());
     }
+    int basic_type = ige->get_field(field_name).get_type();
 
     if (field_name == "mesh_model_coordinates_x") {
       return;
@@ -1079,17 +1275,158 @@ namespace {
       return;
     }
 
-    if (data.size() < isize) {
-      data.resize(isize);
+    if (interface.data_storage_type >= 1 || interface.data_storage_type <= 2) {
+      if (data.size() < isize) {
+        data.resize(isize);
+      }
+    }
+    else {
     }
 
     assert(data.size() >= isize);
     data_read += isize;
     data_write += isize;
     double t1 = timer();
-    ige->get_field_data(field_name, &data[0], isize);
+
+    switch (interface.data_storage_type) {
+    case 1: ige->get_field_data(field_name, &data[0], isize); break;
+    case 2:
+      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+        ige->get_field_data(field_name, data);
+      }
+      else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+        ige->get_field_data(field_name, data_int);
+      }
+      else if (basic_type == Ioss::Field::INT64) {
+        ige->get_field_data(field_name, data_int64);
+      }
+      else if (basic_type == Ioss::Field::REAL) {
+        ige->get_field_data(field_name, data_double);
+      }
+      else if (basic_type == Ioss::Field::COMPLEX) {
+        ige->get_field_data(field_name, data_complex);
+      }
+      else {
+      }
+      break;
+#ifdef SEACAS_HAVE_KOKKOS
+    case 3:
+      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+        ige->get_field_data<char>(field_name, data_view_char);
+      }
+      else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+        ige->get_field_data<int>(field_name, data_view_int);
+      }
+      else if (basic_type == Ioss::Field::INT64) {
+        ige->get_field_data<int64_t>(field_name, data_view_int64);
+      }
+      else if (basic_type == Ioss::Field::REAL) {
+        ige->get_field_data<double>(field_name, data_view_double);
+      }
+      else if (basic_type == Ioss::Field::COMPLEX) {
+        // Since data_view_complex cannot be a global variable.
+        ige->get_field_data(field_name, &data[0], isize);
+      }
+      else {
+      }
+      break;
+    case 4:
+      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+        ige->get_field_data<char>(field_name, data_view_2D_char);
+      }
+      else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+        ige->get_field_data<int>(field_name, data_view_2D_int);
+      }
+      else if (basic_type == Ioss::Field::INT64) {
+        ige->get_field_data<int64_t>(field_name, data_view_2D_int64);
+      }
+      else if (basic_type == Ioss::Field::REAL) {
+        ige->get_field_data<double>(field_name, data_view_2D_double);
+      }
+      else if (basic_type == Ioss::Field::COMPLEX) {
+        // Since data_view_complex cannot be a global variable.
+        ige->get_field_data(field_name, &data[0], isize);
+      }
+      else {
+      }
+      break;
+      return;
+#endif
+    default:
+      if (field_name == "mesh_model_coordinates") {
+        std::cerr << "data_storage option not recognized.";
+      }
+      return;
+    }
+
     double t2 = timer();
-    oge->put_field_data(field_name, &data[0], isize);
+
+    switch (interface.data_storage_type) {
+    case 1: oge->put_field_data(field_name, &data[0], isize); break;
+    case 2:
+      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+        oge->put_field_data(field_name, data);
+      }
+      else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+        oge->put_field_data(field_name, data_int);
+      }
+      else if (basic_type == Ioss::Field::INT64) {
+        oge->put_field_data(field_name, data_int64);
+      }
+      else if (basic_type == Ioss::Field::REAL) {
+        oge->put_field_data(field_name, data_double);
+      }
+      else if (basic_type == Ioss::Field::COMPLEX) {
+        oge->put_field_data(field_name, data_complex);
+      }
+      else {
+      }
+      break;
+#ifdef SEACAS_HAVE_KOKKOS
+    case 3:
+      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+        oge->put_field_data<char>(field_name, data_view_char);
+      }
+      else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+        oge->put_field_data<int>(field_name, data_view_int);
+      }
+      else if (basic_type == Ioss::Field::INT64) {
+        oge->put_field_data<int64_t>(field_name, data_view_int64);
+      }
+      else if (basic_type == Ioss::Field::REAL) {
+        oge->put_field_data<double>(field_name, data_view_double);
+      }
+      else if (basic_type == Ioss::Field::COMPLEX) {
+        // Since data_view_complex cannot be a global variable.
+        oge->put_field_data(field_name, &data[0], isize);
+      }
+      else {
+      }
+      break;
+    case 4:
+      if ((basic_type == Ioss::Field::CHARACTER) || (basic_type == Ioss::Field::STRING)) {
+        oge->put_field_data<char>(field_name, data_view_2D_char);
+      }
+      else if ((basic_type == Ioss::Field::INTEGER) || (basic_type == Ioss::Field::INT32)) {
+        oge->put_field_data<int>(field_name, data_view_2D_int);
+      }
+      else if (basic_type == Ioss::Field::INT64) {
+        oge->put_field_data<int64_t>(field_name, data_view_2D_int64);
+      }
+      else if (basic_type == Ioss::Field::REAL) {
+        oge->put_field_data<double>(field_name, data_view_2D_double);
+      }
+      else if (basic_type == Ioss::Field::COMPLEX) {
+        // Since data_view_complex cannot be a global variable.
+        oge->put_field_data(field_name, &data[0], isize);
+      }
+      else {
+      }
+      break;
+#endif
+    default: return;
+    }
+
     time_write += timer() - t2;
     time_read += t2 - t1;
   }
