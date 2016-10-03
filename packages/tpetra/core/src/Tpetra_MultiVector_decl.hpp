@@ -2286,10 +2286,6 @@ namespace Tpetra {
                          const size_t constantNumPackets,
                          Distributor& /* distor */,
                          const CombineMode CM);
-
-    void createViews () const;
-    void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
-    void releaseViews () const;
     //@}
   }; // class MultiVector
 

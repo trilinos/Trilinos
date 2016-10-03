@@ -4617,53 +4617,6 @@ namespace Tpetra {
     this->describeImpl (out, "Tpetra::MultiVector", verbLevel);
   }
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViews () const
-  {
-    // Do nothing in Kokkos::View implementation
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViewsNonConst (KokkosClassic::ReadWriteOption rwo)
-  {
-    // Do nothing in Kokkos::View implementation
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  releaseViews () const
-  {
-    // Do nothing in Kokkos::View implementation
-  }
-
-#else // NOT TPETRA_USE_KOKKOS_DISTOBJECT
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViews () const
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViewsNonConst (KokkosClassic::ReadWriteOption /* rwo */ )
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  releaseViews () const
-  {}
-
-#endif // TPETRA_USE_KOKKOS_DISTOBJECT
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
