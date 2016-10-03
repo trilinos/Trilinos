@@ -103,6 +103,8 @@ namespace Iohb {
 
     void read_meta_data() {}
 
+    void flush_database() const override;
+    
     bool begin(Ioss::State state);
     bool end(Ioss::State state);
 

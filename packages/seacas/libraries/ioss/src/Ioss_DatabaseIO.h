@@ -155,6 +155,7 @@ namespace Ioss {
 
     virtual void openDatabase() const {}
     virtual void closeDatabase() const {}
+    virtual void flush_database() const {}
 
     /** \brief If a database type supports groups and if the database
      *         contains groups, open the specified group.
