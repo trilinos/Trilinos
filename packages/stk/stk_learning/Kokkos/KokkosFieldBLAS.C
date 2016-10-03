@@ -493,7 +493,7 @@ void populate_mesh(stk::mesh::BulkData& bulk, int nx, int ny, int nz)
     stk::mesh::put_field(*x, meta.locally_owned_part(), &val);
     stk::mesh::put_field(*y, meta.locally_owned_part(), &val);
 
-    stk::unit_test_util::fill_mesh_using_stk_io(os.str(), bulk);
+    stk::io::fill_mesh(os.str(), bulk);
 }
 
 TEST_F(MTK_Kokkos, stkFieldBLAS) {

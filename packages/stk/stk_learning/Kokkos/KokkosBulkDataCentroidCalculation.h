@@ -200,7 +200,7 @@ struct MyApp {
     
         bulk = new stk::mesh::BulkData(meta, MPI_COMM_WORLD);
     
-        stk::unit_test_util::fill_mesh_using_stk_io(os.str(), *bulk);
+        stk::io::fill_mesh(os.str(), *bulk);
     
         coords = meta.get_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates");
 

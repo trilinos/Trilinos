@@ -503,7 +503,7 @@ protected:
         get_ids_along_boundary(bulkData, meshSpec, meshInfo);
 
         delete_elements(meshInfo);
-        //stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
+        //stk::io::write_mesh("afterDelete.g", bulkData, bulkData.parallel());
         unsigned newGraphEdgeCount = elemGraph->num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
@@ -559,12 +559,12 @@ protected:
         get_perforated_mesh_ids(bulkData, *elemGraph, meshInfo);
 
         delete_elements(meshInfo);
-        //stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
+        //stk::io::write_mesh("afterDelete.g", bulkData, bulkData.parallel());
         unsigned newGraphEdgeCount = elemGraph->num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
         add_elements(meshInfo);
-        //stk::unit_test_util::write_mesh_using_stk_io("afterAdd.g", bulkData, bulkData.parallel());
+        //stk::io::write_mesh("afterAdd.g", bulkData, bulkData.parallel());
         unsigned finalGraphEdgeCount = elemGraph->num_edges();
         ASSERT_EQ(oldGraphEdgeCount, finalGraphEdgeCount);
 

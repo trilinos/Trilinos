@@ -62,7 +62,7 @@ void test_field() {
   unsigned dimZ = 10;
   std::ostringstream mesh_spec;
   mesh_spec << "generated:"<<dimX<<"x"<<dimY<<"x"<<dimZ;
-  stk::unit_test_util::fill_mesh_using_stk_io(mesh_spec.str(), bulk);
+  stk::io::fill_mesh(mesh_spec.str(), bulk);
 
   ngp::StaticMesh staticMesh(bulk);
   double initialValue = 9.9;

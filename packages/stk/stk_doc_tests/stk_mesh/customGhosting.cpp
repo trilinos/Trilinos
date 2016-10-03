@@ -99,7 +99,7 @@ TEST(StkMeshHowTo, customGhostElem)
     {
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, communicator);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         stk::mesh::EntityId id = 1;
         stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, id);
@@ -125,7 +125,7 @@ TEST(StkMeshHowTo, addElementToGhostingUsingSpecializedModificationForPerformanc
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulk(meta, communicator);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulk);
+        stk::io::fill_mesh("generated:1x1x4", bulk);
 
         stk::mesh::EntityId elementId = 1;
         stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, elementId);

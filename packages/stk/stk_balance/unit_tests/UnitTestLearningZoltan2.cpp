@@ -344,7 +344,7 @@ class UsingZoltan2 : public stk::unit_test_util::MeshFixture
 protected:
     void run_decomp_with_method(const std::string& method, int nparts, stk::mesh::EntityRank primary_rank, stk::mesh::EntityRank secondary_rank)
     {
-        stk::unit_test_util::write_mesh_using_stk_io("junk.exo", get_bulk());
+        stk::io::write_mesh("junk.exo", get_bulk());
         LearningZoltan2Adapter adapter(get_bulk(), primary_rank, secondary_rank);
         std::vector<int> elem2proc(adapter.getLocalNumOf(map_rank_to_mesh_entity_type(primary_rank)), get_bulk().parallel_rank());
         use_zoltan2_with_adapter(adapter, method, nparts, elem2proc);

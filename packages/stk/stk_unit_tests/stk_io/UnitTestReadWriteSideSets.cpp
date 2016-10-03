@@ -244,7 +244,7 @@ TEST(StkIo, test_side_membership)
         stk::mesh::Part& partProc0 = meta.declare_part("partProc0", meta.side_rank());
         stk::mesh::Part& partProc1 = meta.declare_part("partProc1", meta.side_rank());
         stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulk);
+        stk::io::fill_mesh("generated:1x1x2", bulk);
 
         stk::mesh::EntityId elementId = 1+bulk.parallel_rank();
         stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEM_RANK, elementId);

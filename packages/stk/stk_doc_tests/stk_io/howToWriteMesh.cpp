@@ -14,7 +14,7 @@ TEST(StkIoHowTo, WriteMesh)
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulk);
+        stk::io::fill_mesh("generated:1x1x4", bulk);
 
         stk::io::StkMeshIoBroker stkIo;
         stkIo.set_bulk_data(bulk);
@@ -26,7 +26,7 @@ TEST(StkIoHowTo, WriteMesh)
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::unit_test_util::fill_mesh_using_stk_io(filename, bulk);
+        stk::io::fill_mesh(filename, bulk);
 
         std::vector<size_t> entityCounts;
         stk::mesh::comm_mesh_counts(bulk, entityCounts);

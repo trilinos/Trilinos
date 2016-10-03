@@ -267,7 +267,7 @@ protected:
     void write_submesh_to_file(stk::mesh::BulkData& newBulkData, size_t subdomain_num)
     {
         std::string localFilename = getFilename(get_output_filename(), get_num_procs_target_decomp(), subdomain_num);
-        stk::unit_test_util::write_mesh_using_stk_io(localFilename, newBulkData);
+        stk::io::write_mesh(localFilename, newBulkData);
     }
 
     void test_num_elements_per_file()
@@ -283,7 +283,7 @@ protected:
     {
         stk::mesh::MetaData feta;
         stk::mesh::BulkData bulkData(feta, MPI_COMM_SELF);
-        stk::unit_test_util::fill_mesh_using_stk_io(subdomain_filename, bulkData);
+        stk::io::fill_mesh(subdomain_filename, bulkData);
         EXPECT_EQ(get_num_elements_per_proc_for_target_decomp(), stk::mesh::count_selected_entities(feta.universal_part(), bulkData.buckets(stk::topology::ELEM_RANK)));
     }
 

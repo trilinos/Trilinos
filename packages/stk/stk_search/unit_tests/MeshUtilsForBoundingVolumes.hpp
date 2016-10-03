@@ -134,7 +134,7 @@ inline void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& fil
 {
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, comm);
-    stk::unit_test_util::fill_mesh_using_stk_io(filename, bulk);
+    stk::io::fill_mesh(filename, bulk);
 
     createBoundingBoxesForSidesInSidesets(bulk, domainBoxes);
 }
@@ -355,7 +355,7 @@ inline void fillBoxesUsingElementBlocksFromFile(
 {
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, comm);
-    stk::unit_test_util::fill_mesh_using_stk_io(volumeFilename, bulk);
+    stk::io::fill_mesh(volumeFilename, bulk);
 
     createBoundingBoxesForElementsInElementBlocks(bulk, domainBoxes);
 }
@@ -367,7 +367,7 @@ inline void fillBoundingVolumesUsingNodesFromFile(
     stk::mesh::MetaData meta(spatialDim);
     stk::mesh::BulkData bulk(meta, comm);
 
-    stk::unit_test_util::fill_mesh_using_stk_io(sphereFilename, bulk);
+    stk::io::fill_mesh(sphereFilename, bulk);
 
     stk::mesh::EntityVector nodes;
     stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), nodes);
@@ -399,7 +399,7 @@ inline void fillBoundingVolumesUsingNodesFromFile(
     stk::mesh::MetaData meta(spatialDim);
     stk::mesh::BulkData bulk(meta, comm);
 
-    stk::unit_test_util::fill_mesh_using_stk_io(sphereFilename, bulk);
+    stk::io::fill_mesh(sphereFilename, bulk);
 
     stk::mesh::EntityVector nodes;
     stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), nodes);

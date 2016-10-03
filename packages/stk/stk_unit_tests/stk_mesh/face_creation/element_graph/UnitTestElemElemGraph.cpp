@@ -100,7 +100,7 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
 
     stk::mesh::Part * hexPart = &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8);
 
-    stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData);
+    stk::io::fill_mesh("generated:1x1x2", bulkData);
 
     std::vector<unsigned> counts;
     stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
@@ -331,7 +331,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         EXPECT_EQ(0u, elem_graph.num_edges());
         EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         std::vector<unsigned> counts;
         stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
@@ -825,7 +825,7 @@ TEST(ElementGraph, create_element_graph_serial)
         stk::mesh::BulkData bulkData(meta, comm);
         std::ostringstream os;
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after mesh-read");
@@ -916,7 +916,7 @@ TEST(ElementGraph, create_element_graph_parallel)
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulkData(meta, comm);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         std::vector<unsigned> counts;
         stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
@@ -995,7 +995,7 @@ TEST(ElementSide, get_or_create_element_side_with_permutation)
         stk::io::put_io_part_attribute(new_faces_part);
         BulkDataElementGraphTester bulkData(meta, comm);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x3", bulkData);
+        stk::io::fill_mesh("generated:1x1x3", bulkData);
 
         //////////////// Make first side
 
@@ -1068,7 +1068,7 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulkData(meta, comm);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         std::vector<unsigned> counts;
         stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
@@ -1131,7 +1131,7 @@ TEST(ElementGraph, create_faces_using_element_graph_parallel)
         stk::io::put_io_part_attribute(new_faces_part);
         BulkDataElementGraphTester bulkData(meta, comm);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after mesh-read");
@@ -1158,7 +1158,7 @@ TEST(ElementGraph, create_faces_using_element_graph_parallel)
         unsigned num_faces = entity_counts[side_rank];
         EXPECT_EQ(21u, num_faces);
 
-        stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData);
+        stk::io::write_mesh("out.exo", bulkData);
 
         if (stk::parallel_machine_rank(comm) == 0)
         {
@@ -1201,7 +1201,7 @@ TEST(ElementGraph, create_faces_using_element_graph_parallel_block_membership)
         stk::io::put_io_part_attribute(new_faces_part);
         BulkDataElementGraphTester bulkData(meta, comm);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after mesh-read");
@@ -1281,7 +1281,7 @@ TEST(ElementGraph, compare_performance_create_faces)
         stk::io::put_io_part_attribute(faces_part);
         BulkDataElementGraphTester bulkData(meta, comm);
 
-        stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData);
+        stk::io::fill_mesh(filename, bulkData);
 
         {
             double wall_time_start = stk::wall_time();
@@ -1307,7 +1307,7 @@ TEST(ElementGraph, compare_performance_create_faces)
         const bool connectFacesToEdges = false;
         BulkDataElementGraphTester bulkData(meta, comm);
 
-        stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData);
+        stk::io::fill_mesh(filename, bulkData);
 
         {
             double wall_time_start = stk::wall_time();
@@ -1316,7 +1316,7 @@ TEST(ElementGraph, compare_performance_create_faces)
 
             double elapsed_time = stk::wall_time() - wall_time_start;
 
- //           stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
+ //           stk::io::write_mesh("out.exo", bulkData, bulkData.parallel());
 
             std::vector<size_t> counts;
             stk::mesh::comm_mesh_counts(bulkData, counts);
@@ -1350,7 +1350,7 @@ TEST(ElementGraph, make_items_inactive)
 
         ASSERT_TRUE(active.primary_entity_rank() == stk::topology::INVALID_RANK);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
@@ -1427,8 +1427,8 @@ TEST(ElementGraph, test_element_death)
             BulkDataElementGraphTester bulkData(meta, comm);
 
             stk::mesh::Part& active = meta.declare_part("active", stk::topology::ELEMENT_RANK);
-            stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData);
-            stk::unit_test_util::write_mesh_using_stk_io("orig.exo", bulkData);
+            stk::io::fill_mesh(filename, bulkData);
+            stk::io::write_mesh("orig.exo", bulkData);
 
             double start_graph = stk::wall_time();
 
@@ -1488,7 +1488,7 @@ TEST(ElementGraph, test_element_death)
             }
 
             std::cerr << os.str();
-            stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData);
+            stk::io::write_mesh("out.exo", bulkData);
         }
     }
 }
@@ -1512,7 +1512,7 @@ public:
     {
         initializeObjects();
         std::string filename = stk::unit_test_util::get_name_of_generated_mesh(1, 1, 2, "|sideset:zZ");
-        stk::unit_test_util::fill_mesh_using_stk_io(filename, *bulkData);
+        stk::io::fill_mesh(filename, *bulkData);
         stk::unit_test_util::put_mesh_into_part(*bulkData, *activePart);
         createElemElemGraph();
     }
@@ -2255,7 +2255,7 @@ TEST( ElementGraph, OneHex )
     {
         stk::mesh::MetaData meta(3);
         stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x1", bulk);
+        stk::io::fill_mesh("generated:1x1x1", bulk);
 
         bulk.initialize_face_adjacent_element_graph();
         bulk.get_face_adjacent_element_graph().write_graph(std::cerr, "Before");
@@ -4253,7 +4253,7 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
         stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
 
         stk::mesh::BulkData bulkData(meta, comm, autoAuraOption);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulkData);
+        stk::io::fill_mesh("generated:3x1x3", bulkData);
 
         bulkData.modification_begin();
         if (procRank == 0) {
@@ -4374,7 +4374,7 @@ ElemElemGraphTester create_base_1x1x4_elem_graph(stk::ParallelMachine &comm, stk
 
     ThrowRequire(nProc <= 4);
 
-    stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+    stk::io::fill_mesh("generated:1x1x4", bulkData);
 
     std::vector<unsigned> counts;
     stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
@@ -4517,7 +4517,7 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemAInParallel)
 
         stk::mesh::MetaData meta(spatialDim);
         stk::mesh::BulkData bulkData(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulkData);
+        stk::io::fill_mesh("generated:3x1x3", bulkData);
 
         stk::mesh::EntityProcVec elementProcChanges;
         if (procRank == 1) {
@@ -4612,7 +4612,7 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
 
         stk::mesh::MetaData meta(spatialDim);
         stk::mesh::BulkData bulkData(meta, comm);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulkData);
+        stk::io::fill_mesh("generated:3x1x3", bulkData);
 
         stk::mesh::EntityProcVec elementProcChanges;
         if (procRank == 1) {
@@ -4680,7 +4680,7 @@ TEST(ElemGraph, test_id_reservation)
 
         stk::mesh::MetaData meta(spatialDim);
         BulkDataElementGraphTester bulkData(meta, comm);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         std::vector<stk::mesh::EntityId> ids_in_use = bulkData.my_internal_get_ids_in_use_this_proc_for_locally_owned(stk::topology::ELEM_RANK);
 
@@ -4740,7 +4740,7 @@ TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
         stk::mesh::MetaData meta(3);
         stk::mesh::Part &activePart = meta.declare_part("active");
         BulkDataElementGraphTester bulkData(meta, comm);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
         stk::unit_test_util::put_mesh_into_part(bulkData, activePart);
 
         bulkData.modification_begin();

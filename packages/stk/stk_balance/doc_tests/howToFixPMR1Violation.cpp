@@ -44,7 +44,7 @@ TEST(StkMeshHowTo, FixPMR1Violation)
 {
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulkData(meta, MPI_COMM_WORLD);
-    stk::unit_test_util::fill_mesh_using_stk_io("generated:4x4x4|sideset:xX", bulkData);
+    stk::io::fill_mesh("generated:4x4x4|sideset:xX", bulkData);
 
     stk::mesh::EntityIdProcMap elementAndDestProc;
     EXPECT_NO_THROW(elementAndDestProc = stk::balance::make_mesh_consistent_with_parallel_mesh_rule1(bulkData));
