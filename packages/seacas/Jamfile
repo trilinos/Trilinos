@@ -349,7 +349,7 @@ install install-user-bin
     /tpl/hdf5//h5debug
     /tpl/hdf5//testhdf5
     /tpl/hdf5//testphdf5
-  : <target-os>bgq <location>$(install-root)/bin
+  : <target-os>bgq <location>$(install-bin-dir)
   ;
 
 install install-user-bin
@@ -404,7 +404,7 @@ install install-user-bin
     /tpl/hdf5//h5debug
     /tpl/hdf5//testhdf5
     /tpl/hdf5//testphdf5
-  : <location>$(install-root)/bin
+  : <location>$(install-bin-dir)
   ;
 
 explicit install-exe-targets ;
