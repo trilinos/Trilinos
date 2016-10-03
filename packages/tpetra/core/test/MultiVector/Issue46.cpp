@@ -132,11 +132,11 @@ multiVectorsEqual (const MultiVectorType& X, const MultiVectorType& Y)
   typedef typename MultiVectorType::local_ordinal_type LO;
 
   const LO lclNumRows = static_cast<LO> (X.getLocalLength ());
-  if (lclNumRows != Y.getLocalLength ()) {
+  if (lclNumRows != static_cast<LO> (Y.getLocalLength ())) {
     return false;
   }
   const LO numVecs = static_cast<LO> (X.getNumVectors ());
-  if (numVecs != Y.getNumVectors ()) {
+  if (numVecs != static_cast<LO> (Y.getNumVectors ())) {
     return false;
   }
 
@@ -176,21 +176,30 @@ printMultiVector (std::ostream& out, const MultiVectorType& X)
   }
 }
 
-TEUCHOS_UNIT_TEST( MultiVector, Issue46 )
+// Work-around for #680: GCC 4.7.2 is broken; it does not let me say
+// "X.template sync<Kokkos::HostSpace>()", even when X's type does not
+// depend on template parameters.  However, other compilers require
+// "template" there.  Thus, to work around this GCC 4.7.2 issue, I'll
+// make the test templated on MultiVectorType, and fill in the
+// template parameter when I use the Teuchos macro TEUCHOS_UNIT_TEST
+// to define the unit test.
+template<class MultiVectorType>
+void issue46Test (bool& success, Teuchos::FancyOStream& out)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
-  typedef Tpetra::Map<> map_type;
-  typedef map_type::local_ordinal_type LO;
-  typedef map_type::global_ordinal_type GO;
-  typedef Tpetra::MultiVector<> MV;
-
-  typedef MV::impl_scalar_type IST;
-  typedef MV::dual_view_type::array_layout array_layout;
-  typedef MV::device_type device_type;
-  typedef device_type::memory_space dev_memory_space;
-  typedef Kokkos::View<IST**, array_layout,
+  typedef MultiVectorType MV;
+  typedef typename MV::scalar_type SC;
+  typedef typename MV::local_ordinal_type LO;
+  typedef typename MV::global_ordinal_type GO;
+  typedef typename MV::node_type NT;
+  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef typename MV::impl_scalar_type IST;
+  typedef typename MV::dual_view_type::array_layout array_layout;
+  typedef typename MV::device_type device_type;
+  typedef typename device_type::memory_space dev_memory_space;
+  typedef typename Kokkos::View<IST**, array_layout,
     device_type>::HostMirror::memory_space host_memory_space;
 
   out << "Test Github Issue #46 (offset view of an offset view of a "
@@ -203,7 +212,6 @@ TEUCHOS_UNIT_TEST( MultiVector, Issue46 )
   const LO numVecs = 4;
   RCP<const map_type> map =
     rcp (new map_type (lclNumRows, indexBase, comm, Tpetra::LocallyReplicated));
-
   MV X0 (map, numVecs);
 
   // Fill the "parent" MultiVector X0 with entries, such that each
@@ -217,7 +225,7 @@ TEUCHOS_UNIT_TEST( MultiVector, Issue46 )
     for (LO j = 0; j < numVecs; ++j) {
       auto X0_lcl_j = Kokkos::subview (X0_lcl, Kokkos::ALL (), j);
       for (LO i = 0; i < lclNumRows; ++i) {
-        X0_lcl_j(i) = static_cast<double> (i + 0.1*j);
+        X0_lcl_j(i) = static_cast<SC> (i + 0.1*j);
       }
     }
     X0.template sync<dev_memory_space> ();
@@ -265,5 +273,12 @@ TEUCHOS_UNIT_TEST( MultiVector, Issue46 )
   const bool X2_eq_X3 = multiVectorsEqual (*X2, *X3);
   TEST_ASSERT( X2_eq_X3 );
 }
+
+TEUCHOS_UNIT_TEST( MultiVector, Issue46 )
+{
+  typedef Tpetra::MultiVector<> MV;
+  issue46Test<MV> (success, out);
+}
+
 
 } // namespace (anonymous)
