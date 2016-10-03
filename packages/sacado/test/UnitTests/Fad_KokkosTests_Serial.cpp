@@ -38,15 +38,32 @@
 using Kokkos::Serial;
 VIEW_FAD_TESTS_D( Serial )
 
+// Add a unit test verifying something from Albany compiles
+TEUCHOS_UNIT_TEST(Kokkos_View_Fad, DynRankMauroDeepCopy )
+{
+  Kokkos::DynRankView<Sacado::Fad::DFad<double>,Kokkos::Serial> v1(
+    "v1", 3, 5);
+  Kokkos::DynRankView<Sacado::Fad::DFad<double>,Kokkos::LayoutRight,Kokkos::HostSpace> v2("v2", 3 , 5);
+
+  Kokkos::deep_copy(v1, v2);
+
+  // We're just verifying this compiles
+  success = true;
+}
+
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize serial
   Kokkos::Serial::initialize();
+  if (!std::is_same<Kokkos::Serial, Kokkos::HostSpace::execution_space>::value)
+    Kokkos::HostSpace::execution_space::initialize();
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finalize serial
+  if (!std::is_same<Kokkos::Serial, Kokkos::HostSpace::execution_space>::value)
+    Kokkos::HostSpace::execution_space::finalize();
   Kokkos::Serial::finalize();
 
   return res;
