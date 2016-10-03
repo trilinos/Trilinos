@@ -8,7 +8,10 @@
 #ifdef _OPENMP
  #include <omp.h>
 #if !defined(__INTEL_COMPILER) && !defined(SALINAS_LINUX)
- #include <parallel/algorithm>
+#if defined(GCC_VERSION) && GCC_VERSION >= 480
+  #define USE_NATIVE_THREADED_SORT 1
+  #include <parallel/algorithm>
+#endif
 #endif
 #endif
 
@@ -150,7 +153,7 @@ namespace search {
     if(maxNumThread == 1 || inputVec.size()<10) {
       std::sort(inputVec.begin(), inputVec.end());
     } else {
-#if !defined(__INTEL_COMPILER) && !defined(SALINAS_LINUX)
+#if defined(USE_NATIVE_THREADED_SORT)
       //  Use a gnu implementation if at all possible
       unsigned targetNumThread = ceil(double(inputVec.size())/10.0);
       if(targetNumThread < maxNumThread) {
