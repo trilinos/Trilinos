@@ -2291,9 +2291,6 @@ namespace Tpetra {
     void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
     void releaseViews () const;
     //@}
-
-    typename dual_view_type::t_dev getKokkosView() const { return view_.d_view; }
-
   }; // class MultiVector
 
   namespace Details {
