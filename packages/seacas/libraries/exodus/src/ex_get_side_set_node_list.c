@@ -233,12 +233,12 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
   };
 
   /* pyramid */
-  static int pyramid_table[5][8] = {
-      {1, 2, 5, 0, 6, 11, 10, 0}, /* side 1 (tri) */
-      {2, 3, 5, 0, 7, 12, 11, 0}, /* side 2 (tri) */
-      {3, 4, 5, 0, 8, 13, 12, 0}, /* side 3 (tri) */
-      {1, 5, 4, 0, 10, 13, 9, 0}, /* side 4 (tri) */
-      {1, 4, 3, 2, 9, 8, 7, 6}    /* side 5 (quad) */
+  static int pyramid_table[5][9] = {
+      {1, 2, 5, 0, 6, 11, 10, 0, 15}, /* side 1 (tri) */
+      {2, 3, 5, 0, 7, 12, 11, 0, 16}, /* side 2 (tri) */
+      {3, 4, 5, 0, 8, 13, 12, 0, 17}, /* side 3 (tri) */
+      {1, 5, 4, 0, 10, 13, 9, 0, 18}, /* side 4 (tri) */
+      {1, 4, 3, 2, 9, 8, 7, 6, 14}    /* side 5 (quad) */
   };
 
   char errmsg[MAX_ERR_LENGTH];
@@ -399,7 +399,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
     goto cleanup;
   }
 
-  if (ex_get_elem_blk_ids(exoid, elem_blk_ids) == -1) {
+  if (ex_get_ids(exoid, EX_ELEM_BLOCK, elem_blk_ids) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get element block ids in file id %d", exoid);
     ex_err("ex_get_side_set_node_list", errmsg, EX_MSG);
     err_stat = EX_FATAL;
@@ -543,7 +543,8 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
       }
 
       /* get connectivity array */
-      if (ex_get_elem_conn(exoid, elem_blk_parms[parm_ndx].elem_blk_id, connect) == -1) {
+      if (ex_get_conn(exoid, EX_ELEM_BLOCK, elem_blk_parms[parm_ndx].elem_blk_id, connect, NULL,
+                      NULL) == -1) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for connectivity "
                                          "array for file id %d",
                  exoid);
@@ -946,6 +947,14 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
       break;
     }
     case EX_EL_PYRAMID: {
+      /*
+       * node count:  5 -- 4-node quad, 3-node tri
+       *             13    8            6
+       *             14    9            6
+       *             18    9            7
+       *             19    9            7  + volume center node.
+       */
+
       if (check_valid_side(side_num, 5, "pyramid", exoid) != EX_NOERR) {
         goto cleanup;
       }
@@ -967,6 +976,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
       }
 
       if (num_nodes_per_elem > 5) {
+        /* This gets the mid-edge nodes for three edges */
         get_nodes(exoid, side_set_node_list, node_pos++, connect,
                   connect_offset + pyramid_table[side_num][4] - 1);
         get_nodes(exoid, side_set_node_list, node_pos++, connect,
@@ -974,13 +984,30 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
         get_nodes(exoid, side_set_node_list, node_pos++, connect,
                   connect_offset + pyramid_table[side_num][6] - 1);
 
-        if (pyramid_table[side_num][7] == 0) {                   /* degenerate side? */
-          set_count(exoid, side_set_node_cnt_list, elem_ndx, 6); /* 6 node side */
-        }
-        else {
+        if (side_num == 4) {
+          int face_node_count = num_nodes_per_elem >= 14 ? 9 : 8;
+          set_count(exoid, side_set_node_cnt_list, elem_ndx, face_node_count);
+
+          /* Get the last mid-edge node if this is quad face topology */
           get_nodes(exoid, side_set_node_list, node_pos++, connect,
                     connect_offset + pyramid_table[side_num][7] - 1);
-          set_count(exoid, side_set_node_cnt_list, elem_ndx, 8); /* 8 node side */
+
+          if (num_nodes_per_elem >= 14) {
+            /* Get the mid-face node for the quad */
+            get_nodes(exoid, side_set_node_list, node_pos++, connect,
+                      connect_offset + pyramid_table[side_num][8] - 1);
+          }
+        }
+        else {
+          /* Triangular faces... */
+          int face_node_count = num_nodes_per_elem >= 18 ? 7 : 6;
+          set_count(exoid, side_set_node_cnt_list, elem_ndx, face_node_count);
+
+          if (num_nodes_per_elem >= 18) {
+            /* Get the mid-face node for the tri */
+            get_nodes(exoid, side_set_node_list, node_pos++, connect,
+                      connect_offset + pyramid_table[side_num][8] - 1);
+          }
         }
       }
       break;

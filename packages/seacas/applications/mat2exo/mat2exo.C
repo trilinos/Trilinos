@@ -352,14 +352,14 @@ int main(int argc, char *argv[])
   {
     std::vector<int> ids;
     if (!matGetInt("node_num_map", num_nodes, 1, ids)) {
-      ex_put_node_num_map(exo_file, TOPTR(ids));
+      ex_put_id_map(exo_file, EX_NODE_MAP, TOPTR(ids));
     }
   }
 
   {
     std::vector<int> ids;
     if (!matGetInt("elem_num_map", num_elements, 1, ids)) {
-      ex_put_elem_num_map(exo_file, TOPTR(ids));
+      ex_put_id_map(exo_file, EX_ELEM_MAP, TOPTR(ids));
     }
   }
 

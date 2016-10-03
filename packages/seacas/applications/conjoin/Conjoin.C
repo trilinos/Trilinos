@@ -588,7 +588,7 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
       for (size_t i = 0; i < global.count(Excn::NODE); i++) {
         global_map[i] = global_node_map[i].id;
       }
-      error = ex_put_node_num_map(Excn::ExodusFile::output(), &global_map[0]);
+      error = ex_put_id_map(Excn::ExodusFile::output(), EX_NODE_MAP, &global_map[0]);
     }
 
     if (debug_level & 1)
@@ -598,7 +598,7 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
       for (size_t i = 0; i < global.count(Excn::ELEM); i++) {
         global_map[i] = global_element_map[i].first;
       }
-      ex_put_elem_num_map(Excn::ExodusFile::output(), &global_map[0]);
+      ex_put_id_map(Excn::ExodusFile::output(), EX_ELEM_MAP, &global_map[0]);
     }
 
     T dummy = 0;
@@ -1375,7 +1375,7 @@ namespace {
       Excn::ExodusFile id(p);
       global_element_numbers[p].resize(local_mesh[p].count(Excn::ELEM));
       std::vector<INT> ids(local_mesh[p].count(Excn::ELEM));
-      error += ex_get_elem_num_map(id, &ids[0]);
+      error += ex_get_id_map(id, EX_ELEM_MAP, &ids[0]);
       for (size_t i = 0; i < local_mesh[p].count(Excn::ELEM); i++) {
         global_element_numbers[p][i] = std::make_pair(ids[i], size_t(0));
       }
@@ -1568,7 +1568,7 @@ namespace {
       std::vector<INT>    nid(local_mesh[p].count(Excn::NODE));
 
       Excn::ExodusFile id(p);
-      error += ex_get_node_num_map(id, &nid[0]);
+      error += ex_get_id_map(id, EX_NODE_MAP, &nid[0]);
       error += ex_get_coord(id, &x[0], &y[0], &z[0]);
       for (size_t i = 0; i < local_mesh[p].count(Excn::NODE); i++) {
         global_nodes[p][i] = NodeInfo(nid[i], x[i], y[i], z[i]);

@@ -56,7 +56,13 @@
 #include <stdlib.h> // for NULL
 
 /*!
- * reads the EXODUS II specified variable truth table from the database
+ * \ingroup ResultsData
+ * reads the EXODUS specified variable truth table from the database
+ * \param[in]       exoid              exodus file id
+ * \param[in]       obj_type           object type
+ * \param[in]       num_blk            number of blocks or sets
+ * \param[in]       num_var            number of variables
+ * \param[out]     *var_tab            variable truth table array
  */
 
 int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var, int *var_tab)

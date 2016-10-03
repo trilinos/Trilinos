@@ -1047,8 +1047,16 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       }
     }
 
-    ex_put_concat_node_sets(mesh_exoid, TOPTR(conc_ids), TOPTR(conc_nodes), TOPTR(conc_df),
-                            TOPTR(conc_nind), TOPTR(conc_dind), TOPTR(conc_nlist), TOPTR(conc_sdf));
+    ex_set_specs set_specs;
+    set_specs.sets_ids            = TOPTR(conc_ids);
+    set_specs.num_entries_per_set = TOPTR(conc_nodes);
+    set_specs.num_dist_per_set    = TOPTR(conc_df);
+    set_specs.sets_entry_index    = TOPTR(conc_nind);
+    set_specs.sets_dist_index     = TOPTR(conc_dind);
+    set_specs.sets_entry_list     = TOPTR(conc_nlist);
+    set_specs.sets_extra_list     = nullptr;
+    set_specs.sets_dist_fact      = TOPTR(conc_sdf);
+    ex_put_concat_sets(mesh_exoid, EX_NODE_SET, &set_specs);
   }
   total_out_time += second() - tt1;
 
@@ -1147,9 +1155,17 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
             globals.Proc_SS_Dist_Fact[iproc][globals.Proc_SS_DF_Pointers[iproc][i2] + i3];
       }
     }
-    ex_put_concat_side_sets(mesh_exoid, TOPTR(conc_ids), TOPTR(conc_sides), TOPTR(conc_dist),
-                            TOPTR(conc_eind), TOPTR(conc_dind), TOPTR(conc_elist),
-                            TOPTR(conc_slist), TOPTR(conc_sdflist));
+
+    ex_set_specs set_specs;
+    set_specs.sets_ids            = TOPTR(conc_ids);
+    set_specs.num_entries_per_set = TOPTR(conc_sides);
+    set_specs.num_dist_per_set    = TOPTR(conc_dist);
+    set_specs.sets_entry_index    = TOPTR(conc_eind);
+    set_specs.sets_dist_index     = TOPTR(conc_dind);
+    set_specs.sets_entry_list     = TOPTR(conc_elist);
+    set_specs.sets_extra_list     = TOPTR(conc_slist);
+    set_specs.sets_dist_fact      = TOPTR(conc_sdflist);
+    ex_put_concat_sets(mesh_exoid, EX_SIDE_SET, &set_specs);
   }
   PIO_Time_Array[19] += (second() - tt1);
   total_out_time += (PIO_Time_Array[18] + PIO_Time_Array[19]);
@@ -1280,7 +1296,7 @@ void NemSpread<T, INT>::write_var_timestep(int exoid, int proc, int time_step, I
 
     T *var_ptr = &Restart_Info.Glob_Vals[0];
 
-    error = ex_put_glob_vars(exoid, time_step, Restart_Info.NVar_Glob, var_ptr);
+    error = ex_put_var(exoid, time_step, EX_GLOBAL, 1, 0, Restart_Info.NVar_Glob, var_ptr);
 
     check_exodus_error(error, "ex_put_glob_vars");
   }
@@ -1295,9 +1311,9 @@ void NemSpread<T, INT>::write_var_timestep(int exoid, int proc, int time_step, I
 
       T *var_ptr = &(Restart_Info.Node_Vals[proc][var_offset]);
 
-      error = ex_put_nodal_var(exoid, time_step, (var_num + 1), num_nodes, var_ptr);
+      error = ex_put_var(exoid, time_step, EX_NODAL, (var_num + 1), 1, num_nodes, var_ptr);
 
-      check_exodus_error(error, "ex_put_nodal_var");
+      check_exodus_error(error, "ex_put_var");
     }
   }
 

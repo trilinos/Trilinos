@@ -57,7 +57,7 @@ include:
 ex_create() or ex_open().
 \param[in]   obj_type     Type of object; use one of the options in the table
 below.
-\param[out]  prop_names   Returned array containing \c num_props (obtained from
+\param[out]  prop_names   Returned array containing num_props (obtained from
 call to
                           ex_inquire() or ex_inquire_int()) names (of maximum
 length
@@ -66,25 +66,25 @@ a
                           reserved property name, will be the first name in the
 array.
 
-<table>
-<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
-<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
-<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
-<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
-<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
-<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
-<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_MAP   </td><td>  Element Map entity type  </td></tr>
-<tr><td> \c EX_NODE_MAP   </td><td>  Node Map entity type     </td></tr>
-<tr><td> \c EX_EDGE_MAP   </td><td>  Edge Map entity type     </td></tr>
-<tr><td> \c EX_FACE_MAP   </td><td>  Face Map entity type     </td></tr>
-</table>
+| ex_entity_type | description               |
+| -------------- | ------------------------- |
+|  EX_NODE_SET   |  Node Set entity type     |
+|  EX_EDGE_BLOCK |  Edge Block entity type   |
+|  EX_EDGE_SET   |  Edge Set entity type     |
+|  EX_FACE_BLOCK |  Face Block entity type   |
+|  EX_FACE_SET   |  Face Set entity type     |
+|  EX_ELEM_BLOCK |  Element Block entity type|
+|  EX_ELEM_SET   |  Element Set entity type  |
+|  EX_SIDE_SET   |  Side Set entity type     |
+|  EX_ELEM_MAP   |  Element Map entity type  |
+|  EX_NODE_MAP   |  Node Map entity type     |
+|  EX_EDGE_MAP   |  Edge Map entity type     |
+|  EX_FACE_MAP   |  Face Map entity type     |
 
 As an example, the following code segment reads in properties assigned
 to node sets:
 
-\code
+~~~{.c}
 int error, exoid, num_props, *prop_values;
 char *prop_names[MAX_PROPS];
 
@@ -102,7 +102,7 @@ for (i=0; i < num_props; i++) {
    error = ex_get_prop_array(exoid, EX_NODE_SET, prop_names[i],
                              prop_values);
 }
-\endcode
+~~~
 
 */
 

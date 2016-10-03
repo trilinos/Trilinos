@@ -56,6 +56,8 @@
 #include <stdio.h>
 
 /*!
+ * \ingroup ResultsData
+ *
  * reads the name of a particular results variable from the database
  */
 

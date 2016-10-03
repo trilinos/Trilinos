@@ -56,6 +56,7 @@
 #include <stdio.h>
 
 /*!
+\ingroup ResultsData
 
 The function ex_get_variable_param() reads the number of global,
 nodal, or element variables stored in the database.
@@ -71,31 +72,31 @@ ex_create() or ex_open().
 \param[in]  obj_type  Variable indicating the type of variable which is
 described. Use one
                       of the options in the table below.
-\param[out] num_vars  Returned number of \c var_type variables that are stored
+\param[out] num_vars  Returned number of  var_type variables that are stored
 in the database.
 
-<table>
-<tr><td> \c EX_GLOBAL}    </td><td>  Global entity type       </td></tr>
-<tr><td> \c EX_NODAL}     </td><td>  Nodal entity type        </td></tr>
-<tr><td> \c EX_NODE_SET   </td><td>  Node Set entity type     </td></tr>
-<tr><td> \c EX_EDGE_BLOCK </td><td>  Edge Block entity type   </td></tr>
-<tr><td> \c EX_EDGE_SET   </td><td>  Edge Set entity type     </td></tr>
-<tr><td> \c EX_FACE_BLOCK </td><td>  Face Block entity type   </td></tr>
-<tr><td> \c EX_FACE_SET   </td><td>  Face Set entity type     </td></tr>
-<tr><td> \c EX_ELEM_BLOCK </td><td>  Element Block entity type</td></tr>
-<tr><td> \c EX_ELEM_SET   </td><td>  Element Set entity type  </td></tr>
-<tr><td> \c EX_SIDE_SET   </td><td>  Side Set entity type     </td></tr>
-</table>
+| ex_entity_type|  description              |
+|---------------|---------------------------|
+| EX_GLOBAL     |  Global entity type       |
+| EX_NODAL      |  Nodal entity type        |
+| EX_NODE_SET   |  Node Set entity type     |
+| EX_EDGE_BLOCK |  Edge Block entity type   |
+| EX_EDGE_SET   |  Edge Set entity type     |
+| EX_FACE_BLOCK |  Face Block entity type   |
+| EX_FACE_SET   |  Face Set entity type     |
+| EX_ELEM_BLOCK |  Element Block entity type|
+| EX_ELEM_SET   |  Element Set entity type  |
+| EX_SIDE_SET   |  Side Set entity type     |
 
 As an example, the following coding will determine the number of
 global variables stored in the data file:
 
-\code
+~~~{.c}
 int num_glo_vars, error, exoid;
 
 \comment{read global variables parameters}
 error = ex_get_variable_param(exoid, EX_GLOBAL, &num_glo_vars);
-\endcode
+~~~
 
 */
 

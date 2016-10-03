@@ -570,7 +570,7 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
 
           /* define netCDF variable to store variable values;
            * the j index cycles from 1 through the number of variables so
-           * that the index of the EXODUS II variable (which is part of
+           * that the index of the EXODUS variable (which is part of
            * the name of the netCDF variable) will begin at 1 instead of 0
            */
           status = nc_def_var(exoid, ex_name_var_of_object(obj_type, j, i + 1), nc_flt_code(exoid),

@@ -45,8 +45,8 @@ The function ex_get_time() reads the time value for a specified time
 step.
 
 Because time values are floating point values, the application code
-must declare the array passed to be the appropriate type (\c float or
-\c double) to match the compute word size passed in ex_create() or
+must declare the array passed to be the appropriate type (float or
+double) to match the compute word size passed in ex_create() or
 ex_open().
 
 \return In case of an error, ex_get_time() returns a negative number; a
@@ -68,14 +68,14 @@ arrays stored
 As an example, the following coding will read the time value stored in
 the data file for time step n:
 
-\code
+~~~{.c}
 int n, error, exoid;
 float time_value;
 
 \comment{read time value at time step 3}
 n = 3;
 error = ex_get_time (exoid, n, &time_value);
-\endcode
+~~~
 
 */
 
