@@ -205,8 +205,9 @@ namespace Iocgns {
                                                                                   double ratio)
   {
     assert(is_active());
-    if (ratio > 1.0)
+    if (ratio > 1.0) {
       ratio = 1.0 / ratio;
+    }
 
     // Find ordinal with largest value... Split along that ordinal
     int ordinal = 0;

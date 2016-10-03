@@ -83,24 +83,24 @@ namespace Iocgns {
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
-    unsigned entity_field_support() const;
+    unsigned entity_field_support() const override;
 
-    int64_t node_global_to_local(int64_t global, bool must_exist) const;
-    int64_t element_global_to_local(int64_t global) const;
+    int64_t node_global_to_local(int64_t global, bool must_exist) const override;
+    int64_t element_global_to_local(int64_t global) const override;
 
-    ~DatabaseIO() = default;
+    ~DatabaseIO() override = default;
 
-    void openDatabase() const;
-    void closeDatabase() const;
+    void openDatabase() const override;
+    void closeDatabase() const override;
 
-    bool begin(Ioss::State state);
-    bool end(Ioss::State state);
+    bool begin(Ioss::State state) override;
+    bool end(Ioss::State state) override;
 
-    bool begin_state(Ioss::Region *region, int state, double time);
-    bool end_state(Ioss::Region *region, int state, double time);
+    bool begin_state(Ioss::Region *region, int state, double time) override;
+    bool end_state(Ioss::Region *region, int state, double time) override;
 
     // Metadata-related functions.
-    void read_meta_data();
+    void read_meta_data() override;
 
   private:
     void create_structured_block(cgsize_t base, cgsize_t zone, size_t &num_node, size_t &num_cell);
@@ -109,58 +109,58 @@ namespace Iocgns {
                                    size_t &num_elem);
 
     int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-                               void *data, size_t data_size) const;
+                               void *data, size_t data_size) const override;
     int64_t get_field_internal(const Ioss::SideBlock *sb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
 
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
-                               size_t data_size) const;
+                               size_t data_size) const override;
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-                               void *data, size_t data_size) const;
+                               void *data, size_t data_size) const override;
 
     // ID Mapping functions.
     const Ioss::Map &get_map(entity_type type) const;

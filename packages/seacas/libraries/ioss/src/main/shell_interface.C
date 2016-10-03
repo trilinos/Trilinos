@@ -32,9 +32,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include "Ioss_CodeTypes.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Utils.h"      // for Utils
 #include "shell_interface.h"
+#include <cctype>   // for tolower
 #include <cstddef>  // for nullptr
 #include <cstdlib>  // for exit, strtod, EXIT_SUCCESS, etc
 #include <cstring>  // for strcmp

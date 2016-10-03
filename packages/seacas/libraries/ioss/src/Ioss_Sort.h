@@ -55,12 +55,15 @@ namespace {
 
   template <typename INT> void order3(INT v[], size_t left, size_t center, size_t right)
   {
-    if (v[left] > v[center])
+    if (v[left] > v[center]) {
       SWAP(v, left, center);
-    if (v[left] > v[right])
+    }
+    if (v[left] > v[right]) {
       SWAP(v, left, right);
-    if (v[center] > v[right])
+    }
+    if (v[center] > v[right]) {
       SWAP(v, center, right);
+    }
   }
 
   template <typename INT> size_t median3(INT v[], size_t left, size_t right)
@@ -98,10 +101,12 @@ namespace {
       j     = right - 1;
 
       for (;;) {
-        while (v[++i] < v[pivot])
+        while (v[++i] < v[pivot]) {
           ;
-        while (v[--j] > v[pivot])
+        }
+        while (v[--j] > v[pivot]) {
           ;
+        }
         if (i < j) {
           SWAP(v, i, j);
         }
@@ -123,8 +128,9 @@ namespace {
     INT    small;
     INT    tmp;
 
-    if (N <= 1)
+    if (N <= 1) {
       return;
+    }
     small = v[0];
     for (i = 1; i < N; i++) {
       if (v[i] < small) {
@@ -148,8 +154,9 @@ namespace {
 namespace Ioss {
   template <typename INT> void qsort(std::vector<INT> &v)
   {
-    if (v.size() <= 1)
+    if (v.size() <= 1) {
       return;
+    }
     qsort_int(v.data(), 0, v.size() - 1);
     isort_int(v.data(), v.size());
   }

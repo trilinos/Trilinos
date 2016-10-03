@@ -1035,11 +1035,15 @@ EXODUS_EXPORT int ex_put_elem_cmap(int          exoid,    /* NetCDF/Exodus file 
  */
 
 #ifndef SEACAS_DEPRECATED
-#if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#define SEACAS_DEPRECATED __attribute__((__deprecated__))
-#else
-#define SEACAS_DEPRECATED
-#endif
+#  if defined(SEACAS_IN_SIERRA)
+#    define SEACAS_DEPRECATED
+#  else
+#    if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#      define SEACAS_DEPRECATED __attribute__((__deprecated__))
+#    else
+#      define SEACAS_DEPRECATED
+#    endif
+#  endif
 #endif
 
 SEACAS_DEPRECATED EXODUS_EXPORT int ex_get_glob_vars(int exoid, int time_step, int num_glob_vars,

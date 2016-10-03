@@ -429,9 +429,8 @@ namespace Ioss {
     Ioss::MY_Alltoallv(node_comm_recv, recv_count, recv_disp, node_comm_send, send_count, send_disp,
                        m_comm);
 
-// At this point, 'node_comm_send' contains the list of nodes that I need to
-// provide
-// coordinate data for.
+// At this point, 'node_comm_send' contains the list of nodes that I
+// need to provide coordinate data for.
 
 // DEBUG: == Check that all nodes in node_comm_send are in the range
 //           m_nodeOffset..m_nodeOffset+m_nodeCount

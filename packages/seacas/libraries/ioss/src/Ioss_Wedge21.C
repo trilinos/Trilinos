@@ -170,9 +170,8 @@ Ioss::ElementTopology *Ioss::Wedge21::face_type(int face_number) const
   if (face_number <= 3) {
     return Ioss::ElementTopology::factory("quad9");
   }
-  else {
-    return Ioss::ElementTopology::factory("tri7");
-  }
+
+  return Ioss::ElementTopology::factory("tri7");
 }
 
 Ioss::ElementTopology *Ioss::Wedge21::edge_type(int edge_number) const

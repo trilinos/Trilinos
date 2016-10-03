@@ -79,7 +79,7 @@ SystemInterface interface;
 #if 0
 #define DIFF_OUT(buf) std::cout << trmclr::green << buf << '\n' << trmclr::normal
 #else
-#define DIFF_OUT(buf) std::cout << buf << '\n' 
+#define DIFF_OUT(buf) std::cout << buf << '\n'
 #endif
 
 struct TimeInterp
@@ -872,11 +872,11 @@ namespace {
             int final2 = file2.Num_Times();
             if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(final2))) {
               diff_flag = true;
-	      DIFF_OUT("\tFinal database times differ by "
-		       << FileDiff(file1.Time(time_step1), file2.Time(final2),
-				   interface.final_time_tol.type)
-		       << " which is not within specified " << interface.final_time_tol.typestr()
-		       << " tolerance of " << interface.final_time_tol.value << " (FAILED)");
+              DIFF_OUT("\tFinal database times differ by "
+                       << FileDiff(file1.Time(time_step1), file2.Time(final2),
+                                   interface.final_time_tol.type)
+                       << " which is not within specified " << interface.final_time_tol.typestr()
+                       << " tolerance of " << interface.final_time_tol.value << " (FAILED)");
             }
           }
         }

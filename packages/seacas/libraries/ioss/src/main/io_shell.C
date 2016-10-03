@@ -346,9 +346,9 @@ namespace {
       Ioss::Region region(dbi, "region_1");
 
       if (region.mesh_type() != Ioss::MeshType::UNSTRUCTURED) {
-	OUTPUT << "\nERROR: io_shell does not support '" << region.mesh_type_string()
-	       << "' meshes.  Only 'Unstructured' mesh is supported at this time.\n";
-	return;
+        OUTPUT << "\nERROR: io_shell does not support '" << region.mesh_type_string()
+               << "' meshes.  Only 'Unstructured' mesh is supported at this time.\n";
+        return;
       }
 
       // Get length of longest name on input file...
@@ -492,8 +492,8 @@ namespace {
 
       // Side Sets
       {
-        Ioss::SideSetContainer fss = region.get_sidesets();
-        for (auto ifs : fss) {
+        const auto &fss = region.get_sidesets();
+        for (const auto &ifs : fss) {
           std::string name = ifs->name();
           if (interface.debug) {
             OUTPUT << name << ", ";
@@ -502,11 +502,11 @@ namespace {
           Ioss::SideSet *ofs = output_region.get_sideset(name);
 
           if (ofs != nullptr) {
-            transfer_field_data(ifs, ofs, Ioss::Field::MESH);
-            transfer_field_data(ifs, ofs, Ioss::Field::ATTRIBUTE);
+            transfer_field_data(ifs, ofs, Ioss::Field::MESH, interface);
+            transfer_field_data(ifs, ofs, Ioss::Field::ATTRIBUTE, interface);
 
-            Ioss::SideBlockContainer fbs = ifs->get_side_blocks();
-            for (auto ifb : fbs) {
+            const auto &fbs = ifs->get_side_blocks();
+            for (const auto &ifb : fbs) {
 
               // Find matching output sideblock
               std::string fbname = ifb->name();
@@ -561,8 +561,8 @@ namespace {
 
         // Side Sets
         {
-          Ioss::SideSetContainer fss = region.get_sidesets();
-          for (auto ifs : fss) {
+          const auto &fss = region.get_sidesets();
+          for (const auto &ifs : fss) {
             std::string name = ifs->name();
             if (interface.debug) {
               OUTPUT << name << ", ";
@@ -573,8 +573,8 @@ namespace {
             if (ofs != nullptr) {
               transfer_fields(ifs, ofs, Ioss::Field::TRANSIENT);
 
-              Ioss::SideBlockContainer fbs = ifs->get_side_blocks();
-              for (auto ifb : fbs) {
+              const auto &fbs = ifs->get_side_blocks();
+              for (const auto &ifb : fbs) {
 
                 // Find matching output sideblock
                 std::string fbname = ifb->name();
@@ -646,8 +646,8 @@ namespace {
 
         // Side Sets
         {
-          Ioss::SideSetContainer fss = region.get_sidesets();
-          for (auto ifs : fss) {
+          const auto &fss = region.get_sidesets();
+          for (const auto &ifs : fss) {
             std::string name = ifs->name();
             if (interface.debug) {
               OUTPUT << name << ", ";
@@ -658,8 +658,8 @@ namespace {
             if (ofs != nullptr) {
               transfer_field_data(ifs, ofs, Ioss::Field::TRANSIENT, interface);
 
-              Ioss::SideBlockContainer fbs = ifs->get_side_blocks();
-              for (auto ifb : fbs) {
+              const auto &fbs = ifs->get_side_blocks();
+              for (const auto &ifb : fbs) {
 
                 // Find matching output sideblock
                 std::string fbname = ifb->name();
@@ -687,9 +687,9 @@ namespace {
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::NodeBlockContainer nbs = region.get_node_blocks();
-    size_t                   id  = 1;
-    for (auto inb : nbs) {
+    const auto &nbs = region.get_node_blocks();
+    size_t      id  = 1;
+    for (const auto &inb : nbs) {
       std::string name = inb->name();
       if (debug) {
         OUTPUT << name << ", ";
@@ -730,6 +730,7 @@ namespace {
           inb->get_field_data("owning_processor", &data[0], isize);
           t2 = timer();
           nb->put_field_data("owning_processor", &data[0], isize);
+
           time_write += timer() - t2;
           time_read += t2 - t1;
           data_read += isize;
@@ -750,7 +751,7 @@ namespace {
   void transfer_fields(const std::vector<T *> &entities, Ioss::Region &output_region,
                        Ioss::Field::RoleType role, const IOShell::Interface &interface)
   {
-    for (auto entity : entities) {
+    for (const auto &entity : entities) {
       std::string name = entity->name();
       if (interface.debug) {
         OUTPUT << name << ", ";
@@ -774,26 +775,26 @@ namespace {
   void transfer_field_data(const std::vector<T *> &entities, Ioss::Region &output_region,
                            Ioss::Field::RoleType role, const IOShell::Interface &interface)
   {
-    for (auto entity : entities) {
+    for (const auto &entity : entities) {
       std::string name = entity->name();
 
       // Find the corresponding output block...
       Ioss::GroupingEntity *output = output_region.get_entity(name, entity->type());
       if (output != nullptr) {
-        transfer_field_data(entity, output, role);
+        transfer_field_data(entity, output, role, interface);
         if (interface.do_transform_fields) {
-          transform_field_data(entity, output, role);
+          transform_field_data(entity, output, role, interface);
         }
       }
     }
   }
 
   template <typename T>
-  void transfer_blocks(std::vector<T *> &blocks, Ioss::Region &output_region, bool debug)
+  void transfer_blocks(const std::vector<T *> &blocks, Ioss::Region &output_region, bool debug)
   {
     if (!blocks.empty()) {
       size_t total_entities = 0;
-      for (auto iblock : blocks) {
+      for (const auto &iblock : blocks) {
         std::string name = iblock->name();
         if (debug) {
           OUTPUT << name << ", ";
@@ -821,35 +822,35 @@ namespace {
 
   void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::ElementBlockContainer ebs = region.get_element_blocks();
+    const auto &ebs = region.get_element_blocks();
     transfer_blocks(ebs, output_region, debug);
   }
 
   void transfer_edgeblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::EdgeBlockContainer ebs = region.get_edge_blocks();
+    const auto &ebs = region.get_edge_blocks();
     transfer_blocks(ebs, output_region, debug);
   }
 
   void transfer_faceblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::FaceBlockContainer ebs = region.get_face_blocks();
+    const auto &ebs = region.get_face_blocks();
     transfer_blocks(ebs, output_region, debug);
   }
 
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::SideSetContainer fss         = region.get_sidesets();
-    size_t                 total_sides = 0;
-    for (auto ss : fss) {
+    const auto &fss         = region.get_sidesets();
+    size_t      total_sides = 0;
+    for (const auto &ss : fss) {
       std::string name = ss->name();
       if (debug) {
         OUTPUT << name << ", ";
       }
 
-      auto                     surf = new Ioss::SideSet(output_region.get_database(), name);
-      Ioss::SideBlockContainer fbs  = ss->get_side_blocks();
-      for (auto fb : fbs) {
+      auto        surf = new Ioss::SideSet(output_region.get_database(), name);
+      const auto &fbs  = ss->get_side_blocks();
+      for (const auto &fb : fbs) {
         std::string fbname = fb->name();
         if (debug) {
           OUTPUT << fbname << ", ";
@@ -881,11 +882,11 @@ namespace {
   }
 
   template <typename T>
-  void transfer_sets(std::vector<T *> &sets, Ioss::Region &output_region, bool debug)
+  void transfer_sets(const std::vector<T *> &sets, Ioss::Region &output_region, bool debug)
   {
     if (!sets.empty()) {
       size_t total_entities = 0;
-      for (auto set : sets) {
+      for (const auto &set : sets) {
         std::string name = set->name();
         if (debug) {
           OUTPUT << name << ", ";
@@ -912,32 +913,32 @@ namespace {
 
   void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::NodeSetContainer nss = region.get_nodesets();
+    const auto &nss = region.get_nodesets();
     transfer_sets(nss, output_region, debug);
   }
 
   void transfer_edgesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::EdgeSetContainer nss = region.get_edgesets();
+    const auto &nss = region.get_edgesets();
     transfer_sets(nss, output_region, debug);
   }
 
   void transfer_facesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::FaceSetContainer nss = region.get_facesets();
+    const auto &nss = region.get_facesets();
     transfer_sets(nss, output_region, debug);
   }
 
   void transfer_elemsets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::ElementSetContainer nss = region.get_elementsets();
+    const auto &nss = region.get_elementsets();
     transfer_sets(nss, output_region, debug);
   }
 
   void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::CommSetContainer css = region.get_commsets();
-    for (auto ics : css) {
+    const auto &css = region.get_commsets();
+    for (const auto &ics : css) {
       std::string name = ics->name();
       if (debug) {
         OUTPUT << name << ", ";

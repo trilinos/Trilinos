@@ -38,6 +38,7 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <set>
 #include <stdexcept>
@@ -921,7 +922,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   for (time_step = ts_min - 1; time_step < ts_max; time_step += ts_step) {
     time_step_out++;
 
-    T time_val = -DBL_MAX;
+    T time_val = -std::numeric_limits<T>::max();
     {
       // read in and write out the time step information
       ExodusFile id(0);

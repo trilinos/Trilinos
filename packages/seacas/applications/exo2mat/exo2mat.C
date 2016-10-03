@@ -730,8 +730,9 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         num_sideset_dfac[i]  = n2;
         ex_get_side_set_node_list_len(exo_file, ids[i], &num_sideset_nodes[i]);
         if (n2 != num_sideset_nodes[i]) {
-          std::cerr << "WARNING: Number of sideset nodes does not match number of distribution factors"
-                    << " for sideset with id = " << ids[i] << ".\n";
+          std::cerr
+              << "WARNING: Number of sideset nodes does not match number of distribution factors"
+              << " for sideset with id = " << ids[i] << ".\n";
         }
 
         /* element and side list for side sets (dgriffi) */

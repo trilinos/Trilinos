@@ -55,7 +55,9 @@ namespace {
   size_t get_num_entities(int file_id, EXOTYPE exo_type);
   size_t get_num_variables(int file_id, EXOTYPE exo_type, const char *label);
   size_t get_num_attributes(int file_id, EXOTYPE exo_type, size_t id, const char *label);
+#ifndef NDEBUG
   size_t get_num_timesteps(int file_id);
+#endif
 }
 
 Exo_Entity::Exo_Entity()
@@ -490,5 +492,7 @@ namespace {
     return num_attr;
   }
 
+#ifndef NDEBUG
   size_t get_num_timesteps(int file_id) { return ex_inquire_int(file_id, EX_INQ_TIME); }
+#endif
 }
