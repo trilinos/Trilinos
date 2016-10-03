@@ -1018,6 +1018,16 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         m_output_files[output_file_index]->write_output_mesh(*m_bulk_data);
       }
 
+      void StkMeshIoBroker::flush_output() const
+      {
+	for (const auto& out_file : m_output_files) {
+          out_file->flush_output();
+	}
+	for (const auto& hb : m_heartbeat) {
+          hb->flush_output();
+	}
+      }
+
       int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index)
       {
         validate_output_file_index(output_file_index);
@@ -1561,6 +1571,13 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           }
         }
 
+        void impl::Heartbeat::flush_output() const
+        {
+          if (m_processor == 0) {
+	    m_region->get_database()->flush_database();
+	  }
+        }
+
         void impl::OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data)
         {
           if ( m_mesh_defined == false )
@@ -1591,6 +1608,11 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
               //Attempt to avoid putting state change into the interface.  We'll see . . .
               m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
             }
+        }
+
+        void impl::OutputFile::flush_output() const
+        {
+	    m_region->get_database()->flush_database();
         }
 
         void impl::OutputFile::add_field(stk::mesh::FieldBase &field, const std::string &alternate_name)
