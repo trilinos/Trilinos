@@ -77,7 +77,7 @@ namespace Intrepid2 {
     CellTools_mapToReferenceFrameArgs(refPoints, physPoints, worksetCell, cellTopo);
 #endif  
     typedef RealSpaceTools<SpT> rst;
-    typedef Kokkos::DynRankView<refPointValueType,SpT> refPointViewSpType;
+    typedef Kokkos::DynRankView<typename ScalarTraits<refPointValueType>::scalar_type,SpT> refPointViewSpType;
 
     const auto spaceDim  = cellTopo.getDimension();
     refPointViewSpType 

@@ -1000,10 +1000,11 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                         const shards::CellTopology cellTopo ) {
+      auto basis = createHGradBasis<physPointValueType,refPointValueType>(cellTopo);
       mapToPhysicalFrame(physPoints, 
                          refPoints, 
                          worksetCell, 
-                         createHGradBasis<physPointValueType,refPointValueType>(cellTopo));
+                         basis);
     }
 
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
@@ -1206,11 +1207,12 @@ namespace Intrepid2 {
                                   const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                                   const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                                   const shards::CellTopology cellTopo ) {
+      auto basis = createHGradBasis<physPointValueType,initGuessValueType>(cellTopo);
       mapToReferenceFrameInitGuess(refPoints,
                                    initGuess,
                                    physPoints,
                                    worksetCell,
-                                   createHGradBasis<physPointValueType,initGuessValueType>(cellTopo));
+                                   basis);
     }
 
 
