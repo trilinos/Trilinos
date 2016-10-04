@@ -175,11 +175,13 @@ namespace Ioss {
   Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm)
       : m_comm(comm), m_spatialDimension(3), m_globalElementCount(0), m_elementCount(0),
         m_elementOffset(0), m_importPreLocalElemIndex(0), m_globalNodeCount(0), m_nodeCount(0),
-        m_nodeOffset(0), m_importPreLocalNodeIndex(0)
+        m_nodeOffset(0), m_importPreLocalNodeIndex(0), m_retainFreeNodes(true)
   {
     MPI_Comm_rank(m_comm, &m_processor);
     MPI_Comm_size(m_comm, &m_processorCount);
     m_method = get_decomposition_method(props, m_processor, m_processorCount);
+
+    Utils::check_set_bool_property(props, "RETAIN_FREE_NODES", m_retainFreeNodes);
   }
 
   template bool                Decomposition<int64_t>::needs_centroids() const;
@@ -1104,6 +1106,49 @@ namespace Ioss {
     Ioss::MY_Alltoallv(import_nodes, importNodeCount, importNodeIndex, exportNodeMap,
                        exportNodeCount, exportNodeIndex, m_comm);
 
+    if (m_retainFreeNodes) {
+      // See if all nodes have been accounted for (i.e., process non-connected nodes)
+      std::vector<bool> file_nodes(m_nodeCount);
+      for (const auto &node : exportNodeMap) {
+	file_nodes[node-m_nodeOffset] = true;
+      }
+      for (const auto &node : localNodeMap) {
+	file_nodes[node-m_nodeOffset] = true;
+      }
+
+      size_t found_count = 0;
+      for (size_t i=0; i < file_nodes.size(); i++) {
+	if (!file_nodes[i]) {
+	  localNodeMap.push_back(i+m_nodeOffset);
+	  nodes.push_back(i+m_nodeOffset);
+	  found_count++;
+#if IOSS_DEBUG_OUTPUT
+	  std::cerr << m_processor << ":Node " << i+m_nodeOffset+1 << " not connected to any elements\n";
+#endif
+	}
+      }
+
+      if (found_count > 0) {
+	nodes.shrink_to_fit();
+	localNodeMap.shrink_to_fit();
+	std::sort(nodes.begin(), nodes.end());
+	std::sort(localNodeMap.begin(), localNodeMap.end());
+	for (int proc = m_processor+1; proc < m_processorCount+1; proc++) {
+	  nodeIndex[proc]+=found_count;
+	}
+
+	assert(nodeIndex[m_processorCount] == nodes.size());
+
+	// Also need to update importNodeMap for all nodes being
+	// imported from processors higher than m_processor...
+	size_t beg = importNodeIndex[m_processor+1];
+	size_t end = importNodeIndex[m_processorCount];
+	for (size_t i=beg; i < end; i++) {
+	  importNodeMap[i] += found_count;
+	}
+      }
+    }
+
 // Map that converts nodes from the global index (1-based) to a
 // local-per-processor index (1-based)
 #if IOSS_DEBUG_OUTPUT
@@ -1226,7 +1271,7 @@ namespace Ioss {
       m_nodeCommMap[i] = node_global_to_local(m_nodeCommMap[i] + 1);
     }
 #if IOSS_DEBUG_OUTPUT
-    std::cerr << "Processor " << m_processor << " has " << m_nodeCommMap.size()
+    std::cerr << "Processor " << m_processor << " has " << m_nodeCommMap.size() / 2
               << " shared nodes\n";
 #endif
   }
