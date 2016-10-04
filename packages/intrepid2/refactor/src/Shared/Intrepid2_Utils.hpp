@@ -99,6 +99,38 @@ namespace Intrepid2 {
 #endif
 
   /// 
+  /// scalar type traits
+  /// 
+
+  template<typename T> 
+  struct ScalarTraits {
+    typedef typename T::scalar_type scalar_type;
+  };
+
+  // this is built in types to support
+  template<>
+  struct ScalarTraits<float> {
+    typedef float scalar_type;
+  };
+  template<>
+  struct ScalarTraits<double> {
+    typedef double scalar_type;
+  };
+  template<>
+  struct ScalarTraits<int> {
+    typedef int scalar_type;
+  };
+  template<>
+  struct ScalarTraits<long int> {
+    typedef long int scalar_type;
+  };
+  template<>
+  struct ScalarTraits<long long> {
+    typedef long long scalar_type;
+  };
+
+
+  /// 
   /// space overload
   /// 
 

@@ -391,10 +391,11 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<pointValueType,pointProperties...>       points,
                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                  const shards::CellTopology cellTopo ) {
+      auto basis = createHGradBasis<jacobianValueType,pointValueType>(cellTopo);
       setJacobian(jacobian, 
                   points, 
                   worksetCell, 
-                  createHGradBasis<jacobianValueType,pointValueType>(cellTopo));
+                  basis);
     }
 
     /** \brief  Computes the inverse of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.

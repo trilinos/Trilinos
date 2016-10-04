@@ -211,6 +211,7 @@ class Basis_HCURL_TRI_I1_FEM : public Basis<ExecSpaceType, outputValueType, poin
 
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
 
     virtual
     void
@@ -222,7 +223,7 @@ class Basis_HCURL_TRI_I1_FEM : public Basis<ExecSpaceType, outputValueType, poin
 
     virtual
     void
-    getDofCoords( pointViewType dofCoords ) const {
+    getDofCoords( scalarViewType dofCoords ) const {
       impl_.getDofCoords( dofCoords );
     }
 
