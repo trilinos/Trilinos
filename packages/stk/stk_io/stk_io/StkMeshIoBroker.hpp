@@ -637,6 +637,7 @@ namespace impl
 
       void set_option_to_not_collapse_sequenced_fields();
       int get_num_time_steps();
+      double get_max_time();
 
       //-END
     protected:

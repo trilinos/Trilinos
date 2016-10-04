@@ -1404,6 +1404,11 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           return numTimeSteps;
       }
 
+      double StkMeshIoBroker::get_max_time()
+      {
+          return get_input_io_region()->get_max_time().second;
+      }
+
       size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
                                                    const Ioss::PropertyManager &properties)
       {

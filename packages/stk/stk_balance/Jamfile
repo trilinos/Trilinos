@@ -58,6 +58,7 @@ explicit install-targets ;
 alias install-targets
   : stk_balance_unit_tester
     stk_balance_integration_tester
+    stk_balance
   ;
 
 #
@@ -87,14 +88,18 @@ install install-user-include
 
 explicit install-user-lib ;
 install install-user-lib
-  : stk_balance
+  : stk_balance_lib
   : <location>$(install-root)/stk/stk_balance/lib
   ;
 
 
-lib stk_balance
+lib stk_balance_lib
   :
-    [ ifdevbuild [ glob $(stk_balance-root)/stk_balance/*.cpp $(stk_balance-root)/stk_balance/internal/*.cpp ] ]
+    [ ifdevbuild 
+      [ glob $(stk_balance-root)/stk_balance/balance.cpp 
+             $(stk_balance-root)/stk_balance/internal/*.cpp 
+      ] 
+    ]
     /sierra/stk_io//stk_io
     /sierra/stk_mesh//stk_mesh_base
     /tpl/trilinos//teuchos
@@ -112,11 +117,12 @@ lib stk_balance
 lib stk_balance_test_utils
   :
     [ glob $(stk_balance-root)/test_utils/*.cpp ]
-    stk_balance
+    stk_balance_lib
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_io//stk_io
     /sierra/seacas//ioss
     /sierra/seacas//nemesis
+    /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_test_utils
   ;
 
@@ -131,13 +137,15 @@ exe stk_balance_unit_tester
       $(stk_balance-root)/doc_tests/*.cpp
     ]
     stk_balance_test_utils
-    stk_balance
+    stk_balance_lib
     /sierra/seacas//ioss
     /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/geometry_toolkit//geometry_toolkit
     /tpl/gtest//gtest
     /mpi//mpi
     /sierra/stk_util//stk_util_parallel
   :
+    <include>$(stk_balance-root)/stk_balance
     <tag>@sierra-exec-tag
   ;
 
@@ -147,7 +155,7 @@ exe stk_balance_integration_tester
       $(stk_balance-root)/integration_tests/*.cpp
     ]
     stk_balance_test_utils
-    stk_balance
+    stk_balance_lib
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/seacas//ioss
     /tpl/gtest//gtest
@@ -155,4 +163,18 @@ exe stk_balance_integration_tester
   :
     <tag>@sierra-exec-tag
   ;
+
+exe stk_balance
+  :
+    [ glob 
+        $(stk_balance-root)/stk_balance/main.c*
+    ]
+    stk_balance_lib
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /mpi//mpi
+  :
+    <include>$(stk_balance-root)/stk_balance
+    <tag>@sierra-exec-tag
+  ;
+
 

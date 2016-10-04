@@ -5,7 +5,7 @@
 #include "Vertices.hpp"
 #include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>
 #include "balanceTypes.hpp"
-#include <balanceUtils.hpp>
+#include <stk_balance/balanceUtils.hpp>
 
 namespace stk { namespace balance { class GraphEdge;}}
 

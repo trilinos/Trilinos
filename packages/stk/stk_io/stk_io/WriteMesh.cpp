@@ -9,14 +9,13 @@ namespace io
 {
 
 void write_mesh(const std::string &filename,
-                             stk::mesh::BulkData &bulkData,
-                             stk::io::DatabasePurpose databasePurpose)
+                stk::mesh::BulkData &bulkData,
+                stk::io::DatabasePurpose databasePurpose)
 {
     stk::io::StkMeshIoBroker stkIo;
     stkIo.set_bulk_data(bulkData);
     size_t outputFileIndex = stkIo.create_output_mesh(filename, databasePurpose);
     stkIo.write_output_mesh(outputFileIndex);
-    stkIo.write_defined_output_fields(outputFileIndex);
 }
 
 }
