@@ -41,8 +41,7 @@
 
 #include "Sacado.hpp"
 
-// This only works with the experimental view enabled
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) && !defined(__CUDACC__)
+#if !defined(__CUDACC__)
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_ViewFactory.hpp"
 
@@ -115,7 +114,7 @@ my_func_dynamic(const View1& v1, const View2& v2)
 
 int main(int argc, char* argv[]) {
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) && !defined(__CUDACC__)
+#if !defined(__CUDACC__)
   typedef Sacado::Fad::DFad<double> FadType;
   typedef Kokkos::DefaultExecutionSpace execution_space;
 

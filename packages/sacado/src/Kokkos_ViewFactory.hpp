@@ -30,10 +30,6 @@
 #ifndef KOKKOS_VIEW_FACTORY_HPP
 #define KOKKOS_VIEW_FACTORY_HPP
 
-// This only works with the experimental view enabled
-#include "Sacado_ConfigDefs.h"
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 #include "Sacado_Traits.hpp"
 #include "KokkosExp_View_Fad.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
@@ -167,7 +163,5 @@ createViewWithType(const InputViewType& a,
 }
 
 }
-
-#endif
 
 #endif /* #ifndef KOKKOS_VIEW_FACTORY_HPP */

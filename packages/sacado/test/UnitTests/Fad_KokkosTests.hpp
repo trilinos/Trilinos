@@ -864,9 +864,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
 #endif
 
-// This requires the experimental view because subview's don't work
-// with original
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Subview, FadType, Layout, Device )
 {
@@ -910,12 +907,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
     success = success && checkFads(f, h_s(i), out);
   }
 }
-#else
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
-  Kokkos_View_Fad, Subview, FadType, Layout, Device )
-{
-}
-#endif
 
 // Tests that require view spec
 
@@ -1127,9 +1118,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
-// This test requires experimental view and checks we can allocate a view
+// This test checks we can allocate a view
 // with SFad without specifying the fad size in the constructor
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, SFadNoSizeArg, FadType, Layout, Device )
 {
@@ -1166,12 +1156,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
     }
   }
 }
-#else
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
-  Kokkos_View_Fad, SFadNoSizeArg, FadType, Layout, Device )
-{
-}
-#endif
 
 #else
 
