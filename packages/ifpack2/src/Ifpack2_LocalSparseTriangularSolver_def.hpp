@@ -265,7 +265,10 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
     else {
       X_colMap_->putScalar (STS::zero ());
     }
-    X_colMap_->doImport (X, *importer, Tpetra::ADD);
+    // See discussion of Github Issue #672 for why the Import needs to
+    // use the ZERO CombineMode.  The case where the Export is
+    // nontrivial is likely never exercised.
+    X_colMap_->doImport (X, *importer, Tpetra::ZERO);
   }
   RCP<const MV> X_cur = importer.is_null () ? rcpFromRef (X) :
     Teuchos::rcp_const_cast<const MV> (X_colMap_);
