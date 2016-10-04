@@ -57,8 +57,6 @@ namespace Details {
 template<class XV, class SizeType>
 struct LocalReciprocalThreshold;
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 template<class S, class ... P, class SizeType>
 struct LocalReciprocalThreshold<
   Kokkos::View< Sacado::MP::Vector<S>*,P...>, SizeType > {
@@ -79,31 +77,6 @@ struct LocalReciprocalThreshold<
                                                             minVal.coeff(0) );
   }
 };
-
-#else
-
-template<class T, class L, class D, class M, class SizeType>
-struct LocalReciprocalThreshold<
-  Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>, SizeType > {
-  typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> XV;
-
-  static void
-  compute (const XV& X,
-           const typename XV::non_const_value_type& minVal)
-  {
-    if (!Sacado::is_constant(minVal)) {
-      Kokkos::Impl::raise_error(
-        "LocalReciprocalThreshold not implemented for non-constant minVal");
-    }
-
-    typedef typename XV::flat_array_type Flat_XV;
-    Flat_XV flat_X = X;
-    LocalReciprocalThreshold< Flat_XV, SizeType >::compute( flat_X,
-                                                            minVal.coeff(0) );
-  }
-};
-
-#endif
 
 }
 }

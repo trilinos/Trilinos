@@ -55,8 +55,6 @@
 
 namespace Teuchos {
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 //! Variant of send() that takes a tag (and restores the correct order of arguments).
 template<typename Ordinal, typename D, typename ... P>
 typename std::enable_if<Kokkos::is_view_mp_vector< Kokkos::View<D,P...> >::value>::type
@@ -137,91 +135,6 @@ ireceive (const Kokkos::View<D,P...>& recvBuffer,
   flat_array_type array = recvBuffer;
   return ireceive(array, sourceRank, tag, comm);
 }
-
-#else
-
-//! Variant of send() that takes a tag (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M>
-void
-send (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& sendBuffer,
-      const Ordinal count,
-      const int destRank,
-      const int tag,
-      const Comm<Ordinal>& comm)
-{
-  typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::flat_array_type flat_array_type;
-
-  flat_array_type array = sendBuffer;
-  Ordinal array_count = count * sendBuffer.sacado_size();
-  send(array, array_count, destRank, tag, comm);
-}
-
-//! Variant of ssend() that takes a tag (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M>
-void
-ssend (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& sendBuffer,
-       const Ordinal count,
-       const int destRank,
-       const int tag,
-       const Comm<Ordinal>& comm)
-{
-  typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::flat_array_type flat_array_type;
-
-  flat_array_type array = sendBuffer;
-  Ordinal array_count = count * sendBuffer.sacado_size();
-  ssend(array, array_count, destRank, tag, comm);
-}
-
-//! Variant of readySend() that accepts a message tag.
-template<typename Ordinal, typename T, typename L, typename D, typename M>
-void
-readySend (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& sendBuffer,
-           const Ordinal count,
-           const int destRank,
-           const int tag,
-           const Comm<Ordinal>& comm)
-{
-  typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::flat_array_type flat_array_type;
-
-  flat_array_type array = sendBuffer;
-  Ordinal array_count = count * sendBuffer.sacado_size();
-  readySend(array, array_count, destRank, tag, comm);
-}
-
-//! Variant of isend() that takes a tag (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M>
-RCP<CommRequest<Ordinal> >
-isend (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& sendBuffer,
-       const int destRank,
-       const int tag,
-       const Comm<Ordinal>& comm)
-{
-  typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::flat_array_type flat_array_type;
-
-  flat_array_type array = sendBuffer;
-  return isend(array, destRank, tag, comm);
-}
-
-//! Variant of ireceive that takes a tag argument (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M>
-RCP<CommRequest<Ordinal> >
-ireceive (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& recvBuffer,
-          const int sourceRank,
-          const int tag,
-          const Comm<Ordinal>& comm)
-{
-  typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> view_type;
-  typedef typename view_type::flat_array_type flat_array_type;
-
-  flat_array_type array = recvBuffer;
-  return ireceive(array, sourceRank, tag, comm);
-}
-
-#endif
 
 }
 
