@@ -254,8 +254,7 @@ void BoolParameterEntryValidator::throwTypeError(
 // Nonmmeber helper functions
 
 
-Teuchos::RCP<Teuchos::BoolParameterEntryValidator>
-Teuchos::boolParameterEntryValidator()
+Teuchos::RCP<Teuchos::BoolParameterEntryValidator> boolParameterEntryValidator()
 {
   return rcp(new BoolParameterEntryValidator());
 }
@@ -299,15 +298,10 @@ int AnyNumberParameterEntryValidator::getInt(
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return as<int>(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
-#ifdef HAVE_TEUCHOSCORE_CXX11
-    return std::stoi(any_cast<std::string>(anyValue));
-#else
-    return std::atoi(any_cast<std::string>(anyValue).c_str());
-#endif
+    return convertStringToInt(any_cast<std::string>(anyValue));
   throwTypeError(entry,paramName,sublistName);
   return 0; // Will never get here!
 }
-
 
 double AnyNumberParameterEntryValidator::getDouble(
   const ParameterEntry &entry, const std::string &paramName,
@@ -320,11 +314,7 @@ double AnyNumberParameterEntryValidator::getDouble(
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return any_cast<double>(anyValue);
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
-#ifdef HAVE_TEUCHOSCORE_CXX11
-    return std::stod(any_cast<std::string>(anyValue));
-#else
-    return std::atof(any_cast<std::string>(anyValue).c_str());
-#endif
+    return convertStringToDouble(any_cast<std::string>(anyValue));
   throwTypeError(entry,paramName,sublistName);
   return 0.0; // Will never get here!
 }

@@ -661,7 +661,6 @@ public:
     ParameterEntry * entry
     ) const;
 
-
   //@}
 
 private:
@@ -793,9 +792,6 @@ public:
 
   /** \brief Get a double value from a parameter entry.
    * HAVE_TEUCHOSCORE_CXX11 will call std::stod
-   * otherwise we use std::atof
-   * Note that std::stod throws on badly formatted string but
-   * some formats can be accepted, such as "1.1x" becoming 1.1
    */
   double getDouble(
     const ParameterEntry &entry, const std::string &paramName = "",
@@ -1450,7 +1446,6 @@ public:
 
   /** \brief . */
   Teuchos::any getNumberFromString(const ParameterEntry &entry,
-    const std::string &paramName,  const std::string &sublistName,
     const bool activeQuery) const;
 
   /** \brief . */
@@ -1475,11 +1470,10 @@ private:
   /** \name Private Methods */
   //@{
 
-  // because this is geeneral templated but we want to convert strings
-  // usding stod, stodi, ro atof, atoi, depending on template type T
-  // this method is used to collect the logic for that decision
-  // further discussion could probably unify this behavior in the
-  // base class to share code better with AnyNumberParameterEntryValidator
+  // note this was discussed in issue #612
+  // currently we are keeping a string validator with EnhancedNumberValidator
+  // an alternative is to make a combined class for AnyNumberParameterEntryValidator
+  // and EnhancedNumberValidator
   bool useIntConversions() const;
 
   //@}
@@ -1528,8 +1522,7 @@ void EnhancedNumberValidator<T>::validateAndModify(
   any anyValue = entry->getAny(true);
   // preferred type is not string
   if( anyValue.type() == typeid(std::string) ) {
-    Teuchos::any anyValue =
-    getNumberFromString(*entry,paramName,sublistName,false);
+    anyValue = getNumberFromString(*entry,false);
     entry->setValue(
       any_cast<T>(anyValue),
       false // isDefault
@@ -1569,8 +1562,7 @@ bool EnhancedNumberValidator<T>::useIntConversions() const
 
 template<class T>
 Teuchos::any EnhancedNumberValidator<T>::getNumberFromString(
-  const ParameterEntry &entry, const std::string &paramName,
-  const std::string &sublistName, const bool activeQuery
+  const ParameterEntry &entry, const bool activeQuery
   ) const
 {
   // perhaps we want to just eliminate the int checks
@@ -1579,18 +1571,10 @@ Teuchos::any EnhancedNumberValidator<T>::getNumberFromString(
   // AnyNumberParameterEntryValidator more closely
   const any &anyValue = entry.getAny(activeQuery);
   if(useIntConversions()) {
-#ifdef HAVE_TEUCHOSCORE_CXX11
-    return any((T)std::stoi(any_cast<std::string>(anyValue)));
-#else
-    return any((T)std::atoi(any_cast<std::string>(anyValue).c_str()));
-#endif
+    return any((T)convertStringToInt(any_cast<std::string>(anyValue)));
   }
   else { // if not discrete, read as a double and cast to our type T
-#ifdef HAVE_TEUCHOSCORE_CXX11
-    return any((T)std::stod(any_cast<std::string>(anyValue)));
-#else
-    return any((T)std::atof(any_cast<std::string>(anyValue).c_str()));
-#endif
+    return any((T)convertStringToDouble(any_cast<std::string>(anyValue)));
   }
 }
 
@@ -1606,7 +1590,7 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
   // We may wish to change this to be optional like AnyNumberParameterEntryValidator
   if( anyValue.type() == typeid(std::string) ) {
     // try to upgrade from a string to a number
-    anyValue = getNumberFromString(entry, paramName, sublistName, false);
+    anyValue = getNumberFromString(entry, false);
   }
 
   const std::string &entryName = entry.getAny(false).typeName();

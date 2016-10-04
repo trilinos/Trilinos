@@ -88,7 +88,13 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
   TEST_NOTHROW(validList->set("Int Parameter", 4, "int parameter",
     intVali));
 #ifdef HAVE_TEUCHOSCORE_CXX11
-  TEST_NOTHROW(userList->set("Int Parameter", "xx4"));
+  TEST_NOTHROW(userList->set("Int Parameter", "x4"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Int Parameter", "4x"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Int Parameter", "12")); // ok string bad range
   TEST_THROW(userList->validateParameters(*validList),
     Exceptions::InvalidArgument);
 #endif
@@ -138,7 +144,13 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
   TEST_NOTHROW(validList->set("Short Parameter", (short)4, "short parameter",
     shortVali));
 #ifdef HAVE_TEUCHOSCORE_CXX11
-  TEST_NOTHROW(userList->set("Short Parameter", "xx4"));
+  TEST_NOTHROW(userList->set("Short Parameter", "x4"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Short Parameter", "4x"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Short Parameter", "12")); // ok string bad range
   TEST_THROW(userList->validateParameters(*validList),
     Exceptions::InvalidArgument);
 #endif
@@ -189,7 +201,13 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
   TEST_NOTHROW(validList->set("Float Parameter", (float)4.0, "float parameter",
     floatVali));
 #ifdef HAVE_TEUCHOSCORE_CXX11
-  TEST_NOTHROW(userList->set("Float Parameter", "xx4"));
+  TEST_NOTHROW(userList->set("Float Parameter", "x4.0"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Float Parameter", "4.0x"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Float Parameter", "12.0")); // ok string bad range
   TEST_THROW(userList->validateParameters(*validList),
     Exceptions::InvalidArgument);
 #endif
@@ -240,8 +258,14 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
   TEST_NOTHROW(validList->set("Double Parameter", 4.0, "double parameter",
     doubleVali));
 #ifdef HAVE_TEUCHOSCORE_CXX11
-  TEST_NOTHROW(userList->set("Double Parameter", "xx4"));
+  TEST_NOTHROW(userList->set("Double Parameter", "x4.0"));
   TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Double Parameter", "4.0x"));
+  TEST_THROW(userList->validateParameters(*validList),
+    Exceptions::InvalidArgument);
+  TEST_NOTHROW(userList->set("Double Parameter", "12.0"));
+  TEST_THROW(userList->validateParameters(*validList), // bad range
     Exceptions::InvalidArgument);
 #endif
   userList = rcp(new ParameterList("Valid List"));
@@ -339,21 +363,31 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, anyNumberValidator)
   // std::atof and std::atoi will be used for no CXX11
   //
 #ifdef HAVE_TEUCHOSCORE_CXX11
-  // for int/double/string tyoe we throw for badly formatted string on std::stod
+  // for double types we throw for badly formatted string on std::stod
   // this will check the double type first because it is PREFER_DOUBLE
-  TEST_THROW(validList->set( "allParameter", "b1.1", "documentation",
+  TEST_THROW(validList->set( "allParameter", "1.1x", "documentation",
+    allValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "intDoubleParameter", "1.1x", "documentation",
+    allValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "allParameter", "x1.1", "documentation",
+    allValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "intDoubleParameter", "x1.1", "documentation",
     allValidator), Exceptions::InvalidArgument);
   // for int/string but no double - std::stoi throws for invalid formatting
-  TEST_THROW(validList->set( "intStringParameter", "b1.1", "documentation",
+  TEST_THROW(validList->set( "intStringParameter", "1x", "documentation",
+    intStringValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "intStringParameter", "x1", "documentation",
+    intStringValidator), Exceptions::InvalidArgument);
+  TEST_THROW(validList->set( "intStringParameter", "1 x", "documentation",
     intStringValidator), Exceptions::InvalidArgument);
 #else
   // for int/double/string std::atod does NOT throw - this is the old behavior
   // this is different now when HAVE_TEUCHOSCORE_CXX11 is ON - see above
-  TEST_NOTHROW(validList->set( "allParameter", "b1.1", "documentation",
+  TEST_NOTHROW(validList->set( "allParameter", "1.1x", "documentation",
     allValidator));
   // for int/string std::atoi does NOT throw - this is the old behavior
   // this is different now when HAVE_TEUCHOSCORE_CXX11 is ON - see above
-  TEST_NOTHROW(validList->set( "intStringParameter", "b1.1", "documentation",
+  TEST_NOTHROW(validList->set( "intStringParameter", "1.1x", "documentation",
     intStringValidator));
 #endif
 }
