@@ -89,6 +89,7 @@ namespace Intrepid2 {
     const auto numCells = worksetCell.dimension(0);
     const auto numPoints = physPoints.dimension(1);
     
+    // init guess is created locally and non fad whatever refpoints type is 
     refPointViewSpType initGuess("CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim);
     rst::clone(initGuess, cellCenter);
     
@@ -112,6 +113,8 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
     CellTools_mapToReferenceFrameInitGuessArgs(refPoints, initGuess, physPoints, worksetCell, 
                                                basis->getBaseCellTopology());
+
+    // initGuess cannot be a FAD type, this routine cannot be used on device
 #endif
     const auto cellTopo = basis->getBaseCellTopology();
     const auto spaceDim = cellTopo.getDimension();
@@ -124,34 +127,36 @@ namespace Intrepid2 {
     typedef RealSpaceTools<SpT> rst;
     const auto tol = tolerence();
 
+    // All temporary views here are non-fad view 
+
     // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
-    typedef Kokkos::DynRankView<initGuessValueType,SpT> xViewType;
-    xViewType 
+    typedef Kokkos::DynRankView<typename ScalarTraits<refPointValueType>::scalar_type,SpT> xViewType;
+    xViewType
       xOld("CellTools::mapToReferenceFrameInitGuess::xOld", numCells, numPoints, spaceDim),
       xTmp("CellTools::mapToReferenceFrameInitGuess::xTmp", numCells, numPoints, spaceDim);
 
     // Set initial guess to xOld; we can do soft copy with initGuess but leave it not touched 
     // user may want to keep the same init guess
     Kokkos::deep_copy(xOld, initGuess);
-    
-    typedef Kokkos::DynRankView<physPointValueType,SpT> jacobianViewType;
+
+    typedef Kokkos::DynRankView<typename ScalarTraits<physPointValueType>::scalar_type,SpT> jacobianViewType;
     jacobianViewType
       jacobian   ("CellTools::mapToReferenceFrameInitGuess::jacobian", numCells, numPoints, spaceDim, spaceDim),
       jacobianInv("CellTools::mapToReferenceFrameInitGuess::jacobian", numCells, numPoints, spaceDim, spaceDim);
     
-    typedef Kokkos::DynRankView<initGuessValueType,SpT> errorViewType;
+    typedef Kokkos::DynRankView<typename ScalarTraits<refPointValueType>::scalar_type,SpT> errorViewType;
     errorViewType 
       errorPointwise("CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints),
       errorCellwise ("CellTools::mapToReferenceFrameInitGuess::errorCellwise",  numCells);
-
+    
     // Newton method to solve the equation F(refPoints) - physPoints = 0:
     // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
     for (size_type iter=0;iter<Parameters::MaxNewton;++iter) {
-    
+      
       // Jacobians at the old iterates and their inverses. 
       setJacobian(jacobian, xOld, worksetCell, basis);
       setJacobianInv(jacobianInv, jacobian);
-
+      
       // The Newton step.
       mapToPhysicalFrame(xTmp, xOld, worksetCell, basis); // xTmp <- F(xOld)
       rst::subtract(xTmp, physPoints, xTmp);              // xTmp <- physPoints - F(xOld)
@@ -170,9 +175,11 @@ namespace Intrepid2 {
       if (errorTotal < tol) 
         break;
 
-      // initialize next Newton step
-      //    xOld = refPoints;
-      Kokkos::deep_copy(xOld, refPoints);
+      // initialize next Newton step ( this is not device friendly )
+      for (size_type i=0;i<refPoints.dimension(0);++i)
+        for (size_type j=0;j<refPoints.dimension(1);++j)
+          for (size_type k=0;k<refPoints.dimension(2);++k)
+            xOld(i,j,k) = refPoints(i,j,k);
     }
   }
 
