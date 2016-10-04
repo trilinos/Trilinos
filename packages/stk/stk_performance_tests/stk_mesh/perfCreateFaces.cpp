@@ -109,6 +109,14 @@ TEST_F(CreateFacesClassicPerformanceTest, read_mesh)
     run_create_faces_perf_test();
 }
 
+TEST_F(CreateFacesPerformanceTest, read_mesh_with_auto_decomp)
+{
+    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
+    stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
+
+    run_create_faces_perf_test();
+}
+
 TEST_F(CreateFacesPerformanceTest, read_mesh)
 {
     setup_mesh(get_mesh_spec(), stk::mesh::BulkData::AUTO_AURA);
