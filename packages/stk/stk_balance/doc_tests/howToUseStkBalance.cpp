@@ -395,6 +395,7 @@ public:
     virtual int getNumCriteria() const { return m_critFields.size(); }
     virtual bool isMultiCriteriaRebalance() const { return true;}
 
+    using ParmetisSettings::getGraphVertexWeight;
     virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
     {
         ThrowRequireWithSierraHelpMsg(criteria_index>=0 && static_cast<size_t>(criteria_index)<m_critFields.size());
