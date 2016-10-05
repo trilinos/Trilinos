@@ -90,7 +90,9 @@ namespace Intrepid2 {
     const auto numPoints = physPoints.dimension(1);
     
     // init guess is created locally and non fad whatever refpoints type is 
-    refPointViewSpType initGuess("CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim);
+    auto initGuess = Kokkos::createDynRankView(refPoints, "CellTools::mapToReferenceFrame::initGuess",
+                                               numCells, numPoints, spaceDim);
+    //refPointViewSpType initGuess("CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim);
     rst::clone(initGuess, cellCenter);
     
     mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, worksetCell, cellTopo);  
@@ -114,7 +116,6 @@ namespace Intrepid2 {
     CellTools_mapToReferenceFrameInitGuessArgs(refPoints, initGuess, physPoints, worksetCell, 
                                                basis->getBaseCellTopology());
 
-    // initGuess cannot be a FAD type, this routine cannot be used on device
 #endif
     const auto cellTopo = basis->getBaseCellTopology();
     const auto spaceDim = cellTopo.getDimension();
