@@ -392,7 +392,7 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<pointValueType,pointProperties...>       points,
                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                  const shards::CellTopology cellTopo ) {
-      auto basis = createHGradBasis<jacobianValueType,pointValueType>(cellTopo);
+      auto basis = createHGradBasis<pointValueType,pointValueType>(cellTopo);
       setJacobian(jacobian, 
                   points, 
                   worksetCell, 
