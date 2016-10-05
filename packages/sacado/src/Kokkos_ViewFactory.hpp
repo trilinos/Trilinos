@@ -30,6 +30,8 @@
 #ifndef KOKKOS_VIEW_FACTORY_HPP
 #define KOKKOS_VIEW_FACTORY_HPP
 
+#include <type_traits>
+
 #include "Sacado_Traits.hpp"
 #include "KokkosExp_View_Fad.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
@@ -130,21 +132,40 @@ createDynRankViewWithType(const InputViewType& a,
   return view_factory::template create_view<ResultViewType>(a,prop,dims...);
 }
 
+namespace Impl {
+  // Helper type trait to determine type of resulting DynRankView from
+  // createDynRankView below
+  template <typename InputView>
+  struct ResultDynRankView {
+    // Allow for use of LayoutStride in InputViewType.  We don't want to create
+    // a new view with LayoutStride, so replace it with the default layout
+    // instead.
+    using input_value    = typename InputView::non_const_value_type;
+    using input_layout   = typename InputView::array_layout;
+    using input_device   = typename InputView::device_type;
+    using default_layout = typename input_device::execution_space::array_layout;
+    using result_layout  =
+      typename std::conditional<
+        std::is_same< input_layout, Kokkos::LayoutStride >::value,
+        default_layout,
+        input_layout >::type;
+    using type =
+      Kokkos::DynRankView<input_value, result_layout, input_device>;
+  };
+
+}
+
 //! Wrapper to simplify use of Sacado ViewFactory
 template <typename InputViewType, typename CtorProp, typename ... Dims >
 typename std::enable_if<
   is_view<InputViewType>::value || is_dyn_rank_view<InputViewType>::value,
-  Kokkos::DynRankView<typename InputViewType::non_const_value_type,
-                      typename InputViewType::array_layout,
-                      typename InputViewType::device_type> >::type
+  typename Impl::ResultDynRankView<InputViewType>::type
+  >::type
 createDynRankView(const InputViewType& a,
                   const CtorProp& prop,
                   const Dims... dims)
 {
-  using ResultViewType =
-    Kokkos::DynRankView<typename InputViewType::non_const_value_type,
-                        typename InputViewType::array_layout,
-                        typename InputViewType::device_type>;
+  using ResultViewType = typename Impl::ResultDynRankView<InputViewType>::type;
   return createDynRankViewWithType<ResultViewType>(a, prop, dims...);
 }
 
