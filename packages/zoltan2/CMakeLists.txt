@@ -1,6 +1,6 @@
 IF(Zoltan2_ENABLE_ParMETIS AND NOT TPL_ENABLE_MPI)
   MESSAGE(FATAL_ERROR "ParMETIS requires that MPI is enabled. "
-    "Set TPL_ENABLE_MPI OFF or set TPL_ENABLE_ParMETIS OFF or set "
+    "Set TPL_ENABLE_MPI ON or set TPL_ENABLE_ParMETIS OFF or set "
     "Zoltan2_ENABLE_ParMETIS OFF.")
 ENDIF()
 
@@ -11,7 +11,7 @@ ENDIF()
 
 IF(Zoltan2_ENABLE_Scotch AND NOT HAVE_SCOTCH_VERSION_6_0_3)
   MESSAGE(FATAL_ERROR "Zoltan2 requires Scotch version 6.0.3 or later. Upgrade or"
-    " set TPL_ENABLE_Scotch FALSE or set Zoltan2_ENABLE_Scotch OFF.")
+    " set TPL_ENABLE_Scotch OFF or set Zoltan2_ENABLE_Scotch OFF.")
 ENDIF()
 
 # Path to test and example data directory
