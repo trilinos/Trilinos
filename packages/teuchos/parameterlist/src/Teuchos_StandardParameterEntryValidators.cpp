@@ -251,15 +251,6 @@ void BoolParameterEntryValidator::throwTypeError(
     );
 }
 
-// Nonmmeber helper functions
-
-
-Teuchos::RCP<Teuchos::BoolParameterEntryValidator> boolParameterEntryValidator()
-{
-  return rcp(new BoolParameterEntryValidator());
-}
-
-
 //
 // AnyNumberParameterEntryValidator
 //
@@ -695,6 +686,11 @@ RCP<StringValidator> DummyObjectGetter<StringValidator>::getDummyObject(){
 
 // Nonmmeber helper functions
 
+Teuchos::RCP<Teuchos::BoolParameterEntryValidator>
+Teuchos::boolParameterEntryValidator()
+{
+  return rcp(new BoolParameterEntryValidator());
+}
 
 Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
 Teuchos::anyNumberParameterEntryValidator()
