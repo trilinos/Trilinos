@@ -456,6 +456,7 @@ void EvaluatePartition<Adapter>::sharedConstructor(
   } else {
     problemComm = comm;
   }
+
   RCP<Environment> env;
 
   try{

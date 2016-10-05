@@ -76,7 +76,39 @@ public:
           "BUILD ERROR:  PuLP requested but not compiled into Zoltan2.\n"
           "Please set CMake flag Zoltan2_ENABLE_PuLP:BOOL=ON.");
   }
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    pl.set("pulp_vert_imbalance", 1.1, "vertex imbalance tolerance, ratio of "
+      "maximum load over average load",
+      Environment::getAnyDoubleValidator());
+
+    pl.set("pulp_edge_imbalance", 1.1, "edge imbalance tolerance, ratio of "
+      "maximum load over average load",
+      Environment::getAnyDoubleValidator());
+
+    // bool parameter
+    pl.set("pulp_lp_init", false, "perform label propagation-based "
+      "initialization", Environment::getBoolValidator() );
+
+    // bool parameter
+    pl.set("pulp_minimize_maxcut", false, "perform per-part max cut "
+      "minimization", Environment::getBoolValidator() );
+
+    // bool parameter
+    pl.set("pulp_verbose", false, "verbose output",
+      Environment::getBoolValidator() );
+
+    // bool parameter
+    pl.set("pulp_do_repart", false, "perform repartitioning",
+      Environment::getBoolValidator() );
+
+    pl.set("pulp_seed", 0, "set pulp seed", Environment::getAnyIntValidator());
+  }
 };
+
 }
 #endif
 
@@ -239,11 +271,11 @@ void AlgPuLP<Adapter>::buildModel(modelFlag_t &flags)
     else if (symParameter == std::string("bipartite"))
       flags.set(SYMMETRIZE_INPUT_BIPARTITE);  } 
 
-  int sgParameter = 0;
+  bool sgParameter = false;
   pe = pl.getEntryPtr("subset_graph");
   if (pe)
-    sgParameter = pe->getValue<int>(&sgParameter);
-  if (sgParameter == 1)
+    sgParameter = pe->getValue(&sgParameter);
+  if (sgParameter)
       flags.set(BUILD_SUBSET_GRAPH);
 
   flags.set(REMOVE_SELF_EDGES);
@@ -392,33 +424,33 @@ void AlgPuLP<Adapter>::partition(
   // PuLP - do_edge_min = false, do_maxcut_min = false
   // PuLP-M - do_edge_bal = true, do_maxcut_min = false
   // PuLP-MM - do_edge_bal = true/false, do_maxcut_min = true
-  int do_lp_init = 0;
-  int do_bfs_init = 1;
-  int do_edge_bal = 0;
-  int do_repart = 0;
-  int do_maxcut_min = 0;
-  int verbose_output = 0;
+  bool do_lp_init = false;
+  bool do_bfs_init = true;
+  bool do_edge_bal = false;
+  bool do_repart = false;
+  bool do_maxcut_min = false;
+  bool verbose_output = false;
 
   // Do label propagation initialization instead of bfs?
   pe = pl.getEntryPtr("pulp_lp_init");
-  if (pe) do_lp_init = pe->getValue<int>(&do_lp_init);
-  if (do_lp_init) do_bfs_init = 0;
+  if (pe) do_lp_init = pe->getValue(&do_lp_init);
+  if (do_lp_init) do_bfs_init = false;
 
   // Now look at additional objective
   pe = pl.getEntryPtr("pulp_minimize_maxcut");
   if (pe) {
-    do_maxcut_min = pe->getValue<int>(&do_maxcut_min);
+    do_maxcut_min = pe->getValue(&do_maxcut_min);
     // If we're doing the secondary objective, 
     //   set the additional constraint as well
-    if (do_maxcut_min) do_edge_bal = 1;
+    if (do_maxcut_min) do_edge_bal = true;
   }
 
   pe = pl.getEntryPtr("pulp_do_repart");
   if (pe) {
-    do_repart = pe->getValue<int>(&do_repart);
+    do_repart = pe->getValue(&do_repart);
     // Do repartitioning with input parts
-    do_bfs_init = 0;
-    do_lp_init = 0;
+    do_bfs_init = false;
+    do_lp_init = false;
     // TODO: read in current parts
     // for (int i = 0; i < num_verts; ++i)
     //   parts[i] = something;
@@ -445,18 +477,18 @@ void AlgPuLP<Adapter>::partition(
   // verbose output?  
   // TODO: fully implement verbose flag throughout PuLP
   pe = pl.getEntryPtr("pulp_verbose");
-  if (pe) verbose_output = pe->getValue<int>(&verbose_output);
+  if (pe) verbose_output = pe->getValue(&verbose_output);
 
   // using pulp seed? 
   int pulp_seed = rand();
   pe = pl.getEntryPtr("pulp_seed");
-  if (pe) pulp_seed = pe->getValue<int>(&verbose_output);
+  if (pe) pulp_seed = pe->getValue(&pulp_seed);
 
   // Create PuLP's partitioning data structure
   pulp_part_control_t ppc = {vert_imbalance, edge_imbalance,
-    (bool)do_lp_init, (bool)do_bfs_init, (bool)do_repart,
-    (bool)do_edge_bal, (bool)do_maxcut_min,
-    (bool)verbose_output, pulp_seed};
+    do_lp_init, do_bfs_init, do_repart,
+    do_edge_bal, do_maxcut_min,
+    verbose_output, pulp_seed};
 
 
   if (verbose_output) {

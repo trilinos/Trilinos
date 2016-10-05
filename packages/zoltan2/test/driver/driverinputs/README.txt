@@ -237,8 +237,8 @@ Example 3a: A Partitioning problem definition block.
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="SPECIFY ALGORITHM" />
       <Parameter name="bisection_num_test_cuts" type="int" value="###" />
-      <Parameter name="rectilinear" type="string" value="YES/NO"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="rectilinear" type="bool" value=“true/false”/>
+      <Parameter name="compute_metrics" type=“bool” value="true/false”/>
     </ParameterList>
     
     

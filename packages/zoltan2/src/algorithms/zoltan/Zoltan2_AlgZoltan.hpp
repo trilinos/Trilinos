@@ -347,9 +347,8 @@ void AlgZoltan<Adapter>::partition(
 
   pe = pl.getEntryPtr("rectilinear");
   if (pe) {
-    int val;
-    val = pe->getValue<int>(&val);
-    if (val != 0)
+    bool val = pe->getValue(&val);
+    if (val)
       zz->Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
   }
 
