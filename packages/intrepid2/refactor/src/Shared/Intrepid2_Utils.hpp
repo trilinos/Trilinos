@@ -210,7 +210,7 @@ namespace Intrepid2 {
     template<typename T>
     KOKKOS_FORCEINLINE_FUNCTION
     static T abs(const T a) {
-      return (a > 0 ? a : -a);
+      return (a > 0 ? a : T(-a));
     }
 
     template<typename T>
