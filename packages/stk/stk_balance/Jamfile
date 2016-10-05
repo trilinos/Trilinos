@@ -108,7 +108,7 @@ lib stk_balance_lib
     /mpi//mpi
   :
     <include>$(stk_balance-root)/stk_balance
-    [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance.a ]
+    [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a ]
   :
   :
     <include>$(stk_balance-root)/stk_balance
