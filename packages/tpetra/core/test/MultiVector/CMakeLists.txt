@@ -82,3 +82,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
+
+# This test only uses one process, and does not need MPI,
+# but it still works if MPI is enabled.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue364
+  SOURCES
+    Issue364
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+# This test only uses one process, and does not need MPI,
+# but it should still work if MPI is enabled.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Issue46
+  SOURCES
+    Issue46
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )

@@ -71,7 +71,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cl, lbf, rbf;
-        Util::unrollIndex( cl, lbf, rbf, 
+        unrollIndex( cl, lbf, rbf, 
                            _outputFields.dimension(0),
                            _outputFields.dimension(1),
                            _outputFields.dimension(2),
@@ -143,7 +143,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cl, bf;
-        Util::unrollIndex( cl, bf, 
+        unrollIndex( cl, bf, 
                            _inputFields.dimension(0),
                            _inputFields.dimension(1),
                            iter );

@@ -73,8 +73,6 @@ namespace std {
 
 }
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 #include "impl/KokkosExp_ViewMapping.hpp"
 
 namespace Kokkos {
@@ -110,7 +108,5 @@ public:
 } // namespace Impl
 } // namespace Experimental
 } // namespace Kokkos
-
-#endif // defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
 #endif // #ifndef KOKKOS_EXPERIMENTAL_LAYOUT_CONTIGUOUS_HPP

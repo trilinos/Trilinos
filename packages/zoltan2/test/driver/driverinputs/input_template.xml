@@ -73,12 +73,12 @@
    defined then the problem is assumed to be 1D.
    
    ** parameters: distribute input and debug are optional.
-      If not defined they defualt to True.
+      If not defined they default to true.
    #####################################################-->
   
   <ParameterList name="InputParameters">
-    <Parameter name="debug" type="bool" value="True/False"/>
-    <Parameter name="distribute input" type="bool" value="True/False"/>
+    <Parameter name="debug" type="bool" value="true/false"/>
+    <Parameter name="distribute input" type="bool" value="true/false"/>
     
     <Parameter name="input path" type="string" value="PATH/TO/INPUT/DIRECTORY"/>
     <Parameter name="input file" type="string" value="FILE NAME (NO EXTENSION)"/>
@@ -88,8 +88,8 @@
   <!--  GALERI GRIDS MAY BE 1,2, OR 3D.-->
   <!--  FOR A 1D PROBLEM EXCLUDE x AND y PARAMETERS, ETC.-->
   <ParameterList name="InputParameters">
-    <Parameter name="debug" type="bool" value="True/False"/>
-    <Parameter name="distribute input" type="bool" value="True/False"/>
+    <Parameter name="debug" type="bool" value="true/false"/>
+    <Parameter name="distribute input" type="bool" value="true/false"/>
     
     <Parameter name="x" type="int" value="##"/>
     <Parameter name="y" type="int" value="##"/>
@@ -140,9 +140,8 @@
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="SPECIFY ALGORITHM" />
-      <Parameter name="bisection_num_test_cuts" type="int" value="###" />
-      <Parameter name="rectilinear" type="string" value="YES/NO"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
+      <Parameter name="rectilinear" type="bool" value="true/false"/>
+      <Parameter name="compute_metrics" type="bool" value="true/false"/>
     </ParameterList>
     
     

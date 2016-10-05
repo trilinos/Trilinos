@@ -198,7 +198,7 @@ namespace Intrepid2 {
     const auto card = this->basisCardinality_;
     
     // points are computed in the host and will be copied 
-    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("Hgrad::Line::Cn::dofCoords", card, 1);
 
 
@@ -282,7 +282,7 @@ namespace Intrepid2 {
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRI returns nonzero info." );
     
     // create host mirror 
-    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       vinv("Hgrad::Line::Cn::vinv", card, card);
 
     for (auto i=0;i<card;++i) 

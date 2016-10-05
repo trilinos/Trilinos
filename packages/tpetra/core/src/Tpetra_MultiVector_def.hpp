@@ -3274,16 +3274,32 @@ namespace Tpetra {
       X.template getLocalView<Kokkos::HostSpace> ().ptr_on_device ();
 #endif // HAVE_TPETRA_DEBUG
 
+    const std::pair<size_t, size_t> origRowRng (offset, X.origView_.dimension_0 ());
     const std::pair<size_t, size_t> rowRng (offset, offset + newNumRows);
-    // FIXME (mfh 10 May 2014) Use of origView_ instead of view_ for
-    // the second argument may be wrong, if view_ resulted from a
-    // previous call to offsetView with offset != 0.
-    dual_view_type newView = subview (X.origView_, rowRng, ALL ());
+
+    dual_view_type newOrigView = subview (X.origView_, origRowRng, ALL ());
+    // FIXME (mfh 29 Sep 2016) If we just use X.view_ here, it breaks
+    // CrsMatrix's Gauss-Seidel implementation (which assumes the
+    // ability to create domain Map views of column Map MultiVectors,
+    // and then get the original column Map MultiVector out again).
+    // If we just use X.origView_ here, it breaks the fix for #46.
+    // The test for offset == 0 is a hack that makes both tests pass,
+    // but doesn't actually fix the more general issue.  In
+    // particular, the right way to fix Gauss-Seidel would be to fix
+    // #385; that would make "getting the original column Map
+    // MultiVector out again" unnecessary.
+    dual_view_type newView = subview (offset == 0 ? X.origView_ : X.view_, rowRng, ALL ());
+
     // NOTE (mfh 06 Jan 2015) Work-around to deal with Kokkos not
     // handling subviews of degenerate Views quite so well.  For some
     // reason, the ([0,0], [0,2]) subview of a 0 x 2 DualView is 0 x
     // 0.  We work around by creating a new empty DualView of the
     // desired (degenerate) dimensions.
+    if (newOrigView.dimension_0 () == 0 &&
+        newOrigView.dimension_1 () != X.origView_.dimension_1 ()) {
+      newOrigView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
+                                                         X.getNumVectors ());
+    }
     if (newView.dimension_0 () == 0 &&
         newView.dimension_1 () != X.view_.dimension_1 ()) {
       newView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
@@ -3291,8 +3307,8 @@ namespace Tpetra {
     }
 
     MV subViewMV = X.isConstantStride () ?
-      MV (Teuchos::rcp (new map_type (subMap)), newView, X.origView_) :
-      MV (Teuchos::rcp (new map_type (subMap)), newView, X.origView_, X.whichVectors_ ());
+      MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView) :
+      MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView, X.whichVectors_ ());
 
 #ifdef HAVE_TPETRA_DEBUG
     const size_t strideAfter = X.isConstantStride () ?
@@ -4600,53 +4616,6 @@ namespace Tpetra {
   {
     this->describeImpl (out, "Tpetra::MultiVector", verbLevel);
   }
-
-#if TPETRA_USE_KOKKOS_DISTOBJECT
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViews () const
-  {
-    // Do nothing in Kokkos::View implementation
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViewsNonConst (KokkosClassic::ReadWriteOption rwo)
-  {
-    // Do nothing in Kokkos::View implementation
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  releaseViews () const
-  {
-    // Do nothing in Kokkos::View implementation
-  }
-
-#else // NOT TPETRA_USE_KOKKOS_DISTOBJECT
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViews () const
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  createViewsNonConst (KokkosClassic::ReadWriteOption /* rwo */ )
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  releaseViews () const
-  {}
-
-#endif // TPETRA_USE_KOKKOS_DISTOBJECT
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void

@@ -41,6 +41,7 @@
 
 #include <gtest/gtest.h>
 #include <Intrepid2_MiniTensor_FunctionSet.h>
+#include "ROL_MiniTensor_BoundConstraint.hpp"
 #include "ROL_MiniTensor_EqualityConstraint.hpp"
 #include "ROL_MiniTensor_Function.hpp"
 
@@ -201,49 +202,49 @@ TEST(MiniTensor_ROL, EqualityConstraintId)
   os = (print_output == true) ? std::cout : bhs;
 
   constexpr Intrepid2::Index
-  ROWS{2};
+  NUM_CONSTR{2};
 
   constexpr Intrepid2::Index
-  COLS{2};
+  NUM_VAR{2};
 
-  using MSEC = Intrepid2::Identity<Real, ROWS>;
+  using MSEC = Intrepid2::Identity<Real, NUM_CONSTR, NUM_VAR>;
 
   MSEC
   msec;
 
-  ROL::MiniTensor_EqualityConstraint<MSEC, Real, ROWS, COLS>
+  ROL::MiniTensor_EqualityConstraint<MSEC, Real, NUM_CONSTR, NUM_VAR>
   constr(msec);
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   xval(Intrepid2::RANDOM);
 
   os << "xval:" << xval << '\n';
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   vval(Intrepid2::RANDOM);
 
   os << "vval:" << vval << '\n';
 
-  Intrepid2::Vector<Real, ROWS>
+  Intrepid2::Vector<Real, NUM_CONSTR>
   jvval(Intrepid2::RANDOM);
 
   os << "jvval:" << jvval << '\n';
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   ajvval(Intrepid2::RANDOM);
 
   os << "ajvval:" << ajvval << '\n';
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   x(xval);
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   v(vval);
 
-  ROL::MiniTensorVector<Real, ROWS>
+  ROL::MiniTensorVector<Real, NUM_CONSTR>
   jv(jvval);
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   ajv(ajvval);
 
   std::vector<std::vector<Real>>
@@ -283,49 +284,49 @@ TEST(MiniTensor_ROL, EqualityConstraint01)
   os = (print_output == true) ? std::cout : bhs;
 
   constexpr Intrepid2::Index
-  ROWS{3};
+  NUM_CONSTR{3};
 
   constexpr Intrepid2::Index
-  COLS{5};
+  NUM_VAR{5};
 
-  using MSEC = Intrepid2::Nonlinear01<Real, ROWS>;
+  using MSEC = Intrepid2::Nonlinear01<Real, NUM_CONSTR, NUM_VAR>;
 
   MSEC
   msec;
 
-  ROL::MiniTensor_EqualityConstraint<MSEC, Real, ROWS, COLS>
+  ROL::MiniTensor_EqualityConstraint<MSEC, Real, NUM_CONSTR, NUM_VAR>
   constr(msec);
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   xval(Intrepid2::RANDOM);
 
   os << "xval:" << xval << '\n';
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   vval(Intrepid2::RANDOM);
 
   os << "vval:" << vval << '\n';
 
-  Intrepid2::Vector<Real, ROWS>
+  Intrepid2::Vector<Real, NUM_CONSTR>
   jvval(Intrepid2::RANDOM);
 
   os << "jvval:" << jvval << '\n';
 
-  Intrepid2::Vector<Real, COLS>
+  Intrepid2::Vector<Real, NUM_VAR>
   ajvval(Intrepid2::RANDOM);
 
   os << "ajvval:" << ajvval << '\n';
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   x(xval);
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   v(vval);
 
-  ROL::MiniTensorVector<Real, ROWS>
+  ROL::MiniTensorVector<Real, NUM_CONSTR>
   jv(jvval);
 
-  ROL::MiniTensorVector<Real, COLS>
+  ROL::MiniTensorVector<Real, NUM_VAR>
   ajv(ajvval);
 
   std::vector<std::vector<Real>>
@@ -342,7 +343,7 @@ TEST(MiniTensor_ROL, EqualityConstraint01)
 
   for (Intrepid2::Index i = 0; i < jac_check.size(); ++i) {
     error1 = std::min(error1, jac_check[i][3]);
-    error2 = std::min(error2, jac_check[i][3]);
+    error2 = std::min(error2, ajac_check[i][3]);
   }
 
   Real const
@@ -350,4 +351,62 @@ TEST(MiniTensor_ROL, EqualityConstraint01)
 
   ASSERT_LE(error1, tol);
   ASSERT_LE(error2, tol);
+}
+
+TEST(MiniTensor_ROL, BoundConstraint)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  DIM{16};
+
+  Intrepid2::Vector<Real, DIM>
+  lo_mt(Intrepid2::ONES);
+
+  lo_mt *= -0.5;
+
+  os << "Lower bound:" << lo_mt << '\n';
+
+  Intrepid2::Vector<Real, DIM>
+  hi_mt(Intrepid2::ONES);
+
+  hi_mt *= 0.5;
+
+  os << "Upper bound:" << hi_mt << '\n';
+
+  Intrepid2::Vector<Real, DIM>
+  x_mt(Intrepid2::RANDOM);
+
+  os << "Initial x  :" << x_mt << '\n';
+
+  ROL::MiniTensorVector<Real, DIM>
+  lo_rol(lo_mt);
+
+  ROL::MiniTensorVector<Real, DIM>
+  hi_rol(hi_mt);
+
+  ROL::MiniTensorVector<Real, DIM>
+  x_rol(x_mt);
+
+  ROL::MiniTensor_BoundConstraint<Real, DIM>
+  rol_bounds(lo_rol, hi_rol);
+
+  rol_bounds.project(x_rol);
+
+  x_mt = ROL::MTfromROL<Real, DIM>(x_rol);
+
+  os << "Pruned x   :" << x_mt << '\n';
+
+  bool const
+  is_feasible = rol_bounds.isFeasible(x_rol);
+
+  ASSERT_EQ(is_feasible, true);
 }

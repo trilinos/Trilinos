@@ -112,8 +112,11 @@ namespace Intrepid2 {
 
     typedef Kokkos::View<ordinal_type*  , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_1d;
 
-  protected:
+    // coord value_type
+    typedef typename ScalarTraits<pointValueType>::scalar_type scalarType;
 
+  protected:
+    
     /** \brief  Cardinality of the basis, i.e., the number of basis functions/degrees-of-freedom
      */
     ordinal_type basisCardinality_;
@@ -229,7 +232,7 @@ namespace Intrepid2 {
     }
 
     // dof coords
-    Kokkos::DynRankView<pointValueType,ExecSpaceType> dofCoords_;
+    Kokkos::DynRankView<scalarType,ExecSpaceType> dofCoords_;
 
   public:
 
@@ -242,6 +245,7 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<outputValueType,Kokkos::LayoutStride,ExecSpaceType> outputViewType;
     typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>  pointViewType;
+    typedef Kokkos::DynRankView<scalarType,Kokkos::LayoutStride,ExecSpaceType>      scalarViewType;
 
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
@@ -306,9 +310,16 @@ namespace Intrepid2 {
         \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
         dimensioned (F,D)
     */
+    // virtual
+    // void
+    // getDofCoords( scalarViewType dofCoords ) const {
+    //   INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+    //                                 ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
+    // }
+
     virtual
     void
-    getDofCoords( pointViewType dofCoords ) const {
+    getDofCoords( scalarViewType dofCoords ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
     }

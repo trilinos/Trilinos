@@ -135,12 +135,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   // of entries, namely, that of the local number of entries of A's
   // range Map.
 
-  // FIXME (mfh 21 Nov 2013) For some reason, we have to use this,
-  // even if it differs from the number of entries in the range Map.
-  // Otherwise, AdditiveSchwarz Test1 fails, down in the local solve,
-  // where the matrix has 8 columns but the local part of the vector
-  // only has five rows.
-  const size_t numRows = A_->getNodeNumRows ();
+  const size_t numRows = A_->getRangeMap()->getNodeNumElements ();
 
   // using std::cerr;
   // using std::endl;
@@ -159,13 +154,13 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
 
   // If the original matrix's domain Map is not fitted to its column
   // Map, we'll have to do an Import when applying the matrix.
-  const size_t numCols = A_->getDomainMap ()->getNodeNumElements ();
   if (A_->getRangeMap ().getRawPtr () == A_->getDomainMap ().getRawPtr ()) {
     // The input matrix's domain and range Maps are identical, so the
     // locally filtered matrix's domain and range Maps can be also.
     localDomainMap_ = localRangeMap_;
   }
   else {
+    const size_t numCols = A_->getDomainMap()->getNodeNumElements ();
     localDomainMap_ =
       rcp (new map_type (numCols, indexBase, localComm,
                          Tpetra::GloballyDistributed, A_->getNode ()));

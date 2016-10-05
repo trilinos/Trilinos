@@ -82,8 +82,6 @@
 #include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
 //#include "Intrepid2_HGRAD_WEDGE_I2_FEM.hpp"
 
-#include "Kokkos_Core.hpp"
-
 namespace Intrepid2 {
 
   //nn
@@ -391,10 +389,11 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<pointValueType,pointProperties...>       points,
                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                  const shards::CellTopology cellTopo ) {
+      auto basis = createHGradBasis<pointValueType,pointValueType>(cellTopo);
       setJacobian(jacobian, 
                   points, 
                   worksetCell, 
-                  createHGradBasis<jacobianValueType,pointValueType>(cellTopo));
+                  basis);
     }
 
     /** \brief  Computes the inverse of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
@@ -999,10 +998,11 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                         const shards::CellTopology cellTopo ) {
+      auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
       mapToPhysicalFrame(physPoints, 
                          refPoints, 
                          worksetCell, 
-                         createHGradBasis<physPointValueType,refPointValueType>(cellTopo));
+                         basis);
     }
 
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
@@ -1205,11 +1205,12 @@ namespace Intrepid2 {
                                   const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                                   const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                                   const shards::CellTopology cellTopo ) {
+      auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
       mapToReferenceFrameInitGuess(refPoints,
                                    initGuess,
                                    physPoints,
                                    worksetCell,
-                                   createHGradBasis<physPointValueType,initGuessValueType>(cellTopo));
+                                   basis);
     }
 
 

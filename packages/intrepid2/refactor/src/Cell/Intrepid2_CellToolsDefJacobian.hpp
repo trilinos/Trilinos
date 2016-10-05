@@ -114,6 +114,7 @@ namespace Intrepid2 {
                const HGradBasisPtrType basis ) {
 #ifdef HAVE_INTREPID2_DEBUG    
     CellTools_setJacobianArgs(jacobian, points, worksetCell, basis->getBaseCellTopology());
+    //static_assert(std::is_same( pointValueType, decltype(basis->getDummyOutputValue()) ));
 #endif
     const auto cellTopo = basis->getBaseCellTopology();
     const ordinal_type spaceDim = cellTopo.getDimension();
@@ -128,14 +129,18 @@ namespace Intrepid2 {
     
     // the following does not work for RCP; its * operator returns reference not the object
     //typedef typename decltype(*basis)::output_value_type gradValueType;
-    typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> gradViewType;
+    //typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> gradViewType;
+    typedef Kokkos::DynRankView<pointValueType,SpT> gradViewType;
     
     gradViewType grads;
+
+    typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
+    typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     switch (pointRank) {
     case 2: {
       // For most FEMs
-      grads = gradViewType("CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
+      grads = Kokkos::createDynRankView(points, "CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
       basis->getValues(grads, 
                        points, 
                        OPERATOR_GRAD);
@@ -143,7 +148,7 @@ namespace Intrepid2 {
     }
     case 3: { 
       // For CVFEM
-      grads = gradViewType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
+      grads = Kokkos::createDynRankView(points, "CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
       for (ordinal_type cell=0;cell<numCells;++cell) 
         basis->getValues(Kokkos::subview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
                          Kokkos::subview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  

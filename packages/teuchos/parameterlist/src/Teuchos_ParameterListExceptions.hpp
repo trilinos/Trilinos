@@ -52,6 +52,12 @@ namespace Exceptions {
 /** \brief .
  * \relates ParameterList
  */
+class InvalidArgument : public std::invalid_argument
+{public: InvalidArgument(const std::string& what_arg) : std::invalid_argument(what_arg) {}};
+
+/** \brief .
+ * \relates ParameterList
+ */
 class InvalidParameter : public std::logic_error
 {public: InvalidParameter(const std::string& what_arg) : std::logic_error(what_arg) {}};
 

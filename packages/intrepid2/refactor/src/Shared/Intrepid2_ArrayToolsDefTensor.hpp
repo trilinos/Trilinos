@@ -74,13 +74,13 @@ namespace Intrepid2 {
         size_type rightRank = _rightInput.rank();
 
         if (_hasField) 
-          Util::unrollIndex( cell, field, point, 
+          unrollIndex( cell, field, point, 
                              _output.dimension(0),
                              _output.dimension(1),
                              _output.dimension(2),
                              iter );
         else           
-          Util::unrollIndex( cell, point, 
+          unrollIndex( cell, point, 
                              _output.dimension(0), 
                              _output.dimension(1), 
                              iter );
@@ -397,13 +397,13 @@ namespace Intrepid2 {
         size_type rightRank = _rightInput.rank();
 
         if (_hasField) 
-          Util::unrollIndex( cell, field, point, 
+          unrollIndex( cell, field, point, 
                              _output.dimension(0),
                              _output.dimension(1),
                              _output.dimension(2),
                              iter );
         else           
-          Util::unrollIndex( cell, point, 
+          unrollIndex( cell, point, 
                              _output.dimension(0), 
                              _output.dimension(1), 
                              iter );
@@ -1134,13 +1134,13 @@ namespace Intrepid2 {
         size_type rightRank = _rightInput.rank();
         
         if (_hasField) 
-          Util::unrollIndex( cell, field, point, 
+          unrollIndex( cell, field, point, 
                              _output.dimension(0),
                              _output.dimension(1),
                              _output.dimension(2),
                              iter );
         else           
-          Util::unrollIndex( cell, point, 
+          unrollIndex( cell, point, 
                              _output.dimension(0), 
                              _output.dimension(1), 
                              iter );

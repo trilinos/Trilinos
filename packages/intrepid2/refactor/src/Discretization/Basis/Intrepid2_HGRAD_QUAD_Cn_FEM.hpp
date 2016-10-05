@@ -105,8 +105,8 @@ namespace Intrepid2 {
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
-          const auto ptBegin = Util::min(iter*numPtsEval,    _inputPoints.dimension(0));
-          const auto ptEnd   = Util::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
+          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.dimension(0));
+          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
           
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
@@ -163,6 +163,7 @@ namespace Intrepid2 {
 
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
 
     virtual
     void
@@ -186,7 +187,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoords( pointViewType dofCoords ) const {
+    getDofCoords( scalarViewType dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,

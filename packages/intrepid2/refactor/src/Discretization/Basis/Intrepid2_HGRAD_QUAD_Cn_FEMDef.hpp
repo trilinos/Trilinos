@@ -375,10 +375,10 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
-    Kokkos::DynRankView<PT,SpT>
+    Kokkos::DynRankView<typename scalarViewType::value_type,SpT>
       dofCoordsLine("dofCoordsLine", cardLine, 1);
 
     lineBasis.getDofCoords(dofCoordsLine);

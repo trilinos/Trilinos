@@ -182,9 +182,10 @@ int main(int argc, char *argv[]) {
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
-    qoi_vec[0] = Teuchos::rcp(new QoI_L2Tracking_NavierStokes<RealT>(pde->getVelocityFE(),
-                                                                     pde->getPressureFE(),
-                                                                     pde->getFieldHelper()));
+    qoi_vec[0] = Teuchos::rcp(new QoI_State_NavierStokes<RealT>(*parlist,
+                                                                pde->getVelocityFE(),
+                                                                pde->getPressureFE(),
+                                                                pde->getFieldHelper()));
     qoi_vec[1] = Teuchos::rcp(new QoI_L2Penalty_NavierStokes<RealT>(pde->getVelocityFE(),
                                                                     pde->getPressureFE(),
                                                                     pde->getVelocityBdryFE(),
@@ -212,6 +213,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > zhip = Teuchos::rcp(new PDE_OptVector<RealT>(zhipde));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
       = Teuchos::rcp(new ROL::BoundConstraint<RealT>(zlop,zhip));
+    bnd->deactivate();
 
     /*************************************************************************/
     /***************** BUILD SAMPLER *****************************************/

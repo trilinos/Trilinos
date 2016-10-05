@@ -98,6 +98,8 @@ struct Perf {
   double response_mean ;
   double response_std_dev ;
 
+  std::vector<size_t> ensemble_cg_iter_count;
+
   Perf() : uq_count(1) ,
            global_elem_count(0) ,
            global_node_count(0) ,
@@ -121,7 +123,8 @@ struct Perf {
            newton_residual(0) ,
            error_max(0) ,
            response_mean(0) ,
-           response_std_dev(0) {}
+           response_std_dev(0),
+           ensemble_cg_iter_count() {}
 
   void increment(const Perf& p, const bool accumulate_solve_times) {
     global_elem_count     = p.global_elem_count;
@@ -141,6 +144,11 @@ struct Perf {
     bc_time              += p.bc_time ;
     newton_residual      += p.newton_residual ;
     error_max            += p.error_max;
+
+    const int n = p.ensemble_cg_iter_count.size();
+    ensemble_cg_iter_count.resize(n);
+    for (int i=0; i<n; ++i)
+      ensemble_cg_iter_count[i] += p.ensemble_cg_iter_count[i];
 
     if (accumulate_solve_times) {
       mat_vec_time       += p.mat_vec_time;
@@ -392,6 +400,14 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
+template <typename T>
+struct EnsembleTraits {
+  static const int size = 1;
+  typedef T value_type;
+  static const value_type& coeff(const T& x, int i) { return x; }
+  static value_type& coeff(T& x, int i) { return x; }
+};
+
 // Exponential KL from Stokhos
 template < typename Scalar, typename MeshScalar, typename Device >
 class ExponentialKLCoefficient {
@@ -420,6 +436,7 @@ public:
   const bool m_use_exp;           // Take exponential of random field
   const MeshScalar m_exp_shift;   // Shift of exponential of random field
   const MeshScalar m_exp_scale;   // Scale of exponential of random field
+  const bool m_use_disc_exp_scale; // Use discontinuous exponential scale
   RandomVariableView m_rv;        // KL random variables
 
 public:
@@ -431,7 +448,8 @@ public:
     const size_type num_rv,
     const bool use_exp,
     const MeshScalar exp_shift,
-    const MeshScalar exp_scale) :
+    const MeshScalar exp_scale,
+    const bool use_disc_exp_scale) :
     m_mean( mean ),
     m_variance( variance ),
     m_corr_len( correlation_length ),
@@ -439,6 +457,7 @@ public:
     m_use_exp( use_exp ),
     m_exp_shift( exp_shift ),
     m_exp_scale( exp_scale ),
+    m_use_disc_exp_scale( use_disc_exp_scale ),
     m_rv( "KL Random Variables", m_num_rv )
   {
     Teuchos::ParameterList solverParams;
@@ -464,6 +483,7 @@ public:
     m_use_exp( rhs.m_use_exp ) ,
     m_exp_shift( rhs.m_exp_shift ) ,
     m_exp_scale( rhs.m_exp_scale ) ,
+    m_use_disc_exp_scale( rhs.m_use_disc_exp_scale ),
     m_rv( rhs.m_rv ) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -481,8 +501,28 @@ public:
 
     local_scalar_type val = m_rf.evaluate(point, local_rv);
 
-    if (m_use_exp)
-      val = m_exp_shift + m_exp_scale * std::exp(val);
+    if (m_use_exp) {
+      local_scalar_type exp_scale = m_exp_scale;
+      if (m_use_disc_exp_scale) {
+        MeshScalar D = std::sqrt(3.0);
+        local_scalar_type r = 0.0;
+        for (size_type i=0; i<m_num_rv; ++i)
+          r += local_rv(i)*local_rv(i);
+        r = std::sqrt(r);
+        typedef EnsembleTraits<local_scalar_type> ET;
+        const int ensemble_size = ET::size;
+        for (int j=0; j<ensemble_size; ++j) {
+          typename ET::value_type rj = ET::coeff(r,j);
+          if (rj < D/4.0)
+            ET::coeff(exp_scale,j) = 1.0;
+          else if (rj >= D/4.0 && rj < D/2.0)
+            ET::coeff(exp_scale,j) = 100.0;
+          else
+            ET::coeff(exp_scale,j) = 10.0;
+        }
+      }
+      val = m_exp_shift + exp_scale * std::exp(val);
+    }
 
     return val;
   }

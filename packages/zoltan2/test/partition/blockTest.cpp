@@ -137,7 +137,7 @@ int main(int narg, char **arg)
   cmdp.parse(narg, arg);
 
   Teuchos::ParameterList params("test parameters");
-  //params.set("compute_metrics", "true");
+  //params.set("compute_metrics", true); // bool parameter
   params.set("num_global_parts", nprocs);
   params.set("algorithm", "block");
   params.set("partitioning_approach", "partition");

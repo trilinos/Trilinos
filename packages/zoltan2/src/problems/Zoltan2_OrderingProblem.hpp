@@ -125,6 +125,24 @@ public:
     createOrderingProblem();
   };
 
+  /*! \brief Set up validators specific to this Problem
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    RCP<Teuchos::StringValidator> order_method_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "rcm", "minimum_degree", "natural",
+          "random", "sorted_degree", "scotch", "nd" )));
+    pl.set("order_method", "rcm", "order algorithm",
+      order_method_Validator);
+
+    RCP<Teuchos::StringValidator> order_package_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "amd", "package2", "package3" )));
+    pl.set("order_package", "amd", "package to use in ordering",
+      order_package_Validator);
+  }
+
   //!  \brief Direct the problem to create a solution.
   //
   //    \param updateInputData   If true this indicates that either

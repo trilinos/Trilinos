@@ -50,8 +50,6 @@
 namespace Tpetra {
 namespace Details {
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
   template<class DT, class ... DP,
            class ST, class ... SP,
            class DstWhichVecsType,
@@ -89,44 +87,6 @@ namespace Details {
     typename Kokkos::FlatArrayType<SrcViewType>::type src_flat = src;
     localDeepCopyConstStride( dst_flat, src_flat );
   }
-
-#else
-
-  template<class DT, class DL, class DD, class DM,
-           class ST, class SL, class SD, class SM,
-           class DstWhichVecsType,
-           class SrcWhichVecsType>
-  void
-  localDeepCopy (
-    const Kokkos::View<DT,DL,DD,DM,Kokkos::Impl::ViewPCEContiguous>& dst,
-    const Kokkos::View<ST,SL,SD,SM,Kokkos::Impl::ViewPCEContiguous>& src,
-    const bool dstConstStride, const bool srcConstStride,
-    const DstWhichVecsType& dstWhichVecs,
-    const SrcWhichVecsType& srcWhichVecs)
-  {
-    typedef Kokkos::View<DT,DL,DD,DM,Kokkos::Impl::ViewPCEContiguous> DstViewType;
-    typedef Kokkos::View<ST,SL,SD,SM,Kokkos::Impl::ViewPCEContiguous> SrcViewType;
-    typename DstViewType::flat_array_type dst_flat = dst;
-    typename SrcViewType::flat_array_type src_flat = src;
-    localDeepCopy( dst_flat, src_flat, dstConstStride, srcConstStride,
-                   dstWhichVecs, srcWhichVecs );
-  }
-
-  template<class DT, class DL, class DD, class DM,
-           class ST, class SL, class SD, class SM>
-  void
-  localDeepCopyConstStride (
-    const Kokkos::View<DT,DL,DD,DM,Kokkos::Impl::ViewPCEContiguous>& dst,
-    const Kokkos::View<ST,SL,SD,SM,Kokkos::Impl::ViewPCEContiguous>& src)
-  {
-    typedef Kokkos::View<DT,DL,DD,DM,Kokkos::Impl::ViewPCEContiguous> DstViewType;
-    typedef Kokkos::View<ST,SL,SD,SM,Kokkos::Impl::ViewPCEContiguous> SrcViewType;
-    typename DstViewType::flat_array_type dst_flat = dst;
-    typename SrcViewType::flat_array_type src_flat = src;
-    localDeepCopyConstStride( dst_flat, src_flat );
-  }
-
-#endif
 
 } // Details namespace
 } // Tpetra namespace

@@ -148,47 +148,50 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
 //
 //
 //
-template<typename ConstraintDerived, typename S, Index M>
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
 template<typename T, Index N>
-Vector<T, M>
-Constraint_Base<ConstraintDerived, S, M>::
+Vector<T, NC>
+Constraint_Base<ConstraintDerived, S, NC, NV>::
 value(ConstraintDerived & c, Vector<T, N> const & x)
 {
+  assert(x.get_dimension() == NUM_VAR);
   return c.value(x);
 }
 
 //
 //
 //
-template<typename ConstraintDerived, typename S, Index M>
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
 template<typename T, Index N>
-Matrix<T, M, N>
-Constraint_Base<ConstraintDerived, S, M>::
+Matrix<T, NC, NV>
+Constraint_Base<ConstraintDerived, S, NC, NV>::
 gradient(ConstraintDerived & c, Vector<T, N> const & x)
 {
   using AD = FAD<T, N>;
 
   Index const
-  num_cols = x.get_dimension();
+  num_var = x.get_dimension();
+
+  assert(num_var == NUM_VAR);
 
   Vector<AD, N>
-  x_ad(num_cols);
+  x_ad(num_var);
 
-  for (Index i{0}; i < num_cols; ++i) {
-    x_ad(i) = AD(num_cols, i, x(i));
+  for (Index i{0}; i < num_var; ++i) {
+    x_ad(i) = AD(num_var, i, x(i));
   }
 
-  Vector<AD, M> const
+  Vector<AD, NC> const
   r_ad = c.value(x_ad);
 
   Index const
-  num_rows = r_ad.get_dimension();
+  num_constr = r_ad.get_dimension();
 
-  Matrix<T, M, N>
-  Jacobian(num_rows, num_cols);
+  Matrix<T, NC, NV>
+  Jacobian(num_constr, num_var);
 
-  for (Index i{0}; i < num_rows; ++i) {
-    for (Index j{0}; j < num_cols; ++j) {
+  for (Index i{0}; i < num_constr; ++i) {
+    for (Index j{0}; j < num_var; ++j) {
       Jacobian(i, j) = r_ad(i).dx(j);
     }
   }
@@ -203,6 +206,21 @@ template<typename T, Index N>
 Bounds<T, N>::
 Bounds(Vector<T, N> const & l, Vector<T, N> const & u) : lower(l), upper(u)
 {
+  return;
+}
+
+//
+//
+//
+template<typename T, Index N>
+Minimizer<T, N>::
+Minimizer()
+{
+  constexpr bool
+  is_fad = Sacado::IsADType<T>::value == true;
+
+  static_assert(is_fad == false, "AD types not allowed for type T");
+
   return;
 }
 
@@ -258,6 +276,46 @@ solve(STEP & step_method, FN & fn, Vector<T, N> & soln)
   }
 
   recordFinals(fn, soln);
+  return;
+}
+
+//
+//
+//
+template<typename T, Index N>
+void
+Minimizer<T, N>::
+printReport(std::ostream & os)
+{
+  char const * const
+  converged_string = converged == true ? "YES" : "NO";
+
+  // Happy / frowny face
+  //char const * const
+  //converged_string = converged == true ? "\U0001F60A" : "\U0001F623";
+
+  os << "\n\n";
+  os << "Method       : " << step_method_name << '\n';
+  os << "Function     : " << function_name << '\n';
+  os << "Converged    : " << converged_string << '\n';
+  os << "Max Iters    : " << max_num_iter << '\n';
+  os << "Iters Taken  : " << num_iter << '\n';
+
+  os << std::scientific << std::setprecision(16);
+
+  os << "Initial |R|  : " << std::setw(24) << initial_norm << '\n';
+  os << "Abs Tol      : " << std::setw(24) << abs_tol << '\n';
+  os << "Abs Error    : " << std::setw(24) << abs_error << '\n';
+  os << "Rel Tol      : " << std::setw(24) << rel_tol << '\n';
+  os << "Rel Error    : " << std::setw(24) << rel_error << '\n';
+  os << "Initial X    : " << initial_guess << '\n';
+  os << "Initial f(X) : " << std::setw(24) << initial_value << '\n';
+  os << "Final X      : " << final_soln << '\n';
+  os << "FInal f(X)   : " << std::setw(24) << final_value << '\n';
+  os << "Final Df(X)  : " << final_gradient << '\n';
+  os << "FInal DDf(X) : " << final_hessian << '\n';
+  os << '\n';
+
   return;
 }
 
@@ -350,40 +408,15 @@ continueSolve() const
 //
 //
 template<typename T, Index N>
+template<typename FN>
 void
 Minimizer<T, N>::
-printReport(std::ostream & os)
+recordFinals(FN & fn, Vector<T, N> const & x)
 {
-  char const * const
-  converged_string = converged == true ? "YES" : "NO";
-
-  // Happy / frowny face
-  //char const * const
-  //converged_string = converged == true ? "\U0001F60A" : "\U0001F623";
-
-  os << "\n\n";
-  os << "Method       : " << step_method_name << '\n';
-  os << "Function     : " << function_name << '\n';
-  os << "Converged    : " << converged_string << '\n';
-  os << "Max Iters    : " << max_num_iter << '\n';
-  os << "Iters Taken  : " << num_iter << '\n';
-
-  os << std::scientific << std::setprecision(16);
-
-  os << "Initial |R|  : " << std::setw(24) << initial_norm << '\n';
-  os << "Abs Tol      : " << std::setw(24) << abs_tol << '\n';
-  os << "Abs Error    : " << std::setw(24) << abs_error << '\n';
-  os << "Rel Tol      : " << std::setw(24) << rel_tol << '\n';
-  os << "Rel Error    : " << std::setw(24) << rel_error << '\n';
-  os << "Initial X    : " << initial_guess << '\n';
-  os << "Initial f(X) : " << std::setw(24) << initial_value << '\n';
-  os << "Final X      : " << final_soln << '\n';
-  os << "FInal f(X)   : " << std::setw(24) << final_value << '\n';
-  os << "Final Df(X)  : " << final_gradient << '\n';
-  os << "FInal DDf(X) : " << final_hessian << '\n';
-  os << '\n';
-
-  return;
+  final_soln = x;
+  final_value = fn.value(x);
+  final_gradient = fn.gradient(x);
+  final_hessian = fn.hessian(x);
 }
 
 //

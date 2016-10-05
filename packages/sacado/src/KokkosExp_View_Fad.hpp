@@ -36,8 +36,6 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp"
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 // Some definition that should exist whether the specializations exist or not
 
 namespace Kokkos {
@@ -1181,8 +1179,6 @@ broadcast
 //----------------------------------------------------------------------------
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-
-#endif // defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
 #endif // defined(HAVE_SACADO_KOKKOSCORE)
 

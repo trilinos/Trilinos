@@ -276,6 +276,94 @@ private:
 
 };
 
+// Grouping based on iteration surrogate
+template <typename Scalar, typename Surrogate>
+class SurrogateGrouping : public virtual SampleGrouping<Scalar> {
+public:
+
+  SurrogateGrouping(const Teuchos::RCP<Surrogate>& s,
+                    const bool print_iterations,
+                    const int comm_rank) :
+    m_s(s), m_print(print_iterations), m_comm_rank(comm_rank) {}
+
+  virtual ~SurrogateGrouping() {}
+
+  Teuchos::RCP<Surrogate> getSurrogate() { return m_s; }
+
+  void setSurrogate(const Teuchos::RCP<Surrogate>& s) { m_s = s; }
+
+  // Given a set of sample values and a group size, group the samples into
+  // groups of that size
+  virtual void group(
+    const Teuchos::Ordinal group_size,
+    const Teuchos::Array< Teuchos::Array<Scalar> >& samples,
+    Teuchos::Array< Teuchos::Array<Teuchos::Ordinal> >& groups,
+    Teuchos::Ordinal& num_duplicate) const
+  {
+    using Teuchos::Ordinal;
+
+    Ordinal num_samples = samples.size();
+    if (num_samples == 0) {
+      groups.resize(0);
+      num_duplicate = 0;
+      return;
+    }
+
+    // Evaluate the surrogate for each sample point
+    Teuchos::Array< std::pair<Scalar,Ordinal> > iterations(num_samples);
+    for (Ordinal sample_index=0; sample_index<num_samples; ++sample_index) {
+      iterations[sample_index].first = m_s->evaluate(samples[sample_index]);
+      iterations[sample_index].second = sample_index;
+    }
+
+    if (m_print && (m_comm_rank == 0)) {
+      std::cout << "Predicted sample iterations = ";
+      for (Ordinal sample_index=0; sample_index<num_samples; ++sample_index) {
+        std::cout << "("
+                  << iterations[sample_index].second << ","
+                  << iterations[sample_index].first
+                  << ") ";
+      }
+      std::cout << std::endl;
+    }
+
+    // Sort based on increasing iterations (sort with an array of pair objects
+    // by default sorts on the first value, using the second to resolve ties)
+    std::sort( iterations.begin(), iterations.end() );
+
+    // Now group based on the sorted ordering
+    Ordinal num_groups = (num_samples + group_size - 1) / group_size;
+    Ordinal remainder = num_groups * group_size - num_samples;
+    Teuchos::Array<Ordinal> group;
+    group.reserve(group_size);
+    groups.reserve(num_groups);
+
+    for (Ordinal sample_index=0; sample_index<num_samples; ++sample_index) {
+
+      if (sample_index > 0 && sample_index % group_size == 0) {
+        TEUCHOS_ASSERT( group.size() == group_size );
+        groups.push_back(group);
+        group.resize(0);
+      }
+      group.push_back(iterations[sample_index].second);
+    }
+    for (Ordinal i=0; i<remainder; ++i)
+      group.push_back(iterations[num_samples-1].second);
+    groups.push_back(group);
+
+    num_duplicate = remainder;
+
+    TEUCHOS_ASSERT( groups.size() == num_groups );
+  }
+
+private:
+
+  Teuchos::RCP<Surrogate> m_s;
+  int m_print;
+  int m_comm_rank;
+
+};
+
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos */

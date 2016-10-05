@@ -156,6 +156,7 @@ private:
   
   // Problem parameters.
   Real viscosity_;
+  bool horizontalControl_;
 
   Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
 
@@ -164,14 +165,14 @@ private:
     Real val(0);
     if ((sideset==4) && (dir==0)) {
       if ( param.size() ) {
-        Real zero(0), one(1), two(2), pi(M_PI), four(4), c1(1), c2(-0.5);
+        Real zero(0), half(0.5), one(1), two(2), pi(M_PI), four(4), c1(1), c2(-0.5);
         if ( param[0] == zero ) {
-          val = std::sin(two*pi * (c1*coords[1] + c2));
+          val = half*std::sin(two*pi * (c1*coords[1] + c2));
         }
         else {
           Real num = (std::exp(four*param[0]*(c1*coords[1] + c2)) - one);
           Real den = (std::exp(two*param[0])-one);
-          val = std::sin(pi * num/den);
+          val = half*std::sin(pi * num/den);
         }
       }
       else {
@@ -267,6 +268,7 @@ public:
 
     // Other problem parameters.
     viscosity_ = parlist.sublist("Problem").get("Viscosity", 5e-3);
+    horizontalControl_ = parlist.sublist("Problem").get("Horizontal control",false);
 
     numDofs_ = 0;
     numFields_ = basisPtrs_.size();
@@ -422,11 +424,15 @@ public:
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
-                //for (int m=0; m < d; ++m) {
-                //  (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*Z[m])(cidx,fidx_[j][l]);
-                //}
-                (*R[0])(cidx,fidx_[j][l]) = (*U[0])(cidx,fidx_[j][l]) - (*Z[0])(cidx,fidx_[j][l]);
-                (*R[1])(cidx,fidx_[j][l]) = (*U[1])(cidx,fidx_[j][l]);
+                if ( !horizontalControl_ ) {
+                  for (int m=0; m < d; ++m) {
+                    (*R[m])(cidx,fidx_[j][l]) = (*U[m])(cidx,fidx_[j][l]) - (*Z[m])(cidx,fidx_[j][l]);
+                  }
+                }
+                else {
+                  (*R[0])(cidx,fidx_[j][l]) = (*U[0])(cidx,fidx_[j][l]) - (*Z[0])(cidx,fidx_[j][l]);
+                  (*R[1])(cidx,fidx_[j][l]) = (*U[1])(cidx,fidx_[j][l]);
+                }
               }
             }
           }
@@ -733,10 +739,14 @@ public:
               for (int l = 0; l < numBdryDofs; ++l) {
                 //std::cout << "\n   j=" << j << "  l=" << l << "  " << fidx[j][l];
                 for (int m=0; m < fv; ++m) {
-                  //for (int n=0; n < d; ++n) {
-                  //  (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
-                  //}
-                  (*J[0][0])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+                  if ( !horizontalControl_ ) {
+                    for (int n=0; n < d; ++n) {
+                      (*J[n][n])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+                    }
+                  }
+                  else {
+                    (*J[0][0])(cidx,fidx_[j][l],fidx_[j][l]) = static_cast<Real>(-1);
+                  }
                 }
               }
             }

@@ -65,17 +65,25 @@ namespace Intrepid2 {
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
     const auto eps = epsilon();
 
-    const auto x = input(0);
-    const auto y = input(1);
-    const auto ztmp = input(2);
+    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputViewType;
+    typedef Kokkos::DynRankView<inputPointValueType,inputPointProperties...> inputViewType;
+    static_assert(std::is_same<
+                  typename outputViewType::value_type,
+                  typename inputViewType::value_type>::value,"Input/output view has different value types");
+
+    typedef typename outputViewType::value_type value_type;
+
+    const value_type x = input(0);
+    const value_type y = input(1);
+    const value_type ztmp = input(2);
     
     //be sure that the basis functions are defined when z is very close to 1.
-    const auto z = ( (1.0 - ztmp) < eps ? 1.0 - eps : ztmp );
+    const value_type z = ( (value_type(1.0) - ztmp) < value_type(eps) ? value_type(1.0 - eps) : ztmp );
     
     switch (opType) {
     
     case OPERATOR_VALUE: {
-      const auto factor = 0.25/(1.0 - z);
+      const value_type factor = 0.25/(1.0 - z);
 
       // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
       output(0) = (1.0 - x - z) * (1.0 - y - z) * factor;
@@ -86,8 +94,8 @@ namespace Intrepid2 {
       break;
     }      
     case OPERATOR_GRAD: {
-      const auto factor  = 0.25/(1.0 - z);
-      const auto factor2 = 4.0 * factor * factor;
+      const value_type factor  = 0.25/(1.0 - z);
+      const value_type factor2 = 4.0 * factor * factor;
       
       // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
       output(0, 0) = (y + z - 1.0) * factor;
@@ -112,9 +120,9 @@ namespace Intrepid2 {
       break;
     }
     case OPERATOR_D2: {
-      const auto factor  = 0.25/(1.0 - z);
-      const auto factor2 = 4.0 * factor * factor;
-      const auto factor3 = 8.0 * factor * factor2;
+      const value_type factor  = 0.25/(1.0 - z);
+      const value_type factor2 = 4.0 * factor * factor;
+      const value_type factor3 = 8.0 * factor * factor2;
 
       // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6)
       output(0, 0) =  0.0;                    // {2, 0, 0}
@@ -224,7 +232,7 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     dofCoords(0,0) = -1.0;  dofCoords(0,1) = -1.0;  dofCoords(0,2) =  0.0;

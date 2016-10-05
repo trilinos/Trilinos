@@ -138,40 +138,43 @@ namespace Intrepid2 {
                                     ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): matvec dimensions are not compatible.");
     }
 #endif
-    // ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
-    
-    typedef /**/  Kokkos::DynRankView<outputValValueType,outputValProperties...> outputViewType;
-    typedef const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacInverseViewType;
-    typedef const Kokkos::DynRankView<inputValValueType,inputValProperties...>  inputViewType;
+    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
 
-    const ordinal_type 
-      C = outputVals.dimension(0),
-      F = outputVals.dimension(1),
-      P = outputVals.dimension(2);
+    // this modification is for 2d and 3d (not 1d)
+    // this is an attempt to measure the overhead of subview of dynrankview. 
 
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < SpT, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-    range_policy_type policy( { 0, 0, 0 },
-                              { C, F, P } );
+    // typedef /**/  Kokkos::DynRankView<outputValValueType,outputValProperties...> outputViewType;
+    // typedef const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacInverseViewType;
+    // typedef const Kokkos::DynRankView<inputValValueType,inputValProperties...>  inputViewType;
 
-    const ordinal_type spaceDim = inputVals.dimension(2);
-    switch (spaceDim) {
-    case 2: {
-      typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 2> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
-      break;
-    }
-    case 3: {
-      typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 3> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): spaceDim is not 2 or 3.");
-      break;
-    }
-    }
+    // const ordinal_type 
+    //   C = outputVals.dimension(0),
+    //   F = outputVals.dimension(1),
+    //   P = outputVals.dimension(2);
+
+    // using range_policy_type = Kokkos::Experimental::MDRangePolicy
+    //   < SpT, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    // range_policy_type policy( { 0, 0, 0 },
+    //                           { C, F, P } );
+
+    // const ordinal_type spaceDim = inputVals.dimension(2);
+    // switch (spaceDim) {
+    // case 2: {
+    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 2> FunctorType;
+    //   Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
+    //   break;
+    // }
+    // case 3: {
+    //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 3> FunctorType;
+    //   Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
+    //   break;
+    // }
+    // default: {
+    //   INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    //                                 ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): spaceDim is not 2 or 3.");
+    //   break;
+    // }
+    // }
   }
   
   // ------------------------------------------------------------------------------------

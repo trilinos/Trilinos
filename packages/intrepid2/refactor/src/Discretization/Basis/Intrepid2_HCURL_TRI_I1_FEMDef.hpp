@@ -133,7 +133,7 @@ Basis_HCURL_TRI_I1_FEM()
   
     }
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     dofCoords(0,0) =  0.5;   dofCoords(0,1) =  0.0;

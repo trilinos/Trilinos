@@ -269,6 +269,52 @@ void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
 }
 
 /**
+ * \brief Converts BoolParameterEntryValidators to and from XML.
+ *
+ * The valid XML representation for an BoolParameterEntryValidators is:
+ * \code
+  <Validator type="BoolValidator"
+  />
+  \endcode
+ */
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolValidatorXMLConverter : public ValidatorXMLConverter
+{
+
+public:
+
+  /** \name Overridden from ValidatorXMLConverter */
+  //@{
+
+  /** \brief . */
+  RCP<ParameterEntryValidator> convertXML(
+    const XMLObject& xmlObj,
+    const IDtoValidatorMap& validatorIDsMap) const;
+
+  /** \brief . */
+  void convertValidator(
+    const RCP<const ParameterEntryValidator> validator,
+    XMLObject& xmlObj,
+    const ValidatortoIDMap& validatorIDsMap) const;
+
+  #ifdef HAVE_TEUCHOS_DEBUG
+  /** \brief . */
+  RCP<const ParameterEntryValidator> getDummyValidator() const;
+  #endif
+
+  //@}
+
+private:
+
+  /** \name Private Members */
+  //@{
+
+  // currently empty
+
+  //@}
+
+};
+
+/**
  * \brief Converts AnyNumberParameterEntryValidators to and from XML.
  *
  * The valid XML representation for an AnyNumberParameterEntryValidator is:

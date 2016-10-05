@@ -20,7 +20,8 @@ enum clp_return_type {
 enum GroupingType {
   GROUPING_NATURAL=0,
   GROUPING_MAX_ANISOTROPY,
-  GROUPING_MORTAN_Z
+  GROUPING_MORTAN_Z,
+  GROUPING_TASMANIAN_SURROGATE
 };
 
 enum SamplingType {
@@ -55,6 +56,7 @@ struct CMD {
   int USE_UQ_ORDER;
   int USE_UQ_INIT_LEVEL;
   int USE_UQ_MAX_LEVEL;
+  int USE_UQ_MAX_SAMPLES;
   double USE_UQ_TOL;
   double USE_DIFF_COEFF_LINEAR;
   double USE_DIFF_COEFF_CONSTANT;
@@ -64,12 +66,14 @@ struct CMD {
   bool USE_EXPONENTIAL;
   double USE_EXP_SHIFT;
   double USE_EXP_SCALE;
+  bool USE_DISC_EXP_SCALE;
   bool USE_ISOTROPIC;
   double USE_COEFF_SRC;
   double USE_COEFF_ADV;
   bool USE_SPARSE;
   int USE_UQ_ENSEMBLE;
   GroupingType USE_GROUPING;
+  int TAS_GROUPING_INITIAL_LEVEL;
   bool VTUNE;
   bool VERBOSE;
   bool PRINT;
@@ -104,6 +108,7 @@ struct CMD {
           USE_UQ_ORDER(2),
           USE_UQ_INIT_LEVEL(1),
           USE_UQ_MAX_LEVEL(7),
+          USE_UQ_MAX_SAMPLES(1000),
           USE_UQ_TOL(1e-2),
           USE_DIFF_COEFF_LINEAR(0.0),
           USE_DIFF_COEFF_CONSTANT(1.0),
@@ -113,12 +118,14 @@ struct CMD {
           USE_EXPONENTIAL(false),
           USE_EXP_SHIFT(1.0),
           USE_EXP_SCALE(1.0),
+          USE_DISC_EXP_SCALE(false),
           USE_ISOTROPIC(true),
           USE_COEFF_SRC(1.0),
           USE_COEFF_ADV(0.0),
           USE_SPARSE(false),
           USE_UQ_ENSEMBLE(0),
           USE_GROUPING(GROUPING_NATURAL),
+          TAS_GROUPING_INITIAL_LEVEL(2),
           VTUNE(false),
           VERBOSE(false),
           PRINT(false),

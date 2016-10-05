@@ -311,7 +311,7 @@ applyBinary(Elementwise::BinaryFunction<T> const & f, Vector<T> const & x)
 template<typename T, Intrepid2::Index N>
 T
 MiniTensorVector<T, N>::
-reduce(Elementwise::ReductionOp<T> & r) const
+reduce(Elementwise::ReductionOp<T> const & r) const
 {
   T
   result = r.initialValue();
