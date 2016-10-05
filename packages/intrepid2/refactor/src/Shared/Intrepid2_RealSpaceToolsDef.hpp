@@ -218,6 +218,51 @@ namespace Intrepid2 {
   namespace FunctorRealSpaceTools {
     template<typename outputViewType,
              typename inputViewType>
+    struct F_extractSacadoValues {
+      outputViewType _output;
+      inputViewType  _input;
+
+      KOKKOS_INLINE_FUNCTION
+      F_extractSacadoValues( outputViewType output_,
+                       inputViewType  input_ )
+        : _output(output_), _input(input_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type i) const {
+        const auto jend = _input.dimension(1);
+        const auto kend = _input.dimension(2);
+        const auto lend = _input.dimension(3);
+        const auto mend = _input.dimension(4);
+
+        for (size_type j=0;j<jend;++j)
+          for (size_type k=0;k<kend;++k)
+            for (size_type l=0;l<lend;++l)
+              for (size_type m=0;m<mend;++m)
+                _output(i,j,k,l,m) = Sacado::Value<typename inputViewType::value_type>::eval(_input(i,j,k,l,m));
+      }
+    };
+  }
+
+  template<typename SpT>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties>
+  void
+  RealSpaceTools<SpT>::
+  extractSacadoValues( /**/  Kokkos::DynRankView<outputValueType,outputProperties...>  output,
+                       const Kokkos::DynRankView<inputValueType, inputProperties...>   input ) {
+    typedef          Kokkos::DynRankView<outputValueType,outputProperties...> outputViewType;
+    typedef          Kokkos::DynRankView<inputValueType,inputProperties...> inputViewType;
+    typedef          FunctorRealSpaceTools::F_extractSacadoValues<outputViewType,inputViewType> FunctorType;
+    typedef typename ExecSpace<typename inputViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    
+    const auto loopSize = input.dimension(0);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::parallel_for( policy, FunctorType(output, input) );
+  }
+
+  namespace FunctorRealSpaceTools {
+    template<typename outputViewType,
+             typename inputViewType>
     struct F_clone {
       outputViewType _output;
       inputViewType  _input;

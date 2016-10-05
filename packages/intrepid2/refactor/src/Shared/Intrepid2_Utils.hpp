@@ -52,6 +52,11 @@
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
 
+#include "Kokkos_Core.hpp"
+#include "Kokkos_ViewFactory.hpp"
+
+#include "Sacado_Traits.hpp"
+
 namespace Intrepid2 {
 
 #if defined(KOKKOS_OPT_RANGE_AGGRESSIVE_VECTORIZATION) && defined(KOKKOS_HAVE_PRAGMA_IVDEP) && !defined(__CUDA_ARCH__)

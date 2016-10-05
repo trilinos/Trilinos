@@ -82,9 +82,6 @@
 #include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
 //#include "Intrepid2_HGRAD_WEDGE_I2_FEM.hpp"
 
-#include "Kokkos_Core.hpp"
-#include "Kokkos_ViewFactory.hpp"
-
 namespace Intrepid2 {
 
   //nn

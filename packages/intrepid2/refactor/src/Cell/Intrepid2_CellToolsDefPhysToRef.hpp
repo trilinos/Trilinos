@@ -143,8 +143,14 @@ namespace Intrepid2 {
     auto jacobianInv = Kokkos::createDynRankView(jacobian, "CellTools::mapToReferenceFrameInitGuess::jacobian", 
                                                  numCells, numPoints, spaceDim, spaceDim);
     
-    auto errorPointwise = Kokkos::createDynRankView(xTmp, "CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints);
-    auto errorCellwise  = Kokkos::createDynRankView(xTmp, "CellTools::mapToReferenceFrameInitGuess::errorCellwise",  numCells); 
+    typedef Kokkos::DynRankView<typename ScalarTraits<refPointValueType>::scalar_type,SpT> errorViewType;
+    errorViewType
+      xScalarTmp    ("CellTools::mapToReferenceFrameInitGuess::xScalarTmp",     numCells, numPoints, spaceDim),
+      errorPointwise("CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints),
+      errorCellwise ("CellTools::mapToReferenceFrameInitGuess::errorCellwise",  numCells);
+    
+    //auto errorPointwise = Kokkos::createDynRankView(xTmp, "CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints);
+    //auto errorCellwise  = Kokkos::createDynRankView(xTmp, "CellTools::mapToReferenceFrameInitGuess::errorCellwise",  numCells); 
     
     // Newton method to solve the equation F(refPoints) - physPoints = 0:
     // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
@@ -162,7 +168,10 @@ namespace Intrepid2 {
 
       // l2 error (Euclidean distance) between old and new iterates: |xOld - xNew|
       rst::subtract(xTmp, xOld, refPoints);
-      rst::vectorNorm(errorPointwise, xTmp, NORM_TWO);
+
+      // extract values
+      rst::extractSacadoValues(xScalarTmp, xTmp);
+      rst::vectorNorm(errorPointwise, xScalarTmp, NORM_TWO);
 
       // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
       rst::vectorNorm(errorCellwise, errorPointwise, NORM_ONE);
