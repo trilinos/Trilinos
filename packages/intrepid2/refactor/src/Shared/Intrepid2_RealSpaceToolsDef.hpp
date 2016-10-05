@@ -102,7 +102,7 @@ namespace Intrepid2 {
           for (size_t k=0;k<kend;++k)
             for (size_t l=0;l<lend;++l)
               for (size_t m=0;m<mend;++m) {
-                const value_type current = Util::abs(inVec(i,j,k,l,m));
+                const value_type current = Util<value_type>::abs(inVec(i,j,k,l,m));
                 norm = (norm < current ? current : norm);
               }
       break;
@@ -113,7 +113,7 @@ namespace Intrepid2 {
           for (size_t k=0;k<kend;++k)
             for (size_t l=0;l<lend;++l)
               for (size_t m=0;m<mend;++m)
-                norm += Util::abs(inVec(i,j,k,l,m));
+                norm += Util<value_type>::abs(inVec(i,j,k,l,m));
       break;
     }
     default: {
@@ -278,14 +278,14 @@ namespace Intrepid2 {
         const auto rankDiff = _output.rank() - _input.rank();
         switch (rankDiff) {
         case 3:
-          Util::unrollIndex( k0, k1, k2,
+          unrollIndex( k0, k1, k2,
                              _output.dimension(0),
                              _output.dimension(1),
                              _output.dimension(2),
                              iter );
           break;
         case 2:
-          Util::unrollIndex( k0, k1, 
+          unrollIndex( k0, k1, 
                              _output.dimension(0),
                              _output.dimension(1),
                              iter );
@@ -366,11 +366,13 @@ namespace Intrepid2 {
         const auto lend = _inArray.dimension(3);
         const auto mend = _inArray.dimension(4);
 
+        typedef typename inArrayViewType::value_type value_type;
+
         for (size_type j=0;j<jend;++j)
           for (size_type k=0;k<kend;++k)
             for (size_type l=0;l<lend;++l)
               for (size_type m=0;m<mend;++m)
-                _absArray(i,j,k,l,m) = Util::abs(_inArray(i,j,k,l,m));
+                _absArray(i,j,k,l,m) = Util<value_type>::abs(_inArray(i,j,k,l,m));
       }
     };
   }
@@ -435,7 +437,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type iter) const {
         ordinal_type i, j;
-        Util::unrollIndex( i, j,
+        unrollIndex( i, j,
                            _normArray.dimension(0),
                            _normArray.dimension(1),
                            iter );
@@ -501,7 +503,7 @@ namespace Intrepid2 {
         size_type i = iter, j = 0;
 
         if ( r > 3 )
-          Util::unrollIndex( i, j,
+          unrollIndex( i, j,
                              _transposeMats.dimension(0),
                              _transposeMats.dimension(1),
                              iter );
@@ -1077,7 +1079,7 @@ namespace Intrepid2 {
       void operator()(const ordinal_type iter) const {
         // the rank of normArray is either 1 or 2
         ordinal_type i, j;
-        Util::unrollIndex( i, j,
+        unrollIndex( i, j,
                            _dotArray.dimension(0),
                            _dotArray.dimension(1),
                            iter );
@@ -1156,7 +1158,7 @@ namespace Intrepid2 {
         size_t i = iter, j = 0;
 
         if ( rr > 2 )
-          Util::unrollIndex( i, j,
+          unrollIndex( i, j,
                              _matVecs.dimension(0),
                              _matVecs.dimension(1),
                              iter );
@@ -1283,7 +1285,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type i, j;
-        Util::unrollIndex( i, j,
+        unrollIndex( i, j,
                            _inLeft.dimension(0),
                            _inLeft.dimension(1),
                            iter );

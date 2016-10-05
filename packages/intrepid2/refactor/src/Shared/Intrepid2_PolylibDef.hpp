@@ -429,7 +429,7 @@ namespace Intrepid2 {
       zv(const_cast<ValueType*>(&z), 1), null;
 
     const auto dz  = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<ValueType>::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomialDerivative(1, zi, pd, np, alpha, beta);
@@ -460,7 +460,7 @@ namespace Intrepid2 {
       zv(const_cast<ValueType*>(&z), 1), null;
     
     const auto dz  = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<ValueType>::abs(dz) < tol) 
       return 1.0;
     
     JacobiPolynomial(1, zi, p , null, np-1, alpha, beta + 1);
@@ -496,7 +496,7 @@ namespace Intrepid2 {
       zv(const_cast<ValueType*>(&z), 1), null;
 
     const auto dz  = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<ValueType>::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomial(1, zi, p , null, np-1, alpha+1, beta);
@@ -532,7 +532,7 @@ namespace Intrepid2 {
       zv(const_cast<ValueType*>(&z), 1), null;
 
     const auto dz = z - zi(0);
-    if (Util::abs(dz) < tol) 
+    if (Util<ValueType>::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomial(1, zi, p , null, np-2, alpha + one, beta + one);
@@ -740,7 +740,7 @@ namespace Intrepid2 {
         const ValueType delr = -poly(0) / (pder(0) - sum * poly(0));
         r(0) += delr;
 
-        if( Util::abs(delr) < tol ) 
+        if( Util<ValueType>::abs(delr) < tol ) 
           break;
       }
       z(k)  = r(0);
@@ -797,14 +797,16 @@ namespace Intrepid2 {
         /**/  eViewType e,
         const ordinal_type n) {
     ordinal_type m,l,iter,i,k;
-    typename dViewType::value_type s,r,p,g,f,dd,c,b;
+
+    typedef typename dViewType::value_type value_type;
+    value_type s,r,p,g,f,dd,c,b;
 
     for (l=0; l<n; ++l) {
       iter=0;
       do {
         for (m=l; m<n-1; ++m) {
-          dd=Util::abs(d(m))+Util::abs(d(m+1));
-          if (Util::abs(e(m))+dd == dd) break;
+          dd=Util<value_type>::abs(d(m))+Util<value_type>::abs(d(m+1));
+          if (Util<value_type>::abs(e(m))+dd == dd) break;
         }
         if (m != l) {
           if (iter++ == MaxPolylibIteration) {
@@ -814,13 +816,13 @@ namespace Intrepid2 {
           g=(d(l+1)-d(l))/(2.0*e(l));
           r=sqrt((g*g)+1.0);
           //g=d(m)-d(l)+e(l)/(g+sign(r,g));
-          g=d(m)-d(l)+e(l)/(g+((g)<0 ? -Util::abs(r) : Util::abs(r)));
+          g=d(m)-d(l)+e(l)/(g+((g)<0 ? -Util<value_type>::abs(r) : Util<value_type>::abs(r)));
           s=c=1.0;
           p=0.0;
           for (i=m-1; i>=l; i--) {
             f=s*e(i);
             b=c*e(i);
-            if (Util::abs(f) >= Util::abs(g)) {
+            if (Util<value_type>::abs(f) >= Util<value_type>::abs(g)) {
               c=g/f;
               r=sqrt((c*c)+1.0);
               e(i+1)=f*r;

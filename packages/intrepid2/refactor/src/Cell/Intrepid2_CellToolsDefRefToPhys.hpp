@@ -80,7 +80,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cell, pt;
-        Util::unrollIndex( cell, pt,
+        unrollIndex( cell, pt,
                            _physPoints.dimension(0),
                            _physPoints.dimension(1),
                            iter );
