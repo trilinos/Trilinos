@@ -393,9 +393,9 @@ TEST_F(TOSDTWD, expand_mesh)
         for(size_t i=0;i<direct.size();++i)
         {
             direct[i].resize(3);
-            direct[i][0] = ((double) rand() / (RAND_MAX));
-            direct[i][1] = ((double) rand() / (RAND_MAX));
-            direct[i][2] = ((double) rand() / (RAND_MAX));
+            direct[i][0] = 2.0*((double) rand() / (RAND_MAX))-1.0;
+            direct[i][1] = 2.0*((double) rand() / (RAND_MAX))-1.0;
+            direct[i][2] = 2.0*((double) rand() / (RAND_MAX))-1.0;
             double mag = sqrt(direct[i][0]*direct[i][0] + direct[i][1]*direct[i][1] + direct[i][2]*direct[i][2]);
             direct[i][0] /= mag;
             direct[i][1] /= mag;
