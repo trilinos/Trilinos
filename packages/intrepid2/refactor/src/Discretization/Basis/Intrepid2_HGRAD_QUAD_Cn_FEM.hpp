@@ -208,6 +208,12 @@ namespace Intrepid2 {
       return "Intrepid2_HGRAD_QUAD_Cn_FEM";
     }
 
+    virtual
+    bool
+    requireOrientation() const {
+      return (this->basisDegree_ > 2);
+    }
+
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order */

@@ -233,6 +233,11 @@ public:
       return "Intrepid2_HCURL_TET_I1_FEM";
     }
 
+    virtual
+    bool
+    requireOrientation() const {
+      return true;
+    }
 
 };
 }// namespace Intrepid2

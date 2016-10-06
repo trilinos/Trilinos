@@ -237,6 +237,12 @@ namespace Intrepid2 {
       return "Intrepid2_HDIV_TET_I1_FEM";
     }
 
+    virtual
+    bool
+    requireOrientation() const {
+      return true;
+    }
+
   };
 
 }// namespace Intrepid2
