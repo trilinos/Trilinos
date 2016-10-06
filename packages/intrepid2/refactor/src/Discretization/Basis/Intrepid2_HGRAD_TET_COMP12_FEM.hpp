@@ -238,6 +238,12 @@ namespace Intrepid2 {
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
     }
 
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HGRAD_TET_COMP12_FEM";
+    }
+
   };
 }// namespace Intrepid2
 

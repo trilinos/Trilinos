@@ -227,6 +227,13 @@ public:
       impl_.getDofCoords( dofCoords );
     }
 
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HCURL_TET_I1_FEM";
+    }
+
+
 };
 }// namespace Intrepid2
 

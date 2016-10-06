@@ -201,6 +201,13 @@ namespace Intrepid2 {
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
     }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HGRAD_QUAD_Cn_FEM";
+    }
+
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order */

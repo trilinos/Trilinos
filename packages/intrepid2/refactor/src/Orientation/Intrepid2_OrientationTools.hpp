@@ -244,16 +244,27 @@ namespace Intrepid2 {
                    const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
                    const shards::CellTopology cellTopo);
         
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,  class ...inputProperties,
+             typename ortValueType,    class ...ortProperties,
+             typename BasisPtrType>
+    inline
+    static void
+    modifyBasisByOrientation(/**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                             const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
+                             const Kokkos::DynRankView<ortValueType,   ortProperties...> orts,
+                             const BasisPtrType basis);
+
     template<typename outValueValueType, class ...outValueProperties,
              typename refValueValueType, class ...refValueProperties,
              typename elemOrtValueType,  class ...elemOrtProperties,
-             typename quadBasisType>
+             typename quadBasisPtrType>
     inline
     static void 
-    getModifiedHgradBasisQuadrilateral(/**/  Kokkos::DynRankView<outValueValueType,outValueProperties...> outValues,
-                                       const Kokkos::DynRankView<refValueValueType,refValueProperties...> refValues,
-                                       const Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
-                                       const quadBasisType quadBasis);
+    getModifiedQuadrilateralBasis(/**/  Kokkos::DynRankView<outValueValueType,outValueProperties...> outValues,
+                                  const Kokkos::DynRankView<refValueValueType,refValueProperties...> refValues,
+                                  const Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
+                                  const quadBasisPtrType quadBasis);
   };
   
   template<typename T> 
@@ -264,7 +275,9 @@ namespace Intrepid2 {
 #include "Intrepid2_OrientationToolsDefModifyPoints.hpp"
 #include "Intrepid2_OrientationToolsDefCoeffMatrix.hpp"
 #include "Intrepid2_OrientationToolsDefMatrixData.hpp"
+
 #include "Intrepid2_OrientationToolsDefModifyBasis.hpp"
+#include "Intrepid2_OrientationToolsDefModifyQuadrilateralBasis.hpp"
 
 #endif
 

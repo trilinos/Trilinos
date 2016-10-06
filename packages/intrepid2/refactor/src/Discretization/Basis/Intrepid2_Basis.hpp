@@ -330,6 +330,12 @@ namespace Intrepid2 {
       return "Intrepid2_Basis";
     }
 
+    virtual
+    bool
+    requireOrientation() const {
+      return false;
+    }
+
     /** \brief  Returns cardinality of the basis
 
         \return the number of basis functions in the basis

@@ -62,55 +62,6 @@ namespace Intrepid2 {
     ArrayTools<SpT>::cloneFields(output, input);
   }
 
-  template<typename SpT>
-  template<typename outputValueType, class ...outputProperties,
-           typename inputValueType,  class ...inputProperties,
-           typename ortValueType,    class ...ortProperties,
-           typename HGradBasisPtrType>
-  void
-  FunctionSpaceTools<SpT>::
-  HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
-                       const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
-                       const Kokkos::DynRankView<ortValueType,   ortProperties...>    orts,
-                       const HGradBasisPtrType basis ) {
-#ifdef HAVE_INTREPID2_DEBUG
-    {
-      INTREPID2_TEST_FOR_EXCEPTION( input.rank() != 3 || 
-                                    input.rank() != output.rank(), std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformVALUE): Input and output rank are not 3.");
-      for (ordinal_type i=0;i<3;++i) 
-        INTREPID2_TEST_FOR_EXCEPTION( input.dimension(i) != output.dimension(i), std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformVALUE): Input and output dimension does not match.");
-      
-      INTREPID2_TEST_FOR_EXCEPTION( input.dimension(1) != basis->getCardinality(), std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformVALUE): Field dimension of input/output does not match to basis cardinality.");
-    }
-#endif
-    const auto cellTopo = basis->getBaseCellTopology();
-    bool is_ort_applied = false;
-    switch ( cellTopo.getKey() ) {
-    case shards::Line<2>::key:
-      // do nothing
-      break;
-    case shards::Quadrilateral<4>::key: {
-      // upto 2nd order, orientation is not applied
-      if (basis->getDegree() > 2) {
-        OrientationTools<SpT>::getModifiedHgradBasisQuadrilateral(output, input, orts, basis);
-        is_ort_applied = true;
-      }
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformVALUE): CellTopology is not supported.");
-    }
-    }
-
-    // if orientation is not applied, copy input to output
-    if (!is_ort_applied)
-      Kokkos::deep_copy(output, input);
-  }
-  
   // ------------------------------------------------------------------------------------
 
   namespace FunctorFunctionSpaceTools {

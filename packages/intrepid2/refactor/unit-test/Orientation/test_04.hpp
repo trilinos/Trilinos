@@ -171,10 +171,10 @@ namespace Intrepid2 {
           Kokkos::deep_copy(refValues, refValuesHost);
 
           // modify refValues accounting for orientations
-          ots::getModifiedHgradBasisQuadrilateral(outValues,
-                                                  refValues,
-                                                  elemOrts,
-                                                  cellBasis);
+          ots::getModifiedQuadrilateralBasis(outValues,
+                                             refValues,
+                                             elemOrts,
+                                             &cellBasis);
 
           auto outValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), outValues);
           Kokkos::deep_copy(outValuesHost, outValues);

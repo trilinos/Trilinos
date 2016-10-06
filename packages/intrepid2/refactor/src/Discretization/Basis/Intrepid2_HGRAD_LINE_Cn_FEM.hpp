@@ -220,6 +220,12 @@ namespace Intrepid2 {
       Kokkos::deep_copy(vinv, this->vinv_);      
     }
     
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HGRAD_LINE_Cn_FEM";
+    }
+
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion

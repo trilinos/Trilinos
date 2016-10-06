@@ -227,6 +227,12 @@ class Basis_HCURL_TRI_I1_FEM : public Basis<ExecSpaceType, outputValueType, poin
       impl_.getDofCoords( dofCoords );
     }
 
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HCURL_TRI_I1_FEM";
+    }
+
 };
 
 }// namespace Intrepid2

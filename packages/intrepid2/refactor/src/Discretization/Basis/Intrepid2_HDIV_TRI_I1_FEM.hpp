@@ -223,6 +223,12 @@ namespace Intrepid2 {
       impl_.getDofCoords( dofCoords );
     }
 
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HDIV_TRI_I1_FEM";
+    }
+
   };
 
 }// namespace Intrepid2

@@ -224,7 +224,14 @@ namespace Intrepid2 {
     void
     getDofCoords( scalarViewType dofCoords ) const {
       impl_.getDofCoords( dofCoords );
-    }        
+    } 
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HDIV_QUAD_I1_FEM";
+    }
+       
   };
 
 }// namespace Intrepid2

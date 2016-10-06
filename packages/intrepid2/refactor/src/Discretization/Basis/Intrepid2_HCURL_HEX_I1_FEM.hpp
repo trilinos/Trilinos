@@ -232,6 +232,13 @@ namespace Intrepid2 {
     getDofCoords( scalarViewType dofCoords ) const {
       impl_.getDofCoords( dofCoords );
     }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HCURL_HEX_I1_FEM";
+    }
+
   };
 }// namespace Intrepid2
 

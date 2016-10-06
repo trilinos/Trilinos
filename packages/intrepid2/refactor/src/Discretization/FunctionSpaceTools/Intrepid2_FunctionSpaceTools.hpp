@@ -122,18 +122,6 @@ namespace Intrepid2 {
     static void 
     HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
                          const Kokkos::DynRankView<inputValueType, inputProperties...>  input );
-    // input  : CFP
-    // output : CFP 
-    // orientation transform is applied (should we have different name ?
-    template<typename outputValueType, class ...outputProperties,
-             typename inputValueType,  class ...inputProperties,
-             typename ortValueType,    class ...ortProperties,
-             typename HGradBasisPtrType>
-    static void 
-    HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
-                         const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
-                         const Kokkos::DynRankView<ortValueType,   ortProperties...> orts,
-                         const HGradBasisPtrType basis );
 
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
