@@ -73,7 +73,7 @@ namespace panzer {
     TEST_EQUALITY(basis.cardinality(), 9);
     TEST_EQUALITY(basis.numCells(), 20);
     TEST_EQUALITY(basis.numPoints(), 4);
-    TEST_EQUALITY(basis.dimension(), (int)base_cell_dimension);
+    TEST_EQUALITY(basis.dimension(), Teuchos::as<int>(base_cell_dimension));
     TEST_EQUALITY(basis.name(), "HGrad:2:CubaturePoints (Degree=2,volume)");
     TEST_EQUALITY(basis.fieldName(), "Basis: HGrad:2");
     TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
@@ -119,7 +119,7 @@ namespace panzer {
     TEST_EQUALITY(basis.cardinality(), 9);
     TEST_EQUALITY(basis.numCells(), 20);
     TEST_EQUALITY(basis.numPoints(), 2);
-    TEST_EQUALITY(basis.dimension(), base_cell_dimension);
+    TEST_EQUALITY(basis.dimension(),Teuchos::as<int>(base_cell_dimension));
     TEST_EQUALITY(basis.name(), "HGrad:2:CubaturePoints (Degree=2,side)");
     TEST_EQUALITY(basis.fieldName(), "Basis: HGrad:2");
     TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
@@ -141,7 +141,6 @@ namespace panzer {
     TEST_EQUALITY(basis.functional->size(), num_cells * 9);
     TEST_EQUALITY(basis.functional_grad->size(), num_cells * 9 * dim);
     TEST_EQUALITY(basis.functional_D2->size(), num_cells * 9 * dim * dim);
-
   }
 
   TEUCHOS_UNIT_TEST(basis, TEdge1_2D_volume)
@@ -159,8 +158,8 @@ namespace panzer {
 
     TEST_EQUALITY(basis->getElementSpace(),PureBasis::HCURL);
     TEST_EQUALITY(basis->cardinality(),3);
-    TEST_EQUALITY(basis->numCells(),num_cells);
-    TEST_EQUALITY(basis->dimension(),base_cell_dimension);
+    TEST_EQUALITY(basis->numCells(),Teuchos::as<int>(num_cells));
+    TEST_EQUALITY(basis->dimension(),Teuchos::as<int>(base_cell_dimension));
     TEST_EQUALITY(basis->name(),"HCurl:1");
     TEST_ASSERT(basis->getIntrepid2Basis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
@@ -182,8 +181,8 @@ namespace panzer {
 
     TEST_EQUALITY(basis->getElementSpace(),PureBasis::HCURL);
     TEST_EQUALITY(basis->cardinality(),4);
-    TEST_EQUALITY(basis->numCells(),num_cells);
-    TEST_EQUALITY(basis->dimension(),base_cell_dimension);
+    TEST_EQUALITY(basis->numCells(),Teuchos::as<int>(num_cells));
+    TEST_EQUALITY(basis->dimension(),Teuchos::as<int>(base_cell_dimension));
     TEST_EQUALITY(basis->name(),"HCurl:1");
     TEST_ASSERT(basis->getIntrepid2Basis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
