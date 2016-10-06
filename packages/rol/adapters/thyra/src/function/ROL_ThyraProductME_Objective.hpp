@@ -106,11 +106,11 @@ public:
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
 
-    const int theSize = (int) p_indices.size();
-    for(int i=0; i<theSize; ++i)
+    const int p_indices_size = static_cast<int>(p_indices.size());
+    for(int i=0; i<p_indices_size; ++i)
       inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
 
-    for(int i=0; i<theSize; ++i) {
+    for(int i=0; i<p_indices_size; ++i) {
       Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
       const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
             outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index, p_indices[i]);
