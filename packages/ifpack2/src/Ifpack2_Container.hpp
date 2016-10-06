@@ -49,6 +49,11 @@
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_Describable.hpp"
+#include <Ifpack2_Partitioner.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_Experimental_BlockCrsMatrix_decl.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_Time.hpp>
 #include <iostream>
 #include <type_traits>
 
@@ -107,18 +112,69 @@ namespace Ifpack2 {
 /// Ifpack2_BlockRelaxation_def.hpp.
 template<class MatrixType>
 class Container : public Teuchos::Describable {
-public:
-  typedef typename MatrixType::scalar_type          scalar_type;
-  typedef typename MatrixType::local_ordinal_type   local_ordinal_type;
-  typedef typename MatrixType::global_ordinal_type  global_ordinal_type;
-  typedef typename MatrixType::node_type            node_type;
-
+  //! @name Internal typedefs (protected)
+  //@{
+protected:
+  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename MatrixType::node_type node_type;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> mv_type;
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> vector_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+  typedef Partitioner<Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> > partitioner_type;
+  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> block_crs_matrix_type;
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,
                 "Ifpack2::Container: Please use MatrixType = Tpetra::RowMatrix.");
 
+  //! Internal representation of Scalar in Kokkos::View
+  typedef typename Kokkos::Details::ArithTraits<scalar_type>::val_type impl_scalar_type;
+  //@}
+
+public:
+  typedef typename mv_type::dual_view_type::t_host HostView;
+
   /// \brief Constructor.
+  ///
+  /// \brief matrix [in] The original input matrix.  This Container
+  ///   will construct local diagonal blocks from the rows given by
+  ///   <tt>partitioner</tt>.
+  ///
+  /// \param partitioner [in] The Partitioner object that assigns
+  ///   local rows of the input matrix to blocks.
+  Container (const Teuchos::RCP<const row_matrix_type>& matrix,
+             const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+             int OverlapLevel,
+             scalar_type DampingFactor) :
+    inputMatrix_ (matrix),
+    OverlapLevel_ (OverlapLevel),
+    DampingFactor_ (DampingFactor)
+  {
+    using Teuchos::Ptr;
+    using Teuchos::RCP;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::Comm;
+    typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+    NumLocalRows_ = inputMatrix_->getNodeNumRows();
+    NumGlobalRows_ = inputMatrix_->getGlobalNumRows();
+    NumGlobalNonzeros_ = inputMatrix_->getGlobalNumEntries();
+    IsParallel_ = inputMatrix_->getRowMap()->getComm()->getSize() > 1;
+    const block_crs_matrix_type* global_bcrs =
+      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(inputMatrix_).get();
+    hasBlockCrs_ = global_bcrs;
+    if(hasBlockCrs_)
+      bcrsBlockSize_ = global_bcrs->getBlockSize();
+    else
+      bcrsBlockSize_ = 1;
+    setBlockSizes(partitions);
+  }
+
+  /// \brief Constructor for single block.
   ///
   /// \brief matrix [in] The original input matrix.  This Container
   ///   will construct a local diagonal block from the rows given by
@@ -130,32 +186,44 @@ public:
   ///   j indicates the local row in the calling process.  Subclasses
   ///   must always pass along these indices to the base class.
   Container (const Teuchos::RCP<const row_matrix_type>& matrix,
-             const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
+             const Teuchos::Array<local_ordinal_type>& localRows) :
     inputMatrix_ (matrix),
-    localRows_ (localRows.begin (), localRows.end ())
+    numBlocks_ (1),
+    partitions_ (localRows.size()),
+    blockRows_ (1),
+    partitionIndices_ (1),
+    OverlapLevel_ (0),
+    DampingFactor_ (STS::one())
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      matrix.is_null (), std::invalid_argument, "Ifpack2::Container: "
-      "The constructor's input matrix must be non-null.");
+    NumLocalRows_ = inputMatrix_->getNodeNumRows();
+    NumGlobalRows_ = inputMatrix_->getGlobalNumRows();
+    NumGlobalNonzeros_ = inputMatrix_->getGlobalNumEntries();
+    IsParallel_ = inputMatrix_->getRowMap()->getComm()->getSize() > 1;
+    blockRows_[0] = localRows.size();
+    partitionIndices_[0] = 0;
+    const block_crs_matrix_type* global_bcrs =
+      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(inputMatrix_).get();
+    hasBlockCrs_ = global_bcrs;
+    if(hasBlockCrs_)
+      bcrsBlockSize_ = global_bcrs->getBlockSize();
+    else
+      bcrsBlockSize_ = 1;
+    for(local_ordinal_type i = 0; i < localRows.size(); i++)
+      partitions_[i] = localRows[i];
+    ownsImporter_ = false;
+    if(IsParallel_)
+    {
+      Importer_ = ptr(inputMatrix_->getGraph()->getImporter().get());
+      if(Importer_.is_null())
+      {
+        Importer_ = ptr(new import_type(inputMatrix_->getDomainMap(), inputMatrix_->getColMap()));
+        ownsImporter_ = true; //delete the importer in destructor
+      }
+    }
   }
 
   //! Destructor.
   virtual ~Container() {};
-
-  /// \brief The input matrix to the constructor.
-  ///
-  /// This is not the local diagonal block that the Container
-  /// extracts; this is the original input matrix, of which that
-  /// diagonal block is a submatrix.  You can't get the local diagonal
-  /// block through the Container interface, because the subclass of
-  /// container can store that block in any format it likes (e.g.,
-  /// dense or sparse).
-  Teuchos::RCP<const row_matrix_type> getMatrix() const {
-    return inputMatrix_;
-  }
-
-  //! The number of rows in the diagonal block.
-  virtual size_t getNumRows() const = 0;
 
   /// \brief Local indices of the rows of the input matrix that belong to this block.
   ///
@@ -172,8 +240,10 @@ public:
   /// For an example of how to use these indices, see the
   /// implementation of BlockRelaxation::ExtractSubmatrices() in
   /// Ifpack2_BlockRelaxation_def.hpp.
-  Teuchos::ArrayView<const local_ordinal_type> getLocalRows () const {
-    return localRows_ ();
+  Teuchos::ArrayView<const local_ordinal_type> getLocalRows(int blockIndex) const
+  {
+    return Teuchos::ArrayView<const local_ordinal_type>
+      (&partitions_[partitionIndices_[blockIndex]], blockRows_[blockIndex]);
   }
 
   /// \brief Do all set-up operations that only require matrix structure.
@@ -186,12 +256,54 @@ public:
   /// global dimensions, and the populated entries in each row.
   virtual void initialize () = 0;
 
-  /// \brief Extract the local diagonal block and prepare the solver.
+  //! Initialize arrays with information about block sizes.
+  void setBlockSizes(const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions)
+  {
+    //First, create a grand total of all the rows in all the blocks
+    //Note: If partitioner allowed overlap, this could be greater than the # of local rows
+    local_ordinal_type totalBlockRows = 0;
+    numBlocks_ = partitions.size();
+    blockRows_.resize(numBlocks_);
+    partitionIndices_.resize(numBlocks_);
+    for(int i = 0; i < numBlocks_; i++)
+    {
+      local_ordinal_type rowsInBlock = partitions[i].size();
+      blockRows_[i] = rowsInBlock;
+      partitionIndices_[i] = totalBlockRows;
+      totalBlockRows += rowsInBlock;
+    }
+    partitions_.resize(totalBlockRows);
+    //set partitions_: each entry is the partition/block of the row
+    local_ordinal_type iter = 0;
+    for(int i = 0; i < numBlocks_; i++)
+    {
+      for(int j = 0; j < blockRows_[i]; j++)
+      {
+        partitions_[iter++] = partitions[i][j];
+      }
+    }
+  }
+
+  void getMatDiag() const
+  {
+    if(Diag_.is_null())
+    {
+      Diag_ = rcp(new vector_type(inputMatrix_->getDomainMap()));
+      inputMatrix_->getLocalDiagCopy(*Diag_);
+    }
+  }
+
+  /// \brief Extract the local diagonal block and prepare the solver. 
   ///
   /// If any entries' values in the input matrix have changed, you
   /// must call this method before you may call apply() or
   /// weightedApply().
   virtual void compute () = 0;
+
+  void DoJacobi(HostView& X, HostView& Y, int stride) const;
+  void DoOverlappingJacobi(HostView& X, HostView& Y, HostView& W, int stride) const;
+  void DoGaussSeidel(HostView& X, HostView& Y, int stride) const;
+  void DoSGS(HostView& X, HostView& Y, int stride) const;
 
   //! Set parameters.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
@@ -201,7 +313,7 @@ public:
 
   //! Return \c true if the container has been successfully computed.
   virtual bool isComputed () const = 0;
-
+  
   /// \brief Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   ///
   /// X is in the domain Map of the original matrix (the argument to
@@ -215,11 +327,21 @@ public:
   /// Tpetra::Operator's method of the same name.  This might require
   /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+  apply (HostView& X,
+         HostView& Y,
+         int blockIndex,
+         int stride,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const = 0;
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const = 0;
+
+  //! Wrapper for apply with MVs, used in unit tests (never called by BlockRelaxation)
+  void applyMV (mv_type& X, mv_type& Y) const
+  {
+    HostView XView = X.template getLocalView<Kokkos::HostSpace>();
+    HostView YView = Y.template getLocalView<Kokkos::HostSpace>();
+    this->apply (XView, YView, 0, X.getStride());
+  }
 
   /// \brief Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   ///
@@ -242,27 +364,72 @@ public:
   /// Tpetra::Operator's method of the same name.  This might require
   /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-                 const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
+  weightedApply (HostView& X,
+                 HostView& Y,
+                 HostView& W,
+                 int blockIndex,
+                 int stride,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
-                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const = 0;
+                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const = 0;
+
+  //! Wrapper for weightedApply with MVs, used in unit tests (never called by BlockRelaxation)
+  void weightedApplyMV (mv_type& X,
+                        mv_type& Y,
+                        vector_type& W)
+  {
+    HostView XView = X.template getLocalView<Kokkos::HostSpace>();
+    HostView YView = Y.template getLocalView<Kokkos::HostSpace>();
+    HostView WView = W.template getLocalView<Kokkos::HostSpace>();
+    weightedApply (XView, YView, WView, 0, X.getStride());
+  }
+  
+  virtual void clearBlocks();
 
   //! Print basic information about the container to \c os.
   virtual std::ostream& print (std::ostream& os) const = 0;
 
+  //! Returns string describing the container.
+  //! See <tt>Details::ContainerFactory</tt>.
   static std::string getName()
   {
     return "Generic";
   }
 
-private:
+protected:
   //! The input matrix to the constructor.
   Teuchos::RCP<const row_matrix_type> inputMatrix_;
 
+  //! The number of blocks (partitions) in the container.
+  int numBlocks_;
   //! Local indices of the rows of the input matrix that belong to this block.
-  Teuchos::Array<local_ordinal_type> localRows_;
+  Teuchos::Array<local_ordinal_type> partitions_;      //size: total # of local rows (in all local blocks)
+  //! Number of rows in each block.
+  Teuchos::Array<local_ordinal_type> blockRows_;     //size: # of blocks
+  //! Starting index in partitions_ of local row indices for each block.
+  Teuchos::Array<local_ordinal_type> partitionIndices_;
+  //! Diagonal elements.
+  mutable Teuchos::RCP<vector_type> Diag_;
+  //! Whether the problem is distributed across multiple MPI processes.
+  bool IsParallel_;
+  //! Number of rows of overlap for adjacent blocks.
+  int OverlapLevel_;
+  //! Damping factor, passed to apply() as alpha.
+  scalar_type DampingFactor_;
+  //! Importer for importing off-process elements of MultiVectors.
+  Teuchos::Ptr<const Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>> Importer_;
+  //! True if Importer_ was created in the Container, false if it was given by BlockRelaxation.
+  bool ownsImporter_;
+  //! Number of local rows in input matrix.
+  local_ordinal_type NumLocalRows_; 
+  //! Number of global rows in input matrix.
+  global_ordinal_type NumGlobalRows_;
+  //! Number of nonzeros in input matrix.
+  global_ordinal_type NumGlobalNonzeros_;
+  //! Whether the input matrix is a BlockCRS matrix.
+  bool hasBlockCrs_;
+  //! If hasBlockCrs_, the number of DOFs per vertex. Otherwise 1.
+  int bcrsBlockSize_;
 };
 
 //! Print information about the given Container to the output stream \c os.
@@ -271,6 +438,305 @@ inline std::ostream&
 operator<< (std::ostream& os, const Ifpack2::Container<MatrixType>& obj)
 {
   return obj.print (os);
+}
+
+template <class MatrixType>
+void Container<MatrixType>::DoJacobi(HostView& X, HostView& Y, int stride) const
+{
+  const scalar_type one = STS::one();
+  // Note: Flop counts copied naively from Ifpack.
+  // use partitions_ and blockRows_
+  size_t numVecs = X.dimension_1();
+  // Non-overlapping Jacobi
+  for (local_ordinal_type i = 0; i < numBlocks_; i++)
+  {
+    // may happen that a partition is empty
+    if(blockRows_[i] != 1 || hasBlockCrs_)
+    {
+      if(blockRows_[i] == 0 )
+        continue;
+      apply(X, Y, i, stride, Teuchos::NO_TRANS, DampingFactor_, one);
+    }
+    else    // singleton, can't access Containers_[i] as it was never filled and may be null.
+    {
+      local_ordinal_type LRID = partitions_[partitionIndices_[i]];
+      getMatDiag();
+      HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();
+      impl_scalar_type d = (impl_scalar_type) one / diagView(LRID, 0);
+      for(size_t nv = 0; nv < numVecs; nv++)
+      {
+        impl_scalar_type x = X(LRID, nv);
+        Y(LRID, nv) = x * d;
+      }
+    }
+  }
+}
+
+template <class MatrixType>
+void Container<MatrixType>::DoOverlappingJacobi(HostView& X, HostView& Y, HostView& W, int stride) const
+{
+  // Overlapping Jacobi
+  for(local_ordinal_type i = 0; i < numBlocks_; i++)
+  {
+    // may happen that a partition is empty
+    if(blockRows_[i] == 0)
+      continue;
+    if(blockRows_[i] != 1)
+      weightedApply(X, Y, W, i, stride, Teuchos::NO_TRANS, DampingFactor_, STS::one());
+  }
+}
+
+template<class MatrixType>
+void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, int stride) const
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::Ptr;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  // Note: Flop counts copied naively from Ifpack.
+  const scalar_type one = STS::one();
+  const size_t Length = inputMatrix_->getNodeMaxNumRowEntries();
+  auto numVecs = X.dimension_1();
+  Array<scalar_type> Values;
+  Array<local_ordinal_type> Indices;
+  Indices.resize(Length);
+
+  Values.resize(bcrsBlockSize_ * bcrsBlockSize_ * Length);    //note: if A was not a BlockCRS, bcrsBlockSize_ is 1
+  // I think I decided I need two extra vectors:
+  // One to store the sum of the corrections (initialized to zero)
+  // One to store the temporary residual (doesn't matter if it is zeroed or not)
+  // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
+  HostView Resid("", X.dimension_0(), X.dimension_1());
+  for(local_ordinal_type i = 0; i < numBlocks_; i++)
+  {
+    if(blockRows_[i] > 1 || hasBlockCrs_)
+    {
+      if (blockRows_[i] == 0)
+        continue;
+      // update from previous block
+      ArrayView<const local_ordinal_type> localRows = getLocalRows (i);
+      const size_t localNumRows = blockRows_[i];
+      for(size_t j = 0; j < localNumRows; j++)
+      {
+        const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
+        size_t NumEntries;
+        inputMatrix_->getLocalRowCopy(LID, Indices(), Values(), NumEntries);
+        for(size_t m = 0; m < numVecs; m++)
+        {
+          if(hasBlockCrs_)
+          {
+            for (int localR = 0; localR < bcrsBlockSize_; localR++)
+              Resid(LID * bcrsBlockSize_ + localR, m) = X(LID * bcrsBlockSize_ + localR, m);
+            for (size_t k = 0; k < NumEntries; ++k)
+            {
+              const local_ordinal_type col = Indices[k];
+              for (int localR = 0; localR < bcrsBlockSize_; localR++)
+                for(int localC = 0; localC < bcrsBlockSize_; localC++)
+                  Resid(LID * bcrsBlockSize_ + localR, m) -=
+                    Values[k * bcrsBlockSize_ * bcrsBlockSize_ + localR + localC * bcrsBlockSize_]
+                    * Y(col * bcrsBlockSize_ + localC, m);
+            }
+          }
+          else
+          {
+            Resid(LID, m) = X(LID, m);
+            for (size_t k = 0; k < NumEntries; ++k)
+            {
+              const local_ordinal_type col = Indices[k];
+              Resid(LID, m) -= Values[k] * Y(col, m);
+            }
+          }
+        }
+      }
+      // solve with this block
+      //
+      // Note: I'm abusing the ordering information, knowing that X/Y
+      // and Y2 have the same ordering for on-proc unknowns.
+      //
+      // Note: Add flop counts for inverse apply
+      apply(Resid, Y, i, stride, Teuchos::NO_TRANS, DampingFactor_, one);
+    }
+    else if(blockRows_[i] == 1)
+    {
+      // singleton, can't access Containers_[i] as it was never filled and may be null.
+      // a singleton calculation is exact, all residuals should be zero.
+      local_ordinal_type LRID = partitionIndices_[i];  // by definition, a singleton 1 row in block.
+      getMatDiag();
+      HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();
+      impl_scalar_type d = (impl_scalar_type) one / diagView(LRID, 0);
+      for(size_t m = 0; m < numVecs; m++)
+      {
+        impl_scalar_type x = X(LRID, m);
+        impl_scalar_type newy = x * d;
+        Y(LRID, m) = newy;
+     }
+    } // end else
+  } // end for numBlocks_ 
+}
+
+template<class MatrixType>
+void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, int stride) const
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::Ptr;
+  using Teuchos::ptr;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  const scalar_type one = STS::one();
+  auto numVecs = X.dimension_1();
+  const size_t Length = inputMatrix_->getNodeMaxNumRowEntries();
+  Array<scalar_type> Values;
+  Array<local_ordinal_type> Indices(Length);
+  Values.resize(bcrsBlockSize_ * bcrsBlockSize_ * Length);
+  // I think I decided I need two extra vectors:
+  // One to store the sum of the corrections (initialized to zero)
+  // One to store the temporary residual (doesn't matter if it is zeroed or not)
+  // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
+  HostView Resid("", X.dimension_0(), X.dimension_1());
+  // Forward Sweep
+  for(local_ordinal_type i = 0; i < numBlocks_; i++)
+  {
+    if(blockRows_[i] != 1 || hasBlockCrs_)
+    {
+      if(blockRows_[i] == 0)
+        continue; // Skip empty partitions
+      // update from previous block
+      ArrayView<const local_ordinal_type> localRows = getLocalRows(i);
+      for(local_ordinal_type j = 0; j < blockRows_[i]; j++)
+      {
+        const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
+        size_t NumEntries;
+        inputMatrix_->getLocalRowCopy(LID, Indices(), Values(), NumEntries);
+        //set tmpresid = initresid - A*correction
+        for(size_t m = 0; m < numVecs; m++)
+        {
+          if(hasBlockCrs_)
+          {
+            for(int localR = 0; localR < bcrsBlockSize_; localR++)
+              Resid(LID * bcrsBlockSize_ + localR, m) = X(LID * bcrsBlockSize_ + localR, m);
+            for(size_t k = 0; k < NumEntries; ++k)
+            {
+              const local_ordinal_type col = Indices[k];
+              for (int localR = 0; localR < bcrsBlockSize_; localR++)
+              {
+                for(int localC = 0; localC < bcrsBlockSize_; localC++)
+                  Resid(LID * bcrsBlockSize_ + localR, m) -=
+                    Values[k * (bcrsBlockSize_ * bcrsBlockSize_) + (localR + localC * bcrsBlockSize_)]
+                    * Y(col * bcrsBlockSize_ + localC, m);
+              }
+            }
+          }
+          else
+          {
+            Resid(LID, m) = X(LID, m);
+            for(size_t k = 0; k < NumEntries; k++)
+            {
+              local_ordinal_type col = Indices[k];
+              Resid(LID, m) -= Values[k] * Y(col, m);
+            }
+          }
+        }
+      }
+      // solve with this block
+      //
+      // Note: I'm abusing the ordering information, knowing that X/Y
+      // and Y2 have the same ordering for on-proc unknowns.
+      //
+      // Note: Add flop counts for inverse apply
+      apply(Resid, Y, i, stride, Teuchos::NO_TRANS, DampingFactor_, one);
+      // operations for all getrow's
+    }
+    else // singleton, can't access Containers_[i] as it was never filled and may be null.
+    { 
+      local_ordinal_type LRID  = partitions_[partitionIndices_[i]];
+      getMatDiag();
+      HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();
+      impl_scalar_type d = (impl_scalar_type) one / diagView(LRID, 0);
+      for(size_t m = 0; m < numVecs; m++)
+      {
+        impl_scalar_type x = X(LRID, m);
+        impl_scalar_type newy = x * d;
+        Y(LRID, m) = newy;
+      }
+    } // end else
+  } // end forward sweep over NumLocalBlocks
+  // Reverse Sweep
+  //
+  // mfh 12 July 2013: The unusual iteration bounds, and the use of
+  // i-1 rather than i in the loop body, ensure correctness even if
+  // local_ordinal_type is unsigned.  "i = numBlocks_-1; i >= 0;
+  // i--" will loop forever if local_ordinal_type is unsigned, because
+  // unsigned integers are (trivially) always nonnegative.
+  for(local_ordinal_type i = numBlocks_; i > 0; --i)
+  {
+    if(hasBlockCrs_ || blockRows_[i-1] != 1)
+    {
+      if(blockRows_[i - 1] == 0)
+        continue;
+      // update from previous block
+      ArrayView<const local_ordinal_type> localRows = getLocalRows(i-1);
+      for(local_ordinal_type j = 0; j < blockRows_[i-1]; j++)
+      {
+        const local_ordinal_type LID = localRows[j]; // Containers_[i-1]->ID (j);
+        size_t NumEntries;
+        inputMatrix_->getLocalRowCopy(LID, Indices(), Values(), NumEntries);
+        //set tmpresid = initresid - A*correction
+        for (size_t m = 0; m < numVecs; m++)
+        {
+          if(hasBlockCrs_)
+          {
+            for(int localR = 0; localR < bcrsBlockSize_; localR++)
+              Resid(LID * bcrsBlockSize_ + localR, m) = X(LID * bcrsBlockSize_ + localR, m);
+            for(size_t k = 0; k < NumEntries; ++k)
+            {
+              const local_ordinal_type col = Indices[k];
+              for(int localR = 0; localR < bcrsBlockSize_; localR++)
+              {
+                for(int localC = 0; localC < bcrsBlockSize_; localC++)
+                  Resid(LID*bcrsBlockSize_+localR, m) -=
+                    Values[k * (bcrsBlockSize_ * bcrsBlockSize_) + (localR + localC * bcrsBlockSize_)]
+                    * Y(col * bcrsBlockSize_ + localC, m);
+              }
+            }
+          }
+          else
+          {
+            Resid(LID, m) = X(LID, m);
+            for(size_t k = 0; k < NumEntries; ++k)
+            {
+              local_ordinal_type col = Indices[k];
+              Resid(LID, m) -= Values[k] * Y(col, m);
+            }
+          }
+        }
+      }
+      // solve with this block
+      //
+      // Note: I'm abusing the ordering information, knowing that X/Y
+      // and Y2 have the same ordering for on-proc unknowns.
+      //
+      // Note: Add flop counts for inverse apply
+      apply(Resid, Y, i - 1, stride, Teuchos::NO_TRANS, DampingFactor_, one);
+      // operations for all getrow's
+    } // end  Partitioner_->numRowsInPart (i) != 1 )
+    // else do nothing, as by definition with a singleton, the residuals are zero.
+  } //end reverse sweep
+}
+
+template<class MatrixType>
+void Container<MatrixType>::clearBlocks()
+{
+  numBlocks_ = 0;
+  partitions_.clear();
+  blockRows_.clear();
+  partitionIndices_.clear();
+  Diag_ = Teuchos::null;      //Diag_ will be recreated if needed
 }
 
 } // namespace Ifpack2

@@ -48,11 +48,14 @@
 #include "Ifpack2_DenseContainer.hpp"
 #include "Ifpack2_SparseContainer.hpp"
 #include "Ifpack2_BandedContainer.hpp"
+#include "Ifpack2_Partitioner.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
 #ifdef HAVE_IFPACK2_AMESOS2
 #  include "Ifpack2_Details_Amesos2Wrapper.hpp"
 #endif
 #include "Tpetra_RowMatrix_decl.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Ptr.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
 #include <string>
 
@@ -75,8 +78,10 @@ Teuchos::RCP< ::Ifpack2::Container< ::Tpetra::RowMatrix<typename MatrixType::sca
                                                         typename MatrixType::global_ordinal_type,
                                                         typename MatrixType::node_type> > >
 createContainer (const std::string& containerName,
-                 const Teuchos::RCP<const MatrixType>& A,
-                 const Teuchos::ArrayView<const typename MatrixType::local_ordinal_type>& localRows)
+                 const Teuchos::RCP< const MatrixType>& A,
+                 const Teuchos::Array< Teuchos::Array< typename MatrixType::local_ordinal_type> >& localRows,
+                 int OverlapLevel,
+                 typename MatrixType::scalar_type DampingFactor)
 {
   using Teuchos::rcp;
   typedef Tpetra::RowMatrix<typename MatrixType::scalar_type,
@@ -88,21 +93,21 @@ createContainer (const std::string& containerName,
                  "MatrixType must be a Tpetra::RowMatrix specialization.");
 
   if (containerName == "TriDi") {
-    return rcp (new TriDiContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows));
+    return rcp (new TriDiContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows, OverlapLevel, DampingFactor));
   }
   else if (containerName == "Dense") {
-    return rcp (new DenseContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows));
+    return rcp (new DenseContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows, OverlapLevel, DampingFactor));
   }
   else if (containerName == "SparseILUT") {
-    return rcp (new SparseContainer<MatrixType, ILUT<MatrixType> > (A, localRows));
+    return rcp (new SparseContainer<MatrixType, ILUT<MatrixType> > (A, localRows, OverlapLevel, DampingFactor));
   }
 #ifdef HAVE_IFPACK2_AMESOS2
   else if (containerName == "SparseAmesos2" || containerName == "SparseAmesos") {
-    return rcp (new SparseContainer<MatrixType, Amesos2Wrapper<MatrixType> > (A, localRows));
+    return rcp (new SparseContainer<MatrixType, Amesos2Wrapper<MatrixType> > (A, localRows, OverlapLevel, DampingFactor));
   }
 #endif
   else if (containerName == "Banded") {
-    return rcp (new BandedContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows));
+    return rcp (new BandedContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows, OverlapLevel, DampingFactor));
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION
