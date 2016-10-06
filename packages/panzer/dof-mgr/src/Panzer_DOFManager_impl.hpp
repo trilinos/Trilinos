@@ -369,6 +369,8 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   // INPUT: To the algorithm in the GUN paper
   RCP<MultiVector> overlap_mv = buildTaggedMultiVector(ownedAccess);
 
+  std::cout << Teuchos::describe(*overlap_mv,Teuchos::VERB_EXTREME) << std::endl;
+
   // call the GUN paper algorithm
   RCP<MultiVector> non_overlap_mv = buildGlobalUnknowns_GUN(*overlap_mv);
 
@@ -817,8 +819,10 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
             working[whichField]++;
             offset++;
           }
-          for(std::size_t i=0;i<working.size();i++) 
-            edittwoview[i][lid] = working[i];
+          for(std::size_t i=0;i<working.size();i++) {
+            auto current = edittwoview[i][lid];
+            edittwoview[i][lid] = (current > working[i]) ? current : working[i];
+          }
  
         }
       }

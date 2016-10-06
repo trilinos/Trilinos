@@ -87,6 +87,105 @@ std::string getElementBlock(const Triplet & element,
   return connManager.getBlockId(localElmtId);
 }
 
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
+{
+  typedef CartesianConnManager<int,Ordinal64> CCM;
+  typedef panzer::DOFManager<int,Ordinal64> DOFManager;
+
+  // build global (or serial communicator)
+  #ifdef HAVE_MPI
+    Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
+  #else
+    THIS_REALLY_DOES_NOT_WORK
+  #endif
+
+  int np = comm.getSize(); // number of processors
+  int rank = comm.getRank(); // processor rank
+
+  // mesh description
+  Ordinal64 nx = 8, ny = 4;//, nz = 4;
+  //Ordinal64 nx = 4, ny = 3;//, nz = 4;
+  int px = np, py = 1;//, pz = 1; // npx1 processor grids
+  int bx =  1, by = 2;//, bz = 1; // 1x2 blocks
+
+  // const int poly_U = 4, poly_P = 1, poly_T = 3;
+  const int poly_U = 1;
+
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_U )) );
+
+  // build the topology
+  RCP<CCM> connManager = rcp(new CCM);
+  connManager->initialize(comm,nx,ny,px,py,bx,by);
+
+  // build the dof manager, and assocaite with the topology
+  RCP<DOFManager> dofManager = rcp(new DOFManager);
+  dofManager->setConnManager(connManager,*comm.getRawMpiComm());
+
+  // add velocity (U) and PRESSURE fields to the MHD element block
+  dofManager->addField("eblock-0_0","UX",pattern_U);
+  dofManager->addField("eblock-0_0","P",pattern_U);
+  // dofManager->addField("eblock-0_1","UX",pattern_U);
+  dofManager->addField("eblock-0_1","P",pattern_U);
+
+  // build global unknowns (useful comment!)
+  dofManager->buildGlobalUnknowns();
+
+  auto myOffset   = connManager->getMyOffsetTriplet();
+  auto myElements = connManager->getMyElementsTriplet();
+
+  // check sharing locally on this processor
+  {
+    // choose an element in the middle of the day
+    Triplet element;
+    element.x = myOffset.x + myElements.x/2-1;
+    element.y = myOffset.y + myElements.y/2-1;
+    element.z = 0; 
+
+    out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
+
+    int localElmtId    = connManager->computeLocalElementIndex(element);
+    int localElmtId_px = connManager->computeLocalElementIndex(Triplet(element.x+1,element.y,element.z));
+    int localElmtId_py = connManager->computeLocalElementIndex(Triplet(element.x,element.y+1,element.z));
+
+    TEST_ASSERT(localElmtId>=0);
+    TEST_ASSERT(localElmtId_px>=0);
+    TEST_ASSERT(localElmtId_py>=0);
+
+    std::string eblock    = getElementBlock(element,*connManager);
+    std::string eblock_px = getElementBlock(Triplet(element.x+1,element.y,element.z),*connManager);
+    std::string eblock_py = getElementBlock(Triplet(element.x,element.y+1,element.z),*connManager);
+
+    std::vector<Ordinal64> gids, gids_px, gids_py;
+
+    dofManager->getElementGIDs(localElmtId,   gids);
+    dofManager->getElementGIDs(localElmtId_px,gids_px);
+    dofManager->getElementGIDs(localElmtId_py,gids_py);
+
+    out << "gids = ";
+    for(std::size_t i=0;i<gids.size();i++)
+      out << gids[i] << " ";
+    out << std::endl;
+
+    out << "gids_px = ";
+    for(std::size_t i=0;i<gids_px.size();i++)
+      out << gids_px[i] << " ";
+    out << std::endl;
+
+    out << "gids_py = ";
+    for(std::size_t i=0;i<gids_py.size();i++)
+      out << gids_py[i] << " ";
+    out << std::endl;
+
+    std::sort(gids.begin(),gids.end());
+    std::sort(gids_px.begin(),gids_px.end());
+    std::sort(gids_py.begin(),gids_py.end());
+
+    TEST_ASSERT(gids[0]>=0);
+    TEST_ASSERT(gids_px[0]>=0);
+    TEST_ASSERT(gids_py[0]>=0);
+  }
+}
+
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 {
   typedef CartesianConnManager<int,Ordinal64> CCM;
