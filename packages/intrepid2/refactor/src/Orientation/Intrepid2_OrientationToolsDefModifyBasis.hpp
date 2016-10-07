@@ -157,7 +157,7 @@ namespace Intrepid2 {
       
       const ordinal_type 
         numCells  = output.dimension(0),
-        numBasis  = output.dimension(1),
+        //numBasis  = output.dimension(1),
         numPoints = output.dimension(2),
         dimBasis  = output.dimension(3);
       

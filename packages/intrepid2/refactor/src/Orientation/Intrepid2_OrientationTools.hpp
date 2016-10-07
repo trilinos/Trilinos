@@ -61,6 +61,9 @@
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 
+#include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
+#include "Intrepid2_HDIV_QUAD_I1_FEM.hpp"
+
 #include "Teuchos_LAPACK.hpp"
 
 namespace Intrepid2 {

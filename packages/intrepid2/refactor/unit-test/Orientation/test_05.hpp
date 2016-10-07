@@ -75,7 +75,7 @@ namespace Intrepid2 {
     }
     
     template<typename DeviceSpaceType>
-    int Orientation_Test04(const bool verbose) {
+    int Orientation_Test05(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -99,7 +99,7 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|                 Unit Test (OrientationTools, getModifiedHgradBasis)         |\n"
+        << "|                 Unit Test (OrientationTools, getModifiedHcurl_I1_Basis)     |\n"
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
@@ -112,12 +112,9 @@ namespace Intrepid2 {
         {
           *outStream << "\n -- Testing Quadrilateral \n\n";
 
-          const ordinal_type order = 4;
-
-          Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType> cellBasis(order);
+          Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> cellBasis;
           const auto cellTopo = cellBasis.getBaseCellTopology();
           const ordinal_type ndofBasis = cellBasis.getCardinality();
-
           
           // 
           // 9 12 13 16
@@ -147,11 +144,11 @@ namespace Intrepid2 {
 
           auto elemOrtsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), elemOrts);
           Kokkos::deep_copy(elemOrtsHost, elemOrts);
-
+          
           // cell specific modified basis 
           Kokkos::DynRankView<double,DeviceSpaceType> outValues("outValues", numCells, ndofBasis);
           Kokkos::DynRankView<double,DeviceSpaceType> refValues("refValues", numCells, ndofBasis);
-
+          
           auto refValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), refValues);
           for (auto cell=0;cell<numCells;++cell)           
             for (auto bf=0;bf<ndofBasis;++bf) 
@@ -171,21 +168,10 @@ namespace Intrepid2 {
             int flag = 0 ;
             std::stringstream s1, s2;
             
-            s1 << " :: vert = " ;
-            s2 << " :: vert = " ;
-            for (auto vertId=0;vertId<numVerts;++vertId) {
-              const auto ord = cellBasis.getDofOrdinal(0, vertId, 0);
-              s1 << std::setw(4) << refValuesHost(cell, ord);              
-              s2 << std::setw(4) << outValuesHost(cell, ord); 
-              flag += (std::abs(outValuesHost(cell, ord) - refValuesHost(cell, ord)) > tol);
-            }
-
-            const ordinal_type reverse[numEdges][2] = { { 0,1 },
-                                                        { 0,1 },
-                                                        { 1,0 },
-                                                        { 1,0 } };
             ordinal_type orts[numEdges];
             elemOrtsHost(cell).getEdgeOrientation(orts, numEdges);
+            
+            const double ortVal[2] = { 1.0 , - 1.0 };
 
             s1 << " :: edge(0000) = " ;
             s2 << " :: edge(" << orts[0] << orts[1] << orts[2] << orts[3] << ") = ";
@@ -193,27 +179,15 @@ namespace Intrepid2 {
               const auto ndof = cellBasis.getDofTag(cellBasis.getDofOrdinal(1, edgeId, 0))(3);
               for (auto i=0;i<ndof;++i) {
                 const auto refOrd = cellBasis.getDofOrdinal(1, edgeId, i);
-                const auto outOrd = cellBasis.getDofOrdinal(1, edgeId, (reverse[edgeId][orts[edgeId]] ? ndof-i-1 : i));
+                const auto outOrd = cellBasis.getDofOrdinal(1, edgeId, i);
                 s1 << std::setw(4) << refValuesHost(cell, refOrd);              
                 s2 << std::setw(4) << outValuesHost(cell, refOrd);              
 
-                flag += (std::abs(outValuesHost(cell, outOrd) - refValuesHost(cell, refOrd)) > tol);
+                flag += (std::abs(ortVal[orts[edgeId]]*outValuesHost(cell, outOrd) - refValuesHost(cell, refOrd)) > tol);
               }
 
               s1 << " // ";
               s2 << " // ";
-            }
-
-            s1 << " :: intr = " ;
-            s2 << " :: intr = " ;
-            {
-              const auto ndof = cellBasis.getDofTag(cellBasis.getDofOrdinal(2, 0, 0))(3);
-              for (auto i=0;i<ndof;++i) {
-                const auto ord = cellBasis.getDofOrdinal(2, 0, i);
-                s1 << std::setw(4) << refValuesHost(cell, ord);              
-                s2 << std::setw(4) << outValuesHost(cell, ord);              
-                flag += (std::abs(outValuesHost(cell, ord) - refValuesHost(cell, ord)) > tol);
-              }
             }
 
             *outStream << "\n cell = " << cell << "\n"
