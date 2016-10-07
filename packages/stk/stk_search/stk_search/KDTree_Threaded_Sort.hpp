@@ -8,7 +8,7 @@
 #ifdef _OPENMP
  #include <omp.h>
 #if !defined(__INTEL_COMPILER) && !defined(SALINAS_LINUX)
-#if defined(GCC_VERSION) && GCC_VERSION >= 480
+#if defined(GCC_VERSION) && GCC_VERSION >= 500
   #define USE_NATIVE_THREADED_SORT 1
   #include <parallel/algorithm>
 #endif
