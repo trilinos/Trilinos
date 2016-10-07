@@ -348,7 +348,7 @@ void RealSpaceTools<Scalar>::vectorNorm(ArrayNorm & normArray, const ArrayIn & i
                               std::invalid_argument,
                               ">>> ERROR (RealSpaceTools::vectorNorm): Rank of vector array must be 2 or 3!");
   for (index_type i=0; i<arrayRank-1; i++) {
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (int) inVecs.dimension(i) != (int) normArray.dimension(i) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( static_cast<int>(inVecs.dimension(i)) != static_cast<int>(normArray.dimension(i)) ),
                                 std::invalid_argument,
                                 ">>> ERROR (RealSpaceTools::vectorNorm): Dimensions of norm and vector arguments do not agree!");
   }
