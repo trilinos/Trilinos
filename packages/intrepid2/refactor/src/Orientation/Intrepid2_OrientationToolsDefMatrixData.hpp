@@ -56,80 +56,100 @@
 namespace Intrepid2 {
 
   template<typename SpT>
+  template<typename BasisPtrType>
+  typename OrientationTools<SpT>::CoeffMatrixDataViewType
+  OrientationTools<SpT>::createCoeffMatrixInternal(BasisPtrType basis) {
+    const ordinal_type order(basis->getDegree());
+    const std::string name(basis->getName());
+    CoeffMatrixDataViewType matData;
+
+    auto ordinalToTag = basis->getAllDofTags();
+    auto tagToOrdinal = basis->getAllDofOrdinal();
+
+    /**/   if (name == "Intrepid2_HGRAD_QUAD_Cn_FEM") {
+      const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3);
+      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_QUAD_Cn_FEM",
+                                        4, // # of edges
+                                        2, // # of orts,
+                                        matDim, 
+                                        matDim);
+
+      init_HGRAD_QUAD_Cn_FEM(matData, order);
+    } 
+    else if (name == "Intrepid2_HCURL_QUAD_I1_FEM" || 
+             name == "Intrepid2_HDIV_QUAD_I1_FEM") {
+      const ordinal_type matDim = 1;
+      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_QUAD_Cn_FEM",
+                                        4, // # of edges
+                                        2, // # of orts,
+                                        matDim, 
+                                        matDim);
+      
+      init_HCURL_QUAD_I1_FEM(matData);
+    }
+    return matData;
+  }
+
+  template<typename SpT>
   void
   OrientationTools<SpT>::
-  initQuadrilateral(Kokkos::View<double****,Kokkos::LayoutStride,SpT> matData,
-                    const EFunctionSpace space,
-                    const ordinal_type order) {
-
-    switch (space) {
-    case FUNCTION_SPACE_HGRAD: {
-      Basis_HGRAD_LINE_Cn_FEM<SpT> lineBasis(order);
-      Basis_HGRAD_QUAD_Cn_FEM<SpT> cellBasis(order);
-      
-      const ordinal_type numEdge = 4, numOrt = 2;
-      for (auto edgeId=0;edgeId<numEdge;++edgeId)
-        for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-          auto mat = Kokkos::subview(matData, 
-                                     edgeId, edgeOrt,
-                                     Kokkos::ALL(), Kokkos::ALL());
-          Impl::OrientationTools::getEdgeCoeffMatrix_HGRAD(mat,
-                                                           lineBasis, cellBasis, 
-                                                           edgeId, edgeOrt);
-        }
-      break;
-    }            
-    case FUNCTION_SPACE_HCURL:
-    case FUNCTION_SPACE_HDIV: {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                    ">>> ERROR (Intrepid::OrientationTools::initQuadrilateral): " \
-                                    "Not yet implemented.");
-      break;
-    }
-    case FUNCTION_SPACE_HVOL: {
-      // do nothing
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                    ">>> ERROR (Intrepid::OrientationTools::initQuadrilateral): " \
-                                    "Invalid function space.");
-      break;
-    }
-    }
+  init_HGRAD_QUAD_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                         const ordinal_type order) {
+    Basis_HGRAD_LINE_Cn_FEM<SpT> lineBasis(order);
+    Basis_HGRAD_QUAD_Cn_FEM<SpT> cellBasis(order);
+    
+    const ordinal_type numEdge = 4, numOrt = 2;
+    for (auto edgeId=0;edgeId<numEdge;++edgeId)
+      for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
+        auto mat = Kokkos::subview(matData, 
+                                   edgeId, edgeOrt,
+                                   Kokkos::ALL(), Kokkos::ALL());
+        Impl::OrientationTools::getEdgeCoeffMatrix_HGRAD(mat,
+                                                         lineBasis, cellBasis, 
+                                                         edgeId, edgeOrt);
+      }
   }
 
   template<typename SpT>
-  void OrientationTools<SpT>::initialize(const shards::CellTopology cellTopo,
-                                         const EFunctionSpace space,
-                                         const ordinal_type order) {
-    typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-    const auto key = cellTopo.getBaseCellTopologyData()->key;
-    switch (key) {
-    case shards::Quadrilateral<>::key : {
-      if (!quadEdgeData.span())
-        quadEdgeData = MatrixDataViewType("quadEdgeData", 
-                                          3,  // # of function space
-                                          Parameters::MaxOrder, // # of orders
-                                          4,  // # of edges
-                                          2,  // # of orts
-                                          Parameters::MaxOrder - 1,  // matrix row dimension
-                                          Parameters::MaxOrder - 1); // matrix col dimension
-
-      auto matData = Kokkos::subview(quadEdgeData, 
-                                     static_cast<ordinal_type>(space), order - 1, 
-                                     Kokkos::ALL(), Kokkos::ALL(), 
-                                     Kokkos::ALL(), Kokkos::ALL());
-
-      initQuadrilateral(matData, space, order);
-      break;
-    }
-    }
+  void
+  OrientationTools<SpT>::
+  init_HCURL_QUAD_I1_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData) {
+    const ordinal_type numEdge = 4, numOrt = 2;
+    const double edgeOrtCoeff[2] = { 1.0, -1.0 };
+    for (auto edgeId=0;edgeId<numEdge;++edgeId)
+      for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
+        auto mat = Kokkos::subview(matData, 
+                                   edgeId, edgeOrt,
+                                   Kokkos::ALL(), Kokkos::ALL());
+        mat(0,0) = edgeOrtCoeff[edgeOrt];
+      }
   }
 
   template<typename SpT>
-  void OrientationTools<SpT>::finalize() {
-    quadEdgeData = MatrixDataViewType();
+  template<typename BasisPtrType>
+  typename OrientationTools<SpT>::CoeffMatrixDataViewType
+  OrientationTools<SpT>::createCoeffMatrix(BasisPtrType basis) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( !basis->requireOrientation(), std::invalid_argument,
+                                  ">>> ERROR (OrientationTools::createCoeffMatrix): basis does not require orientations." );
+#endif
+    const std::pair<std::string,int> key(basis->getName(), basis->getDegree());
+    const auto found = ortCoeffData.find(key);
+
+    CoeffMatrixDataViewType matData;
+    if (found == ortCoeffData.end()) {
+      matData = createCoeffMatrixInternal(basis);
+      ortCoeffData.insert(std::make_pair(key, matData));
+    } else {
+      matData = found->second;
+    }
+    
+    return matData;
+  }
+  
+  template<typename SpT>
+  void OrientationTools<SpT>::clearCoeffMatrix() {
+    ortCoeffData.clear();
   }
 }
 

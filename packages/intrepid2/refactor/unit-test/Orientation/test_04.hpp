@@ -118,8 +118,8 @@ namespace Intrepid2 {
           Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType> cellBasis(order);
           const auto cellTopo = cellBasis.getBaseCellTopology();
           const ordinal_type ndofBasis = cellBasis.getCardinality();
-          ots::initialize(cellTopo, FUNCTION_SPACE_HGRAD, order);
 
+          
           // 
           // 9 12 13 16
           // 4  3 11 15
@@ -171,10 +171,10 @@ namespace Intrepid2 {
           Kokkos::deep_copy(refValues, refValuesHost);
 
           // modify refValues accounting for orientations
-          ots::getModifiedQuadrilateralBasis(outValues,
-                                             refValues,
-                                             elemOrts,
-                                             &cellBasis);
+          ots::modifyBasisByOrientation(outValues,
+                                        refValues,
+                                        elemOrts,
+                                        &cellBasis);
 
           auto outValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), outValues);
           Kokkos::deep_copy(outValuesHost, outValues);
@@ -236,7 +236,7 @@ namespace Intrepid2 {
               errorFlag += flag;
             }
           }
-          ots::finalize();
+          ots::clearCoeffMatrix();
         }
 
       } catch (std::exception err) {

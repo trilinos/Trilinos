@@ -207,27 +207,32 @@ namespace Intrepid2 {
   template<typename ExecSpaceType>
   class OrientationTools {
   public:
-    // function space, order, subcell ordinal, orientation, matrix m x n
-    typedef Kokkos::View<double******,ExecSpaceType> MatrixDataViewType;
+    // subcell ordinal, orientation, matrix m x n
+    typedef Kokkos::View<double****,ExecSpaceType> CoeffMatrixDataViewType;
 
-    static MatrixDataViewType quadEdgeData;
+    // key :: basis name, order, value :: matrix data view type 
+    static std::map<std::pair<std::string,int>,CoeffMatrixDataViewType> ortCoeffData;
     
   private:
 
-    // space and order is fixed
+    template<typename BasisPtrType>
+    inline 
+    static CoeffMatrixDataViewType createCoeffMatrixInternal(BasisPtrType basis);
+    
     inline
-    static void initQuadrilateral(Kokkos::View<double****,Kokkos::LayoutStride,ExecSpaceType> matData,
-                                  const EFunctionSpace space,
-                                  const ordinal_type order);
+    static void init_HGRAD_QUAD_Cn_FEM(CoeffMatrixDataViewType matData,
+                                       const ordinal_type order);
 
+    inline
+    static void init_HCURL_QUAD_I1_FEM(CoeffMatrixDataViewType matData);
+    
   public:
+    template<typename BasisPtrType>
     inline 
-    static void initialize(const shards::CellTopology cellTopo, 
-                           const EFunctionSpace space,
-                           const ordinal_type order);
+    static CoeffMatrixDataViewType createCoeffMatrix(BasisPtrType basis);
 
     inline 
-    static void finalize();
+    static void clearCoeffMatrix();
 
     // if an element is aligned left, it is an error.
     template<typename ptViewType>
@@ -254,21 +259,11 @@ namespace Intrepid2 {
                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                              const Kokkos::DynRankView<ortValueType,   ortProperties...> orts,
                              const BasisPtrType basis);
-
-    template<typename outValueValueType, class ...outValueProperties,
-             typename refValueValueType, class ...refValueProperties,
-             typename elemOrtValueType,  class ...elemOrtProperties,
-             typename quadBasisPtrType>
-    inline
-    static void 
-    getModifiedQuadrilateralBasis(/**/  Kokkos::DynRankView<outValueValueType,outValueProperties...> outValues,
-                                  const Kokkos::DynRankView<refValueValueType,refValueProperties...> refValues,
-                                  const Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
-                                  const quadBasisPtrType quadBasis);
   };
   
   template<typename T> 
-  typename OrientationTools<T>::MatrixDataViewType OrientationTools<T>::quadEdgeData;
+  std::map<std::pair<std::string,int>, typename OrientationTools<T>::CoeffMatrixDataViewType>
+  OrientationTools<T>::ortCoeffData;
 }
 
 // include templated function definitions
@@ -277,7 +272,6 @@ namespace Intrepid2 {
 #include "Intrepid2_OrientationToolsDefMatrixData.hpp"
 
 #include "Intrepid2_OrientationToolsDefModifyBasis.hpp"
-#include "Intrepid2_OrientationToolsDefModifyQuadrilateralBasis.hpp"
 
 #endif
 

@@ -120,17 +120,12 @@ namespace Intrepid2 {
 
           const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
 
-          const ordinal_type space = FUNCTION_SPACE_HGRAD;
           const ordinal_type order = 4;
 
           Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType> cellBasis(order);
           
-          ots::initialize(cellTopo, FUNCTION_SPACE_HGRAD, order);
-          
-          const auto matData = Kokkos::subview(ots::quadEdgeData, 
-                                               space, order - 1, 
-                                               Kokkos::ALL(), Kokkos::ALL(),
-                                               Kokkos::ALL(), Kokkos::ALL());
+          const auto matData = ots::createCoeffMatrix(&cellBasis);
+
           auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
           Kokkos::deep_copy(matDataHost, matData);
           
@@ -156,7 +151,7 @@ namespace Intrepid2 {
               }
             } 
           }
-          ots::finalize();
+          ots::clearCoeffMatrix();
         }
 
       } catch (std::exception err) {

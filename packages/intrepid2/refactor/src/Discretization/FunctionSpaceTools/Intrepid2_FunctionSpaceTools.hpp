@@ -59,9 +59,6 @@
 
 #include "Intrepid2_Kernels.hpp"
 
-#include "Intrepid2_Orientation.hpp"
-#include "Intrepid2_OrientationTools.hpp"
-
 #include "Intrepid2_ArrayTools.hpp"
 #include "Intrepid2_RealSpaceTools.hpp"
 #include "Intrepid2_CellTools.hpp"
