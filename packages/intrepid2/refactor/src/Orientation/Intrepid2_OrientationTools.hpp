@@ -58,11 +58,23 @@
 #include "Intrepid2_PointTools.hpp"
 
 #include "Intrepid2_Basis.hpp"
+
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
+#include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
+
 #include "Intrepid2_HDIV_QUAD_I1_FEM.hpp"
+#include "Intrepid2_HDIV_TRI_I1_FEM.hpp"
+
+#include "Intrepid2_HCURL_HEX_I1_FEM.hpp"
+#include "Intrepid2_HCURL_TET_I1_FEM.hpp"
+#include "Intrepid2_HCURL_WEDGE_I1_FEM.hpp"
+
+#include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
+#include "Intrepid2_HDIV_TET_I1_FEM.hpp"
+#include "Intrepid2_HDIV_WEDGE_I1_FEM.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 
@@ -227,7 +239,16 @@ namespace Intrepid2 {
                                        const ordinal_type order);
 
     inline
-    static void init_HCURL_QUAD_I1_FEM(CoeffMatrixDataViewType matData);
+    static void init_EDGE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
+                                         const ordinal_type edgeId);
+    
+    inline
+    static void init_TRI_FACE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
+                                             const ordinal_type faceId);
+    
+    inline
+    static void init_QUAD_FACE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
+                                              const ordinal_type faceId);
     
   public:
     template<typename BasisPtrType>
