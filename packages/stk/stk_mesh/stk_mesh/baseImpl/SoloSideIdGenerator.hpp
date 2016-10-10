@@ -13,12 +13,12 @@ class SoloSideIdGenerator
 {
 public:
     SoloSideIdGenerator(int nProcs, int proc, uint64_t maxSideId)
-      : procId(proc), numProcs(nProcs), m_maxSideId(maxSideId), pseudoOrdinal(6)
+      : numProcs(nProcs), pseudoOrdinal(6)
     {
         ThrowRequire(maxSideId > 10);
         m_maxPseudoElement = (maxSideId - 10) / 10;
 
-        pseudoElement = procId + 1;
+        pseudoElement = proc + 1;
     }
 
     stk::mesh::EntityId get_solo_side_id()
@@ -50,10 +50,8 @@ private:
             pseudoElement += numProcs;
         }
     }
-    int procId;
     int numProcs;
     uint64_t m_maxPseudoElement;
-    stk::mesh::EntityId m_maxSideId;
     unsigned pseudoOrdinal;
     stk::mesh::EntityId pseudoElement;
 };
