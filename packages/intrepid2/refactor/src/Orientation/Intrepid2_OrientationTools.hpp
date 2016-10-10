@@ -61,6 +61,7 @@
 
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 #include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
@@ -160,62 +161,23 @@ namespace Intrepid2 {
       
       /** \brief  Compute coefficient matrix by collocating point values
           
-          \param  lineBasis [in]  - line basis function 
+          \param  subcellBasis [in]  - subcell basis function 
           \param  cellBasis [in]  - cell basis function
-          \param  edgeId    [in]  - edge Id in the cell topology
-          \param  edgeOrt   [in]  - orientation number between 0 and 1
+          \param  subcellId    [in]  - subcell Id in the cell topology
+          \param  subcellOrt   [in]  - orientation number between 0 and 1
 
           \return rank 2 coefficient matrix
       */
       template<typename outputViewType,
-               typename lineBasisType,
+               typename subcellBasisType,
                typename cellBasisType>
       inline
       static void
-      getEdgeCoeffMatrix_HGRAD(outputViewType &output,
-                               const lineBasisType lineBasis,
-                               const cellBasisType cellBasis,
-                               const ordinal_type edgeId,
-                               const ordinal_type edgeOrt);
-
-      // /** \brief  Compute coefficient matrix by collocating point values
-          
-      //     \param  faceBasis [in]  - triangle face basis function 
-      //     \param  cellBasis [in]  - cell basis function
-      //     \param  faceId    [in]  - face Id in the cell topology
-      //     \param  faceOrt   [in]  - orientation number between 0 and 5
-
-      //     \return rank 2 coefficient matrix
-      // */
-      // template<typename ExecSpaceType,
-      //          typename ValueType>
-      // inline
-      // static Kokkos::View<ValueType**,ExecSpaceType,Kokkos::LayoutStride>
-      // getTriangleCoeffMatrix_HGRAD(const Basis<ExecSpaceType,ValueType,ValueType> faceBasis,
-      //                              const Basis<ExecSpaceType,ValueType,ValueType> cellBasis,
-      //                              const ordinal_type faceId,
-      //                              const ordinal_type faceOrt);
-      
-      // /** \brief  Compute coefficient matrix by collocating point values
-          
-      //     \param  faceBasis [in]  - triangle face basis function 
-      //     \param  cellBasis [in]  - cell basis function
-      //     \param  faceId    [in]  - face Id in the cell topology
-      //     \param  faceOrt   [in]  - orientation number between 0 and 7
-
-      //     \return rank 2 coefficient matrix
-
-      //     For simplicity, this one does not use tensor product space; 
-      //     later It would be better if we use it. 
-      // */
-      // template<typename ExecSpaceType,
-      //          typename ValueType>
-      // inline
-      // static Kokkos::View<ValueType**,ExecSpaceType,Kokkos::LayoutStride> 
-      // getQuadrilateralCoeffMatrix_HGRAD(const Basis<ExecSpaceType,ValueType,ValueType> faceBasis,
-      //                                   const Basis<ExecSpaceType,ValueType,ValueType> cellBasis,
-      //                                   const ordinal_type faceId,
-      //                                   const ordinal_type faceOrt);
+      getCoeffMatrix_HGRAD(outputViewType &output,
+                           const subcellBasisType subcellBasis,
+                           const cellBasisType cellBasis,
+                           const ordinal_type subcellId,
+                           const ordinal_type subcellOrt);
     };
   }
 
@@ -234,10 +196,30 @@ namespace Intrepid2 {
     inline 
     static CoeffMatrixDataViewType createCoeffMatrixInternal(BasisPtrType basis);
     
+    //
+    // High order elements transformation matrices
+    // 
+
     inline
     static void init_HGRAD_QUAD_Cn_FEM(CoeffMatrixDataViewType matData,
                                        const ordinal_type order);
 
+    inline
+    static void init_HGRAD_HEX_Cn_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+
+    inline
+    static void init_HGRAD_TRI_Cn_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+    
+    inline
+    static void init_HGRAD_TET_Cn_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+
+    //
+    // I1 element specialization
+    //
+    
     inline
     static void init_EDGE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
                                          const ordinal_type edgeId);
