@@ -50,6 +50,7 @@
 #  include "Kokkos_Functional.hpp" // hash function used by Kokkos::UnorderedMap
 #endif // TPETRA_USE_MURMUR_HASH
 #include "Kokkos_ArithTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include <type_traits>
 
 namespace Tpetra {
@@ -1033,8 +1034,21 @@ init (const keys_type& keys,
 {
   using Kokkos::subview;
   using Kokkos::ViewAllocateWithoutInitializing;
+  using Teuchos::TypeNameTraits;
+  typedef typename std::decay<decltype (keys.dimension_0 ()) >::type size_type;
+  const char prefix[] = "Tpetra::Details::FixedHashTable: ";
 
   const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
+  {
+    const offset_type maxVal = ::Kokkos::Details::ArithTraits<offset_type>::max ();
+    const size_type maxValST = static_cast<size_type> (maxVal);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (keys.dimension_0 () > maxValST, std::invalid_argument, prefix << "The "
+       "number of keys " << keys.dimension_0 () << " does not fit in "
+       "offset_type = " << TypeNameTraits<offset_type>::name () << ", whose "
+       "max value is " << maxVal << ".  This means that it is not possible to "
+       "use this constructor.");
+  }
   TEUCHOS_TEST_FOR_EXCEPTION
     (static_cast<unsigned long long> (numKeys) >
      static_cast<unsigned long long> (::Kokkos::Details::ArithTraits<ValueType>::max ()),
@@ -1043,10 +1057,10 @@ init (const keys_type& keys,
      "ValueType value " << ::Kokkos::Details::ArithTraits<ValueType>::max () << ".  "
      "This means that it is not possible to use this constructor.");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (numKeys > static_cast<offset_type> (INT_MAX), std::logic_error, "Tpetra::"
-     "Details::FixedHashTable: This class currently only works when the number "
-     "of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you"
-     ", please talk to the Tpetra developers.");
+    (numKeys > static_cast<offset_type> (INT_MAX), std::logic_error, prefix <<
+     "This class currently only works when the number of keys is <= INT_MAX = "
+     << INT_MAX << ".  If this is a problem for you, please talk to the Tpetra "
+     "developers.");
 
   const bool buildInParallel =
     FHT::worthBuildingFixedHashTableInParallel<execution_space> ();
