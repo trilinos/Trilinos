@@ -69,7 +69,7 @@ public:
     // C(0) = U(0) - Z(0)
     (*cp)[0] = (*up)[0]-(*zp)[0];
     // C(1) = 0.5 * (U(0) + U(1) - Z(0))^2
-    (*cp)[1] = half*std::pow((*up)[0]+(*up)[1]-(*zp)[1],two);
+    (*cp)[1] = half*std::pow((*up)[0]+(*up)[1]-(*zp)[0],two);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
@@ -83,7 +83,7 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*jvp)[0] = (*vp)[0];
-    (*jvp)[1] = ((*up)[0] + (*up)[1] - (*zp)[1]) * ((*vp)[0] + (*vp)[1]);
+    (*jvp)[1] = ((*up)[0] + (*up)[1] - (*zp)[0]) * ((*vp)[0] + (*vp)[1]);
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
@@ -97,7 +97,7 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*jvp)[0] = -(*vp)[0];
-    (*jvp)[1] = ((*zp)[1] - (*up)[0] - (*up)[1]) * (*vp)[1];
+    (*jvp)[1] = ((*zp)[0] - (*up)[0] - (*up)[1]) * (*vp)[0];
   }
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v,
@@ -110,8 +110,8 @@ public:
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
-    (*ajvp)[0] = (*vp)[0] + ((*up)[0] + (*up)[1] - (*zp)[1]) * (*vp)[1];
-    (*ajvp)[1] = ((*up)[0] + (*up)[1] - (*zp)[1]) * (*vp)[1];
+    (*ajvp)[0] = (*vp)[0] + ((*up)[0] + (*up)[1] - (*zp)[0]) * (*vp)[1];
+    (*ajvp)[1] = ((*up)[0] + (*up)[1] - (*zp)[0]) * (*vp)[1];
   }
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v,
@@ -124,8 +124,7 @@ public:
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
-    (*ajvp)[0] = -(*vp)[0];
-    (*ajvp)[1] = ((*zp)[1] - (*up)[0] - (*up)[1]) * (*vp)[1];
+    (*ajvp)[0] = ((*zp)[0] - (*up)[0] - (*up)[1]) * (*vp)[1] - (*vp)[0];
   }
 
   void applyAdjointHessian_11(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
@@ -156,8 +155,7 @@ public:
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
-    (*ahwvp)[0] = static_cast<Real>(0);
-    (*ahwvp)[1] = -(*wp)[1] * ((*vp)[0] + (*vp)[1]);
+    (*ahwvp)[0] = -(*wp)[1] * ((*vp)[0] + (*vp)[1]);
   }
 
   void applyAdjointHessian_21(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
@@ -172,8 +170,8 @@ public:
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
-    (*ahwvp)[0] = -(*wp)[1] * (*vp)[1];
-    (*ahwvp)[1] = -(*wp)[1] * (*vp)[1];
+    (*ahwvp)[0] = -(*wp)[1] * (*vp)[0];
+    (*ahwvp)[1] = -(*wp)[1] * (*vp)[0];
   }
 
   void applyAdjointHessian_22(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
@@ -188,8 +186,7 @@ public:
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
-    (*ahwvp)[0] = static_cast<Real>(0);
-    (*ahwvp)[1] = (*wp)[1] * (*vp)[1];
+    (*ahwvp)[0] = (*wp)[1] * (*vp)[0];
   }
 };
 
@@ -209,7 +206,6 @@ public:
     const Real one(1), two(2);
     // C = exp(U) - (Z^2 + 1)
     (*cp)[0] = std::exp((*up)[0])-(std::pow((*zp)[0],two) + one);
-    (*cp)[1] = std::exp((*up)[1])-(std::pow((*zp)[1],two) + one);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
@@ -223,7 +219,6 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*jvp)[0] = std::exp((*up)[0]) * (*vp)[0];
-    (*jvp)[1] = std::exp((*up)[1]) * (*vp)[1];
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
@@ -239,7 +234,6 @@ public:
 
     const Real two(2);
     (*jvp)[0] = -two * (*zp)[0] * (*vp)[0];
-    (*jvp)[1] = -two * (*zp)[1] * (*vp)[1];
   }
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v,
@@ -253,7 +247,6 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*ajvp)[0] = std::exp((*up)[0]) * (*vp)[0];
-    (*ajvp)[1] = std::exp((*up)[1]) * (*vp)[1];
   }
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v,
@@ -269,7 +262,6 @@ public:
 
     const Real two(2);
     (*ajvp)[0] = -two * (*zp)[0] * (*vp)[0];
-    (*ajvp)[1] = -two * (*zp)[1] * (*vp)[1];
   }
 
   void applyInverseJacobian_1(ROL::Vector<Real> &ijv, const ROL::Vector<Real> &v,
@@ -283,7 +275,6 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*ijvp)[0] = (*vp)[0] / std::exp((*up)[0]);
-    (*ijvp)[1] = (*vp)[1] / std::exp((*up)[1]);
   }
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &ijv, const ROL::Vector<Real> &v,
@@ -297,7 +288,6 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*ijvp)[0] = (*vp)[0] / std::exp((*up)[0]);
-    (*ijvp)[1] = (*vp)[1] / std::exp((*up)[1]);
   }
 
   void applyAdjointHessian_11(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
@@ -313,7 +303,6 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*ahwvp)[0] = std::exp((*up)[0]) * (*wp)[0] * (*vp)[0];
-    (*ahwvp)[1] = std::exp((*up)[1]) * (*wp)[1] * (*vp)[1];
   }
 
   void applyAdjointHessian_12(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
@@ -329,7 +318,6 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*ahwvp)[0] = static_cast<Real>(0);
-    (*ahwvp)[1] = static_cast<Real>(0);
   }
 
   void applyAdjointHessian_21(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
@@ -345,7 +333,6 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*ahwvp)[0] = static_cast<Real>(0);
-    (*ahwvp)[1] = static_cast<Real>(0);
   }
 
   void applyAdjointHessian_22(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
@@ -361,7 +348,6 @@ public:
     Teuchos::RCP<const std::vector<Real> > zp
       = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
     (*ahwvp)[0] = static_cast<Real>(-2) * (*wp)[0] * (*vp)[0];
-    (*ahwvp)[1] = static_cast<Real>(-2) * (*wp)[1] * (*vp)[1];
   }
 };
 
@@ -387,51 +373,81 @@ int main(int argc, char *argv[]) {
   try {
 
     int dim = 2;
+    int dimz = 1;
     Teuchos::RCP<std::vector<RealT> > ustd  = Teuchos::rcp(new std::vector<RealT>(dim));
     Teuchos::RCP<std::vector<RealT> > dustd = Teuchos::rcp(new std::vector<RealT>(dim));
-    Teuchos::RCP<std::vector<RealT> > zstd  = Teuchos::rcp(new std::vector<RealT>(dim));
-    Teuchos::RCP<std::vector<RealT> > dzstd = Teuchos::rcp(new std::vector<RealT>(dim));
+    Teuchos::RCP<std::vector<RealT> > zstd  = Teuchos::rcp(new std::vector<RealT>(dimz));
+    Teuchos::RCP<std::vector<RealT> > dzstd = Teuchos::rcp(new std::vector<RealT>(dimz));
     Teuchos::RCP<std::vector<RealT> > cstd  = Teuchos::rcp(new std::vector<RealT>(dim));
+    Teuchos::RCP<std::vector<RealT> > czstd = Teuchos::rcp(new std::vector<RealT>(dimz));
+    Teuchos::RCP<std::vector<RealT> > sstd  = Teuchos::rcp(new std::vector<RealT>(dimz));
+    Teuchos::RCP<std::vector<RealT> > dsstd = Teuchos::rcp(new std::vector<RealT>(dimz));
 
     (*ustd)[0]  = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
     (*ustd)[1]  = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
     (*dustd)[0] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
     (*dustd)[1] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
     (*zstd)[0]  = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-    (*zstd)[1]  = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
     (*dzstd)[0] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-    (*dzstd)[1] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
     (*cstd)[0]  = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
     (*cstd)[1]  = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+    (*czstd)[0] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+    (*sstd)[0]  = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+    (*dsstd)[0] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
 
     Teuchos::RCP<ROL::Vector<RealT> > u  = Teuchos::rcp(new ROL::StdVector<RealT>(ustd));
     Teuchos::RCP<ROL::Vector<RealT> > du = Teuchos::rcp(new ROL::StdVector<RealT>(dustd));
     Teuchos::RCP<ROL::Vector<RealT> > z  = Teuchos::rcp(new ROL::StdVector<RealT>(zstd));
     Teuchos::RCP<ROL::Vector<RealT> > dz = Teuchos::rcp(new ROL::StdVector<RealT>(dzstd));
     Teuchos::RCP<ROL::Vector<RealT> > c  = Teuchos::rcp(new ROL::StdVector<RealT>(cstd));
+    Teuchos::RCP<ROL::Vector<RealT> > cz = Teuchos::rcp(new ROL::StdVector<RealT>(czstd));
+    Teuchos::RCP<ROL::Vector<RealT> > s  = Teuchos::rcp(new ROL::StdVector<RealT>(sstd));
+    Teuchos::RCP<ROL::Vector<RealT> > ds = Teuchos::rcp(new ROL::StdVector<RealT>(dsstd));
 
-    ROL::Vector_SimOpt<RealT> x(u,z);
-    ROL::Vector_SimOpt<RealT> dx(du,dz);
+    ROL::Vector_SimOpt<RealT> x(u,s);
+    ROL::Vector_SimOpt<RealT> dx(du,ds);
+    ROL::Vector_SimOpt<RealT> y(s,z);
+    ROL::Vector_SimOpt<RealT> dy(ds,dz);
+    ROL::Vector_SimOpt<RealT> w(u,z);
+    ROL::Vector_SimOpt<RealT> dw(du,dz);
 
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > valCon = Teuchos::rcp(new valConstraint<RealT>());
-    valCon->checkAdjointConsistencyJacobian_1(*c,*du,*u,*z,true,*outStream);
-    valCon->checkAdjointConsistencyJacobian_2(*c,*dz,*u,*z,true,*outStream);
+    valCon->checkAdjointConsistencyJacobian_1(*c,*du,*u,*s,true,*outStream);
+    valCon->checkAdjointConsistencyJacobian_2(*c,*dz,*u,*s,true,*outStream);
+    valCon->checkApplyJacobian_1(*u,*s,*du,*c,true,*outStream);
+    valCon->checkApplyJacobian_2(*u,*s,*ds,*c,true,*outStream);
     valCon->checkApplyJacobian(x,dx,*c,true,*outStream);
+    valCon->checkApplyAdjointHessian_11(*u,*s,*c,*du,*u,true,*outStream);
+    valCon->checkApplyAdjointHessian_12(*u,*s,*c,*du,*s,true,*outStream);
+    valCon->checkApplyAdjointHessian_21(*u,*s,*c,*ds,*u,true,*outStream);
+    valCon->checkApplyAdjointHessian_22(*u,*s,*c,*ds,*s,true,*outStream);
     valCon->checkApplyAdjointHessian(x,*c,dx,x,true,*outStream);
 
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > redCon = Teuchos::rcp(new redConstraint<RealT>());
-    redCon->checkAdjointConsistencyJacobian_1(*c,*du,*u,*z,true,*outStream);
-    redCon->checkAdjointConsistencyJacobian_2(*c,*dz,*u,*z,true,*outStream);
-    redCon->checkInverseJacobian_1(*c,*du,*u,*z,true,*outStream); 
-    redCon->checkInverseAdjointJacobian_1(*du,*c,*u,*z,true,*outStream); 
-    redCon->checkApplyJacobian(x,dx,*c,true,*outStream);
-    redCon->checkApplyAdjointHessian(x,*c,dx,x,true,*outStream);
+    redCon->checkAdjointConsistencyJacobian_1(*cz,*ds,*s,*z,true,*outStream);
+    redCon->checkAdjointConsistencyJacobian_2(*cz,*dz,*s,*z,true,*outStream);
+    redCon->checkInverseJacobian_1(*cz,*ds,*s,*z,true,*outStream); 
+    redCon->checkInverseAdjointJacobian_1(*ds,*cz,*s,*z,true,*outStream); 
+    redCon->checkApplyJacobian_1(*s,*z,*ds,*cz,true,*outStream);
+    redCon->checkApplyJacobian_2(*s,*z,*dz,*cz,true,*outStream);
+    redCon->checkApplyJacobian(y,dy,*cz,true,*outStream);
+    redCon->checkApplyAdjointHessian_11(*s,*z,*cz,*ds,*s,true,*outStream);
+    redCon->checkApplyAdjointHessian_12(*s,*z,*cz,*ds,*z,true,*outStream);
+    redCon->checkApplyAdjointHessian_21(*s,*z,*cz,*dz,*s,true,*outStream);
+    redCon->checkApplyAdjointHessian_22(*s,*z,*cz,*dz,*z,true,*outStream);
+    redCon->checkApplyAdjointHessian(y,*cz,dy,y,true,*outStream);
 
-    ROL::CompositeEqualityConstraint_SimOpt<RealT> con(valCon,redCon,*c,*c,*u,*z,*z);
+    ROL::CompositeEqualityConstraint_SimOpt<RealT> con(valCon,redCon,*c,*cz,*u,*s,*z);
     con.checkAdjointConsistencyJacobian_1(*c,*du,*u,*z,true,*outStream);
     con.checkAdjointConsistencyJacobian_2(*c,*dz,*u,*z,true,*outStream);
-    con.checkApplyJacobian(x,dx,*c,true,*outStream);
-    con.checkApplyAdjointHessian(x,*c,dx,x,true,*outStream);
+    con.checkApplyJacobian_1(*u,*z,*du,*c,true,*outStream);
+    con.checkApplyJacobian_2(*u,*z,*dz,*c,true,*outStream);
+    con.checkApplyJacobian(w,dw,*c,true,*outStream);
+    con.checkApplyAdjointHessian_11(*u,*z,*c,*du,*u,true,*outStream);
+    con.checkApplyAdjointHessian_12(*u,*z,*c,*du,*z,true,*outStream);
+    con.checkApplyAdjointHessian_21(*u,*z,*c,*dz,*u,true,*outStream);
+    con.checkApplyAdjointHessian_22(*u,*z,*c,*dz,*z,true,*outStream);
+    con.checkApplyAdjointHessian(w,*c,dw,w,true,*outStream);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
