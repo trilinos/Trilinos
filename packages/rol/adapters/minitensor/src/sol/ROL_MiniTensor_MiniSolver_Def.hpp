@@ -107,6 +107,13 @@ solve(
 
   updateConvergenceCriterion(norm_resi);
 
+  ROL::AlgorithmState<T> &
+  state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
+
+  ROL::StatusTest<T>
+  status(params);
+
+  converged = status.check(state) == false;
   recordFinals(fn, soln);
 
   return;
@@ -116,14 +123,86 @@ solve(
 //
 //
 template<typename T, Index N>
-template<typename FN, typename CN, Index NC>
+template<typename FN, typename BC>
 void
 MiniTensor_Minimizer<T, N>::
 solve(
     std::string const & algoname,
     Teuchos::ParameterList & params,
     FN & fn,
-    CN & cn,
+    BC & bc,
+    Intrepid2::Vector<T, N> & soln)
+{
+  step_method_name = algoname.c_str();
+  function_name = FN::NAME;
+  initial_guess = soln;
+
+  Intrepid2::Vector<T, N>
+  resi = fn.gradient(soln);
+
+  initial_value = fn.value(soln);
+  previous_value = initial_value;
+  failed = failed || fn.failed;
+  initial_norm = Intrepid2::norm(resi);
+
+  // Define algorithm.
+  ROL::MiniTensor_Objective<FN, T, N>
+  obj(fn);
+
+  MiniTensorVector<T, N>
+  lo(bc.lower);
+
+  MiniTensorVector<T, N>
+  hi(bc.upper);
+
+  // Define constraint
+  ROL::MiniTensor_BoundConstraint<T, N>
+  constr(lo, hi);
+
+  ROL::Algorithm<T>
+  algo(algoname, params);
+
+  // Set initial guess
+  ROL::MiniTensorVector<T, N>
+  x(soln);
+
+  // Run Algorithm
+  algo.run(x, obj, constr, verbose);
+
+  soln = ROL::MTfromROL<T, N>(x);
+
+  resi = fn.gradient(soln);
+
+  T const
+  norm_resi = Intrepid2::norm(resi);
+
+  updateConvergenceCriterion(norm_resi);
+
+  ROL::AlgorithmState<T> &
+  state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
+
+  ROL::StatusTest<T>
+  status(params);
+
+  converged = status.check(state) == false;
+  recordFinals(fn, soln);
+
+  return;
+}
+
+
+//
+//
+//
+template<typename T, Index N>
+template<typename FN, typename EC, Index NC>
+void
+MiniTensor_Minimizer<T, N>::
+solve(
+    std::string const & algoname,
+    Teuchos::ParameterList & params,
+    FN & fn,
+    EC & ec,
     Intrepid2::Vector<T, N> & soln,
     Intrepid2::Vector<T, NC> & cv)
 {
@@ -144,8 +223,8 @@ solve(
   obj(fn);
 
   // Define constraint
-  ROL::MiniTensor_EqualityConstraint<CN, T, NC, N>
-  constr(cn);
+  ROL::MiniTensor_EqualityConstraint<EC, T, NC, N>
+  constr(ec);
 
   ROL::Algorithm<T>
   algo(algoname, params);
@@ -169,6 +248,14 @@ solve(
   norm_resi = Intrepid2::norm(resi);
 
   updateConvergenceCriterion(norm_resi);
+
+  ROL::AlgorithmState<T> &
+  state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
+
+  ROL::StatusTest<T>
+  status(params);
+
+  converged = status.check(state) == false;
 
   recordFinals(fn, soln);
 

@@ -69,13 +69,22 @@ public:
       FN & fn,
       Intrepid2::Vector<T, N> & soln);
 
-  template<typename FN, typename CN, Index NC>
+  template<typename FN, typename BC>
   void
   solve(
       std::string const & algoname,
       Teuchos::ParameterList & params,
       FN & fn,
-      CN & cn,
+      BC & bc,
+      Intrepid2::Vector<T, N> & soln);
+
+  template<typename FN, typename EC, Index NC>
+  void
+  solve(
+      std::string const & algoname,
+      Teuchos::ParameterList & params,
+      FN & fn,
+      EC & ec,
       Intrepid2::Vector<T, N> & soln,
       Intrepid2::Vector<T, NC> & cv);
 

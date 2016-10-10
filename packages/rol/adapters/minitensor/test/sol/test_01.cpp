@@ -97,14 +97,14 @@ TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
   Teuchos::ParameterList
   params;
 
-  params.sublist("Step").sublist("Line Search").sublist("Descent Method")
-      .set("Type", "Newton-Krylov");
+  params.sublist("Step").sublist("Line Search").sublist("Descent Method").
+    set("Type", "Newton-Krylov");
 
   params.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
   params.sublist("Status Test").set("Step Tolerance", 1.0e-16);
   params.sublist("Status Test").set("Iteration Limit", 128);
 
-  // Set Initial Guess
+  // Set initial guess
   Intrepid2::Vector<Real, DIM>
   x(Intrepid2::RANDOM);
 
@@ -127,7 +127,7 @@ TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
   ASSERT_LE(error, tol);
 }
 
-TEST(MiniTensor_ROL, Paraboloid_EqConstraint)
+TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -200,6 +200,73 @@ TEST(MiniTensor_ROL, Paraboloid_EqConstraint)
   minimizer;
 
   minimizer.solve(algoname, params, fn, constr, x, c);
+
+  minimizer.printReport(os);
+
+  Real const
+  tol{0.04};
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  soln(1.0, 0.0);
+
+  Real const
+  error = Intrepid2::norm(soln - x);
+
+  ASSERT_LE(error, tol);
+}
+
+TEST(MiniTensor_ROL, Paraboloid_BoundConstraint)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  NUM_VAR{2};
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  lo(1.0, -10.0);
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  hi(10.0, 10.0);
+
+  // Function to optimize
+  Intrepid2::Paraboloid<Real, NUM_VAR>
+  fn;
+
+  // Constraint that defines the feasible region
+  Intrepid2::Bounds<Real, NUM_VAR>
+  bounds(lo, hi);
+
+  // Define algorithm.
+  std::string const
+  algoname{"Line Search"};
+
+  // Set parameters.
+  Teuchos::ParameterList
+  params;
+
+  params.sublist("Step").sublist("Line Search").sublist("Descent Method").
+    set("Type", "Newton-Krylov");
+
+  params.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Iteration Limit", 128);
+
+  // Set initial guess
+  Intrepid2::Vector<Real, NUM_VAR>
+  x(Intrepid2::RANDOM);
+
+  ROL::MiniTensor_Minimizer<Real, NUM_VAR>
+  minimizer;
+
+  minimizer.solve(algoname, params, fn, bounds, x);
 
   minimizer.printReport(os);
 
