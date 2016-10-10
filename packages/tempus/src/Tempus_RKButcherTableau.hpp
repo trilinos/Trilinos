@@ -67,6 +67,8 @@ class RKButcherTableau :
     virtual int orderMax() const { return orderMax_; }
     /** \brief Return true if the RK method is implicit */
     virtual bool isImplicit() const { return isImplicit_; }
+    /** \brief Return true if the RK method is Diagonally Implicit */
+    virtual bool isDIRK() const { return isDIRK_; }
     /** \brief Return true if the RK method has embedded capabilities */
     virtual bool isEmbedded() const { return isEmbedded_; }
 
@@ -110,6 +112,7 @@ class RKButcherTableau :
       orderMin_ = orderMin;
       orderMax_ = orderMax;
       this->set_isImplicit();
+      this->set_isDIRK();
       longDescription_ = longDescription;
 
       if (isEmbedded) {
@@ -183,6 +186,17 @@ class RKButcherTableau :
         for (size_t j = i; j < this->numStages(); j++)
           if (A_(i,j) != 0.0) isImplicit_ = true;
     }
+    void set_isDIRK() {
+      isDIRK_ = true;
+      for (size_t i = 0; i < this->numStages(); i++) {
+        if (A_(i,i) == 0.0) {
+          isDIRK_ = false;
+        } else {
+          for (size_t j = i+1; j < this->numStages(); j++)
+            if (A_(i,j) != 0.0) isDIRK_ = false;
+        }
+      }
+    }
 
     void setValidParameterList(
       const Teuchos::RCP<Teuchos::ParameterList> validPL )
@@ -198,6 +212,7 @@ class RKButcherTableau :
     int orderMin_;
     int orderMax_;
     bool isImplicit_;
+    bool isDIRK_;
     std::string longDescription_;
     mutable Teuchos::RCP<Teuchos::ParameterList> validPL_;
 
