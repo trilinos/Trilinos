@@ -1,5 +1,5 @@
-#ifndef TEMPUS_MODELEVALUATOR_IMPL_HPP
-#define TEMPUS_MODELEVALUATOR_IMPL_HPP
+#ifndef Tempus_ResidualModelEvaluator_impl_hpp
+#define Tempus_ResidualModelEvaluator_impl_hpp
 
 namespace Tempus {
 
@@ -78,4 +78,4 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
 } // namespace Tempus
 
-#endif
+#endif  // Tempus_ResidualModelEvaluator_impl_hpp

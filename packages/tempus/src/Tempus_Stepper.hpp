@@ -1,5 +1,5 @@
-#ifndef TEMPUS_STEPPER_HPP
-#define TEMPUS_STEPPER_HPP
+#ifndef Tempus_Stepper_hpp
+#define Tempus_Stepper_hpp
 
 //Teuchos
 #include "Teuchos_VerboseObject.hpp"
@@ -153,4 +153,4 @@ public:
 
 };
 } // namespace Tempus
-#endif // TEMPUS_STEPPER_HPP
+#endif // Tempus_Stepper_hpp

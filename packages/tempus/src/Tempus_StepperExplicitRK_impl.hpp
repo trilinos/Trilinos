@@ -1,5 +1,5 @@
-#ifndef TEMPUS_STEPPEREXPLICITRK_IMPL_HPP
-#define TEMPUS_STEPPEREXPLICITRK_IMPL_HPP
+#ifndef Tempus_StepperExplicitRK_impl_hpp
+#define Tempus_StepperExplicitRK_impl_hpp
 
 #include "Tempus_RKButcherTableauBuilder.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -221,4 +221,4 @@ StepperExplicitRK<Scalar>::unsetParameterList()
 
 
 } // namespace Tempus
-#endif // TEMPUS_STEPPEREXPLICITRK_IMPL_HPP
+#endif // Tempus_StepperExplicitRK_impl_hpp

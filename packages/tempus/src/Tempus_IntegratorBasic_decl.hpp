@@ -1,5 +1,5 @@
-#ifndef TEMPUS_INTEGRATORBASIC_DECL_HPP
-#define TEMPUS_INTEGRATORBASIC_DECL_HPP
+#ifndef Tempus_IntegratorBasic_decl_hpp
+#define Tempus_IntegratorBasic_decl_hpp
 
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
@@ -124,4 +124,4 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
 
 } // namespace Tempus
 
-#endif // TEMPUS_INTEGRATORBASIC_HPP
+#endif // Tempus_IntegratorBasic_decl_hpp

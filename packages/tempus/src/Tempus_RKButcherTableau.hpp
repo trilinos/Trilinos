@@ -1,5 +1,5 @@
-#ifndef TEMPUS_RK_BUTCHER_TABLEAU_HPP
-#define TEMPUS_RK_BUTCHER_TABLEAU_HPP
+#ifndef Tempus_RKButcherTableau_hpp
+#define Tempus_RKButcherTableau_hpp
 
 // disable clang warnings
 #ifdef __clang__
@@ -2667,4 +2667,4 @@ class SDIRK3Stage4thOrder_RKBT :
 } // namespace Tempus
 
 
-#endif // TEMPUS_RK_BUTCHER_TABLEAU_HPP
+#endif // Tempus_RKButcherTableau_hpp

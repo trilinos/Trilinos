@@ -1,5 +1,5 @@
-#ifndef TEMPUS_INTEGRATOR_HPP
-#define TEMPUS_INTEGRATOR_HPP
+#ifndef Tempus_Integrator_hpp
+#define Tempus_Integrator_hpp
 
 #include "Tempus_Stepper.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -55,4 +55,4 @@ public:
 
 };
 } // namespace Tempus
-#endif // TEMPUS_INTEGRATOR_HPP
+#endif // Tempus_Integrator_hpp

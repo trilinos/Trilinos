@@ -1,5 +1,5 @@
-#ifndef TEMPUS_TIMESTEPCONTROL_DECL_HPP
-#define TEMPUS_TIMESTEPCONTROL_DECL_HPP
+#ifndef Tempus_TimeStepControl_decl_hpp
+#define Tempus_TimeStepControl_decl_hpp
 
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
@@ -97,4 +97,4 @@ public:
 };
 } // namespace Tempus
 
-#endif // TEMPUS_TIMESTEPCONTROL_HPP
+#endif // Tempus_TimeStepControl_decl_hpp

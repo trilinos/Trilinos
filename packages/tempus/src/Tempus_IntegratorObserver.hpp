@@ -1,5 +1,5 @@
-#ifndef TEMPUS_INTEGRATOROBSERVER_HPP
-#define TEMPUS_INTEGRATOROBSERVER_HPP
+#ifndef Tempus_IntegratorObserver_hpp
+#define Tempus_IntegratorObserver_hpp
 
 #include "Tempus_TimeStepControl.hpp"
 
@@ -72,4 +72,4 @@ protected:
 
 };
 } // namespace Tempus
-#endif // TEMPUS_INTEGRATOROBSERVER_HPP
+#endif // Tempus_IntegratorObserver_hpp

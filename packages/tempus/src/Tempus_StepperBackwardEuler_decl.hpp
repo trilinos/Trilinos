@@ -1,5 +1,5 @@
-#ifndef TEMPUS_STEPPERBACKWARDEULER_DECL_HPP
-#define TEMPUS_STEPPERBACKWARDEULER_DECL_HPP
+#ifndef Tempus_StepperBackwardEuler_decl_hpp
+#define Tempus_StepperBackwardEuler_decl_hpp
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_ResidualModelEvaluator.hpp"
@@ -75,4 +75,4 @@ private:
 };
 } // namespace Tempus
 
-#endif // TEMPUS_STEPPERBACKWARDEULER_HPP
+#endif // Tempus_StepperBackwardEuler_decl_hpp

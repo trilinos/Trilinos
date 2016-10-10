@@ -1,5 +1,5 @@
-#ifndef TEMPUS_STEPPERFACTORY_HPP
-#define TEMPUS_STEPPERFACTORY_HPP
+#ifndef Tempus_StepperFactory_hpp
+#define Tempus_StepperFactory_hpp
 
 #include "Teuchos_ParameterList.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
@@ -97,4 +97,4 @@ public:
 
 
 } // namespace Tempus
-#endif // TEMPUS_STEPPERFACTORY_HPP
+#endif // Tempus_StepperFactory_hpp

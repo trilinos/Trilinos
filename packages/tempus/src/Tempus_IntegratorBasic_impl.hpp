@@ -1,5 +1,5 @@
-#ifndef TEMPUS_INTEGRATORBASIC_IMPL_HPP
-#define TEMPUS_INTEGRATORBASIC_IMPL_HPP
+#ifndef Tempus_IntegratorBasic_impl_hpp
+#define Tempus_IntegratorBasic_impl_hpp
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Tempus_StepperFactory.hpp"
@@ -570,4 +570,4 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
 }
 
 } // namespace Tempus
-#endif // TEMPUS_INTEGRATORBASIC_IMPL_HPP
+#endif // Tempus_IntegratorBasic_impl_hpp

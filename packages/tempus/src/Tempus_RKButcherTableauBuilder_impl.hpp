@@ -1,5 +1,5 @@
-#ifndef TEMPUS_RK_BUTCHER_TABLEAU_BUILDER_DEF_HPP
-#define TEMPUS_RK_BUTCHER_TABLEAU_BUILDER_DEF_HPP
+#ifndef Tempus_RKButcherTableauBuilder_impl_hpp
+#define Tempus_RKButcherTableauBuilder_impl_hpp
 
 #include "Tempus_RKButcherTableauBuilder_decl.hpp"
 #include "Tempus_RKButcherTableau.hpp"
@@ -313,4 +313,4 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
 } // namespace Tempus
 
 
-#endif // TEMPUS_RK_BUTCHER_TABLEAU_BUILDER_DEF_HPP
+#endif // Tempus_RKButcherTableauBuilder_impl_hpp

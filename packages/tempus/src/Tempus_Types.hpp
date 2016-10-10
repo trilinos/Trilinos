@@ -1,5 +1,5 @@
-#ifndef TEMPUS_TYPES_HPP
-#define TEMPUS_TYPES_HPP
+#ifndef Tempus_Types_hpp
+#define Tempus_Types_hpp
 
 namespace Tempus {
 
@@ -74,4 +74,4 @@ const char* toString(const Status status)
 
 
 } // namespace Tempus
-#endif // TEMPUS_TYPES_HPP
+#endif // Tempus_Types_hpp

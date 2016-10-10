@@ -1,5 +1,5 @@
-#ifndef TEMPUS_STEPPERIMPLICIT_HPP
-#define TEMPUS_STEPPERIMPLICIT_HPP
+#ifndef Tempus_StepperImplicit_hpp
+#define Tempus_StepperImplicit_hpp
 
 // Tempus
 #include "Tempus_Stepper.hpp"
@@ -84,4 +84,4 @@ const Thyra::SolveStatus<Scalar> StepperImplicit<Scalar>::solveNonLinear(
 
 
 } // namespace Tempus
-#endif // TEMPUS_STEPPERIMPLICIT_HPP
+#endif // Tempus_StepperImplicit_hpp

@@ -1,5 +1,5 @@
-#ifndef TEMPUS_STEPPERFORWARDEULER_IMPL_HPP
-#define TEMPUS_STEPPERFORWARDEULER_IMPL_HPP
+#ifndef Tempus_StepperForwardEuler_impl_hpp
+#define Tempus_StepperForwardEuler_impl_hpp
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -147,4 +147,4 @@ StepperForwardEuler<Scalar>::unsetParameterList()
 
 
 } // namespace Tempus
-#endif // TEMPUS_STEPPERFORWARDEULER_IMPL_HPP
+#endif // Tempus_StepperForwardEuler_impl_hpp

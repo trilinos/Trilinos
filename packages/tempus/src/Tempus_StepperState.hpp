@@ -1,5 +1,5 @@
-#ifndef TEMPUS_STEPPERSTATE_HPP
-#define TEMPUS_STEPPERSTATE_HPP
+#ifndef Tempus_StepperState_hpp
+#define Tempus_StepperState_hpp
 
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
@@ -79,4 +79,4 @@ public:
 
 };
 } // namespace Tempus
-#endif // TEMPUS_STEPPERSTATE_HPP
+#endif // Tempus_StepperState_hpp

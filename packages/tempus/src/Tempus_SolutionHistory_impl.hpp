@@ -1,5 +1,5 @@
-#ifndef TEMPUS_SOLUTIONHISTORY_IMPL_HPP
-#define TEMPUS_SOLUTIONHISTORY_IMPL_HPP
+#ifndef Tempus_SolutionHistory_impl_hpp
+#define Tempus_SolutionHistory_impl_hpp
 
 // Teuchos
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -451,4 +451,4 @@ Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory(
 
 
 } // namespace Tempus
-#endif // TEMPUS_SOLUTIONHISTORY_IMPL_HPP
+#endif // Tempus_SolutionHistory_impl_hpp

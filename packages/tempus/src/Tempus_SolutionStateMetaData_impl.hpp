@@ -1,5 +1,5 @@
-#ifndef TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
-#define TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
+#ifndef Tempus_SolutionStateMetaData_impl_hpp
+#define Tempus_SolutionStateMetaData_impl_hpp
 
 #include "Tempus_config.hpp"
 
@@ -153,4 +153,4 @@ void SolutionStateMetaData<Scalar>::describe(
 }
 
 } // namespace Tempus
-#endif // TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
+#endif // Tempus_SolutionStateMetaData_impl_hpp

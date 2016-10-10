@@ -1,5 +1,5 @@
-#ifndef TEMPUS_SOLUTIONSTATE_IMPL_HPP
-#define TEMPUS_SOLUTIONSTATE_IMPL_HPP
+#ifndef Tempus_SolutionState_impl_hpp
+#define Tempus_SolutionState_impl_hpp
 
 #include "Thyra_VectorStdOps.hpp"
 
@@ -51,7 +51,7 @@ SolutionState<Scalar>::SolutionState(
     xdotdot_     (xdotdot),
     stepperState_(stepperState)
 {
-  metaData_ = 
+  metaData_ =
     Teuchos::rcp(new SolutionStateMetaData<Scalar> (time,
                                                     iStep,
                                                     dt,
@@ -211,4 +211,4 @@ void SolutionState<Scalar>::describe(
 }
 
 } // namespace Tempus
-#endif // TEMPUS_SOLUTIONSTATE_IMPL_HPP
+#endif // Tempus_SolutionState_impl_hpp

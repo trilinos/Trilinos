@@ -1,5 +1,5 @@
-#ifndef TEMPUS_SOLUTIONHISTORY_DECL_HPP
-#define TEMPUS_SOLUTIONHISTORY_DECL_HPP
+#ifndef Tempus_SolutionHistory_decl_hpp
+#define Tempus_SolutionHistory_decl_hpp
 
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
@@ -178,4 +178,4 @@ solutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
 } // namespace Tempus
 
-#endif // TEMPUS_SOLUTIONHISTORY_HPP
+#endif // Tempus_SolutionHistory_decl_hpp

@@ -1,5 +1,5 @@
-#ifndef TEMPUS_TIMESTEPCONTROL_IMPL_HPP
-#define TEMPUS_TIMESTEPCONTROL_IMPL_HPP
+#ifndef Tempus_TimeStepControl_impl_hpp
+#define Tempus_TimeStepControl_impl_hpp
 
 // Teuchos
 #include "Teuchos_ScalarTraits.hpp"
@@ -560,4 +560,4 @@ TimeStepControl<Scalar>::unsetParameterList()
 
 
 } // namespace Tempus
-#endif // TEMPUS_TIMESTEPCONTROL_IMPL_HPP
+#endif // Tempus_TimeStepControl_impl_hpp

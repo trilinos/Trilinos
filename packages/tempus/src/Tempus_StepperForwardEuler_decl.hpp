@@ -1,5 +1,5 @@
-#ifndef TEMPUS_STEPPERFORWARDEULER_DECL_HPP
-#define TEMPUS_STEPPERFORWARDEULER_DECL_HPP
+#ifndef Tempus_StepperForwardEuler_decl_hpp
+#define Tempus_StepperForwardEuler_decl_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
@@ -64,4 +64,4 @@ protected:
 };
 } // namespace Tempus
 
-#endif // TEMPUS_STEPPERFORWARDEULER_DECL_HPP
+#endif // Tempus_StepperForwardEuler_decl_hpp

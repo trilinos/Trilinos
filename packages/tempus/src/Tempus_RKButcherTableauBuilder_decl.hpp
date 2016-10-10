@@ -1,5 +1,5 @@
-#ifndef TEMPUS_RK_BUTCHER_TABLEAU_BUILDER_DECL_HPP
-#define TEMPUS_RK_BUTCHER_TABLEAU_BUILDER_DECL_HPP
+#ifndef Tempus_RKButcherTableauBuilder_decl_hpp
+#define Tempus_RKButcherTableauBuilder_decl_hpp
 
 #include "Tempus_RKButcherTableau.hpp"
 #include "Teuchos_ObjectBuilder.hpp"
@@ -63,4 +63,4 @@ Teuchos::RCP<RKButcherTableau<Scalar> > createRKBT(const std::string& rkbt_name)
 } // namespace Tempus
 
 
-#endif // TEMPUS_RK_BUTCHER_TABLEAU_BUILDER_DECL_HPP
+#endif // Tempus_RKButcherTableauBuilder_decl_hpp
