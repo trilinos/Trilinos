@@ -91,12 +91,11 @@ TEST( SoloSideIdGenerator, test_id_space_per_proc )
 
     const uint64_t maxSideId = 1000000;
     SoloSideIdGeneratorTester soloSideIdGenerator(numProcs, myProcId, maxSideId);
-    unsigned maxPseudoElement = soloSideIdGenerator.max_pseudo_element();
-    unsigned offsetThisProc = maxPseudoElement*myProcId;
+    uint64_t maxPseudoElement = soloSideIdGenerator.max_pseudo_element();
 
-    for(size_t elementIndex = 1; elementIndex <= maxPseudoElement; elementIndex++)
+    for(size_t elementIndex = myProcId+1; elementIndex <= maxPseudoElement; elementIndex+=numProcs)
         for(size_t ordinal = 6; ordinal < 10; ordinal++)
-            EXPECT_EQ(soloSideIdGenerator.get_solo_side_id(), soloSideIdGenerator.test_get_solo_side_id_using_formula(elementIndex+offsetThisProc, ordinal));
+            EXPECT_EQ(soloSideIdGenerator.get_solo_side_id(), soloSideIdGenerator.test_get_solo_side_id_using_formula(elementIndex, ordinal));
 
     EXPECT_THROW(soloSideIdGenerator.get_solo_side_id(), std::exception);
 }
