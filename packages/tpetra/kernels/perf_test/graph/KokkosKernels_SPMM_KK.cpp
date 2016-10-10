@@ -6,7 +6,7 @@
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_GraphColor.hpp"
 
-typedef size_t size_type;
+typedef int size_type;
 typedef int idx;
 typedef double wt;
 
@@ -155,7 +155,9 @@ int main (int argc, char ** argv){
       else if ( 0 == strcasecmp( argv[i] , "KKMULTICOLOR2" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 11;
       }
-
+      else if ( 0 == strcasecmp( argv[i] , "VIENNA" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 12;
+      }
       else {
         cmdline[ CMD_ERROR ] = 1 ;
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
@@ -411,9 +413,9 @@ int main (int argc, char ** argv){
     delete [] ew;
 
 
-    std::cout << "STARTUP MULTIPLYING A*A" << std::endl;
-    run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
-    std::cout << "STARTUP DONE  A*A\n\n\n\n\n" << std::endl;
+    //std::cout << "STARTUP MULTIPLYING A*A" << std::endl;
+    //run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
+    //std::cout << "STARTUP DONE  A*A\n\n\n\n\n" << std::endl;
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
@@ -961,6 +963,10 @@ crsMat_t run_experiment(
   case 11:
       kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2);
       break;
+  case 12:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_VIENNA);
+    break;
+
 
   default:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
