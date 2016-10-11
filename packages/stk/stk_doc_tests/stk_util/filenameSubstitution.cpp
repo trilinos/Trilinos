@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-//-BEGIN
+//BEGINFilenameSubstitution
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_util/environment/EnvData.hpp>  // for EnvData
 #include <stk_util/environment/FileUtils.hpp>
@@ -74,4 +74,4 @@ namespace
     EXPECT_EQ(expected_filename, file_name);
   }
 }
-//-END
+//ENDFilenameSubstitution
