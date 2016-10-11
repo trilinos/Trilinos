@@ -1,5 +1,12 @@
 MESSAGE(STATUS "${PACKAGE_NAME}: Processing ETI / test support")
 
+# mfh 11 Oct 2016: Hack to work around #701.  Strip out anything that
+# looks like a Kokkos "Node" type (not the same as a Device type!!!)
+# from the manglings and typedefs lists.
+
+SET(list_of_manglings "")
+SET(eti_typedefs "")
+
 # This CMake module generates the following header file, which gets
 # written to the build directory (like other header files that CMake
 # generates).  The file contains macros that do instantiation over a
@@ -73,14 +80,6 @@ MESSAGE(STATUS "Enabled Scalar types:       ${${PACKAGE_NAME}_ETI_SCALARS}")
 MESSAGE(STATUS "Enabled LocalOrdinal types: ${${PACKAGE_NAME}_ETI_LORDS}")
 MESSAGE(STATUS "Enabled Device types:       ${${PACKAGE_NAME}_ETI_DEVICES}")
 
-# Construct the "type expansion" string that TriBITS' ETI system
-# expects.  Even if ETI is OFF, we will use this to generate macros
-# for instantiating tests.
-TRIBITS_ETI_TYPE_EXPANSION(SingleScalarInsts 
-  "S=${${PACKAGE_NAME}_ETI_SCALARS}"
-  "LO=${${PACKAGE_NAME}_ETI_LORDS}" 
-  "D=${${PACKAGE_NAME}_ETI_DEVICES}")
-
 # Set up the set of enabled type combinations, in a format that
 # TriBITS understands.
 #
@@ -88,18 +87,17 @@ TRIBITS_ETI_TYPE_EXPANSION(SingleScalarInsts
 # going on here, but it looks like if ETI is enabled, we let users
 # modify ${PACKAGE_NAME}_ETI_LIBRARYSET, and if it's not, we don't.
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  TRIBITS_ADD_ETI_INSTANTIATIONS(${PACKAGE_NAME} ${SingleScalarInsts})
-  # mfh 17 Aug 2015: For some reason, these are empty unless ETI is
-  # ON.  That seems to be OK, though, unless users want to exclude
-  # enabling certain type combinations when ETI is OFF.
-  MESSAGE(STATUS "Excluded type combinations: ${${PACKAGE_NAME}_ETI_EXCLUDE_SET}:${${PACKAGE_NAME}_ETI_EXCLUDE_SET_INT}")
-ELSE()
-  TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_LIBRARYSET 
-    "S=${${PACKAGE_NAME}_ETI_SCALARS}"
-    "LO=${${PACKAGE_NAME}_ETI_LORDS}" 
-    "D=${${PACKAGE_NAME}_ETI_DEVICES}")
-ENDIF()
+
+# Construct the "type expansion" string that TriBITS' ETI system
+# expects.  Even if ETI is OFF, we will use this to generate macros
+# for instantiating tests.
+TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_LIBRARYSET 
+  "S=${${PACKAGE_NAME}_ETI_SCALARS}"
+  "LO=${${PACKAGE_NAME}_ETI_LORDS}" 
+  "D=${${PACKAGE_NAME}_ETI_DEVICES}")
+
+TRIBITS_ADD_ETI_INSTANTIATIONS(${PACKAGE_NAME} ${${PACKAGE_NAME}_ETI_LIBRARYSET})
+
 MESSAGE(STATUS "Set of enabled types, before exclusions: ${${PACKAGE_NAME}_ETI_LIBRARYSET}")
 
 #
