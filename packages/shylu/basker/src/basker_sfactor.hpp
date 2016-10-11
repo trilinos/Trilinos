@@ -124,103 +124,98 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::sfactor()
-   {
-     //check if already called
-       if(symb_flag == true) 
-         {return -1;}
+{
+  //check if already called
+  if(symb_flag == true) 
+  {return -1;}
 
-     #ifdef BASKER_DEBUG_SFACTOR
-     printf("Default Symbolic Called \n");
-     #endif     
+#ifdef BASKER_DEBUG_SFACTOR
+  printf("Default Symbolic Called \n");
+#endif     
 
-     if(btf_tabs_offset != 0)
-       {
-	 symmetric_sfactor();
-       }
+  if(btf_tabs_offset != 0)
+  {
+    symmetric_sfactor();
+  }
 
-     //#ifdef BASKER_DEBUG_SFACTOR
-     if(Options.verbose == BASKER_TRUE)
-       {
-     printf("\n\n\n");
-     printf("----------------------------------\n");
-     printf("Total NNZ: %d \n", global_nnz);
-     printf("----------------------------------\n");
-     printf("\n\n\n");
-       }
-     //#endif
-          
+  //#ifdef BASKER_DEBUG_SFACTOR
+  if(Options.verbose == BASKER_TRUE)
+  {
+    printf("\n\n\n");
+    printf("----------------------------------\n");
+    printf("Total NNZ: %d \n", global_nnz);
+    printf("----------------------------------\n");
+    printf("\n\n\n");
+  }
+  //#endif
 
-     
-     if(Options.btf == BASKER_TRUE)
-       {
-	 if(btf_nblks > 1)
-	   {
-	     btf_last_dense();
-	   }	 
-       }
+  if(Options.btf == BASKER_TRUE)
+  {
+    if(btf_nblks > 1)
+    {
+      btf_last_dense();
+    }	 
+  }
 
+  //Allocate Factorspace
 
-     //Allocate Factorspace
+  if(btf_tabs_offset != 0)
+  {
+#ifdef BASKER_KOKKOS
+    kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
+      iF(this);
+    Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
+    Kokkos::fence();
+#else
+#endif
 
-     if(btf_tabs_offset != 0)
-       {
-     #ifdef BASKER_KOKKOS
-     kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
-       iF(this);
-     Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
-     Kokkos::fence();
-     #else
-     #endif
-     
-       }
+  }
 
 
-     //if(btf_tabs_offset != 0)
-       {
-     //Allocate workspace
-     #ifdef BASKER_KOKKOS
-     typedef Kokkos::TeamPolicy<Exe_Space>      TeamPolicy;
-     kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
-       iWS(this);
-     Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
-     Kokkos::fence();
-     #else
-     
-     #endif
-       }
-     
-       //printf("MALLOC GPERM size: %d \n", A.nrow);
-     BASKER_ASSERT(A.nrow > 0, "Sfactor A.nrow");
-     MALLOC_INT_1DARRAY(gperm, A.nrow);
-     //init_value(gperm, A.nrow, A.max_idx);
-     init_value(gperm,A.nrow, BASKER_MAX_IDX);
-     MALLOC_INT_1DARRAY(gpermi,A.nrow);
-     //init_value(gpermi, A.nrow, A.max_idx);
-     init_value(gpermi, A.nrow, BASKER_MAX_IDX);
-    
-    
+  //if(btf_tabs_offset != 0)
+  {
+    //Allocate workspace
+#ifdef BASKER_KOKKOS
+    typedef Kokkos::TeamPolicy<Exe_Space>      TeamPolicy;
+    kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
+      iWS(this);
+    Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
+    Kokkos::fence();
+#else
 
-    
-     //Incomplete Factor Setup
-     //#ifdef BASKER_INC_LVL
-     if(Options.incomplete == BASKER_TRUE)
-       {
-     Int lvl_nnz = 1.2*global_nnz;
-     MALLOC_INT_1DARRAY(INC_LVL_ARRAY, lvl_nnz);
-     //init_value(INC_LVL_ARRAY, lvl_nnz, A.max_idx);
-     init_value(INC_LVL_ARRAY, lvl_nnz, BASKER_MAX_IDX);
-     MALLOC_INT_1DARRAY(INC_LVL_ARRAY_CNT, A.nrow);
-     init_value(INC_LVL_ARRAY_CNT, A.nrow,(Int)0);
-     MALLOC_INT_1DARRAY(INC_LVL_TEMP, A.nrow);
-     //init_value(INC_LVL_TEMP, A.nrow, A.max_idx);
-     init_value(INC_LVL_TEMP, A.nrow, BASKER_MAX_IDX);
-     //#endif
-     //printf("MALLOC TEMP SIZE: %d \n", A.nrow);
+#endif
+  }
 
-       }
+  //printf("MALLOC GPERM size: %d \n", A.nrow);
+  BASKER_ASSERT(A.nrow > 0, "Sfactor A.nrow");
+  MALLOC_INT_1DARRAY(gperm, A.nrow);
+  //init_value(gperm, A.nrow, A.max_idx);
+  init_value(gperm,A.nrow, BASKER_MAX_IDX);
+  MALLOC_INT_1DARRAY(gpermi,A.nrow);
+  //init_value(gpermi, A.nrow, A.max_idx);
+  init_value(gpermi, A.nrow, BASKER_MAX_IDX);
 
-     return 0;
-   }//end default_symb()
+
+  //Incomplete Factor Setup
+  //#ifdef BASKER_INC_LVL
+  if(Options.incomplete == BASKER_TRUE)
+  {
+    Int lvl_nnz = 1.2*global_nnz;
+    MALLOC_INT_1DARRAY(INC_LVL_ARRAY, lvl_nnz);
+    //init_value(INC_LVL_ARRAY, lvl_nnz, A.max_idx);
+    init_value(INC_LVL_ARRAY, lvl_nnz, BASKER_MAX_IDX);
+    MALLOC_INT_1DARRAY(INC_LVL_ARRAY_CNT, A.nrow);
+    init_value(INC_LVL_ARRAY_CNT, A.nrow,(Int)0);
+    MALLOC_INT_1DARRAY(INC_LVL_TEMP, A.nrow);
+    //init_value(INC_LVL_TEMP, A.nrow, A.max_idx);
+    init_value(INC_LVL_TEMP, A.nrow, BASKER_MAX_IDX);
+    //#endif
+    //printf("MALLOC TEMP SIZE: %d \n", A.nrow);
+
+  }
+
+  return 0;
+}//end default_symb()
 
   //Used with Matrix in ND-ORDERING-Assume Static-pivot
   template<class Int, class Entry, class Exe_Space>

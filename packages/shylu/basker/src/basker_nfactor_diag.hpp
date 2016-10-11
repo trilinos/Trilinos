@@ -292,7 +292,8 @@ namespace BaskerNS
     Int xnnz, lnnz, unnz, lcnt, ucnt;
     
     Entry pivot, value;
-    Entry absv, maxc;
+//    Entry absv, maxc; //NDE - warning: unsed maxc
+    Entry absv;
 
     Int llnnz  = L.nnz;
     Int uunnz  = U.nnz;
@@ -762,7 +763,8 @@ namespace BaskerNS
     Int *store       = &(stack[ws_size]);
 
     Int i, t, head, i1;
-    Int start, end, done;
+    //Int start, end, done; //NDE - warning: unused
+    Int start, end;
     
     start    = -1;
     head     = 0;
@@ -819,7 +821,7 @@ namespace BaskerNS
 	  {
 	    start = store[j];
 	  }
-	done = 1;
+	//done = 1; //NDE - warning: unused
 	
 
 	end = L.col_ptr(t-L.scol);

@@ -243,8 +243,9 @@ namespace BaskerNS
 	  }//for -j = col_ptr
       }//for - k...ncol
  
+    //NDE: compiler error in debug mode; no op* for int and complex<double>
     LM.nnz = nnz_low *
-      (((Entry)BASKER_FILL_LESTIMATE+Options.user_fill)*
+      (((double)BASKER_FILL_LESTIMATE+Options.user_fill)* 
        (Options.inc_lvl+1));
     global_nnz += LM.nnz;
     UM.nnz = nnz_top *
