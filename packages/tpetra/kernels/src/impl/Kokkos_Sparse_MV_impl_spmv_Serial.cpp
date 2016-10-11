@@ -42,9 +42,8 @@
 */
 
 #include "TpetraKernels_config.h"
-#include "Kokkos_Macros.hpp"
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 #  include "Kokkos_Sparse.hpp"
 
 #  define INSTMACRO( SCALAR, LO ) \
@@ -62,5 +61,5 @@ namespace Impl {
 } // namespace Impl
 } // namespace KokkosSparse
 
-#endif // KOKKOS_HAVE_SERIAL
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
