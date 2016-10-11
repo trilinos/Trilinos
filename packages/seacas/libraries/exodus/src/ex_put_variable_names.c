@@ -156,7 +156,7 @@ error = ex_put_variable_names (exoid, EX_NODAL, num_nod_vars, var_names);
 
 int ex_put_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char *var_names[])
 {
-  int  varid, dimid, status;
+  int  varid, status;
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
