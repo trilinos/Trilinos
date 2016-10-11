@@ -19,6 +19,15 @@
 /* Define this macro to disallow instantiations of kernels which are not covered by ETI */
 #cmakedefine HAVE_TPETRAKERNELS_ETI_ONLY
 
+/* Whether to build kernels for execution space Kokkos::Cuda */
+#cmakedefine TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+/* Whether to build kernels for execution space Kokkos::OpenMP */
+#cmakedefine TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+/* Whether to build kernels for execution space Kokkos::Threads */
+#cmakedefine TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+/* Whether to build kernels for execution space Kokkos::Serial */
+#cmakedefine TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+
 /*
  * "Optimization level" for computational kernels in this subpackage.
  * The higher the level, the more code variants get generated, and
