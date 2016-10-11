@@ -88,6 +88,17 @@ public:
       Intrepid2::Vector<T, N> & soln,
       Intrepid2::Vector<T, NC> & cv);
 
+  template<typename FN, typename EC, typename BC, Index NC>
+  void
+  solve(
+      std::string const & algoname,
+      Teuchos::ParameterList & params,
+      FN & fn,
+      EC & ec,
+      BC & bc,
+      Intrepid2::Vector<T, N> & soln,
+      Intrepid2::Vector<T, NC> & cv);
+
   void
   printReport(std::ostream & os);
 

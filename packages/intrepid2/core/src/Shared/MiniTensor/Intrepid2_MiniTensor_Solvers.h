@@ -108,13 +108,13 @@ public:
 };
 
 ///
-/// Constraint base class that defines the interface to Mini Solvers.
+/// Equality constraint base class that defines the interface to Mini Solvers.
 ///
 template<typename ConstraintDerived, typename S, Index NC, Index NV>
-struct Constraint_Base
+struct Equality_Constraint
 {
 public:
-  Constraint_Base()
+  Equality_Constraint()
   {
   }
 

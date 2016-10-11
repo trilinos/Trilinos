@@ -160,7 +160,7 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
 
   // Constraint that defines the feasible region
   Intrepid2::Circumference<Real, NUM_CONSTR, NUM_VAR>
-  constr(r, a, b);
+  eq_constr(r, a, b);
 
   // Define algorithm.
   std::string const
@@ -171,22 +171,24 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
   params;
 
   params.sublist("Step").sublist(algoname).
-    sublist("Optimality System Solver").set("Nominal Relative Tolerance",1.e-8);
+      sublist("Optimality System Solver").set(
+      "Nominal Relative Tolerance",
+      1.e-8);
 
   params.sublist("Step").sublist(algoname).
-    sublist("Optimality System Solver").set("Fix Tolerance",true);
+      sublist("Optimality System Solver").set("Fix Tolerance", true);
 
   params.sublist("Step").sublist(algoname).
-    sublist("Tangential Subproblem Solver").set("Iteration Limit",128);
+      sublist("Tangential Subproblem Solver").set("Iteration Limit", 128);
 
   params.sublist("Step").sublist(algoname).
-    sublist("Tangential Subproblem Solver").set("Relative Tolerance",1e-6);
+      sublist("Tangential Subproblem Solver").set("Relative Tolerance", 1e-6);
 
-  params.sublist("Step").sublist(algoname).set("Output Level",0);
-  params.sublist("Status Test").set("Gradient Tolerance",1.e-12);
-  params.sublist("Status Test").set("Constraint Tolerance",1.e-12);
-  params.sublist("Status Test").set("Step Tolerance",1.e-18);
-  params.sublist("Status Test").set("Iteration Limit",128);
+  params.sublist("Step").sublist(algoname).set("Output Level", 0);
+  params.sublist("Status Test").set("Gradient Tolerance", 1.0e-12);
+  params.sublist("Status Test").set("Constraint Tolerance", 1.0e-12);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-18);
+  params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Set initial guess
   Intrepid2::Vector<Real, NUM_VAR>
@@ -199,7 +201,7 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
   ROL::MiniTensor_Minimizer<Real, NUM_VAR>
   minimizer;
 
-  minimizer.solve(algoname, params, fn, constr, x, c);
+  minimizer.solve(algoname, params, fn, eq_constr, x, c);
 
   minimizer.printReport(os);
 

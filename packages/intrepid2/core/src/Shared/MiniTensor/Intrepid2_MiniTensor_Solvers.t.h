@@ -151,7 +151,7 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
 template<typename ConstraintDerived, typename S, Index NC, Index NV>
 template<typename T, Index N>
 Vector<T, NC>
-Constraint_Base<ConstraintDerived, S, NC, NV>::
+Equality_Constraint<ConstraintDerived, S, NC, NV>::
 value(ConstraintDerived & c, Vector<T, N> const & x)
 {
   assert(x.get_dimension() == NUM_VAR);
@@ -164,7 +164,7 @@ value(ConstraintDerived & c, Vector<T, N> const & x)
 template<typename ConstraintDerived, typename S, Index NC, Index NV>
 template<typename T, Index N>
 Matrix<T, NC, NV>
-Constraint_Base<ConstraintDerived, S, NC, NV>::
+Equality_Constraint<ConstraintDerived, S, NC, NV>::
 gradient(ConstraintDerived & c, Vector<T, N> const & x)
 {
   using AD = FAD<T, N>;

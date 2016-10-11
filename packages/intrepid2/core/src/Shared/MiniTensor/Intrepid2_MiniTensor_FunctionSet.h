@@ -943,7 +943,7 @@ public:
 // Identity
 //
 template<typename S, Index NC, Index NV>
-class Identity : public Constraint_Base<Identity<S, NC, NV>, S, NC, NV>
+class Identity : public Equality_Constraint<Identity<S, NC, NV>, S, NC, NV>
 {
 public:
 
@@ -953,7 +953,7 @@ public:
   char const * const
   NAME{"Identity Map"};
 
-  using Base = Constraint_Base<Identity<S, NC, NV>, S, NC, NV>;
+  using Base = Equality_Constraint<Identity<S, NC, NV>, S, NC, NV>;
 
   // Explicit value.
   template<typename T, Index N>
@@ -977,7 +977,7 @@ public:
 // A nonlinear function
 //
 template<typename S, Index NC = 3, Index NV = 5>
-class Nonlinear01 : public Constraint_Base<Nonlinear01<S, NC, NV>, S, NC, NV>
+class Nonlinear01 : public Equality_Constraint<Nonlinear01<S, NC, NV>, S, NC, NV>
 {
 public:
 
@@ -987,7 +987,7 @@ public:
   char const * const
   NAME{"Nonlinear map 01"};
 
-  using Base = Constraint_Base<Nonlinear01<S, NC, NV>, S, NC, NV>;
+  using Base = Equality_Constraint<Nonlinear01<S, NC, NV>, S, NC, NV>;
 
   // Explicit value.
   template<typename T, Index N = 5>
@@ -1021,7 +1021,7 @@ public:
 // Circumference feasible region
 //
 template<typename S, Index NC = 1, Index NV = 2>
-class Circumference : public Constraint_Base<Circumference<S, NC, NV>, S, NC, NV>
+class Circumference : public Equality_Constraint<Circumference<S, NC, NV>, S, NC, NV>
 {
 public:
 
@@ -1035,7 +1035,7 @@ public:
   char const * const
   NAME{"Nonlinear map 01"};
 
-  using Base = Constraint_Base<Circumference<S, NC, NV>, S, NC, NV>;
+  using Base = Equality_Constraint<Circumference<S, NC, NV>, S, NC, NV>;
 
   // Explicit value.
   template<typename T, Index N = 5>
