@@ -41,19 +41,26 @@
 //@HEADER
 */
 
-#include <Kokkos_Sparse.hpp>
+#include "TpetraKernels_config.h"
+#include "Kokkos_Macros.hpp"
+
+#ifdef KOKKOS_HAVE_SERIAL
+#  include "Kokkos_Sparse.hpp"
+
+#  define INSTMACRO( SCALAR, LO ) \
+  KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( SCALAR, LO, Kokkos::Serial, Kokkos::HostSpace )
+
+#  include "TpetraKernels_ETIHelperMacros.h"
 
 namespace KokkosSparse {
 namespace Impl {
+  // This already happens in Kokkos_Sparse_impl_spmv.hpp.
+  //TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
 
-#ifdef KOKKOS_HAVE_SERIAL
-
-KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( int, int, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( long, int, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( double, int, Kokkos::Serial, Kokkos::HostSpace )
-
-#endif // KOKKOS_HAVE_SERIAL
+  TPETRAKERNELS_INSTANTIATE_SL( INSTMACRO )
 
 } // namespace Impl
 } // namespace KokkosSparse
+
+#endif // KOKKOS_HAVE_SERIAL
 
