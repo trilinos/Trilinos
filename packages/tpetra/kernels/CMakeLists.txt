@@ -52,14 +52,16 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Whether or not ETI is defined, the variables govern the set of
 # template parameter combinations over which Tpetra runs tests.
 
-ASSERT_DEFINED (Tpetra_ETI_SCALARS)
-ASSERT_DEFINED (Tpetra_ETI_SCALARS_NO_ORDS)
+ASSERT_DEFINED (Tpetra_ETI_SCALARS_KOKKOS)
+ASSERT_DEFINED (Tpetra_ETI_SCALARS_KOKKOS_NO_ORDS)
 ASSERT_DEFINED (Tpetra_ETI_LORDS)
 ASSERT_DEFINED (Tpetra_ETI_DEVICES)
 
-SET(${PACKAGE_NAME}_ETI_SCALARS "${Tpetra_ETI_SCALARS}")
+# mfh 11 Oct 2016: Use Kokkos versions of Scalar types for ETI.
+# In particular, use Kokkos::complex<T> in place of std::complex<T>.
+SET(${PACKAGE_NAME}_ETI_SCALARS "${Tpetra_ETI_SCALARS_KOKKOS}")
 # Exclude all ordinal types (GlobalOrdinal and int).
-SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "${Tpetra_ETI_SCALARS_NO_ORDS}")
+SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "${Tpetra_ETI_SCALARS_KOKKOS_NO_ORDS}")
 SET(${PACKAGE_NAME}_ETI_LORDS "${Tpetra_ETI_LORDS}")
 SET(${PACKAGE_NAME}_ETI_DEVICES "${Tpetra_ETI_DEVICES}")
 
