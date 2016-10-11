@@ -121,6 +121,7 @@ public:
     }
 };
 
+SideSetData get_sideset_data_from_written_file(stk::ParallelMachine comm, const std::string& output_file_name);
 void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& input_file_name, const std::string& output_file_name);
 void compare_sidesets(const std::string& input_file_name, const SideSetData &sideset_data1, const SideSetData &sideset_data2);
 
