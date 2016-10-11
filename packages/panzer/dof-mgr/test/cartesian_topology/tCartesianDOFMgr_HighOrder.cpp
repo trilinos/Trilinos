@@ -87,6 +87,98 @@ std::string getElementBlock(const Triplet & element,
   return connManager.getBlockId(localElmtId);
 }
 
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
+{
+  typedef CartesianConnManager<int,Ordinal64> CCM;
+  typedef panzer::DOFManager<int,Ordinal64> DOFManager;
+
+  // build global (or serial communicator)
+  #ifdef HAVE_MPI
+    Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
+  #else
+    THIS_REALLY_DOES_NOT_WORK
+  #endif
+
+  int np = comm.getSize(); // number of processors
+  int rank = comm.getRank(); // processor rank
+
+  // mesh description
+  Ordinal64 nx = 8, ny = 4;//, nz = 4;
+  //Ordinal64 nx = 4, ny = 3;//, nz = 4;
+  int px = np, py = 1;//, pz = 1; // npx1 processor grids
+  int bx =  1, by = 1;//, bz = 1; // 1x2 blocks
+
+  const int poly_U = 4;
+  const int poly_P = 3;
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_U )) );
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_P )) );
+
+  // build the topology
+  RCP<CCM> connManager = rcp(new CCM);
+  connManager->initialize(comm,nx,ny,px,py,bx,by);
+
+  // build the dof manager, and assocaite with the topology
+  RCP<DOFManager> dofManager = rcp(new DOFManager);
+  dofManager->setConnManager(connManager,*comm.getRawMpiComm());
+
+  // add velocity (U) and PRESSURE fields to the MHD element block
+  dofManager->addField("eblock-0_0","U",pattern_U);
+  dofManager->addField("eblock-0_0","P",pattern_P);
+
+  // build global unknowns (useful comment!)
+  dofManager->buildGlobalUnknowns();
+
+  auto myOffset   = connManager->getMyOffsetTriplet();
+  auto myElements = connManager->getMyElementsTriplet();
+
+  // check sharing locally on this processor
+  {
+    // choose an element in the middle of the day
+    Triplet element;
+    element.x = myOffset.x + myElements.x/2-1;
+    element.y = myOffset.y + myElements.y/2-1;
+    element.z = 0; 
+
+    out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
+
+    int localElmtId    = connManager->computeLocalElementIndex(element);
+
+    TEST_ASSERT(localElmtId>=0);
+
+    std::string eblock    = getElementBlock(element,*connManager);
+
+    std::vector<Ordinal64> gids;
+    dofManager->getElementGIDs(localElmtId,   gids);
+
+    std::set<Ordinal64> s_gids;
+    s_gids.insert(gids.begin(),gids.end());
+ 
+    // ensure that the expected number of GIDs are produced
+    TEST_EQUALITY(s_gids.size(),gids.size());
+  }
+
+  std::vector<Ordinal64> indices;
+  dofManager->getOwnedIndices(indices);
+  std::set<Ordinal64> s_indices;
+  s_indices.insert(indices.begin(),indices.end());
+  TEST_EQUALITY(s_indices.size(),indices.size()); // these should be the same
+
+  int count = Teuchos::as<int>(s_indices.size());
+  int totalCount = 0;
+  Teuchos::reduceAll(comm,Teuchos::REDUCE_SUM,1,&count,&totalCount);
+
+  TEST_EQUALITY(totalCount,(nx*poly_U+1)*(ny*poly_U+1)+(nx*poly_P+1)*(ny*poly_P+1))
+
+  std::vector<Ordinal64> ghosted_indices;
+  dofManager->getOwnedAndGhostedIndices(ghosted_indices);
+  std::set<Ordinal64> s_ghosted_indices;
+  s_ghosted_indices.insert(ghosted_indices.begin(),ghosted_indices.end());
+
+  TEST_ASSERT(s_ghosted_indices.size()>=s_indices.size()); // should have more ghosted indices then owned indices
+  TEST_EQUALITY(s_ghosted_indices.size(),ghosted_indices.size()); // these should be the same
+
+}
+
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
 {
   typedef CartesianConnManager<int,Ordinal64> CCM;
@@ -301,6 +393,19 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
     dofManager->getElementGIDs(localElmtId_px,gids_px);
     dofManager->getElementGIDs(localElmtId_py,gids_py);
 
+    // check that GIDs are all unique within an element
+    {
+      std::set<Ordinal64> s_gids, s_gids_px, s_gids_py;
+      s_gids.insert(gids.begin(),gids.end());
+      s_gids_px.insert(gids_px.begin(),gids_px.end());
+      s_gids_py.insert(gids_py.begin(),gids_py.end());
+ 
+      // ensure that the expected number of GIDs are produced
+      TEST_EQUALITY(s_gids.size(),gids.size());
+      TEST_EQUALITY(s_gids_px.size(),gids_px.size());
+      TEST_EQUALITY(s_gids_py.size(),gids_py.size());
+    }
+
     {
       out << "Elements " << localElmtId << " " << localElmtId_px << std::endl;
       auto offsets   = dofManager->getGIDFieldOffsets_closure(eblock,   ux_num,1,1); // +x
@@ -368,6 +473,17 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
     std::vector<Ordinal64> gids_l, gids_r;
     dofManager->getElementGIDs(   localElmtId_l,   gids_l);
     dofManager->getElementGIDs(   localElmtId_r,   gids_r);
+
+    // check that GIDs are all unique within an element
+    {
+      std::set<Ordinal64> s_gids_l, s_gids_r;
+      s_gids_l.insert(gids_l.begin(),gids_l.end());
+      s_gids_r.insert(gids_r.begin(),gids_r.end());
+ 
+      // ensure that the expected number of GIDs are produced
+      TEST_EQUALITY(s_gids_l.size(),gids_l.size());
+      TEST_EQUALITY(s_gids_r.size(),gids_r.size());
+    }
 
     std::string eblock_l = getElementBlock(element_l,*connManager);
     std::string eblock_r = getElementBlock(element_r,*connManager);
