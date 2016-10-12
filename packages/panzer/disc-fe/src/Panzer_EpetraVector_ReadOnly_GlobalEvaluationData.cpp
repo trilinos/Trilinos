@@ -27,20 +27,20 @@ useConstantValues(const std::vector<int> & indices,double value)
 
 void
 EpetraVector_ReadOnly_GlobalEvaluationData::
-initialize(const RCP<const Epetra_Import> & importer,
-           const RCP<const Epetra_Map> & ghostedMap,
-           const RCP<const Epetra_Map> & uniqueMap)
+initialize(const RCP<const Epetra_Import>& importer,
+           const RCP<const Epetra_Map>&    ghostedMap,
+           const RCP<const Epetra_Map>&    ownedMap)
 {
-  importer_ = importer;
+  importer_   = importer;
   ghostedMap_ = ghostedMap;
-  uniqueMap_ = uniqueMap;
+  ownedMap_   = ownedMap;
 
   // allocate the ghosted vector
   ghostedVector_ = Teuchos::rcp(new Epetra_Vector(*ghostedMap_));
 
   // build up the thyra conversion data structures
   ghostedSpace_ = Thyra::create_VectorSpace(ghostedMap_);
-  uniqueSpace_ = Thyra::create_VectorSpace(uniqueMap_);
+  ownedSpace_   = Thyra::create_VectorSpace(ownedMap_);
 
   // translate filtered pair GIDs to LIDs
    // initialize some ghosted values to the user specified values
@@ -66,16 +66,17 @@ void
 EpetraVector_ReadOnly_GlobalEvaluationData::
 globalToGhost(int mem)
 {
-   TEUCHOS_TEST_FOR_EXCEPTION(uniqueVector_==Teuchos::null,std::logic_error,
-                              "Unique vector has not been set, can't perform the halo exchange!");
+  TEUCHOS_TEST_FOR_EXCEPTION(ownedVector_ == Teuchos::null,std::logic_error,
+    "Owned vector has not been set, can't perform the halo exchange!");
 
-   // initialize the ghosted data, zeroing out things, and filling in specified constants
-   initializeData();
-
-   Teuchos::RCP<const Epetra_Vector> uniqueVector_ep = Thyra::get_Epetra_Vector(*uniqueMap_,uniqueVector_);
+  // Initialize the ghosted data, zeroing out things, and filling in specified
+  // constants.
+  initializeData();
+  Teuchos::RCP<const Epetra_Vector> ownedVector_ep = Thyra::get_Epetra_Vector(
+    *ownedMap_, ownedVector_);
   
-   // do the global distribution
-   ghostedVector_->Import(*uniqueVector_ep,*importer_,Insert);
+  // Do the global distribution.
+  ghostedVector_->Import(*ownedVector_ep, *importer_, Insert);
 }
 
 void 
@@ -98,11 +99,10 @@ initializeData()
 
 void 
 EpetraVector_ReadOnly_GlobalEvaluationData::
-setUniqueVector_Epetra(const Teuchos::RCP<const Epetra_Vector> & uniqueVector)
+setOwnedVector_Epetra(const Teuchos::RCP<const Epetra_Vector>& ownedVector)
 {
   TEUCHOS_ASSERT(isInitialized_);
-
-  uniqueVector_ = Thyra::create_Vector(uniqueVector,uniqueSpace_);
+  ownedVector_ = Thyra::create_Vector(ownedVector, ownedSpace_);
 }
 
 Teuchos::RCP<Epetra_Vector> 
@@ -117,28 +117,28 @@ getGhostedVector_Epetra() const
 
 void 
 EpetraVector_ReadOnly_GlobalEvaluationData::
-setUniqueVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & uniqueVector)
+setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >&
+	ownedVector)
 {
   TEUCHOS_ASSERT(isInitialized_);
-
-  // uniqueVector_ep_ = Thyra::get_Epetra_Vector(*uniqueMap_,uniqueVector);
-  uniqueVector_ = uniqueVector;
+  // ownedVector_ep_ = Thyra::get_Epetra_Vector(*ownedMap_, ownedVector);
+  ownedVector_ = ownedVector;
 /*
-  std::cout << "SETTING UNIQUE" << std::endl;
-  std::cout << Teuchos::describe(*uniqueVector,Teuchos::VERB_EXTREME) << std::endl;
-  uniqueVector_->Print(std::cout);
+  std::cout << "SETTING OWNED" << std::endl;
+  std::cout << Teuchos::describe(*ownedVector, Teuchos::VERB_EXTREME) << std::endl;
+  ownedVector_->Print(std::cout);
   std::cout << std::endl;
-  */
+*/
 }
 
 Teuchos::RCP<const Thyra::VectorBase<double> > 
 EpetraVector_ReadOnly_GlobalEvaluationData::
-getUniqueVector() const
+getOwnedVector() const
 {
   TEUCHOS_ASSERT(isInitialized_);
-
-  // return (uniqueVector_==Teuchos::null) ? Teuchos::null : Thyra::create_Vector(uniqueVector_,uniqueSpace_);
-  return uniqueVector_;
+  // return (ownedVector_==Teuchos::null) ? Teuchos::null :
+  // 	 Thyra::create_Vector(ownedVector_, ownedSpace_);
+  return ownedVector_;
 }
 
 Teuchos::RCP<Thyra::VectorBase<double> > 
@@ -159,7 +159,7 @@ print(std::ostream & os) const
   os << "\n";
   os << tab << "EpetraVector_ReadOnly_GlobalEvaluationData\n"
      << tab << "  init    = " << isInitialized_ << "\n"
-     << tab << "  unique  = " << uniqueVector_ << "\n"
+     << tab << "  owned   = " << ownedVector_   << "\n"
      << tab << "  ghosted = " << ghostedVector_ << "\n";
 
   /*
@@ -171,12 +171,12 @@ print(std::ostream & os) const
   ghostedVector_->Print(os);
   os << "\n\n";
 
-  os << "UNIQUE MAP\n";
-  uniqueMap_->Print(os);
+  os << "OWNED MAP\n";
+  ownedMap_->Print(os);
   os << "\n\n";
 
-  os << "UNIQUE Vector\n";
-  uniqueVector_->Print(os);
+  os << "OWNED Vector\n";
+  ownedVector_->Print(os);
   os << "\n\n";
   */
 }

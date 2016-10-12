@@ -94,12 +94,12 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
   TEST_ASSERT(comm.NumProc()==2);
 
   std::vector<int> ghosted(5);
-  std::vector<int> unique(3);
+  std::vector<int> owned(3);
 
   if(comm.MyPID()==0) {
-    unique[0] = 0;
-    unique[1] = 1;
-    unique[2] = 2;
+    owned[0] = 0;
+    owned[1] = 1;
+    owned[2] = 2;
 
     ghosted[0] = 0;
     ghosted[1] = 1;
@@ -108,9 +108,9 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
     ghosted[4] = 4;
   }
   else {
-    unique[0] = 3;
-    unique[1] = 4;
-    unique[2] = 5;
+    owned[0] = 3;
+    owned[1] = 4;
+    owned[2] = 5;
 
     ghosted[0] = 1;
     ghosted[1] = 2;
@@ -119,15 +119,15 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
     ghosted[4] = 5;
   }
 
-  RCP<const Epetra_Map> uniqueMap = rcp(new Epetra_Map(-1,unique.size(),&unique[0],0,comm));
+  RCP<const Epetra_Map> ownedMap = rcp(new Epetra_Map(-1,owned.size(),&owned[0],0,comm));
   RCP<const Epetra_Map> ghostedMap = rcp(new Epetra_Map(-1,ghosted.size(),&ghosted[0],0,comm));
-  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
+  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*ownedMap));
 
   EpetraVector_ReadOnly_GlobalEvaluationData ged;
  
   TEST_ASSERT(!ged.isInitialized());
 
-  ged.initialize(importer,ghostedMap,uniqueMap);
+  ged.initialize(importer,ghostedMap,ownedMap);
 
   TEST_ASSERT(ged.isInitialized());
 
@@ -149,37 +149,37 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
     TEST_EQUALITY(ghostedSpace->localSubDim(),ghostedVecE->MyLength());
   }
 
-  // test setting a unique vector
+  // test setting an owned vector
   {
-    RCP<Epetra_Vector> uniqueVec = rcp(new Epetra_Vector(*uniqueMap));
+    RCP<Epetra_Vector> ownedVec = rcp(new Epetra_Vector(*ownedMap));
 
     if(comm.MyPID()==0) {
-      (*uniqueVec)[0] = 3.14;
-      (*uniqueVec)[1] = 1.82;
-      (*uniqueVec)[2] = -.91;
+      (*ownedVec)[0] = 3.14;
+      (*ownedVec)[1] = 1.82;
+      (*ownedVec)[2] = -.91;
     }
     else {
-      (*uniqueVec)[0] = 2.72;
-      (*uniqueVec)[1] = 6.23;
-      (*uniqueVec)[2] = -.17;
+      (*ownedVec)[0] = 2.72;
+      (*ownedVec)[1] = 6.23;
+      (*ownedVec)[2] = -.17;
     }
 
-    // set the unique vector, assure that const can be used
-    ged.setUniqueVector_Epetra(uniqueVec.getConst());
+    // set the owned vector, assure that const can be used
+    ged.setOwnedVector_Epetra(ownedVec.getConst());
   }
 
-  // test the unique vector sizing and thyra entries
+  // test the owned vector sizing and thyra entries
   { 
-    RCP<const Thyra_Vector>  uniqueVecT = ged.getUniqueVector();
+    RCP<const Thyra_Vector>  ownedVecT = ged.getOwnedVector();
 
-    TEST_ASSERT(uniqueVecT!=Teuchos::null); 
+    TEST_ASSERT(ownedVecT!=Teuchos::null); 
 
-    RCP<const Thyra::SpmdVectorSpaceBase<double> > uniqueSpace 
-        = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(uniqueVecT->space());
+    RCP<const Thyra::SpmdVectorSpaceBase<double> > ownedSpace 
+        = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(ownedVecT->space());
     
-    TEST_EQUALITY(uniqueSpace->isLocallyReplicated(),false);
+    TEST_EQUALITY(ownedSpace->isLocallyReplicated(),false);
 
-    RCP<const Thyra_SpmdVec> spmdVec = rcp_dynamic_cast<const Thyra_SpmdVec>(uniqueVecT);
+    RCP<const Thyra_SpmdVec> spmdVec = rcp_dynamic_cast<const Thyra_SpmdVec>(ownedVecT);
 
     Teuchos::ArrayRCP<const double> thyraVec;
     spmdVec->getLocalData(Teuchos::ptrFromRef(thyraVec));
@@ -250,12 +250,12 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
   TEST_ASSERT(comm.NumProc()==2);
 
   std::vector<int> ghosted(5);
-  std::vector<int> unique(3);
+  std::vector<int> owned(3);
 
   if(comm.MyPID()==0) {
-    unique[0] = 0;
-    unique[1] = 1;
-    unique[2] = 2;
+    owned[0] = 0;
+    owned[1] = 1;
+    owned[2] = 2;
 
     ghosted[0] = 0;
     ghosted[1] = 1;
@@ -264,9 +264,9 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
     ghosted[4] = 4;
   }
   else {
-    unique[0] = 3;
-    unique[1] = 4;
-    unique[2] = 5;
+    owned[0] = 3;
+    owned[1] = 4;
+    owned[2] = 5;
 
     ghosted[0] = 1;
     ghosted[1] = 2;
@@ -275,30 +275,30 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
     ghosted[4] = 5;
   }
 
-  RCP<const Epetra_Map> uniqueMap = rcp(new Epetra_Map(-1,unique.size(),&unique[0],0,comm));
+  RCP<const Epetra_Map> ownedMap = rcp(new Epetra_Map(-1,owned.size(),&owned[0],0,comm));
   RCP<const Epetra_Map> ghostedMap = rcp(new Epetra_Map(-1,ghosted.size(),&ghosted[0],0,comm));
-  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
+  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*ownedMap));
 
   RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ged_a, ged_b;
-  ged_a = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,uniqueMap));
-  ged_b = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,uniqueMap));
+  ged_a = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,ownedMap));
+  ged_b = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,ownedMap));
   std::vector<RCP<ReadOnlyVector_GlobalEvaluationData> > gedBlocks;
   gedBlocks.push_back(ged_a);
   gedBlocks.push_back(ged_b);
 
-  RCP<const Thyra::VectorSpaceBase<double> > uniqueSpace_ab = Thyra::defaultSpmdVectorSpace<double>(tComm,3,-1);
+  RCP<const Thyra::VectorSpaceBase<double> > ownedSpace_ab = Thyra::defaultSpmdVectorSpace<double>(tComm,3,-1);
   RCP<const Thyra::VectorSpaceBase<double> > ghostedSpace_ab = ged_a->getGhostedVector()->space();
 
-  RCP<Thyra::DefaultProductVectorSpace<double> > uniqueSpace = Thyra::productVectorSpace<double>(uniqueSpace_ab,2);
+  RCP<Thyra::DefaultProductVectorSpace<double> > ownedSpace = Thyra::productVectorSpace<double>(ownedSpace_ab,2);
   RCP<Thyra::DefaultProductVectorSpace<double> > ghostedSpace = Thyra::productVectorSpace<double>(ghostedSpace_ab,2);
 
   BlockedVector_ReadOnly_GlobalEvaluationData ged;
-  ged.initialize(ghostedSpace,uniqueSpace,gedBlocks);
+  ged.initialize(ghostedSpace,ownedSpace,gedBlocks);
 
-  RCP<Thyra::VectorBase<double> > uniqueVec = Thyra::createMember(*uniqueSpace);
+  RCP<Thyra::VectorBase<double> > ownedVec = Thyra::createMember(*ownedSpace);
 
   {
-    RCP<Thyra::ProductVectorBase<double> > vec = Thyra::castOrCreateNonconstProductVectorBase(uniqueVec);
+    RCP<Thyra::ProductVectorBase<double> > vec = Thyra::castOrCreateNonconstProductVectorBase(ownedVec);
 
     TEST_ASSERT(vec->productSpace()->numBlocks()==2);
 
@@ -330,7 +330,7 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
     }
   }
 
-  ged.setUniqueVector(uniqueVec);
+  ged.setOwnedVector(ownedVec);
 
   ged.initializeData();
   ged.globalToGhost(0);
@@ -388,13 +388,13 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
   TEST_ASSERT(comm.NumProc()==2);
 
   std::vector<int> ghosted(4);
-  std::vector<int> unique(2);
+  std::vector<int> owned(2);
 
   // This is a line with 6 notes (numbered 0-5). The boundaries
   // are removed at 0 and 5.
   if(comm.MyPID()==0) {
-    unique[0] = 1;
-    unique[1] = 2;
+    owned[0] = 1;
+    owned[1] = 2;
 
     ghosted[0] = 0;
     ghosted[1] = 1;
@@ -402,8 +402,8 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
     ghosted[3] = 3;
   }
   else {
-    unique[0] = 3;
-    unique[1] = 4;
+    owned[0] = 3;
+    owned[1] = 4;
 
     ghosted[0] = 2;
     ghosted[1] = 3;
@@ -411,9 +411,9 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
     ghosted[3] = 5;
   }
 
-  RCP<const Epetra_Map> uniqueMap = rcp(new Epetra_Map(-1,unique.size(),&unique[0],0,comm));
+  RCP<const Epetra_Map> ownedMap = rcp(new Epetra_Map(-1,owned.size(),&owned[0],0,comm));
   RCP<const Epetra_Map> ghostedMap = rcp(new Epetra_Map(-1,ghosted.size(),&ghosted[0],0,comm));
-  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
+  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*ownedMap));
 
   EpetraVector_ReadOnly_GlobalEvaluationData ged;
  
@@ -426,24 +426,24 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
   constIndex[0] = 5;
   ged.useConstantValues(constIndex,3.0);
 
-  ged.initialize(importer,ghostedMap,uniqueMap);
+  ged.initialize(importer,ghostedMap,ownedMap);
 
   TEST_THROW(ged.useConstantValues(constIndex,4.0),std::logic_error);
 
   {
-    RCP<Epetra_Vector> uniqueVec = rcp(new Epetra_Vector(*uniqueMap));
+    RCP<Epetra_Vector> ownedVec = rcp(new Epetra_Vector(*ownedMap));
 
     if(comm.MyPID()==0) {
-      (*uniqueVec)[0] = 3.14;
-      (*uniqueVec)[1] = 1.82;
+      (*ownedVec)[0] = 3.14;
+      (*ownedVec)[1] = 1.82;
     }
     else {
-      (*uniqueVec)[0] = 2.72;
-      (*uniqueVec)[1] = 6.23;
+      (*ownedVec)[0] = 2.72;
+      (*ownedVec)[1] = 6.23;
     }
 
-    // set the unique vector, assure that const can be used
-    ged.setUniqueVector_Epetra(uniqueVec.getConst());
+    // set the owned vector, assure that const can be used
+    ged.setOwnedVector_Epetra(ownedVec.getConst());
   }
 
   // actually do something...

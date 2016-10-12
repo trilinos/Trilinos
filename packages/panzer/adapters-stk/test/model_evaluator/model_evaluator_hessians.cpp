@@ -1252,12 +1252,12 @@ namespace panzer {
       Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > linObjFactory
           = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,ap.dofManager,dofManager));
 
-      Teuchos::RCP<Epetra_Map> uniqueMap = linObjFactory->getColMap(0);
+      Teuchos::RCP<Epetra_Map> ownedMap = linObjFactory->getColMap(0);
       Teuchos::RCP<Epetra_Map> ghostedMap = linObjFactory->getGhostedColMap(0);
-      Teuchos::RCP<Epetra_Import> importer = Teuchos::rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
+      Teuchos::RCP<Epetra_Import> importer = Teuchos::rcp(new Epetra_Import(*ghostedMap,*ownedMap));
 
       ap.param_dofManager = dofManager;
-      ap.param_ged = Teuchos::rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,uniqueMap));
+      ap.param_ged = Teuchos::rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,ownedMap));
       ap.param_lof = linObjFactory;
     }
 

@@ -105,22 +105,22 @@ getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
   typedef Tpetra::Vector<GO,LO,GO,Node> Vector;
   typedef Tpetra::Import<LO,GO,Node> Import;
 
-  std::vector<GlobalOrdinalT> uniqueIndices;
+  std::vector<GlobalOrdinalT> ownedIndices;
   std::vector<GlobalOrdinalT> ghostedIndices;
 
-  // build unique and ghosted maps
-  getOwnedIndices(uniqueIndices);
+  // build owned and ghosted maps
+  getOwnedIndices(ownedIndices);
   getOwnedAndGhostedIndices(ghostedIndices);
 
-  RCP<const Map> uniqueMap 
-      = Tpetra::createNonContigMap<LO,GO>(uniqueIndices,getComm());
+  RCP<const Map> ownedMap 
+      = Tpetra::createNonContigMap<LO,GO>(ownedIndices,getComm());
   RCP<const Map> ghostedMap 
       = Tpetra::createNonContigMap<LO,GO>(ghostedIndices,getComm());
 
-  // allocate the unique vector, mark those GIDs as unfiltered
+  // allocate the owned vector, mark those GIDs as unfiltered
   // (they are by definition)
-  Vector uniqueActive(uniqueMap);
-  uniqueActive.putScalar(1);
+  Vector ownedActive(ownedMap);
+  ownedActive.putScalar(1);
 
   // Initialize all indices to zero
   Vector ghostedActive(ghostedMap);
@@ -128,8 +128,8 @@ getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
 
   // do communication, marking unfiltered indices as 1 (filtered
   // indices locally are marked as zero)
-  Import importer(uniqueMap,ghostedMap);
-  ghostedActive.doImport(uniqueActive,importer,Tpetra::INSERT);
+  Import importer(ownedMap,ghostedMap);
+  ghostedActive.doImport(ownedActive,importer,Tpetra::INSERT);
 
   Teuchos::ArrayRCP<const GO> data = ghostedActive.getData();
 

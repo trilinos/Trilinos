@@ -512,7 +512,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
       }
       else {
         TEUCHOS_ASSERT(ro_ged!=Teuchos::null);
-        ro_ged->setUniqueVector(paramVec);
+        ro_ged->setOwnedVector(paramVec);
       }
     }
   }
@@ -539,12 +539,12 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
   thGlobalContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x));
-  xContainer_->setUniqueVector(x);
+  xContainer_->setOwnedVector(x);
   ae_inargs.addGlobalEvaluationData("Solution Gather Container - X",xContainer_);
 
   if (is_transient) {
     thGlobalContainer->set_dxdt_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x_dot));
-    xdotContainer_->setUniqueVector(x_dot);
+    xdotContainer_->setOwnedVector(x_dot);
     ae_inargs.addGlobalEvaluationData("Solution Gather Container - Xdot",xdotContainer_);
   }
 
@@ -922,7 +922,7 @@ evalModel_D2gDx2(int respIndex,
   ae_inargs.beta = 1.0;
 
   auto deltaXContainer = lof_->buildDomainContainer();
-  deltaXContainer->setUniqueVector(delta_x);
+  deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
   // evaluate responses
@@ -968,7 +968,7 @@ evalModel_D2gDxDp(int respIndex,
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
 
   auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
-  deltaPContainer->setUniqueVector(delta_p);
+  deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
   // evaluate responses
@@ -1018,7 +1018,7 @@ evalModel_D2gDp2(int respIndex,
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
 
   auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
-  deltaPContainer->setUniqueVector(delta_p);
+  deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
   // evaluate responses
@@ -1068,7 +1068,7 @@ evalModel_D2gDpDx(int respIndex,
   ae_inargs.second_sensitivities_name  = "";
 
   auto deltaXContainer = lof_->buildDomainContainer();
-  deltaXContainer->setUniqueVector(delta_x);
+  deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
   // evaluate responses
@@ -1121,7 +1121,7 @@ evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   setupAssemblyInArgs(inArgs,ae_inargs);
 
   auto deltaXContainer = lof_->buildDomainContainer();
-  deltaXContainer->setUniqueVector(delta_x);
+  deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
   // set model parameters from supplied inArgs
@@ -1221,7 +1221,7 @@ evalModel_D2fDxDp(int pIndex,
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
 
   auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
-  deltaPContainer->setUniqueVector(delta_p);
+  deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
   // set model parameters from supplied inArgs
@@ -1313,7 +1313,7 @@ evalModel_D2fDpDx(int pIndex,
   setupAssemblyInArgs(inArgs,ae_inargs);
 
   auto deltaXContainer = lof_->buildDomainContainer();
-  deltaXContainer->setUniqueVector(delta_x);
+  deltaXContainer->setOwnedVector(delta_x);
   ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
 
   ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
@@ -1362,7 +1362,7 @@ evalModel_D2fDp2(int pIndex,
   setupAssemblyInArgs(inArgs,ae_inargs);
 
   auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
-  deltaPContainer->setUniqueVector(delta_p);
+  deltaPContainer->setOwnedVector(delta_p);
   ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
 
   ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of

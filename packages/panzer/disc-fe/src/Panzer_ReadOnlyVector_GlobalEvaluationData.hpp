@@ -30,11 +30,11 @@ public:
     */
   virtual void ghostToGlobal(int mem) {}
 
-  //! Set the unique vector
-  virtual void setUniqueVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & uniqueVector) = 0;
+  //! Set the owned vector
+  virtual void setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & ownedVector) = 0;
 
-  //! Get the unique vector
-  virtual Teuchos::RCP<const Thyra::VectorBase<double> > getUniqueVector() const = 0;
+  //! Get the owned vector
+  virtual Teuchos::RCP<const Thyra::VectorBase<double> > getOwnedVector() const = 0;
 
   //! Get the ghosted vector
   virtual Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const = 0;
