@@ -129,6 +129,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Scotch          "cmake/TPLs/"    SS
   OVIS            "cmake/TPLs/"    SS
   gpcd            "cmake/TPLs/"    SS
+  CGNS            "cmake/TPLs/"    SS
   METIS           "cmake/TPLs/"    TS
   ParMETIS        "cmake/TPLs/"    SS
   PuLP            "cmake/TPLs/"    EX
