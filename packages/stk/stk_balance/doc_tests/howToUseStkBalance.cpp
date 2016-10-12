@@ -10,7 +10,7 @@
 
 namespace
 {
-//BEGIN_RCB_SETTINGS
+//BEGINRcbSettings
 class RcbSettings : public stk::balance::BalanceSettings
 {
 public:
@@ -23,7 +23,7 @@ public:
     virtual std::string getCoordinateFieldName() const { return std::string("coordinates"); }
     virtual bool shouldPrintMetrics() const { return true; }
 };
-//END_RCB_SETTINGS
+//ENDRcbSettings
 
 class StkBalanceHowTo : public stk::unit_test_util::MeshFixture
 {};
@@ -63,7 +63,7 @@ bool is_mesh_balanced_wrt_weight(const stk::mesh::BulkData& bulk, stk::mesh::Fie
     return fabs(weightThisProc - balancedWeight)  < tolerance;
 }
 
-//BEGIN_BALANCE_TEST_1
+//BEGINBalanceTest1
 TEST_F(StkBalanceHowTo, UseRebalanceWithGeometricMethods)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
@@ -76,10 +76,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithGeometricMethods)
         EXPECT_TRUE(is_mesh_balanced(get_bulk()));
     }
 }
-//END_BALANCE_TEST_1
+//ENDBalanceTest1
 
 
-//BEGIN_PARMETIS_SETTINGS
+//BEGINParmetisSettings
 class ParmetisSettings : public stk::balance::GraphCreationSettings
 {
 public:
@@ -181,9 +181,9 @@ public:
         return 0;
     }
 };
-//END_PARMETIS_SETTINGS
+//ENDParmetisSettings
 
-//BEGIN_BALANCE_TEST_2
+//BEGINBalanceTest2
 TEST_F(StkBalanceHowTo, UseRebalanceWithParmetis)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
@@ -196,9 +196,9 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithParmetis)
         EXPECT_TRUE(is_mesh_balanced(get_bulk()));
     }
 }
-//END_BALANCE_TEST_2
+//ENDBalanceTest2
 
-//BEGIN_PARMETIS_SEARCH_SETTINGS
+//BEGINParmeticSearchSettings
 class ParmetisWithSearchSettings : public ParmetisSettings
 {
     virtual bool includeSearchResultsInGraph() const { return true; }
@@ -206,10 +206,10 @@ class ParmetisWithSearchSettings : public ParmetisSettings
     virtual double getVertexWeightMultiplierForVertexInSearch() const { return 6.0; }
     virtual double getGraphEdgeWeightForSearch() const { return 1000; }
 };
-//END_PARMETIS_SEARCH_SETTINGS
+//ENDParmeticSearchSettings
 
 
-//BEGIN_BALANCE_TEST_3
+//BEGINBalanceTest3
 TEST_F(StkBalanceHowTo, UseRebalanceWithParmetisAugmentedWithSearch)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
@@ -222,9 +222,9 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithParmetisAugmentedWithSearch)
         EXPECT_TRUE(is_mesh_balanced(get_bulk()));
     }
 }
-//END_BALANCE_TEST_3
+//ENDBalanceTest3
 
-//BEGIN_RCB_FIELD_SETTINGS
+//BEGINRcbFieldSettings
 class FieldVertexWeightSettings : public stk::balance::GraphCreationSettings
 {
 public:
@@ -260,7 +260,7 @@ protected:
     const double m_defaultWeight;
 };
 
-//END_RCB_FIELD_SETTINGS
+//ENDRcbFieldSettings
 
 void set_vertex_weights(const stk::mesh::BulkData& bulk, stk::mesh::Selector selector, stk::mesh::Field<double>& weightField)
 {
@@ -276,7 +276,7 @@ void set_vertex_weights(const stk::mesh::BulkData& bulk, stk::mesh::Selector sel
     }
 }
 
-//BEGIN_BALANCE_TEST_4
+//BEGINBalanceTest4
 TEST_F(StkBalanceHowTo, UseRebalanceWithFieldSpecifiedVertexWeights)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
@@ -292,7 +292,7 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithFieldSpecifiedVertexWeights)
         EXPECT_TRUE(is_mesh_balanced_wrt_weight(get_bulk(), weightField));
     }
 }
-//END_BALANCE_TEST_4
+//ENDBalanceTest4
 
 TEST_F(StkBalanceHowTo, DISABLED_UseRebalanceWithFieldSpecifiedVertexWeightsOnLocallyOwnedPart)
 {
@@ -311,7 +311,7 @@ TEST_F(StkBalanceHowTo, DISABLED_UseRebalanceWithFieldSpecifiedVertexWeightsOnLo
 }
 
 
-//BEGIN_MULTICRITERIA_SELECTOR_SETTINGS
+//BEGINMultiCriteriaSelectorSettings
 class MultipleCriteriaSelectorSettings : public ParmetisSettings
 {
 public:
@@ -325,8 +325,7 @@ protected:
     MultipleCriteriaSelectorSettings(const MultipleCriteriaSelectorSettings&) = delete;
     MultipleCriteriaSelectorSettings& operator=(const MultipleCriteriaSelectorSettings&) = delete;
 };
-
-//END_MULTICRITERIA_SELECTOR_SETTINGS
+//ENDMultiCriteriaSelectorSettings
 
 void put_elements_in_different_parts(stk::mesh::BulkData &bulk, stk::mesh::Part &part1, stk::mesh::Part &part2)
 {
@@ -360,7 +359,7 @@ void verify_mesh_balanced_wrt_selectors(const stk::mesh::BulkData& bulk, const s
     }
 }
 
-//BEGIN_BALANCE_TEST_5
+//BEGINBalanceTest5
 TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithSelectors)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
@@ -379,9 +378,9 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithSelectors)
         verify_mesh_balanced_wrt_selectors(get_bulk(), selectors);
     }
 }
-//END_BALANCE_TEST_5
+//ENDBalanceTest5
 
-//BEGIN_MULTICRITERIA_FIELD_SETTINGS
+//BEGINMultiCriteriaFieldSettings
 class MultipleCriteriaFieldSettings : public ParmetisSettings
 {
 public:
@@ -419,7 +418,7 @@ protected:
     const std::vector<stk::mesh::Field<double>*> m_critFields;
     const double m_defaultWeight;
 };
-//END_MULTICRITERIA_FIELD_SETTINGS
+//ENDMultiCriteriaFieldSettings
 
 void verify_mesh_balanced_wrt_fields(const stk::mesh::BulkData& bulk, const std::vector<stk::mesh::Field<double>*> &critFields)
 {
@@ -469,7 +468,7 @@ void set_vertex_weights_checkerboard(stk::mesh::BulkData& bulk, stk::mesh::Selec
     }
 }
 
-//BEGIN_BALANCE_TEST_6
+//BEGINBalanceTest6
 TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithFields)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
@@ -491,5 +490,5 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithFields)
         verify_mesh_balanced_wrt_fields(get_bulk(), critFields);
     }
 }
-//END_BALANCE_TEST_6
+//ENDBalanceTest6
 }
