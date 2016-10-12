@@ -56,7 +56,7 @@ namespace Impl {
   // This already happens in Kokkos_Sparse_impl_spmv.hpp.
   //TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
 
-  TPETRAKERNELS_INSTANTIATE_SL( INSTMACRO )
+  TPETRAKERNELS_INSTANTIATE_SL_ORDINAL_SCALAR( INSTMACRO )
 
 } // namespace Impl
 } // namespace KokkosSparse

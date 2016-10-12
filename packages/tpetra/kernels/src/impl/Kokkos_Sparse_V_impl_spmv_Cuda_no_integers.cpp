@@ -43,11 +43,11 @@
 
 #include "TpetraKernels_config.h"
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 #  include "Kokkos_Sparse.hpp"
 
 #  define INSTMACRO( SCALAR, LO ) \
-  KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( SCALAR, LO, Kokkos::OpenMP, Kokkos::HostSpace )
+  KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DEF( SCALAR, LO, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #  include "TpetraKernels_ETIHelperMacros.h"
 
@@ -56,10 +56,10 @@ namespace Impl {
   // This already happens in Kokkos_Sparse_impl_spmv.hpp.
   //TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
 
-  TPETRAKERNELS_INSTANTIATE_SL( INSTMACRO )
+  TPETRAKERNELS_INSTANTIATE_SL_NO_ORDINAL_SCALAR( INSTMACRO )
 
 } // namespace Impl
 } // namespace KokkosSparse
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
