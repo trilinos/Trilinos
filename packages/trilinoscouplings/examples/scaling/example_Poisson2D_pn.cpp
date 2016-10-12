@@ -2468,8 +2468,8 @@ void GenerateEdgeEnumeration(const FieldContainer<int> &refEdgeToNode, const Fie
   
   //#define DEBUG_EDGE_ENUMERATION
 #ifdef DEBUG_EDGE_ENUMERATION
-  printf("**** Edge coordinates ***\n");
-  for(int i=0; i<num_edges; i++)
+  printf("**** Old Edge coordinates ***\n");
+  for(int i=0; i<edgeCoord.dimension(0); i++)
     printf("[%2d] %10.2f %10.2f\n",i,edgeCoord(i,0),edgeCoord(i,1));
 #endif
 
@@ -2614,8 +2614,8 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
   
   //#define DEBUG_EDGE_ENUMERATION
 #ifdef DEBUG_EDGE_ENUMERATION
-  printf("**** Edge coordinates ***\n");
-  for(int i=0; i<num_edges; i++)
+  printf("**** New Edge coordinates ***\n");
+  for(int i=0; i<edgeCoord.dimension(0); i++)
     printf("[%2d] %10.2f %10.2f\n",i,edgeCoord(i,0),edgeCoord(i,1));
 #endif
 
@@ -2623,11 +2623,12 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
   int elid=0;
   for(long long b = 0; b < mesh.numElemBlk; b++){
     for(long long el = 0; el < mesh.elements[b]; el++){
-      for (int i=0; i < numEdgesPerElem; i++){		
-	long long nid0 = globalNodeIds[edgeToNode(elemToEdge(elid,i),0)];
-	long long nid1 = globalNodeIds[edgeToNode(elemToEdge(elid,i),1)];
-	int lo = std::min(nid0,nid1);
-	elemToEdgeOrient(elid,i) = (lo==nid0)? 1 : -1;
+      for (int i=0; i < numEdgesPerElem; i++){	
+	int edge = elemToEdge(elid,i);
+	int n0 = mesh.elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,0)]-1;
+	  //	int n0 = elem_to_node[refEdgeToNode(i,0)];
+	//	int n1 = elem_to_node[refEdgeToNode(i,1)];
+	elemToEdgeOrient(elid,i) = (n0==edgeToNode(edge,0))?  1 : -1;
       }
       elid++;
     }
