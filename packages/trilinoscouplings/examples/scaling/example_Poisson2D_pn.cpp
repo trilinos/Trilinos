@@ -143,6 +143,8 @@
 #include "Sacado_No_Kokkos.hpp"
 #endif
 
+#include <sstream>
+
 using namespace std;
 using namespace Intrepid;
 
@@ -159,12 +161,85 @@ typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
 typedef Intrepid::CellTools<double>      IntrepidCTools;
 
 
+struct fecomp{
+  bool operator () ( topo_entity* x,  topo_entity*  y )const
+  {
+    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;
+    return false;
+  }
+};
+
+
+#if 0
+ long long  *nodes_per_element   = new long long [numElemBlk];
+  long long  *element_attributes  = new long long [numElemBlk];
+  long long  *elements            = new long long [numElemBlk];
+  char      **element_types       = new char * [numElemBlk];
+  long long **elmt_node_linkage   = new long long * [numElemBlk];
+#endif
+
+
+//elements,nodes_per_element,elmt_node_linkage,numElemBlk,
+struct PamgenMesh{ 
+  int dim;
+
+  /* Mesh connectivity info */
+  long long numElemBlk;
+  std::vector<long long> nodes_per_element; 
+  std::vector<long long> element_attributes;
+  std::vector<long long> elements;            
+  std::vector<std::vector<char> > element_types;       
+  std::vector<std::vector<long long> >elmt_node_linkage;   
+
+  /* Communicator info */
+  std::vector<long long> node_comm_proc_ids;
+  std::vector<long long> node_cmap_node_cnts;
+  std::vector<long long> node_cmap_ids;
+  std::vector<long long*>  comm_node_ids;
+  std::vector<std::vector<long long> > comm_node_proc_ids;
+  long long num_node_comm_maps;
+
+  PamgenMesh(int mydim):dim(mydim){}
+  ~PamgenMesh() {
+    for(int i=0;i<(int)comm_node_ids.size(); i++)
+      delete [] comm_node_ids[i];
+  }   
+
+
+  void allocateConnectivity(long long my_numElemBlk) {
+    numElemBlk = my_numElemBlk;
+    nodes_per_element.resize(numElemBlk);
+    element_attributes.resize(numElemBlk);
+    elements.resize(numElemBlk);
+    element_types.resize(numElemBlk);
+    elmt_node_linkage.resize(numElemBlk);
+  }
+
+
+
+};
+
+
+
 // forward declarations
 void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
                           FieldContainer<int> & Pn_elemToNode, FieldContainer<double> & Pn_nodeCoord,FieldContainer<int> & Pn_nodeOnBoundary);
 
 
-void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord);
+void GenerateEdgeEnumeration(const FieldContainer<int> & refEdgeToNode,const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord, const long long * globalNodeIds,FieldContainer<int> & edgeToNode);
+
+
+void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodesPerEdge,
+			  FieldContainer<int> refEdgeToNode,const FieldContainer<double> & nodeCoord,
+			  /*const*/ long long * globalNodeIds,
+			  PamgenMesh & mesh,
+			  Epetra_Comm & Comm,
+			  /*Output args */
+			  std::vector<long long> & globalEdgeIds,
+			  std::vector<bool> & edgeIsOwned,
+			  std::vector<int> & ownedEdgeIds,
+			  FieldContainer<int> &elemToEdge,  FieldContainer<int> & elemToEdgeOrient,FieldContainer<int> &edgeToNode,FieldContainer<double> & edgeCoord,
+			  int & numEdgesGlobal);
 
 void CreateP1MeshFromP2Mesh(const FieldContainer<int> & P2_elemToNode, FieldContainer<int> &aux_P1_elemToNode);
 
@@ -325,12 +400,12 @@ int main(int argc, char *argv[]) {
   numProcs=mpiSession.getNProc();
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
-  if(numProcs!=1) {printf("Error: This test only currently works in serial\n");return 1;}
+  //  if(numProcs!=1) {printf("Error: This test only currently works in serial\n");return 1;}
 #else
   Epetra_SerialComm Comm;
 #endif
 
-
+  std::cout<<"Initial Message"<<std::endl;
 
   int MyPID = Comm.MyPID();
   Epetra_Time Time(Comm);
@@ -404,6 +479,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
       return 0;
     }
+  std::cout<<std::endl;
 
   if(xmlSolverInFileName.length()) {
     if (MyPID == 0)
@@ -428,15 +504,30 @@ int main(int argc, char *argv[]) {
   /***************************** GET CELL TOPOLOGY **********************************/
   /**********************************************************************************/
 
-  // Get cell topology for base hexahedron
+  // Get cell topology for base quad
   shards::CellTopology P1_cellType(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
   shards::CellTopology Pn_cellType(shards::getCellTopologyData<shards::Quadrilateral<> >() );
   assert(P1_cellType.getDimension() == Pn_cellType.getDimension());
 
   // Get dimensions
   int P1_numNodesPerElem = P1_cellType.getNodeCount();
+  int P1_numEdgesPerElem = P1_cellType.getEdgeCount();
   int spaceDim = P1_cellType.getDimension();
   int dim = 2;
+  int P1_numNodesPerEdge=2;
+
+  // Build reference element edge to node map
+  FieldContainer<int> P1_refEdgeToNode(P1_numEdgesPerElem,P1_numNodesPerEdge);
+  for (int i=0; i<P1_numEdgesPerElem; i++){
+    P1_refEdgeToNode(i,0)=P1_cellType.getNodeMap(1, i, 0);
+    P1_refEdgeToNode(i,1)=P1_cellType.getNodeMap(1, i, 1);
+  }
+
+  printf("**** refEdgeToNode ****\n");
+  for (int i=0; i<P1_numEdgesPerElem; i++)
+    printf("(%d,%d) ", P1_refEdgeToNode(i,0), P1_refEdgeToNode(i,1));
+  printf("\n");
+
 
   /**********************************************************************************/
   /******************************* GENERATE MESH ************************************/
@@ -446,16 +537,12 @@ int main(int argc, char *argv[]) {
     std::cout << "Generating mesh ... \n\n";
   }
 
-  long long *  node_comm_proc_ids   = NULL;
-  long long *  node_cmap_node_cnts  = NULL;
-  long long *  node_cmap_ids        = NULL;
-  long long ** comm_node_ids        = NULL;
-  long long ** comm_node_proc_ids   = NULL;
-
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
   long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
   TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
+  PamgenMesh P1_mesh(dim);
+
 
   string msg("Poisson: ");
   if(MyPID == 0) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
@@ -465,14 +552,16 @@ int main(int argc, char *argv[]) {
   long long numDim;
   long long numNodes;
   long long numElems;
-  long long numElemBlk;
   long long numNodeSets;
   long long numSideSets;
   int id = 0;
-
+  long long my_numElemBlk;
+  
   im_ex_get_init_l(id, title, &numDim, &numNodes,
-                   &numElems, &numElemBlk, &numNodeSets,
+                   &numElems, &my_numElemBlk, &numNodeSets,
                    &numSideSets);
+  P1_mesh.allocateConnectivity(my_numElemBlk);
+
 
   long long numNodesGlobal;
   long long numElemsGlobal;
@@ -490,40 +579,34 @@ int main(int argc, char *argv[]) {
     std::cout << " Number of Global Nodes: " << numNodesGlobal << " \n\n";
   }
 
-  long long * block_ids = new long long [numElemBlk];
+  long long * block_ids = new long long [P1_mesh.numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
 
+ 
 
-  long long  *nodes_per_element   = new long long [numElemBlk];
-  long long  *element_attributes  = new long long [numElemBlk];
-  long long  *elements            = new long long [numElemBlk];
-  char      **element_types       = new char * [numElemBlk];
-  long long **elmt_node_linkage   = new long long * [numElemBlk];
-
-
-  for(long long i = 0; i < numElemBlk; i ++){
-    element_types[i] = new char [MAX_STR_LENGTH + 1];
+  for(long long i = 0; i < P1_mesh.numElemBlk; i ++){
+    P1_mesh.element_types[i].resize(MAX_STR_LENGTH + 1);
     error += im_ex_get_elem_block_l(id,
                                     block_ids[i],
-                                    element_types[i],
-                                    (long long*)&(elements[i]),
-                                    (long long*)&(nodes_per_element[i]),
-                                    (long long*)&(element_attributes[i]));
+                                    P1_mesh.element_types[i].data(),
+                                    &(P1_mesh.elements[i]),
+                                    &(P1_mesh.nodes_per_element[i]),
+                                    &(P1_mesh.element_attributes[i]));
   }
 
   /*connectivity*/
-  for(long long b = 0; b < numElemBlk; b++){
-    elmt_node_linkage[b] =  new long long [nodes_per_element[b]*elements[b]];
-    error += im_ex_get_elem_conn_l(id,block_ids[b],elmt_node_linkage[b]);
+  for(long long b = 0; b < P1_mesh.numElemBlk; b++){
+    P1_mesh.elmt_node_linkage[b].resize(P1_mesh.nodes_per_element[b]* P1_mesh.elements[b]);
+    error += im_ex_get_elem_conn_l(id,block_ids[b],P1_mesh.elmt_node_linkage[b].data());
   }
 
   // Get node-element connectivity
   int telct = 0;
   FieldContainer<int> P1_elemToNode(numElems,P1_numNodesPerElem);
-  for(long long b = 0; b < numElemBlk; b++){
-    for(long long el = 0; el < elements[b]; el++){
+  for(long long b = 0; b <P1_mesh.numElemBlk; b++){
+    for(long long el = 0; el < P1_mesh.elements[b]; el++){
       for (int j=0; j<P1_numNodesPerElem; j++) {
-        P1_elemToNode(telct,j) = elmt_node_linkage[b][el*P1_numNodesPerElem + j]-1;
+        P1_elemToNode(telct,j) = P1_mesh.elmt_node_linkage[b][el*P1_numNodesPerElem + j]-1;
       }
       telct ++;
     }
@@ -544,7 +627,6 @@ int main(int argc, char *argv[]) {
   long long num_external_nodes;
   long long num_internal_elems;
   long long num_border_elems;
-  long long num_node_comm_maps;
   long long num_elem_comm_maps;
   im_ne_get_loadbal_param_l( id,
                              &num_internal_nodes,
@@ -552,37 +634,37 @@ int main(int argc, char *argv[]) {
                              &num_external_nodes,
                              &num_internal_elems,
                              &num_border_elems,
-                             &num_node_comm_maps,
+                             &P1_mesh.num_node_comm_maps,
                              &num_elem_comm_maps,
                              0/*unused*/ );
 
-  if(num_node_comm_maps > 0){
-    node_comm_proc_ids   = new long long  [num_node_comm_maps];
-    node_cmap_node_cnts  = new long long  [num_node_comm_maps];
-    node_cmap_ids        = new long long  [num_node_comm_maps];
-    comm_node_ids        = new long long* [num_node_comm_maps];
-    comm_node_proc_ids   = new long long* [num_node_comm_maps];
+  if(P1_mesh.num_node_comm_maps > 0){
+    P1_mesh.node_comm_proc_ids.resize(P1_mesh.num_node_comm_maps);
+    P1_mesh.node_cmap_node_cnts.resize(P1_mesh.num_node_comm_maps);
+    P1_mesh.node_cmap_ids.resize(P1_mesh.num_node_comm_maps);
+    P1_mesh.comm_node_ids.resize(P1_mesh.num_node_comm_maps);
+    P1_mesh.comm_node_proc_ids.resize(P1_mesh.num_node_comm_maps);
 
     long long *  elem_cmap_ids        = new long long [num_elem_comm_maps];
     long long *  elem_cmap_elem_cnts  = new long long [num_elem_comm_maps];
 
 
     if ( im_ne_get_cmap_params_l( id,
-                                  node_cmap_ids,
-                                  (long long*)node_cmap_node_cnts,
+                                  P1_mesh.node_cmap_ids.data(),
+                                  (long long*)P1_mesh.node_cmap_node_cnts.data(),
                                   elem_cmap_ids,
                                   (long long*)elem_cmap_elem_cnts,
                                   0/*not used proc_id*/ ) < 0 )++error;
 
-    for(long long j = 0; j < num_node_comm_maps; j++) {
-      comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
-      comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
+    for(long long j = 0; j < P1_mesh.num_node_comm_maps; j++) {
+      P1_mesh.comm_node_ids[j] = new long long [P1_mesh.node_cmap_node_cnts[j]];
+      P1_mesh.comm_node_proc_ids[j].resize(P1_mesh.node_cmap_node_cnts[j]);
       if ( im_ne_get_node_cmap_l( id,
-                                  node_cmap_ids[j],
-                                  comm_node_ids[j],
-                                  comm_node_proc_ids[j],
+				  P1_mesh.node_cmap_ids[j],
+                                  P1_mesh.comm_node_ids[j],
+                                  P1_mesh.comm_node_proc_ids[j].data(),
                                   0/*not used proc_id*/ ) < 0 )++error;
-      node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
+      P1_mesh.node_comm_proc_ids[j] = P1_mesh.comm_node_proc_ids[j][0];
     }
 
     delete [] elem_cmap_ids;
@@ -598,10 +680,10 @@ int main(int argc, char *argv[]) {
   calc_global_node_ids(P1_globalNodeIds,
                        P1_nodeIsOwned,
                        numNodes,
-                       num_node_comm_maps,
-                       node_cmap_node_cnts,
-                       node_comm_proc_ids,
-                       comm_node_ids,
+                       P1_mesh.num_node_comm_maps,
+                       P1_mesh.node_cmap_node_cnts.data(),
+                       P1_mesh.node_comm_proc_ids.data(),
+                       P1_mesh.comm_node_ids.data(),
                        rank);
 
 
@@ -643,8 +725,64 @@ int main(int argc, char *argv[]) {
   // NOTE: Only correct in serial
   FieldContainer<int> P1_elemToEdge(numElems,4);// Because quads
   FieldContainer<int> P1_elemToEdgeOrient(numElems,4);
-  FieldContainer<double> P1_edgeCoord(1,dim);//will be resized  
-  GenerateEdgeEnumeration(P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeCoord);
+  FieldContainer<double> P1_edgeCoord;
+  FieldContainer<int> P1_edgeToNode;
+  GenerateEdgeEnumeration(P1_refEdgeToNode,P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeCoord,P1_globalNodeIds,P1_edgeToNode);
+
+
+
+  std::vector<long long> PG_globalEdgeIds;
+  std::vector<bool> PG_edgeIsOwned;
+  std::vector<int> PG_ownedEdgeIds;
+  FieldContainer<int> PG_elemToEdge(numElems,P1_numEdgesPerElem);
+  FieldContainer<int> PG_elemToEdgeOrient(numElems,P1_numEdgesPerElem);
+  FieldContainer<int> PG_edgeToNode;
+  FieldContainer<double> PG_edgeCoord;
+  int PG_numEdgesGlobal;
+
+  PamgenEnumerateEdges(P1_numNodesPerElem,P1_numEdgesPerElem,P1_numNodesPerEdge,P1_refEdgeToNode,P1_nodeCoord,
+		       P1_globalNodeIds,P1_mesh,
+		       Comm, PG_globalEdgeIds,PG_edgeIsOwned,PG_ownedEdgeIds,PG_elemToEdge,PG_elemToEdgeOrient,PG_edgeToNode,PG_edgeCoord,PG_numEdgesGlobal);
+
+  {
+    ostringstream ss;
+    ss<<"***** Old Edge Enumeration ["<<Comm.MyPID()<<"] *****"<<endl;
+    for (int i=0;i<numElems; i++) {
+      for (int j=0; j<P1_numEdgesPerElem; j++)
+	ss<<P1_elemToEdge(i,j)<<"("<<PG_globalEdgeIds[P1_elemToEdge(i,j)]<<")["<<P1_elemToEdgeOrient(i,j)<<"] ";
+      ss<<endl;
+    }
+
+    ss<<"***** New Edge Enumeration ["<<Comm.MyPID()<<"] *****"<<endl;
+    for (int i=0;i<numElems; i++) {
+      for (int j=0; j<P1_numEdgesPerElem; j++)
+	ss<<PG_elemToEdge(i,j)<<"("<<PG_globalEdgeIds[PG_elemToEdge(i,j)]<<")["<<PG_elemToEdgeOrient(i,j)<<"] ";
+      ss<<endl;
+    }
+    ss<<"***** Old Edge2Node ["<<Comm.MyPID()<<"] *****"<<endl;
+    for (int i=0; i<P1_edgeToNode.dimension(0); i++) {
+      for (int j=0; j<P1_edgeToNode.dimension(1); j++)
+	ss<<P1_edgeToNode(i,j)<<" ";
+      ss<<endl;
+    }
+
+
+    ss<<"***** New Edge2Node ["<<Comm.MyPID()<<"] *****"<<endl;
+    for (int i=0; i<PG_edgeToNode.dimension(0); i++) {
+      for (int j=0; j<PG_edgeToNode.dimension(1); j++)
+	ss<<PG_edgeToNode(i,j)<<" ";
+      ss<<endl;
+    }
+
+
+    printf("%s",ss.str().c_str());
+    fflush(stdout);
+  }
+
+
+  Comm.Barrier();
+  MPI_Finalize();
+  return 1;
 
 
   // Generate higher order mesh
@@ -1317,30 +1455,9 @@ int main(int argc, char *argv[]) {
 
 
   // Cleanup
-  for(long long b = 0; b < numElemBlk; b++){
-    delete [] elmt_node_linkage[b];
-    delete [] element_types[b];
-  }
   delete [] block_ids;
-  delete [] nodes_per_element;
-  delete [] element_attributes;
-  delete [] element_types;
-  delete [] elmt_node_linkage;
-  delete [] elements;
   delete [] P1_globalNodeIds;
   delete [] P1_nodeIsOwned;
-  if(num_node_comm_maps > 0){
-    delete [] node_comm_proc_ids;
-    delete [] node_cmap_node_cnts;
-    delete [] node_cmap_ids;
-    for(long long i=0;i<num_node_comm_maps;i++){
-      delete [] comm_node_ids[i];
-      delete [] comm_node_proc_ids[i];
-    }
-
-    delete [] comm_node_ids;
-    delete [] comm_node_proc_ids;
-  }
 
   delete [] nodeCoordx;
   delete [] nodeCoordy;
@@ -1629,74 +1746,6 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
 /*********************************************************************************************************/
 /*********************************************************************************************************/
-/*********************************************************************************************************/
-
-
-void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord) {
-  // Not especially efficient, but effective... at least in serial!
-  
-  int numElems        = elemToNode.dimension(0);
-  int numNodesperElem = elemToNode.dimension(1);
-  int dim             = nodeCoord.dimension(1);
-
-  // Sanity checks
-  if(numNodesperElem !=4) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
-  if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1)) 
-    throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
-
-  int edge_node0_id[4]={0,1,2,3};
-  int edge_node1_id[4]={1,2,3,0};
-  
-  // Run over all the elements and start enumerating edges
-  typedef std::map<std::pair<int,int>,int> en_map_type;
-  en_map_type e2n;
-
-  int num_edges=0;
-  en_map_type edge_map;
-  for(int i=0; i<numElems; i++) {
-
-    // Generate edge pairs, based on the global orientation of "edges go from low ID to high ID"
-    for(int j=0; j<4; j++) {
-      int lo = std::min(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
-      int hi = std::max(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
-
-      std::pair<int,int> ep(lo,hi);
-
-      int edge_id;
-      en_map_type::iterator iter = edge_map.find(ep);      
-      if(iter==edge_map.end()) {
-        edge_map[ep] = num_edges;
-        edge_id = num_edges;
-        num_edges++;
-      }
-      else
-        edge_id = (*iter).second;
-      
-      elemToEdge(i,j) = edge_id;
-      elemToEdgeOrient(i,j) = (lo==elemToNode(i,edge_node0_id[j]))?1:-1;
-    }
-  }      
-
-  // Fill out the edge centers (clobbering data if needed)
-  edgeCoord.resize(num_edges,dim);
-  for(int i=0; i<numElems; i++) {
-    for(int j=0; j<4; j++) {      
-      int n0 = elemToNode(i,edge_node0_id[j]);
-      int n1 = elemToNode(i,edge_node1_id[j]);
-      for(int k=0; k<dim; k++)
-        edgeCoord(elemToEdge(i,j),k) = (nodeCoord(n0,k)+nodeCoord(n1,k))/2.0;
-    }
-  }
-  
-  //#define DEBUG_EDGE_ENUMERATION
-#ifdef DEBUG_EDGE_ENUMERATION
-  printf("**** Edge coordinates ***\n");
-  for(int i=0; i<num_edges; i++)
-    printf("[%2d] %10.2f %10.2f\n",i,edgeCoord(i,0),edgeCoord(i,1));
-#endif
-
-}
-
 
 
 /*********************************************************************************************************/
@@ -2341,4 +2390,248 @@ void Apply_Dirichlet_BCs(std::vector<int> BCNodes, Epetra_FECrsMatrix & A, Epetr
     for(int j=0; j<NumEntries; j++)
       Values[j] = (Indices[j] == lrid) ? 1.0 : 0.0;      
   }
+}
+
+
+
+
+
+/*********************************************************************************************************/
+
+
+void GenerateEdgeEnumeration(const FieldContainer<int> &refEdgeToNode, const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord, const long long *globalNodeIds, FieldContainer<int> & edgeToNode) {
+  // Not especially efficient, but effective... at least in serial!
+  
+  int numElems        = elemToNode.dimension(0);
+  int numNodesperElem = elemToNode.dimension(1);
+  int dim             = nodeCoord.dimension(1);
+
+  // Sanity checks
+  if(numNodesperElem !=4) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
+  if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1)) 
+    throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
+
+
+  //  int edge_node0_id[4]={0,1,2,3};
+  //  int edge_node1_id[4]={1,2,3,0};
+  
+  // Run over all the elements and start enumerating edges
+  typedef std::map<std::pair<long long,long long>,int> en_map_type;
+  en_map_type e2n;
+
+  int num_edges=0;
+  en_map_type edge_map;
+  for(int i=0; i<numElems; i++) {
+
+    // Generate edge pairs, based on the global orientation of "edges go from low ID to high ID"
+    for(int j=0; j<4; j++) {
+      long long id0 = globalNodeIds[elemToNode(i,refEdgeToNode(j,0))];
+      long long id1 = globalNodeIds[elemToNode(i,refEdgeToNode(j,1))];
+      long long lo = std::min(id0,id1);
+      long long hi = std::max(id0,id1);
+
+      std::pair<long long,long long> ep(lo,hi);
+
+      int edge_id;
+      en_map_type::iterator iter = edge_map.find(ep);      
+      if(iter==edge_map.end()) {
+        edge_map[ep] = num_edges;
+        edge_id = num_edges;
+        num_edges++;
+      }
+      else
+        edge_id = (*iter).second;
+      
+      elemToEdge(i,j) = edge_id;
+      elemToEdgeOrient(i,j) = (lo==id0)?1:-1;
+    }
+  }      
+
+  // Edge to Node connectivity
+  edgeToNode.resize(num_edges,2);
+  for(en_map_type::iterator iter = edge_map.begin(); iter != edge_map.end(); iter++) {
+    edgeToNode(iter->second,0) = iter->first.first;
+    edgeToNode(iter->second,1) = iter->first.second;
+  }
+
+
+  // Fill out the edge centers (clobbering data if needed)
+  edgeCoord.resize(num_edges,dim);
+  for(int i=0; i<numElems; i++) {
+    for(int j=0; j<4; j++) {      
+      int n0 = elemToNode(i,refEdgeToNode(j,0));
+      int n1 = elemToNode(i,refEdgeToNode(j,1));
+      for(int k=0; k<dim; k++)
+        edgeCoord(elemToEdge(i,j),k) = (nodeCoord(n0,k)+nodeCoord(n1,k))/2.0;
+    }
+  }
+  
+  //#define DEBUG_EDGE_ENUMERATION
+#ifdef DEBUG_EDGE_ENUMERATION
+  printf("**** Edge coordinates ***\n");
+  for(int i=0; i<num_edges; i++)
+    printf("[%2d] %10.2f %10.2f\n",i,edgeCoord(i,0),edgeCoord(i,1));
+#endif
+
+}
+
+
+
+/*********************************************************************************************************/
+void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodesPerEdge,
+			  FieldContainer<int> refEdgeToNode,const FieldContainer<double> & nodeCoord,
+			  /*const*/ long long * globalNodeIds,
+			  PamgenMesh & mesh,
+			  Epetra_Comm & Comm,
+			  /*Output args */
+			  std::vector<long long> & globalEdgeIds,
+			  std::vector<bool> & edgeIsOwned,
+			  std::vector<int> & ownedEdgeIds,
+			  FieldContainer<int> &elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> &edgeToNode,FieldContainer<double> & edgeCoord,
+			  int & numEdgesGlobal) {
+  std::vector < topo_entity * > edge_vector;
+  std::set < topo_entity * , fecomp > edge_set;
+  std::vector < int > edge_comm_procs;
+  int rank = Comm.MyPID();
+
+  /***** Hensinger Stuff *****/
+  // Calculate edge and ids
+  int elct = 0;
+  for(long long b = 0; b < mesh.numElemBlk; b++){
+    //loop over all elements and push their edges onto a set if they are not there already
+    for(long long el = 0; el < mesh.elements[b]; el++){
+      std::set< topo_entity *, fecomp > ::iterator fit;
+      for (int i=0; i < numEdgesPerElem; i++){
+	topo_entity * teof = new topo_entity;
+	for(int j = 0; j < numNodesPerEdge;j++)
+	  teof->add_node(mesh.elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds);
+	teof->sort();
+	fit = edge_set.find(teof);
+	if(fit == edge_set.end()){
+	  teof->local_id = edge_vector.size();
+	  edge_set.insert(teof);
+	  //	    printf("[%d] Adding edge %d to element %d/%d\n",Comm.MyPID(),edge_vector.size(),elct,elemToEdge.dimension(0));fflush(stdout);
+	  elemToEdge(elct,i)= edge_vector.size();
+	  edge_vector.push_back(teof);
+	}
+	else{
+	  elemToEdge(elct,i) = (*fit)->local_id;
+	  delete teof;
+	}
+      }        
+      elct ++;
+    }
+  }
+
+#if 0
+  // Edge to Node connectivity - old Hensinger style
+  edgeToNode.resize(edge_vector.size(), numNodesPerEdge);
+  for(unsigned ect = 0; ect != edge_vector.size(); ect++){
+    std::list<long long>::iterator elit;
+    int nct = 0;
+    for(elit  = edge_vector[ect]->local_node_ids.begin();
+	elit != edge_vector[ect]->local_node_ids.end();
+	elit ++){
+      edgeToNode(ect,nct) = *elit-1;
+      nct++;
+    }
+  } 
+#endif
+
+  // Edge to Node connectivity - old Hensinger style
+  assert(numNodesPerEdge==2);
+  edgeToNode.resize(edge_vector.size(), numNodesPerEdge);
+  for(unsigned ect = 0; ect != edge_vector.size(); ect++){
+    int n[2];
+    std::list<long long>::iterator elit;
+    elit =  edge_vector[ect]->local_node_ids.begin();
+    n[0] = *elit-1;
+    elit++;
+    n[1] = *elit-1;
+    long long nid0 = globalNodeIds[n[0]];
+    long long nid1 = globalNodeIds[n[1]];
+    long long lo = std::min(nid0,nid1);
+    edgeToNode(ect,0)= (lo==nid0)? n[0] : n[1];
+    edgeToNode(ect,1)= (lo==nid0)? n[1] : n[0];
+  }
+
+
+  int numEdges = edge_vector.size();
+   
+  // Calculate global edge and face numbering
+  std::string doing_type;
+  doing_type = "EDGES";
+  calc_global_ids(edge_vector,
+		  mesh.comm_node_ids.data(),
+		  mesh.node_comm_proc_ids.data(),
+		  mesh.node_cmap_node_cnts.data(),
+		  mesh.num_node_comm_maps,
+		  rank,
+		  doing_type);
+   
+  // Build list of owned global edge ids
+  globalEdgeIds.resize(numEdges);
+  edgeIsOwned.resize(numEdges);
+  int numOwnedEdges=0;
+  for (int i=0; i<numEdges; i++) {
+    edgeIsOwned[i] = edge_vector[i]->owned;
+    globalEdgeIds[i] = edge_vector[i]->global_id;
+    if (edgeIsOwned[i]){
+      numOwnedEdges++;
+    }
+  }
+  ownedEdgeIds.resize(numOwnedEdges);
+  int nedge=0;
+  for (int i=0; i<numEdges; i++) {
+    if (edgeIsOwned[i]){
+      ownedEdgeIds[nedge]=(int)globalEdgeIds[i];
+      nedge++;
+    }
+  }
+
+
+  // Calculate number of global edges
+#ifdef HAVE_MPI
+  Comm.SumAll(&numOwnedEdges,&numEdgesGlobal,1);
+#else
+  numEdgesGlobal = numEdges;
+#endif
+
+
+
+  assert(numNodesPerEdge==2);
+
+  /***** Non-Hensinger Stuff ****/
+  // Fill out the edge centers (clobbering data if needed)
+  edgeCoord.resize(numEdges,mesh.dim);
+  for (int i=0; i<numEdges; i++) {
+    for(int j=0; j<mesh.dim; j++) {
+      edgeCoord(i,j)=0;
+      for(int k=0; k<numNodesPerEdge; k++)
+	edgeCoord(i,j)+=nodeCoord(edgeToNode(i,k),j)/numNodesPerEdge;
+    }   
+  }
+  
+  //#define DEBUG_EDGE_ENUMERATION
+#ifdef DEBUG_EDGE_ENUMERATION
+  printf("**** Edge coordinates ***\n");
+  for(int i=0; i<num_edges; i++)
+    printf("[%2d] %10.2f %10.2f\n",i,edgeCoord(i,0),edgeCoord(i,1));
+#endif
+
+  // Build the element edge orientation list
+  int elid=0;
+  for(long long b = 0; b < mesh.numElemBlk; b++){
+    for(long long el = 0; el < mesh.elements[b]; el++){
+      for (int i=0; i < numEdgesPerElem; i++){		
+	long long nid0 = globalNodeIds[edgeToNode(elemToEdge(elid,i),0)];
+	long long nid1 = globalNodeIds[edgeToNode(elemToEdge(elid,i),1)];
+	int lo = std::min(nid0,nid1);
+	elemToEdgeOrient(elid,i) = (lo==nid0)? 1 : -1;
+      }
+      elid++;
+    }
+  }
+
+ 
 }
