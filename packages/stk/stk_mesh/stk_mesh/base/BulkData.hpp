@@ -65,6 +65,7 @@
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
+#include <stk_mesh/base/SideSetEntry.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_util/diag/Timer.hpp>
@@ -802,6 +803,8 @@ public:
       }
       return iter->second;
   }
+
+  void create_side_entities(const StkSideSet &sideSet, const stk::mesh::PartVector& parts);
 
 protected:
   void save_sideset_data(int sideset_id, const SideSet& data)

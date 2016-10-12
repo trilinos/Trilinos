@@ -41,6 +41,8 @@
 #include <iterator>                     // for back_insert_iterator, etc
 #include <set>                          // for set, set<>::iterator, etc
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
+#include <stk_mesh/base/FaceCreator.hpp>
+
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
@@ -7349,6 +7351,12 @@ void BulkData::mark_entities_as_deleted(stk::mesh::Bucket * bucket)
         notifier.notify_entity_deleted(e);
         record_entity_deletion(e);
     }
+}
+
+void BulkData::create_side_entities(const StkSideSet &sideSet, const stk::mesh::PartVector& parts)
+{
+    if(has_face_adjacent_element_graph())
+        FaceCreator(*this, *m_elemElemGraph).create_side_entities_given_sideset(sideSet, parts);
 }
 
 #ifdef SIERRA_MIGRATION
