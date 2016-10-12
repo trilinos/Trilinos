@@ -101,12 +101,12 @@ using Sacado::mpl::disable_if_c;
 /// Vector
 template <typename T>
 struct is_vector {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 template <typename T, Index N, typename ES>
 struct is_vector<Vector<T, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, Index N, typename ES>
@@ -117,12 +117,12 @@ struct apply_vector {
 /// 2nd-order tensor
 template <typename T>
 struct is_tensor {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 template <typename T, Index N, typename ES>
 struct is_tensor<Tensor<T, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, Index N, typename ES>
@@ -133,12 +133,12 @@ struct apply_tensor {
 /// 3rd-order tensor
 template <typename T>
 struct is_tensor3 {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 template <typename T, Index N, typename ES>
 struct is_tensor3<Tensor3<T, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, Index N, typename ES>
@@ -149,12 +149,12 @@ struct apply_tensor3 {
 /// 4th-order tensor
 template <typename T>
 struct is_tensor4 {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 template <typename T, Index N, typename ES>
 struct is_tensor4<Tensor4<T, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, Index N, typename ES>
@@ -165,12 +165,12 @@ struct apply_tensor4 {
 /// Matrix
 template <typename T>
 struct is_matrix {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 template <typename T, Index M, Index N, typename ES>
 struct is_matrix<Matrix<T, M, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, Index M, Index N, typename ES>
@@ -181,32 +181,32 @@ struct apply_matrix {
 /// Tensors from 1st to 4th order and matrix
 template <typename T>
 struct order_1234 {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 template <typename T, Index N, typename ES>
 struct order_1234<Vector<T, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, Index N, typename ES>
 struct order_1234<Tensor<T, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, Index N, typename ES>
 struct order_1234<Tensor3<T, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, Index N, typename ES>
 struct order_1234<Tensor4<T, N, ES>> {
- static const bool value = true;          
+ static bool const value = true;
   };                        
 
 template<typename T, Index M, Index N, typename ES>
 struct order_1234<Matrix<T, M, N, ES>>{
-  static const bool value = true;
+  static bool const value = true;
 };
 
 /// For Sacado traits
@@ -369,13 +369,13 @@ struct IsEqual<Vector<T, N, ES>> {
 
 template <typename T, Index N, typename ES>
 struct IsStaticallySized<Vector<T, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, typename ES>
-struct IsStaticallySized<Vector<T, DYNAMIC,ES>>
+struct IsStaticallySized<Vector<T, DYNAMIC, ES>>
 {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 /// Sacado traits specializations for Tensor
@@ -448,13 +448,13 @@ struct IsEqual<Tensor<T, N, ES>> {
 
 template <typename T, Index N, typename ES>
 struct IsStaticallySized<Tensor<T, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, typename ES>
 struct IsStaticallySized<Tensor<T, DYNAMIC, ES>>
 {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 /// Sacado traits specializations for Tensor3
@@ -528,13 +528,13 @@ struct IsEqual<Tensor3<T, N, ES>> {
 template <typename T, Index N, typename ES>
 struct IsStaticallySized<Tensor3<T, N, ES>>
 {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, typename ES>
-struct IsStaticallySized<Tensor3<T, DYNAMIC,ES>>
+struct IsStaticallySized<Tensor3<T, DYNAMIC, ES>>
 {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 /// Sacado traits specializations for Tensor4
@@ -608,13 +608,13 @@ struct IsEqual<Tensor4<T, N, ES>> {
 template <typename T, Index N, typename ES>
 struct IsStaticallySized<Tensor4<T, N, ES>>
 {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, typename ES>
 struct IsStaticallySized<Tensor4<T, DYNAMIC, ES>>
 {
- static const bool value= false;
+ static bool const value= false;
 };
 
 /// Sacado traits specializations for Matrix
@@ -688,25 +688,25 @@ struct IsEqual<Matrix<T, M, N, ES>> {
 
 template <typename T, Index M, Index N, typename ES>
 struct IsStaticallySized<Matrix<T, M, N, ES>> {
-  static const bool value = true;
+  static bool const value = true;
 };
 
 template <typename T, Index M, typename ES>
 struct IsStaticallySized<Matrix<T, M, DYNAMIC, ES>>
 {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 template <typename T, Index N, typename ES>
 struct IsStaticallySized<Matrix<T, DYNAMIC, N, ES>>
 {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 template <typename T, typename ES>
 struct IsStaticallySized<Matrix<T, DYNAMIC, DYNAMIC, ES>>
 {
-  static const bool value = false;
+  static bool const value = false;
 };
 
 } // namespace Sacado

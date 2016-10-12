@@ -391,10 +391,10 @@ levi_civita_3()
 
 template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, DYNAMIC,ES> const
+Tensor3<T, DYNAMIC, ES> const
 levi_civita_3(Index const dimension)
 {
-  Tensor3<T, DYNAMIC,ES>
+  Tensor3<T, DYNAMIC, ES>
   A(dimension, ZEROS);
 
   fill_levi_civita(A);
@@ -409,7 +409,7 @@ levi_civita_3(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
 
-  Tensor3<T, DYNAMIC,ES>
+  Tensor3<T, DYNAMIC, ES>
   A(dimension, ZEROS);
 
   fill_levi_civita(A);
@@ -428,7 +428,7 @@ permutation_3()
 
 template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, DYNAMIC,ES> const
+Tensor3<T, DYNAMIC, ES> const
 permutation_3(Index const dimension)
 {
   return levi_civita_3<T>(dimension);
@@ -455,7 +455,7 @@ alternator_3()
 
 template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, DYNAMIC,ES> const
+Tensor3<T, DYNAMIC, ES> const
 alternator_3(Index const dimension)
 {
   return levi_civita_3<T>(dimension);

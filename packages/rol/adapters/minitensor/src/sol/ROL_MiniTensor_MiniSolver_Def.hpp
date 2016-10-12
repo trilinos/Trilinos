@@ -38,8 +38,14 @@
 //
 // ************************************************************************
 // @HEADER
+#include <type_traits>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_MiniTensor_BoundConstraint.hpp"
+#include "ROL_MiniTensor_EqualityConstraint.hpp"
+#include "ROL_MiniTensor_Function.hpp"
+#include "ROL_MiniTensor_InequalityConstraint.hpp"
+#include "ROL_MiniTensor_Vector.hpp"
 
 namespace ROL {
 
@@ -194,14 +200,14 @@ solve(
 //
 //
 template<typename T, Index N>
-template<typename FN, typename EC, Index NC>
+template<typename FN, typename EIC, Index NC>
 void
 MiniTensor_Minimizer<T, N>::
 solve(
     std::string const & algoname,
     Teuchos::ParameterList & params,
     FN & fn,
-    EC & ec,
+    EIC & eic,
     Intrepid2::Vector<T, N> & soln,
     Intrepid2::Vector<T, NC> & cv)
 {
@@ -222,8 +228,12 @@ solve(
   obj(fn);
 
   // Define constraint
-  ROL::MiniTensor_EqualityConstraint<EC, T, NC, N>
-  eq_constr(ec);
+  using MTCONSTR = typename std::conditional<eic.IS_EQUALITY,
+      ROL::MiniTensor_EqualityConstraint<EIC, T, NC, N>,
+      ROL::MiniTensor_InequalityConstraint<EIC, T, NC, N>>::type;
+
+  MTCONSTR
+  constr(eic);
 
   ROL::Algorithm<T>
   algo(algoname, params);
@@ -237,7 +247,7 @@ solve(
   c(cv);
 
   // Run Algorithm
-  algo.run(x, c, obj, eq_constr, verbose);
+  algo.run(x, c, obj, constr, verbose);
 
   soln = ROL::MTfromROL<T, N>(x);
 
@@ -265,14 +275,14 @@ solve(
 //
 //
 template<typename T, Index N>
-template<typename FN, typename EC, typename BC, Index NC>
+template<typename FN, typename EIC, typename BC, Index NC>
 void
 MiniTensor_Minimizer<T, N>::
 solve(
     std::string const & algoname,
     Teuchos::ParameterList & params,
     FN & fn,
-    EC & ec,
+    EIC & eic,
     BC & bc,
     Intrepid2::Vector<T, N> & soln,
     Intrepid2::Vector<T, NC> & cv)
@@ -303,9 +313,13 @@ solve(
   ROL::MiniTensor_BoundConstraint<T, N>
   bound_constr(lo, hi);
 
-  // Define equality constraint
-  ROL::MiniTensor_EqualityConstraint<EC, T, NC, N>
-  eq_constr(ec);
+  // Define equality/inequality constraint
+  using MTCONSTR = typename std::conditional<eic.IS_EQUALITY,
+      ROL::MiniTensor_EqualityConstraint<EIC, T, NC, N>,
+      ROL::MiniTensor_InequalityConstraint<EIC, T, NC, N>>::type;
+
+  MTCONSTR
+  eqineq_constr(eic);
 
   ROL::Algorithm<T>
   algo(algoname, params);
@@ -319,7 +333,7 @@ solve(
   c(cv);
 
   // Run Algorithm
-  algo.run(x, c, obj, eq_constr, bound_constr, verbose);
+  algo.run(x, c, obj, eqineq_constr, bound_constr, verbose);
 
   soln = ROL::MTfromROL<T, N>(x);
 

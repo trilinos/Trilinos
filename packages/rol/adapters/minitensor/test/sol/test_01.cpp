@@ -127,6 +127,73 @@ TEST(MiniTensor_ROL, Rosenbrock_Unconstrained)
   ASSERT_LE(error, tol);
 }
 
+TEST(MiniTensor_ROL, Paraboloid_BoundConstraint)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  NUM_VAR{2};
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  lo(1.0, -10.0);
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  hi(10.0, 10.0);
+
+  // Function to optimize
+  Intrepid2::Paraboloid<Real, NUM_VAR>
+  fn;
+
+  // Constraint that defines the feasible region
+  Intrepid2::Bounds<Real, NUM_VAR>
+  bounds(lo, hi);
+
+  // Define algorithm.
+  std::string const
+  algoname{"Line Search"};
+
+  // Set parameters.
+  Teuchos::ParameterList
+  params;
+
+  params.sublist("Step").sublist("Line Search").sublist("Descent Method").
+    set("Type", "Newton-Krylov");
+
+  params.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Iteration Limit", 128);
+
+  // Set initial guess
+  Intrepid2::Vector<Real, NUM_VAR>
+  x(Intrepid2::RANDOM);
+
+  ROL::MiniTensor_Minimizer<Real, NUM_VAR>
+  minimizer;
+
+  minimizer.solve(algoname, params, fn, bounds, x);
+
+  minimizer.printReport(os);
+
+  Real const
+  tol{0.04};
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  soln(1.0, 0.0);
+
+  Real const
+  error = Intrepid2::norm(soln - x);
+
+  ASSERT_LE(error, tol);
+}
+
 TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
 {
   bool const
@@ -217,7 +284,7 @@ TEST(MiniTensor_ROL, Paraboloid_EqualityConstraint)
   ASSERT_LE(error, tol);
 }
 
-TEST(MiniTensor_ROL, Paraboloid_BoundConstraint)
+TEST(MiniTensor_ROL, Paraboloid_InequalityConstraint)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -232,43 +299,66 @@ TEST(MiniTensor_ROL, Paraboloid_BoundConstraint)
   constexpr Intrepid2::Index
   NUM_VAR{2};
 
-  Intrepid2::Vector<Real, NUM_VAR>
-  lo(1.0, -10.0);
+  constexpr Intrepid2::Index
+  NUM_CONSTR{1};
 
-  Intrepid2::Vector<Real, NUM_VAR>
-  hi(10.0, 10.0);
+  Real const
+  a = 2.0;
+
+  Real const
+  b = 0.0;
+
+  Real const
+  r = 1.0;
 
   // Function to optimize
   Intrepid2::Paraboloid<Real, NUM_VAR>
   fn;
 
   // Constraint that defines the feasible region
-  Intrepid2::Bounds<Real, NUM_VAR>
-  bounds(lo, hi);
+  Intrepid2::Circle<Real, NUM_CONSTR, NUM_VAR>
+  ineq_constr(r, a, b);
 
   // Define algorithm.
   std::string const
-  algoname{"Line Search"};
+  algoname{"Composite Step"};
 
   // Set parameters.
   Teuchos::ParameterList
   params;
 
-  params.sublist("Step").sublist("Line Search").sublist("Descent Method").
-    set("Type", "Newton-Krylov");
+  params.sublist("Step").sublist(algoname).
+      sublist("Optimality System Solver").set(
+      "Nominal Relative Tolerance",
+      1.e-8);
 
-  params.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
-  params.sublist("Status Test").set("Step Tolerance", 1.0e-16);
+  params.sublist("Step").sublist(algoname).
+      sublist("Optimality System Solver").set("Fix Tolerance", true);
+
+  params.sublist("Step").sublist(algoname).
+      sublist("Tangential Subproblem Solver").set("Iteration Limit", 128);
+
+  params.sublist("Step").sublist(algoname).
+      sublist("Tangential Subproblem Solver").set("Relative Tolerance", 1e-6);
+
+  params.sublist("Step").sublist(algoname).set("Output Level", 0);
+  params.sublist("Status Test").set("Gradient Tolerance", 1.0e-12);
+  params.sublist("Status Test").set("Constraint Tolerance", 1.0e-12);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-18);
   params.sublist("Status Test").set("Iteration Limit", 128);
 
   // Set initial guess
   Intrepid2::Vector<Real, NUM_VAR>
   x(Intrepid2::RANDOM);
 
+  // Set constraint vector
+  Intrepid2::Vector<Real, NUM_CONSTR>
+  c(Intrepid2::RANDOM);
+
   ROL::MiniTensor_Minimizer<Real, NUM_VAR>
   minimizer;
 
-  minimizer.solve(algoname, params, fn, bounds, x);
+  minimizer.solve(algoname, params, fn, ineq_constr, x, c);
 
   minimizer.printReport(os);
 

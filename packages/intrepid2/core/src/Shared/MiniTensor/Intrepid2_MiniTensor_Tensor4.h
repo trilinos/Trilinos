@@ -52,7 +52,7 @@ using tensor4_store = Storage<T, dimension_power<N, 4>::value, ES>;
 ///
 /// Fourth-order tensor.
 ///
-template<typename T, Index N = DYNAMIC,  typename ES=NOKOKKOS>
+template<typename T, Index N = DYNAMIC,  typename ES = NOKOKKOS>
 class Tensor4 : public TensorBase<T, tensor4_store<T, N, ES>>
 {
 public:
@@ -136,7 +136,7 @@ public:
   /// 4th-order tensor from 2nd-order tensor
   ///
   KOKKOS_INLINE_FUNCTION
-  Tensor4(Tensor<T, dimension_square<N>::value,ES> const & A);
+  Tensor4(Tensor<T, dimension_square<N>::value, ES> const & A);
 
   ///
   /// 4th-order tensor simple destructor
@@ -296,17 +296,17 @@ transpose(Tensor4<T, N, ES> const & A);
 /// 4th-order identity I1
 /// \return \f$ \delta_{ik} \delta_{jl} \f$ such that \f$ A = I_1 A \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_1();
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC, ES> const
 identity_1(Index const dimension);
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_1(Index const dimension);
@@ -315,17 +315,17 @@ identity_1(Index const dimension);
 /// 4th-order identity I2
 /// \return \f$ \delta_{il} \delta_{jk} \f$ such that \f$ A^T = I_2 A \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_2();
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC, ES> const
 identity_2(Index const dimension);
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_2(Index const dimension);
@@ -334,17 +334,17 @@ identity_2(Index const dimension);
 /// 4th-order identity I3
 /// \return \f$ \delta_{ij} \delta_{kl} \f$ such that \f$ I_A I = I_3 A \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_3();
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC, ES> const
 identity_3(Index const dimension);
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 identity_3(Index const dimension);
@@ -352,17 +352,17 @@ identity_3(Index const dimension);
 ///
 /// Levi-Civita symbol
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 levi_civita_4();
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC, ES> const
 levi_civita_4(Index const dimension);
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 levi_civita_4(Index const dimension);

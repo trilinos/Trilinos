@@ -39,146 +39,53 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(ROL_MiniTensor_MiniSolver_hpp)
-#define ROL_MiniTensor_MiniSolver_hpp
+#if !defined(ROL_MiniTensor_InequalityConstraint_hpp)
+#define ROL_MiniTensor_InequalityConstraint_hpp
 
 #include "Intrepid2_MiniTensor_Solvers.h"
+#include "ROL_InequalityConstraint.hpp"
+#include "ROL_MiniTensor_Vector.hpp"
 
 namespace ROL {
 
 using Index = Intrepid2::Index;
 
 ///
-/// Minimizer Struct
+/// Function base class that defines the interface to Mini Solvers.
 ///
-template<typename T, Index N>
-struct MiniTensor_Minimizer
+template<typename MSIC, typename S, Index M, Index N>
+class MiniTensor_InequalityConstraint : public InequalityConstraint<S>
 {
 public:
-  MiniTensor_Minimizer();
 
-  template<typename FN>
-  void
-  solve(
-      std::string const & algoname,
-      Teuchos::ParameterList & params,
-      FN & fn,
-      Intrepid2::Vector<T, N> & soln);
+  MiniTensor_InequalityConstraint(MSIC & msec);
 
-  template<typename FN, typename BC>
-  void
-  solve(
-      std::string const & algoname,
-      Teuchos::ParameterList & params,
-      FN & fn,
-      BC & bc,
-      Intrepid2::Vector<T, N> & soln);
+  MiniTensor_InequalityConstraint() = delete;
 
-  template<typename FN, typename EIC, Index NC>
-  void
-  solve(
-      std::string const & algoname,
-      Teuchos::ParameterList & params,
-      FN & fn,
-      EIC & eic,
-      Intrepid2::Vector<T, N> & soln,
-      Intrepid2::Vector<T, NC> & cv);
+  virtual
+  ~MiniTensor_InequalityConstraint();
 
-  template<typename FN, typename EIC, typename BC, Index NC>
+  // ROL interface
+  virtual
   void
-  solve(
-      std::string const & algoname,
-      Teuchos::ParameterList & params,
-      FN & fn,
-      EIC & eic,
-      BC & bc,
-      Intrepid2::Vector<T, N> & soln,
-      Intrepid2::Vector<T, NC> & cv);
+  value(Vector<S> & c, Vector<S> const & x, S & tol) final;
 
+  virtual
   void
-  printReport(std::ostream & os);
+  applyJacobian(Vector<S> & jv, Vector<S> const & v,
+      Vector<S> const & x, S & tol) final;
+
+  virtual
+  void
+  applyAdjointJacobian(Vector<S> & ajv, Vector<S> const & v,
+      Vector<S> const & x, S & tol) final;
 
 private:
-  void
-  updateConvergenceCriterion(T const abs_error);
-
-  void
-  updateDivergenceCriterion(T const fn_value);
-
-  template<typename FN>
-  void
-  recordFinals(FN & fn, Intrepid2::Vector<T, N> const & x);
-
-public:
-  T
-  initial_norm{1.0};
-
-  T
-  rel_tol{1.0e-12};
-
-  T
-  rel_error{1.0};
-
-  T
-  abs_tol{1.0e-12};
-
-  T
-  abs_error{1.0};
-
-  T
-  growth_limit{1.0};
-
-  T
-  initial_value{0.0};
-
-  T
-  previous_value{0.0};
-
-  T
-  final_value{0.0};
-
-  bool
-  verbose{false};
-
-  bool
-  failed{false};
-
-  bool
-  converged{false};
-
-  bool
-  monotonic{true};
-
-  bool
-  bounded{true};
-
-  bool
-  enforce_monotonicity{false};
-
-  bool
-  enforce_boundedness{false};
-
-  Intrepid2::Vector<T, N>
-  initial_guess;
-
-  Intrepid2::Vector<T, N>
-  final_soln;
-
-  Intrepid2::Vector<T, N>
-  final_gradient;
-
-  Intrepid2::Tensor<T, N>
-  final_hessian;
-
-  char const *
-  step_method_name{nullptr};
-
-  char const *
-  function_name{nullptr};
+  MSIC
+  minisolver_ic_;
 };
-
 } // namespace ROL
 
-#include "ROL_MiniTensor_MiniSolver_Def.hpp"
+#include "ROL_MiniTensor_InequalityConstraint_Def.hpp"
 
-#endif // ROL_MiniTensor_MiniSolver_hpp
+#endif // ROL_MiniTensor_InequalityConstraint_hpp

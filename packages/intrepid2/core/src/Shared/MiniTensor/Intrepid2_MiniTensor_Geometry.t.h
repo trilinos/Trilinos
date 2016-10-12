@@ -298,10 +298,10 @@ bounding_box(I start, I end)
 
 template<typename T, typename I,  typename ES>
 KOKKOS_INLINE_FUNCTION
-std::pair<Vector<T, DYNAMIC,ES>, Vector<T, DYNAMIC,ES>>
+std::pair<Vector<T, DYNAMIC, ES>, Vector<T, DYNAMIC, ES>>
 bounding_box(I start, I end)
 {
-  return bounding_box<T, I, DYNAMIC,ES>(start, end);
+  return bounding_box<T, I, DYNAMIC, ES>(start, end);
 }
 
 //

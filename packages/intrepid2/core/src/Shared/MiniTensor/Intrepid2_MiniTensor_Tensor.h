@@ -66,8 +66,8 @@ using tensor_store = Storage<T, dimension_power<N, 2>::value, ES>;
 ///
 /// Second order tensor.
 ///
-template<typename T, Index N = DYNAMIC,  typename ES=NOKOKKOS>
-class Tensor: public TensorBase<T, tensor_store<T, N,ES>>
+template<typename T, Index N = DYNAMIC,  typename ES = NOKOKKOS>
+class Tensor: public TensorBase<T, tensor_store<T, N, ES>>
 {
 public:
 
@@ -700,17 +700,17 @@ diag(Tensor<T, N, ES> const & A);
 /// Zero 2nd-order tensor
 /// All components are zero
 ///
-template<typename T, Index N, class  ES=NOKOKKOS>
+template<typename T, Index N, class  ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION 
 Tensor<T, N, ES> const
 zero();
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 zero(Index const dimension);
 
-template<typename T, Index N, class  ES=NOKOKKOS>
+template<typename T, Index N, class  ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 zero(Index const dimension);
@@ -718,17 +718,17 @@ zero(Index const dimension);
 ///
 /// 2nd-order identity tensor
 ///
-template<typename T, Index N, class  ES=NOKOKKOS>
+template<typename T, Index N, class  ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 identity();
 
-template<typename T, class  ES=NOKOKKOS>
+template<typename T, class  ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 identity(Index const dimension);
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 identity(Index const dimension);
@@ -736,17 +736,17 @@ identity(Index const dimension);
 ///
 /// 2nd-order identity tensor, à la Matlab
 ///
-template<typename T, Index N, class  ES=NOKOKKOS>
+template<typename T, Index N, class  ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 eye();
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 eye(Index const dimension);
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES = NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 eye(Index const dimension);

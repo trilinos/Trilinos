@@ -57,7 +57,7 @@ using vector_store = Storage<T, dimension_power<N, 1>::value, ES>;
 ///
 /// Vector class.
 ///
-template<typename T, Index N = DYNAMIC,  typename ES=NOKOKKOS>
+template<typename T, Index N = DYNAMIC,  typename ES = NOKOKKOS>
 class Vector: public TensorBase<T, vector_store<T, N, ES>>
 {
 public:
@@ -79,7 +79,7 @@ public:
   ///
   /// Storage type
   ///
-  using Store = vector_store<T, N,ES>;
+  using Store = vector_store<T, N, ES>;
 
   ///
   /// Vector order

@@ -475,7 +475,7 @@ template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 CartesianParametrization<T, N, ES>::get_normal(
-    Vector<T, dimension_const<N, 3>::value,ES> const & parameters
+    Vector<T, dimension_const<N, 3>::value, ES> const & parameters
 ) const
 {
   T const &
