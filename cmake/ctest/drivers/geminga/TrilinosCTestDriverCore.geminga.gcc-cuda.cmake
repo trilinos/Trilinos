@@ -80,7 +80,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       ### COMPILERS AND FLAGS ###
       "-DTrilinos_ENABLE_CXX11:BOOL=ON"
         "-DTrilinos_CXX11_FLAGS:STRING='-std=c++11 -expt-extended-lambda'"
-      "-DCMAKE_CXX_FLAGS:STRING='-g -G -Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow'"
+      "-DCMAKE_CXX_FLAGS:STRING='-Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow'"
       "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
 
       ### TPLS ###
