@@ -24,8 +24,7 @@ public:
     LastStepFieldWriter(stk::mesh::BulkData& bulk, const std::string& inputFilename)
     : LastStepFieldWriter(bulk)
     {
-        stk::io::StkMeshIoBroker stkIo;
-        fill_mesh_and_time_data(stkIo, inputFilename);
+        fill_mesh_and_time_data(inputFilename);
     }
 
     ~LastStepFieldWriter() {}
@@ -33,21 +32,19 @@ public:
     void write_mesh(const std::string& filename,
                     stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS)
     {
+        size_t fh = stkIo.create_output_mesh(filename, databasePurpose);
+
         if(has_field_data())
         {
-            stk::io::StkMeshIoBroker broker(bulkData.parallel());
-            broker.set_bulk_data(bulkData);
-            size_t fh = broker.create_output_mesh(filename, databasePurpose);
-            add_transient_fields(broker, fh);
+            add_transient_fields(fh);
 
-            broker.begin_output_step(fh, maxTime);
-            broker.write_defined_output_fields(fh);
-            broker.end_output_step(fh);
+            stkIo.begin_output_step(fh, maxTime);
+            stkIo.write_defined_output_fields(fh);
+            stkIo.end_output_step(fh);
         }
         else
         {
-            stk::io::write_mesh(filename, bulkData, databasePurpose);
-        }
+            stkIo.write_output_mesh(fh);        }
     }
 
     void set_output_time(double outputTime)
@@ -63,7 +60,7 @@ protected:
 
     bool has_field_data() const { return numSteps>0; }
 
-    void fill_time_data(stk::io::StkMeshIoBroker& stkIo)
+    void fill_time_data()
     {
         numSteps = stkIo.get_num_time_steps();
         if(numSteps>0)
@@ -73,7 +70,7 @@ protected:
         }
     }
 
-    void add_transient_fields(stk::io::StkMeshIoBroker& stkIo, size_t fileHandle) const
+    void add_transient_fields(size_t fileHandle)
     {
         const stk::mesh::FieldVector& out_fields = stkIo.meta_data().get_fields();
 
@@ -87,15 +84,16 @@ protected:
         }
     }
 
-    void fill_mesh_and_time_data(stk::io::StkMeshIoBroker& stkIo, const std::string& inputFilename)
+    void fill_mesh_and_time_data(const std::string& inputFilename)
     {
         stk::io::fill_mesh_preexisting(stkIo, inputFilename, bulkData);
-        fill_time_data(stkIo);
+        fill_time_data();
     }
 
     stk::mesh::BulkData& bulkData;
     int numSteps;
     double maxTime;
+    stk::io::StkMeshIoBroker stkIo;
 };
 
 class LastStepFieldWriterAutoDecomp : public LastStepFieldWriter
@@ -104,9 +102,8 @@ public:
     LastStepFieldWriterAutoDecomp(stk::mesh::BulkData& bulk, const std::string& inputFilename)
     : LastStepFieldWriter(bulk)
     {
-        stk::io::StkMeshIoBroker stkIo;
         stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
-        fill_mesh_and_time_data(stkIo, inputFilename);
+        fill_mesh_and_time_data(inputFilename);
     }
 };
 
