@@ -47,7 +47,7 @@
 #  include "Kokkos_Sparse.hpp"
 
 #  define INSTMACRO( SCALAR, LO ) \
-  KOKKOSSPARSE_IMPL_SPMV_MV_DEFAULTS_DEF( SCALAR, LO, Kokkos::Serial, Kokkos::HostSpace )
+  KOKKOSSPARSE_IMPL_SPMV_MV_DEFAULTS_NO_ORDINAL_SCALAR_DEF( SCALAR, LO, Kokkos::Serial, Kokkos::HostSpace )
 
 #  include "TpetraKernels_ETIHelperMacros.h"
 
