@@ -91,7 +91,7 @@ parameters.
 \muelu{} relies on other \trilinos{} packages to provide level smoothers and
 coarse solvers. \ifpack{} and \ifpacktwo{} provide standard smoothers (see
 Table~\ref{tab:smoothers}), and \amesos{} and \amesostwo{} provide direct
-solvers (see Table~\ref{tab:coarse}). Note that it is completely possible to use
+solvers (see Table~\ref{tab:coarse_solvers}). Note that it is completely possible to use
 any level smoother as a direct solver.
 
 \muelu{} checks parameters \verb|smoother: * type| and \verb|coarse: type| to
@@ -148,7 +148,7 @@ post-smoothing, and SuperLU for coarse system solver.
       \bottomrule
     \end{tabular}
     \caption{Commonly used direct solvers provided by \amesos{}/\amesostwo{}}
-\label{tab:coarse}
+\label{tab:coarse_solvers}
   \end{center}
 \end{table}
 
