@@ -43,9 +43,10 @@
 #ifndef KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_
 #define KOKKOS_BLAS1_MV_IMPL_UPDATE_HPP_
 
-#include <TpetraKernels_config.h>
-#include <Kokkos_Core.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include "TpetraKernels_config.h"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_InnerProductSpaceTraits.hpp"
+#include "TpetraKernels_ETIHelperMacros.h"
 
 #ifdef HAVE_TPETRAKERNELS_ETI_ONLY
 #define KOKKOSBLAS_ETI_ONLY
@@ -749,36 +750,42 @@ struct Update<Kokkos::View<const SCALAR**, \
 // Their definitions go in .cpp file(s) in this source directory.
 //
 
+TPETRAKERNELS_ETI_MANGLING_TYPEDEFS()
+
 #ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_SERIAL( SCALAR ) \
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+TPETRAKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_SERIAL )
 
+#undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_SERIAL
 #endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
 
 #ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
+#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_OPENMP( SCALAR ) \
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+TPETRAKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_OPENMP )
 
+#undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_OPENMP
 #endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
 
 #ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_PTHREAD( SCALAR ) \
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+TPETRAKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_PTHREAD )
 
+#undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_PTHREAD
 #endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
 #ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_CUDA( SCALAR ) \
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+TPETRAKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_CUDA )
 
+#undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL_CUDA
 #endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
 
 //

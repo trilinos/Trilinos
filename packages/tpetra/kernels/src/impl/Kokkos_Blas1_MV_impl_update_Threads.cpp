@@ -41,43 +41,23 @@
 //@HEADER
 */
 
-#include <Kokkos_Blas1_MV_impl_update.hpp>
+#include "TpetraKernels_config.h"
+
+#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
+#include "Kokkos_Blas1_MV_impl_update.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
 
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
+#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF_PTHREAD( SCALAR ) \
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( SCALAR, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+TPETRAKERNELS_INSTANTIATE_S( KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF_PTHREAD )
 
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_SERIAL
-
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_OPENMP
-
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
-
-#ifdef TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
-
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-  KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_CUDA
+#undef KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF_PTHREAD
 
 } // namespace Impl
 } // namespace KokkosBlas
+
+#endif // TPETRAKERNELS_BUILD_EXECUTION_SPACE_PTHREAD
 
