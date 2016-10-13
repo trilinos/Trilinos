@@ -1316,13 +1316,15 @@ template<class aT, class aL, class aD, class aM,
          class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
          class bT, class bL, class bD, class bM,
-         class YT, class YL, class YD, class YM>
+         class YT, class YL, class YD, class YM,
+         const bool integerScalarType>
 void
 SPMV_MV<aT, aL, aD, aM,
         AT, AO, AD, AM, AS,
         XT, XL, XD, XM,
         bT, bL, bD, bM,
-        YT, YL, YD, YM>::
+        YT, YL, YD, YM,
+        integerScalarType>::
 spmv_mv (const char mode[],
          const aCoeffs& alpha,
          const AMatrix& A,
@@ -1337,13 +1339,15 @@ template<class aT, class aL, class aD, class aM,
          class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
          class bT, class bL, class bD, class bM,
-         class YT, class YL, class YD, class YM>
+         class YT, class YL, class YD, class YM,
+         const bool integerScalarType>
 void
 SPMV_MV<aT, aL, aD, aM,
         AT, AO, AD, AM, AS,
         XT, XL, XD, XM,
         bT, bL, bD, bM,
-        YT, YL, YD, YM>::
+        YT, YL, YD, YM,
+        integerScalarType>::
 spmv_mv (const char mode[],
          const typename aCoeffs::non_const_value_type& alpha,
          const AMatrix& A,
@@ -1374,13 +1378,15 @@ template<class aT, class aL, class aD, class aM,
          class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
          class bT, class bL, class bD, class bM,
-         class YT, class YL, class YD, class YM>
+         class YT, class YL, class YD, class YM,
+         const bool integerScalarType>
 void
 SPMV_MV<aT, aL, aD, aM,
         AT, AO, AD, AM, AS,
         XT, XL, XD, XM,
         bT, bL, bD, bM,
-        YT, YL, YD, YM>::
+        YT, YL, YD, YM,
+        integerScalarType>::
 spmv_mv (const char mode[],
          const aCoeffs& alpha,
          const AMatrix& A,
@@ -1410,13 +1416,15 @@ template<class aT, class aL, class aD, class aM,
          class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
          class bT, class bL, class bD, class bM,
-         class YT, class YL, class YD, class YM>
+         class YT, class YL, class YD, class YM,
+         const bool integerScalarType>
 void
 SPMV_MV<aT, aL, aD, aM,
         AT, AO, AD, AM, AS,
         XT, XL, XD, XM,
         bT, bL, bD, bM,
-        YT, YL, YD, YM>::
+        YT, YL, YD, YM,
+        integerScalarType>::
 spmv_mv (const char mode[],
          const typename aCoeffs::non_const_value_type& alpha,
          const AMatrix& A,
@@ -1477,7 +1485,8 @@ SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        std::is_integral<SCALAR_TYPE>::value>:: \
 spmv_mv (const char mode[], \
          const aCoeffs& alpha, \
          const AMatrix& A, \
@@ -1509,7 +1518,8 @@ SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        std::is_integral<SCALAR_TYPE>::value>:: \
 spmv_mv (const char mode[], \
          const aCoeffs::non_const_value_type& alpha, \
          const AMatrix& A, \
@@ -1556,7 +1566,8 @@ SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        std::is_integral<SCALAR_TYPE>::value>:: \
 spmv_mv (const char mode[], \
          const aCoeffs& alpha, \
          const AMatrix& A, \
@@ -1602,7 +1613,8 @@ SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        std::is_integral<SCALAR_TYPE>::value>:: \
 spmv_mv (const char mode[], \
          const aCoeffs::non_const_value_type& alpha, \
          const AMatrix& A, \
@@ -1662,7 +1674,7 @@ SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         Kokkos::LayoutLeft, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, std::is_integral<SCALAR_TYPE>::value >:: \
 spmv_mv (const char mode[], \
          const aCoeffs& alpha, \
          const AMatrix& A, \
@@ -1694,7 +1706,7 @@ SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         Kokkos::LayoutLeft, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, std::is_integral<SCALAR_TYPE>::value >:: \
 spmv_mv (const char mode[], \
          const aCoeffs::non_const_value_type& alpha, \
          const AMatrix& A, \
@@ -1741,7 +1753,7 @@ SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         Kokkos::LayoutLeft, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, std::is_integral<SCALAR_TYPE>::value >:: \
 spmv_mv (const char mode[], \
          const aCoeffs& alpha, \
          const AMatrix& A, \
@@ -1787,7 +1799,7 @@ SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         Kokkos::LayoutLeft, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, std::is_integral<SCALAR_TYPE>::value >:: \
 spmv_mv (const char mode[], \
          const aCoeffs::non_const_value_type& alpha, \
          const AMatrix& A, \

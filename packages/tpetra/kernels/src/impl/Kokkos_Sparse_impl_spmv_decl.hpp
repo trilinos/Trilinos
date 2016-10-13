@@ -282,14 +282,19 @@ TPETRAKERNELS_INSTANTIATE_SL( KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL_CUDA )
 /// The next 5 template parameters (that start with X) correspond to
 /// the input Kokkos::View.  The 5 template parameters after that
 /// (that start with lower-case b) are the template parameters of the
-/// input 1-D View of coefficients 'beta'.  Finally, the last 5
-/// template parameters (that start with Y) correspond to the output
-/// Kokkos::View.
+/// input 1-D View of coefficients 'beta'.  Next, the 5 template
+/// parameters that start with Y correspond to the output
+/// Kokkos::View.  The last template parameter indicates whether the
+/// matrix's entries have integer type.  Per Github Issue #700, we
+/// don't optimize as heavily for that case, in order to reduce build
+/// times and library sizes.
 template<class aT, class aL, class aD, class aM,
          class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
          class bT, class bL, class bD, class bM,
-         class YT, class YL, class YD, class YM>
+         class YT, class YL, class YD, class YM,
+         const bool integerScalarType =
+           std::is_integral<typename std::decay<AT>::type>::value>
 struct SPMV_MV
 {
   typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
@@ -365,7 +370,8 @@ struct SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        std::is_integral<SCALAR_TYPE>::value> \
 { \
   typedef Kokkos::View<const SCALAR_TYPE*, \
                        Kokkos::LayoutLeft, \
@@ -456,7 +462,8 @@ struct SPMV_MV<const SCALAR_TYPE*, \
         SCALAR_TYPE**, \
         Kokkos::LayoutLeft, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+        std::is_integral<SCALAR_TYPE>::value> \
 { \
   typedef Kokkos::View<const SCALAR_TYPE*, \
                        Kokkos::LayoutLeft, \
