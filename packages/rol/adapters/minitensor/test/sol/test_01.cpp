@@ -373,3 +373,218 @@ TEST(MiniTensor_ROL, Paraboloid_InequalityConstraint)
 
   ASSERT_LE(error, tol);
 }
+
+namespace
+{
+
+template<typename S, Intrepid2::Index M = 2>
+class HS24 : public Intrepid2::Function_Base<HS24<S, M>, S, M>
+{
+public:
+
+  HS24()
+  {
+  }
+
+  static constexpr
+  char const * const
+  NAME{"HS24's Function"};
+
+  using Base = Intrepid2::Function_Base<HS24<S, M>, S, M>;
+
+  // Explicit value.
+  template<typename T, Intrepid2::Index N>
+  T
+  value(Intrepid2::Vector<T, N> const & x)
+  {
+    T const
+    sqrt3 = std::sqrt(3.0);
+
+    T const
+    a = x(1) * x(1) * x(1);
+
+    return sqrt3 * x(0) * a * (x(0) - 6.0) / 81.0;
+  }
+
+  // Default AD gradient.
+  template<typename T, Intrepid2::Index N>
+  Intrepid2::Vector<T, N>
+  gradient(Intrepid2::Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
+
+  // Default AD hessian.
+  template<typename T, Intrepid2::Index N>
+  Intrepid2::Tensor<T, N>
+  hessian(Intrepid2::Vector<T, N> const & x)
+  {
+    return Base::hessian(*this, x);
+  }
+
+};
+
+template<typename S, Intrepid2::Index M = 2>
+class HS4 : public Intrepid2::Function_Base<HS4<S, M>, S, M>
+{
+public:
+
+  HS4()
+  {
+  }
+
+  static constexpr
+  char const * const
+  NAME{"HS4's Function"};
+
+  using Base = Intrepid2::Function_Base<HS4<S, M>, S, M>;
+
+  // Explicit value.
+  template<typename T, Intrepid2::Index N>
+  T
+  value(Intrepid2::Vector<T, N> const & x)
+  {
+    T const
+    a = x(0) + 1.0;
+
+    return a * a * a / 3.0 + x(1);
+  }
+
+  // Default AD gradient.
+  template<typename T, Intrepid2::Index N>
+  Intrepid2::Vector<T, N>
+  gradient(Intrepid2::Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
+
+  // Default AD hessian.
+  template<typename T, Intrepid2::Index N>
+  Intrepid2::Tensor<T, N>
+  hessian(Intrepid2::Vector<T, N> const & x)
+  {
+    return Base::hessian(*this, x);
+  }
+
+};
+
+//
+// HS24 feasible region
+//
+template<typename S, Intrepid2::Index NC = 3, Intrepid2::Index NV = 2>
+class HS24_Region : public Intrepid2::Inequality_Constraint<HS24_Region<S, NC, NV>, S, NC, NV>
+{
+public:
+
+  HS24_Region()
+  {
+  }
+
+  static constexpr
+  char const * const
+  NAME{"HS24 feasible region"};
+
+  using Base = Intrepid2::Inequality_Constraint<HS24_Region<S, NC, NV>, S, NC, NV>;
+
+  // Explicit value.
+  template<typename T, Intrepid2::Index N = 2>
+  Intrepid2::Vector<T, NC>
+  value(Intrepid2::Vector<T, N> const & x)
+  {
+    assert(x.get_dimension() == NV);
+
+    T const
+    c = std::sqrt(3.0);
+
+    Intrepid2::Vector<T, NC>
+    f(Intrepid2::ZEROS);
+
+    f(0) = x(0) / c- x(1);
+
+    f(1) = x(0) + c * x(1);
+
+    f(2) = -x(0) - c * x(1) + 6.0;
+
+    return f;
+  }
+
+  // Default AD gradient.
+  template<typename T, Intrepid2::Index N = 2>
+  Intrepid2::Matrix<T, NC, NV>
+  gradient(Intrepid2::Vector<T, N> const & x)
+  {
+    return Base::gradient(*this, x);
+  }
+
+};
+
+} // anonymous namespace
+
+TEST(MiniTensor_ROL, HS24_BoundOnlyMod)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Intrepid2::Index
+  NUM_VAR{2};
+
+  // Function to optimize
+  HS24<Real, NUM_VAR>
+  fn;
+
+  // Define algorithm.
+  std::string const
+  algoname{"Line Search"};
+
+  // Set parameters.
+  Teuchos::ParameterList
+  params;
+
+  params.sublist("Step").sublist("Line Search").sublist("Descent Method").
+    set("Type", "Newton-Krylov");
+
+  params.sublist("Status Test").set("Gradient Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Step Tolerance", 1.0e-16);
+  params.sublist("Status Test").set("Iteration Limit", 128);
+
+  // These are not the original bounds for these problems.
+  // We use them to check the algorithm.
+  Intrepid2::Vector<Real, NUM_VAR>
+  lo(-1.0, -1.0);
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  hi(1.0, 1.0);
+
+  // Constraint that defines the feasible region
+  Intrepid2::Bounds<Real, NUM_VAR>
+  bounds(lo, hi);
+
+  // Set initial guess
+  Intrepid2::Vector<Real, NUM_VAR>
+  x(-0.9, -0.9);
+
+  ROL::MiniTensor_Minimizer<Real, NUM_VAR>
+  minimizer;
+
+  minimizer.solve(algoname, params, fn, bounds, x);
+
+  minimizer.printReport(os);
+
+  Real const
+  tol{1.0e-10};
+
+  Intrepid2::Vector<Real, NUM_VAR>
+  soln(-1.0, -1.0);
+
+  Real const
+  error = Intrepid2::norm(soln - x);
+
+  ASSERT_LE(error, tol);
+}
