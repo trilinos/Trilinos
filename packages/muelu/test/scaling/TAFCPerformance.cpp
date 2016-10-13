@@ -125,6 +125,49 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >  build_map_for
 
 }
 
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >  build_map_for_transfer_repartition(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > oldMap){
+#include <MueLu_UseShortNames.hpp>
+  // Turn P procs into ~P/9 procs
+  int Nproc = oldMap->getComm()->getSize();
+  int MyPID = oldMap->getComm()->getRank();
+  int N = (int)oldMap->getGlobalNumElements();
+
+  Xpetra::UnderlyingLib lib = oldMap->lib();
+
+  if(Nproc==1 ) return oldMap;
+  int ideal_new_unknowns_per_proc = N / (Nproc / 9.0);
+  
+
+  int start= ideal_new_unknowns_per_proc*MyPID < N ? ideal_new_unknowns_per_proc*MyPID : 0;
+  int stop = ideal_new_unknowns_per_proc*MyPID < N ? std::min(N,ideal_new_unknowns_per_proc*(MyPID+1)):0;
+
+  Teuchos::Array<GlobalOrdinal> elems;
+  if(stop-start>0) {
+    elems.resize(stop-start);
+    for(int i=0; i<stop-start; i++)
+      elems[i] = start+i;
+  }
+
+#if 0
+  printf("[%d] elems(%d) = ",MyPID,(int)elems.size());
+  for(int i=0; i<(int)elems.size(); i++)
+    printf("%d ",elems[i]);
+  printf("\n");
+  fflush(stdout);
+#endif
+  
+  int i_am_active= (elems.size()>0);
+  int num_active=0;
+  Teuchos::reduce(&i_am_active,&num_active,1,Teuchos::REDUCE_SUM,0,*oldMap->getComm());
+  if(MyPID==0) printf("Repartitioning to %d/%d processors\n",num_active,Nproc);
+
+  return Xpetra::MapFactory<LO,GO,Node>::Build(lib,oldMap->getGlobalNumElements(),elems(),oldMap->getIndexBase(),oldMap->getComm(),oldMap->getNode());
+
+}
+
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > toXpetraCrs(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A) {
 #include <MueLu_UseShortNames.hpp>
@@ -212,6 +255,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
   std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
   int         numImports        = 100;               clp.setOption("numImport",              &numImports,        "#times to test");
+  std::string mapmode           = "small";           clp.setOption("mapMode", &mapmode, "map to use ('small' or 'repartition')");
 
 
   switch (clp.parse(argc, argv)) {
@@ -357,7 +401,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
  
       // Build the target map for the importing
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >  importMap = build_map_for_transfer<Scalar,LO,GO,Node>(A->getRowMap()); 
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >  importMap;
+      if(mapmode=="small") importMap=build_map_for_transfer<Scalar,LO,GO,Node>(A->getRowMap()); 
+      else if(mapmode=="repartition") importMap=build_map_for_transfer_repartition<Scalar,LO,GO,Node>(A->getRowMap()); 
+      else throw std::runtime_error("Invalid map mode");
+
       Teuchos::RCP<Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = Xpetra::ImportFactory<LO,GO,Node>::Build(A->getRowMap(),importMap);
 
       for(int i=0; i<numImports; i++) {
