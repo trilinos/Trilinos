@@ -17,7 +17,7 @@ TEST_F(TestSideSet, creatingSideOfOneElem_eachProcHasOneSide)
     stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), localElems);
     ASSERT_GE(localElems.size(), 1u);
 
-    stk::mesh::StkSideSet sideSet;
+    stk::mesh::SideSet sideSet;
     sideSet.push_back(stk::mesh::SideSetEntry(localElems[0], 1));
 
     EXPECT_EQ(0u, stk::mesh::count_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(get_meta().side_rank())));

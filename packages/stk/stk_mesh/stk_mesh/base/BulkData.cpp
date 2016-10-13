@@ -7353,7 +7353,7 @@ void BulkData::mark_entities_as_deleted(stk::mesh::Bucket * bucket)
     }
 }
 
-void BulkData::create_side_entities(const StkSideSet &sideSet, const stk::mesh::PartVector& parts)
+void BulkData::create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts)
 {
     if(has_face_adjacent_element_graph())
         FaceCreator(*this, *m_elemElemGraph).create_side_entities_given_sideset(sideSet, parts);

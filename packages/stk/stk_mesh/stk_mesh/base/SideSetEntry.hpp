@@ -25,7 +25,7 @@ struct SideSetEntry
   stk::mesh::ConnectivityOrdinal side;
 };
 
-typedef std::vector<SideSetEntry> StkSideSet;
+typedef std::vector<SideSetEntry> SideSet;
 
 }
 }

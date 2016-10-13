@@ -24,16 +24,14 @@ inline size_t get_number_sides_in_sideset(const stk::mesh::BulkData& bulk,
 
         const stk::mesh::SideSet& sset = bulk.get_sideset_data(sideset_id);
 
-        for(const stk::mesh::ElemIdSide& elem_and_side : sset)
+        for(const stk::mesh::SideSetEntry& elem_and_side : sset)
         {
-            stk::mesh::EntityId elem_id = elem_and_side.elem_id;
-            int zero_based_side_ord = elem_and_side.side_ordinal;
-            stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk, elem_id, zero_based_side_ord, bulk.mesh_meta_data().side_rank());
+            stk::mesh::Entity element = elem_and_side.element;
+            stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulk, element, elem_and_side.side);
             if(bulk.is_valid(side))
             {
                 if(selector(bulk.bucket(side)))
                 {
-                    stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEM_RANK, elem_id);
                     if(stk_element_topology == stk::topology::INVALID_TOPOLOGY ||
                        stk_element_topology == bulk.bucket(element).topology())
                     {
@@ -73,17 +71,17 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
 
         for(size_t i=0;i<sset.size();++i)
         {
-            stk::mesh::EntityId elem_id = sset[i].elem_id;
-            int zero_based_side_ord = sset[i].side_ordinal;
-            stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk_data, elem_id, zero_based_side_ord, bulk_data.mesh_meta_data().side_rank());
+            stk::mesh::Entity element = sset[i].element;
+            stk::mesh::EntityId elemId = bulk_data.identifier(element);
+            int zero_based_side_ord = sset[i].side;
+            stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk_data, elemId, zero_based_side_ord, bulk_data.mesh_meta_data().side_rank());
             if(bulk_data.is_valid(side))
             {
                 if(selector(bulk_data.bucket(side)))
                 {
-                    stk::mesh::Entity element = bulk_data.get_entity(stk::topology::ELEM_RANK, elem_id);
                     if(bulk_data.bucket(element).topology() == stk_element_topology)
                     {
-                        elem_side_ids.push_back(elem_id);
+                        elem_side_ids.push_back(elemId);
                         elem_side_ids.push_back(zero_based_side_ord+1);
                         sides.push_back(side);
                     }

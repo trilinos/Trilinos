@@ -95,13 +95,6 @@ namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; }
 namespace stk {
 namespace mesh {
 
-struct ElemIdSide {
-    int elem_id;
-    int side_ordinal;
-};
-
-typedef std::vector<ElemIdSide> SideSet;
-
 class SideConnector;
 class BulkData;
 struct PartStorage;
@@ -804,7 +797,7 @@ public:
       return iter->second;
   }
 
-  void create_side_entities(const StkSideSet &sideSet, const stk::mesh::PartVector& parts);
+  void create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts);
 
 protected:
   void save_sideset_data(int sideset_id, const SideSet& data)

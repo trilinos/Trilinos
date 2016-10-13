@@ -28,22 +28,22 @@ void write_exo_file(BulkDataTester &bulkData, const std::string &filename, const
     io_broker.write_output_mesh(resultFileIndex);
 }
 
-void fill_sideset_data_from_serial_input_file_and_write_decomposed_file(stk::ParallelMachine comm, const std::string& input_filename, const std::string& output_file_name, SideSetData& sideset_data)
+void fill_sideset_data_from_serial_input_file_and_write_decomposed_file(BulkDataTester &bulk, const std::string& input_filename, const std::string& output_file_name, SideSetData& sideset_data)
 {
-    stk::mesh::MetaData meta;
-    BulkDataTester bulkData(meta, comm);
-    read_exo_file( bulkData, input_filename, sideset_data, READ_SERIAL_AND_DECOMPOSE);
-    write_exo_file( bulkData, output_file_name, sideset_data);
+    read_exo_file( bulk, input_filename, sideset_data, READ_SERIAL_AND_DECOMPOSE);
+    write_exo_file( bulk, output_file_name, sideset_data);
 }
 
-void fill_sideset_data_from_decomposed_input_file(stk::ParallelMachine comm, const std::string& input_filename, SideSetData& sideset_data)
+void fill_sideset_data_from_decomposed_input_file(BulkDataTester &bulk, const std::string& input_filename, SideSetData& sideset_data)
 {
-    stk::mesh::MetaData meta;
-    BulkDataTester bulkData(meta, comm);
-    read_exo_file( bulkData, input_filename, sideset_data, READ_ALREADY_DECOMPOSED);
+    read_exo_file( bulk, input_filename, sideset_data, READ_ALREADY_DECOMPOSED);
 }
 
-void compare_sidesets(const std::string& input_file_name, const SideSetData &sideset_data1, const SideSetData &sideset_data2)
+void compare_sidesets(const std::string& input_file_name,
+                      BulkDataTester &bulk1,
+                      const SideSetData &sideset_data1,
+                      BulkDataTester &bulk2,
+                      const SideSetData &sideset_data2)
 {
     ASSERT_EQ(sideset_data1.size(), sideset_data2.size()) << "for file: " << input_file_name;
     for(size_t ss=0; ss<sideset_data1.size(); ++ss)
@@ -55,36 +55,35 @@ void compare_sidesets(const std::string& input_file_name, const SideSetData &sid
 
         for(size_t i=0;i<sideSet1.size();++i)
         {
-            EXPECT_EQ(sideSet1[i].elem_id, sideSet2[i].elem_id) << "for file: " << input_file_name;
-            EXPECT_EQ(sideSet1[i].side_ordinal, sideSet2[i].side_ordinal) << "for file: " << input_file_name;
+            EXPECT_EQ(bulk1.identifier(sideSet1[i].element), bulk2.identifier(sideSet2[i].element)) << "for file: " << input_file_name;
+            EXPECT_EQ(sideSet1[i].side, sideSet2[i].side) << "for file: " << input_file_name;
         }
     }
 }
 
-void compare_sideset_read_against_sideset_written(const std::string& input_file_name, const SideSetData &sideset_data1, const SideSetData &sideset_data2)
-{
-    compare_sidesets(input_file_name, sideset_data1, sideset_data2);
-}
-
-SideSetData get_sideset_data_from_file_read_and_write_new_file(stk::ParallelMachine comm, const std::string& input_file_name, const std::string& output_file_name)
+SideSetData get_sideset_data_from_file_read_and_write_new_file(BulkDataTester &bulk, const std::string& input_file_name, const std::string& output_file_name)
 {
     SideSetData sideset_data1;
-    fill_sideset_data_from_serial_input_file_and_write_decomposed_file(comm, input_file_name, output_file_name, sideset_data1);
+    fill_sideset_data_from_serial_input_file_and_write_decomposed_file(bulk, input_file_name, output_file_name, sideset_data1);
     return sideset_data1;
 }
 
-SideSetData get_sideset_data_from_written_file(stk::ParallelMachine comm, const std::string& output_file_name)
+SideSetData get_sideset_data_from_written_file(BulkDataTester &bulk, const std::string& output_file_name)
 {
     SideSetData sideset_data2;
-    fill_sideset_data_from_decomposed_input_file(comm, output_file_name, sideset_data2);
+    fill_sideset_data_from_decomposed_input_file(bulk, output_file_name, sideset_data2);
     return sideset_data2;
 }
 
 void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& input_file_name, const std::string& output_file_name)
 {
-    SideSetData sideset_data1 = get_sideset_data_from_file_read_and_write_new_file(comm, input_file_name, output_file_name);
-    SideSetData sideset_data2 = get_sideset_data_from_written_file(comm, output_file_name);
-    compare_sideset_read_against_sideset_written(input_file_name, sideset_data1, sideset_data2);
+    stk::mesh::MetaData meta1;
+    BulkDataTester bulk1(meta1, comm);
+    SideSetData sideset_data1 = get_sideset_data_from_file_read_and_write_new_file(bulk1, input_file_name, output_file_name);
+    stk::mesh::MetaData meta2;
+    BulkDataTester bulk2(meta2, comm);
+    SideSetData sideset_data2 = get_sideset_data_from_written_file(bulk2, output_file_name);
+    compare_sidesets(input_file_name, bulk1, sideset_data1, bulk2, sideset_data2);
     unlink(output_file_name.c_str());
 }
 
