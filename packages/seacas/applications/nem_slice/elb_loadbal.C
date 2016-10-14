@@ -72,24 +72,29 @@
 
 int is_hex(E_Type etype)
 {
-  if (etype == HEX8 || etype == HEX27 || etype == HEX20 || etype == HEXSHELL)
-    return 1;
-  else
-    return 0;
+  return (etype == HEX8 || etype == HEX27 || etype == HEX20 || etype == HEXSHELL);
 }
 
 int is_tet(E_Type etype)
 {
-  if (etype == TET4 || etype == TET10 || etype == TET8)
-    return 1;
-  else
-    return 0;
+  return (etype == TET4 || etype == TET10 || etype == TET8 || etype == TET14 || etype == TET15);
+}
+
+int is_wedge(E_Type etype)
+{
+  return (etype == WEDGE6 || etype == WEDGE15 || etype == WEDGE16 || etype == WEDGE20 ||
+          etype == WEDGE21);
+}
+
+int is_pyramid(E_Type etype)
+{
+  return (etype == PYRAMID5 || etype == PYRAMID13 || etype == PYRAMID14 || etype == PYRAMID18 ||
+          etype == PYRAMID19);
 }
 
 int is_3d_element(E_Type etype)
 {
-  return (is_hex(etype) || is_tet(etype) || etype == WEDGE6 || etype == WEDGE15 ||
-          etype == WEDGE16 || etype == PYRAMID5 || etype == PYRAMID13);
+  return (is_hex(etype) || is_tet(etype) || is_wedge(etype) || is_pyramid(etype));
 }
 
 int ilog2i(size_t n)
@@ -217,11 +222,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       graph->adj[cnt]++;
   }
 
-  if (((problem->type == NODAL) &&
-       (lb->type == INERTIAL)) ||
+  if (((problem->type == NODAL) && (lb->type == INERTIAL)) ||
       ((problem->type == ELEMENTAL) &&
-      (lb->type == INERTIAL || lb->type == ZPINCH || lb->type == BRICK || lb->type == ZOLTAN_RCB ||
-       lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC))) {
+       (lb->type == INERTIAL || lb->type == ZPINCH || lb->type == BRICK || lb->type == ZOLTAN_RCB ||
+        lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC))) {
     if (problem->read_coords != ELB_TRUE) {
       Gen_Error(0, "FATAL: internal logic error. Reading coordinates, but read_coords not set");
       return 0;
@@ -1209,9 +1213,7 @@ namespace {
         E_Type etype = mesh->elem_type[ecnt];
 
         /* need to check for volume elements */
-        if (etype == HEX8 || etype == HEXSHELL || etype == HEX20 || etype == TET4 ||
-            etype == TET10 || etype == WEDGE6 || etype == WEDGE15 || etype == WEDGE16 ||
-            etype == PYRAMID5 || etype == PYRAMID13 || etype == TET8) {
+        if (is_3d_element(etype)) {
 
           int nnodes = get_elem_info(NNODES, mesh->elem_type[ecnt]);
 

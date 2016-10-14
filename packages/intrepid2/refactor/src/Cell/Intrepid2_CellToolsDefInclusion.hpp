@@ -84,6 +84,8 @@ namespace Intrepid2 {
     const double minus_one =  -1.0 - t;
     const double plus_one  =   1.0 + t;
     const double minus_zero = -t;
+
+    typedef typename pointViewType::value_type value_type;
   
     // A cell with extended topology has the same reference cell as a cell with base topology. 
     // => testing for inclusion in a reference Triangle<> and a reference Triangle<6> relies on 
@@ -96,7 +98,7 @@ namespace Intrepid2 {
       break;
       
     case shards::Triangle<>::key : {
-      const auto distance = Util::max( std::max( -point(0), -point(1) ), point(0) + point(1) - 1.0 );
+      const auto distance = Util<value_type>::max( std::max( -point(0), -point(1) ), point(0) + point(1) - 1.0 );
       if( distance > threshold ) testResult = false;
       break;
     }
@@ -107,8 +109,8 @@ namespace Intrepid2 {
       break;
       
     case shards::Tetrahedron<>::key : {
-      const auto distance = Util::max(  Util::max(-point(0),-point(1)), 
-                                        Util::max(-point(2), point(0) + point(1) + point(2) - 1)  );
+      const auto distance = Util<value_type>::max(  Util<value_type>::max(-point(0),-point(1)), 
+                                        Util<value_type>::max(-point(2), point(0) + point(1) + point(2) - 1)  );
       if( distance > threshold ) testResult = false;
       break;
     }
@@ -123,7 +125,7 @@ namespace Intrepid2 {
       // The base of the reference prism is the same as the reference triangle => apply triangle test
       // to X and Y coordinates and test whether Z is in [-1,1]
     case shards::Wedge<>::key : {
-      const auto distance = Util::max( Util::max( -point(0), -point(1) ), point(0) + point(1) - 1 );
+      const auto distance = Util<value_type>::max( Util<value_type>::max( -point(0), -point(1) ), point(0) + point(1) - 1 );
       if( distance > threshold ||                     
           point(2) < minus_one || point(2) > plus_one) 
         testResult = false;

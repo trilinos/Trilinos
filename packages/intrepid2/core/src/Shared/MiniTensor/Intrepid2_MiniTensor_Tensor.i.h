@@ -1675,7 +1675,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 eye(Index const dimension)
 {
-  return identity<T, DYNAMIC,ES>(dimension);
+  return identity<T, DYNAMIC, ES>(dimension);
 }
 
 template<typename T, Index N,  typename ES>
@@ -1745,7 +1745,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 permutation_2(Index const dimension)
 {
-  return levi_civita_2<T, DYNAMIC,ES>(dimension);
+  return levi_civita_2<T, DYNAMIC, ES>(dimension);
 }
 
 
@@ -1754,7 +1754,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 permutation_2(Index const dimension)
 {
-  return levi_civita_2<T, N,ES>(dimension);
+  return levi_civita_2<T, N, ES>(dimension);
 }
 
 //
@@ -1765,7 +1765,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 alternator_2()
 {
-  return levi_civita_2<T, N,ES>();
+  return levi_civita_2<T, N, ES>();
 }
 
 template<typename T,  typename ES>
@@ -1781,7 +1781,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 alternator_2(Index const dimension)
 {
-  return levi_civita_2<T, N,ES>(dimension);
+  return levi_civita_2<T, N, ES>(dimension);
 }
 
 //

@@ -68,11 +68,6 @@ const char *obj_typenames[] = {"   Edge block", "   Face block", "Element block"
                                "    Edge set",  "    Face set",  "    Side set",  " Element set",
                                "    Node map",  "    Edge map",  "    Face map",  " Element map"};
 
-const char *obj_typestr[] = {
-    "L", "F", "E", "M", "D", "A", "S", "T", 0, /* maps have no result variables */
-    0,   0,   0,
-};
-
 int obj_sizeinq[] = {EX_INQ_EDGE,
                      EX_INQ_FACE,
                      EX_INQ_ELEM,
@@ -171,12 +166,12 @@ int cReadEdgeFace(int argc, char *argv[])
 
     if ((OBJECT_IS_BLOCK(i)) || (OBJECT_IS_SET(i))) {
       int *tp;
-      EXCHECK(ex_get_var_param(exoid, obj_typestr[i], &num_vars),
+      EXCHECK(ex_get_variable_param(exoid, obj_types[i], &num_vars),
               "Could not read number of variables.\n");
 
       if (num_vars && num_timesteps > 0) {
         truth_tab = (int *)malloc(num_vars * nids * sizeof(int));
-        EXCHECK(ex_get_var_tab(exoid, obj_typestr[i], nids, num_vars, truth_tab),
+        EXCHECK(ex_get_truth_table(exoid, obj_types[i], nids, num_vars, truth_tab),
                 "Could not read truth table.\n");
         tp = truth_tab;
         fprintf(stdout, "Truth:");
@@ -192,7 +187,7 @@ int cReadEdgeFace(int argc, char *argv[])
         for (j         = 0; j < num_vars; ++j)
           var_names[j] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
 
-        EXCHECK(ex_get_var_names(exoid, obj_typestr[i], num_vars, var_names),
+        EXCHECK(ex_get_variable_names(exoid, obj_types[i], num_vars, var_names),
                 "Could not read variable names.\n");
         have_var_names = 1;
       }

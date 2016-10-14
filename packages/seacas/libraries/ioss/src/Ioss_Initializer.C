@@ -55,6 +55,8 @@ Ioss::Initializer::Initializer()
   Ioss::Pyramid5::factory();
   Ioss::Pyramid13::factory();
   Ioss::Pyramid14::factory();
+  Ioss::Pyramid18::factory();
+  Ioss::Pyramid19::factory();
 
   Ioss::Quad4::factory();
   Ioss::Quad8::factory();

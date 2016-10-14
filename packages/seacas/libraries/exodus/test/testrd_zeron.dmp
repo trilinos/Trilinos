@@ -41,9 +41,9 @@ info records =
  ''
  ''
 
-after ex_get_var_param, error =   0
+after ex_get_variable_param, error =   0
 
-after ex_get_var_names, error =   0
+after ex_get_variable_names, error =   0
 There are  1 global variables; their names are :
  'glo_vars'
 

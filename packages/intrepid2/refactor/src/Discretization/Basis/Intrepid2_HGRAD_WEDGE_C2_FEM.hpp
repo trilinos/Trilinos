@@ -248,6 +248,13 @@ namespace Intrepid2 {
     getDofCoords( scalarViewType dofCoords ) const {
       impl_.getDofCoords( dofCoords );
     }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HGRAD_WEDGE_C2_FEM";
+    }
+
   };
 
 }// namespace Intrepid2

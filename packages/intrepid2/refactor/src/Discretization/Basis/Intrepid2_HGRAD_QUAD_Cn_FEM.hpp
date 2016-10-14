@@ -105,8 +105,8 @@ namespace Intrepid2 {
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
-          const auto ptBegin = Util::min(iter*numPtsEval,    _inputPoints.dimension(0));
-          const auto ptEnd   = Util::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
+          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.dimension(0));
+          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
           
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
@@ -201,6 +201,19 @@ namespace Intrepid2 {
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
     }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HGRAD_QUAD_Cn_FEM";
+    }
+
+    virtual
+    bool
+    requireOrientation() const {
+      return (this->basisDegree_ > 2);
+    }
+
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order */

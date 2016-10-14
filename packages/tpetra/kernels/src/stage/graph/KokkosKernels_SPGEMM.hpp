@@ -2,6 +2,7 @@
 #define _KOKKOS_GAUSSSEIDEL_HPP
 
 #include "KokkosKernels_Handle.hpp"
+#include "KokkosKernels_SPGEMM_viennaCL_impl.hpp"
 #include "KokkosKernels_SPGEMM_cuSPARSE_impl.hpp"
 #include "KokkosKernels_SPGEMM_CUSP_impl.hpp"
 #include "KokkosKernels_SPGEMM_mkl_impl.hpp"
@@ -233,6 +234,15 @@ namespace Graph{
     case SPGEMM_MKL:
       std::cout << "MKL" << std::endl;
       Impl::mkl_apply<spgemmHandleType>(
+                sh,
+                m,n,k,
+                row_mapA, entriesA, valuesA, transposeA,
+                row_mapB, entriesB, valuesB, transposeB,
+                row_mapC, entriesC, valuesC);
+      break;
+    case SPGEMM_VIENNA:
+      std::cout << "VIENNA" << std::endl;
+      Impl::viennaCL_apply<spgemmHandleType>(
                 sh,
                 m,n,k,
                 row_mapA, entriesA, valuesA, transposeA,

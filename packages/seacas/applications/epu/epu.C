@@ -38,6 +38,7 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <set>
 #include <stdexcept>
@@ -685,7 +686,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
         if (debug_level & 1)
           std::cout << time_stamp(tsFormat);
         std::cout << "Writing global node number map...\n";
-        error = ex_put_node_num_map(ExodusFile::output(), TOPTR(global_node_map));
+        error = ex_put_id_map(ExodusFile::output(), EX_NODE_MAP, TOPTR(global_node_map));
         if (error < 0)
           exodus_error(__LINE__);
       }
@@ -695,7 +696,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
           std::cout << time_stamp(tsFormat);
         std::cout << "Writing out master global elements information...\n";
         if (!global_element_map.empty()) {
-          error = ex_put_elem_num_map(ExodusFile::output(), TOPTR(global_element_map));
+          error = ex_put_id_map(ExodusFile::output(), EX_ELEM_MAP, TOPTR(global_element_map));
           if (error < 0)
             exodus_error(__LINE__);
         }
@@ -921,7 +922,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   for (time_step = ts_min - 1; time_step < ts_max; time_step += ts_step) {
     time_step_out++;
 
-    T time_val = -DBL_MAX;
+    T time_val = -std::numeric_limits<T>::max();
     {
       // read in and write out the time step information
       ExodusFile id(0);
@@ -1720,7 +1721,7 @@ namespace {
       size_t offset = 0;
       for (int p = 0; p < part_count; p++) {
         ExodusFile id(p);
-        error = ex_get_elem_num_map(id, TOPTR(global_element_numbers[p]));
+        error = ex_get_id_map(id, EX_ELEM_MAP, TOPTR(global_element_numbers[p]));
         if (error < 0)
           exodus_error(__LINE__);
         std::copy(global_element_numbers[p].begin(), global_element_numbers[p].end(),
@@ -1803,7 +1804,7 @@ namespace {
       for (int p = 0; p < part_count; p++) {
         size_t element_count = local_mesh[p].elementCount;
         element_map.resize(element_count);
-        int error = ex_get_elem_num_map(ExodusFile(p), TOPTR(element_map));
+        int error = ex_get_id_map(ExodusFile(p), EX_ELEM_MAP, TOPTR(element_map));
         if (error < 0)
           exodus_error(__LINE__);
 
@@ -1898,7 +1899,7 @@ namespace {
     int    error  = 0;
     for (int p = 0; p < part_count; p++) {
       ExodusFile id(p);
-      error = ex_get_node_num_map(id, TOPTR(global_node_numbers[p]));
+      error = ex_get_id_map(id, EX_NODE_MAP, TOPTR(global_node_numbers[p]));
       if (error < 0)
         exodus_error(__LINE__);
       std::copy(global_node_numbers[p].begin(), global_node_numbers[p].end(),
@@ -2386,7 +2387,7 @@ namespace {
       if (error < 0)
         exodus_error(__LINE__);
       if (glob_set.dfCount > 0) {
-        error = ex_put_node_set_dist_fact(exoid, glob_set.id, TOPTR(glob_set.distFactors));
+        error = ex_put_set_dist_fact(exoid, EX_NODE_SET, glob_set.id, TOPTR(glob_set.distFactors));
         if (error < 0)
           exodus_error(__LINE__);
       }

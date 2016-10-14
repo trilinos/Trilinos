@@ -51,10 +51,8 @@
 #ifndef KOKKOS_SPARSE_TRSV_HPP_
 #define KOKKOS_SPARSE_TRSV_HPP_
 
-#include <Kokkos_Sparse_impl_trsm.hpp>
-#ifdef KOKKOS_HAVE_CXX11
+#include "Kokkos_Sparse_impl_trsm.hpp"
 #include <type_traits>
-#endif // KOKKOS_HAVE_CXX11
 
 namespace KokkosSparse {
 

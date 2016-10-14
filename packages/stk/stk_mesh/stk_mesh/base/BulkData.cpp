@@ -41,6 +41,8 @@
 #include <iterator>                     // for back_insert_iterator, etc
 #include <set>                          // for set, set<>::iterator, etc
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
+#include <stk_mesh/base/FaceCreator.hpp>
+
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
@@ -504,7 +506,9 @@ BulkData::BulkData( MetaData & mesh_meta_data
         bucket_capacity),
     m_use_identifiers_for_resolving_sharing(false),
     m_modSummary(*this),
-    m_meshDiagnosticObserver(*this)
+    m_meshDiagnosticObserver(*this),
+    m_sideSetData(),
+    m_hasSideSetData(false)
 {
   mesh_meta_data.set_mesh_bulk_data(this);
   m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);
@@ -900,32 +904,33 @@ Entity BulkData::create_and_connect_side(const stk::mesh::EntityId globalSideId,
 
 Entity BulkData::declare_element_side(Entity elem, const unsigned sideOrd, const stk::mesh::PartVector& parts)
 {
-    check_declare_element_side_inputs(*this, elem, sideOrd);
-
-    stk::mesh::Entity sideEntity = stk::mesh::get_side_entity_for_elem_side_pair(*this, elem, sideOrd);
-    if(is_valid(sideEntity))
-        change_entity_parts(sideEntity, parts, {});
-    else
-    {
-        stk::mesh::EntityId chosenId = select_side_id(elem, sideOrd);
-        ThrowRequireMsg(!is_valid(get_entity(mesh_meta_data().side_rank(), chosenId)),
-                        "Conflicting id in declare_elem_side, found pre-existing side with id " << chosenId
-                        << " not connected to requested element " << identifier(elem) << ", side " << sideOrd);
-        sideEntity = create_and_connect_side(chosenId, elem, sideOrd, parts);
-    }
-    return sideEntity;
+    stk::mesh::EntityId chosenId = select_side_id(elem, sideOrd);
+    return declare_element_side(chosenId, elem, sideOrd, parts);
 }
 
 Entity BulkData::declare_element_side(const stk::mesh::EntityId globalSideId,
                                       Entity elem,
-                                      const unsigned localSideId,
+                                      const unsigned sideOrd,
                                       const stk::mesh::PartVector& parts)
 {
-    check_declare_element_side_inputs(*this, elem, localSideId);
+    check_declare_element_side_inputs(*this, elem, sideOrd);
 
-    Entity side = get_entity(mesh_meta_data().side_rank(), globalSideId);
-    if(!is_valid(side))
-        side = create_and_connect_side(globalSideId, elem, localSideId, parts);
+    Entity side = stk::mesh::get_side_entity_for_elem_side_pair(*this, elem, sideOrd);
+    if(is_valid(side))
+    {
+        if(bucket(side).owned())
+            change_entity_parts(side, parts, {});
+    }
+    else
+    {
+        if(has_face_adjacent_element_graph())
+        {
+            ThrowRequireMsg(!is_valid(get_entity(mesh_meta_data().side_rank(), globalSideId)),
+                        "Conflicting id in declare_elem_side, found pre-existing side with id " << globalSideId
+                        << " not connected to requested element " << identifier(elem) << ", side " << sideOrd);
+        }
+        side = create_and_connect_side(globalSideId, elem, sideOrd, parts);
+    }
     return side;
 }
 
@@ -4849,6 +4854,26 @@ void pack_induced_memberships_for_entities_less_than_element_rank( BulkData& bul
     }
 }
 
+void append_parts_from_sharer_to_owner(stk::mesh::BulkData& bulk, stk::mesh::Entity entity, stk::mesh::OrdinalVector &partOrdinals)
+{
+    if(bulk.state(entity)==stk::mesh::Created)
+    {
+        const stk::mesh::PartVector& all_parts = bulk.bucket(entity).supersets();
+        partOrdinals.reserve(all_parts.size());
+        for(stk::mesh::Part* part : all_parts)
+        {
+            bool isPartSameRankAsEntity = part->primary_entity_rank()==bulk.entity_rank(entity);
+            bool isPartParallelConsistent = part->entity_membership_is_parallel_consistent();
+            bool isRootTopologyPart = stk::mesh::is_topology_root_part(*part);
+            bool isAutoDeclaredPart = stk::mesh::is_auto_declared_part(*part);
+            if(isPartSameRankAsEntity && isPartParallelConsistent && !isRootTopologyPart && !isAutoDeclaredPart)
+            {
+                partOrdinals.push_back(part->mesh_meta_data_ordinal());
+            }
+        }
+    }
+}
+
 void pack_induced_memberships( BulkData& bulk_data,
                                stk::CommSparse & comm ,
                                const EntityCommListInfoVector & entity_comm )
@@ -4863,6 +4888,7 @@ void pack_induced_memberships( BulkData& bulk_data,
       induced.clear();
 
       induced_part_membership(bulk_data, entity_comm[i].entity , empty , induced );
+      append_parts_from_sharer_to_owner(bulk_data, entity_comm[i].entity, induced);
 
       CommBuffer & buf = comm.send_buffer( entity_comm[i].owner );
 
@@ -4977,14 +5003,17 @@ struct PartStorage
    PartVector removeParts;
 };
 
+
 void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, const EntityCommInfoVector& entity_comm_info,
         PartStorage& part_storage, stk::CommSparse& comm)
 {
     part_storage.induced_part_ordinals.clear();
     induced_part_membership(*this, entity, part_storage.empty, part_storage.induced_part_ordinals);
+
     unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
     filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
     stk::mesh::impl::convert_part_ordinals_to_parts(mesh_meta_data(), part_storage.induced_part_ordinals, part_storage.inducedParts);
+
     internal_change_entity_parts(entity, part_storage.inducedParts, part_storage.removeParts);
 }
 
@@ -6864,9 +6893,7 @@ void BulkData::delete_sides_on_all_procs(const stk::mesh::EntityVector& deletedS
                 {
                     procs.push_back( ec->proc );
                 }
-                std::sort( procs.begin() , procs.end() );
-                std::vector<int>::iterator iter = std::unique( procs.begin() , procs.end() );
-                procs.erase( iter , procs.end() );
+                stk::util::sort_and_unique(procs);
 
                 for(size_t proc_index = 0; proc_index < procs.size(); ++proc_index)
                 {
@@ -6940,9 +6967,7 @@ void BulkData::set_shared_owned_parts_and_ownership_on_comm_data(const std::vect
         modified_entities[i] = entity;
     }
 
-    std::sort(modified_entities.begin(), modified_entities.end(), stk::mesh::EntityLess(*this));
-    stk::mesh::EntityVector::iterator iter = std::unique(modified_entities.begin(), modified_entities.end());
-    modified_entities.resize(iter - modified_entities.begin());
+    stk::util::sort_and_unique(modified_entities, stk::mesh::EntityLess(*this));
 
     add_comm_list_entries_for_entities(modified_entities);
 }
@@ -7326,6 +7351,12 @@ void BulkData::mark_entities_as_deleted(stk::mesh::Bucket * bucket)
         notifier.notify_entity_deleted(e);
         record_entity_deletion(e);
     }
+}
+
+void BulkData::create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts)
+{
+    if(has_face_adjacent_element_graph())
+        FaceCreator(*this, *m_elemElemGraph).create_side_entities_given_sideset(sideSet, parts);
 }
 
 #ifdef SIERRA_MIGRATION

@@ -228,6 +228,19 @@ namespace Intrepid2 {
     getDofCoords( scalarViewType dofCoords ) const {
       impl_.getDofCoords( dofCoords );
     }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HDIV_HEX_I1_FEM";
+    }
+
+    virtual
+    bool
+    requireOrientation() const {
+      return true;
+    }
+
   };
 
 }// namespace Intrepid2

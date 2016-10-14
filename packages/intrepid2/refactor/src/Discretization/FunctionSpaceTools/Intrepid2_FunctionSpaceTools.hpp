@@ -78,7 +78,7 @@ namespace Intrepid2 {
   class FunctionSpaceTools {
   public:
     /** \brief Transformation of a (scalar) value field in the H-grad space, defined at points on a
-        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
+        reference cell, stored in the user-provided container <var><b>input</b></var>
         and indexed by (F,P), into the output container <var><b>outVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P).
    
@@ -91,13 +91,13 @@ namespace Intrepid2 {
         should contain the values of the function set \f$\{\widehat{u}_f\}_{f=0}^{F}\f$ at the 
         reference points:
         \f[
-        inputVals(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
+        input(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
         \f]
         The method returns   
         \f[
         outVals(c,f,p) 
         = \widehat{u}_f\circ F^{-1}_{c}(x_{c,p}) 
-        = \widehat{u}_f(\widehat{x}_p) =  inputVals(f,p) \qquad 0\le c < C \,,
+        = \widehat{u}_f(\widehat{x}_p) =  input(f,p) \qquad 0\le c < C \,,
         \f]
         i.e., it simply replicates the values in the user-provided container to every cell. 
         See Section \ref sec_pullbacks for more details about pullbacks. 
@@ -112,13 +112,13 @@ namespace Intrepid2 {
         |------|----------------------|--------------------------------------------------|
         \endcode
     */
-    // outputVals : CFP
-    // inputVals  :  FP
-    template<typename outputValValueType, class ...outputValProperties,
-             typename inputValValueType,     class ...inputValProperties>
+    // output : CFP
+    // input  :  FP
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,     class ...inputProperties>
     static void 
-    HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,outputValProperties...> outputVals,
-                         const Kokkos::DynRankView<inputValValueType, inputValProperties...>  inputVals );
+    HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                         const Kokkos::DynRankView<inputValueType, inputProperties...>  input );
 
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>

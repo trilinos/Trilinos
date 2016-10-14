@@ -49,8 +49,6 @@ SRCDIR=@CMAKE_CURRENT_SOURCE_DIR@
 NCDUMP=@NETCDF_NCDUMP@
 DIFF="diff -w"
 
-echo "************************************************************************"
-echo "************************************************************************"
 rm -f test.output
 echo "testwt - single precision write test..."
 echo "begin testwt" > test.output
@@ -242,6 +240,3 @@ echo "test-empty - read an empty (only ex_create called) exodus file..."
 echo "begin test-empty" >> test.output
 ${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test-empty.dmp | tee test-empty.res
 echo "end test-empty" >> test.output
-
-echo "************************************************************************"
-echo "************************************************************************"

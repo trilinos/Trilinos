@@ -185,9 +185,8 @@ Ioss::ElementTopology *Ioss::Tet7::face_type(int face_number) const
   if (face_number == 4) {
     return Ioss::ElementTopology::factory("tri6");
   }
-  else {
-    return Ioss::ElementTopology::factory("tri4a");
-  }
+
+  return Ioss::ElementTopology::factory("tri4a");
 }
 
 Ioss::ElementTopology *Ioss::Tet7::edge_type(int edge_number) const
@@ -203,9 +202,8 @@ Ioss::ElementTopology *Ioss::Tet7::edge_type(int edge_number) const
   if (edge_number <= 3) {
     return Ioss::ElementTopology::factory("edge3");
   }
-  else {
-    return Ioss::ElementTopology::factory("edge2");
-  }
+
+  return Ioss::ElementTopology::factory("edge2");
 }
 
 Ioss::IntVector Ioss::Tet7::face_edge_connectivity(int face_number) const

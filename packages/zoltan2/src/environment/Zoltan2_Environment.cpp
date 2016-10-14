@@ -145,6 +145,146 @@ Environment::~Environment()
     memoryOutputFile_->close();
 }
 
+RCP<Teuchos::BoolParameterEntryValidator> Environment::getBoolValidator()
+{
+  return Teuchos::rcp( new Teuchos::BoolParameterEntryValidator() );
+}
+
+// provides a generic any double validator to avoid clutter
+RCP<Teuchos::AnyNumberParameterEntryValidator>
+  Environment::getAnyDoubleValidator()
+{
+  Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes allTypes;
+  RCP<Teuchos::AnyNumberParameterEntryValidator> any_number_validator =
+    Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
+    Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE, allTypes) );
+  return any_number_validator;
+}
+
+// provides a generic any number validator to avoid clutter
+RCP<Teuchos::AnyNumberParameterEntryValidator>
+  Environment::getAnyIntValidator()
+{
+  Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes typesNoDoubles;
+  typesNoDoubles.allowDouble(false);
+  RCP<Teuchos::AnyNumberParameterEntryValidator> int_string_validator =
+    Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator(
+    Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, typesNoDoubles) );
+  return int_string_validator;
+}
+
+void Environment::getValidParameters(ParameterList & pl)
+{
+  // these  parameters are generic to all environments - timers, debugging, etc
+
+  // we set the name here because this always happens
+  pl.setName("zoltan2ValidatingParameters");
+
+  // error_check_level
+  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+    error_check_level_Validator = Teuchos::rcp(
+      new Teuchos::StringToIntegralParameterEntryValidator<int>(
+      Teuchos::tuple<std::string>( "no_assertions", "basic_assertions",
+        "complex_assertions", "debug_mode_assertions" ),
+      Teuchos::tuple<std::string>( "no assertions will be performed",
+        "typical checks of argument validity",
+        "additional checks, i.e. is input graph a valid graph)",
+        "check for everything including logic errors (slowest)" ),
+      Teuchos::tuple<int>( 0, 1, 2, 3 ), "error_check_level") );
+  pl.set("error_check_level", "basic_assertions", "the amount of error checking"
+    " performed (If the compile flag Z2_OMIT_ALL_ERROR_CHECKING was set, then "
+    "error checking code is not executed at runtime.)",
+    error_check_level_Validator);
+
+  // basic_status
+  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+    debug_level_Validator = Teuchos::rcp(
+      new Teuchos::StringToIntegralParameterEntryValidator<int>(
+        Teuchos::tuple<std::string>( "no_status", "basic_status",
+          "detailed_status", "verbose_detailed_status" ),
+        Teuchos::tuple<std::string>( "library outputs no status information",
+          "library outputs basic status information",
+          "library outputs detailed information",
+          "library outputs very detailed information" ),
+        Teuchos::tuple<int>( 0, 1, 2, 3 ),
+        "basic_status") );
+  pl.set("debug_level", "basic_status", "the amount of status/debugging/warning"
+    " information to print",
+    debug_level_Validator);
+
+  // timer_type
+  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+    timer_type_Validator = Teuchos::rcp( new
+      Teuchos::StringToIntegralParameterEntryValidator<int>(
+        Teuchos::tuple<std::string>( "no_timers", "macro_timers",
+          "micro_timers", "both_timers", "test_timers" ),
+      Teuchos::tuple<std::string>( "No timing data will be collected ",
+        "Time an algorithm (or other entity) as a whole.",
+        "Time the substeps of an entity.", "Run both MACRO and MICRO timers.",
+        "Run timers added to code for testing, removed later" ),
+      Teuchos::tuple<int>( 0, 1, 2, 3, 4 ),
+      "no_timers") );
+  pl.set("timer_type", "no_timers", "  the type of timing information to "
+    "collect (If the compile flag Z2_OMIT_ALL_PROFILING was set, then the "
+    "timing code is not executed at runtime.)",
+    timer_type_Validator);
+
+  // debug_output_stream
+  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+    output_stream_Validator = Teuchos::rcp(
+      new Teuchos::StringToIntegralParameterEntryValidator<int>(
+        Teuchos::tuple<std::string>( "std::cout", "cout", "stdout",
+          "std::cerr", "cerr", "stderr", "/dev/null", "null" ),
+        // original did not have this documented - left blank
+        Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
+        Teuchos::tuple<int>( 0, 0, 0, 1, 1, 1, 2, 2 ),
+        "cout") );
+
+  pl.set("debug_output_stream", "cout",
+    "output stream for debug/status/warning messages",
+    output_stream_Validator);
+
+  pl.set("timer_output_stream", "cout",
+    "output stream for timing report",
+    output_stream_Validator);
+
+  pl.set("memory_output_stream", "cout",
+    "output stream for memory usage messages",
+    output_stream_Validator);
+
+  // validator for file does not have to exist
+  RCP<Teuchos::FileNameValidator> file_not_required_validator =
+    Teuchos::rcp( new Teuchos::FileNameValidator(false) );
+
+  // debug_output_file
+  pl.set("memory_output_file", "/dev/null",
+    "name of file to which memory profiling information should "
+    "be written (process rank will be included in file name)",
+    file_not_required_validator);
+
+  // timer_output_file
+  pl.set("timer_output_file", "/dev/null", "name of file to which "
+    "timing information should be written (process rank will be "
+    "included in file name)", file_not_required_validator);
+
+  // debug_output_file
+  pl.set("debug_output_file", "/dev/null", "name of file to which debug/status"
+    " messages should be written (process rank will be included in file name)",
+    file_not_required_validator);
+
+  const bool bUnsortedFalse = false; // defined this to clarify the meaning
+  RCP<Zoltan2::IntegerRangeListValidator<int>> procs_Validator =
+    Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(bUnsortedFalse) );
+
+  // debug_procs
+  pl.set("debug_procs", "0", "list of ranks that output debugging/status "
+    "messages", procs_Validator);
+
+  // memory_procs
+  pl.set("memory_procs", "0", "list of ranks that do memory profiling "
+    "information", procs_Validator);
+}
+
 void Environment::commitParameters()
 {
   using Teuchos::Array;
@@ -287,8 +427,9 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
 
   // Data type of these parameters will now change from string to int
 
-  std::string validatorName("StringIntegralValidator(int)");
-  typedef Teuchos::StringToIntegralParameterEntryValidator<int> s2i_t;
+  std::string validatorNameInt("StringIntegralValidator(int)");
+  std::string validatorNameBool("StringIntegralValidator(bool)");
+  typedef Teuchos::StringToIntegralParameterEntryValidator<int> s2int_t;
 
   while (next != params.end()){
 
@@ -302,12 +443,12 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
     }
     else{
       if ((entry.validator()).get()){
-        if (entry.validator()->getXMLTypeName() == validatorName){
+        if (entry.validator()->getXMLTypeName() == validatorNameInt){
           std::string dummy("");
           std::string &entryValue = entry.getValue<std::string>(&dummy);
-          RCP<const s2i_t> s2i =
-            Teuchos::rcp_dynamic_cast<const s2i_t>(entry.validator(), true);
-          int val = s2i->getIntegralValue(entryValue);
+          RCP<const s2int_t> s2int =
+            Teuchos::rcp_dynamic_cast<const s2int_t>(entry.validator(), true);
+          int val = s2int->getIntegralValue(entryValue);
           entry.setValue<int>(val);
         }
       }

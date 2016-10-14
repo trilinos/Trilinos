@@ -474,9 +474,9 @@ namespace kokkos {
 
 void get_mesh_dimensions(int &nx, int &ny, int &nz)
 {
-    nx = unitTestUtils::get_command_line_option<int>("-nx","10");
-    ny = unitTestUtils::get_command_line_option<int>("-ny","10");
-    nz = unitTestUtils::get_command_line_option<int>("-nz","10");
+    nx = stk::unit_test_util::get_command_line_option<int>("-nx", 10);
+    ny = stk::unit_test_util::get_command_line_option<int>("-ny", 10);
+    nz = stk::unit_test_util::get_command_line_option<int>("-nz", 10);
 }
 
 void populate_mesh(stk::mesh::BulkData& bulk, int nx, int ny, int nz)
@@ -493,7 +493,7 @@ void populate_mesh(stk::mesh::BulkData& bulk, int nx, int ny, int nz)
     stk::mesh::put_field(*x, meta.locally_owned_part(), &val);
     stk::mesh::put_field(*y, meta.locally_owned_part(), &val);
 
-    stk::unit_test_util::fill_mesh_using_stk_io(os.str(), bulk);
+    stk::io::fill_mesh(os.str(), bulk);
 }
 
 TEST_F(MTK_Kokkos, stkFieldBLAS) {

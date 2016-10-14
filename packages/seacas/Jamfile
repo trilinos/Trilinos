@@ -179,7 +179,7 @@ alias install-targets
 # This rule provides a common name for the multiple install rules.
 
 explicit install-user-include ;
-alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include3 install-user-include4 install-user-include5 ;
+alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include2b install-user-include3 install-user-include4 install-user-include5 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -204,6 +204,13 @@ install install-user-include2
   : [ path.glob-tree $(seacas-root)/libraries/exodus/include : *.h ]
   : <location>$(install-root)/seacas/include/exodus
     <install-source-root>$(seacas-root)/libraries/exodus/include
+  ;
+
+explicit install-user-include2b ;
+install install-user-include2b
+  : [ path.glob-tree $(seacas-root)/libraries/exodus/sierra : *.h ]
+  : <location>$(install-root)/seacas/include/exodus
+    <install-source-root>$(seacas-root)/libraries/exodus/sierra
   ;
 
 # This rule copies all headers it finds in the named directory of the
@@ -349,7 +356,7 @@ install install-user-bin
     /tpl/hdf5//h5debug
     /tpl/hdf5//testhdf5
     /tpl/hdf5//testphdf5
-  : <target-os>bgq <location>$(install-root)/bin
+  : <target-os>bgq <location>$(install-bin-dir)
   ;
 
 install install-user-bin
@@ -404,7 +411,7 @@ install install-user-bin
     /tpl/hdf5//h5debug
     /tpl/hdf5//testhdf5
     /tpl/hdf5//testphdf5
-  : <location>$(install-root)/bin
+  : <location>$(install-bin-dir)
   ;
 
 explicit install-exe-targets ;
@@ -729,6 +736,7 @@ lib exodus
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/exodus/src/*.c ]
+        [ glob $(seacas-root)/libraries/exodus/src/deprecated/*.c ]
     ]
     /tpl/netcdf//netcdf
   :
@@ -736,6 +744,7 @@ lib exodus
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/include
+        <include>$(seacas-root)/libraries/exodus/sierra
 	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
@@ -749,6 +758,7 @@ lib exodus
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/include
+        <include>$(seacas-root)/libraries/exodus/sierra
 	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild

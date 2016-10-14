@@ -1,3 +1,4 @@
+#include <gtest/gtest.h>
 #include <ngp/Ngp.hpp>
 #include <ngp/NgpMultistateField.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
@@ -127,9 +128,10 @@ TEST_F(NgpHowTo, exerciseAura)
             EXPECT_EQ(2.0, *stk::mesh::field_data(field, elem));
 }
 
-stk::mesh::Field<int> &create_field_with_num_states_and_init(stk::mesh::MetaData &meta, int numStates, int init)
+template <typename DataType>
+stk::mesh::Field<DataType> &create_field_with_num_states_and_init(stk::mesh::MetaData &meta, int numStates, DataType init)
 {
-    auto &field = meta.declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK, "myField", numStates);
+    auto &field = meta.declare_field<stk::mesh::Field<DataType>>(stk::topology::ELEM_RANK, "myField", numStates);
     stk::mesh::put_field(field, meta.universal_part(), &init);
     return field;
 }
@@ -210,6 +212,23 @@ TEST_F(NgpHowTo, useConvenientMultistateFields)
     verify_state_new_has_value(get_bulk(), stkField, ngpMultistateField, 2);
 }
 
+TEST_F(NgpHowTo, setAllFieldValues)
+{
+  
+    stk::mesh::Field<double> &stkField = create_field_with_num_states_and_init<double>(get_meta(), 2, 0.0);
+    setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+
+    ngp::Field<double> ngpField(get_bulk(), stkField);
+    ngp::Mesh ngpMesh(get_bulk());
+
+    ngpField.set_all(ngpMesh, 1.0);
+
+    double sum = ngp::get_field_sum(ngpMesh, ngpField, get_meta().universal_part());
+
+    EXPECT_NEAR(4.0, sum, 1e-14);
+}
+
+
 class NgpReduceHowTo : public stk::unit_test_util::MeshFixture
 {
 protected:
@@ -262,3 +281,6 @@ TEST_F(NgpReduceHowTo, getSumFieldValue)
     int numElems = get_num_elems();
     EXPECT_EQ(numElems*(numElems+1)/2, get_sum_field_value(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
 }
+
+
+

@@ -43,10 +43,6 @@
 #define ROL_MiniTensor_MiniSolver_hpp
 
 #include "Intrepid2_MiniTensor_Solvers.h"
-#include "ROL_MiniTensor_BoundConstraint.hpp"
-#include "ROL_MiniTensor_EqualityConstraint.hpp"
-#include "ROL_MiniTensor_Function.hpp"
-#include "ROL_MiniTensor_Vector.hpp"
 
 namespace ROL {
 
@@ -69,13 +65,33 @@ public:
       FN & fn,
       Intrepid2::Vector<T, N> & soln);
 
-  template<typename FN, typename CN, Index NC>
+  template<typename FN, typename BC>
   void
   solve(
       std::string const & algoname,
       Teuchos::ParameterList & params,
       FN & fn,
-      CN & cn,
+      BC & bc,
+      Intrepid2::Vector<T, N> & soln);
+
+  template<typename FN, typename EIC, Index NC>
+  void
+  solve(
+      std::string const & algoname,
+      Teuchos::ParameterList & params,
+      FN & fn,
+      EIC & eic,
+      Intrepid2::Vector<T, N> & soln,
+      Intrepid2::Vector<T, NC> & cv);
+
+  template<typename FN, typename EIC, typename BC, Index NC>
+  void
+  solve(
+      std::string const & algoname,
+      Teuchos::ParameterList & params,
+      FN & fn,
+      EIC & eic,
+      BC & bc,
       Intrepid2::Vector<T, N> & soln,
       Intrepid2::Vector<T, NC> & cv);
 

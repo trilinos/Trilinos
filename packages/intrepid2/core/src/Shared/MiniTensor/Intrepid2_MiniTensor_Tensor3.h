@@ -52,7 +52,7 @@ using tensor3_store = Storage<T, dimension_power<N, 3>::value, ES>;
 ///
 /// Third-order tensor.
 ///
-template<typename T, Index N = DYNAMIC,  typename ES=NOKOKKOS>
+template<typename T, Index N = DYNAMIC,  typename ES = NOKOKKOS>
 class Tensor3 : public TensorBase<T, tensor3_store<T, N, ES>>
 {
 public:
@@ -377,7 +377,7 @@ levi_civita_3();
 
 template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, DYNAMIC,ES> const
+Tensor3<T, DYNAMIC, ES> const
 levi_civita_3(Index const dimension);
 
 template<typename T, Index N,  typename ES>
@@ -395,7 +395,7 @@ permutation_3();
 
 template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, DYNAMIC,ES> const
+Tensor3<T, DYNAMIC, ES> const
 permutation_3(Index const dimension);
 
 template<typename T, Index N,  typename ES>
@@ -413,7 +413,7 @@ alternator_3();
 
 template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor3<T, DYNAMIC,ES> const
+Tensor3<T, DYNAMIC, ES> const
 alternator_3(Index const dimension);
 
 template<typename T, Index N,  typename ES>

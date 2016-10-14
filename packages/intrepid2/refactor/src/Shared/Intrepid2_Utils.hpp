@@ -52,6 +52,11 @@
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
 
+#include "Kokkos_Core.hpp"
+#include "Kokkos_ViewFactory.hpp"
+
+#include "Sacado_Traits.hpp"
+
 namespace Intrepid2 {
 
 #if defined(KOKKOS_OPT_RANGE_AGGRESSIVE_VECTORIZATION) && defined(KOKKOS_HAVE_PRAGMA_IVDEP) && !defined(__CUDA_ARCH__)
@@ -148,89 +153,58 @@ namespace Intrepid2 {
   /// utilities device compirable
   ///
 
+  // this will be gone 
+  template<typename IdxType, typename DimType, typename IterType>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static void 
+  unrollIndex(IdxType &i, IdxType &j, 
+              const DimType dim0,
+              const DimType dim1,
+              const IterType iter) {
+    // left index
+    //j = iter/dim0;
+    //i = iter%dim0;
+    
+    // right index
+    i = iter/dim1;
+    j = iter%dim1;
+  }
+  
+  template<typename IdxType, typename DimType, typename IterType>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static void 
+  unrollIndex(IdxType &i, IdxType &j, IdxType &k, 
+              const DimType dim0,
+              const DimType dim1,
+              const DimType dim2,
+              const IterType iter) {
+    IdxType tmp;
+    
+    //unrollIndex(tmp, k, dim0*dim1, dim2, iter);
+    //unrollIndex(  i, j, dim0,      dim1,  tmp);
+    
+    unrollIndex( i, tmp, dim0, dim1*dim2, iter);
+    unrollIndex( j, k,   dim1,      dim2,  tmp);
+  }
+  
+  template<typename T>
   class Util {
   public:
-
-    template<typename IdxType, typename DimType, typename IterType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static void 
-    unrollIndex(IdxType &i, IdxType &j, 
-                const DimType dim0,
-                const DimType dim1,
-                const IterType iter) {
-      // left index
-      //j = iter/dim0;
-      //i = iter%dim0;
-
-      // right index
-      i = iter/dim1;
-      j = iter%dim1;
-    }
-    
-    template<typename IdxType, typename DimType, typename IterType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static void 
-    unrollIndex(IdxType &i, IdxType &j, IdxType &k, 
-                const DimType dim0,
-                const DimType dim1,
-                const DimType dim2,
-                const IterType iter) {
-      IdxType tmp;
-
-      //unrollIndex(tmp, k, dim0*dim1, dim2, iter);
-      //unrollIndex(  i, j, dim0,      dim1,  tmp);
-
-      unrollIndex( i, tmp, dim0, dim1*dim2, iter);
-      unrollIndex( j, k,   dim1,      dim2,  tmp);
-    }
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static T sign(const T a) {
-      return (a < 0 ? -1 : 1);
-    }
-
-    template<typename T>
     KOKKOS_FORCEINLINE_FUNCTION
     static T min(const T a, const T b) {
       return (a < b ? a : b);
     }
 
-    template<typename T>
     KOKKOS_FORCEINLINE_FUNCTION
     static T max(const T a, const T b) {
       return (a > b ? a : b);
     }
 
-    template<typename T>
     KOKKOS_FORCEINLINE_FUNCTION
     static T abs(const T a) {
-      return (a > 0 ? a : -a);
+      return (a > 0 ? a : T(-a));
     }
 
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static T real(const T a) {
-      return a;
-    }
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static T imag(const T a) {
-      return 0;
-    }
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static T conj(const T a) {
-      return a;
-    }
-    
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static void swap(T &a, T &b) {
-      T c(a); a = b; b = c;
-    }
   };
 
 

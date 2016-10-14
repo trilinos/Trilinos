@@ -59,13 +59,10 @@
 #ifndef KOKKOS_SPARSE_HPP_
 #define KOKKOS_SPARSE_HPP_
 
-#ifdef KOKKOS_HAVE_CXX11
+#include "Kokkos_Sparse_CrsMatrix.hpp"
+#include "Kokkos_Sparse_impl_spmv.hpp"
+#include "Kokkos_Sparse_trsv.hpp"
 #include <type_traits>
-#endif // KOKKOS_HAVE_CXX11
-
-#include <Kokkos_Sparse_CrsMatrix.hpp>
-#include <Kokkos_Sparse_impl_spmv.hpp>
-#include <Kokkos_Sparse_trsv.hpp>
 
 namespace KokkosSparse {
 
@@ -84,8 +81,6 @@ spmv(const char mode[],
      const YVector& y,
      const RANK_ONE)
 {
-
-#ifdef KOKKOS_HAVE_CXX11
   // Make sure that both x and y have the same rank.
   static_assert ((int) XVector::rank == (int) YVector::rank,
                  "KokkosBlas::spmv: Vector ranks do not match.");
@@ -96,20 +91,6 @@ spmv(const char mode[],
   static_assert (Kokkos::Impl::is_same<typename YVector::value_type,
                                        typename YVector::non_const_value_type>::value,
                  "KokkosBlas::spmv: Output Vector must be non-const.");
-
-#else
-  // We prefer to use C++11 static_assert, because it doesn't give
-  // "unused typedef" warnings, like the constructs below do.
-  //
-  // Make sure that both x and y have the same rank.
-  typedef typename
-    Kokkos::Impl::StaticAssert<(int) XVector::rank == (int) YVector::rank>::type
-    Blas1_spmv_vector_ranks_do_not_match;
-  // Make sure that x (and therefore y) is rank 1.
-  typedef typename
-    Kokkos::Impl::StaticAssert<(int) XVector::rank == 1 >::type
-    Blas1_spmv_vector_rank_not_one;
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if((mode[0]==NoTranspose[0])||(mode[0]==Conjugate[0])) {

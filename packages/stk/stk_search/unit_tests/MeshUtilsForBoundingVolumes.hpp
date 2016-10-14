@@ -34,31 +34,36 @@
 #ifndef STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 #define STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 
-#include <exodusMeshInterface.h>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_unit_test_utils/getOption.h>
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_unit_test_utils/ioUtils.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/Field.hpp"
+#include "stk_mesh/base/ExodusTranslator.hpp"
+#include <exodusII.h>
 
-inline void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
-        const std::vector<double> &coordinates, std::vector<double>& boxCoordinates)
+inline void findBoundingBoxCoordinates(const std::vector<double> &coordinates, std::vector<double>& boxCoordinates)
 {
     int spatialDim = 3;
     double *minCoordinates = &boxCoordinates[0];
     double *maxCoordinates = &boxCoordinates[spatialDim];
 
-    int firstNode=0;
     for (int j=0;j<spatialDim;j++)
     {
-        minCoordinates[j] = coordinates[spatialDim*connectivity[firstNode]+j];
-        maxCoordinates[j] = coordinates[spatialDim*connectivity[firstNode]+j];
+        minCoordinates[j] = coordinates[j];
+        maxCoordinates[j] = coordinates[j];
     }
+
+    int numNodesPerElement = coordinates.size()/3;
 
     for (int i=1;i<numNodesPerElement;i++)
     {
-        sierra::Mesh::LocalNodeId nodeId = connectivity[i];
         for (int j=0;j<spatialDim;j++)
         {
-           minCoordinates[j] = std::min(minCoordinates[j], coordinates[spatialDim*nodeId+j]);
-           maxCoordinates[j] = std::max(maxCoordinates[j], coordinates[spatialDim*nodeId+j]);
+           minCoordinates[j] = std::min(minCoordinates[j], coordinates[spatialDim*i+j]);
+           maxCoordinates[j] = std::max(maxCoordinates[j], coordinates[spatialDim*i+j]);
         }
     }
     bool inflateBox = true;
@@ -76,50 +81,62 @@ inline void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connect
     }
 }
 
-inline void createBoundingBoxesForSidesInSidesets(const sierra::Mesh &mesh, const std::vector<double> &coordinates,
-        std::vector<GtkBox>& domainBoxes)
+
+inline void createBoundingBoxesForSidesInSidesets(const stk::mesh::BulkData& bulk, std::vector<FloatBox>& domainBoxes)
 {
+    stk::mesh::ExodusTranslator exoTranslator(bulk);
     size_t numberBoundingBoxes = 0;
-    sierra::Mesh::SideSetIdVector sidesetIds;
-    mesh.fillSideSetIds(sidesetIds);
+    std::vector<int64_t> sidesetIds;
+    exoTranslator.fill_side_set_ids(sidesetIds);
 
     for (size_t i=0;i<sidesetIds.size();i++)
     {
-        numberBoundingBoxes += mesh.getNumberSidesInSideSet(sidesetIds[i]);
+        numberBoundingBoxes += exoTranslator.get_local_num_entities_for_id(sidesetIds[i], bulk.mesh_meta_data().side_rank());
     }
 
     domainBoxes.resize(numberBoundingBoxes);
+
+    stk::mesh::FieldBase const * coords = bulk.mesh_meta_data().coordinate_field();
 
     size_t boxCounter = 0;
 
     std::vector<double> boxCoordinates(6);
     for (size_t ssetCounter=0;ssetCounter<sidesetIds.size();ssetCounter++)
     {
-        sierra::Mesh::LocalNodeIdVector nodeIds;
-        std::vector<int> numNodesPerFace;
-        mesh.fillSideSetLocalNodeIds(sidesetIds[ssetCounter], nodeIds, numNodesPerFace);
-        size_t offset=0;
-        for (size_t i=0;i<numNodesPerFace.size();i++)
+        const stk::mesh::Part* sideset = exoTranslator.get_exodus_part_of_rank(sidesetIds[ssetCounter], bulk.mesh_meta_data().side_rank());
+        stk::mesh::EntityVector sides;
+        stk::mesh::Selector sel = bulk.mesh_meta_data().locally_owned_part() & *sideset;
+        stk::mesh::get_selected_entities(sel, bulk.buckets(bulk.mesh_meta_data().side_rank()), sides);
+
+        for(size_t j=0;j<sides.size();++j)
         {
-            createBoundingBoxForElement(&nodeIds[offset], numNodesPerFace[i], coordinates, boxCoordinates);
+            unsigned num_nodes_per_side = bulk.num_nodes(sides[j]);
+            const stk::mesh::Entity* nodes = bulk.begin_nodes(sides[j]);
+            std::vector<double> coordinates(3*num_nodes_per_side,0);
+            for(unsigned k=0;k<num_nodes_per_side;++k)
+            {
+                double *data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[k]));
+                coordinates[3*k] = data[0];
+                coordinates[3*k+1] = data[1];
+                coordinates[3*k+2] = data[2];
+            }
+            findBoundingBoxCoordinates(coordinates, boxCoordinates);
             domainBoxes[boxCounter].set_box(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
                                             boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]);
             boxCounter++;
-            offset += numNodesPerFace[i];
         }
     }
 
     ThrowRequireMsg(boxCounter == numberBoundingBoxes, "Program error. Please contact sierra-help for support");
 }
 
-inline void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<GtkBox> &domainBoxes)
+inline void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<FloatBox> &domainBoxes)
 {
-    sierra::ExodusMeshInterface mesh(filename, comm);
+    stk::mesh::MetaData meta(3);
+    stk::mesh::BulkData bulk(meta, comm);
+    stk::io::fill_mesh(filename, bulk);
 
-    std::vector<double> coordinates;
-    mesh.fillCoordinates(coordinates);
-
-    createBoundingBoxesForSidesInSidesets(mesh, coordinates, domainBoxes);
+    createBoundingBoxesForSidesInSidesets(bulk, domainBoxes);
 }
 
 inline int openFileAndGetId(const int numBoxes, const int num_element_blocks, const std::string &filename)
@@ -177,7 +194,7 @@ inline void setHexCoordinates(const double &xmin, const double &ymin, const doub
     hexCoordinates[3*ordering[7]+2] = zmax;
 }
 
-inline void putCoordinatesInFile(const int exoid, const std::vector<GtkBox>& boxes)
+inline void putCoordinatesInFile(const int exoid, const std::vector<FloatBox>& boxes)
 {
     const int num_nodes_per_element = 8;
     const int spatialDim = 3;
@@ -239,7 +256,7 @@ inline void fillNumElementsPerBlock(const int num_elements, std::vector<int> &nu
     }
 }
 
-inline void writeExodusFileUsingBoxes(const std::vector<GtkBox>& boxes, const std::string &filename)
+inline void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const std::string &filename)
 {
     if ( boxes.size() == 0 )
     {
@@ -276,19 +293,19 @@ inline void writeExodusFileUsingBoxes(const std::vector<GtkBox>& boxes, const st
     ex_close(exoid);
 }
 
-inline void fillDomainBoxes(MPI_Comm comm, std::vector<GtkBox>& domainBoxes)
+inline void fillDomainBoxes(MPI_Comm comm, std::vector<FloatBox>& domainBoxes)
 {
-    std::string filename = unitTestUtils::getOption("-i", "input.exo");
+    std::string filename = stk::unit_test_util::get_option("-i", "input.exo");
     fillBoxesUsingSidesetsFromFile(comm, filename, domainBoxes);
 
-    std::string exodusFilename = unitTestUtils::getOption("-o", "boxes.exo");
+    std::string exodusFilename = stk::unit_test_util::get_option("-o", "boxes.exo");
     if ( exodusFilename != "skip" )
     {
         writeExodusFileUsingBoxes(domainBoxes, exodusFilename);
     }
 }
 
-inline void fillStkBoxesUsingGtkBoxes(const std::vector<GtkBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
+inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
 {
     for (size_t i=0;i<domainBoxes.size();i++)
     {
@@ -299,191 +316,121 @@ inline void fillStkBoxesUsingGtkBoxes(const std::vector<GtkBox> &domainBoxes, co
     }
 }
 
-inline void createBoundingBoxesForElementsInElementBlocks(const int procId, const sierra::Mesh &mesh, const std::vector<double> &coordinates, GtkBoxVector& domainBoxes)
+inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FlaotBoxVector& domainBoxes)
 {
-    size_t numberBoundingBoxes = mesh.getNumberLocalElements();
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+
+    size_t numberBoundingBoxes = elements.size();
     domainBoxes.resize(numberBoundingBoxes);
 
-    sierra::Mesh::BlockIdVector blockIds;
-    mesh.fillElementBlockIds(blockIds);
-
-    sierra::Mesh::AnalystElementIdVector analystElementIds;
-    mesh.fillAnalystElementIds(analystElementIds);
-    size_t boxCounter = 0;
+    stk::mesh::FieldBase const * coords = bulk.mesh_meta_data().coordinate_field();
 
     std::vector<double> boxCoordinates(6);
 
-    for (size_t elemBlockNum=0;elemBlockNum<mesh.getNumberElementBlocks();elemBlockNum++)
+    for(size_t i=0;i<elements.size();++i)
     {
-        sierra::Mesh::LocalNodeIdVector connectivity;
-        mesh.fillElementToLocalNodeConnectivityForBlock(blockIds[elemBlockNum], connectivity);
-        int numNodesPerElement = mesh.getNumberNodesPerElement(blockIds[elemBlockNum]);
-        size_t numElementsThisBlock = mesh.getNumberLocalElementsInBlock(blockIds[elemBlockNum]);
-        for (size_t elemCounter=0;elemCounter<numElementsThisBlock;elemCounter++)
+        unsigned num_nodes = bulk.num_nodes(elements[i]);
+        std::vector<double> coordinates(3*num_nodes,0);
+        const stk::mesh::Entity* nodes = bulk.begin_nodes(elements[i]);
+        for(unsigned j=0;j<num_nodes;++j)
         {
-            createBoundingBoxForElement(&connectivity[numNodesPerElement*elemCounter], numNodesPerElement, coordinates, boxCoordinates);
-            Ident domainBoxId(analystElementIds[boxCounter], procId);
-            domainBoxes[boxCounter] = std::make_pair(GtkBox(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
-                                                            boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]),
-                                                            domainBoxId);
-            boxCounter++;
+            double* data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[j]));
+            coordinates[3*j] = data[0];
+            coordinates[3*j+1] = data[1];
+            coordinates[3*j+2] = data[2];
         }
+        findBoundingBoxCoordinates(coordinates, boxCoordinates);
+        unsigned id = bulk.identifier(elements[i]);
+        Ident domainBoxId(id, bulk.parallel_rank());
+        domainBoxes[i] = std::make_pair(FloatBox(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
+                                                boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]),
+                                                domainBoxId);
+
     }
 }
 
 inline void fillBoxesUsingElementBlocksFromFile(
-        MPI_Comm comm, const std::string& volumeFilename, GtkBoxVector &domainBoxes)
+        MPI_Comm comm, const std::string& volumeFilename, FlaotBoxVector &domainBoxes)
 {
-    sierra::ExodusMeshInterface volumeMesh(volumeFilename, comm);
+    stk::mesh::MetaData meta(3);
+    stk::mesh::BulkData bulk(meta, comm);
+    stk::io::fill_mesh(volumeFilename, bulk);
 
-    std::vector<double> coordinates;
-    volumeMesh.fillCoordinates(coordinates);
-
-    int procId=-1;
-    MPI_Comm_rank(comm, &procId);
-
-    createBoundingBoxesForElementsInElementBlocks(procId, volumeMesh, coordinates, domainBoxes);
+    createBoundingBoxesForElementsInElementBlocks(bulk, domainBoxes);
 }
 
 inline void fillBoundingVolumesUsingNodesFromFile(
         MPI_Comm comm, const std::string& sphereFilename, std::vector< std::pair<Sphere, Ident> > &spheres)
 {
-    int procId=-1;
-    MPI_Comm_rank(comm, &procId);
-
-    sierra::ExodusMeshInterface sphereMesh(sphereFilename, comm);
-
-    std::vector<double> coordinates;
-    sphereMesh.fillCoordinates(coordinates);
-
     const int spatialDim = 3;
-    const size_t numSpheres = coordinates.size()/spatialDim;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData bulk(meta, comm);
+
+    stk::io::fill_mesh(sphereFilename, bulk);
+
+    stk::mesh::EntityVector nodes;
+    stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), nodes);
 
     spheres.clear();
-    spheres.resize(numSpheres);
-    sierra::Mesh::AnalystNodeIdVector analystIds;
-    sphereMesh.fillAnalystNodeIds(analystIds);
+    spheres.resize(nodes.size());
 
-    for (size_t i=0;i<numSpheres;i++)
+    stk::mesh::FieldBase const * coords = meta.coordinate_field();
+
+    for (size_t i=0;i<nodes.size();i++)
     {
-        double x=coordinates[spatialDim*i];
-        double y=coordinates[spatialDim*i+1];
-        double z=coordinates[spatialDim*i+2];
+        stk::mesh::Entity node = nodes[i];
+        double *data = static_cast<double*>(stk::mesh::field_data(*coords, node));
+
+        double x=data[0];
+        double y=data[1];
+        double z=data[2];
+
         double radius=1e-5;
-        spheres[i] = std::make_pair(Sphere(Point(x,y,z), radius), Ident(analystIds[i],procId));
+        unsigned id = bulk.identifier(node);
+        spheres[i] = std::make_pair(Sphere(Point(x,y,z), radius), Ident(id, bulk.parallel_rank()));
     }
 }
 
 inline void fillBoundingVolumesUsingNodesFromFile(
-        MPI_Comm comm, const std::string& sphereFilename, GtkBoxVector &spheres)
+        MPI_Comm comm, const std::string& sphereFilename, FlaotBoxVector &spheres)
 {
-    int procId=-1;
-    MPI_Comm_rank(comm, &procId);
-
-    sierra::ExodusMeshInterface sphereMesh(sphereFilename, comm);
-
-    std::vector<double> coordinates;
-    sphereMesh.fillCoordinates(coordinates);
-
     const int spatialDim = 3;
-    const size_t numSpheres = coordinates.size()/spatialDim;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData bulk(meta, comm);
+
+    stk::io::fill_mesh(sphereFilename, bulk);
+
+    stk::mesh::EntityVector nodes;
+    stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), nodes);
 
     spheres.clear();
-    spheres.resize(numSpheres);
-    sierra::Mesh::AnalystNodeIdVector analystIds;
-    sphereMesh.fillAnalystNodeIds(analystIds);
+    spheres.resize(nodes.size());
 
-    for (size_t i=0;i<numSpheres;i++)
+    stk::mesh::FieldBase const * coords = meta.coordinate_field();
+
+    for (size_t i=0;i<nodes.size();i++)
     {
-        double x=coordinates[spatialDim*i];
-        double y=coordinates[spatialDim*i+1];
-        double z=coordinates[spatialDim*i+2];
+        stk::mesh::Entity node = nodes[i];
+        double *data = static_cast<double*>(stk::mesh::field_data(*coords, node));
+
+        double x=data[0];
+        double y=data[1];
+        double z=data[2];
+
         double radius=1e-5;
-        double offset = radius;
-        GtkBox box(x-offset, y-offset, z-offset, x+offset, y+offset, z+offset);
-        spheres[i] = std::make_pair(box, Ident(analystIds[i],procId));
+        unsigned id = bulk.identifier(node);
+        FloatBox box(x-radius, y-radius, z-radius, x+radius, y+radius, z+radius);
+        spheres[i] = std::make_pair(box, Ident(id, bulk.parallel_rank()));
     }
 }
 
 template <typename Identifier>
-inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domain, std::vector< std::pair<GtkBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
+inline void kdtree_search(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
-    int num_procs = -1;
-    int proc_id   = -1;
-    MPI_Comm_rank(comm, &proc_id);
-    MPI_Comm_size(comm, &num_procs);
-
-    std::vector<stk::search::Box<float> > rangeBoxes(local_range.size());
-    std::vector<stk::search::Box<float> > domainBoxes(local_domain.size());
-
-    for (size_t i=0;i<local_domain.size();i++)
-    {
-        domainBoxes[i] = local_domain[i].first;
-    }
-
-    for (size_t i=0;i<local_range.size();i++)
-    {
-        rangeBoxes[i] = local_range[i].first;
-    }
-
-    std::vector<int> ghost_indices;
-    std::vector<int> ghost_procs;
-    gtk::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
-
-    std::vector< std::vector<stk::search::Box<float> > > send_list(num_procs);
-    std::vector< std::vector<stk::search::Box<float> > > recv_list(num_procs);
-
-    // i am sending proc 'ghost proc[i]' my range box 'ghost_indices[i]'
-    // ghost_indices.size() is total number of communications that need to occur with all procs
-    typedef typename Identifier::ident_type GlobalIdType;
-    std::vector< std::vector<GlobalIdType> > send_indices(num_procs);
-    std::vector< std::vector<GlobalIdType> > recv_indices(num_procs);
-
-    for (size_t i=0;i<ghost_indices.size();i++)
-    {
-        send_list[ghost_procs[i]].push_back(rangeBoxes[ghost_indices[i]]);
-        GlobalIdType id = local_range[ghost_indices[i]].second.id();
-        send_indices[ghost_procs[i]].push_back(id);
-    }
-
-    stk::parallel_data_exchange_t(send_indices, recv_indices, comm );
-    stk::parallel_data_exchange_t(send_list, recv_list, comm);
-
-    for (size_t i=0;i<recv_list.size();i++)
-    {
-        for (size_t j=0;j<recv_list[i].size();j++)
-        {
-            rangeBoxes.push_back(recv_list[i][j]);
-            local_range.push_back(std::make_pair(recv_list[i][j], Identifier(recv_indices[i][j], i)));
-        }
-    }
-
-    std::vector<int> interaction_list;
-    std::vector<int> first_interaction;
-    std::vector<int> last_interaction;
-
-    gtk::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
-
-    typedef std::vector <std::pair<Identifier,Identifier> > localJunk;
-    typedef std::set <std::pair<Identifier,Identifier> > localJunkSet;
-    localJunk localResults;
-    localResults.reserve(domainBoxes.size());
-
-    for (size_t i=0;i<domainBoxes.size();i++)
-    {
-        Identifier box1_ident = local_domain[i].second;
-        for (int j=first_interaction[i];j<last_interaction[i];j++)
-        {
-            Identifier box2_ident = local_range[interaction_list[j]].second;
-            localResults.push_back(std::make_pair(box1_ident, box2_ident));
-        }
-    }
-
-    localJunk tmp;
-    tmp.reserve(localResults.size());
-    stk::search::communicateVector(comm, localResults, tmp);
-    searchResults=tmp;
-    std::sort(searchResults.begin(), searchResults.end());
+    //change this BOOST_RTREE to KDTREE once it's available.
+    //Also this function and the ones below can likely go away at that time.
+    stk::search::coarse_search(local_domain, local_range, stk::search::BOOST_RTREE, comm, searchResults);
 }
 
 enum NewSearchMethod { BOOST_RTREE, OCTREE, GTK };
@@ -505,11 +452,11 @@ inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
 }
 
 template <typename Identifier>
-inline void coarse_search_new(std::vector< std::pair<GtkBox, Identifier> >& local_domain, std::vector< std::pair<GtkBox, Identifier> >& local_range, NewSearchMethod algorithm, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
+inline void coarse_search_new(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, NewSearchMethod algorithm, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
     if ( algorithm == GTK )
     {
-        gtk_search(local_domain, local_range, comm, searchResults);
+        kdtree_search(local_domain, local_range, comm, searchResults);
     }
     else if ( algorithm == OCTREE )
     {

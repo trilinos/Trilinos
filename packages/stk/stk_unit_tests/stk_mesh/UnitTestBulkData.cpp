@@ -1795,9 +1795,7 @@ TEST(BulkData, testChangeEntityPartsOfShared)
             EXPECT_FALSE(shared_procs.empty());
         }
 
-        // Expect that part change had no impact since it was on the proc that did not end
-        // up as the owner
-        EXPECT_FALSE(mesh.bucket(changing_node).member(extra_node_part));
+        EXPECT_TRUE(mesh.bucket(changing_node).member(extra_node_part));
 
         mesh.modification_begin();
 
@@ -2677,9 +2675,9 @@ TEST(BulkData, onlyKeepTheOwnersParts)
     EXPECT_TRUE( nodeBucket.member(stkMeshMetaData.globally_shared_part()));
 
     EXPECT_TRUE( nodeBucket.member(partA));
-    EXPECT_FALSE( nodeBucket.member(partB));
+    EXPECT_TRUE( nodeBucket.member(partB));
     EXPECT_TRUE( stk::mesh::has_superset(nodeBucket,partA));
-    EXPECT_FALSE( stk::mesh::has_superset(nodeBucket,partB));
+    EXPECT_TRUE( stk::mesh::has_superset(nodeBucket,partB));
 
     stk::mesh::Entity element0 = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, element_id_0);
     stk::mesh::Entity element1 = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, element_id_1);
@@ -3083,7 +3081,7 @@ TEST(BulkData, ModificationEnd)
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
         stk::unit_test_util::BulkDataTester *stkMeshBulkData = new stk::unit_test_util::BulkDataTester(stkMeshMetaData, communicator);
 
-        std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x4");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x4");
 
         // STK IO module will be described in separate chapter.
         // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
@@ -3164,7 +3162,7 @@ TEST(BulkData, set_parallel_owner_rank_but_not_comm_lists)
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::unit_test_util::BulkDataTester mesh(stkMeshMetaData, communicator);
-    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x1|sideset:xXyYzZ");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x1|sideset:xXyYzZ");
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
         exodusFileReader.set_bulk_data(mesh);
@@ -3219,7 +3217,7 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::unit_test_util::BulkDataTester mesh(stkMeshMetaData, communicator);
-    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x3");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x3");
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
         exodusFileReader.set_bulk_data(mesh);
@@ -3265,7 +3263,7 @@ TEST(BulkData, verify_closure_count_is_correct)
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
         stk::unit_test_util::BulkDataTester *stkMeshBulkData = new stk::unit_test_util::BulkDataTester(stkMeshMetaData, communicator);
 
-        std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x2");
+        std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:1x1x2");
 
         // STK IO module will be described in separate chapter.
         // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
@@ -5899,7 +5897,7 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
         stk::unit_test_util::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
 
         const std::string generatedMeshSpec = "generated:1x1x2";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh);
+        stk::io::fill_mesh(generatedMeshSpec, mesh);
 
         int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
@@ -6104,7 +6102,7 @@ TEST(ChangeEntityId, test_throw_on_shared_node)
         stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
 
         const std::string generatedMeshSpec = "generated:1x1x2";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh);
+        stk::io::fill_mesh(generatedMeshSpec, mesh);
 
         stk::mesh::Entity sharedNode5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
 

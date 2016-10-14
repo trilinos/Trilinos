@@ -65,7 +65,7 @@ TEST(StkMeshIoBroker, outputEqualsInput)
     // A simple test for reading and writing an exodus file, to make sure
     // that the output file is the same as the input file.
 
-    std::string input_filename = unitTestUtils::getOption("--input-mesh", "no-mesh-specified");
+    std::string input_filename = stk::unit_test_util::get_option("--input-mesh", "no-mesh-specified");
 
     if (input_filename != "no-mesh-specified")
     {

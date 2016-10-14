@@ -231,6 +231,18 @@ namespace Intrepid2 {
       impl_.getDofCoords( dofCoords );
     }
 
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HDIV_TET_I1_FEM";
+    }
+
+    virtual
+    bool
+    requireOrientation() const {
+      return true;
+    }
+
   };
 
 }// namespace Intrepid2

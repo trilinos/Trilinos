@@ -83,7 +83,7 @@ install install-user-jamfile
 explicit install-user-bin ;
 install install-user-bin
   :
-  : <location>$(install-root)/bin
+  : <location>$(install-bin-dir)
   ;
 
 explicit install-user-include ;

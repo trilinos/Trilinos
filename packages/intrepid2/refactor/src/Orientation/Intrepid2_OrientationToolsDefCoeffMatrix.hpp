@@ -58,16 +58,16 @@ namespace Intrepid2 {
   namespace Impl {
 
     template<typename outputViewType,
-             typename lineBasisType,
+             typename subcellBasisType,
              typename cellBasisType>
-    inline 
-    void 
+    inline
+    void
     OrientationTools::
-    getEdgeCoeffMatrix_HGRAD(outputViewType &output,
-                             const lineBasisType lineBasis,
-                             const cellBasisType cellBasis,
-                             const ordinal_type edgeId,
-                             const ordinal_type edgeOrt) {
+    getCoeffMatrix_HGRAD(outputViewType &output,
+                         const subcellBasisType subcellBasis,
+                         const cellBasisType cellBasis,
+                         const ordinal_type subcellId,
+                         const ordinal_type subcellOrt) {
       typedef typename outputViewType::execution_space space_type;
       typedef typename outputViewType::value_type value_type;
 
@@ -75,70 +75,135 @@ namespace Intrepid2 {
       typedef typename
         Kokkos::Impl::is_space<space_type>::host_mirror_space::execution_space host_space_type;
 
-      // populate points on a line and map to subcell
+      // populate points on a subcell and map to subcell
       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
-      const shards::CellTopology lineTopo = lineBasis.getBaseCellTopology();
+      const shards::CellTopology subcellTopo = subcellBasis.getBaseCellTopology();
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_EXCEPTION( subcellTopo.getBaseKey() != shards::Line<>::key ||
+                                    subcellTopo.getBaseKey() != shards::Quadrilateral<>::key ||
+                                    subcellTopo.getBaseKey() != shards::Triangle<>::key,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                    "subcellBasis must have line, quad, or triangle topology.");
+#endif
 
-      const auto cellDim = cellTopo.getDimension();
-      const auto lineDim = lineTopo.getDimension();
+      // if node map has left handed system, orientation should be re-enumerated.
+      ordinal_type ort = -1;
+      switch (subcellTopo.getBaseKey()) {
+      case shards::Line<>::key: {
+        if (subcellOrt >= 0 && subcellOrt <  2)
+          ort = subcellOrt;
+        break;
+      }
+      case shards::Triangle<>::key: {
+        if (subcellOrt >= 0 && subcellOrt <  6) {
+          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
+          const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
+          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+        }
+        break;
+      }
+      case shards::Quadrilateral<>::key: {
+        if (subcellOrt >= 0 && subcellOrt <  8) {
+          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 3);
+          const ordinal_type leftOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 };
+          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+        }
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( subcellTopo.getBaseKey() != shards::Line<>::key ||
+                                      subcellTopo.getBaseKey() != shards::Quadrilateral<>::key ||
+                                      subcellTopo.getBaseKey() != shards::Triangle<>::key,
+                                      std::logic_error,
+                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                      "subcellBasis must have line, quad, or triangle topology.");
+      }
+      }
+      INTREPID2_TEST_FOR_EXCEPTION( ort == -1,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                    "Orientation is not properly setup.");
+      
+      const ordinal_type cellDim = cellTopo.getDimension();
+      const ordinal_type subcellDim = subcellTopo.getDimension();
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_EXCEPTION( subcellDim != 1 ||
+                                    subcellDim != 2,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                    "subcellBasis must have dimensions 1 or 2.");
 
-      const auto degree = cellBasis.getDegree();
+      INTREPID2_TEST_FOR_EXCEPTION( subcellDim >= cellDim,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                    "cellDim must be greater than subcellDim.");
+#endif
 
-      const auto numCellBasis = cellBasis.getCardinality();
-      const auto numLineBasis = lineBasis.getCardinality();
+      const ordinal_type degree = cellBasis.getDegree();
 
-      const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
-      const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
+      const ordinal_type numCellBasis = cellBasis.getCardinality();
+      const ordinal_type numSubcellBasis = subcellBasis.getCardinality();
+
+      const ordinal_type ordSubcell = cellBasis.getDofOrdinal(subcellDim, subcellId, 0);
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_EXCEPTION( ordSubcell == -1,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                    "Invalid subcellId returns -1 ordSubcell.");
+#endif
+
+      const ordinal_type ndofSubcell = cellBasis.getDofTag(ordSubcell)(3);
 
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( !(ndofEdge == PointTools::getLatticeSize(lineTopo, degree, 1)),
+      INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != PointTools::getLatticeSize(subcellTopo, degree, 1),
                                     std::logic_error,
-                                    ">>> ERROR (Intrepid::OrientationTools::getEdgeCoeffMatrix_HGRAD): " \
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                     "The number of DOFs does not match to the number of collocation points.");
 #endif
 
-      // reference points between (-1 , 1)
-      Kokkos::DynRankView<value_type,host_space_type> refPtsLine("refPtsLine", ndofEdge, lineDim);
-      PointTools::getLattice(refPtsLine,
-                             lineTopo,
+      // reference points on a subcell
+      Kokkos::DynRankView<value_type,host_space_type> refPtsSubcell("refPtsSubcell", ndofSubcell, subcellDim);
+      PointTools::getLattice(refPtsSubcell,
+                             subcellTopo,
                              degree,
-                             1,
+                             1, // offset by 1 so the points are located inside
                              POINTTYPE_EQUISPACED);
-      
-      // modified points with orientation
-      Kokkos::DynRankView<value_type,host_space_type> ortPtsLine("ortPtsLine", ndofEdge, lineDim);
-      Impl::OrientationTools::mapToModifiedReference(ortPtsLine,
-                                                     refPtsLine,
-                                                     lineTopo,
-                                                     edgeOrt);
-      
-      // map to reference coordinates
-      Kokkos::DynRankView<value_type,host_space_type> refPtsCell("refPtsCell", ndofEdge, cellDim);
-      CellTools<host_space_type>::mapToReferenceSubcell(refPtsCell,
-                                                        refPtsLine,
-                                                        lineDim,
-                                                        edgeId,
-                                                        cellTopo);
-      
-      // evaluate values on the reference cell
-      Kokkos::DynRankView<value_type,host_space_type> refValues("refValues", numCellBasis, ndofEdge);
-      cellBasis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
-      
-      // evaluate values on the modified cell
-      Kokkos::DynRankView<value_type,host_space_type> outValues("outValues", numLineBasis, ndofEdge);
-      lineBasis.getValues(outValues, ortPtsLine, OPERATOR_VALUE);
-      
-      // construct collocation matrix; using lapack, it should be left layout
-      Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space_type> 
-        refMat("refMat", ndofEdge, ndofEdge),
-        ortMat("ortMat", ndofEdge, ndofEdge),
-        pivVec("pivVec", ndofEdge, 1);
-      
-      for (auto i=0;i<ndofEdge;++i) {
-        const auto iref = cellBasis.getDofOrdinal(lineDim, edgeId, i);
-        const auto iout = lineBasis.getDofOrdinal(lineDim, 0,      i);
 
-        for (auto j=0;j<ndofEdge;++j) {
+      // modified points with orientation
+      Kokkos::DynRankView<value_type,host_space_type> ortPtsSubcell("ortPtsSubcell", ndofSubcell, subcellDim);
+      Impl::OrientationTools::mapToModifiedReference(ortPtsSubcell,
+                                                     refPtsSubcell,
+                                                     subcellTopo,
+                                                     subcellOrt);
+
+      // map to reference coordinates
+      Kokkos::DynRankView<value_type,host_space_type> refPtsCell("refPtsCell", ndofSubcell, cellDim);
+      CellTools<host_space_type>::mapToReferenceSubcell(refPtsCell,
+                                                        refPtsSubcell,
+                                                        subcellDim,
+                                                        subcellId,
+                                                        cellTopo);
+
+      // evaluate values on the reference cell
+      Kokkos::DynRankView<value_type,host_space_type> refValues("refValues", numCellBasis, ndofSubcell);
+      cellBasis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
+
+      // evaluate values on the modified cell
+      Kokkos::DynRankView<value_type,host_space_type> outValues("outValues", numSubcellBasis, ndofSubcell);
+      subcellBasis.getValues(outValues, ortPtsSubcell, OPERATOR_VALUE);
+
+      // construct collocation matrix; using lapack, it should be left layout
+      Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space_type>
+        refMat("refMat", ndofSubcell, ndofSubcell),
+        ortMat("ortMat", ndofSubcell, ndofSubcell),
+        pivVec("pivVec", ndofSubcell, 1);
+
+      for (ordinal_type i=0;i<ndofSubcell;++i) {
+        const ordinal_type iref = cellBasis.getDofOrdinal(subcellDim, subcellId, i);
+        const ordinal_type iout = subcellBasis.getDofOrdinal(subcellDim, 0, i);
+
+        for (auto j=0;j<ndofSubcell;++j) {
           refMat(j,i) = refValues(iref,j);
           ortMat(j,i) = outValues(iout,j);
         }
@@ -149,17 +214,17 @@ namespace Intrepid2 {
         Teuchos::LAPACK<ordinal_type,value_type> lapack;
         ordinal_type info = 0;
 
-        lapack.GESV(ndofEdge, ndofEdge,
+        lapack.GESV(ndofSubcell, ndofSubcell,
                     refMat.data(),
                     refMat.stride_1(),
                     (ordinal_type*)pivVec.data(),
                     ortMat.data(),
                     ortMat.stride_1(),
                     &info);
-        
+
         if (info) {
           std::stringstream ss;
-          ss << ">>> ERROR (Intrepid::OrientationTools::getEdgeCoeffMatrix_HGRAD): "
+          ss << ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): "
              << "LAPACK return with error code: "
              << info;
           INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
@@ -168,224 +233,11 @@ namespace Intrepid2 {
 
       {
         // move the data to original device memory
-        const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);
+        const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofSubcell);
         Kokkos::deep_copy(Kokkos::subview(output, range, range), ortMat);
       }
     }
   }
+
 }
 #endif
-
-
-//     template<typename SpT,
-//              typename VT>
-//     inline 
-//     Kokkos::View<VT**,SpT,Kokkos::LayoutStride>
-//     OrientationTools::
-//     getTriangleCoeffMatrix_HGRAD(const Basis<SpT,VT,VT> faceBasis,
-//                                  const Basis<SpT,VT,VT> cellBasis,
-//                                  const ordinal_type faceId,
-//                                  const ordinal_type faceOrt) {
-//       // populate points on a line and map to subcell
-//       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
-//       const shards::CellTopology faceTopo = faceBasis.getBaseCellTopology();
-
-//       // if the face is left-handed system, the orientation should be re-enumerated
-//       const ordinal_type leftHanded = cellTopo.getNodeMap(2, faceId, 1) > cellTopo.getNodeMap(2, faceId, 2);
-//       const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
-//       const ordinal_type ort = (leftHanded ? leftOrt[faceOrt] : faceOrt);
-
-//       const auto cellDim = cellTopo.getDimension();
-//       const auto faceDim = faceTopo.getDimension();
-
-//       const auto degree = cellBasis.getDegree();
-
-//       const auto numCellBasis = cellBasis.getCardinality();
-//       const auto numFaceBasis = faceBasis.getCardinality();
-
-//       const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
-//       const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
-
-// #ifdef HAVE_INTREPID2_DEBUG
-//       INTREPID2_TEST_FOR_ABORT( !(ndofFace == PointTools::getLatticeSize<Scalar>(faceTopo, degree, 1)),
-//                                   std::logic_error,
-//                                   ">>> ERROR (Intrepid::OrientationTools::getTriangleCoeffMatrix_HGRAD): " \
-//                                   "The number of DOFs does not match to the number of collocation points.");
-// #endif
-
-//       // reference points in triangle
-//       Kokkos::DynRankView<VT,SpT> refPtsFace("refPtsFace", ndofFace, faceDim);
-//       PointTools::getLattice(refPtsFace,
-//                              faceTopo,
-//                              degree,
-//                              1,
-//                              POINTTYPE_EQUISPACED);
-      
-//       // modified points with orientation
-//       Kokkos::DynRankView<VT,SpT> ortPtsFace("ortPtsFace", ndofFace, faceDim);
-//       Impl::OrientationTools::mapToModifiedReference(ortPtsFace,
-//                                                      refPtsFace,
-//                                                      faceTopo,
-//                                                      ort);
-      
-//       // map to reference coordinates
-//       Kokkos::DynRankView<VT,SpT> refPtsCell("refPtsCell", ndofFace, cellDim);
-//       CellTools<SpT>::mapToReferenceSubcell(refPtsCell,
-//                                                           refPtsFace,
-//                                                           faceDim,
-//                                                           faceId,
-//                                                           cellTopo);
-
-//       // evaluate values on the reference cell
-//       Kokkos::DynRankView<VT,SpT> refValues("refValues", numCellBasis, ndofFace);
-//       cellBasis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
-
-//       // evaluate values on the modified cell
-//       Kokkos::DynRankView<VT,SpT> outValues("outValues", numFaceBasis, ndofFace);
-//       faceBasis.getValues(outValues, ortPtsFace, OPERATOR_VALUE);
-
-//       // construct collocation matrix
-//       Kokkos::View<VT**,SpT,Kokkos::LayoutLeft> 
-//         refMat("refMat", ndofFace, ndofFace),
-//         ortMat("ortMat", ndofFace, ndofFace),
-//         pivVec("pivVec", ndofFace, 1);
-
-//       for (auto i=0;i<ndofFace;++i) {
-//         const auto iref = cellBasis.getDofOrdinal(faceDim, faceId, i);
-//         const auto iout = faceBasis.getDofOrdinal(faceDim, 0,      i);
-//         for (auto j=0;j<ndofFace;++j) {
-//           refMat(j,i) = refValues(iref,j);
-//           ortMat(j,i) = outValues(iout,j);
-//         }
-//       }
-      
-//       // solve the system
-//       {
-//         Teuchos::LAPACK<ordinal_type,VT> lapack;
-//         ordinal_type info = 0;
-//         lapack.GESV(ndofFace, ndofFace,
-//                     refMat.data(),
-//                     refMat.stride_1(),
-//                     (ordinal_type*)pivVec.data(),
-//                     ortMat.data(),
-//                     ortMat.stride_1(),
-//                     &info);
-        
-//         if (info) {
-//           std::stringstream ss;
-//           ss << ">>> ERROR (Intrepid::OrientationTools::getTriangleCoeffMatrix_HGRAD): "
-//              << "LAPACK return with error code: "
-//              << info;
-//           INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
-//         }
-//       }
-      
-//       return ortMat;
-//     }
-
-
-//     template<typename SpT,
-//              typename VT>
-//     inline 
-//     Kokkos::View<VT**,SpT,Kokkos::LayoutStride>
-//     OrientationTools::
-//     getQuadrilateralCoeffMatrix_HGRAD(const Basis<SpT,VT,VT> faceBasis,
-//                                       const Basis<SpT,VT,VT> cellBasis,
-//                                       const ordinal_type faceId,
-//                                       const ordinal_type faceOrt) {
-//       // populate points on a line and map to subcell
-//       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
-//       const shards::CellTopology faceTopo = faceBasis.getBaseCellTopology();
-
-//       // if the face is left-handed system, the orientation should be re-enumerated
-//       const ordinal_type leftHanded = cellTopo.getNodeMap(2, faceId, 1) > cellTopo.getNodeMap(2, faceId, 3);
-//       const ordinal_type leftOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 };
-//       const ordinal_type ort = (leftHanded ? leftOrt[faceOrt] : faceOrt);
-
-//       const auto cellDim = cellTopo.getDimension();
-//       const auto faceDim = faceTopo.getDimension();
-
-//       const auto degree = cellBasis.getDegree();
-
-//       const auto numCellBasis = cellBasis.getCardinality();
-//       const auto numFaceBasis = faceBasis.getCardinality();
-
-//       const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
-//       const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
-
-// #ifdef HAVE_INTREPID2_DEBUG
-//       INTREPID2_TEST_FOR_ABORT( !(ndofFace == PointTools::getLatticeSize(faceTopo, degree, 1)),
-//                                   std::logic_error,
-//                                   ">>> ERROR (Intrepid::OrientationTools::getQuadrilateralCoeffMatrix_HGRAD): " \
-//                                   "The number of DOFs does not match to the number of collocation points.");
-// #endif
-
-//       // reference points in quadrilateral
-//       Kokkos::DynRankView<VT,SpT> refPtsFace("refPtsFace", ndofFace, faceDim);
-//       PointTools::getLattice(refPtsFace,
-//                              faceTopo,
-//                              degree,
-//                              1,
-//                              POINTTYPE_EQUISPACED);
-      
-//       // modified points with orientation
-//       Kokkos::DynRankView<VT,SpT> ortPtsFace("ortPtsFace", ndofFace, faceDim);
-//       Impl::OrientationTools::mapToModifiedReference(ortPtsFace,
-//                                                      refPtsFace,
-//                                                      faceTopo,
-//                                                      ort);
-      
-//       // map to reference coordinates
-//       Kokkos::DynRankView<VT,SpT> refPtsCell("refPtsCell", ndofFace, cellDim);
-//       CellTools<SpT>::mapToReferenceSubcell(refPtsCell,
-//                                                           refPtsFace,
-//                                                           faceDim,
-//                                                           faceId,
-//                                                           cellTopo);
-
-//       // evaluate values on the reference cell
-//       Kokkos::DynRankView<VT,SpT> refValues("refValues", numCellBasis, ndofFace);
-//       cellBasis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
-
-//       // evaluate values on the modified cell
-//       Kokkos::DynRankView<VT,SpT> outValues("outValues", numFaceBasis, ndofFace);
-//       faceBasis.getValues(outValues, ortPtsFace, OPERATOR_VALUE);
-
-//       // construct collocation matrix
-//       Kokkos::View<VT**,SpT,Kokkos::LayoutLeft> 
-//         refMat("refMat", ndofFace, ndofFace),
-//         ortMat("ortMat", ndofFace, ndofFace),
-//         pivVec("pivVec", ndofFace, 1);
-
-//       for (auto i=0;i<ndofFace;++i) {
-//         const auto iref = cellBasis.getDofOrdinal(faceDim, faceId, i);
-//         const auto iout = faceBasis.getDofOrdinal(faceDim, 0,      i);
-//         for (auto j=0;j<ndofFace;++j) {
-//           refMat(j,i) = refValues(iref,j);
-//           ortMat(j,i) = outValues(iout,j);
-//         }
-//       }
-      
-//       // solve the system
-//       {
-//         Teuchos::LAPACK<ordinal_type,VT> lapack;
-//         ordinal_type info = 0;
-//         lapack.GESV(ndofFace, ndofFace,
-//                     refMat.data(),
-//                     refMat.stride(0),
-//                     (ordinal_type*)pivVec.data(),
-//                     ortMat.data(),
-//                     ortMat.stride(0),
-//                     &info);
-        
-//         if (info) {
-//           std::stringstream ss;
-//           ss << ">>> ERROR (Intrepid::OrientationTools::getTriangleCoeffMatrix_HGRAD): "
-//              << "LAPACK return with error code: "
-//              << info;
-//           INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
-//         }
-//       }
-      
-//       return ortMat;
-//     }

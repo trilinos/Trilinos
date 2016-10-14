@@ -156,6 +156,7 @@ TEUCHOS_STATIC_SETUP()
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::FileNameValidator, Teuchos::FileNameValidatorXMLConverter);
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::StringValidator, Teuchos::StringValidatorXMLConverter);
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::AnyNumberParameterEntryValidator, Teuchos::AnyNumberValidatorXMLConverter);
+  TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::BoolParameterEntryValidator, Teuchos::BoolValidatorXMLConverter);
 
 }
 

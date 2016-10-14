@@ -82,9 +82,6 @@
 #include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
 //#include "Intrepid2_HGRAD_WEDGE_I2_FEM.hpp"
 
-#include "Kokkos_Core.hpp"
-#include "Kokkos_ViewFactory.hpp"
-
 namespace Intrepid2 {
 
   //nn
@@ -1001,7 +998,7 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                         const shards::CellTopology cellTopo ) {
-      auto basis = createHGradBasis<physPointValueType,refPointValueType>(cellTopo);
+      auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
       mapToPhysicalFrame(physPoints, 
                          refPoints, 
                          worksetCell, 
@@ -1208,7 +1205,7 @@ namespace Intrepid2 {
                                   const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                                   const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                                   const shards::CellTopology cellTopo ) {
-      auto basis = createHGradBasis<physPointValueType,initGuessValueType>(cellTopo);
+      auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
       mapToReferenceFrameInitGuess(refPoints,
                                    initGuess,
                                    physPoints,

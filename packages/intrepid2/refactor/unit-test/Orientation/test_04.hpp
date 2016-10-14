@@ -112,14 +112,13 @@ namespace Intrepid2 {
         {
           *outStream << "\n -- Testing Quadrilateral \n\n";
 
-          const ordinal_type space = FUNCTION_SPACE_HGRAD;
           const ordinal_type order = 4;
 
           Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType> cellBasis(order);
           const auto cellTopo = cellBasis.getBaseCellTopology();
           const ordinal_type ndofBasis = cellBasis.getCardinality();
-          ots::initialize(cellTopo, FUNCTION_SPACE_HGRAD, order);
 
+          
           // 
           // 9 12 13 16
           // 4  3 11 15
@@ -149,17 +148,6 @@ namespace Intrepid2 {
           auto elemOrtsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), elemOrts);
           Kokkos::deep_copy(elemOrtsHost, elemOrts);
 
-          // work scenario
-          // - evaluate basis function input (P,D) and output (F,P)
-          // - after integration, we do not need point dimension
-          // - now reference basis should be accordingly modified for assembly
-          //const ordinal_type numPoints = 1;
-          //Kokkos::DynRankView<double,DeviceSpaceType> tmpValues("tmpValues", ndofBasis, numPoints);
-          //Kokkos::DynRankView<double,DeviceSpaceType> inputPoints("inputPoints", numPoints, cellDim);
-          
-          //cellBasis.getValues(tmpValues, inputPoints);
-          //RealSpaceTools<SpT>::clone(refValues, Kokkos::subview(tmpValues, Kokkos::ALL(), 0));
-
           // cell specific modified basis 
           Kokkos::DynRankView<double,DeviceSpaceType> outValues("outValues", numCells, ndofBasis);
           Kokkos::DynRankView<double,DeviceSpaceType> refValues("refValues", numCells, ndofBasis);
@@ -171,10 +159,10 @@ namespace Intrepid2 {
           Kokkos::deep_copy(refValues, refValuesHost);
 
           // modify refValues accounting for orientations
-          ots::getModifiedHgradBasisQuadrilateral(outValues,
-                                                  refValues,
-                                                  elemOrts,
-                                                  cellBasis);
+          ots::modifyBasisByOrientation(outValues,
+                                        refValues,
+                                        elemOrts,
+                                        &cellBasis);
 
           auto outValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), outValues);
           Kokkos::deep_copy(outValuesHost, outValues);
@@ -236,7 +224,7 @@ namespace Intrepid2 {
               errorFlag += flag;
             }
           }
-          ots::finalize();
+          ots::clearCoeffMatrix();
         }
 
       } catch (std::exception err) {

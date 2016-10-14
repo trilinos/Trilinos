@@ -777,16 +777,16 @@ void F2C(expelb, EXPELB)(int *idexo, entity_id *elem_blk_id, char *elem_type,
     int64_t *n_nodes_per_elem = num_nodes_per_elem;
     int64_t *n_attr           = num_attr;
 
-    *ierr =
-        ex_put_elem_block(*idexo, *elem_blk_id, sptr, *n_elem_this_blk, *n_nodes_per_elem, *n_attr);
+    *ierr = ex_put_block(*idexo, EX_ELEM_BLOCK, *elem_blk_id, sptr, *n_elem_this_blk,
+                         *n_nodes_per_elem, 0, 0, *n_attr);
   }
   else {
     int *n_elem_this_blk  = num_elem_this_blk;
     int *n_nodes_per_elem = num_nodes_per_elem;
     int *n_attr           = num_attr;
 
-    *ierr =
-        ex_put_elem_block(*idexo, *elem_blk_id, sptr, *n_elem_this_blk, *n_nodes_per_elem, *n_attr);
+    *ierr = ex_put_block(*idexo, EX_ELEM_BLOCK, *elem_blk_id, sptr, *n_elem_this_blk,
+                         *n_nodes_per_elem, 0, 0, *n_attr);
   }
   free(sptr);
 }
@@ -812,8 +812,8 @@ void F2C(exgelb, EXGELB)(int *idexo, entity_id *elem_blk_id, char *elem_type,
     *ierr = EX_MEMFAIL;
     return;
   }
-  if (ex_get_elem_block(*idexo, *elem_blk_id, sptr, num_elem_this_blk, num_nodes_per_elem,
-                        num_attr) == EX_FATAL) {
+  if (ex_get_block(*idexo, EX_ELEM_BLOCK, *elem_blk_id, sptr, num_elem_this_blk, num_nodes_per_elem,
+                   NULL, NULL, num_attr) == EX_FATAL) {
     *ierr = EX_FATAL;
     return;
   }
@@ -828,7 +828,7 @@ void F2C(exgelb, EXGELB)(int *idexo, entity_id *elem_blk_id, char *elem_type,
  */
 void F2C(exgebi, EXGEBI)(int *idexo, void_int *elem_blk_ids, int *ierr)
 {
-  *ierr = ex_get_elem_blk_ids(*idexo, elem_blk_ids);
+  *ierr = ex_get_ids(*idexo, EX_ELEM_BLOCK, elem_blk_ids);
 }
 
 /*
@@ -836,7 +836,7 @@ void F2C(exgebi, EXGEBI)(int *idexo, void_int *elem_blk_ids, int *ierr)
  */
 void F2C(expelc, EXPELC)(int *idexo, entity_id *elem_blk_id, void_int *connect, int *ierr)
 {
-  *ierr = ex_put_elem_conn(*idexo, *elem_blk_id, connect);
+  *ierr = ex_put_conn(*idexo, EX_ELEM_BLOCK, *elem_blk_id, connect, NULL, NULL);
 }
 
 /*
@@ -844,7 +844,7 @@ void F2C(expelc, EXPELC)(int *idexo, entity_id *elem_blk_id, void_int *connect, 
  */
 void F2C(exgelc, EXGELC)(int *idexo, entity_id *elem_blk_id, void_int *connect, int *ierr)
 {
-  *ierr = ex_get_elem_conn(*idexo, *elem_blk_id, connect);
+  *ierr = ex_get_conn(*idexo, EX_ELEM_BLOCK, *elem_blk_id, connect, NULL, NULL);
 }
 
 /*
@@ -872,7 +872,7 @@ void F2C(exgecpp, EXGECPP)(int *idexo, int *obj_type, entity_id *elem_blk_id, in
  */
 void F2C(expeat, EXPEAT)(int *idexo, entity_id *elem_blk_id, real *attrib, int *ierr)
 {
-  *ierr = ex_put_elem_attr(*idexo, *elem_blk_id, attrib);
+  *ierr = ex_put_attr(*idexo, EX_ELEM_BLOCK, *elem_blk_id, attrib);
 }
 
 /*
@@ -880,7 +880,7 @@ void F2C(expeat, EXPEAT)(int *idexo, entity_id *elem_blk_id, real *attrib, int *
  */
 void F2C(exgeat, EXGEAT)(int *idexo, entity_id *elem_blk_id, real *attrib, int *ierr)
 {
-  *ierr = ex_get_elem_attr(*idexo, *elem_blk_id, attrib);
+  *ierr = ex_get_attr(*idexo, EX_ELEM_BLOCK, *elem_blk_id, attrib);
 }
 
 /*
@@ -921,7 +921,7 @@ void F2C(exgean, EXGEAN)(int *idexo, entity_id *elem_blk_id, int *num_attr, char
   *(aptr + i)   = 0;                     /* null out last ptr */
 
   *ierr = 0;
-  if (ex_get_elem_attr_names(*idexo, *elem_blk_id, aptr) == EX_FATAL) {
+  if (ex_get_attr_names(*idexo, EX_ELEM_BLOCK, *elem_blk_id, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr); /* free up allocated space */
     free(aptr);
@@ -980,7 +980,7 @@ void F2C(expean, EXPEAN)(int *idexo, entity_id *elem_blk_id, int *num_attr, char
   *(aptr + i) = 0; /* null out last ptr */
 
   *ierr = 0;
-  if (ex_put_elem_attr_names(*idexo, *elem_blk_id, aptr) == EX_FATAL) {
+  if (ex_put_attr_names(*idexo, EX_ELEM_BLOCK, *elem_blk_id, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
   }
   free(sptr); /* Free up string staging area */
@@ -1450,12 +1450,12 @@ void F2C(expnp, EXPNP)(int *idexo, entity_id *node_set_id, void_int *num_nodes_i
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
     int64_t nnis = *(int64_t *)num_nodes_in_set;
     int64_t ndis = *(int64_t *)num_dist_in_set;
-    *ierr        = ex_put_node_set_param(*idexo, *node_set_id, nnis, ndis);
+    *ierr        = ex_put_set_param(*idexo, EX_NODE_SET, *node_set_id, nnis, ndis);
   }
   else {
     int nnis = *(int *)num_nodes_in_set;
     int ndis = *(int *)num_dist_in_set;
-    *ierr    = ex_put_node_set_param(*idexo, *node_set_id, nnis, ndis);
+    *ierr    = ex_put_set_param(*idexo, EX_NODE_SET, *node_set_id, nnis, ndis);
   }
 }
 
@@ -1465,7 +1465,7 @@ void F2C(expnp, EXPNP)(int *idexo, entity_id *node_set_id, void_int *num_nodes_i
 void F2C(exgnp, EXGNP)(int *idexo, entity_id *node_set_id, void_int *num_nodes_in_set,
                        void_int *num_dist_in_set, int *ierr)
 {
-  *ierr = ex_get_node_set_param(*idexo, *node_set_id, num_nodes_in_set, num_dist_in_set);
+  *ierr = ex_get_set_param(*idexo, EX_NODE_SET, *node_set_id, num_nodes_in_set, num_dist_in_set);
 }
 
 /*
@@ -1473,7 +1473,7 @@ void F2C(exgnp, EXGNP)(int *idexo, entity_id *node_set_id, void_int *num_nodes_i
  */
 void F2C(expns, EXPNS)(int *idexo, entity_id *node_set_id, void_int *node_set_node_list, int *ierr)
 {
-  *ierr = ex_put_node_set(*idexo, *node_set_id, node_set_node_list);
+  *ierr = ex_put_set(*idexo, EX_NODE_SET, *node_set_id, node_set_node_list, NULL);
 }
 
 /*
@@ -1481,7 +1481,7 @@ void F2C(expns, EXPNS)(int *idexo, entity_id *node_set_id, void_int *node_set_no
  */
 void F2C(expnsd, EXPNSD)(int *idexo, entity_id *node_set_id, real *node_set_dist_fact, int *ierr)
 {
-  *ierr = ex_put_node_set_dist_fact(*idexo, *node_set_id, node_set_dist_fact);
+  *ierr = ex_put_set_dist_fact(*idexo, EX_NODE_SET, *node_set_id, node_set_dist_fact);
 }
 
 /*
@@ -1489,7 +1489,7 @@ void F2C(expnsd, EXPNSD)(int *idexo, entity_id *node_set_id, real *node_set_dist
  */
 void F2C(exgns, EXGNS)(int *idexo, entity_id *node_set_id, void_int *node_set_node_list, int *ierr)
 {
-  *ierr = ex_get_node_set(*idexo, *node_set_id, node_set_node_list);
+  *ierr = ex_get_set(*idexo, EX_NODE_SET, *node_set_id, node_set_node_list, NULL);
 }
 
 /*
@@ -1497,7 +1497,7 @@ void F2C(exgns, EXGNS)(int *idexo, entity_id *node_set_id, void_int *node_set_no
  */
 void F2C(exgnsd, EXGNSD)(int *idexo, entity_id *node_set_id, real *node_set_dist_fact, int *ierr)
 {
-  *ierr = ex_get_node_set_dist_fact(*idexo, *node_set_id, node_set_dist_fact);
+  *ierr = ex_get_set_dist_fact(*idexo, EX_NODE_SET, *node_set_id, node_set_dist_fact);
 }
 
 /*
@@ -1505,7 +1505,7 @@ void F2C(exgnsd, EXGNSD)(int *idexo, entity_id *node_set_id, real *node_set_dist
  */
 void F2C(exgnsi, EXGNSI)(int *idexo, void_int *node_set_ids, int *ierr)
 {
-  *ierr = ex_get_node_set_ids(*idexo, node_set_ids);
+  *ierr = ex_get_ids(*idexo, EX_NODE_SET, node_set_ids);
 }
 
 /*
@@ -1516,8 +1516,9 @@ void F2C(expcns, EXPCNS)(int *idexo, void_int *node_set_ids, void_int *num_nodes
                          void_int *node_sets_dist_index, void_int *node_sets_node_list,
                          real *node_sets_dist_fact, int *ierr)
 {
-  int num_node_sets, i;
-  int int_size;
+  struct ex_set_specs set_specs;
+  int                 num_node_sets, i;
+  int                 int_size;
 
   void_int *node_index_ptr, *dist_index_ptr;
 
@@ -1559,9 +1560,17 @@ void F2C(expcns, EXPCNS)(int *idexo, void_int *node_set_ids, void_int *num_nodes
     }
   }
 
-  *ierr = ex_put_concat_node_sets(*idexo, node_set_ids, num_nodes_per_set, num_dist_per_set,
-                                  node_index_ptr, dist_index_ptr, node_sets_node_list,
-                                  node_sets_dist_fact);
+  set_specs.sets_ids            = node_set_ids;
+  set_specs.num_entries_per_set = num_nodes_per_set;
+  set_specs.num_dist_per_set    = num_dist_per_set;
+  set_specs.sets_entry_index    = node_index_ptr;
+  set_specs.sets_dist_index     = dist_index_ptr;
+  set_specs.sets_entry_list     = node_sets_node_list;
+  set_specs.sets_extra_list     = NULL;
+  set_specs.sets_dist_fact      = node_sets_dist_fact;
+
+  *ierr = ex_put_concat_sets(*idexo, EX_NODE_SET, &set_specs);
+
   free(node_index_ptr);
   free(dist_index_ptr);
 }
@@ -1574,11 +1583,19 @@ void F2C(exgcns, EXGCNS)(int *idexo, void_int *node_set_ids, void_int *num_nodes
                          void_int *node_sets_dist_index, void_int *node_sets_node_list,
                          real *node_sets_dist_fact, int *ierr)
 {
-  int num_node_sets, i;
+  struct ex_set_specs set_specs;
+  int                 num_node_sets, i;
 
-  *ierr = ex_get_concat_node_sets(*idexo, node_set_ids, num_nodes_per_set, num_dist_per_set,
-                                  node_sets_node_index, node_sets_dist_index, node_sets_node_list,
-                                  node_sets_dist_fact);
+  set_specs.sets_ids            = node_set_ids;
+  set_specs.num_entries_per_set = num_nodes_per_set;
+  set_specs.num_dist_per_set    = num_dist_per_set;
+  set_specs.sets_entry_index    = node_sets_node_index;
+  set_specs.sets_dist_index     = node_sets_dist_index;
+  set_specs.sets_entry_list     = node_sets_node_list;
+  set_specs.sets_extra_list     = NULL;
+  set_specs.sets_dist_fact      = node_sets_dist_fact;
+
+  *ierr = ex_get_concat_sets(*idexo, EX_NODE_SET, &set_specs);
 
   num_node_sets = ex_inquire_int(*idexo, EX_INQ_NODE_SETS);
   if (num_node_sets < 0) {
@@ -1609,12 +1626,12 @@ void F2C(expsp, EXPSP)(int *idexo, entity_id *side_set_id, void_int *num_sides_i
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
     int64_t nsis = *(int64_t *)num_sides_in_set;
     int64_t ndis = *(int64_t *)num_df_in_set;
-    *ierr        = ex_put_side_set_param(*idexo, *side_set_id, nsis, ndis);
+    *ierr        = ex_put_set_param(*idexo, EX_SIDE_SET, *side_set_id, nsis, ndis);
   }
   else {
     int nsis = *(int *)num_sides_in_set;
     int ndis = *(int *)num_df_in_set;
-    *ierr    = ex_put_side_set_param(*idexo, *side_set_id, nsis, ndis);
+    *ierr    = ex_put_set_param(*idexo, EX_SIDE_SET, *side_set_id, nsis, ndis);
   }
 }
 
@@ -1624,7 +1641,7 @@ void F2C(expsp, EXPSP)(int *idexo, entity_id *side_set_id, void_int *num_sides_i
 void F2C(exgsp, EXGSP)(int *idexo, entity_id *side_set_id, void_int *num_sides_in_set,
                        void_int *num_df_in_set, int *ierr)
 {
-  *ierr = ex_get_side_set_param(*idexo, *side_set_id, num_sides_in_set, num_df_in_set);
+  *ierr = ex_get_set_param(*idexo, EX_SIDE_SET, *side_set_id, num_sides_in_set, num_df_in_set);
 }
 
 /*
@@ -1641,7 +1658,7 @@ void F2C(exgsnl, EXGSNL)(int *idexo, entity_id *side_set_id, void_int *num_nodes
 void F2C(expss, EXPSS)(int *idexo, entity_id *side_set_id, void_int *side_set_elem_list,
                        void_int *side_set_side_list, int *ierr)
 {
-  *ierr = ex_put_side_set(*idexo, *side_set_id, side_set_elem_list, side_set_side_list);
+  *ierr = ex_put_set(*idexo, EX_SIDE_SET, *side_set_id, side_set_elem_list, side_set_side_list);
 }
 
 /*
@@ -1650,7 +1667,7 @@ void F2C(expss, EXPSS)(int *idexo, entity_id *side_set_id, void_int *side_set_el
 void F2C(exgss, EXGSS)(int *idexo, entity_id *side_set_id, void_int *side_set_elem_list,
                        void_int *side_set_side_list, int *ierr)
 {
-  *ierr = ex_get_side_set(*idexo, *side_set_id, side_set_elem_list, side_set_side_list);
+  *ierr = ex_get_set(*idexo, EX_SIDE_SET, *side_set_id, side_set_elem_list, side_set_side_list);
 }
 
 /*
@@ -1658,7 +1675,7 @@ void F2C(exgss, EXGSS)(int *idexo, entity_id *side_set_id, void_int *side_set_el
  */
 void F2C(expssd, EXPSSD)(int *idexo, entity_id *side_set_id, real *side_set_dist_fact, int *ierr)
 {
-  *ierr = ex_put_side_set_dist_fact(*idexo, *side_set_id, side_set_dist_fact);
+  *ierr = ex_put_set_dist_fact(*idexo, EX_SIDE_SET, *side_set_id, side_set_dist_fact);
 }
 
 /*
@@ -1666,7 +1683,7 @@ void F2C(expssd, EXPSSD)(int *idexo, entity_id *side_set_id, real *side_set_dist
  */
 void F2C(exgssd, EXGSSD)(int *idexo, entity_id *side_set_id, real *side_set_dist_fact, int *ierr)
 {
-  *ierr = ex_get_side_set_dist_fact(*idexo, *side_set_id, side_set_dist_fact);
+  *ierr = ex_get_set_dist_fact(*idexo, EX_SIDE_SET, *side_set_id, side_set_dist_fact);
 }
 
 /*
@@ -1674,7 +1691,7 @@ void F2C(exgssd, EXGSSD)(int *idexo, entity_id *side_set_id, real *side_set_dist
  */
 void F2C(exgssi, EXGSSI)(int *idexo, void_int *side_set_ids, int *ierr)
 {
-  *ierr = ex_get_side_set_ids(*idexo, side_set_ids);
+  *ierr = ex_get_ids(*idexo, EX_SIDE_SET, side_set_ids);
 }
 
 /*
@@ -1685,9 +1702,10 @@ void F2C(expcss, EXPCSS)(int *idexo, void_int *side_set_ids, void_int *num_elem_
                          void_int *side_sets_dist_index, void_int *side_sets_elem_list,
                          void_int *side_sets_side_list, real *side_sets_dist_fact, int *ierr)
 {
-  int       num_side_sets, i;
-  void_int *elem_index_ptr, *dist_index_ptr;
-  int       int_size;
+  int                 num_side_sets, i;
+  void_int *          elem_index_ptr, *dist_index_ptr;
+  int                 int_size;
+  struct ex_set_specs set_specs;
 
   *ierr = 0;
 
@@ -1728,9 +1746,16 @@ void F2C(expcss, EXPCSS)(int *idexo, void_int *side_set_ids, void_int *num_elem_
     }
   }
 
-  *ierr = ex_put_concat_side_sets(*idexo, side_set_ids, num_elem_per_set, num_dist_per_set,
-                                  elem_index_ptr, dist_index_ptr, side_sets_elem_list,
-                                  side_sets_side_list, side_sets_dist_fact);
+  set_specs.sets_ids            = side_set_ids;
+  set_specs.num_entries_per_set = num_elem_per_set;
+  set_specs.num_dist_per_set    = num_dist_per_set;
+  set_specs.sets_entry_index    = elem_index_ptr;
+  set_specs.sets_dist_index     = dist_index_ptr;
+  set_specs.sets_entry_list     = side_sets_elem_list;
+  set_specs.sets_extra_list     = side_sets_side_list;
+  set_specs.sets_dist_fact      = side_sets_dist_fact;
+
+  *ierr = ex_put_concat_sets(*idexo, EX_SIDE_SET, &set_specs);
   free(elem_index_ptr);
   free(dist_index_ptr);
 }
@@ -1743,7 +1768,8 @@ void F2C(exgcss, EXGCSS)(int *idexo, void_int *side_set_ids, void_int *num_elem_
                          void_int *side_sets_dist_index, void_int *side_sets_elem_list,
                          void_int *side_sets_side_list, real *side_sets_dist_fact, int *ierr)
 {
-  int i, num_side_sets;
+  int                 i, num_side_sets;
+  struct ex_set_specs set_specs;
 
   *ierr = 0;
 
@@ -1753,9 +1779,16 @@ void F2C(exgcss, EXGCSS)(int *idexo, void_int *side_set_ids, void_int *num_elem_
     return;
   }
 
-  *ierr = ex_get_concat_side_sets(*idexo, side_set_ids, num_elem_per_set, num_dist_per_set,
-                                  side_sets_elem_index, side_sets_dist_index, side_sets_elem_list,
-                                  side_sets_side_list, side_sets_dist_fact);
+  set_specs.sets_ids            = side_set_ids;
+  set_specs.num_entries_per_set = num_elem_per_set;
+  set_specs.num_dist_per_set    = num_dist_per_set;
+  set_specs.sets_entry_index    = side_sets_elem_index;
+  set_specs.sets_dist_index     = side_sets_dist_index;
+  set_specs.sets_entry_list     = side_sets_elem_list;
+  set_specs.sets_extra_list     = side_sets_side_list;
+  set_specs.sets_dist_fact      = side_sets_dist_fact;
+
+  *ierr = ex_get_concat_sets(*idexo, EX_SIDE_SET, &set_specs);
 
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
     for (i = 0; i < num_side_sets; i++) { /* change from 0-based to 1 index */
@@ -1779,7 +1812,8 @@ void F2C(exgcssf, EXGCSSF)(int *idexo, void_int *side_set_ids, void_int *num_ele
                            void_int *side_sets_dist_index, void_int *side_sets_elem_list,
                            void_int *side_sets_side_list, int *ierr)
 {
-  int i, num_side_sets;
+  int                 i, num_side_sets;
+  struct ex_set_specs set_specs;
 
   num_side_sets = ex_inquire_int(*idexo, EX_INQ_SIDE_SETS);
   if (num_side_sets < 0) {
@@ -1787,9 +1821,16 @@ void F2C(exgcssf, EXGCSSF)(int *idexo, void_int *side_set_ids, void_int *num_ele
     return;
   }
 
-  *ierr = ex_get_concat_side_sets(*idexo, side_set_ids, num_elem_per_set, num_dist_per_set,
-                                  side_sets_elem_index, side_sets_dist_index, side_sets_elem_list,
-                                  side_sets_side_list, 0);
+  set_specs.sets_ids            = side_set_ids;
+  set_specs.num_entries_per_set = num_elem_per_set;
+  set_specs.num_dist_per_set    = num_dist_per_set;
+  set_specs.sets_entry_index    = side_sets_elem_index;
+  set_specs.sets_dist_index     = side_sets_dist_index;
+  set_specs.sets_entry_list     = side_sets_elem_list;
+  set_specs.sets_extra_list     = side_sets_side_list;
+  set_specs.sets_dist_fact      = NULL;
+
+  *ierr = ex_get_concat_sets(*idexo, EX_SIDE_SET, &set_specs);
 
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
     for (i = 0; i < num_side_sets; i++) { /* change from 0-based to 1 index */
@@ -1810,7 +1851,9 @@ void F2C(exgcssf, EXGCSSF)(int *idexo, void_int *side_set_ids, void_int *num_ele
  */
 void F2C(expvp, EXPVP)(int *idexo, char *var_type, int *num_vars, int *ierr, int var_typelen)
 {
-  *ierr = ex_put_var_param(*idexo, var_type, *num_vars);
+  ex_entity_type obj_type;
+  obj_type = ex_var_type_to_ex_entity_type(*var_type);
+  *ierr    = ex_put_variable_param(*idexo, obj_type, *num_vars);
 }
 
 /*
@@ -1818,7 +1861,9 @@ void F2C(expvp, EXPVP)(int *idexo, char *var_type, int *num_vars, int *ierr, int
  */
 void F2C(exgvp, EXGVP)(int *idexo, char *var_type, int *num_vars, int *ierr, int var_typelen)
 {
-  *ierr = ex_get_var_param(*idexo, var_type, num_vars);
+  ex_entity_type obj_type;
+  obj_type = ex_var_type_to_ex_entity_type(*var_type);
+  *ierr    = ex_get_variable_param(*idexo, obj_type, num_vars);
 }
 
 /*
@@ -1827,10 +1872,12 @@ void F2C(exgvp, EXGVP)(int *idexo, char *var_type, int *num_vars, int *ierr, int
 void F2C(expvan, EXPVAN)(int *idexo, char *var_type, int *num_vars, char *var_names, int *ierr,
                          int var_typelen, int var_nameslen)
 {
-  char **aptr; /* ptr to temp staging space for string array
-                * ptrs */
-  char *sptr;  /* ptr to temp staging space for strings */
-  int   i, slen;
+  char **aptr;         /* ptr to temp staging space for string array
+                        * ptrs */
+  char *         sptr; /* ptr to temp staging space for strings */
+  int            i, slen;
+  ex_entity_type obj_type;
+  obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
   *ierr = 0; /* default no errror */
 
@@ -1862,7 +1909,7 @@ void F2C(expvan, EXPVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
   }
   *(aptr + i) = 0; /* null out last ptr */
   /* do Exodus C call to write results variables names */
-  if (ex_put_var_names(*idexo, var_type, *num_vars, aptr) == EX_FATAL) {
+  if (ex_put_variable_names(*idexo, obj_type, *num_vars, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
   }
   free(sptr); /* Free up string staging area */
@@ -1874,10 +1921,12 @@ void F2C(expvan, EXPVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
 void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_names, int *ierr,
                          int var_typelen, int var_nameslen)
 {
-  char **aptr; /* ptr to temp staging space for string array
-                * ptrs */
-  char *sptr;  /* ptr to temp staging space for strings */
-  int   i, slen;
+  char **aptr;         /* ptr to temp staging space for string array
+                        * ptrs */
+  char *         sptr; /* ptr to temp staging space for strings */
+  int            i, slen;
+  ex_entity_type obj_type;
+  obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
   *ierr = 0; /* default no errror */
 
@@ -1906,7 +1955,7 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
   *(aptr + i)   = 0;                     /* null out last ptr */
 
   /* do Exodus C call to read results variables names */
-  if (ex_get_var_names(*idexo, var_type, *num_vars, aptr) == EX_FATAL) {
+  if (ex_get_variable_names(*idexo, obj_type, *num_vars, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr); /* free up allocated space */
     free(aptr);
@@ -1929,7 +1978,7 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
 void F2C(expvtt, EXPVTT)(int *idexo, int *num_elem_blk, int *num_elem_var, int *elem_var_tab,
                          int *ierr)
 {
-  *ierr = ex_put_elem_var_tab(*idexo, *num_elem_blk, *num_elem_var, elem_var_tab);
+  *ierr = ex_put_truth_table(*idexo, EX_ELEM_BLOCK, *num_elem_blk, *num_elem_var, elem_var_tab);
 }
 
 /*
@@ -1937,7 +1986,7 @@ void F2C(expvtt, EXPVTT)(int *idexo, int *num_elem_blk, int *num_elem_var, int *
  */
 void F2C(expnstt, EXPNSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
 {
-  *ierr = ex_put_nset_var_tab(*idexo, *num_entity, *num_var, var_tab);
+  *ierr = ex_put_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab);
 }
 
 /*
@@ -1945,7 +1994,7 @@ void F2C(expnstt, EXPNSTT)(int *idexo, int *num_entity, int *num_var, int *var_t
  */
 void F2C(expsstt, EXPSSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
 {
-  *ierr = ex_put_sset_var_tab(*idexo, *num_entity, *num_var, var_tab);
+  *ierr = ex_put_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab);
 }
 
 /*
@@ -1954,7 +2003,7 @@ void F2C(expsstt, EXPSSTT)(int *idexo, int *num_entity, int *num_var, int *var_t
 void F2C(exgvtt, EXGVTT)(int *idexo, int *num_elem_blk, int *num_elem_var, int *elem_var_tab,
                          int *ierr)
 {
-  *ierr = ex_get_elem_var_tab(*idexo, *num_elem_blk, *num_elem_var, elem_var_tab);
+  *ierr = ex_get_truth_table(*idexo, EX_ELEM_BLOCK, *num_elem_blk, *num_elem_var, elem_var_tab);
 }
 
 /*
@@ -1962,7 +2011,7 @@ void F2C(exgvtt, EXGVTT)(int *idexo, int *num_elem_blk, int *num_elem_var, int *
  */
 void F2C(exgnstt, EXGNSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
 {
-  *ierr = ex_get_nset_var_tab(*idexo, *num_entity, *num_var, var_tab);
+  *ierr = ex_get_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab);
 }
 
 /*
@@ -1970,7 +2019,7 @@ void F2C(exgnstt, EXGNSTT)(int *idexo, int *num_entity, int *num_var, int *var_t
  */
 void F2C(exgsstt, EXGSSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
 {
-  *ierr = ex_get_sset_var_tab(*idexo, *num_entity, *num_var, var_tab);
+  *ierr = ex_get_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab);
 }
 
 /*
@@ -1979,7 +2028,7 @@ void F2C(exgsstt, EXGSSTT)(int *idexo, int *num_entity, int *num_var, int *var_t
 void F2C(expgv, EXPGV)(int *idexo, int *time_step, int *num_glob_vars, real *glob_var_vals,
                        int *ierr)
 {
-  *ierr = ex_put_glob_vars(*idexo, *time_step, *num_glob_vars, glob_var_vals);
+  *ierr = ex_put_var(*idexo, *time_step, EX_GLOBAL, 1, 0, *num_glob_vars, glob_var_vals);
 }
 
 /*
@@ -1988,7 +2037,7 @@ void F2C(expgv, EXPGV)(int *idexo, int *time_step, int *num_glob_vars, real *glo
 void F2C(exggv, EXGGV)(int *idexo, int *time_step, int *num_glob_vars, real *glob_var_vals,
                        int *ierr)
 {
-  *ierr = ex_get_glob_vars(*idexo, *time_step, *num_glob_vars, glob_var_vals);
+  *ierr = ex_get_var(*idexo, *time_step, EX_GLOBAL, 1, 0, *num_glob_vars, glob_var_vals);
 }
 
 /*
@@ -1997,8 +2046,8 @@ void F2C(exggv, EXGGV)(int *idexo, int *time_step, int *num_glob_vars, real *glo
 void F2C(exggvt, EXGGVT)(int *idexo, int *glob_var_index, int *beg_time_step, int *end_time_step,
                          real *glob_var_vals, int *ierr)
 {
-  *ierr =
-      ex_get_glob_var_time(*idexo, *glob_var_index, *beg_time_step, *end_time_step, glob_var_vals);
+  *ierr = ex_get_var_time(*idexo, EX_GLOBAL, *glob_var_index, 1, *beg_time_step, *end_time_step,
+                          glob_var_vals);
 }
 
 /*
@@ -2015,7 +2064,7 @@ void F2C(expnv, EXPNV)(int *idexo, int *time_step, int *nodal_var_index, void_in
     nnodes = *(int *)num_nodes;
   }
 
-  *ierr = ex_put_nodal_var(*idexo, *time_step, *nodal_var_index, nnodes, nodal_var_vals);
+  *ierr = ex_put_var(*idexo, *time_step, EX_NODAL, *nodal_var_index, 1, nnodes, nodal_var_vals);
 }
 
 /*
@@ -2032,7 +2081,7 @@ void F2C(exgnv, EXGNV)(int *idexo, int *time_step, int *nodal_var_index, void_in
     nnodes = *(int *)num_nodes;
   }
 
-  *ierr = ex_get_nodal_var(*idexo, *time_step, *nodal_var_index, nnodes, nodal_var_vals);
+  *ierr = ex_get_var(*idexo, *time_step, EX_NODAL, *nodal_var_index, 1, nnodes, nodal_var_vals);
 }
 
 /*
@@ -2049,8 +2098,8 @@ void F2C(exgnvt, EXGNVT)(int *idexo, int *nodal_var_index, void_int *node_number
     nnode = *(int *)node_number;
   }
 
-  *ierr = ex_get_nodal_var_time(*idexo, *nodal_var_index, nnode, *beg_time_step, *end_time_step,
-                                nodal_var_vals);
+  *ierr = ex_get_var_time(*idexo, EX_NODAL, *nodal_var_index, nnode, *beg_time_step, *end_time_step,
+                          nodal_var_vals);
 }
 
 /*
@@ -2067,7 +2116,8 @@ void F2C(expev, EXPEV)(int *idexo, int *time_step, int *elem_var_index, entity_i
     neblk = *(int *)num_elem_this_blk;
   }
 
-  *ierr = ex_put_elem_var(*idexo, *time_step, *elem_var_index, *elem_blk_id, neblk, elem_var_vals);
+  *ierr = ex_put_var(*idexo, *time_step, EX_ELEM_BLOCK, *elem_var_index, *elem_blk_id, neblk,
+                     elem_var_vals);
 }
 
 /*
@@ -2084,7 +2134,8 @@ void F2C(exgev, EXGEV)(int *idexo, int *time_step, int *elem_var_index, entity_i
     neblk = *(int *)num_elem_this_blk;
   }
 
-  *ierr = ex_get_elem_var(*idexo, *time_step, *elem_var_index, *elem_blk_id, neblk, elem_var_vals);
+  *ierr = ex_get_var(*idexo, *time_step, EX_ELEM_BLOCK, *elem_var_index, *elem_blk_id, neblk,
+                     elem_var_vals);
 }
 
 /*
@@ -2101,8 +2152,8 @@ void F2C(exgevt, EXGEVT)(int *idexo, int *elem_var_index, void_int *elem_number,
     el_num = *(int *)elem_number;
   }
 
-  *ierr = ex_get_elem_var_time(*idexo, *elem_var_index, el_num, *beg_time_step, *end_time_step,
-                               elem_var_vals);
+  *ierr = ex_get_var_time(*idexo, EX_ELEM_BLOCK, *elem_var_index, el_num, *beg_time_step,
+                          *end_time_step, elem_var_vals);
 }
 
 /*
@@ -2119,7 +2170,7 @@ void F2C(expnsv, EXPNSV)(int *idexo, int *time_step, int *var_index, entity_id *
     n_entity = *(int *)num_entity;
   }
 
-  *ierr = ex_put_nset_var(*idexo, *time_step, *var_index, *id, n_entity, var_vals);
+  *ierr = ex_put_var(*idexo, *time_step, EX_NODE_SET, *var_index, *id, n_entity, var_vals);
 }
 
 /*
@@ -2136,7 +2187,7 @@ void F2C(exgnsv, EXGNSV)(int *idexo, int *time_step, int *var_index, entity_id *
     n_entity = *(int *)num_entity;
   }
 
-  *ierr = ex_get_nset_var(*idexo, *time_step, *var_index, *id, n_entity, var_vals);
+  *ierr = ex_get_var(*idexo, *time_step, EX_NODE_SET, *var_index, *id, n_entity, var_vals);
 }
 
 /*
@@ -2153,7 +2204,7 @@ void F2C(expssv, EXPSSV)(int *idexo, int *time_step, int *var_index, entity_id *
     n_entity = *(int *)num_entity;
   }
 
-  *ierr = ex_put_sset_var(*idexo, *time_step, *var_index, *id, n_entity, var_vals);
+  *ierr = ex_put_var(*idexo, *time_step, EX_SIDE_SET, *var_index, *id, n_entity, var_vals);
 }
 
 /*
@@ -2170,7 +2221,7 @@ void F2C(exgssv, EXGSSV)(int *idexo, int *time_step, int *var_index, entity_id *
     n_entity = *(int *)num_entity;
   }
 
-  *ierr = ex_get_sset_var(*idexo, *time_step, *var_index, *id, n_entity, var_vals);
+  *ierr = ex_get_var(*idexo, *time_step, EX_SIDE_SET, *var_index, *id, n_entity, var_vals);
 }
 
 /*
@@ -2462,6 +2513,8 @@ void F2C(exgvnm, EXGVNM)(int *idexo, char *var_type, int *var_index, char *var_n
   char *sptr; /* ptr to temp staging space for string */
   int   slen;
   *ierr = 0; /* default no errror */
+  ex_entity_type obj_type;
+  obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (slen < 0) {
@@ -2478,7 +2531,7 @@ void F2C(exgvnm, EXGVNM)(int *idexo, char *var_type, int *var_index, char *var_n
     return;
   }
   /* do Exodus C call to read results variables names */
-  if (ex_get_var_name(*idexo, var_type, *var_index, sptr) == EX_FATAL) {
+  if (ex_get_variable_name(*idexo, obj_type, *var_index, sptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr); /* free up allocated space */
     return;
@@ -2558,6 +2611,8 @@ void F2C(expvnm, EXPVNM)(int *idexo, char *var_type, int *var_index, char *var_n
   char *sptr; /* ptr to temp staging space for string */
   int   slen;
   *ierr = 0; /* default no errror */
+  ex_entity_type obj_type;
+  obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH); /* max str size */
   if (slen < 0) {
@@ -2576,7 +2631,7 @@ void F2C(expvnm, EXPVNM)(int *idexo, char *var_type, int *var_index, char *var_n
   ex_fstrncpy(sptr, var_name, slen); /* copy string into buffer */
 
   /* do Exodus C call to write results variable name */
-  if (ex_put_var_name(*idexo, var_type, *var_index, sptr) == EX_FATAL) {
+  if (ex_put_variable_name(*idexo, obj_type, *var_index, sptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr); /* free up allocated space */
     return;
@@ -3277,8 +3332,8 @@ void F2C(expevs, EXPEVS)(int *idne, int *time_step, int *elem_var_index, entity_
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_put_elem_var_slab(*idne, *time_step, *elem_var_index, *elem_blk_id, st, cnt,
-                                    elem_var_vals)) != 0) {
+  if ((*ierr = ex_put_partial_var(*idne, *time_step, EX_ELEM_BLOCK, *elem_var_index, *elem_blk_id,
+                                  st, cnt, elem_var_vals)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to write elem block variable slab to file id %d", *idne);
@@ -3326,8 +3381,8 @@ void F2C(expnvs, EXPNVS)(int *idne, int *time_step, int *nodal_var_index, void_i
     cnt = *(int *)count;
   }
 
-  if ((*ierr = ex_put_nodal_var_slab(*idne, *time_step, *nodal_var_index, st, cnt,
-                                     nodal_var_vals)) != 0) {
+  if ((*ierr = ex_put_partial_var(*idne, *time_step, EX_NODAL, *nodal_var_index, 1, st, cnt,
+                                  nodal_var_vals)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write nodal variable slab to file id %d",
              *idne);

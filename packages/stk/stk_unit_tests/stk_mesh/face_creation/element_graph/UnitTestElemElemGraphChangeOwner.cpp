@@ -46,8 +46,7 @@ void expect_elem_connected_to_local_elem_id_via_side(const stk::mesh::BulkData& 
             }
         }
     }
-    ASSERT_TRUE(foundLocallyConnectedId)
-            << "elem " << elemId << " expected local elem " << connectedId;
+    ASSERT_TRUE(foundLocallyConnectedId) << "elem " << elemId << " expected local elem " << connectedId;
 }
 
 void expect_elem_connected_to_remote_elem_id_via_side(const stk::mesh::BulkData& bulkData, stk::mesh::ElemElemGraph& elemGraph,
@@ -64,8 +63,7 @@ void expect_elem_connected_to_remote_elem_id_via_side(const stk::mesh::BulkData&
             }
         }
     }
-    ASSERT_TRUE(foundRemotelyConnectedId)
-            << "elem " << elemId << " expected remote elem " << connectedId;
+    ASSERT_TRUE(foundRemotelyConnectedId) << "elem " << elemId << " expected remote elem " << connectedId;
 }
 
 class ElemGraphChangeOwner : public stk::unit_test_util::MeshTestFixture
@@ -143,8 +141,7 @@ protected:
         stk::mesh::EntityId elemId = get_bulk().identifier(elem);
         ASSERT_TRUE(!get_elem_graph().is_connected_elem_locally_owned(elem, connectedIndex))
                 << "elem " << elemId << " expected remote elem " << connectedId;
-        EXPECT_EQ(connectedId, get_elem_graph().get_connected_remote_id_and_via_side(elem, connectedIndex).id)
-                << "elem " << elemId;
+        EXPECT_EQ(connectedId, get_elem_graph().get_connected_remote_id_and_via_side(elem, connectedIndex).id) << "elem " << elemId;
     }
 
     void expect_otherProc_permutation_chosenId(const stk::mesh::impl::ParallelInfo &parInfo,
@@ -514,7 +511,7 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
         }
         stk::mesh::BulkData bulkData(meta, comm, aura_option);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         std::vector<unsigned> counts;
         stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
@@ -614,7 +611,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
         }
         stk::mesh::BulkData bulkData(meta, comm, aura_option);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
@@ -943,7 +940,7 @@ void change_entity_owner_hex_test_4_procs(bool aura_on)
         }
         stk::mesh::BulkData bulkData(meta, comm, aura_option);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after mesh-read");

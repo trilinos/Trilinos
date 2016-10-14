@@ -3484,7 +3484,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *eb, const Ioss:
                                      nodeGlobalImplicitMap);
       }
 
-      ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset + 1, file_count, data);
+      ierr = ex_put_partial_conn(get_file_pointer(), EX_ELEM_BLOCK, id, proc_offset + 1, file_count, data, NULL, NULL);
       if (ierr < 0)
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
     }
@@ -3516,7 +3516,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *eb, const Ioss:
                                      nodeGlobalImplicitMap);
       }
 
-      ierr = ex_put_partial_elem_conn(get_file_pointer(), id, proc_offset + 1, file_count, data);
+      ierr = ex_put_partial_conn(get_file_pointer(), EX_ELEM_BLOCK, id, proc_offset + 1, file_count, data, NULL, NULL);
       if (ierr < 0)
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
     }

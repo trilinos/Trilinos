@@ -108,13 +108,13 @@ public:
 };
 
 ///
-/// Constraint base class that defines the interface to Mini Solvers.
+/// Equality constraint base class that defines the interface to Mini Solvers.
 ///
 template<typename ConstraintDerived, typename S, Index NC, Index NV>
-struct Constraint_Base
+struct Equality_Constraint
 {
 public:
-  Constraint_Base()
+  Equality_Constraint()
   {
   }
 
@@ -131,6 +131,10 @@ public:
   Matrix<T, NC, NV>
   gradient(ConstraintDerived & c, Vector<T, N> const & x);
 
+  static constexpr
+  bool
+  IS_EQUALITY{true};
+
   ///
   /// Signal that something has gone horribly wrong.
   ///
@@ -144,6 +148,18 @@ public:
   static constexpr
   Index
   NUM_VAR{NV};
+};
+
+///
+/// Inequality constraint base class that defines the interface to Mini Solvers.
+///
+template<typename ConstraintDerived, typename S, Index NC, Index NV>
+struct Inequality_Constraint :
+    public Equality_Constraint<ConstraintDerived, S, NC, NV>
+{
+  static constexpr
+  bool
+  IS_EQUALITY{false};
 };
 
 ///

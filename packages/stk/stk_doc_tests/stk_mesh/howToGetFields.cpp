@@ -43,7 +43,7 @@ namespace stk { namespace mesh { class Part; } }
 namespace {
 
 namespace SpatialDimension { const unsigned three = 3; }
-//BEGIN
+//BEGINHowToGetFields
 TEST(stkMeshHowTo, getFields)
 {
     stk::mesh::MetaData metaData(SpatialDimension::three);
@@ -63,6 +63,6 @@ TEST(stkMeshHowTo, getFields)
     EXPECT_EQ(displacementsField, metaData.get_field<VectorField>(stk::topology::NODE_RANK, displacementsFieldName));
     EXPECT_EQ(displacementsField, metaData.get_field(stk::topology::NODE_RANK, displacementsFieldName));
 }
-//END
+//ENDHowToGetFields
 
 }

@@ -70,7 +70,7 @@ Matrix<T, M, N, ES>::Matrix(Index const rows, Index const cols) :
 ///
 template<typename T, Index M, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Matrix<T, M, N,ES>::Matrix(ComponentValue const value) :
+Matrix<T, M, N, ES>::Matrix(ComponentValue const value) :
     TensorBase<T, Store>::TensorBase(M * N, ORDER, value)
 {
   return;
@@ -332,7 +332,7 @@ Matrix<T, M, N, ES>::Matrix(
 
 template<typename T, Index M, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Matrix<T, M, N,ES>::Matrix(T const * data_ptr) :
+Matrix<T, M, N, ES>::Matrix(T const * data_ptr) :
     TensorBase<T, Store>::TensorBase(M * N, ORDER, data_ptr)
 {
   return;

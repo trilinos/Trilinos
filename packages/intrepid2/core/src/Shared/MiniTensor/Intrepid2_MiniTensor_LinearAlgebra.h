@@ -80,7 +80,7 @@ norm_infinity(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N,ES>
+Tensor<T, N, ES>
 inverse(Tensor<T, N, ES> const & A);
 
 ///
@@ -370,7 +370,7 @@ sort_permutation(Vector<T, N, ES> const & u);
 /// \return \f$ A = USV^T\f$
 ///
 template<typename T, Index N,  typename ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N,ES>, Tensor<T, N,ES>>
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 svd(Tensor<T, N, ES> const & A);
 
 ///

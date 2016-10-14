@@ -287,7 +287,8 @@ int DOFManager<LO,GO>::getNumFields() const
 template <typename LO, typename GO>
 const std::vector<int> & DOFManager<LO,GO>::getGIDFieldOffsets(const std::string & blockID, int fieldNum) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before buildGlobalUnknowns has been called");
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before "
+                                                                      "buildGlobalUnknowns has been called");
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockID);
   if(bitr==blockNameToID_.end())
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
@@ -367,12 +368,15 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   ElementBlockAccess ownedAccess(true,connMngr_);
 
   // INPUT: To the algorithm in the GUN paper
-  RCP<MultiVector> overlap_mv = buildTaggedMultiVector(ownedAccess);
+  RCP<MultiVector> tagged_overlap_mv = buildTaggedMultiVector(ownedAccess);
+  RCP<const Map> overlap_map   = tagged_overlap_mv->getMap();
+
+  RCP<MultiVector> overlap_mv = Tpetra::createMultiVector<GO>(overlap_map,(size_t)numFields_);
 
   // call the GUN paper algorithm
-  RCP<MultiVector> non_overlap_mv = buildGlobalUnknowns_GUN(*overlap_mv);
-
-  RCP<const Map> overlap_map   = overlap_mv->getMap();
+  auto non_overlap_pair = buildGlobalUnknowns_GUN(*tagged_overlap_mv,*overlap_mv);
+  RCP<MultiVector> non_overlap_mv = non_overlap_pair.first;
+  RCP<MultiVector> tagged_non_overlap_mv = non_overlap_pair.second;
   RCP<const Map> non_overlap_map = non_overlap_mv->getMap();
 
  /* 14. Cross reference local element connectivity and overlap map to
@@ -434,12 +438,20 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
     typedef std::unordered_set<GO> HashTable;
     HashTable isOwned, remainingOwned;
-    //owned_ is made up of owned_ids.
+
+    // owned_ is made up of owned_ids.: This doesn't work for high order
     Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
-    for (int j = 0; j < nvals.size(); ++j)
-    {
-      if (nvals[j] != -1)
-        isOwned.insert(nvals[j]);
+    Teuchos::ArrayRCP<const GO> tagged_vals = tagged_non_overlap_mv->get1dView();
+    TEUCHOS_ASSERT(nvals.size()==tagged_vals.size());
+    for (int j = 0; j < nvals.size(); ++j) {
+      if (nvals[j] != -1) {
+        for(GO offset=0;offset<tagged_vals[j];offset++)
+          isOwned.insert(nvals[j]+offset);
+      }
+      else {
+        // sanity check
+        TEUCHOS_ASSERT(tagged_vals[j]==0)
+      }
     }
     remainingOwned = isOwned;
 
@@ -556,8 +568,10 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 }
 
 template <typename LO, typename GO>
-Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >
-DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const
+std::pair<Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >,
+          Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> > >
+DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & tagged_overlap_mv,
+                                           Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const
 {
   // some typedefs
   typedef panzer::TpetraNodeType Node;
@@ -572,7 +586,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
   PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN");
 
   // LINE 2: In the GUN paper
-  RCP<const Map> overlap_map   = overlap_mv.getMap();
+  RCP<const Map> overlap_map   = tagged_overlap_mv.getMap();
 
  /* 6.  Create a OneToOne map from the overlap map.
    */
@@ -597,11 +611,11 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
 
   // LINE 5: In the GUN paper
 
-  Teuchos::RCP<MultiVector> non_overlap_mv;
+  Teuchos::RCP<MultiVector> tagged_non_overlap_mv;
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_05 alloc_unique_mv");
 
-    non_overlap_mv = Tpetra::createMultiVector<GO>(non_overlap_map,(size_t)numFields_);
+    tagged_non_overlap_mv = Tpetra::createMultiVector<GO>(non_overlap_map,(size_t)numFields_);
   }
 
  /* 8.  Create an export between the two maps.
@@ -610,6 +624,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
   // LINE 6: In the GUN paper
   RCP<Export> exp;
   RCP<Import> imp;
+  RCP<MultiVector> non_overlap_mv;
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_06 export");
 
@@ -624,7 +639,11 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
 
     /* 9.  Export data using ABSMAX.
       */
-    non_overlap_mv->doExport(overlap_mv,*exp,Tpetra::ABSMAX);
+    tagged_non_overlap_mv->doExport(tagged_overlap_mv,*exp,Tpetra::ABSMAX);
+
+    // copy the tagged one, so as to preserve the tagged MV so we can overwrite
+    // the non_overlap_mv
+    non_overlap_mv = rcp(new MultiVector(*tagged_non_overlap_mv,Teuchos::Copy));
   }
 
 
@@ -650,18 +669,6 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
 
   // LINE 10: In the GUN paper
 
-/*
-  RCP<const Map> gid_map;
-  {
-    PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_10 prefix_sum");
-
-    // One of the map constructors automatically does a prefix sum underneath
-    // so we abuse it here to compute a bunch of unique IDs for each processor to define
-    gid_map = rcp (new Map (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (),
-                            static_cast<size_t> (localsum), static_cast<GO> (0), getComm()));
-  }
-  */
-  
   GO myOffset = -1;
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_10 prefix_sum");
@@ -724,7 +731,8 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::
 
   //std::cout << Teuchos::describe(*non_overlap_mv,Teuchos::VERB_EXTREME)  << std::endl;
 
-  return non_overlap_mv;
+  // return non_overlap_mv;
+  return std::make_pair(non_overlap_mv,tagged_non_overlap_mv);
 }
 
 template <typename LO, typename GO>
@@ -817,8 +825,10 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
             working[whichField]++;
             offset++;
           }
-          for(std::size_t i=0;i<working.size();i++) 
-            edittwoview[i][lid] = working[i];
+          for(std::size_t i=0;i<working.size();i++) {
+            auto current = edittwoview[i][lid];
+            edittwoview[i][lid] = (current > working[i]) ? current : working[i];
+          }
  
         }
       }
@@ -1192,12 +1202,15 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
       int offset=0;
       for (int c = 0; c < connSize; ++c) {
         size_t lid = overlapmap.getLocalElement(elmtConn[c]);
+        std::vector<int> dofsPerField(numFields_,0);
         for (int n = 0; n < numFields[c]; ++n) {
           int whichField = fieldIds[offset];
           offset++;
           //Row will be lid. column will be whichField.
           //Shove onto local ordering
-          localOrdering.push_back(twoview[whichField][lid]);
+          localOrdering.push_back(twoview[whichField][lid]+dofsPerField[whichField]);
+
+          dofsPerField[whichField]++;
         }
       }
       LO thisID=myElements[l];

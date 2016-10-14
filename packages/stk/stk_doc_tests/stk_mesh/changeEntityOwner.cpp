@@ -70,7 +70,7 @@ TEST(StkMeshHowTo, changeEntityOwner)
     {
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, communicator);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
+        stk::io::fill_mesh("generated:1x1x4", bulkData);
 
         stk::mesh::EntityId elem2Id = 2;
         stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, elem2Id);

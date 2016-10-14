@@ -36,11 +36,6 @@
 namespace Ioss {
   /** \brief The mesh type -- structured, unstructured, hybrid (future), or unknown
    */
-  enum class MeshType {
-    UNKNOWN,
-    STRUCTURED,
-    UNSTRUCTURED,
-    HYBRID
-  };
+  enum class MeshType { UNKNOWN, STRUCTURED, UNSTRUCTURED, HYBRID };
 }
 #endif

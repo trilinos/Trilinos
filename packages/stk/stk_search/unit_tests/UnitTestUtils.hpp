@@ -40,12 +40,11 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
-#include <Geom_Specialized_Searches.h>
-
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/OctTreeOps.hpp>
 
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 
 #include <stk_unit_test_utils/getOption.h>
 
@@ -56,10 +55,10 @@ typedef stk::search::Box<double> StkBox;
 typedef std::pair<StkBox,Ident> StkBoxWithId;
 typedef std::vector< StkBoxWithId > StkBoxVector;
 
-typedef stk::search::Box<float> GtkBox;
+typedef stk::search::Box<float> FloatBox;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
-typedef std::pair<GtkBox,Ident> BoxWithId;
-typedef std::vector< BoxWithId > GtkBoxVector;
+typedef std::pair<FloatBox,Ident> BoxWithId;
+typedef std::vector< BoxWithId > FlaotBoxVector;
 
 
 template<class VolumeType>
@@ -106,7 +105,7 @@ std::pair<VolumeType, Ident> generateBoundingVolume(double x, double y, double z
 
 inline size_t getGoldValueForTest()
 {
-    std::string goldValue = unitTestUtils::getOption("-gold");
+    std::string goldValue = stk::unit_test_util::get_option("-gold");
     if ( goldValue == "skip" ) return 0u;
     std::istringstream ss(goldValue);
     size_t goldValueNumber=0;
@@ -123,22 +122,22 @@ inline void gatherResultstoProcZero(MPI_Comm comm, SearchResults& boxIdPairResul
     MPI_Comm_size(comm, &numProc);
 
     int procIdDestination = 0;
-    stk::CommAll gather(comm);
+    stk::CommSparse commSparse(comm);
     for (int phase=0; phase<2; ++phase)
     {
         if ( procId != procIdDestination )
         {
             for (size_t j=0;j<boxIdPairResults.size();++j)
             {
-                gather.send_buffer(procIdDestination).pack< std::pair<Ident, Ident> >(boxIdPairResults[j]);
+                commSparse.send_buffer(procIdDestination).pack< std::pair<Ident, Ident> >(boxIdPairResults[j]);
             }
         }
 
         if (phase == 0) { //allocation phase
-          gather.allocate_buffers( numProc / 4 );
+          commSparse.allocate_buffers();
         }
         else { // communication phase
-          gather.communicate();
+          commSparse.communicate();
         }
     }
 
@@ -146,7 +145,7 @@ inline void gatherResultstoProcZero(MPI_Comm comm, SearchResults& boxIdPairResul
     {
         for ( int p = 0 ; p < numProc ; ++p )
         {
-            stk::CommBuffer &buf = gather.recv_buffer( p );
+            stk::CommBuffer &buf = commSparse.recv_buffer( p );
             while ( buf.remaining() )
             {
                 std::pair<Ident, Ident> temp;

@@ -41,7 +41,7 @@
 
 #if defined ( STK_HAS_MPI )
 
-//DocTest1
+//BEGINCommSparse
 TEST(ParallelComm, HowToCommunicateOneValue)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -84,7 +84,8 @@ TEST(ParallelComm, HowToCommunicateOneValue)
         }
     }
 }
-//DocTest2
+//ENDCommSparse
+//BEGINCommSparse2
 TEST(ParallelComm, HowToCommunicateAnArbitraryNumberOfValues)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -137,5 +138,5 @@ TEST(ParallelComm, HowToCommunicateAnArbitraryNumberOfValues)
         }
     }
 }
-//EndDocTest
+//ENDCommSparse2
 #endif

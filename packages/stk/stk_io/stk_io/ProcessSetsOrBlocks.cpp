@@ -4,6 +4,8 @@
 #include "Ioss_Field.h"
 #include "Ioss_SideSet.h"
 #include "IossBridge.hpp"
+#include "SidesetTranslator.hpp"
+#include "StkIoUtils.hpp"
 
 #include "StkMeshIoBroker.hpp"
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData

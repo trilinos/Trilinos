@@ -43,7 +43,7 @@
 /*!
 
 The function ex_put_qa() writes the QA records to the database. Each
-QA record contains four \c MAX_STR_LENGTH-byte character
+QA record contains four MAX_STR_LENGTH-byte character
 strings. The character strings are:
 
  -  the analysis code name
@@ -69,7 +69,7 @@ ex_create() or ex_open().
 
 The following code segment will write out two QA records:
 
-\code
+~~~{.c}
 int num_qa_rec, error, exoid;
 char *qa_record[2][4];
 
@@ -86,7 +86,7 @@ qa_record[1][2] = "07/07/93";
 qa_record[1][3] = "16:41:33";
 
 error = ex_put_qa (exoid, num_qa_rec, qa_record);
-\endcode
+~~~
 
  */
 

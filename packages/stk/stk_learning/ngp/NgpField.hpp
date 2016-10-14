@@ -4,6 +4,7 @@
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
 #include <ngp/NgpMesh.hpp>
+#include <ngp/NgpForEachEntity.hpp>
 
 namespace ngp {
 
@@ -38,6 +39,15 @@ public:
         T* data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket->bucket_id(), entity.bucketOrd));
         ThrowAssert(data);
         return data[component];
+    }
+
+    void set_all(const StkMeshAdapter& ngpMesh, const T& value)
+    {
+        ngp::for_each_entity_run(ngpMesh, field->entity_rank(), *field, KOKKOS_LAMBDA(const StkMeshAdapter::MeshIndex& entity) {
+            T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, *entity.bucket, entity.bucketOrd));
+            *fieldPtr = value;
+
+        });
     }
 
     void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field_in)
@@ -96,11 +106,6 @@ public:
     }
     void swap_data(StkFieldAdapter<T> &sf)
     {
-    }
-    //TODO: delete and work with SM to replace usage
-    StkFieldAdapter<T> get_non_const_field() const
-    {
-        return stkFieldAdapter;
     }
 private:
     StkFieldAdapter<T> stkFieldAdapter;
@@ -173,6 +178,13 @@ public:
     T& get(MeshIndex entity, int component) const
     {
         return deviceData(get_index(entity.bucket->bucket_id(), entity.bucketOrd)+component);
+    }
+
+    template <typename Mesh> STK_FUNCTION
+    void set_all(const Mesh& ngpMesh, const T& value)
+    {
+        Kokkos::deep_copy(hostData, value);
+        Kokkos::deep_copy(deviceData, value);
     }
 
     STK_FUNCTION
@@ -364,13 +376,6 @@ public:
         sf = staticField;
         staticField = tmp;
         constDeviceData = staticField.deviceData;
-    }
-
-    //TODO: delete and work with SM to replace usage
-    STK_FUNCTION
-    StaticField<T> get_non_const_field() const
-    {
-        return staticField;
     }
 
 private:

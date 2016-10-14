@@ -103,9 +103,8 @@ Ioss::Property Ioss::SideBlock::get_implicit_property(const std::string &my_name
   if (my_name == "parent_topology_type") {
     return Ioss::Property(my_name, parent_element_topology()->name());
   }
-  else {
-    return Ioss::EntityBlock::get_implicit_property(my_name);
-  }
+
+  return Ioss::EntityBlock::get_implicit_property(my_name);
 }
 
 void Ioss::SideBlock::block_membership(std::vector<std::string> &block_members)

@@ -142,7 +142,6 @@ exe stk_search_integration_tester
     /sierra/stk_util//stk_util_unit_test_support
     /sierra/stk_util//stk_util_use_case
     /sierra/stk_util//stk_util_diag
-    /sierra/geometry_toolkit//geometry_toolkit
     /sierra/mesh//mesh
     /sierra/acme//acme
     /sierra/stk_unit_test_utils//stk_unit_test_utils
@@ -160,7 +159,6 @@ exe stk_search_utest
     stk_search
     /sierra/stk_util//stk_util_use_case
     /sierra/stk_util//stk_util_diag
-    /sierra/geometry_toolkit//geometry_toolkit
     /sierra/acme//acme
     /sierra/mesh//mesh
     /sierra/stk_unit_test_utils//stk_unit_test_utils

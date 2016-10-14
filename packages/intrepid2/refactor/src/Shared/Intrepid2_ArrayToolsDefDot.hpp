@@ -74,13 +74,13 @@ namespace Intrepid2 {
         size_type leftRank(_leftInput.rank()), rightRank(_rightInput.rank());
 
         if (_hasField) 
-          Util::unrollIndex( cl, bf, pt, 
+          unrollIndex( cl, bf, pt, 
                              _output.dimension(0),
                              _output.dimension(1), 
                              _output.dimension(2), 
                              iter );
         else          
-          Util::unrollIndex( cl, pt,
+          unrollIndex( cl, pt,
                              _output.dimension(0),
                              _output.dimension(1),
                              iter);

@@ -320,8 +320,10 @@ protected:
     * tagged overlapped multi-vector (<code>overlap_mv</code>) is overwritten with the global IDs. Note
     * fields on geometric entities that are not assigned a global ID are given an entry of -1.
     */
-  Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >
-  buildGlobalUnknowns_GUN(Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
+  std::pair<Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >,
+            Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> > >
+  buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & tagged_overlap_mv,
+                          Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
 
   void fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
                                 std::vector<std::vector< GO > > & elementGIDs,

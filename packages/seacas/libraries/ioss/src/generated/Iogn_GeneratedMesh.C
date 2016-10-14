@@ -670,16 +670,19 @@ namespace Iogn {
 
     int64_t count = (numX + 1) * (numY + 1);
     int64_t slab  = count;
-    if (!isFirstProc && !isLastProc)
+    if (!isFirstProc && !isLastProc) {
       count *= 2;
+    }
     map.resize(count);
     proc.resize(count);
 
     int64_t j = 0;
-    if (!isFirstProc)
+    if (!isFirstProc) {
       j = build_node_map(map, proc, slab, 0, myProcessor - 1, j);
-    if (!isLastProc)
+    }
+    if (!isLastProc) {
       j = build_node_map(map, proc, slab, myNumZ, myProcessor + 1, j);
+    }
   }
 
   void GeneratedMesh::element_map(int64_t block_number, Ioss::Int64Vector &map) const

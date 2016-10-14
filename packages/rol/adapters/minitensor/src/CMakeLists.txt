@@ -50,6 +50,8 @@ IF (ROL_ENABLE_Boost AND ROL_ENABLE_Intrepid2)
     function/ROL_MiniTensor_EqualityConstraint_Def.hpp
     function/ROL_MiniTensor_Function.hpp
     function/ROL_MiniTensor_Function_Def.hpp
+    function/ROL_MiniTensor_InequalityConstraint.hpp
+    function/ROL_MiniTensor_InequalityConstraint_Def.hpp
   )
 ENDIF()
 

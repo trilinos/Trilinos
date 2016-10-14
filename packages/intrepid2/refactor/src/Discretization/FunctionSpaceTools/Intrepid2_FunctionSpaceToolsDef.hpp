@@ -53,15 +53,15 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
   template<typename SpT>
-  template<typename outputValValueType, class ...outputValProperties,
-           typename inputValValueType,  class ...inputValProperties>
+  template<typename outputValueType, class ...outputProperties,
+           typename inputValueType,  class ...inputProperties>
   void
   FunctionSpaceTools<SpT>::
-  HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,outputValProperties...> outputVals,
-                       const Kokkos::DynRankView<inputValValueType, inputValProperties...>  inputVals ) {
-    ArrayTools<SpT>::cloneFields(outputVals, inputVals);
+  HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+                       const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
+    ArrayTools<SpT>::cloneFields(output, input);
   }
-  
+
   // ------------------------------------------------------------------------------------
 
   namespace FunctorFunctionSpaceTools {

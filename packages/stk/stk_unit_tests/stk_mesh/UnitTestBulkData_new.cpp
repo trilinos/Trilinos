@@ -984,9 +984,9 @@ TEST ( UnitTestBulkData_new , testUninitializedMetaData )
   bulk.modification_begin();
 
   ASSERT_THROW( bulk.declare_entity(stk::topology::NODE_RANK,
-                                            1, /*id*/
-                                            PartVector() ),
-                        std::logic_error);
+                                    1, /*id*/
+                                    PartVector() ),
+                                    std::logic_error);
 }
 
 namespace {

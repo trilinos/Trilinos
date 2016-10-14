@@ -47,7 +47,7 @@ protected:
         stkField = &get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField", numStates);
         double init = -1.0;
         stk::mesh::put_field(*stkField, get_meta().universal_part(), &init);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", get_bulk());
+        stk::io::fill_mesh("generated:1x1x4", get_bulk());
     }
     void test_n_states(unsigned numStates)
     {

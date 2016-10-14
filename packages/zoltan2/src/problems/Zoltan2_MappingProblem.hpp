@@ -141,6 +141,17 @@ public:
   
   void solve(bool updateInputData=true); 
 
+  /*! \brief Set up validators specific to this Problem
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    RCP<Teuchos::StringValidator> mapping_algorithm_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "geometric", "default", "block" )));
+    pl.set("mapping_algorithm", "default", "mapping algorithm",
+      mapping_algorithm_Validator);
+  }
+
   //!  \brief Get the solution to the problem.
   //
   //   \return  the solution to the most recent solve().

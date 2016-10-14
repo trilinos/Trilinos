@@ -479,7 +479,8 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       int  num_elem = 0;
       int  num_node = 0;
       int  num_attr = 0;
-      ex_get_elem_block(exo_file, ids[i], type, &num_elem, &num_node, &num_attr);
+      ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], type, &num_elem, &num_node, NULL, NULL,
+                   &num_attr);
       types[i]             = std::string(type);
       num_elem_in_block[i] = num_elem;
       num_node_per_elem[i] = num_node;
@@ -537,7 +538,8 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
       int num_elem = 0;
       int num_node = 0;
       int num_attr = 0;
-      ex_get_elem_block(exo_file, ids[i], TOPTR(type), &num_elem, &num_node, &num_attr);
+      ex_get_block(exo_file, EX_ELEM_BLOCK, ids[i], TOPTR(type), &num_elem, &num_node, NULL, NULL,
+                   &num_attr);
       types += type.data();
       types += "\n";
       num_elem_in_block[i] = num_elem;
@@ -623,7 +625,7 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         /* distribution-factors list */
-        ex_get_node_set_dist_fact(exo_file, ids[i], &dist_fac[df_off]);
+        ex_get_set_dist_fact(exo_file, EX_NODE_SET, ids[i], &dist_fac[df_off]);
         index               = 4 * i + 3;
         cell_element[index] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims,
                                             &dist_fac[df_off], MAT_F_DONT_COPY_DATA);
@@ -649,7 +651,7 @@ std::vector<int> handle_node_sets(int exo_file, int num_sets, bool use_cell_arra
 
         /* distribution-factors list */
         std::vector<double> dist_fac(num_df[i]);
-        ex_get_node_set_dist_fact(exo_file, ids[i], TOPTR(dist_fac));
+        ex_get_set_dist_fact(exo_file, EX_NODE_SET, ids[i], TOPTR(dist_fac));
         sprintf(str, "nsfac%02d", i + 1);
         PutDbl(str, dist_fac.size(), 1, TOPTR(dist_fac));
       }
@@ -728,8 +730,9 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         num_sideset_dfac[i]  = n2;
         ex_get_side_set_node_list_len(exo_file, ids[i], &num_sideset_nodes[i]);
         if (n2 != num_sideset_nodes[i]) {
-          std::cerr << "WARNING: Number of sideset nodes does not match number of distribution factors"
-                    << " for sideset with id = " << ids[i] << ".\n";
+          std::cerr
+              << "WARNING: Number of sideset nodes does not match number of distribution factors"
+              << " for sideset with id = " << ids[i] << ".\n";
         }
 
         /* element and side list for side sets (dgriffi) */
@@ -770,7 +773,7 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
 
         /* distribution-factors list */
         if (has_ss_dfac) {
-          ex_get_side_set_dist_fact(exo_file, ids[i], &ssdfac[df_off]);
+          ex_get_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], &ssdfac[df_off]);
         }
         else {
           n2 = num_sideset_dfac[i];
@@ -826,7 +829,7 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         /* distribution-factors list */
         ssdfac.resize(n2);
         if (has_ss_dfac) {
-          ex_get_side_set_dist_fact(exo_file, ids[i], TOPTR(ssdfac));
+          ex_get_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], TOPTR(ssdfac));
         }
         else {
           for (int j = 0; j < n2; j++) {
@@ -1138,7 +1141,7 @@ int main(int argc, char *argv[])
         Mat_VarSetCell(cell_array, j, cell_element[j]);
         j++;
 
-        ex_get_glob_var_time(exo_file, i + 1, 1, num_time_steps, &scr[offset]);
+        ex_get_var_time(exo_file, EX_GLOBAL, i + 1, 1, 1, num_time_steps, &scr[offset]);
         cell_element[j] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, &scr[offset],
                                         MAT_F_DONT_COPY_DATA);
         assert(cell_element[j]);
@@ -1154,7 +1157,7 @@ int main(int argc, char *argv[])
       std::vector<double> scr(num_time_steps);
       for (int i = 0; i < num_global_vars; i++) {
         sprintf(str, "gvar%02d", i + 1);
-        ex_get_glob_var_time(exo_file, i + 1, 1, num_time_steps, TOPTR(scr));
+        ex_get_var_time(exo_file, EX_GLOBAL, i + 1, 1, 1, num_time_steps, TOPTR(scr));
         PutDbl(str, num_time_steps, 1, TOPTR(scr));
       }
     }
@@ -1197,7 +1200,7 @@ int main(int argc, char *argv[])
         assert(cell_element[j]);
         Mat_VarSetCell(cell_array, j, cell_element[j]);
         for (int k = 0; k < num_time_steps; k++) {
-          ex_get_nodal_var(exo_file, k + 1, i + 1, num_nodes, &scr[num_nodes * k + offset]);
+          ex_get_var(exo_file, k + 1, EX_NODAL, i + 1, 1, num_nodes, &scr[num_nodes * k + offset]);
         }
         offset += num_time_steps * num_nodes;
         j++;
@@ -1215,7 +1218,7 @@ int main(int argc, char *argv[])
           logger("\tReading");
         }
         for (int j = 0; j < num_time_steps; j++) {
-          ex_get_nodal_var(exo_file, j + 1, i + 1, num_nodes, &scr[num_nodes * j]);
+          ex_get_var(exo_file, j + 1, EX_NODAL, i + 1, 1, num_nodes, &scr[num_nodes * j]);
         }
         if (debug) {
           logger("\tWriting");
@@ -1258,13 +1261,13 @@ int main(int argc, char *argv[])
   }
   ex_opts(0); /* turn off error reporting. It is not an error to have no map*/
   std::vector<int> ids(num_nodes);
-  err = ex_get_node_num_map(exo_file, TOPTR(ids));
+  err = ex_get_id_map(exo_file, EX_NODE_MAP, TOPTR(ids));
   if (err == 0) {
     PutInt("node_num_map", num_nodes, 1, TOPTR(ids));
   }
 
   ids.resize(num_elements);
-  err = ex_get_elem_num_map(exo_file, TOPTR(ids));
+  err = ex_get_id_map(exo_file, EX_ELEM_MAP, TOPTR(ids));
   if (err == 0) {
     PutInt("elem_num_map", num_elements, 1, TOPTR(ids));
   }

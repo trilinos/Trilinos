@@ -68,6 +68,7 @@ namespace IOShell {
     double                   maximum_time;
     double                   minimum_time;
     int                      surface_split_type;
+    int                      data_storage_type;
     int                      compression_level;
     bool                     shuffle;
     bool                     debug;

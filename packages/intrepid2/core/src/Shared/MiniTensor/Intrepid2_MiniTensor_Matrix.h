@@ -59,7 +59,7 @@ using matrix_store = Storage<T, dimension_product<M, N>::value, ES>;
 ///
 /// General rectangular matrix.
 ///
-template<typename T, Index M = DYNAMIC, Index N = DYNAMIC,  typename ES=NOKOKKOS>
+template<typename T, Index M = DYNAMIC, Index N = DYNAMIC,  typename ES = NOKOKKOS>
 class Matrix: public TensorBase<T, matrix_store<T, M, N, ES>>
 {
 public:
@@ -460,7 +460,7 @@ operator*(Matrix<S, M, P, ES> const & A, Matrix<T, P, N, ES> const & B);
 ///
 template<typename S, typename T, Index M, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-typename lazy_disable_if<order_1234<S>, apply_matrix<Promote<S, T>, M, N,ES>>::type
+typename lazy_disable_if<order_1234<S>, apply_matrix<Promote<S, T>, M, N, ES>>::type
 operator*(S const & s, Matrix<T, M, N, ES> const & A);
 
 ///

@@ -222,7 +222,7 @@ struct dimension_product<DYNAMIC, DYNAMIC> {
 ///
 /// Base static storage class. Simple linear access memory model.
 ///
-template<typename T, Index N,typename ES>
+template<typename T, Index N, typename ES>
 class Storage
 {
 public:

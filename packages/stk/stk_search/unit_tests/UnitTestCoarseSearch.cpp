@@ -214,15 +214,15 @@ void testCoarseSearchForAlgorithm_IntsForIdents(stk::search::SearchMethod algori
   }
 }
 
-void testCoarseSearchForAlgorithmUsingGtkAABoxes(NewSearchMethod algorithm, MPI_Comm comm)
+void testCoarseSearchForAlgorithmUsingFloatAABoxes(NewSearchMethod algorithm, MPI_Comm comm)
 {
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
-  GtkBoxVector local_domain, local_range;
+  FlaotBoxVector local_domain, local_range;
   // what if identifier is NOT unique
 
-  GtkBox box;
+  FloatBox box;
   Ident id;
 
   box.set_box(proc_id + 0.1, 0.0, 0.0, proc_id + 0.9, 1.0, 1.0);
@@ -270,19 +270,19 @@ TEST(stk_search, coarse_search_octree)
   testCoarseSearchForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
 }
 
-TEST(stk_search, coarse_search_boost_rtree_using_gtk_aa_boxes)
+TEST(stk_search, coarse_search_boost_rtree_using_float_aa_boxes)
 {
-    testCoarseSearchForAlgorithmUsingGtkAABoxes(BOOST_RTREE, MPI_COMM_WORLD);
+    testCoarseSearchForAlgorithmUsingFloatAABoxes(BOOST_RTREE, MPI_COMM_WORLD);
 }
 
-TEST(stk_search, coarse_search_octree_using_gtk_aa_boxes)
+TEST(stk_search, coarse_search_octree_using_float_aa_boxes)
 {
-    testCoarseSearchForAlgorithmUsingGtkAABoxes(OCTREE, MPI_COMM_WORLD);
+    testCoarseSearchForAlgorithmUsingFloatAABoxes(OCTREE, MPI_COMM_WORLD);
 }
 
-TEST(stk_search, coarse_search_gtk_using_gtk_aa_boxes)
+TEST(stk_search, coarse_search_kdtree_using_float_aa_boxes)
 {
-    testCoarseSearchForAlgorithmUsingGtkAABoxes(GTK, MPI_COMM_WORLD);
+    testCoarseSearchForAlgorithmUsingFloatAABoxes(GTK, MPI_COMM_WORLD);
 }
 
 void testIdentProcWithSearch(stk::search::SearchMethod searchMethod)
@@ -295,12 +295,12 @@ void testIdentProcWithSearch(stk::search::SearchMethod searchMethod)
 
     if ( numProcs != 1 )
     {
-        GtkBox box1(0,0,0,1,1,1);
-        GtkBox box2(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
+        FloatBox box1(0,0,0,1,1,1);
+        FloatBox box2(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
         Ident id1(1, 0);
         Ident id2(1, 1);
 
-        GtkBoxVector boxes;
+        FlaotBoxVector boxes;
         if ( procId == 0 )
         {
           boxes.push_back(std::make_pair(box1, id1));

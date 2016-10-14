@@ -126,16 +126,6 @@ IF (Tpetra_INST_INT_INT)
     )
 ENDIF()
 
-IF (Tpetra_INST_INT_LONG)
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Map_removeEmptyProcesses
-  SOURCES
-    Map_removeEmptyProcesses
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM mpi
-  NUM_MPI_PROCS 1-10
-  STANDARD_PASS_OUTPUT
-  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_replaceCommWithSubset
@@ -146,18 +136,29 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-10
   STANDARD_PASS_OUTPUT
   )
+
+IF (Tpetra_INST_INT_LONG)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map_removeEmptyProcesses
+    SOURCES
+      Map_removeEmptyProcesses
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM mpi
+    NUM_MPI_PROCS 1-10
+    STANDARD_PASS_OUTPUT
+    )
 ENDIF()
 
 IF (Tpetra_INST_INT_INT)
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Map_isOneToOne
-  SOURCES
-    isOneToOne
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1-10
-  STANDARD_PASS_OUTPUT
-  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map_isOneToOne
+    SOURCES
+      isOneToOne
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    NUM_MPI_PROCS 1-10
+    STANDARD_PASS_OUTPUT
+    )
 ENDIF()
 
 # FIXME (mfh 20 Oct 2015) My recent commit

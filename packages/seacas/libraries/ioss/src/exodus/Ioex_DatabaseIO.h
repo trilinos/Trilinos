@@ -270,6 +270,7 @@ namespace Ioex {
     // Given the global region step, return the step on the database...
     int get_database_step(int global_step) const;
 
+    void flush_database() const override;
     void finalize_write(double sim_time);
 
     // Private member data...

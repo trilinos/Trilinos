@@ -39,6 +39,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 
@@ -333,7 +334,7 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
   bgi::query(global_domain, bgi::intersects(local_box), std::back_inserter(intersecting_procs));
 
   // Communicate overlapping domains
-  stk::CommAll comm_all( comm );
+  stk::CommSparse comm_sparse( comm );
   int size = stk::parallel_machine_size(comm);
   for (int phase = 0; phase < 2; ++phase) {
     for (size_t i=0, ie=intersecting_procs.size(); i < ie; ++i) {
@@ -344,19 +345,19 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
       std::vector<value_type> overlaps;
       bgi::query(local_domain, bgi::intersects(box), std::back_inserter(overlaps));
 
-      stk::CommBuffer & buff = comm_all.send_buffer(proc);
+      stk::CommBuffer & buff = comm_sparse.send_buffer(proc);
       buff.pack<value_type>(&*overlaps.begin(), overlaps.size());
     }
     if (phase == 0) {
-      comm_all.allocate_buffers( size / 4, false /*not symmetric*/ );
+      comm_sparse.allocate_buffers();
     }
   }
 
-  comm_all.communicate();
+  comm_sparse.communicate();
 
   // Add overlapping processes to local domain
   for ( int p = 0 ; p < size ; ++p ) {
-    stk::CommBuffer & buf = comm_all.recv_buffer( p );
+    stk::CommBuffer & buf = comm_sparse.recv_buffer( p );
 
     const int num_recv = buf.remaining() / sizeof(value_type);
     std::vector<value_type> values(num_recv);
@@ -410,20 +411,20 @@ int coarse_search_boost_rtree_gather_range( std::vector< std::pair<RangeBox,Rang
 
   // gather all range that can potentially intersect my local domain
   {
-    stk::CommAll comm_all( comm );
+    stk::CommSparse comm_sparse( comm );
     for (int phase = 0; phase < 2; ++phase) {
       for (int p = 0; p < p_size; ++p) {
-        comm_all.send_buffer(p).pack<RangeValue>(&*range_send[p].begin(), range_send[p].size());
+        comm_sparse.send_buffer(p).pack<RangeValue>(&*range_send[p].begin(), range_send[p].size());
       }
       if (phase == 0) {
-        comm_all.allocate_buffers( p_size / 4, false /*not symmetric*/ );
+        comm_sparse.allocate_buffers();
       }
     }
 
-    comm_all.communicate();
+    comm_sparse.communicate();
 
     for ( int p = 0 ; p < p_size ; ++p ) {
-      stk::CommBuffer & buf = comm_all.recv_buffer( p );
+      stk::CommBuffer & buf = comm_sparse.recv_buffer( p );
 
       const int num_recv = buf.remaining() / sizeof(RangeValue);
       std::vector<RangeValue> values(num_recv);
@@ -515,7 +516,7 @@ void coarse_search_boost_rtree_impl( std::vector< std::pair<DomainBox,DomainIden
   {
     int p_rank = stk::parallel_machine_rank(comm);
 
-    stk::CommAll comm_all( comm );
+    stk::CommSparse comm_sparse( comm );
     std::vector<OutputVector> send_matches(p_size);
     for (size_t r = 0, re = gather_range.size(); r < re; ++r) {
       RangeBox const& range = gather_range[r].first;
@@ -542,17 +543,17 @@ void coarse_search_boost_rtree_impl( std::vector< std::pair<DomainBox,DomainIden
     {
       for (int phase = 0; phase < 2; ++phase) {
         for (int p = 0; p < p_size; ++p) {
-          comm_all.send_buffer(p).pack<Output>(&*send_matches[p].begin(), send_matches[p].size());
+          comm_sparse.send_buffer(p).pack<Output>(&*send_matches[p].begin(), send_matches[p].size());
         }
         if (phase == 0) {
-          comm_all.allocate_buffers( p_size / 4, false /*not symmetric*/ );
+          comm_sparse.allocate_buffers();
         }
       }
 
-      comm_all.communicate();
+      comm_sparse.communicate();
 
       for ( int p = 0 ; p < p_size ; ++p ) {
-        stk::CommBuffer & buf = comm_all.recv_buffer( p );
+        stk::CommBuffer & buf = comm_sparse.recv_buffer( p );
 
         const int num_recv = buf.remaining() / sizeof(Output);
         OutputVector values(num_recv);

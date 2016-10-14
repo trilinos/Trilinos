@@ -50,9 +50,9 @@ struct TopologyMapper
     int exodusNumNodes;
     std::string iossTopologyName;
     stk::topology stkTopology;
-    stk::mesh::CellTopology shardsTopology;
+    shards::CellTopology shardsTopology;
     TopologyMapper(const std::string &exodusName_, const int exodusNumNodes_, const std::string& iossTopologyName_,
-            stk::topology stkTopology_, stk::mesh::CellTopology shardsTopology_) :
+            stk::topology stkTopology_, shards::CellTopology shardsTopology_) :
                 exodusName(exodusName_), exodusNumNodes(exodusNumNodes_), iossTopologyName(iossTopologyName_),
                 stkTopology(stkTopology_), shardsTopology(shardsTopology_)
     {}
@@ -71,34 +71,34 @@ void setUpMappingsToTest(std::vector<TopologyMapper>& topologyMappings)
     int exodusNumNodes=-1;
     std::string iossTopologyName;
     stk::topology stkTopology;
-    stk::mesh::CellTopology shardsTopology;
+    shards::CellTopology shardsTopology;
 
     exodusName="sphere";
     exodusNumNodes=1;
     iossTopologyName="sphere";
     stkTopology=stk::topology::PARTICLE;
-    shardsTopology=stk::mesh::CellTopology(shards::getCellTopologyData< shards::Particle >());
+    shardsTopology=shards::CellTopology(shards::getCellTopologyData< shards::Particle >());
     topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology, shardsTopology));
 
     exodusName="BEam";
     exodusNumNodes=3;
     iossTopologyName="bar3";
     stkTopology=stk::topology::BEAM_3;
-    shardsTopology=stk::mesh::CellTopology(shards::getCellTopologyData< shards::Beam<3> >());
+    shardsTopology=shards::CellTopology(shards::getCellTopologyData< shards::Beam<3> >());
     topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology, shardsTopology));
 
     exodusName="Tri";
     exodusNumNodes=3;
     iossTopologyName="trishell3";
     stkTopology=stk::topology::SHELL_TRIANGLE_3;
-    shardsTopology=stk::mesh::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >());
+    shardsTopology=shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >());
     topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology, shardsTopology));
 
     exodusName="hex";
     exodusNumNodes=20;
     iossTopologyName="hex20";
     stkTopology=stk::topology::HEXAHEDRON_20;
-    shardsTopology=stk::mesh::CellTopology(shards::getCellTopologyData< shards::Hexahedron<20> >());
+    shardsTopology=shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<20> >());
     topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology, shardsTopology));
 }
 
@@ -124,7 +124,7 @@ TEST(Understanding, sierra_topologies)
         stk::topology mappedStkTopologyFromIossTopology = stk::io::map_ioss_topology_to_stk(iossTopology);
         EXPECT_EQ(goldValues.stkTopology, mappedStkTopologyFromIossTopology);
 
-        stk::mesh::CellTopology mappedShardsTopologyFromStkTopology = stk::mesh::get_cell_topology(mappedStkTopologyFromIossTopology);
+        shards::CellTopology mappedShardsTopologyFromStkTopology = stk::mesh::get_cell_topology(mappedStkTopologyFromIossTopology);
         EXPECT_EQ(goldValues.shardsTopology, mappedShardsTopologyFromStkTopology);
 
         stk::topology mappedStkTopologyFromShards = stk::mesh::get_topology(mappedShardsTopologyFromStkTopology, spatialDim);

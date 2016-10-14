@@ -60,7 +60,7 @@ public:
 
   MiniTensor_BoundConstraint() = delete;
 
-      MiniTensor_BoundConstraint(
+  MiniTensor_BoundConstraint(
       MiniTensorVector<T, N> & lo,
       MiniTensorVector<T, N> & hi
   );

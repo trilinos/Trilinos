@@ -207,7 +207,7 @@ namespace Intrepid2 {
     case POINTTYPE_WARPBLEND: {
       // lattice ordering 
       {
-        const auto offset = 0;
+        const ordinal_type offset = 0;
         PointTools::getLattice( dofCoords,
                                 this->basisCellTopology_, 
                                 order, offset, 

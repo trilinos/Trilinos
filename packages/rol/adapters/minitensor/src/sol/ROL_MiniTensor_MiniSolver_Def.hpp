@@ -38,8 +38,14 @@
 //
 // ************************************************************************
 // @HEADER
+#include <type_traits>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_MiniTensor_BoundConstraint.hpp"
+#include "ROL_MiniTensor_EqualityConstraint.hpp"
+#include "ROL_MiniTensor_Function.hpp"
+#include "ROL_MiniTensor_InequalityConstraint.hpp"
+#include "ROL_MiniTensor_Vector.hpp"
 
 namespace ROL {
 
@@ -107,6 +113,13 @@ solve(
 
   updateConvergenceCriterion(norm_resi);
 
+  ROL::AlgorithmState<T> &
+  state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
+
+  ROL::StatusTest<T>
+  status(params);
+
+  converged = status.check(state) == false;
   recordFinals(fn, soln);
 
   return;
@@ -116,14 +129,85 @@ solve(
 //
 //
 template<typename T, Index N>
-template<typename FN, typename CN, Index NC>
+template<typename FN, typename BC>
 void
 MiniTensor_Minimizer<T, N>::
 solve(
     std::string const & algoname,
     Teuchos::ParameterList & params,
     FN & fn,
-    CN & cn,
+    BC & bc,
+    Intrepid2::Vector<T, N> & soln)
+{
+  step_method_name = algoname.c_str();
+  function_name = FN::NAME;
+  initial_guess = soln;
+
+  Intrepid2::Vector<T, N>
+  resi = fn.gradient(soln);
+
+  initial_value = fn.value(soln);
+  previous_value = initial_value;
+  failed = failed || fn.failed;
+  initial_norm = Intrepid2::norm(resi);
+
+  // Define algorithm.
+  ROL::MiniTensor_Objective<FN, T, N>
+  obj(fn);
+
+  MiniTensorVector<T, N>
+  lo(bc.lower);
+
+  MiniTensorVector<T, N>
+  hi(bc.upper);
+
+  // Define bound constraint
+  ROL::MiniTensor_BoundConstraint<T, N>
+  bound_constr(lo, hi);
+
+  ROL::Algorithm<T>
+  algo(algoname, params);
+
+  // Set initial guess
+  ROL::MiniTensorVector<T, N>
+  x(soln);
+
+  // Run Algorithm
+  algo.run(x, obj, bound_constr, verbose);
+
+  soln = ROL::MTfromROL<T, N>(x);
+
+  resi = fn.gradient(soln);
+
+  T const
+  norm_resi = Intrepid2::norm(resi);
+
+  updateConvergenceCriterion(norm_resi);
+
+  ROL::AlgorithmState<T> &
+  state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
+
+  ROL::StatusTest<T>
+  status(params);
+
+  converged = status.check(state) == false;
+  recordFinals(fn, soln);
+
+  return;
+}
+
+//
+//
+//
+template<typename T, Index N>
+template<typename FN, typename EIC, Index NC>
+void
+MiniTensor_Minimizer<T, N>::
+solve(
+    std::string const & algoname,
+    Teuchos::ParameterList & params,
+    FN & fn,
+    EIC & eic,
     Intrepid2::Vector<T, N> & soln,
     Intrepid2::Vector<T, NC> & cv)
 {
@@ -144,8 +228,12 @@ solve(
   obj(fn);
 
   // Define constraint
-  ROL::MiniTensor_EqualityConstraint<CN, T, NC, N>
-  constr(cn);
+  using MTCONSTR = typename std::conditional<eic.IS_EQUALITY,
+      ROL::MiniTensor_EqualityConstraint<EIC, T, NC, N>,
+      ROL::MiniTensor_InequalityConstraint<EIC, T, NC, N>>::type;
+
+  MTCONSTR
+  constr(eic);
 
   ROL::Algorithm<T>
   algo(algoname, params);
@@ -170,12 +258,104 @@ solve(
 
   updateConvergenceCriterion(norm_resi);
 
+  ROL::AlgorithmState<T> &
+  state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
+
+  ROL::StatusTest<T>
+  status(params);
+
+  converged = status.check(state) == false;
+
   recordFinals(fn, soln);
 
   return;
 }
 
+//
+//
+//
+template<typename T, Index N>
+template<typename FN, typename EIC, typename BC, Index NC>
+void
+MiniTensor_Minimizer<T, N>::
+solve(
+    std::string const & algoname,
+    Teuchos::ParameterList & params,
+    FN & fn,
+    EIC & eic,
+    BC & bc,
+    Intrepid2::Vector<T, N> & soln,
+    Intrepid2::Vector<T, NC> & cv)
+{
+  step_method_name = algoname.c_str();
+  function_name = FN::NAME;
+  initial_guess = soln;
 
+  Intrepid2::Vector<T, N>
+  resi = fn.gradient(soln);
+
+  initial_value = fn.value(soln);
+  previous_value = initial_value;
+  failed = failed || fn.failed;
+  initial_norm = Intrepid2::norm(resi);
+
+  // Define algorithm.
+  ROL::MiniTensor_Objective<FN, T, N>
+  obj(fn);
+
+  MiniTensorVector<T, N>
+  lo(bc.lower);
+
+  MiniTensorVector<T, N>
+  hi(bc.upper);
+
+  // Define bound constraint
+  ROL::MiniTensor_BoundConstraint<T, N>
+  bound_constr(lo, hi);
+
+  // Define equality/inequality constraint
+  using MTCONSTR = typename std::conditional<eic.IS_EQUALITY,
+      ROL::MiniTensor_EqualityConstraint<EIC, T, NC, N>,
+      ROL::MiniTensor_InequalityConstraint<EIC, T, NC, N>>::type;
+
+  MTCONSTR
+  eqineq_constr(eic);
+
+  ROL::Algorithm<T>
+  algo(algoname, params);
+
+  // Set Initial Guess
+  ROL::MiniTensorVector<T, N>
+  x(soln);
+
+  // Set constraint vector
+  ROL::MiniTensorVector<T, NC>
+  c(cv);
+
+  // Run Algorithm
+  algo.run(x, c, obj, eqineq_constr, bound_constr, verbose);
+
+  soln = ROL::MTfromROL<T, N>(x);
+
+  resi = fn.gradient(soln);
+
+  T const
+  norm_resi = Intrepid2::norm(resi);
+
+  updateConvergenceCriterion(norm_resi);
+
+  ROL::AlgorithmState<T> &
+  state = const_cast<ROL::AlgorithmState<T> &>(*(algo.getState()));
+
+  ROL::StatusTest<T>
+  status(params);
+
+  converged = status.check(state) == false;
+
+  recordFinals(fn, soln);
+
+  return;
+}
 //
 //
 //

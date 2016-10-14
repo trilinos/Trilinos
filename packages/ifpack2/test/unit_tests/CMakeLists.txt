@@ -19,7 +19,6 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
 Ifpack2_UnitTestMain.cpp
-Ifpack2_UnitTestAdditiveSchwarz.cpp
 Ifpack2_UnitTestAmesos2solver.cpp
 Ifpack2_UnitTestBlockRelaxation.cpp
 Ifpack2_UnitTestChebyshev.cpp
@@ -50,6 +49,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     unit_tests
     SOURCES ${SOURCES}
+    ARGS ""
+    COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    AdditiveSchwarz
+    SOURCES Ifpack2_UnitTestAdditiveSchwarz.cpp Ifpack2_UnitTestMain.cpp
     ARGS ""
     COMM serial mpi
   )

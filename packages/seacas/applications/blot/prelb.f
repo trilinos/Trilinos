@@ -191,7 +191,7 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
 
 10020  FORMAT (/, 1X, 'ELEMENT BLOCKS', :, ' - ', A)
 10030  FORMAT (1X, 'Block', I9, 1X, A, ':',
-     &   I6, ' elements', 1X, A,
+     &   I9, ' elements', 1X, A,
      &   I4, '-node', I4, ' attributes')
 10040  FORMAT (4X, 'Element block name = "',A
      $      ,'", type = "', A, '"')

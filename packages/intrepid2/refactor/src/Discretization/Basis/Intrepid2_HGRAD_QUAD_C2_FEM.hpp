@@ -228,6 +228,12 @@ namespace Intrepid2 {
       impl_.getDofCoords( dofCoords );
     }
 
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HGRAD_QUAD_C2_FEM";
+    }
+
   };
 }// namespace Intrepid2
 

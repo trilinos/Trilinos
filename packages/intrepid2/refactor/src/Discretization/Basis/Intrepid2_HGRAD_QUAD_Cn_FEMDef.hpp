@@ -295,6 +295,10 @@ namespace Intrepid2 {
   Basis_HGRAD_QUAD_Cn_FEM<SpT,OT,PT>::
   Basis_HGRAD_QUAD_Cn_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
+    INTREPID2_TEST_FOR_EXCEPTION( !(pointType == POINTTYPE_EQUISPACED ||
+                                    pointType == POINTTYPE_WARPBLEND), std::invalid_argument,
+                                  ">>> ERROR (Basis_HGRAD_QUAD_Cn_FEM): pointType must be either equispaced or warpblend." );
+
     // this should be in host
     Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT> lineBasis( order, pointType );
     const auto cardLine = lineBasis.getCardinality();

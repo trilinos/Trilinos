@@ -63,6 +63,7 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
 
 namespace Zoltan2 {
 
@@ -120,6 +121,24 @@ public:
   /*! \brief Destructor
    */
   ~Environment();
+
+  /*! \brief Collect the paramaters specific to Environment
+   */
+  static void getValidParameters(ParameterList & pl);
+
+  /*! \brief Exists to make setting up validators less cluttered
+   */
+  static RCP<Teuchos::BoolParameterEntryValidator> getBoolValidator();
+
+  /*! \brief Exists to make setting up validators less cluttered
+   */
+  static RCP<Teuchos::AnyNumberParameterEntryValidator>
+    getAnyDoubleValidator();
+
+  /*! \brief Exists to make setting up validators less cluttered
+   */
+  static RCP<Teuchos::AnyNumberParameterEntryValidator>
+    getAnyIntValidator();
 
   /*! \brief Provide the Timer object to the Environment.
    *
@@ -570,13 +589,16 @@ public:
   /*! \brief Convert parameters of type 
    *  Teuchos::StringToIntegralParameterEntryValidator<int> to integer.
    *
+   *  Teuchos::StringToIntegralParameterEntryValidator<bool> to bool.
+   *
    * \param params  on input, a list of parameter, on return, all of the
    *                     StringToIntegral parameters have been converted
-   *                     to integer values.
+   *                     to integer values or bool values.
    *
    *    Given a parameter list, this function converts all of the entries that
    *    have valiator of type StringToIntegralParameterEntryValidator<int>
    *    from their string value to their int value.
+   *    Also StringToIntegralParameterEntryValidator<bool> to bool
    *
    */
 
@@ -597,8 +619,8 @@ private:
   /*! \brief The validated user parameters.
    *
    *  When the constructor calls commitParameters(), some of the
-   *  input parameters are changed. For example, "yes"/"no" types
-   *  of parameters are changed to the integers 0 or 1.  So
+   *  input parameters are changed. For example, "true"/"false" types
+   *  of parameters are changed to the integers 1 or 0.  So
    *  this list of parameters provided to Problems and algorithms
    *  is this validated/converted list.
    */
