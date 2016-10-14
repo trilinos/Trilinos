@@ -279,7 +279,7 @@ namespace Xpetra {
       XPETRA_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       // first extract partial vector from full vector (using xpetra style GIDs)
-      const RCP<Vector> vv = VectorFactory::Build(getMap(block,false), true);
+      const RCP<Vector> vv = VectorFactory::Build(getMap(block,false), false);
       ExtractVector(*full, block, *vv);
       if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
@@ -304,7 +304,7 @@ namespace Xpetra {
       XPETRA_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       // first extract partial vector from full vector (using xpetra style GIDs)
-      const RCP<Vector> vv = VectorFactory::Build(getMap(block,false), true);
+      const RCP<Vector> vv = VectorFactory::Build(getMap(block,false), false);
       ExtractVector(*full, block, *vv);
       if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
@@ -329,7 +329,7 @@ namespace Xpetra {
       XPETRA_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       // first extract partial vector from full vector (using xpetra style GIDs)
-      const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), true);
+      const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), false);
       ExtractVector(*full, block, *vv);
       if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
@@ -355,7 +355,7 @@ namespace Xpetra {
       XPETRA_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       // first extract partial vector from full vector (using xpetra style GIDs)
-      const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), true);
+      const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), false);
       ExtractVector(*full, block, *vv);
       if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
