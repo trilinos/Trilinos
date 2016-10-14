@@ -56,7 +56,7 @@ namespace panzer {
 PHX_EVALUATOR_CTOR(Integrator_BasisTimesVector,p) :
   residual( p.get<std::string>("Residual Name"), 
             p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  vectorField( p.get<std::string>("Value Name"), 
+  vectorField( p.get<std::string>("Value Name"),
                 p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {

@@ -40,80 +40,51 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_POINT_RULE_HPP
-#define PANZER_POINT_RULE_HPP
+#ifndef PANZER_EVALUATOR_GRADBASISCROSSVECTOR_DECL_HPP
+#define PANZER_EVALUATOR_GRADBASISCROSSVECTOR_DECL_HPP
 
-#include "Teuchos_ArrayRCP.hpp"
+#include <string>
+#include "Panzer_Dimension.hpp"
+#include "Phalanx_Evaluator_Macros.hpp"
+#include "Phalanx_MDField.hpp"
+#include "Kokkos_DynRankView.hpp"
 
-#include "Phalanx_DataLayout.hpp"
-
-#include "Shards_CellTopology.hpp"
+#include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-
-  class CellData;
-
-  /** Base class useful for constructing data layouts
-    * for points on a reference cell.
-    */
-  class PointRule {
-  public:
     
-    /** if side = -1 then we use the cell as an reference frame
-      *
-      * \param[in] ptName Name of the point rule.
-      * \param[in] np Number of points per cell
-      * \param[in] cell_data Description of the cell
-      */
-    PointRule(const std::string & ptName,int np, const panzer::CellData& cell_data);
-
-    //! Destructor (Satisfying the compiler)
-    virtual ~PointRule() {}
-
-    void setup(const std::string & ptName,int np, const panzer::CellData& cell_data);
+PANZER_EVALUATOR_CLASS(Integrator_GradBasisCrossVector)
   
-    // Returns true if this point rule is for a sideset
-    bool isSide() const;
-
-    /** Get the name of this point rule.
-      */
-    const std::string & getName() const;
-
-    Teuchos::RCP<const shards::CellTopology> topology;
+  std::vector<PHX::MDField<ScalarT,Cell,BASIS> > _residuals;
     
-    Teuchos::RCP<shards::CellTopology> side_topology;
-    
-    //! Data layout for scalar fields
-    Teuchos::RCP<PHX::DataLayout> dl_scalar;
-    //! Data layout for vector fields
-    Teuchos::RCP<PHX::DataLayout> dl_vector;
-    //! Data layout for rank-2 tensor fields
-    Teuchos::RCP<PHX::DataLayout> dl_tensor;
-    
-    //! Data layout for vector fields - full (x,y,z)
-    Teuchos::RCP<PHX::DataLayout> dl_vector3;
+  PHX::MDField<const ScalarT,Cell,IP,Dim> _vector;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > _field_multipliers;
 
-    int spatial_dimension;
-    int workset_size;
-    int num_points;
+  // Number of nodes in the basis
+  std::size_t _num_basis_nodes;
 
-    //! Defaults to -1 if this is volume and not sideset
-    int side;
+  // Number of nodes in the integration rule
+  std::size_t _num_quadrature_points;
 
-    //! print information about the integration rule
-    virtual void print(std::ostream & os);
-  
-  protected:
-    PointRule() : side(-1) {}
+  // Number of dimensions associated with the vector
+  std::size_t _num_dims;
 
-    /** Look up side topology for a cell_data object. Returns null if
-      * cell data does not correspond to a side object.
-      */
-    static Teuchos::RCP<shards::CellTopology> getSideTopology(const CellData & cell_data);
+  // Number of dimensions associated with the GRAD
+  std::size_t _num_grad_dims;
 
-  private:
-    std::string point_name;
-  };
+  // Scalar multiplier against vector
+  ScalarT _multiplier;
+
+  // Name of the basis
+  std::string _basis_name;
+
+  // Index of basis in workset bases
+  std::size_t _basis_index;
+
+  // Temporary variable to store tmp = multipliers * vector
+  Kokkos::DynRankView<ScalarT,PHX::Device> _tmp;
+
+PANZER_EVALUATOR_CLASS_END
 
 }
 
