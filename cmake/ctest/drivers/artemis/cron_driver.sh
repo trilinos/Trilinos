@@ -28,6 +28,7 @@ module load kokkos-env
 module load sems-python/2.7.9
 module load sems-cmake/2.8.12
 module load sems-git/2.1.3
+module load sems-${COMPILER_SUFFIX}
 
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
