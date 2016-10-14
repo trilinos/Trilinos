@@ -73,6 +73,7 @@ FUNCTION(CHECK_SCOTCH_VERSION_6_0_3  VARNAME)
   SET(SOURCE
   "
   #include <stdio.h>
+  #include <stdint.h>
 #ifdef TPL_ENABLE_MPI
   #include <mpi.h>
   #include <ptscotch.h>
