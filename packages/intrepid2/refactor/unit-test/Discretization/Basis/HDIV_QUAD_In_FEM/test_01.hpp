@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   test_01.hpp
-    \brief  Unit tests for the Intrepid2::HCURL_QUAD_In_FEM class.
+    \brief  Unit tests for the Intrepid2::HDIV_QUAD_In_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson, Kyungjoo Kim
 */
 
@@ -56,7 +56,7 @@
 #include "Intrepid2_Utils.hpp"
 
 #include "Intrepid2_PointTools.hpp"
-#include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
+#include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -79,7 +79,7 @@ namespace Intrepid2 {
 
 
     template<typename ValueType, typename DeviceSpaceType>
-    int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
+    int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -101,10 +101,10 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|                 Unit Test (Basis_HCURL_QUAD_In_FEM)                         |\n"
+        << "|                 Unit Test (Basis_HDIV_QUAD_In_FEM)                          |\n"
         << "|                                                                             |\n"
         << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
-        << "|     2) Basis values for VALUE and CURL operators                            |\n"
+        << "|     2) Basis values for VALUE and DIV operators                             |\n"
         << "|                                                                             |\n"
         << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
         << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
@@ -126,8 +126,8 @@ namespace Intrepid2 {
       // for virtual function, value and point types are declared in the class
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-
-      typedef Basis_HCURL_QUAD_In_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadBasisType;
+      
+      typedef Basis_HDIV_QUAD_In_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadBasisType;
 
       *outStream
         << "\n"
@@ -153,11 +153,11 @@ namespace Intrepid2 {
         {
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
 
-          // exception #1: GRAD cannot be applied to HCURL functions
+          // exception #1: GRAD cannot be applied to HDIV functions
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_GRAD) );
 
-          // exception #2: DIV cannot be applied to HCURL functions
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_DIV) );
+          // exception #2: CURL cannot be applied to HDIV functions
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_CURL) );
         }
 
         // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
@@ -189,9 +189,9 @@ namespace Intrepid2 {
             INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
           }
           {
-            // exception #11 output values must be of rank-2 for OPERATOR_CURL
+            // exception #11 output values must be of rank-2 for OPERATOR_DIV
             DynRankView ConstructWithLabel(badVals, 4, 3, 2);
-            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_CURL) );
+            INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_DIV) );
           }
           {
             // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
@@ -293,20 +293,26 @@ namespace Intrepid2 {
 
       outStream->precision(20);
 
-      // VALUE: Each row pair gives the 4x2 correct basis set values at an evaluation point: (P,F,D) layout
+      // VALUE: Each row pair gives the correct basis set values at an evaluation point: (F, P, D) layout
+      // const ValueType basisValues[] = {
+      //   1.0, 0.0, 0.5, 0.0, 0.0, 0.0, /**/ 1.0, 0.0, 0.5, 0.0, 0.0, 0.0, /**/ 1.0, 0.0, 0.5, 0.0, 0.0, 0.0,
+      //   0.0, 0.0, 0.5, 0.0, 1.0, 0.0, /**/ 0.0, 0.0, 0.5, 0.0, 1.0, 0.0, /**/ 0.0, 0.0, 0.5, 0.0, 1.0, 0.0,
+      //   0.0, 1.0, 0.0, 1.0, 0.0, 1.0, /**/ 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, /**/ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      //   0.0, 0.0, 0.0, 0.0, 0.0, 0.0, /**/ 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, /**/ 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
+      // };
       const ValueType basisValues[] = {
-        1,0,1,0,1,0, /**/ 0.5,0,0.5,0,0.5,0, /**/ 0,0,0,0,0,0,
-        0,0,0,0,0,0, /**/ 0.5,0,0.5,0,0.5,0, /**/ 1,0,1,0,1,0,
-        0,1,0,0.5,0,0, /**/ 0,1,0,0.5,0,0, /**/   0,1,0,0.5,0,0,
-        0,0,0,0.5,0,1, /**/ 0,0,0,0.5,0,1, /**/   0,0,0,0.5,0,1,
+        0.0, 1.0, 0.0, 1.0, 0.0, 1.0, /**/ 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, /**/ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, /**/ 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, /**/ 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
+        1.0, 0.0, 0.5, 0.0, 0.0, 0.0, /**/ 1.0, 0.0, 0.5, 0.0, 0.0, 0.0, /**/ 1.0, 0.0, 0.5, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.5, 0.0, 1.0, 0.0, /**/ 0.0, 0.0, 0.5, 0.0, 1.0, 0.0, /**/ 0.0, 0.0, 0.5, 0.0, 1.0, 0.0
       };
 
-      // CURL: correct values in (F,P) format
-      const ValueType basisCurls[] = {
+      // DIV: correct values in (P,F) format
+      const ValueType basisDivs[] = {
+        -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
         0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
         -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
-        -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
-        0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+        0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
       };
 
       try{
@@ -348,7 +354,7 @@ namespace Intrepid2 {
               for (ordinal_type k = 0; k < spaceDim; ++k) {
 
                 // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-                const ordinal_type l = k + i * spaceDim * numPoints + j * spaceDim;
+                const ordinal_type l = i * numPoints * spaceDim + j * spaceDim + k;
                 if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -363,23 +369,23 @@ namespace Intrepid2 {
             }
           }
         }
-        *outStream << " -- Testing OPERATOR_CURL \n";
+        *outStream << " -- Testing OPERATOR_DIV \n";
         {
-          // Check CURL of basis function: resize vals to rank-2 container
+          // Check DIV of basis function: resize vals to rank-2 container
           DynRankView ConstructWithLabel(vals, numFields, numPoints);
-          quadBasis.getValues(vals, quadNodes, OPERATOR_CURL);
+          quadBasis.getValues(vals, quadNodes, OPERATOR_DIV);
           for (ordinal_type i = 0; i < numFields; ++i) {
             for (ordinal_type j = 0; j < numPoints; ++j) {
               const ordinal_type l =  j + i * numPoints;
-              if (std::abs(vals(i,j) - basisCurls[l]) > tol) {
+              if (std::abs(vals(i,j) - basisDivs[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                 // Output the multi-index of the value where the error is:
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";
-                *outStream << "}  computed curl component: " << vals(i,j)
-                           << " but reference curl component: " << basisCurls[l] << "\n";
+                *outStream << "}  computed div component: " << vals(i,j)
+                           << " but reference div component: " << basisDivs[l] << "\n";
               }
             }
           }
@@ -400,31 +406,3 @@ namespace Intrepid2 {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
