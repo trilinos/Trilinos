@@ -17,6 +17,19 @@
 
 namespace stk{ namespace unit_test_util{ namespace sideset{
 
+struct SideSetLess {
+  inline bool operator()(const stk::mesh::ElemIdSide &lhs, const stk::mesh::ElemIdSide &rhs) const
+  {
+      if(lhs.elem_id < rhs.elem_id)
+          return true;
+      else if(lhs.elem_id == rhs.elem_id)
+          return lhs.side_ordinal < rhs.side_ordinal;
+      else
+          return false;
+  }
+  inline SideSetLess& operator=(const SideSetLess& rhs);
+};
+
 struct IdAndSideSet {
     int id;
     stk::mesh::SideSet sideSet;
