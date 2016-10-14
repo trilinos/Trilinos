@@ -55,9 +55,6 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
-//#include "Intrepid2_CubatureDirectLineGauss.hpp"
-//#include "Intrepid2_FunctionSpaceTools.hpp"
-
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 
