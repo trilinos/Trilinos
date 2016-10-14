@@ -483,15 +483,15 @@ namespace Xpetra {
 
     //@}
 
-    RCP<     Vector> getVector(size_t i, bool bThyraMode = false) const {
+    RCP<     Vector> getVector(size_t i, bool bThyraMode = false, bool bZero = true) const {
       XPETRA_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::getVector: getVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-      return VectorFactory::Build(getMap(i, bThyraMode), true);
+      return VectorFactory::Build(getMap(i, bThyraMode), bZero);
     }
-    RCP<MultiVector> getVector(size_t i, size_t numvec, bool bThyraMode = false) const {
+    RCP<MultiVector> getVector(size_t i, size_t numvec, bool bThyraMode = false, bool bZero = true) const {
       XPETRA_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::getVector: getVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-      return MultiVectorFactory::Build(getMap(i, bThyraMode), numvec, true);
+      return MultiVectorFactory::Build(getMap(i, bThyraMode), numvec, bZero);
     }
 
     /// returns true, if sub maps are stored in Thyra-style numbering

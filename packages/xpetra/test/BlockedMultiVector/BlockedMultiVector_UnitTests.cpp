@@ -608,11 +608,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVector, M, MA, Scal
 
 #ifdef HAVE_XPETRA_DEBUG
   // create malicious multivector
-  Teuchos::RCP<MultiVector> part1 = me->getVector(0,23,false);
+  Teuchos::RCP<MultiVector> part1 = me->getVector(0,23,false,true);
   TEST_THROW(me->InsertVector(part1,0,bvv),Xpetra::Exceptions::RuntimeError);
-  Teuchos::RCP<MultiVector> part2 = me->getVector(0,2,false);
+  Teuchos::RCP<MultiVector> part2 = me->getVector(0,2,false,true);
   TEST_THROW(me->InsertVector(part2,1,bvv),Xpetra::Exceptions::RuntimeError);
-  TEST_THROW(Teuchos::RCP<MultiVector> part3 = me->getVector(1,2,true),Xpetra::Exceptions::RuntimeError);
+  TEST_THROW(Teuchos::RCP<MultiVector> part3 = me->getVector(1,2,true,true),Xpetra::Exceptions::RuntimeError);
 #endif
 }
 
@@ -659,14 +659,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA,
 
 #ifdef HAVE_XPETRA_DEBUG
   // create malicious multivector
-  Teuchos::RCP<MultiVector> part1 = me->getVector(0,23,true);
+  Teuchos::RCP<MultiVector> part1 = me->getVector(0,23,true,true);
   TEST_THROW(me->InsertVector(part1,0,bvv),Xpetra::Exceptions::RuntimeError);
   // unfortunately, in Thyra mode there is no error thrown since the vectors in
   // block 0 and 1 have the same length (and the same GIDs)
-  Teuchos::RCP<MultiVector> part2 = me->getVector(0,2,true);
+  Teuchos::RCP<MultiVector> part2 = me->getVector(0,2,true,true);
   TEST_NOTHROW(me->InsertVector(part2,1,bvv,me->getThyraMode()));
   // This should throw, thought
-  Teuchos::RCP<MultiVector> part3 = me->getVector(0,2,true);
+  Teuchos::RCP<MultiVector> part3 = me->getVector(0,2,true,true);
   TEST_THROW(me->InsertVector(part2,2,bvv,me->getThyraMode()),Xpetra::Exceptions::RuntimeError);
 #endif
 }
