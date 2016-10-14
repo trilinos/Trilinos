@@ -498,6 +498,7 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(r > getMapExtractor()->NumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << getMapExtractor()->NumMaps() << " partial blocks.");
       Teuchos::RCP<MultiVector> ret = vv_[r];
       if(bThyraMode_ != bThyraMode) {
+#if 0
         size_t localLength = ret->getLocalLength();
         size_t numVecs     = vv_[r]->getNumVectors();
         // standard case: bThyraMode_ == true but bThyraMode == false
@@ -509,6 +510,14 @@ namespace Xpetra {
              targetVecData[i] = srcVecData[i];
           }
         }
+#else
+        // deep copy of partial vector
+        Teuchos::RCP<MultiVector> ret2 = MultiVectorFactory::Build(ret->getMap(),ret->getNumVectors());
+        *ret2 = *ret; // deep copy
+        // change map of copy
+        ret2->replaceMap(getMapExtractor()->getMap(r,bThyraMode));
+        return ret2;
+#endif
       }
       return ret;
     }
@@ -530,6 +539,7 @@ namespace Xpetra {
       else {
         // standard case: bThyraMode_ == true but bThyraMode == false
         XPETRA_TEST_FOR_EXCEPTION(me->getMap(r,bThyraMode)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
+#if 0
         size_t numVecs     = v->getNumVectors();
         Teuchos::RCP<MultiVector> target = me->getVector(r,numVecs,bThyraMode_);
         size_t localLength = target->getLocalLength();
@@ -541,6 +551,14 @@ namespace Xpetra {
           }
         }
         vv_[r] = target;
+#else
+        // deep copy of partial vector
+        Teuchos::RCP<MultiVector> vv2 = MultiVectorFactory::Build(v->getMap(),v->getNumVectors());
+        *vv2 = *vv; // deep copy
+        // change map of copy
+        vv2->replaceMap(getMapExtractor()->getMap(r,bThyraMode_));
+        vv_[r] = vv2;
+#endif
       }
     }
 
