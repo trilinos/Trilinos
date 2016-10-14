@@ -865,7 +865,7 @@ namespace Intrepid2 {
   ValueType
   Polylib::Serial::
   GammaFunction(const ValueType x) {
-    ValueType gamma;
+    ValueType gamma(0);
 
     if      (x == -0.5) gamma = -2.0*sqrt(M_PI);
     else if (x ==  0.0) gamma = 1.0;

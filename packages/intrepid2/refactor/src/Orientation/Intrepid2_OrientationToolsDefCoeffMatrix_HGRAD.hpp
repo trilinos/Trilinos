@@ -45,8 +45,8 @@
     \brief  Definition file for the Intrepid2::OrientationTools class.
     \author Created by Kyungjoo Kim
 */
-#ifndef __INTREPID2_ORIENTATIONTOOLS_DEF_COEFF_MATRIX_HPP__
-#define __INTREPID2_ORIENTATIONTOOLS_DEF_COEFF_MATRIX_HPP__
+#ifndef __INTREPID2_ORIENTATIONTOOLS_DEF_COEFF_MATRIX_HGRAD_HPP__
+#define __INTREPID2_ORIENTATIONTOOLS_DEF_COEFF_MATRIX_HGRAD_HPP__
 
 // disable clang warnings
 #if defined (__clang__) && !defined (__INTEL_COMPILER)
@@ -75,9 +75,37 @@ namespace Intrepid2 {
       typedef typename
         Kokkos::Impl::is_space<space_type>::host_mirror_space::execution_space host_space_type;
 
+      typedef Kokkos::DynRankView<value_type,host_space_type> DynRankViewHostType;
+
+
+      ///
+      /// Function space
+      ///
+      
+      {
+        const std::string cellBasisName(cellBasis.getName());
+        if (cellBasisName.find("HGRAD") != std::string::npos) {
+          const std::string subcellBasisName(subcellBasis.getName());
+          INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+                                        std::logic_error,
+                                        ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                        "subcellBasis function space is not consistent to cellBasis.");
+        }
+
+        INTREPID2_TEST_FOR_EXCEPTION( subcellBasis.getDegree() != cellBasis.getDegree(),
+                                      std::logic_error,
+                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                      "subcellBasis has a different polynomial degree from cellBasis' degree.");
+      }
+
+      ///
+      /// Topology
+      ///
+
       // populate points on a subcell and map to subcell
       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
       const shards::CellTopology subcellTopo = subcellBasis.getBaseCellTopology();
+
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( subcellTopo.getBaseKey() != shards::Line<>::key ||
                                     subcellTopo.getBaseKey() != shards::Quadrilateral<>::key ||
@@ -124,16 +152,14 @@ namespace Intrepid2 {
                                     std::logic_error,
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                     "Orientation is not properly setup.");
+
+      ///
+      /// Collocation points
+      ///
       
       const ordinal_type cellDim = cellTopo.getDimension();
       const ordinal_type subcellDim = subcellTopo.getDimension();
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( subcellDim != 1 ||
-                                    subcellDim != 2,
-                                    std::logic_error,
-                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-                                    "subcellBasis must have dimensions 1 or 2.");
-
       INTREPID2_TEST_FOR_EXCEPTION( subcellDim >= cellDim,
                                     std::logic_error,
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
@@ -163,7 +189,7 @@ namespace Intrepid2 {
 #endif
 
       // reference points on a subcell
-      Kokkos::DynRankView<value_type,host_space_type> refPtsSubcell("refPtsSubcell", ndofSubcell, subcellDim);
+      DynRankViewHostType refPtsSubcell("refPtsSubcell", ndofSubcell, subcellDim);
       PointTools::getLattice(refPtsSubcell,
                              subcellTopo,
                              degree,
@@ -171,27 +197,41 @@ namespace Intrepid2 {
                              POINTTYPE_EQUISPACED);
 
       // modified points with orientation
-      Kokkos::DynRankView<value_type,host_space_type> ortPtsSubcell("ortPtsSubcell", ndofSubcell, subcellDim);
+      DynRankViewHostType ortPtsSubcell("ortPtsSubcell", ndofSubcell, subcellDim);
       Impl::OrientationTools::mapToModifiedReference(ortPtsSubcell,
                                                      refPtsSubcell,
                                                      subcellTopo,
                                                      subcellOrt);
 
       // map to reference coordinates
-      Kokkos::DynRankView<value_type,host_space_type> refPtsCell("refPtsCell", ndofSubcell, cellDim);
+      DynRankViewHostType refPtsCell("refPtsCell", ndofSubcell, cellDim);
       CellTools<host_space_type>::mapToReferenceSubcell(refPtsCell,
                                                         refPtsSubcell,
                                                         subcellDim,
                                                         subcellId,
                                                         cellTopo);
 
+      ///
+      /// Basis evaluation on the collocation points
+      ///
+
       // evaluate values on the reference cell
-      Kokkos::DynRankView<value_type,host_space_type> refValues("refValues", numCellBasis, ndofSubcell);
+      DynRankViewHostType refValues("refValues", numCellBasis, ndofSubcell);
       cellBasis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
 
       // evaluate values on the modified cell
-      Kokkos::DynRankView<value_type,host_space_type> outValues("outValues", numSubcellBasis, ndofSubcell);
+      DynRankViewHostType outValues("outValues", numSubcellBasis, ndofSubcell);
       subcellBasis.getValues(outValues, ortPtsSubcell, OPERATOR_VALUE);
+
+      ///
+      /// Restrict vector valued basis functions on the subcell dimensions
+      ///
+      
+      // no need for hgrad functions
+
+      ///
+      /// Construct collocation matrix and solve problems
+      ///
 
       // construct collocation matrix; using lapack, it should be left layout
       Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space_type>

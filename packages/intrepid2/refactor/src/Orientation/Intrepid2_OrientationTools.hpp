@@ -63,6 +63,9 @@
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
+#include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
+#include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
+
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 #include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
 
@@ -178,6 +181,28 @@ namespace Intrepid2 {
                            const cellBasisType cellBasis,
                            const ordinal_type subcellId,
                            const ordinal_type subcellOrt);
+
+      template<typename outputViewType,
+               typename subcellBasisType,
+               typename cellBasisType>
+      inline
+      static void
+      getCoeffMatrix_HCURL(outputViewType &output,
+                           const subcellBasisType subcellBasis,
+                           const cellBasisType cellBasis,
+                           const ordinal_type subcellId,
+                           const ordinal_type subcellOrt) {}
+
+      template<typename outputViewType,
+               typename subcellBasisType,
+               typename cellBasisType>
+      inline
+      static void
+      getCoeffMatrix_HDIV(outputViewType &output,
+                          const subcellBasisType subcellBasis,
+                          const cellBasisType cellBasis,
+                          const ordinal_type subcellId,
+                          const ordinal_type subcellOrt) {}
     };
   }
 
@@ -197,7 +222,7 @@ namespace Intrepid2 {
     static CoeffMatrixDataViewType createCoeffMatrixInternal(BasisPtrType basis);
     
     //
-    // High order elements transformation matrices
+    // High order elements transformation matrices for HGRAD
     // 
 
     inline
@@ -214,6 +239,22 @@ namespace Intrepid2 {
     
     inline
     static void init_HGRAD_TET_Cn_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+
+    //
+    // High order elements transformation matrices for HCURL
+    // 
+
+    inline
+    static void init_HCURL_QUAD_In_FEM(CoeffMatrixDataViewType matData,
+                                       const ordinal_type order);
+
+    //
+    // High order elements transformation matrices for HDIV
+    // 
+    
+    inline
+    static void init_HDIV_QUAD_In_FEM(CoeffMatrixDataViewType matData,
                                       const ordinal_type order);
 
     //
@@ -274,7 +315,9 @@ namespace Intrepid2 {
 
 // include templated function definitions
 #include "Intrepid2_OrientationToolsDefModifyPoints.hpp"
-#include "Intrepid2_OrientationToolsDefCoeffMatrix.hpp"
+#include "Intrepid2_OrientationToolsDefCoeffMatrix_HGRAD.hpp"
+//#include "Intrepid2_OrientationToolsDefCoeffMatrix_HCURL.hpp"
+//#include "Intrepid2_OrientationToolsDefCoeffMatrix_HDIV.hpp"
 #include "Intrepid2_OrientationToolsDefMatrixData.hpp"
 
 #include "Intrepid2_OrientationToolsDefModifyBasis.hpp"
