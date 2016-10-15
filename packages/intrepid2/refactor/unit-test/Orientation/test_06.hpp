@@ -74,7 +74,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
     
-    template<typename DeviceSpaceType>
+    template<typename QuadBasisType, typename DeviceSpaceType>
     int Orientation_Test06(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -99,7 +99,7 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|                 Unit Test (OrientationTools, getModifiedHcurl_In_Basis)     |\n"
+        << "|            Unit Test (OrientationTools, getModifiedHcurl/Hdiv_In_Basis)     |\n"
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
@@ -113,7 +113,9 @@ namespace Intrepid2 {
           *outStream << "\n -- Testing Quadrilateral \n\n";
 
           const ordinal_type order = 3;
-          Basis_HCURL_QUAD_In_FEM<DeviceSpaceType> cellBasis(order);
+          QuadBasisType cellBasis(order);
+
+          *outStream << "\n --- " << cellBasis.getName() << "\n";
 
           const auto cellTopo = cellBasis.getBaseCellTopology();
           const ordinal_type ndofBasis = cellBasis.getCardinality();

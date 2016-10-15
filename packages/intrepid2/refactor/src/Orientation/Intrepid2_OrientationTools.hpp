@@ -202,7 +202,7 @@ namespace Intrepid2 {
                           const subcellBasisType subcellBasis,
                           const cellBasisType cellBasis,
                           const ordinal_type subcellId,
-                          const ordinal_type subcellOrt) {}
+                          const ordinal_type subcellOrt);
     };
   }
 
@@ -317,7 +317,7 @@ namespace Intrepid2 {
 #include "Intrepid2_OrientationToolsDefModifyPoints.hpp"
 #include "Intrepid2_OrientationToolsDefCoeffMatrix_HGRAD.hpp"
 #include "Intrepid2_OrientationToolsDefCoeffMatrix_HCURL.hpp"
-//#include "Intrepid2_OrientationToolsDefCoeffMatrix_HDIV.hpp"
+#include "Intrepid2_OrientationToolsDefCoeffMatrix_HDIV.hpp"
 #include "Intrepid2_OrientationToolsDefMatrixData.hpp"
 
 #include "Intrepid2_OrientationToolsDefModifyBasis.hpp"

@@ -47,6 +47,9 @@
 
 #include "Kokkos_Core.hpp"
 
+#include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
+#include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
+
 #include "test_06.hpp"
 
 int main(int argc, char *argv[]) {
@@ -54,7 +57,10 @@ int main(int argc, char *argv[]) {
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
   
-  const int r_val = Intrepid2::Test::Orientation_Test06<Kokkos::Serial>(verbose);
+  int r_val = 0;
+
+  r_val += Intrepid2::Test::Orientation_Test06<Intrepid2::Basis_HCURL_QUAD_In_FEM<Kokkos::Serial>, Kokkos::Serial>(verbose);
+  r_val += Intrepid2::Test::Orientation_Test06<Intrepid2::Basis_HDIV_QUAD_In_FEM <Kokkos::Serial>, Kokkos::Serial>(verbose);
 
   Kokkos::finalize();
   return r_val;
