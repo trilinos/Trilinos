@@ -415,7 +415,7 @@ namespace Intrepid2 {
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Cell dimension does not match.");
       const ordinal_type P = outputVals.dimension(1);
       INTREPID2_TEST_FOR_EXCEPTION( inputDet.dimension(1)      != P ||
-                                    inputWeights.dimension(1) != P, std::invalid_argument,
+                                    inputWeights.dimension(0) != P, std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Point dimension does not match.");
     }
 #endif
@@ -453,9 +453,9 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( inputJac.rank() != 4, std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Input Jacobian container must have rank 4.");
     INTREPID2_TEST_FOR_EXCEPTION( scratch.rank() != 1, std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch space always has a unit rank.");
-    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() >= inputJac.span(), std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch space must be greater than inputJac.");
+                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch view imust have rank 1.");
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() < inputJac.span(), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch storage must be greater than or equal to inputJac's one.");
 #endif
 
     // face normals (reshape scratch)
@@ -493,9 +493,9 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( (inputJac.rank() != 4), std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Input Jacobian container must have rank 4.");
     INTREPID2_TEST_FOR_EXCEPTION( scratch.rank() != 1, std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch space always has a unit rank.");
-    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() >= inputJac.span(), std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch space must be greater than inputJac.");
+                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch view must have a rank 1.");
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() < inputJac.span(), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch storage must be greater than or equal to inputJac'one.");
 #endif
 
     // edge tangents (reshape scratch)

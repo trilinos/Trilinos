@@ -436,7 +436,7 @@ namespace Intrepid2 {
                 DynRankView ConstructWithLabel(cub_points_side_refcell, numCubPointsSide, cellDim);
                 DynRankView ConstructWithLabel(cub_points_side_physical, 1, numCubPointsSide, cellDim);
                 DynRankView ConstructWithLabel(jacobian_side_refcell, 1, numCubPointsSide, cellDim, cellDim);
-                DynRankView ConstructWithLabel(scratch_side, numCubPointsSide*cellDim);
+                DynRankView ConstructWithLabel(scratch_side, numCubPointsSide*cellDim*cellDim);
                 DynRankView ConstructWithLabel(jacobian_det_side_refcell, 1, numCubPointsSide);
                 DynRankView ConstructWithLabel(weighted_measure_side_refcell, 1, numCubPointsSide);
 
