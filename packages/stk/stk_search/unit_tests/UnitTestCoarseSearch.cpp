@@ -270,6 +270,11 @@ TEST(stk_search, coarse_search_octree)
   testCoarseSearchForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
 }
 
+TEST(stk_search, coarse_search_kdtree)
+{
+  testCoarseSearchForAlgorithm(stk::search::KDTREE, MPI_COMM_WORLD);
+}
+
 TEST(stk_search, coarse_search_boost_rtree_using_float_aa_boxes)
 {
     testCoarseSearchForAlgorithmUsingFloatAABoxes(BOOST_RTREE, MPI_COMM_WORLD);
@@ -411,6 +416,11 @@ TEST(stk_search, coarse_search_one_point_OCTREE)
 TEST(stk_search, coarse_search_one_point_BOOST_RTREE)
 {
     testCoarseSearchOnePoint(stk::search::BOOST_RTREE);
+}
+
+TEST(stk_search, coarse_search_one_point_KDTREE)
+{
+    testCoarseSearchOnePoint(stk::search::KDTREE);
 }
 
 TEST(CoarseSearch, forDeterminingSharing)

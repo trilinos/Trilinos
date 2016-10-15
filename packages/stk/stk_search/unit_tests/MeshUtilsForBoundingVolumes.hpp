@@ -428,9 +428,7 @@ inline void fillBoundingVolumesUsingNodesFromFile(
 template <typename Identifier>
 inline void kdtree_search(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
-    //change this BOOST_RTREE to KDTREE once it's available.
-    //Also this function and the ones below can likely go away at that time.
-    stk::search::coarse_search(local_domain, local_range, stk::search::BOOST_RTREE, comm, searchResults);
+    stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, comm, searchResults);
 }
 
 enum NewSearchMethod { BOOST_RTREE, OCTREE, GTK };
@@ -443,6 +441,10 @@ inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
     else if ( method == OCTREE )
     {
         return stk::search::OCTREE;
+    }
+    else if ( method == GTK )
+    {
+      return stk::search::KDTREE;
     }
     else
     {
