@@ -25,10 +25,37 @@ namespace stk {
                                 std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
                                 bool communicateRangeBoxInfo=true)
     {
-      std::cerr << "kdtree_search(..) does not support non-box search types yet" << std::endl;
-      std::abort();
-    }
+      //std::cout << __FUNCTION__ << ", domain size= " << local_domain.size() << '\n';
+      //std::cout << __FUNCTION__ << ", range  size= " << local_range.size()  << '\n';
 
+      using value_type = typename DomainBoxType::value_type;
+      using Box        = stk::search::Box<value_type>;
+
+      std::vector< std::pair<Box, DomainIdentifier> > domainBoxes;
+      domainBoxes.reserve( local_domain.size() );
+
+      for(auto& p : local_domain) {
+
+        auto& sphere = p.first;
+        domainBoxes.push_back( std::make_pair(Box({sphere.get_x_min(), sphere.get_y_min(), sphere.get_z_min()}, 
+                                                  {sphere.get_x_max(), sphere.get_y_max(), sphere.get_z_max()} 
+              ), p.second)
+            );
+      }
+
+      std::vector< std::pair<Box,  RangeIdentifier > > rangeBoxes;
+      rangeBoxes.reserve( local_range.size() );
+
+      for(auto& p : local_range) {
+        auto& sphere = p.first;
+        rangeBoxes.push_back( std::make_pair(Box({sphere.get_x_min(), sphere.get_y_min(), sphere.get_z_min()}, 
+                                                 {sphere.get_x_max(), sphere.get_y_max(), sphere.get_z_max()} 
+              ), p.second)
+            );
+      }
+
+      kdtree_search(domainBoxes, rangeBoxes, comm, searchResults, communicateRangeBoxInfo);
+    }
 
     //
     //  Wrapping of the KDTree search for use in the general STK coarse_search algorithm.  Find the overlaps between
