@@ -191,7 +191,7 @@ namespace Intrepid2 {
                            const subcellBasisType subcellBasis,
                            const cellBasisType cellBasis,
                            const ordinal_type subcellId,
-                           const ordinal_type subcellOrt) {}
+                           const ordinal_type subcellOrt);
 
       template<typename outputViewType,
                typename subcellBasisType,
@@ -316,7 +316,7 @@ namespace Intrepid2 {
 // include templated function definitions
 #include "Intrepid2_OrientationToolsDefModifyPoints.hpp"
 #include "Intrepid2_OrientationToolsDefCoeffMatrix_HGRAD.hpp"
-//#include "Intrepid2_OrientationToolsDefCoeffMatrix_HCURL.hpp"
+#include "Intrepid2_OrientationToolsDefCoeffMatrix_HCURL.hpp"
 //#include "Intrepid2_OrientationToolsDefCoeffMatrix_HDIV.hpp"
 #include "Intrepid2_OrientationToolsDefMatrixData.hpp"
 
