@@ -126,7 +126,7 @@ namespace Intrepid2 {
             break;
           }
           case OPERATOR_CURL : {
-            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
+            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble );
             break;
           }
@@ -161,7 +161,7 @@ namespace Intrepid2 {
 
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType scalarViewType;
 
     virtual
     void
