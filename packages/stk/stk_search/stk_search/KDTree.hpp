@@ -80,11 +80,7 @@ class ProximitySearchTree_T {
   // Get the a box that bounds the whole search tree
   //
   KOKKOS_FORCEINLINE_FUNCTION const RangeBoxType BoundingBox() const {
-    if(empty()) {
-      return RangeBoxType();
-    } else {
-      return m_tree[0].GetBox();
-    }
+    return ( empty() ?  RangeBoxType() : m_tree[0].GetBox() );
   }
 
   //

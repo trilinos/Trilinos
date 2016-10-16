@@ -37,9 +37,9 @@ namespace stk {
       for(auto& p : local_domain) {
 
         auto& sphere = p.first;
-        domainBoxes.push_back( std::make_pair(Box({sphere.get_x_min(), sphere.get_y_min(), sphere.get_z_min()}, 
-                                                  {sphere.get_x_max(), sphere.get_y_max(), sphere.get_z_max()} 
-              ), p.second)
+
+        domainBoxes.push_back( std::make_pair(Box(sphere.get_x_min(), sphere.get_y_min(), sphere.get_z_min(), 
+                                                  sphere.get_x_max(), sphere.get_y_max(), sphere.get_z_max()), p.second)
             );
       }
 
@@ -48,9 +48,8 @@ namespace stk {
 
       for(auto& p : local_range) {
         auto& sphere = p.first;
-        rangeBoxes.push_back( std::make_pair(Box({sphere.get_x_min(), sphere.get_y_min(), sphere.get_z_min()}, 
-                                                 {sphere.get_x_max(), sphere.get_y_max(), sphere.get_z_max()} 
-              ), p.second)
+        rangeBoxes.push_back( std::make_pair(Box(sphere.get_x_min(), sphere.get_y_min(), sphere.get_z_min(), 
+                                                 sphere.get_x_max(), sphere.get_y_max(), sphere.get_z_max()), p.second)
             );
       }
 
