@@ -57,9 +57,9 @@ namespace stk {
     //  Wrapping of the KDTree search for use in the general STK coarse_search algorithm.  Find the overlaps between
     //  boxes in domain and boxes in range
     //
-    template <typename DomainIdentifier, typename RangeIdentifier, typename DomainBoxType, typename RangeBoxType>
-    inline void kdtree_search(std::vector< std::pair<stk::search::Box<DomainBoxType>, DomainIdentifier> > const & local_domain,
-                              std::vector< std::pair<stk::search::Box<RangeBoxType>,  RangeIdentifier > > const & local_range,
+    template <typename DomainIdentifier, typename RangeIdentifier, typename DBoxNumType, typename RBoxNumType>
+    inline void kdtree_search(std::vector< std::pair<stk::search::Box<DBoxNumType>, DomainIdentifier> > const & local_domain,
+                              std::vector< std::pair<stk::search::Box<RBoxNumType>,  RangeIdentifier > > const & local_range,
                                MPI_Comm comm,
                                std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
                                bool communicateRangeBoxInfo=true)
@@ -69,7 +69,7 @@ namespace stk {
       MPI_Comm_rank(comm, &proc_id);
       MPI_Comm_size(comm, &num_procs);
 
-      std::vector<stk::search::Box<RangeBoxType> > rangeBoxes( local_range.size() );
+      std::vector<stk::search::Box<RBoxNumType> > rangeBoxes( local_range.size() );
 
       std::vector<RangeIdentifier> rangeGhostIdentifiers;
 
@@ -83,7 +83,7 @@ namespace stk {
 
       if ((local_domain.size() > 0) && (rangeBoxes.size() > 0)) {
 
-        const stk::search::ProximitySearchTree_T<stk::search::Box<RangeBoxType> > proxSearch(rangeBoxes);
+        const stk::search::ProximitySearchTree_T<stk::search::Box<RBoxNumType> > proxSearch(rangeBoxes);
         const unsigned numBoxDomain = local_domain.size();
 
 #ifdef _OPENMP
