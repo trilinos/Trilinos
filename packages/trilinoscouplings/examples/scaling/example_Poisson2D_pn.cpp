@@ -254,7 +254,7 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
 			  std::vector<bool> & edgeIsOwned,
 			  std::vector<int> & ownedEdgeIds,
 			  FieldContainer<int> &elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> &edgeToNode,FieldContainer<double> & edgeCoord,
-			  int & numEdgesGlobal);
+			  long long & numEdgesGlobal);
 
 void EnumerateElements(Epetra_Comm & Comm, int numMyElements, std::vector<long long> & globalElementIds);
 
@@ -277,7 +277,7 @@ void CreateLinearSystem(int numWorkSets,
                         );
 
 
-void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P);
+void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp,Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P);
 
 void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNode,
                       Epetra_Map const & P1_map_aux, Epetra_Map const &Pn_map,
@@ -732,6 +732,7 @@ int main(int argc, char *argv[]) {
   if(MyPID ==0) {cout << msg << "Boundary Conds   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
 
+  /******************************************/
   // Enumerate Edges
   if(MyPID==0) printf("Using new edge enumeration\n");
   std::vector<long long> P1_globalEdgeIds;
@@ -741,7 +742,7 @@ int main(int argc, char *argv[]) {
   FieldContainer<int> P1_elemToEdgeOrient(numElems,P1_numEdgesPerElem);
   FieldContainer<int> P1_edgeToNode;
   FieldContainer<double> P1_edgeCoord;
-  int P1_globalNumEdges;
+  long long P1_globalNumEdges;
 
   PamgenEnumerateEdges(P1_numNodesPerElem,P1_numEdgesPerElem,P1_numNodesPerEdge,P1_refEdgeToNode,P1_nodeCoord,
 		       P1_globalNodeIds,P1_mesh,
@@ -767,11 +768,13 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
+  /******************************************/
   // Enumerate Elements
   std::vector<long long> P1_globalElementIds;
   EnumerateElements(Comm,numElems,P1_globalElementIds);
 
 
+  /******************************************/
   // Generate higher order mesh
   // The number of *my* Pn nodes will be related to the number of *my* nodes, edges (owned and ghosted) and elements (owned)
   int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.dimension(0) + (degree-1)*(degree-1)*numElems;  // local
@@ -792,7 +795,7 @@ int main(int argc, char *argv[]) {
                        Pn_globalNumNodes,elemToNode, nodeCoord, nodeOnBoundary,Pn_nodeIsOwned,Pn_globalNodeIds);
 
 
-  if(!MyPID) printf("P1 global (nodes,edges) = (%d,%d) Pn global nodes = %d\n",P1_globalNumNodes,P1_globalNumEdges,Pn_globalNumNodes);
+  if(!MyPID) printf("P1 global (nodes,edges) = (%lld,%lld) Pn global nodes = %lld\n",P1_globalNumNodes,P1_globalNumEdges,Pn_globalNumNodes);
 #if 1
   {
     ostringstream ss;
@@ -806,17 +809,22 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-  Comm.Barrier(); 
-  exit(1);
 
-  // ---------------------------
-
-  long long numElems_aux = numElems*4;  //4 P1 elements per Pn element in auxiliary mesh
+  /******************************************/
+  // Generate Auxillary Mesh
+  int numElems_aux = numElems*4;  //4 P1 elements per Pn element in auxiliary mesh
+  long long globalNumElems_aux = P1_globalNumElems*4;
   FieldContainer<int> aux_P1_elemToNode(numElems_aux,P1_numNodesPerElem); //4 P1 elements per Pn element
   CreateP1MeshFromP2Mesh(elemToNode, aux_P1_elemToNode);
 
-  // Only works in serial
+  // Print mesh information
+  if (MyPID == 0){
+    std::cout << " Number of Pn Global Elements: " << Pn_globalNumElems << " \n";
+    std::cout << " Number of Pn Global Nodes: " << Pn_globalNumNodes << " \n";
+    std::cout << " Number of faux P1 Global Elements: " << globalNumElems_aux << " \n\n";
+  }
 
+  // Coordinates in single vector form
   std::vector<double> Pn_nodeCoordx(Pn_numNodes);
   std::vector<double> Pn_nodeCoordy(Pn_numNodes);
   for (int i=0; i<Pn_numNodes; i++) {
@@ -827,15 +835,6 @@ int main(int argc, char *argv[]) {
   // Reset constants
   int P1_numNodes =numNodes;
   numNodes = Pn_numNodes;
-
-
-  // Print mesh information
-  if (MyPID == 0){
-    std::cout << " Number of Pn Global Elements: " << Pn_globalNumElems << " \n";
-    std::cout << " Number of Pn Global Nodes: " << Pn_globalNumNodes << " \n";
-    std::cout << " Number of faux P1 Global Elements: " << aux_P1_elemToNode.dimension(0) << " \n\n";
-  }
-
 
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
@@ -942,7 +941,6 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << "Getting basis                               "
                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
-
   /**********************************************************************************/
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
   /**********************************************************************************/
@@ -952,7 +950,7 @@ int main(int argc, char *argv[]) {
     if(Pn_nodeIsOwned[i]) Pn_ownedNodes++;
 
   // Build a list of the OWNED global ids...
-  // NTS: will need to switch back to long long
+  // NOTE: We cast all of this down to ints for ease of use w/ epetra
   std::vector<int> Pn_ownedGIDs(Pn_ownedNodes);
   int oidx=0;
   for(int i=0;i<numNodes;i++)
@@ -1171,7 +1169,6 @@ int main(int argc, char *argv[]) {
                      msg,
                      Time
                      );
-
   /**********************************************************************************/
   /********************* ASSEMBLE OVER MULTIPLE PROCESSORS **************************/
   /**********************************************************************************/
@@ -1183,13 +1180,23 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << msg << "Global assembly (auxiliary system)          "
                           << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
+
+
   // Generate Pn-to-P1 identity coarsening (base mesh to auxiliary mesh).
   Teuchos::RCP<Epetra_CrsMatrix> P_identity;
+  inputSolverList.set("aux P1",true);//HAQ
   if (inputSolverList.isParameter("aux P1")) {
     printf("Generating Identity Pn-to-P1 coarsening...\n");
     GenerateIdentityCoarsening_pn_to_p1(elemToNode, StiffMatrix_aux.DomainMap(), StiffMatrix.RangeMap(), P_identity);
     inputSolverList.remove("aux P1"); //even though LevelWrap happily accepts this parameter
   }
+
+  Comm.Barrier();
+  exit(1);
+
+
+
+
   
 /**********************************************************************************/
 /******************************* ADJUST MATRIX DUE TO BC **************************/
@@ -1974,8 +1981,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,long lo
 
 /*********************************************************************************************************/
 
-void CreateP1MeshFromP2Mesh(
-                            FieldContainer<int> const    & P2_elemToNode,
+void CreateP1MeshFromP2Mesh(FieldContainer<int> const    & P2_elemToNode,                           
                             FieldContainer<int>          & P1_elemToNode)
 {
 
@@ -2040,7 +2046,7 @@ void CreateLinearSystem(int numWorksets,
                         Teuchos::RCP<Basis<double,FieldContainer<double> > >&myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<long long> const &globalNodeIds,
                         Epetra_FECrsMatrix &StiffMatrix,
                         Epetra_FEVector &rhsVector,
                         std::string &msg,
@@ -2305,16 +2311,16 @@ void CreateLinearSystem(int numWorksets,
       for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
 
         int localRow  = elemToNode(cell, cellRow);
-        int globalRow = globalNodeIds[localRow];
+        int globalRow = (int) globalNodeIds[localRow];
         double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
 
-        rhsVector.SumIntoGlobalValues(1, &globalRow, &sourceTermContribution);
+        rhsVector.SumIntoGlobalValues(1,&globalRow,&sourceTermContribution);
 
         // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
         for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
 
           int localCol  = elemToNode(cell, cellCol);
-          int globalCol = globalNodeIds[localCol];
+          int globalCol = (int) globalNodeIds[localCol];
           double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
           StiffMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
 
@@ -2336,8 +2342,6 @@ void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContain
   // Generate a P matrix that uses the linear coarsening from pn to p1 on the base mesh.
   // This presumes that the Pn element is number according to the Kirby convention (aka straight across, bottom to top)
   // Resulting matrix is #Pnnodes x #P1nodes
-  //  int edge_node0_id[4]={0,1,2,3};
-  //  int edge_node1_id[4]={1,2,3,0};
   int p1_node_in_pn[4] = {0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)};
 
   // Get the reference coordinates for the Pn element  
@@ -2351,8 +2355,6 @@ void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContain
   FieldContainer<double> P1Values_at_PnDofs(numFieldsP1,numFieldsPn);
   P1Basis_rcp->getValues(P1Values_at_PnDofs, PnDofCoords, OPERATOR_VALUE);
 
-
-
   // Generate P
   int Nelem=Pn_elemToNode.dimension(0);  
   P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,Pn_map,0));
@@ -2360,16 +2362,17 @@ void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContain
   // Assemble
   for(int i=0; i<Nelem; i++) {
     for(int j=0; j<numFieldsPn; j++) {
-      int row = Pn_elemToNode(i,j);
+      int row_lid = Pn_elemToNode(i,j);
+      int row_gid = P1_map.GID(row_lid);
       for(int k=0; k<numFieldsP1; k++) {
-        int col = Pn_elemToNode(i,p1_node_in_pn[k]);
+        int col_lid = Pn_elemToNode(i,p1_node_in_pn[k]);
+	int col_gid = Pn_map.GID(col_lid);
         double val = P1Values_at_PnDofs(k,j);
-        P->InsertGlobalValues(row,1,&val,&col);
+        P->InsertGlobalValues(row_gid,1,&val,&col_gid);/// FIXME: This is swong
       }
     }
   }
   P->FillComplete(P1_map,Pn_map);
-
 }
 
 /*********************************************************************************************************/
@@ -2384,24 +2387,15 @@ void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNo
   
   double one = 1.0;
   P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,Pn_map,0));
-
-  //We must keep track of the nodes already encountered.  Inserting more than once will cause
-  //the values to be summed.  Using a hashtable would work -- we abuse std::map for this purpose.
-  std::map<int,int> hashTable;
-  int Nelem=Pn_elemToNode.dimension(0);
-  for(int i=0; i<Nelem; i++) {
-    for(int j=0; j<Pn_elemToNode.dimension(1); j++) {
-      int row = Pn_elemToNode(i,j);
-      if (hashTable.find(row) == hashTable.end()) {
-        //not found
-        P->InsertGlobalValues(row,1,&one,&row);
-        hashTable[row] = 1;
-      }
-    }
+ 
+  // Identity matrices are easy - exploit the fact that the maps are identical
+  for(int i=0; i<Pn_map.NumMyElements(); i++) {
+    int row_gid = Pn_map.GID(i);
+    P->InsertGlobalValues(row_gid,1,&one,&row_gid);
   }
-
   P->FillComplete(P1_map_aux,Pn_map);
 }
+
 
 
 
@@ -2436,7 +2430,7 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
 			  std::vector<bool> & edgeIsOwned,
 			  std::vector<int> & ownedEdgeIds,
 			  FieldContainer<int> &elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> &edgeToNode,FieldContainer<double> & edgeCoord,
-			  int & numEdgesGlobal) {
+			  long long & numEdgesGlobal) {
   std::vector < topo_entity * > edge_vector;
   std::set < topo_entity * , fecomp > edge_set;
   std::vector < int > edge_comm_procs;
@@ -2523,7 +2517,8 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
 
   // Calculate number of global edges
 #ifdef HAVE_MPI
-  Comm.SumAll(&numOwnedEdges,&numEdgesGlobal,1);
+  long long numOwnedEdges_ll = numOwnedEdges;
+  Comm.SumAll(&numOwnedEdges_ll,&numEdgesGlobal,1);
 #else
   numEdgesGlobal = numEdges;
 #endif
@@ -2572,7 +2567,7 @@ void EnumerateElements(Epetra_Comm & Comm, int numMyElements, std::vector<long l
 
   Comm.ScanSum(&numMyElements_ll,&myGlobalElementBase,1);
   myGlobalElementBase -=numMyElements;
-  printf("[%d] MyGlobalElementBase = %d\n",Comm.MyPID(),myGlobalElementBase);
+  printf("[%d] MyGlobalElementBase = %lld\n",Comm.MyPID(),myGlobalElementBase);
 
   globalElementIds.resize(numMyElements);
   for(int i=0; i<numMyElements; i++)
