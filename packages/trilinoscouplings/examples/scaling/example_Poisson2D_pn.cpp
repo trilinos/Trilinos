@@ -170,6 +170,8 @@ struct fecomp{
 };
 
 
+int global_MyPID;//DEBUG
+
 #if 0
  long long  *nodes_per_element   = new long long [numElemBlk];
   long long  *element_attributes  = new long long [numElemBlk];
@@ -222,8 +224,24 @@ struct PamgenMesh{
 
 
 // forward declarations
-void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
-                          FieldContainer<int> & Pn_elemToNode, FieldContainer<double> & Pn_nodeCoord,FieldContainer<int> & Pn_nodeOnBoundary);
+void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,long long P1_globalNumNodes,long long P1_globalNumEdges,long long P1_globalNumElem,
+                 const FieldContainer<int>    & P1_elemToNode,
+                 const FieldContainer<double> & P1_nodeCoord,
+                 const FieldContainer<double> & P1_edgeCoord,
+                 const FieldContainer<int>    & P1_elemToEdge,
+                 const FieldContainer<int>    & P1_elemToEdgeOrient,
+                 const FieldContainer<int>    & P1_nodeOnBoundary,
+		 const bool*                    P1_nodeIsOwned,
+		 const std::vector<bool>      & P1_edgeIsOwned,
+		 const std::vector<long long> & P1_globalNodeIds,
+		 const std::vector<long long> & P1_globalEdgeIds,
+		 const std::vector<long long> & P1_globalElementIds,
+		 long long                    & Pn_globalNumNodes,
+                 FieldContainer<int>          & Pn_elemToNode,
+                 FieldContainer<double>       & Pn_nodeCoord,
+		 FieldContainer<int>          & Pn_nodeOnBoundary,
+		 std::vector<bool>            & Pn_nodeIsOwned,
+		 std::vector<long long>       & Pn_globalNodeIds);
 
 
 void GenerateEdgeEnumeration(const FieldContainer<int> & refEdgeToNode,const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord, const long long * globalNodeIds,FieldContainer<int> & edgeToNode);
@@ -231,15 +249,17 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & refEdgeToNode,const Fie
 
 void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodesPerEdge,
 			  FieldContainer<int> refEdgeToNode,const FieldContainer<double> & nodeCoord,
-			  /*const*/ long long * globalNodeIds,
+			  std::vector<long long> globalNodeIds,
 			  PamgenMesh & mesh,
 			  Epetra_Comm & Comm,
 			  /*Output args */
 			  std::vector<long long> & globalEdgeIds,
 			  std::vector<bool> & edgeIsOwned,
 			  std::vector<int> & ownedEdgeIds,
-			  FieldContainer<int> &elemToEdge,  FieldContainer<int> & elemToEdgeOrient,FieldContainer<int> &edgeToNode,FieldContainer<double> & edgeCoord,
+			  FieldContainer<int> &elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> &edgeToNode,FieldContainer<double> & edgeCoord,
 			  int & numEdgesGlobal);
+
+void EnumerateElements(Epetra_Comm & Comm, int numMyElements, std::vector<long long> & globalElementIds);
 
 void CreateP1MeshFromP2Mesh(const FieldContainer<int> & P2_elemToNode, FieldContainer<int> &aux_P1_elemToNode);
 
@@ -252,7 +272,7 @@ void CreateLinearSystem(int numWorkSets,
                         Teuchos::RCP<Basis<double,FieldContainer<double> > > &myBasis_rcp,
                         FieldContainer<double> const &HGBGrads,
                         FieldContainer<double> const &HGBValues,
-                        std::vector<int>       const &globalNodeIds,
+                        std::vector<long long> const &globalNodeIds,
                         Epetra_FECrsMatrix &StiffMatrix,
                         Epetra_FEVector &rhsVector,
                         std::string &msg,
@@ -408,6 +428,7 @@ int main(int argc, char *argv[]) {
   std::cout<<"Initial Message"<<std::endl;
 
   int MyPID = Comm.MyPID();
+  global_MyPID = MyPID;//DEBUG
   Epetra_Time Time(Comm);
 
   //Check number of arguments
@@ -523,12 +544,6 @@ int main(int argc, char *argv[]) {
     P1_refEdgeToNode(i,1)=P1_cellType.getNodeMap(1, i, 1);
   }
 
-  printf("**** refEdgeToNode ****\n");
-  for (int i=0; i<P1_numEdgesPerElem; i++)
-    printf("(%d,%d) ", P1_refEdgeToNode(i,0), P1_refEdgeToNode(i,1));
-  printf("\n");
-
-
   /**********************************************************************************/
   /******************************* GENERATE MESH ************************************/
   /**********************************************************************************/
@@ -563,20 +578,20 @@ int main(int argc, char *argv[]) {
   P1_mesh.allocateConnectivity(my_numElemBlk);
 
 
-  long long numNodesGlobal;
-  long long numElemsGlobal;
+  long long P1_globalNumNodes;
+  long long P1_globalNumElems;
   long long numElemBlkGlobal;
   long long numNodeSetsGlobal;
   long long numSideSetsGlobal;
 
-  im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
+  im_ne_get_init_global_l(id, &P1_globalNumNodes, &P1_globalNumElems,
                           &numElemBlkGlobal, &numNodeSetsGlobal,
                           &numSideSetsGlobal);
 
   // Print mesh information
   if (MyPID == 0){
-    std::cout << " Number of Global Elements: " << numElemsGlobal << " \n";
-    std::cout << " Number of Global Nodes: " << numNodesGlobal << " \n\n";
+    std::cout << " Number of Global Elements: " << P1_globalNumElems << " \n";
+    std::cout << " Number of Global Nodes: "    << P1_globalNumNodes << " \n\n";
   }
 
   long long * block_ids = new long long [P1_mesh.numElemBlk];
@@ -674,10 +689,10 @@ int main(int argc, char *argv[]) {
   if(!Comm.MyPID()) {cout << msg << "Mesh Queries     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
   //Calculate global node ids
-  long long * P1_globalNodeIds = new long long[numNodes];
-  bool * P1_nodeIsOwned = new bool[numNodes];
+  std::vector<long long> P1_globalNodeIds(numNodes);
+  bool*      P1_nodeIsOwned = new bool[numNodes];
 
-  calc_global_node_ids(P1_globalNodeIds,
+  calc_global_node_ids(P1_globalNodeIds.data(),
                        P1_nodeIsOwned,
                        numNodes,
                        P1_mesh.num_node_comm_maps,
@@ -721,83 +736,94 @@ int main(int argc, char *argv[]) {
 
 
 
+
+#ifdef OLD_AND_BUSTED
   // Enumerate edges 
   // NOTE: Only correct in serial
+  if(MyPID==0) printf("Using old edge enumeration\n");
   FieldContainer<int> P1_elemToEdge(numElems,4);// Because quads
   FieldContainer<int> P1_elemToEdgeOrient(numElems,4);
   FieldContainer<double> P1_edgeCoord;
   FieldContainer<int> P1_edgeToNode;
   GenerateEdgeEnumeration(P1_refEdgeToNode,P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeCoord,P1_globalNodeIds,P1_edgeToNode);
-
-
-
-  std::vector<long long> PG_globalEdgeIds;
-  std::vector<bool> PG_edgeIsOwned;
-  std::vector<int> PG_ownedEdgeIds;
-  FieldContainer<int> PG_elemToEdge(numElems,P1_numEdgesPerElem);
-  FieldContainer<int> PG_elemToEdgeOrient(numElems,P1_numEdgesPerElem);
-  FieldContainer<int> PG_edgeToNode;
-  FieldContainer<double> PG_edgeCoord;
-  int PG_numEdgesGlobal;
+#else
+  if(MyPID==0) printf("Using new edge enumeration\n");
+  std::vector<long long> P1_globalEdgeIds;
+  std::vector<bool> P1_edgeIsOwned;
+  std::vector<int> P1_ownedEdgeIds;
+  FieldContainer<int> P1_elemToEdge(numElems,P1_numEdgesPerElem);
+  FieldContainer<int> P1_elemToEdgeOrient(numElems,P1_numEdgesPerElem);
+  FieldContainer<int> P1_edgeToNode;
+  FieldContainer<double> P1_edgeCoord;
+  int P1_globalNumEdges;
 
   PamgenEnumerateEdges(P1_numNodesPerElem,P1_numEdgesPerElem,P1_numNodesPerEdge,P1_refEdgeToNode,P1_nodeCoord,
 		       P1_globalNodeIds,P1_mesh,
-		       Comm, PG_globalEdgeIds,PG_edgeIsOwned,PG_ownedEdgeIds,PG_elemToEdge,PG_elemToEdgeOrient,PG_edgeToNode,PG_edgeCoord,PG_numEdgesGlobal);
+		       Comm, P1_globalEdgeIds,P1_edgeIsOwned,P1_ownedEdgeIds,P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeToNode,P1_edgeCoord,P1_globalNumEdges);
+#endif
 
+#if 0
   {
     ostringstream ss;
-    ss<<"***** Old Edge Enumeration ["<<Comm.MyPID()<<"] *****"<<endl;
+    ss<<"***** Edge Enumeration ["<<Comm.MyPID()<<"] *****"<<endl;
     for (int i=0;i<numElems; i++) {
       for (int j=0; j<P1_numEdgesPerElem; j++)
 	ss<<P1_elemToEdge(i,j)<<"("<<PG_globalEdgeIds[P1_elemToEdge(i,j)]<<")["<<P1_elemToEdgeOrient(i,j)<<"] ";
       ss<<endl;
     }
-
-    ss<<"***** New Edge Enumeration ["<<Comm.MyPID()<<"] *****"<<endl;
-    for (int i=0;i<numElems; i++) {
-      for (int j=0; j<P1_numEdgesPerElem; j++)
-	ss<<PG_elemToEdge(i,j)<<"("<<PG_globalEdgeIds[PG_elemToEdge(i,j)]<<")["<<PG_elemToEdgeOrient(i,j)<<"] ";
-      ss<<endl;
-    }
-    ss<<"***** Old Edge2Node ["<<Comm.MyPID()<<"] *****"<<endl;
-    for (int i=0; i<P1_edgeToNode.dimension(0); i++) {
-      for (int j=0; j<P1_edgeToNode.dimension(1); j++)
-	ss<<P1_edgeToNode(i,j)<<" ";
-      ss<<endl;
-    }
-
-
-    ss<<"***** New Edge2Node ["<<Comm.MyPID()<<"] *****"<<endl;
+    ss<<"***** Edge2Node ["<<Comm.MyPID()<<"] *****"<<endl;
     for (int i=0; i<PG_edgeToNode.dimension(0); i++) {
       for (int j=0; j<PG_edgeToNode.dimension(1); j++)
 	ss<<PG_edgeToNode(i,j)<<" ";
       ss<<endl;
     }
-
-
     printf("%s",ss.str().c_str());
     fflush(stdout);
   }
+#endif
 
-
-  Comm.Barrier();
-  MPI_Finalize();
-  return 1;
+  // Enumerate Elements
+  std::vector<long long> P1_globalElementIds;
+  EnumerateElements(Comm,numElems,P1_globalElementIds);
 
 
   // Generate higher order mesh
-  // NOTE: Only correct in serial
-  int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.dimension(0) + (degree-1)*(degree-1)*numElems;
+  // The number of *my* Pn nodes will be related to the number of *my* nodes, edges (owned and ghosted) and elements (owned)
+  int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.dimension(0) + (degree-1)*(degree-1)*numElems;  // local
   int Pn_numNodesperElem = (degree+1)*(degree+1); // Quads
   FieldContainer<int>    elemToNode(numElems,Pn_numNodesperElem); 
   FieldContainer<double> nodeCoord(Pn_numNodes,dim);
   FieldContainer<int>   nodeOnBoundary(Pn_numNodes);
 
-  printf("Pn_numNodes = %d Pn_numNodesperElem = %d\n",Pn_numNodes,Pn_numNodesperElem);
+  printf("[%d] P1_numNodes = %d Pn_numNodes = %d Pn_numNodesperElem = %d degree = %d\n",Comm.MyPID(),(int)numNodes,Pn_numNodes,Pn_numNodesperElem,degree);
 
-  printf("Running p=%d Kirby\n",degree);
-  PromoteMesh_Pn_Kirby(degree,POINTTYPE_EQUISPACED,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
-                       elemToNode, nodeCoord, nodeOnBoundary);
+  std::vector<bool>Pn_nodeIsOwned(Pn_numNodes,false);
+  std::vector<long long>Pn_globalNodeIds(Pn_numNodes);
+  long long Pn_globalNumNodes=0;
+  long long Pn_globalNumElems=P1_globalNumElems;
+
+  PromoteMesh_Pn_Kirby(degree,POINTTYPE_EQUISPACED,P1_globalNumNodes,P1_globalNumEdges,P1_globalNumElems,
+		       P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,P1_nodeIsOwned,P1_edgeIsOwned,P1_globalNodeIds,P1_globalEdgeIds,P1_globalElementIds,
+                       Pn_globalNumNodes,elemToNode, nodeCoord, nodeOnBoundary,Pn_nodeIsOwned,Pn_globalNodeIds);
+
+
+  if(!MyPID) printf("P1 global (nodes,edges) = (%d,%d) Pn global nodes = %d\n",P1_globalNumNodes,P1_globalNumEdges,Pn_globalNumNodes);
+#if 1
+  {
+    ostringstream ss;
+    ss<<"***** Node ids & ownership ["<<Comm.MyPID()<<"] *****"<<endl;
+    for (int i=0; i<Pn_numNodes; i++)
+      ss<<i<<"["<<Pn_globalNodeIds[i]<<","<<Pn_nodeIsOwned[i]<<"] ";
+    ss<<endl;
+
+    printf("%s",ss.str().c_str());
+    fflush(stdout);
+  }
+#endif
+
+  Comm.Barrier(); 
+  exit(1);
+
   // ---------------------------
 
   long long numElems_aux = numElems*4;  //4 P1 elements per Pn element in auxiliary mesh
@@ -805,10 +831,6 @@ int main(int argc, char *argv[]) {
   CreateP1MeshFromP2Mesh(elemToNode, aux_P1_elemToNode);
 
   // Only works in serial
-  std::vector<bool>Pn_nodeIsOwned(Pn_numNodes,true);
-  std::vector<int>Pn_globalNodeIds(Pn_numNodes);
-  for(int i=0; i<Pn_numNodes; i++)
-    Pn_globalNodeIds[i]=i;
 
   std::vector<double> Pn_nodeCoordx(Pn_numNodes);
   std::vector<double> Pn_nodeCoordy(Pn_numNodes);
@@ -820,12 +842,12 @@ int main(int argc, char *argv[]) {
   // Reset constants
   int P1_numNodes =numNodes;
   numNodes = Pn_numNodes;
-  numNodesGlobal = numNodes;
+
 
   // Print mesh information
   if (MyPID == 0){
-    std::cout << " Number of Pn Global Elements: " << numElemsGlobal << " \n";
-    std::cout << " Number of Pn Global Nodes: " << numNodesGlobal << " \n";
+    std::cout << " Number of Pn Global Elements: " << Pn_globalNumElems << " \n";
+    std::cout << " Number of Pn Global Nodes: " << Pn_globalNumNodes << " \n";
     std::cout << " Number of faux P1 Global Elements: " << aux_P1_elemToNode.dimension(0) << " \n\n";
   }
 
@@ -849,8 +871,6 @@ int main(int argc, char *argv[]) {
 
   if(MyPID==0) {std::cout << "Getting cubature                            "
                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
-
-
 
   /**********************************************************************************/
   /*********************************** GET BASIS ************************************/
@@ -1284,7 +1304,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_MPI
   // Import solution onto current processor
   //int numNodesGlobal = globalMapG.NumGlobalElements();
-  Epetra_Map     solnMap(static_cast<int>(numNodesGlobal), static_cast<int>(numNodesGlobal), 0, Comm);
+  Epetra_Map     solnMap((long long)(-1),Pn_numNodes, 0, Comm);
   Epetra_Import  solnImporter(solnMap, globalMapG);
   Epetra_Vector  uCoeff(solnMap);
   uCoeff.Import(femCoefficients, solnImporter, Insert);
@@ -1456,11 +1476,10 @@ int main(int argc, char *argv[]) {
 
   // Cleanup
   delete [] block_ids;
-  delete [] P1_globalNodeIds;
-  delete [] P1_nodeIsOwned;
 
   delete [] nodeCoordx;
   delete [] nodeCoordy;
+  delete [] P1_nodeIsOwned;
 
   // delete mesh
   Delete_Pamgen_Mesh();
@@ -1749,16 +1768,25 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
 
 /*********************************************************************************************************/
-void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
+void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,long long P1_globalNumNodes, long long P1_globalNumEdges,long long P1_globalNumElem,
                  const FieldContainer<int>    & P1_elemToNode,
                  const FieldContainer<double> & P1_nodeCoord,
                  const FieldContainer<double> & P1_edgeCoord,
                  const FieldContainer<int>    & P1_elemToEdge,
                  const FieldContainer<int>    & P1_elemToEdgeOrient,
                  const FieldContainer<int>    & P1_nodeOnBoundary,
+		 const bool * P1_nodeIsOwned,
+		 const std::vector<bool>      & P1_edgeIsOwned,
+		 const std::vector<long long> & P1_globalNodeIds,
+		 const std::vector<long long> & P1_globalEdgeIds,
+		 const std::vector<long long> & P1_globalElementIds,
+		 long long                    & Pn_globalNumNodes,
                  FieldContainer<int>          & Pn_elemToNode,
                  FieldContainer<double>       & Pn_nodeCoord,
-                 FieldContainer<int>          & Pn_nodeOnBoundary) {
+		 FieldContainer<int>          & Pn_nodeOnBoundary,
+		 std::vector<bool>            & Pn_nodeIsOwned,
+		 std::vector<long long>       & Pn_globalNodeIds
+) {
 //#define DEBUG_PROMOTE_MESH
   int numElems           = P1_elemToNode.dimension(0);
   int P1_numNodesperElem = P1_elemToNode.dimension(1);
@@ -1816,27 +1844,49 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   int edge_skip[4] = {1,degree+1,-1,-(degree+1)};
   int center_root = degree+2;
 
+  printf("[%d] Global Edge Offset = %d Global Element Offset = %d\n",global_MyPID, P1_globalNumNodes, P1_globalNumNodes+P1_globalNumEdges*(degree-1));
+
   // Make the new el2node array
   for(int i=0; i<numElems; i++)  {    
     // P1 nodes
-    for(int j=0; j<P1_numNodesperElem; j++) 
-      Pn_elemToNode(i,p1_node_in_pn[j]) = P1_elemToNode(i,j);
-  
+    for(int j=0; j<P1_numNodesperElem; j++) {
+      int lid = P1_elemToNode(i,j);
+      Pn_elemToNode(i,p1_node_in_pn[j]) = lid;
+      Pn_nodeIsOwned[lid]   = P1_nodeIsOwned[lid];
+      Pn_globalNodeIds[lid] = P1_globalNodeIds[lid];
+    }  
+
     // P1 edges
     for(int j=0; j<P1_numEdgesperElem; j++){
       int orient   = P1_elemToEdgeOrient(i,j);
-      int base_id = (orient==1) ? p1_node_in_pn[edge_node0_id[j]] : p1_node_in_pn[edge_node1_id[j]];
-      int skip     =  orient*edge_skip[j];
-      for(int k=0; k<degree-1; k++) 
-        Pn_elemToNode(i,base_id+(k+1)*skip) = P1_numNodes+P1_elemToEdge(i,j)*(degree-1)+k;
+      int base_id  = (orient==1) ? p1_node_in_pn[edge_node0_id[j]] : p1_node_in_pn[edge_node1_id[j]];
+      int skip     = orient*edge_skip[j];
+      bool is_owned= P1_edgeIsOwned[P1_elemToEdge(i,j)];// new node is owned if the edge was
+      for(int k=0; k<degree-1; k++) {
+	int lid       = P1_numNodes+P1_elemToEdge(i,j)*(degree-1)+k;
+	long long gid = P1_globalNumNodes + P1_globalEdgeIds[P1_elemToEdge(i,j)]*(degree-1)+k;
+        Pn_elemToNode(i,base_id+(k+1)*skip) = lid;
+	Pn_nodeIsOwned[lid]   = is_owned;
+	Pn_globalNodeIds[lid] = gid;
+      }
     }
-
+ 
+    //    printf("GID Base = %d degree = %d\n", P1_globalNumNodes+P1_globalNumEdges*(degree-1) + P1_globalElementIds[i]*(degree-1)*(degree-1),degree);
     // P1 cells
     for(int j=0; j<degree-1; j++) 
-      for(int k=0; k<degree-1; k++) 
-        Pn_elemToNode(i,center_root+j*(degree+1)+k) = P1_numNodes+P1_numEdges*(degree-1)+i*(degree-1)*(degree-1) +  j*(degree-1)+k;
+      for(int k=0; k<degree-1; k++) {
+	int offset    = j*(degree-1)+k;
+	int lid       = P1_numNodes+P1_numEdges*(degree-1)+i*(degree-1)*(degree-1)+offset;
+	long long gid = P1_globalNumNodes+P1_globalNumEdges*(degree-1) + P1_globalElementIds[i]*(degree-1)*(degree-1) + offset;
+	//	printf("offset = %d lid = %d gid = %d P1_globalElementIds = %d\n",offset,lid,gid, P1_globalElementIds[i]);
+	Pn_elemToNode(i,center_root+j*(degree+1)+k) = lid;
+	Pn_nodeIsOwned[lid] = true; //elements are always owned
+	Pn_globalNodeIds[lid] = gid;
+      }
 
-  }
+  }  
+
+  Pn_globalNumNodes = P1_globalNumNodes+P1_globalNumEdges*(degree-1) + P1_globalNumElem*(degree-1)*(degree-1);
 
   // Get the p=n node locations
   FieldContainer<double> RefNodeCoords(Pn_numNodesperElem,dim);  
@@ -1868,14 +1918,12 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
    // Map the reference node location to physical   
    Intrepid::CellTools<double>::mapToPhysicalFrame(PhysNodeCoords,RefNodeCoords2,my_p1_nodes,cellTopo);
 
-
 #ifdef DEBUG_PROMOTE_MESH
    printf("[%2d] PhysNodes  : ",i);
    for(int j=0; j<Pn_numNodesperElem; j++)
      printf("(%10.2f %10.2f) ",PhysNodeCoords(0,j,0),PhysNodeCoords(0,j,1));
    printf("\n");
 #endif
-
 
    // Copy the physical node locations to the Pn_nodeCoord array
    for(int j=0; j<Pn_numNodesperElem; j++) {
@@ -1934,8 +1982,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   for(int i=0; i<P1_numNodes; i++) {
     printf("[%2d] %10.2e %10.2e (%d)\n",i,P1_nodeCoord(i,0),P1_nodeCoord(i,1),(int)P1_nodeOnBoundary(i));   
   }
-  #endif
-
+#endif
 
 }
 
@@ -2410,10 +2457,6 @@ void GenerateEdgeEnumeration(const FieldContainer<int> &refEdgeToNode, const Fie
   if(numNodesperElem !=4) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
   if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1)) 
     throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
-
-
-  //  int edge_node0_id[4]={0,1,2,3};
-  //  int edge_node1_id[4]={1,2,3,0};
   
   // Run over all the elements and start enumerating edges
   typedef std::map<std::pair<long long,long long>,int> en_map_type;
@@ -2454,7 +2497,6 @@ void GenerateEdgeEnumeration(const FieldContainer<int> &refEdgeToNode, const Fie
     edgeToNode(iter->second,1) = iter->first.second;
   }
 
-
   // Fill out the edge centers (clobbering data if needed)
   edgeCoord.resize(num_edges,dim);
   for(int i=0; i<numElems; i++) {
@@ -2480,7 +2522,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> &refEdgeToNode, const Fie
 /*********************************************************************************************************/
 void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodesPerEdge,
 			  FieldContainer<int> refEdgeToNode,const FieldContainer<double> & nodeCoord,
-			  /*const*/ long long * globalNodeIds,
+			  std::vector<long long> globalNodeIds,
 			  PamgenMesh & mesh,
 			  Epetra_Comm & Comm,
 			  /*Output args */
@@ -2504,7 +2546,7 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
       for (int i=0; i < numEdgesPerElem; i++){
 	topo_entity * teof = new topo_entity;
 	for(int j = 0; j < numNodesPerEdge;j++)
-	  teof->add_node(mesh.elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds);
+	  teof->add_node(mesh.elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds.data());
 	teof->sort();
 	fit = edge_set.find(teof);
 	if(fit == edge_set.end()){
@@ -2538,13 +2580,12 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
   } 
 #endif
 
-  // Edge to Node connectivity - old Hensinger style
+  // Edge to Node connectivity - new style
   assert(numNodesPerEdge==2);
   edgeToNode.resize(edge_vector.size(), numNodesPerEdge);
   for(unsigned ect = 0; ect != edge_vector.size(); ect++){
     int n[2];
-    std::list<long long>::iterator elit;
-    elit =  edge_vector[ect]->local_node_ids.begin();
+    std::list<long long>::iterator elit=edge_vector[ect]->local_node_ids.begin();
     n[0] = *elit-1;
     elit++;
     n[1] = *elit-1;
@@ -2589,15 +2630,12 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
     }
   }
 
-
   // Calculate number of global edges
 #ifdef HAVE_MPI
   Comm.SumAll(&numOwnedEdges,&numEdgesGlobal,1);
 #else
   numEdgesGlobal = numEdges;
 #endif
-
-
 
   assert(numNodesPerEdge==2);
 
@@ -2626,8 +2664,6 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
       for (int i=0; i < numEdgesPerElem; i++){	
 	int edge = elemToEdge(elid,i);
 	int n0 = mesh.elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,0)]-1;
-	  //	int n0 = elem_to_node[refEdgeToNode(i,0)];
-	//	int n1 = elem_to_node[refEdgeToNode(i,1)];
 	elemToEdgeOrient(elid,i) = (n0==edgeToNode(edge,0))?  1 : -1;
       }
       elid++;
@@ -2636,3 +2672,21 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
 
  
 }
+
+
+
+
+/*********************************************************************************************************/
+void EnumerateElements(Epetra_Comm & Comm, int numMyElements, std::vector<long long> & globalElementIds) { 
+  long long numMyElements_ll = numMyElements;
+  long long myGlobalElementBase = 0;
+
+  Comm.ScanSum(&numMyElements_ll,&myGlobalElementBase,1);
+  myGlobalElementBase -=numMyElements;
+  printf("[%d] MyGlobalElementBase = %d\n",Comm.MyPID(),myGlobalElementBase);
+
+  globalElementIds.resize(numMyElements);
+  for(int i=0; i<numMyElements; i++)
+    globalElementIds[i] = myGlobalElementBase + i;
+}
+
