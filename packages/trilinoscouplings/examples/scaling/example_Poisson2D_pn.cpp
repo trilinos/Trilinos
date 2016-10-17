@@ -244,9 +244,6 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,long lo
 		 std::vector<long long>       & Pn_globalNodeIds);
 
 
-void GenerateEdgeEnumeration(const FieldContainer<int> & refEdgeToNode,const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord, const long long * globalNodeIds,FieldContainer<int> & edgeToNode);
-
-
 void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodesPerEdge,
 			  FieldContainer<int> refEdgeToNode,const FieldContainer<double> & nodeCoord,
 			  std::vector<long long> globalNodeIds,
@@ -735,18 +732,7 @@ int main(int argc, char *argv[]) {
   if(MyPID ==0) {cout << msg << "Boundary Conds   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
 
-
-
-#ifdef OLD_AND_BUSTED
-  // Enumerate edges 
-  // NOTE: Only correct in serial
-  if(MyPID==0) printf("Using old edge enumeration\n");
-  FieldContainer<int> P1_elemToEdge(numElems,4);// Because quads
-  FieldContainer<int> P1_elemToEdgeOrient(numElems,4);
-  FieldContainer<double> P1_edgeCoord;
-  FieldContainer<int> P1_edgeToNode;
-  GenerateEdgeEnumeration(P1_refEdgeToNode,P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeCoord,P1_globalNodeIds,P1_edgeToNode);
-#else
+  // Enumerate Edges
   if(MyPID==0) printf("Using new edge enumeration\n");
   std::vector<long long> P1_globalEdgeIds;
   std::vector<bool> P1_edgeIsOwned;
@@ -760,7 +746,6 @@ int main(int argc, char *argv[]) {
   PamgenEnumerateEdges(P1_numNodesPerElem,P1_numEdgesPerElem,P1_numNodesPerEdge,P1_refEdgeToNode,P1_nodeCoord,
 		       P1_globalNodeIds,P1_mesh,
 		       Comm, P1_globalEdgeIds,P1_edgeIsOwned,P1_ownedEdgeIds,P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeToNode,P1_edgeCoord,P1_globalNumEdges);
-#endif
 
 #if 0
   {
@@ -1844,7 +1829,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,long lo
   int edge_skip[4] = {1,degree+1,-1,-(degree+1)};
   int center_root = degree+2;
 
-  printf("[%d] Global Edge Offset = %d Global Element Offset = %d\n",global_MyPID, P1_globalNumNodes, P1_globalNumNodes+P1_globalNumEdges*(degree-1));
+  //  printf("[%d] Global Edge Offset = %d Global Element Offset = %d\n",global_MyPID, P1_globalNumNodes, P1_globalNumNodes+P1_globalNumEdges*(degree-1));
 
   // Make the new el2node array
   for(int i=0; i<numElems; i++)  {    
@@ -2440,85 +2425,6 @@ void Apply_Dirichlet_BCs(std::vector<int> BCNodes, Epetra_FECrsMatrix & A, Epetr
 }
 
 
-
-
-
-/*********************************************************************************************************/
-
-
-void GenerateEdgeEnumeration(const FieldContainer<int> &refEdgeToNode, const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord, const long long *globalNodeIds, FieldContainer<int> & edgeToNode) {
-  // Not especially efficient, but effective... at least in serial!
-  
-  int numElems        = elemToNode.dimension(0);
-  int numNodesperElem = elemToNode.dimension(1);
-  int dim             = nodeCoord.dimension(1);
-
-  // Sanity checks
-  if(numNodesperElem !=4) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
-  if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1)) 
-    throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
-  
-  // Run over all the elements and start enumerating edges
-  typedef std::map<std::pair<long long,long long>,int> en_map_type;
-  en_map_type e2n;
-
-  int num_edges=0;
-  en_map_type edge_map;
-  for(int i=0; i<numElems; i++) {
-
-    // Generate edge pairs, based on the global orientation of "edges go from low ID to high ID"
-    for(int j=0; j<4; j++) {
-      long long id0 = globalNodeIds[elemToNode(i,refEdgeToNode(j,0))];
-      long long id1 = globalNodeIds[elemToNode(i,refEdgeToNode(j,1))];
-      long long lo = std::min(id0,id1);
-      long long hi = std::max(id0,id1);
-
-      std::pair<long long,long long> ep(lo,hi);
-
-      int edge_id;
-      en_map_type::iterator iter = edge_map.find(ep);      
-      if(iter==edge_map.end()) {
-        edge_map[ep] = num_edges;
-        edge_id = num_edges;
-        num_edges++;
-      }
-      else
-        edge_id = (*iter).second;
-      
-      elemToEdge(i,j) = edge_id;
-      elemToEdgeOrient(i,j) = (lo==id0)?1:-1;
-    }
-  }      
-
-  // Edge to Node connectivity
-  edgeToNode.resize(num_edges,2);
-  for(en_map_type::iterator iter = edge_map.begin(); iter != edge_map.end(); iter++) {
-    edgeToNode(iter->second,0) = iter->first.first;
-    edgeToNode(iter->second,1) = iter->first.second;
-  }
-
-  // Fill out the edge centers (clobbering data if needed)
-  edgeCoord.resize(num_edges,dim);
-  for(int i=0; i<numElems; i++) {
-    for(int j=0; j<4; j++) {      
-      int n0 = elemToNode(i,refEdgeToNode(j,0));
-      int n1 = elemToNode(i,refEdgeToNode(j,1));
-      for(int k=0; k<dim; k++)
-        edgeCoord(elemToEdge(i,j),k) = (nodeCoord(n0,k)+nodeCoord(n1,k))/2.0;
-    }
-  }
-  
-  //#define DEBUG_EDGE_ENUMERATION
-#ifdef DEBUG_EDGE_ENUMERATION
-  printf("**** Old Edge coordinates ***\n");
-  for(int i=0; i<edgeCoord.dimension(0); i++)
-    printf("[%2d] %10.2f %10.2f\n",i,edgeCoord(i,0),edgeCoord(i,1));
-#endif
-
-}
-
-
-
 /*********************************************************************************************************/
 void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodesPerEdge,
 			  FieldContainer<int> refEdgeToNode,const FieldContainer<double> & nodeCoord,
@@ -2565,22 +2471,7 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
     }
   }
 
-#if 0
-  // Edge to Node connectivity - old Hensinger style
-  edgeToNode.resize(edge_vector.size(), numNodesPerEdge);
-  for(unsigned ect = 0; ect != edge_vector.size(); ect++){
-    std::list<long long>::iterator elit;
-    int nct = 0;
-    for(elit  = edge_vector[ect]->local_node_ids.begin();
-	elit != edge_vector[ect]->local_node_ids.end();
-	elit ++){
-      edgeToNode(ect,nct) = *elit-1;
-      nct++;
-    }
-  } 
-#endif
-
-  // Edge to Node connectivity - new style
+  // Edge to Node connectivity 
   assert(numNodesPerEdge==2);
   edgeToNode.resize(edge_vector.size(), numNodesPerEdge);
   for(unsigned ect = 0; ect != edge_vector.size(); ect++){
@@ -2669,10 +2560,8 @@ void PamgenEnumerateEdges(int numNodesPerElem, int numEdgesPerElem, int numNodes
       elid++;
     }
   }
-
  
 }
-
 
 
 
