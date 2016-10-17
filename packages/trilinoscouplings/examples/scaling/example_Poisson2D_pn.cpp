@@ -1104,9 +1104,7 @@ int main(int argc, char *argv[]) {
   /////////////////////////////////////////////////////////////////////
   // Create P1 matrix and RHS to be used in preconditioner
   /////////////////////////////////////////////////////////////////////
-
   //Cubature
-
   // Get numerical integration points and weights
   int cubDegree_aux = 2; //TODO  This was 3 for P=2.  I think this should be 2 now .... Ask Chris.
   Teuchos::RCP<Cubature<double> > myCub_aux = cubFactory.create(P1_cellType, cubDegree_aux);
@@ -1122,7 +1120,6 @@ int main(int argc, char *argv[]) {
                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
   //Basis
-
   // Define basis
   int numFieldsG_aux = myHGradBasis_aux.getCardinality();
   FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
@@ -1191,8 +1188,6 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////////
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
-  //  std::cout << "numBCNodes = " << numBCNodes << std::endl;
-  //  std::cout << "globalMapG #elts = " << globalMapG.NumMyElements() << std::endl;
   Apply_Dirichlet_BCs(BCNodes,StiffMatrix_aux,rhsVector_aux,rhsVector_aux,v);
 
   if(MyPID==0) {std::cout << msg << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
@@ -1211,7 +1206,6 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
-
   // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
   ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
@@ -1247,7 +1241,6 @@ int main(int argc, char *argv[]) {
     interpolationMatrix = P_linear;
   }
 
-
   TestMultiLevelPreconditionerLaplace(probType, MLList,
                                       Teuchos::rcpFromRef(StiffMatrix), interpolationMatrix, exactNodalVals,
                                       rhsVector,            femCoefficients,
@@ -1259,7 +1252,6 @@ int main(int argc, char *argv[]) {
   EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector.dat",femCoefficients,0,0,false);
   EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector_exact.dat",exactNodalVals,0,0,false);
 #endif
-
 
   // Build an overlap map for error calculation.  This is kind of like StiffMatrix's ColMap, but in a different order
   std::vector<int>Pn_globalNodeIds_int(Pn_numNodes);
