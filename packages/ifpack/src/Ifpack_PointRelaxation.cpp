@@ -953,6 +953,8 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   {
     if (CrsMatrix->StorageOptimized() && LocalSmoothingIndices_)
       return(ApplyInverseSGS_LocalFastCrsMatrix(CrsMatrix, X, Y));
+    else if (CrsMatrix->StorageOptimized() && X.NumVectors() == 1)
+      return(ApplyInverseSGS_SingleRhsFastCrsMatrix(CrsMatrix, X, Y));
     else if (CrsMatrix->StorageOptimized())
       return(ApplyInverseSGS_FastCrsMatrix(CrsMatrix, X, Y));
     else
@@ -1225,6 +1227,83 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
   return(0);
 }
 
+//==============================================================================
+// this requires Epetra_CrsMatrix + OptimizeStorage() + NumVecs == 1
+int Ifpack_PointRelaxation::
+ApplyInverseSGS_SingleRhsFastCrsMatrix(const Epetra_CrsMatrix* A,
+                                       const Epetra_MultiVector& X,
+                                       Epetra_MultiVector& Y) const
+{
+  int* IndexOffset;
+  int* Indices;
+  double* Values;
+  IFPACK_CHK_ERR(A->ExtractCrsDataPointers(IndexOffset, Indices, Values));
+
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
+  if (IsParallel_) {
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), 1) );
+  }
+  else
+    Y2 = Teuchos::rcp( &Y, false );
+
+  double** y_mptr, ** y2_mptr, ** x_mptr, *d_ptr;
+  X.ExtractView(&x_mptr);
+  Y.ExtractView(&y_mptr);
+  Y2->ExtractView(&y2_mptr);
+  Diagonal_->ExtractView(&d_ptr);
+
+  double* x_ptr  = x_mptr[0];
+  double* y_ptr  = y_mptr[0];
+  double* y2_ptr = y2_mptr[0];
+
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+
+    // only one data exchange per sweep
+    if (IsParallel_)
+      IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
+
+    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+
+      int col;
+      double diag = DampingFactor_ * d_ptr[i];
+
+      double dtemp = x_ptr[i];
+
+      for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
+        col = Indices[k];
+        dtemp -= Values[k] * y2_ptr[col];
+      }
+
+      y2_ptr[i] += dtemp * diag;
+
+    }
+
+    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+
+      int col;
+      double diag = DampingFactor_ * d_ptr[i];
+
+      double dtemp = x_ptr[i];
+      for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
+
+        col = Indices[k];
+        dtemp -= Values[k] * y2_ptr[col];
+      }
+
+      y2_ptr[i] += dtemp * diag;
+
+    }
+
+    if (IsParallel_)
+      for (int i = 0 ; i < NumMyRows_ ; ++i)
+        y_ptr[i] = y2_ptr[i];
+  }
+
+#ifdef IFPACK_FLOPCOUNTERS
+  ApplyInverseFlops_ += (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+#endif
+  return(0);
+}
 
 //==============================================================================
 // this requires Epetra_CrsMatrix + OptimizeStorage() + LocalSmoothingIndices_

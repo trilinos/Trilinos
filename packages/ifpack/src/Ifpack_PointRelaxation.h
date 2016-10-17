@@ -374,6 +374,10 @@ private:
                                             const Epetra_MultiVector& X,
                                             Epetra_MultiVector& Y) const;
 
+  virtual int ApplyInverseSGS_SingleRhsFastCrsMatrix(const Epetra_CrsMatrix* A,
+                                            const Epetra_MultiVector& X,
+                                            Epetra_MultiVector& Y) const;
+
   virtual int ApplyInverseSGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A,
                                             const Epetra_MultiVector& X,
                                             Epetra_MultiVector& Y) const;
