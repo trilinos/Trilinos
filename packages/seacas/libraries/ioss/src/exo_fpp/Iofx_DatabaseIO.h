@@ -98,6 +98,8 @@ namespace Iofx {
 
     void get_step_times() override;
 
+    const std::string &decoded_filename() const;
+
   private:
     bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
                          bool abort_if_error) const;
@@ -264,6 +266,9 @@ namespace Iofx {
                            size_t data_size) const;
     int64_t put_side_field(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
                            size_t data_size) const;
+
+    mutable std::string decodedFilename; /// The actual processor-specific filename.
+    mutable bool isSerialParallel; //!< true if application code is controlling the processor id.
   };
 }
 #endif

@@ -257,6 +257,16 @@ namespace Iopx {
                 "isParallelConsistent property.";
       IOSS_ERROR(errmsg);
     }
+
+    if (!is_input()) {
+      // Check whether appending to existing file...
+      if (open_create_behavior() == Ioss::DB_APPEND ||
+          open_create_behavior() == Ioss::DB_APPEND_GROUP) {
+        // Append to file if it already exists -- See if the file exists.
+        Ioss::FileInfo file             = Ioss::FileInfo(get_filename());
+        fileExists                      = file.exists();
+      }
+    }
   }
 
   DatabaseIO::~DatabaseIO() = default;
@@ -1874,7 +1884,7 @@ void DatabaseIO::get_commsets()
   // If this is a serial execution, there will be no communication
   // nodesets, just return an empty container.
 
-  if (isParallel || isSerialParallel) {
+  if (isParallel) {
 
     // Create a single node commset
     Ioss::CommSet *commset =
@@ -4009,7 +4019,7 @@ void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Io
         std::ostringstream errmsg;
         errmsg << "ERROR: Problem outputting nodal variable '" << var_name
                << "' with index = " << var_index << " to file "
-               << util().decode_filename(get_filename(), isParallel) << "\n"
+               << get_filename() << " on processor " << myProcessor << "\n"
                << "Should have output " << nodeCount << " values, but instead only output "
                << num_out << " values.\n";
         IOSS_ERROR(errmsg);
@@ -4032,7 +4042,7 @@ void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Io
         std::ostringstream errmsg;
         errmsg << "ERROR: Problem outputting nodal variable '" << var_name
                << "' with index = " << var_index << " to file "
-               << util().decode_filename(get_filename(), isParallel) << "\n";
+               << get_filename() << " on processor " << myProcessor << "\n";
         IOSS_ERROR(errmsg);
       }
     }

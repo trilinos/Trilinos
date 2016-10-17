@@ -453,10 +453,8 @@ namespace Ioss {
 
     mutable Ioss::State dbState;
 
-    bool         isParallel;       //!< true if running in parallel
-    mutable bool isSerialParallel; //!< true if a serial code that needs to read/write the parallel
-                                   //! information.
-    int myProcessor;               //!< number of processor this database is for
+    bool isParallel;  //!< true if running in parallel
+    int  myProcessor; //!< number of processor this database is for
 
     /*!
      * Check the topology of all face/element pairs in the model and
