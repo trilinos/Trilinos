@@ -969,11 +969,11 @@ public:
     J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);  
     J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);  
 
-    J[0][0] = feVel_->stiffMat();
+    *(J[0][0]) = *(feVel_->stiffMat());
     Intrepid::RealSpaceTools<Real>::add(*(J[0][0]),*(feVel_->massMat()));
-    J[1][1] = feVel_->stiffMat();
+    *(J[1][1]) = *(feVel_->stiffMat());
     Intrepid::RealSpaceTools<Real>::add(*(J[1][1]),*(feVel_->massMat()));
-    J[2][2] = fePrs_->massMat();
+    *(J[2][2]) = *(fePrs_->massMat());
 
     // Combine the jacobians.
     fieldHelper_->combineFieldCoeff(riesz, J);
@@ -1004,11 +1004,11 @@ public:
     J[1][0] = Teuchos::rcpFromRef(velYvelX_jac); J[1][1] = Teuchos::rcpFromRef(velYvelY_jac); J[1][2] = Teuchos::rcpFromRef(velYpres_jac);  
     J[2][0] = Teuchos::rcpFromRef(presvelX_jac); J[2][1] = Teuchos::rcpFromRef(presvelY_jac); J[2][2] = Teuchos::rcpFromRef(prespres_jac);  
 
-    J[0][0] = feVel_->stiffMat();
+    *(J[0][0]) = *(feVel_->stiffMat());
     Intrepid::RealSpaceTools<Real>::add(*(J[0][0]),*(feVel_->massMat()));
-    J[1][1] = feVel_->stiffMat();
+    *(J[1][1]) = *(feVel_->stiffMat());
     Intrepid::RealSpaceTools<Real>::add(*(J[1][1]),*(feVel_->massMat()));
-    J[2][2] = fePrs_->massMat();
+    *(J[2][2]) = *(fePrs_->massMat());
 
     // Combine the jacobians.
     fieldHelper_->combineFieldCoeff(riesz, J);

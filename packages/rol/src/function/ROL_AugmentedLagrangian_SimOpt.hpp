@@ -190,7 +190,7 @@ public:
   virtual void gradient_2( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
     // Compute objective function gradient
     if ( !isGradient2Computed_ ) {
-      obj_->gradient_2(*gradient1_,u,z,tol); ngval_++;
+      obj_->gradient_2(*gradient2_,u,z,tol); ngval_++;
       isGradient2Computed_ = true;
     }
     g.set(*gradient2_);

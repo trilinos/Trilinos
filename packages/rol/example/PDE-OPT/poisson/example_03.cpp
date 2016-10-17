@@ -61,7 +61,7 @@
 #include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
-#include "../TOOLS/pdeconstraint.hpp"
+#include "../TOOLS/linearpdeconstraint.hpp"
 #include "../TOOLS/pdeobjective.hpp"
 #include "../TOOLS/pdevector.hpp"
 #include "pde_poisson.hpp"
@@ -103,9 +103,9 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<PDE_Poisson<RealT> > pde
       = Teuchos::rcp(new PDE_Poisson<RealT>(*parlist));
     Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
-      = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
+      = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     Teuchos::RCP<Assembler<RealT> > assembler
-      = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con)->getAssembler();
+      = Teuchos::rcp_dynamic_cast<Linear_PDE_Constraint<RealT> >(con)->getAssembler();
     assembler->printMeshData(*outStream);
     // Initialize quadratic objective function
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(2,Teuchos::null);
@@ -180,12 +180,11 @@ int main(int argc, char *argv[]) {
                << static_cast<RealT>(std::clock()-timerTR)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
 
+
     RealT tol(1.e-8);
     con->solve(*rp,*up,*zp,tol);
     assembler->outputTpetraVector(u_rcp,"state.txt");
     assembler->outputTpetraVector(z_rcp,"control.txt");
-    assembler->outputTpetraVector(u_rcp,"stateFS.txt");
-    assembler->outputTpetraVector(z_rcp,"controlFS.txt");
 
     Teuchos::Array<RealT> res(1,0);
     con->value(*rp,*up,*zp,tol);

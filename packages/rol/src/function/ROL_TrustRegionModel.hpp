@@ -45,11 +45,18 @@
 #define ROL_TRUSTREGIONMODEL_H
 
 #include "ROL_Objective.hpp"
+#include "ROL_Secant.hpp"
 
 /** @ingroup func_group
     \class ROL::TrustRegionModel
-    \brief Provides the interface to evaluate trust region model functions.
+    \brief Provides the interface to evaluate trust-region model functions.
 
+    ROL::TrustRegionModel provides the interface to implement a number of
+    trust-region models for unconstrained and constrained optimization.
+    The default implementation is the standard quadratic trust region model
+    for unconstrained optimization.
+
+    -----
 */
 
 
@@ -57,28 +64,81 @@ namespace ROL {
 
 template <class Real>
 class TrustRegionModel : public Objective<Real> {
+private:
+  Teuchos::RCP<Objective<Real> > obj_;
+  Teuchos::RCP<Vector<Real> > x_, g_, dual_;
+  Teuchos::RCP<Secant<Real> > secant_;
+
+  const bool useSecantPrecond_;
+  const bool useSecantHessVec_;
+
 public:
 
   virtual ~TrustRegionModel() {}
 
-  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
-
-  virtual Real value( const Vector<Real> &x, Real &tol ) = 0;
-
-  virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) ;
-
-  virtual Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) ;
-
-  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol );
-
-  virtual void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-      ">>> ERROR (ROL::Objective): invHessVec not implemented!"); 
-    //hv.set(v.dual());
+  TrustRegionModel(Objective<Real> &obj, Vector<Real> &x, Vector<Real> &g)
+    : secant_(Teuchos::null), useSecantPrecond_(false), useSecantHessVec_(false) {
+    obj_  = Teuchos::rcpFromRef(obj);
+    x_    = Teuchos::rcpFromRef(x);
+    g_    = Teuchos::rcpFromRef(g);
+    dual_ = g.clone();
   }
 
-  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Pv.set(v.dual());
+  TrustRegionModel(Objective<Real> &obj, Vector<Real> &x, Vector<Real> &g,
+                   const Teuchos::RCP<Secant<Real> > &secant,
+                   const bool useSecantPrecond, const bool useSecantHessVec)
+    : secant_(secant), useSecantPrecond_(useSecantPrecond), useSecantHessVec_(useSecantHessVec) {
+    obj_  = Teuchos::rcpFromRef(obj);
+    x_    = Teuchos::rcpFromRef(x);
+    g_    = Teuchos::rcpFromRef(g);
+    dual_ = g.clone();
+  }
+
+  virtual Real value( const Vector<Real> &s, Real &tol ) {
+    if ( useSecantHessVec_ ) {
+      secant_->applyB(*dual_,s);
+    }
+    else {
+      obj_->hessVec(*dual_,s,*x_,tol);
+    }
+    return g_->dot(s.dual()) + static_cast<Real>(0.5) * dual_->dot(s.dual());
+  }
+
+  virtual void gradient( Vector<Real> &g, const Vector<Real> &s, Real &tol ) {
+    if ( useSecantHessVec_ ) {
+      secant_->applyB(g,s);
+    }
+    else {
+      obj_->hessVec(g,s,*x_,tol);
+    }
+    g.plus(*g_);
+  }
+
+  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
+    if ( useSecantHessVec_ ) {
+      secant_->applyB(hv,s);
+    }
+    else {
+      obj_->hessVec(hv,v,*x_,tol);
+    }
+  }
+
+  virtual void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
+    if ( useSecantHessVec_ ) {
+      secant_->applyH(hv,s);
+    }
+    else {
+      obj_->invHessVec(hv,v,*x_,tol);
+    }
+  }
+
+  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
+    if ( useSecantPrecond_ ) {
+      secant_->applyH(Pv,v);
+    }
+    else {
+      obj_->precond(Pv,v,*x_,tol);
+    }
   }
 
   virtual void forwardTransform( Vector<Real> &tv, const Vector<Real> &v ) { 
@@ -89,6 +149,9 @@ public:
     tiv.set(v);
   }
 
+
+  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+  virtual Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol );
 
 }; // class TrustRegionModel
 

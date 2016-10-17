@@ -223,7 +223,7 @@ public:
   	
     for(int i=0; i<TMS; i++) {
       for(int j=0; j<TMS; j++) {
-        (*scaledMaterialTensor)(i, j) = scale * (*Material<Real>::gerMaterialTensor())(i, j);
+        (*scaledMaterialTensor)(i, j) = scale * (*Material<Real>::getMaterialTensor())(i, j);
       }
     }
     return scaledMaterialTensor;

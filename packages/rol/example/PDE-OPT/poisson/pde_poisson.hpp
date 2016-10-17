@@ -249,12 +249,20 @@ public:
   }
 
   void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
-    riesz = fe_vol_->stiffMat();
+    int c = fe_vol_->N()->dimension(0);
+    int f = fe_vol_->N()->dimension(1);
+    // INITILAIZE JACOBIAN
+    riesz = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+    *riesz = *fe_vol_->stiffMat();
     Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
   }
 
   void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
-    riesz = fe_vol_->massMat();
+    int c = fe_vol_->N()->dimension(0);
+    int f = fe_vol_->N()->dimension(1);
+    // INITILAIZE JACOBIAN
+    riesz = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+    *riesz = *fe_vol_->massMat();
   }
 
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {

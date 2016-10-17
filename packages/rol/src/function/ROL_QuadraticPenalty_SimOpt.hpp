@@ -311,7 +311,7 @@ public:
           primalMultiplierVector_->scale(penaltyParameter_);
           primalMultiplierVector_->plus(*multiplier_);
         }
-        con_->applyAdjointHessian_11(*dualOptVector_,*primalMultiplierVector_,v,u,z,tol);
+        con_->applyAdjointHessian_22(*dualOptVector_,*primalMultiplierVector_,v,u,z,tol);
         hv.plus(*dualOptVector_);
       }
     }
