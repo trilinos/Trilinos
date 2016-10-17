@@ -25,9 +25,6 @@ namespace stk {
                                 std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
                                 bool communicateRangeBoxInfo=true)
     {
-      //std::cout << __FUNCTION__ << ", domain size= " << local_domain.size() << '\n';
-      //std::cout << __FUNCTION__ << ", range  size= " << local_range.size()  << '\n';
-
       using value_type = typename DomainBoxType::value_type;
       using Box        = stk::search::Box<value_type>;
 
@@ -36,21 +33,21 @@ namespace stk {
 
       for(auto& p : local_domain) {
 
-        auto& sphere = p.first;
+        auto& boxAble = p.first;
 
-        domainBoxes.push_back( std::make_pair(Box(sphere.get_x_min(), sphere.get_y_min(), sphere.get_z_min(), 
-                                                  sphere.get_x_max(), sphere.get_y_max(), sphere.get_z_max()), p.second)
-            );
+        domainBoxes.push_back( std::make_pair(Box(boxAble.get_x_min(), boxAble.get_y_min(), boxAble.get_z_min(), 
+                                                  boxAble.get_x_max(), boxAble.get_y_max(), boxAble.get_z_max()), p.second)
+                             );
       }
 
       std::vector< std::pair<Box,  RangeIdentifier > > rangeBoxes;
       rangeBoxes.reserve( local_range.size() );
 
       for(auto& p : local_range) {
-        auto& sphere = p.first;
-        rangeBoxes.push_back( std::make_pair(Box(sphere.get_x_min(), sphere.get_y_min(), sphere.get_z_min(), 
-                                                 sphere.get_x_max(), sphere.get_y_max(), sphere.get_z_max()), p.second)
-            );
+        auto& boxAble = p.first;
+        rangeBoxes.push_back( std::make_pair(Box(boxAble.get_x_min(), boxAble.get_y_min(), boxAble.get_z_min(), 
+                                                 boxAble.get_x_max(), boxAble.get_y_max(), boxAble.get_z_max()), p.second)
+                            );
       }
 
       kdtree_search(domainBoxes, rangeBoxes, comm, searchResults, communicateRangeBoxInfo);
