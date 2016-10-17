@@ -79,7 +79,7 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
             {
                 if(selector(bulk_data.bucket(side)))
                 {
-                    if(bulk_data.bucket(element).topology() == stk_element_topology)
+                    if(stk_element_topology == stk::topology::INVALID_TOPOLOGY || bulk_data.bucket(element).topology() == stk_element_topology)
                     {
                         elem_side_ids.push_back(elemId);
                         elem_side_ids.push_back(zero_based_side_ord+1);
