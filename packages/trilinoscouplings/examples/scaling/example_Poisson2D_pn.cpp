@@ -277,7 +277,7 @@ void CreateLinearSystem(int numWorkSets,
                         );
 
 
-void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp,Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P);
+void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, const std::vector<bool> & Pn_nodeIsOwned, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp,Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P);
 
 void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNode,
                       Epetra_Map const & P1_map_aux, Epetra_Map const &Pn_map,
@@ -869,7 +869,6 @@ int main(int argc, char *argv[]) {
   Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis_aux;
   Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_aux_rcp(&myHGradBasis_aux, false);
 
-
   int numFieldsG = myHGradBasis.getCardinality();
 
   FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
@@ -983,7 +982,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Epetra_CrsMatrix> P_linear;
   if (inputSolverList.isParameter("linear P1")) {
     printf("Generating Linear Pn-to-P1 coarsening...\n");
-    GenerateLinearCoarsening_pn_kirby_to_p1(degree,elemToNode, myHGradBasisWithDofCoords_rcp, myHGradBasis_aux_rcp,P1_globalMap,globalMapG,P_linear);
+    GenerateLinearCoarsening_pn_kirby_to_p1(degree,elemToNode,Pn_nodeIsOwned,myHGradBasisWithDofCoords_rcp, myHGradBasis_aux_rcp,P1_globalMap,globalMapG,P_linear);
     inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
 
@@ -1184,18 +1183,11 @@ int main(int argc, char *argv[]) {
 
   // Generate Pn-to-P1 identity coarsening (base mesh to auxiliary mesh).
   Teuchos::RCP<Epetra_CrsMatrix> P_identity;
-  inputSolverList.set("aux P1",true);//HAQ
   if (inputSolverList.isParameter("aux P1")) {
     printf("Generating Identity Pn-to-P1 coarsening...\n");
     GenerateIdentityCoarsening_pn_to_p1(elemToNode, StiffMatrix_aux.DomainMap(), StiffMatrix.RangeMap(), P_identity);
     inputSolverList.remove("aux P1"); //even though LevelWrap happily accepts this parameter
   }
-
-  Comm.Barrier();
-  exit(1);
-
-
-
 
   
 /**********************************************************************************/
@@ -1280,191 +1272,7 @@ int main(int argc, char *argv[]) {
   EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector_exact.dat",exactNodalVals,0,0,false);
 #endif
 
-  /**********************************************************************************/
-  /**************************** CALCULATE ERROR *************************************/
-  /**********************************************************************************/
-
-  if (MyPID == 0) {Time.ResetStartTime();}
-
-  double L2err = 0.0;
-  double L2errTot = 0.0;
-  double H1err = 0.0;
-  double H1errTot = 0.0;
-  double Linferr = 0.0;
-  double LinferrTot = 0.0;
-
-#ifdef HAVE_MPI
-  // Import solution onto current processor
-  //int numNodesGlobal = globalMapG.NumGlobalElements();
-  Epetra_Map     solnMap((long long)(-1),Pn_numNodes, 0, Comm);
-  Epetra_Import  solnImporter(solnMap, globalMapG);
-  Epetra_Vector  uCoeff(solnMap);
-  uCoeff.Import(femCoefficients, solnImporter, Insert);
-#endif
-
-  // Define desired workset size
-  desiredWorksetSize = numElems;
-  int numWorksetsErr    = numElems/desiredWorksetSize;
-
-  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
-  if(numWorksetsErr*desiredWorksetSize < numElems) numWorksetsErr += 1;
-
-  // Get cubature points and weights for error calc (may be different from previous)
-  Intrepid::DefaultCubatureFactory<double>  cubFactoryErr;
-  int cubDegErr = 3*degree;
-  Teuchos::RCP<Intrepid::Cubature<double> > cellCubatureErr = cubFactoryErr.create(Pn_cellType, cubDegErr);
-  int cubDimErr       = cellCubatureErr->getDimension();
-  int numCubPointsErr = cellCubatureErr->getNumPoints();
-  Intrepid::FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
-  Intrepid::FieldContainer<double> cubWeightsErr(numCubPointsErr);
-  cellCubatureErr->getCubature(cubPointsErr, cubWeightsErr);
-
-  // Evaluate basis values and gradients at cubature points
-  Intrepid::FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr);
-  Intrepid::FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim);
-  myHGradBasis.getValues(uhGVals, cubPointsErr, Intrepid::OPERATOR_VALUE);
-  myHGradBasis.getValues(uhGrads, cubPointsErr, Intrepid::OPERATOR_GRAD);
-
-  // Loop over worksets
-  for(int workset = 0; workset < numWorksetsErr; workset++){
-
-    // compute cell numbers where the workset starts and ends
-    int worksetSize  = 0;
-    int worksetBegin = (workset + 0)*desiredWorksetSize;
-    int worksetEnd   = (workset + 1)*desiredWorksetSize;
-
-    // when numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
-    worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
-
-    // now we know the actual workset size and can allocate the array for the cell nodes
-    worksetSize  = worksetEnd - worksetBegin;
-    Intrepid::FieldContainer<double> cellWorksetEr(worksetSize, numFieldsG, spaceDim);
-    Intrepid::FieldContainer<double> worksetApproxSolnCoef(worksetSize, numFieldsG);
-
-    // loop over cells to fill arrays with coordinates and discrete solution coefficient
-    int cellCounter = 0;
-    for(int cell = worksetBegin; cell < worksetEnd; cell++){
-
-      for (int node = 0; node < numFieldsG; node++) {
-        cellWorksetEr(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
-        cellWorksetEr(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
-
-        int rowIndex  = Pn_globalNodeIds[elemToNode(cell, node)];
-#ifdef HAVE_MPI
-        worksetApproxSolnCoef(cellCounter, node) = uCoeff.Values()[rowIndex];
-#else
-        worksetApproxSolnCoef(cellCounter, node) = femCoefficients.Values()[rowIndex];
-#endif
-      }
-
-      cellCounter++;
-
-    } // end cell loop
-
-      // Containers for Jacobian
-    Intrepid::FieldContainer<double> worksetJacobianE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
-    Intrepid::FieldContainer<double> worksetJacobInvE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
-    Intrepid::FieldContainer<double> worksetJacobDetE(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetCubWeightsE(worksetSize, numCubPointsErr);
-
-    // Containers for basis values and gradients in physical space
-    Intrepid::FieldContainer<double> uhGValsTrans(worksetSize,numFieldsG, numCubPointsErr);
-    Intrepid::FieldContainer<double> uhGradsTrans(worksetSize, numFieldsG, numCubPointsErr, spaceDim);
-
-    // compute cell Jacobians, their inverses and their determinants
-    IntrepidCTools::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetEr,  myHGradBasis_rcp);
-    IntrepidCTools::setJacobianInv(worksetJacobInvE, worksetJacobianE );
-    IntrepidCTools::setJacobianDet(worksetJacobDetE, worksetJacobianE );
-
-    // map cubature points to physical frame
-    Intrepid::FieldContainer<double> worksetCubPoints(worksetSize, numCubPointsErr, cubDimErr);
-    IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPointsErr, cellWorksetEr, myHGradBasis_rcp);
-
-    // evaluate exact solution and gradient at cubature points
-    Intrepid::FieldContainer<double> worksetExactSoln(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetExactSolnGrad(worksetSize, numCubPointsErr, spaceDim);
-    evaluateExactSolution(worksetExactSoln, worksetCubPoints);
-    evaluateExactSolutionGrad(worksetExactSolnGrad, worksetCubPoints);
-
-    // transform basis values to physical coordinates
-    IntrepidFSTools::HGRADtransformVALUE<double>(uhGValsTrans, uhGVals);
-    IntrepidFSTools::HGRADtransformGRAD<double>(uhGradsTrans, worksetJacobInvE, uhGrads);
-
-    // compute weighted measure
-    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeightsE, worksetJacobDetE, cubWeightsErr);
-
-    // evaluate the approximate solution and gradient at cubature points
-    Intrepid::FieldContainer<double> worksetApproxSoln(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetApproxSolnGrad(worksetSize, numCubPointsErr, spaceDim);
-    IntrepidFSTools::evaluate<double>(worksetApproxSoln, worksetApproxSolnCoef, uhGValsTrans);
-    IntrepidFSTools::evaluate<double>(worksetApproxSolnGrad, worksetApproxSolnCoef, uhGradsTrans);
-
-    // get difference between approximate and exact solutions
-    Intrepid::FieldContainer<double> worksetDeltaSoln(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetDeltaSolnGrad(worksetSize, numCubPointsErr, spaceDim);
-    IntrepidRSTools::subtract(worksetDeltaSoln, worksetApproxSoln, worksetExactSoln);
-    IntrepidRSTools::subtract(worksetDeltaSolnGrad, worksetApproxSolnGrad, worksetExactSolnGrad);
-
-    // take absolute values
-    IntrepidRSTools::absval(worksetDeltaSoln);
-    IntrepidRSTools::absval(worksetDeltaSolnGrad);
-    // apply cubature weights to differences in values and grads for use in integration
-    Intrepid::FieldContainer<double> worksetDeltaSolnWeighted(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetDeltaSolnGradWeighted(worksetSize, numCubPointsErr, spaceDim);
-    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnWeighted,
-                                                    worksetCubWeightsE, worksetDeltaSoln);
-    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnGradWeighted,
-                                                    worksetCubWeightsE, worksetDeltaSolnGrad);
-
-    // integrate to get errors on each element
-    Intrepid::FieldContainer<double> worksetL2err(worksetSize);
-    Intrepid::FieldContainer<double> worksetH1err(worksetSize);
-    IntrepidFSTools::integrate<double>(worksetL2err, worksetDeltaSoln,
-                                       worksetDeltaSolnWeighted, Intrepid::COMP_BLAS);
-    IntrepidFSTools::integrate<double>(worksetH1err, worksetDeltaSolnGrad,
-                                       worksetDeltaSolnGradWeighted, Intrepid::COMP_BLAS);
-
-    // loop over cells to get errors for total workset
-    cellCounter = 0;
-    for(int cell = worksetBegin; cell < worksetEnd; cell++){
-
-      // loop over cubature points
-      for(int nPt = 0; nPt < numCubPointsErr; nPt++){
-
-        Linferr = std::max(Linferr, worksetDeltaSoln(cellCounter,nPt));
-
-      }
-
-      L2err += worksetL2err(cellCounter);
-      H1err += worksetH1err(cellCounter);
-
-      cellCounter++;
-
-    } // end cell loop
-
-  } // end loop over worksets
-
-#ifdef HAVE_MPI
-  // sum over all processors
-  Comm.SumAll(&L2err,&L2errTot,1);
-  Comm.SumAll(&H1err,&H1errTot,1);
-  Comm.MaxAll(&Linferr,&LinferrTot,1);
-#else
-  L2errTot = L2err;
-  H1errTot = H1err;
-  LinferrTot = Linferr;
-#endif
-
-
-  if (MyPID == 0) {
-    std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
-    std::cout << "H1 Error:  " << sqrt(H1errTot) <<"\n";
-    std::cout << "LInf Error:  " << LinferrTot <<"\n\n";
-  }
-
-  if(MyPID==0) {std::cout << msg << "Calculate error                             "
-                          << Time.ElapsedTime() << " s \n"; Time.ResetStartTime();}
-
+ 
 
   // Cleanup
   delete [] block_ids;
@@ -2333,7 +2141,7 @@ void CreateLinearSystem(int numWorksets,
 } //CreateLinearSystem
 
 /*********************************************************************************************************/
-void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P) {
+void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, const std::vector<bool> & Pn_nodeIsOwned,Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P) {
 
   // Sanity checks
   assert(Pn_elemToNode.dimension(1) == PnBasis_rcp->getCardinality());
@@ -2360,15 +2168,20 @@ void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContain
   P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,Pn_map,0));
 
   // Assemble
+  std::vector<int> touched(P1_map.NumMyElements(),0);
+
   for(int i=0; i<Nelem; i++) {
     for(int j=0; j<numFieldsPn; j++) {
       int row_lid = Pn_elemToNode(i,j);
-      int row_gid = P1_map.GID(row_lid);
+      int row_gid = Pn_map.GID(row_lid);
       for(int k=0; k<numFieldsP1; k++) {
         int col_lid = Pn_elemToNode(i,p1_node_in_pn[k]);
-	int col_gid = Pn_map.GID(col_lid);
+	int col_gid = P1_map.GID(col_lid);
         double val = P1Values_at_PnDofs(k,j);
-        P->InsertGlobalValues(row_gid,1,&val,&col_gid);/// FIXME: This is swong
+	if(Pn_nodeIsOwned[col_lid] && !touched[col_lid]) {
+	  P->InsertGlobalValues(row_gid,1,&val,&col_gid);
+	  touched[col_lid]=1;
+	}
       }
     }
   }
@@ -2574,3 +2387,200 @@ void EnumerateElements(Epetra_Comm & Comm, int numMyElements, std::vector<long l
     globalElementIds[i] = myGlobalElementBase + i;
 }
 
+
+
+
+/**********************************************************************************/
+/**************************** CALCULATE ERROR *************************************/
+/**********************************************************************************/
+void CalculateError(const Epetra_Vector & femCoefficients, const Epetra_Map &overlapMap,Epetra_Time & Time,  shards::CellTopology &Pn_cellType, Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_rcp, const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, int degree) {
+
+  const Epetra_BlockMap & globalMapG = femCoefficients.Map();
+  const Epetra_Comm & Comm = globalMapG.Comm();
+  int MyPID = Comm.MyPID();
+  int numFieldsG = myHGradBasis_rcp->getCardinality();
+  int spaceDim = Pn_cellType.getDimension();
+  int numElems = elemToNode.dimension(0);
+  string msg("Poisson: ");
+
+  if (MyPID == 0) {Time.ResetStartTime();}
+
+  double L2err = 0.0;
+  double L2errTot = 0.0;
+  double H1err = 0.0;
+  double H1errTot = 0.0;
+  double Linferr = 0.0;
+  double LinferrTot = 0.0;
+
+#ifdef HAVE_MPI
+  // Get ghost information from solution to compute error
+  Epetra_Import  solnImporter(overlapMap, globalMapG);
+  Epetra_Vector  uCoeff(overlapMap);
+  uCoeff.Import(femCoefficients, solnImporter, Insert);
+#endif
+
+  // Define desired workset size
+  int desiredWorksetSize = numElems;
+  int numWorksetsErr    = numElems/desiredWorksetSize;
+
+  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
+  if(numWorksetsErr*desiredWorksetSize < numElems) numWorksetsErr += 1;
+
+  // Get cubature points and weights for error calc (may be different from previous)
+  Intrepid::DefaultCubatureFactory<double>  cubFactoryErr;
+  int cubDegErr = 3*degree;
+  Teuchos::RCP<Intrepid::Cubature<double> > cellCubatureErr = cubFactoryErr.create(Pn_cellType, cubDegErr);
+  int cubDimErr       = cellCubatureErr->getDimension();
+  int numCubPointsErr = cellCubatureErr->getNumPoints();
+  Intrepid::FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
+  Intrepid::FieldContainer<double> cubWeightsErr(numCubPointsErr);
+  cellCubatureErr->getCubature(cubPointsErr, cubWeightsErr);
+
+  // Evaluate basis values and gradients at cubature points
+  Intrepid::FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr);
+  Intrepid::FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim);
+  myHGradBasis_rcp->getValues(uhGVals, cubPointsErr, Intrepid::OPERATOR_VALUE);
+  myHGradBasis_rcp->getValues(uhGrads, cubPointsErr, Intrepid::OPERATOR_GRAD);
+
+  // Loop over worksets
+  for(int workset = 0; workset < numWorksetsErr; workset++){
+
+    // compute cell numbers where the workset starts and ends
+    int worksetSize  = 0;
+    int worksetBegin = (workset + 0)*desiredWorksetSize;
+    int worksetEnd   = (workset + 1)*desiredWorksetSize;
+
+    // when numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
+    worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
+
+    // now we know the actual workset size and can allocate the array for the cell nodes
+    worksetSize  = worksetEnd - worksetBegin;
+    Intrepid::FieldContainer<double> cellWorksetEr(worksetSize, numFieldsG, spaceDim);
+    Intrepid::FieldContainer<double> worksetApproxSolnCoef(worksetSize, numFieldsG);
+
+    // loop over cells to fill arrays with coordinates and discrete solution coefficient
+    int cellCounter = 0;
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+      for (int node = 0; node < numFieldsG; node++) {
+        cellWorksetEr(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
+        cellWorksetEr(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
+
+        int rowIndex  = elemToNode(cell, node);
+#ifdef HAVE_MPI
+        worksetApproxSolnCoef(cellCounter, node) = uCoeff.Values()[rowIndex];
+#else
+        worksetApproxSolnCoef(cellCounter, node) = femCoefficients.Values()[rowIndex];
+#endif
+      }
+
+      cellCounter++;
+
+    } // end cell loop
+
+      // Containers for Jacobian
+    Intrepid::FieldContainer<double> worksetJacobianE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
+    Intrepid::FieldContainer<double> worksetJacobInvE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
+    Intrepid::FieldContainer<double> worksetJacobDetE(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetCubWeightsE(worksetSize, numCubPointsErr);
+
+    // Containers for basis values and gradients in physical space
+    Intrepid::FieldContainer<double> uhGValsTrans(worksetSize,numFieldsG, numCubPointsErr);
+    Intrepid::FieldContainer<double> uhGradsTrans(worksetSize, numFieldsG, numCubPointsErr, spaceDim);
+
+    // compute cell Jacobians, their inverses and their determinants
+    IntrepidCTools::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetEr,  myHGradBasis_rcp);
+    IntrepidCTools::setJacobianInv(worksetJacobInvE, worksetJacobianE );
+    IntrepidCTools::setJacobianDet(worksetJacobDetE, worksetJacobianE );
+
+    // map cubature points to physical frame
+    Intrepid::FieldContainer<double> worksetCubPoints(worksetSize, numCubPointsErr, cubDimErr);
+    IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPointsErr, cellWorksetEr, myHGradBasis_rcp);
+
+    // evaluate exact solution and gradient at cubature points
+    Intrepid::FieldContainer<double> worksetExactSoln(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetExactSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+    evaluateExactSolution(worksetExactSoln, worksetCubPoints);
+    evaluateExactSolutionGrad(worksetExactSolnGrad, worksetCubPoints);
+
+    // transform basis values to physical coordinates
+    IntrepidFSTools::HGRADtransformVALUE<double>(uhGValsTrans, uhGVals);
+    IntrepidFSTools::HGRADtransformGRAD<double>(uhGradsTrans, worksetJacobInvE, uhGrads);
+
+    // compute weighted measure
+    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeightsE, worksetJacobDetE, cubWeightsErr);
+
+    // evaluate the approximate solution and gradient at cubature points
+    Intrepid::FieldContainer<double> worksetApproxSoln(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetApproxSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+    IntrepidFSTools::evaluate<double>(worksetApproxSoln, worksetApproxSolnCoef, uhGValsTrans);
+    IntrepidFSTools::evaluate<double>(worksetApproxSolnGrad, worksetApproxSolnCoef, uhGradsTrans);
+
+    // get difference between approximate and exact solutions
+    Intrepid::FieldContainer<double> worksetDeltaSoln(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetDeltaSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+    IntrepidRSTools::subtract(worksetDeltaSoln, worksetApproxSoln, worksetExactSoln);
+    IntrepidRSTools::subtract(worksetDeltaSolnGrad, worksetApproxSolnGrad, worksetExactSolnGrad);
+
+    // take absolute values
+    IntrepidRSTools::absval(worksetDeltaSoln);
+    IntrepidRSTools::absval(worksetDeltaSolnGrad);
+    // apply cubature weights to differences in values and grads for use in integration
+    Intrepid::FieldContainer<double> worksetDeltaSolnWeighted(worksetSize, numCubPointsErr);
+    Intrepid::FieldContainer<double> worksetDeltaSolnGradWeighted(worksetSize, numCubPointsErr, spaceDim);
+    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnWeighted,
+                                                    worksetCubWeightsE, worksetDeltaSoln);
+    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnGradWeighted,
+                                                    worksetCubWeightsE, worksetDeltaSolnGrad);
+
+    // integrate to get errors on each element
+    Intrepid::FieldContainer<double> worksetL2err(worksetSize);
+    Intrepid::FieldContainer<double> worksetH1err(worksetSize);
+    IntrepidFSTools::integrate<double>(worksetL2err, worksetDeltaSoln,
+                                       worksetDeltaSolnWeighted, Intrepid::COMP_BLAS);
+    IntrepidFSTools::integrate<double>(worksetH1err, worksetDeltaSolnGrad,
+                                       worksetDeltaSolnGradWeighted, Intrepid::COMP_BLAS);
+
+    // loop over cells to get errors for total workset
+    cellCounter = 0;
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+      // loop over cubature points
+      for(int nPt = 0; nPt < numCubPointsErr; nPt++){
+
+        Linferr = std::max(Linferr, worksetDeltaSoln(cellCounter,nPt));
+
+      }
+
+      L2err += worksetL2err(cellCounter);
+      H1err += worksetH1err(cellCounter);
+
+      cellCounter++;
+
+    } // end cell loop
+
+  } // end loop over worksets
+
+#ifdef HAVE_MPI
+  // sum over all processors
+  Comm.SumAll(&L2err,&L2errTot,1);
+  Comm.SumAll(&H1err,&H1errTot,1);
+  Comm.MaxAll(&Linferr,&LinferrTot,1);
+#else
+  L2errTot = L2err;
+  H1errTot = H1err;
+  LinferrTot = Linferr;
+#endif
+
+
+  if (MyPID == 0) {
+    std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
+    std::cout << "H1 Error:  " << sqrt(H1errTot) <<"\n";
+    std::cout << "LInf Error:  " << LinferrTot <<"\n\n";
+  }
+
+  if(MyPID==0) {std::cout << msg << "Calculate error                             "
+                          << Time.ElapsedTime() << " s \n"; Time.ResetStartTime();}
+
+
+}
