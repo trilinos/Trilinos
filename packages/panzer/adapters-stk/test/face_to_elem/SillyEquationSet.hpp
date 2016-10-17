@@ -84,8 +84,14 @@ class MyFactory : public panzer::EquationSetFactory {
       Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set=
         Teuchos::rcp(new panzer::EquationSet_TemplateManager<panzer::Traits>);
       bool found = false;
-
       PANZER_BUILD_EQSET_OBJECTS("MeshCoords", EquationSet_MeshCoords)
+      if (!found)
+      {
+        std::string msg = "Error - the \"Equation Set\" called \"" +
+          params->get<std::string>("Type") + "\" is not a valid equation " + 
+          "set identifier.  Please supply the correct factory.\n";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+      }
       return eq_set;
     }
 
