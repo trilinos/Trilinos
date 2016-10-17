@@ -311,7 +311,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol);
 
-
+void CalculateError(const Epetra_FEVector & femCoefficients, const Epetra_Map &overlapMap,Epetra_Time & Time,  shards::CellTopology &Pn_cellType, Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_rcp, const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, int degree);
 
 /**********************************************************************************/
 /******** FUNCTION DECLARATIONS FOR EXACT SOLUTION AND SOURCE TERMS ***************/
@@ -421,8 +421,6 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-
-  std::cout<<"Initial Message"<<std::endl;
 
   int MyPID = Comm.MyPID();
   global_MyPID = MyPID;//DEBUG
@@ -783,7 +781,7 @@ int main(int argc, char *argv[]) {
   FieldContainer<double> nodeCoord(Pn_numNodes,dim);
   FieldContainer<int>   nodeOnBoundary(Pn_numNodes);
 
-  printf("[%d] P1_numNodes = %d Pn_numNodes = %d Pn_numNodesperElem = %d degree = %d\n",Comm.MyPID(),(int)numNodes,Pn_numNodes,Pn_numNodesperElem,degree);
+  //  printf("[%d] P1_numNodes = %d Pn_numNodes = %d Pn_numNodesperElem = %d degree = %d\n",Comm.MyPID(),(int)numNodes,Pn_numNodes,Pn_numNodesperElem,degree);
 
   std::vector<bool>Pn_nodeIsOwned(Pn_numNodes,false);
   std::vector<long long>Pn_globalNodeIds(Pn_numNodes);
@@ -796,7 +794,8 @@ int main(int argc, char *argv[]) {
 
 
   if(!MyPID) printf("P1 global (nodes,edges) = (%lld,%lld) Pn global nodes = %lld\n",P1_globalNumNodes,P1_globalNumEdges,Pn_globalNumNodes);
-#if 1
+
+#if 0
   {
     ostringstream ss;
     ss<<"***** Node ids & ownership ["<<Comm.MyPID()<<"] *****"<<endl;
@@ -1203,8 +1202,8 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////////
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
-  std::cout << "numBCNodes = " << numBCNodes << std::endl;
-  std::cout << "globalMapG #elts = " << globalMapG.NumMyElements() << std::endl;
+  //  std::cout << "numBCNodes = " << numBCNodes << std::endl;
+  //  std::cout << "globalMapG #elts = " << globalMapG.NumMyElements() << std::endl;
   Apply_Dirichlet_BCs(BCNodes,StiffMatrix_aux,rhsVector_aux,rhsVector_aux,v);
 
   if(MyPID==0) {std::cout << msg << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
@@ -1272,7 +1271,9 @@ int main(int argc, char *argv[]) {
   EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector_exact.dat",exactNodalVals,0,0,false);
 #endif
 
- 
+
+  // Calculate Error
+  CalculateError(femCoefficients,StiffMatrix.ColMap(),Time,Pn_cellType,myHGradBasis_rcp,elemToNode,nodeCoord,degree);
 
   // Cleanup
   delete [] block_ids;
@@ -1550,7 +1551,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   string msg = ProblemType;
 
   if (A0->Comm().MyPID() == 0) {
-    cout << msg << endl << "......Using " << A0->Comm().NumProc() << " processes" << endl;
+    cout << msg << "......Using " << A0->Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
     cout << msg << "......||x_exact - x||_2/||x_exact||_2 = " << sqrt(d_tot/s_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
@@ -1857,7 +1858,7 @@ void CreateLinearSystem(int numWorksets,
                         std::vector<long long> const &globalNodeIds,
                         Epetra_FECrsMatrix &StiffMatrix,
                         Epetra_FEVector &rhsVector,
-                        std::string &msg,
+                        std::string &msg0,
                         Epetra_Time &Time
                         )
 {
@@ -1871,16 +1872,18 @@ void CreateLinearSystem(int numWorksets,
 
 
   
+  if(!global_MyPID) {
     std::cout << "CreateLinearSystem:" << std::endl;
     std::cout << "     numCubPoints = " << numCubPoints << std::endl;
     std::cout << "     cubDim = " << cubDim << std::endl;
     std::cout << "     spaceDim = " << spaceDim << std::endl;
     std::cout << "     numFieldsG = " << numFieldsG << std::endl;
-    std::cout << "     numElems = " << numElems << std::endl;
+    //    std::cout << "     numElems = " << numElems << std::endl;
     std::cout << "     numNodesPerElem = " << numNodesPerElem << std::endl;
-    std::cout << "     length(globalNodeIds) = " << globalNodeIds.size() << std::endl;
-    std::cout << "     length(nodeCoord) = " << nodeCoord.dimension(0) << std::endl;
-  
+    //    std::cout << "     length(globalNodeIds) = " << globalNodeIds.size() << std::endl;
+    //    std::cout << "     length(nodeCoord) = " << nodeCoord.dimension(0) << std::endl;
+  }
+  std::string msg = "     " + msg0;
 
   if(nodeCoord.dimension(0) != Teuchos::as<int>(globalNodeIds.size())) {
     std::ostringstream errStr;
@@ -2380,7 +2383,7 @@ void EnumerateElements(Epetra_Comm & Comm, int numMyElements, std::vector<long l
 
   Comm.ScanSum(&numMyElements_ll,&myGlobalElementBase,1);
   myGlobalElementBase -=numMyElements;
-  printf("[%d] MyGlobalElementBase = %lld\n",Comm.MyPID(),myGlobalElementBase);
+  //  printf("[%d] MyGlobalElementBase = %lld\n",Comm.MyPID(),myGlobalElementBase);
 
   globalElementIds.resize(numMyElements);
   for(int i=0; i<numMyElements; i++)
@@ -2393,7 +2396,7 @@ void EnumerateElements(Epetra_Comm & Comm, int numMyElements, std::vector<long l
 /**********************************************************************************/
 /**************************** CALCULATE ERROR *************************************/
 /**********************************************************************************/
-void CalculateError(const Epetra_Vector & femCoefficients, const Epetra_Map &overlapMap,Epetra_Time & Time,  shards::CellTopology &Pn_cellType, Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_rcp, const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, int degree) {
+void CalculateError(const Epetra_FEVector & femCoefficients, const Epetra_Map &overlapMap,Epetra_Time & Time,  shards::CellTopology &Pn_cellType, Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_rcp, const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, int degree) {
 
   const Epetra_BlockMap & globalMapG = femCoefficients.Map();
   const Epetra_Comm & Comm = globalMapG.Comm();
