@@ -67,17 +67,23 @@ namespace stk {
     }
 
 
-    template<typename DomainIdentifier, typename RangeIdentifier, typename AxisAlignedBBType>
+    template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
       void
       ComputeRangeWithGhostsForCoarseSearch(
-                                            const std::vector<std::pair<AxisAlignedBBType, DomainIdentifier> >& local_domain,
-                                            const std::vector<std::pair<AxisAlignedBBType, RangeIdentifier> >& local_range,
+                                            const std::vector<std::pair<DomainObjType, DomainIdentifier> >& local_domain,
+                                            const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
                                             int num_procs,
-                                            std::vector<AxisAlignedBBType>& rangeBoxes, std::vector<RangeIdentifier>& rangeGhostIdentifiers, MPI_Comm comm)
+                                            std::vector<RangeBoxType >& rangeBoxes, 
+                                            std::vector<RangeIdentifier>& rangeGhostIdentifiers, MPI_Comm comm)
     {
 
       const unsigned numBoxRange  = local_range.size();
       const unsigned numBoxDomain = local_domain.size();
+
+      using domainValueType = typename DomainObjType::value_type;
+      using DomainBox       = stk::search::Box<domainValueType>;
+
+
 
 #ifdef _OPENMP
 #pragma omp parallel for default(shared)
@@ -99,9 +105,9 @@ namespace stk {
       //  Store the boxes in unique entries in a global processor bounding box array.
       //
 
-      stk::search::ObjectBoundingBox_T<AxisAlignedBBType> boxA_proc;
+      stk::search::ObjectBoundingBox_T<DomainBox> boxA_proc;
 #ifdef _OPENMP
-      std::vector<stk::search::ObjectBoundingBox_T<AxisAlignedBBType> > threadBoxes( omp_get_max_threads() );
+      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > threadBoxes( omp_get_max_threads() );
 #endif
 
 #ifdef _OPENMP
@@ -109,9 +115,9 @@ namespace stk {
 #endif
       {
 #ifdef _OPENMP
-        stk::search::ObjectBoundingBox_T<AxisAlignedBBType>& curBox = threadBoxes[omp_get_thread_num()];
+        stk::search::ObjectBoundingBox_T<DomainBox>& curBox = threadBoxes[omp_get_thread_num()];
 #else
-        stk::search::ObjectBoundingBox_T<AxisAlignedBBType>& curBox = boxA_proc;
+        stk::search::ObjectBoundingBox_T<DomainBox>& curBox = boxA_proc;
 #endif
 #ifdef _OPENMP
 #pragma omp for
@@ -128,7 +134,7 @@ namespace stk {
       }
 #endif
 
-      std::vector<stk::search::ObjectBoundingBox_T<AxisAlignedBBType>> boxA_proc_box_array(num_procs);
+      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array(num_procs);
       boxA_proc_box_array[current_proc] = boxA_proc;
 
       //
@@ -145,7 +151,7 @@ namespace stk {
       //  This hierarchy will be used to search for overlaps between processors and
       //  objects.
       //
-      stk::search::ProximitySearchTree_T<AxisAlignedBBType> boxA_box_hierarchy(boxA_proc_box_array);
+      stk::search::ProximitySearchTree_T<DomainBox> boxA_box_hierarchy(boxA_proc_box_array);
 
       //
       //  Determine what to ghost.  If a boxB box from this processor overlaps another processor's
@@ -155,15 +161,11 @@ namespace stk {
       //
 
       typedef typename RangeIdentifier::ident_type GlobalIdType;
-      typedef std::pair<AxisAlignedBBType, GlobalIdType> BoxIdPair;
+      typedef std::pair<RangeBoxType, GlobalIdType> BoxIdPair;
       std::vector<std::vector<BoxIdPair> > send_list(num_procs);
       std::vector<std::vector<BoxIdPair> > recv_list(num_procs);
 
-
       std::vector<int> proc_list(num_procs);
-
-
-
       for(unsigned int iboxB = 0; iboxB < numBoxRange; ++iboxB) {
         boxA_box_hierarchy.SearchForOverlap(local_range[iboxB].first, proc_list);
         for(unsigned i = 0; i < proc_list.size(); ++i) {
@@ -183,7 +185,6 @@ namespace stk {
           rangeGhostIdentifiers.push_back(RangeIdentifier(recvd_boxIdPair.second, i));
         }
       }
-
     }
 
     template <typename DataType>
