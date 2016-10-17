@@ -78,7 +78,7 @@
 
 /*** Uncomment if you would like output data for plotting ***/
 //#define DUMP_DATA
-
+//#define DUMP_DATA_COORD
 /**************************************************************/
 /*                          Includes                          */
 /**************************************************************/
@@ -995,7 +995,8 @@ int main(int argc, char *argv[]) {
                           << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
 
 
-#ifdef DUMP_DATA_OLD
+
+#ifdef DUMP_DATA_COORD
   /**********************************************************************************/
   /**** PUT COORDINATES AND NODAL VALUES IN ARRAYS FOR OUTPUT (FOR PLOTTING ONLY) ***/
   /**********************************************************************************/
@@ -1006,25 +1007,13 @@ int main(int argc, char *argv[]) {
 
   int indOwned = 0;
   for (int inode=0; inode<numNodes; inode++) {
-    if (nodeIsOwned[inode]) {
+    if (Pn_nodeIsOwned[inode]) {
       nCoord[0][indOwned]=nodeCoord(inode,0);
       nCoord[1][indOwned]=nodeCoord(inode,1);
-      nBound[0][indOwned]=nodeOnBoundary(inode);
       indOwned++;
     }
   }
   EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
-  EpetraExt::MultiVectorToMatrixMarketFile("nodeOnBound.dat",nBound,0,0,false);
-
-  // Put element to node mapping in multivector for output
-  Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
-  Epetra_MultiVector elem2nodeMV(globalMapElem, numNodesPerElem);
-  for (int ielem=0; ielem<numElems; ielem++) {
-    for (int inode=0; inode<numNodesPerElem; inode++) {
-      elem2nodeMV[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2nodeMV,0,0,false);
 
   if(MyPID==0) {Time.ResetStartTime();}
 
@@ -1272,8 +1261,14 @@ int main(int argc, char *argv[]) {
 #endif
 
 
+  // Build an overlap map for error calculation.  This is kind of like StiffMatrix's ColMap, but in a different order
+  std::vector<int>Pn_globalNodeIds_int(Pn_numNodes);
+  for(int i=0;i<Pn_numNodes; i++)
+    Pn_globalNodeIds_int[i] = (int)Pn_globalNodeIds[i];
+  Epetra_Map OverlapMap(-1,Pn_numNodes,Pn_globalNodeIds_int.data(),0,Comm);
+
   // Calculate Error
-  CalculateError(femCoefficients,StiffMatrix.ColMap(),Time,Pn_cellType,myHGradBasis_rcp,elemToNode,nodeCoord,degree);
+  CalculateError(femCoefficients,OverlapMap,Time,Pn_cellType,myHGradBasis_rcp,elemToNode,nodeCoord,degree);
 
   // Cleanup
   delete [] block_ids;
