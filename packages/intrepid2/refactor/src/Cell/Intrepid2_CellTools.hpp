@@ -1320,7 +1320,7 @@ namespace Intrepid2 {
     static bool 
     checkPointInclusion( const pointViewType        point,
                          const shards::CellTopology cellTopo,
-                         const double               threshold = threshold() );
+                         const double               thres = threshold() );
 
     // /** \brief  Checks if a set of points belongs to a reference cell.
 
