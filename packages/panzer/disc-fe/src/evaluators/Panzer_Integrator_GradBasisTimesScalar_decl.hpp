@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_GRADBASISDOTVECTOR_DECL_HPP
-#define PANZER_EVALUATOR_GRADBASISDOTVECTOR_DECL_HPP
+#ifndef PANZER_EVALUATOR_GRADBASISTIMESSCALAR_DECL_HPP
+#define PANZER_EVALUATOR_GRADBASISTIMESSCALAR_DECL_HPP
 
 #include <string>
 #include "Panzer_Dimension.hpp"
@@ -53,26 +53,33 @@
 
 namespace panzer {
     
-PANZER_EVALUATOR_CLASS(Integrator_GradBasisDotVector)
+PANZER_EVALUATOR_CLASS(Integrator_GradBasisTimesScalar)
   
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
+  std::vector<PHX::MDField<ScalarT,Cell,BASIS> > _residuals;
     
-  PHX::MDField<const ScalarT,Cell,IP,Dim> flux;
-    
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
+  PHX::MDField<const ScalarT,Cell,IP> _scalar;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > _field_multipliers;
 
-  std::size_t num_nodes;
+  // Number of nodes in the basis
+  std::size_t _num_basis_nodes;
 
-  std::size_t num_qp;
+  // Number of nodes in the integration rule
+  std::size_t _num_quadrature_points;
 
-  std::size_t num_dim;
+  // Number of dimensions associated with the gradient
+  std::size_t _num_dims;
 
-  double multiplier;
+  // Scalar multiplier against vector
+  ScalarT _multiplier;
 
-  std::string basis_name;
-  std::size_t basis_index;
+  // Name of the basis
+  std::string _basis_name;
 
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
+  // Index of basis in workset bases
+  std::size_t _basis_index;
+
+  // Temporary variable to store tmp = multipliers * vector
+  Kokkos::DynRankView<ScalarT,PHX::Device> _tmp;
 
 PANZER_EVALUATOR_CLASS_END
 

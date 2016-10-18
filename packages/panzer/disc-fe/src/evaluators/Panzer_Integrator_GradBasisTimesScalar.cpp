@@ -40,42 +40,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_GRADBASISDOTVECTOR_DECL_HPP
-#define PANZER_EVALUATOR_GRADBASISDOTVECTOR_DECL_HPP
+#include "PanzerDiscFE_config.hpp"
 
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
-#include "Panzer_Evaluator_Macros.hpp"
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-namespace panzer {
-    
-PANZER_EVALUATOR_CLASS(Integrator_GradBasisDotVector)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-    
-  PHX::MDField<const ScalarT,Cell,IP,Dim> flux;
-    
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
+#include "Panzer_Integrator_GradBasisTimesScalar_decl.hpp"
+#include "Panzer_Integrator_GradBasisTimesScalar_impl.hpp"
 
-  std::size_t num_nodes;
-
-  std::size_t num_qp;
-
-  std::size_t num_dim;
-
-  double multiplier;
-
-  std::string basis_name;
-  std::size_t basis_index;
-
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
-
-PANZER_EVALUATOR_CLASS_END
-
-}
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Integrator_GradBasisTimesScalar)
 
 #endif

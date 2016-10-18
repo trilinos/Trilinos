@@ -58,16 +58,32 @@ namespace panzer {
 PHX_EVALUATOR_CTOR(Integrator_GradBasisDotVector,p) :
   residual( p.get<std::string>("Residual Name"), 
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  flux( p.get<std::string>("Flux Name"), 
-	p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector ),
+//  flux( p.get<std::string>("Flux Name"),
+//	p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector ),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<const PureBasis> basis 
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
 
+
+  // Default to this so we don't break anything
+  Teuchos::RCP<PHX::DataLayout> vector = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector;
+  if(p.isType<Teuchos::RCP<PHX::DataLayout> >("Vector Data Layout")){
+    vector = p.get<Teuchos::RCP<PHX::DataLayout> >("Vector Data Layout");
+  }
+
+  flux = PHX::MDField<const ScalarT,Cell,IP,Dim>( p.get<std::string>("Flux Name"), vector);
+
+  // Number of dimensions has to be based on the spatial dimensions NOT THE DIMENSIONS OF THE VECTOR
+  num_dim = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector->dimension(2);
+
   // Verify that this basis supports the gradient operation
   TEUCHOS_TEST_FOR_EXCEPTION(!basis->supportsGrad(),std::logic_error,
                              "Integrator_GradBasisDotVector: Basis of type \"" << basis->name() << "\" does not support GRAD");
+
+  // Make sure the Grad dimensions includes the vector
+  TEUCHOS_TEST_FOR_EXCEPTION(vector->dimension(2) < num_dim,std::logic_error,
+                               "Integrator_GradBasisDotVector: Dimension of space exceeds dimension of vector.");
 
   this->addEvaluatedField(residual);
   this->addDependentField(flux);
@@ -82,14 +98,14 @@ PHX_EVALUATOR_CTOR(Integrator_GradBasisDotVector,p) :
     for (std::vector<std::string>::const_iterator name = field_multiplier_names.begin(); 
       name != field_multiplier_names.end(); ++name) 
     {
-      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+      PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
     }
   }
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->addDependentField(*field);
+  for (auto & field : field_multipliers){
+    this->addDependentField(field);
+  }
 
   std::string n = 
     "Integrator_GradBasisDotVector: " + residual.fieldTag().name();
@@ -103,13 +119,11 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisDotVector,sd,fm)
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(flux,fm);
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->utils.setFieldData(*field,fm);
+  for (auto & field : field_multipliers)
+    this->utils.setFieldData(field,fm);
 
   num_nodes = residual.dimension(1);
   num_qp = flux.dimension(1);
-  num_dim = flux.dimension(2);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
@@ -128,15 +142,14 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
   // do a scaled copy
   for (int i=0; i < flux.extent_int(0); ++i)
     for (int j=0; j < flux.extent_int(1); ++j)
-       for (int k=0; k < flux.extent_int(2); ++k)
+       for (int k=0; k < num_dim; ++k)
          tmp(i,j,k) = multiplier * flux(i,j,k);
 //Irina modified
 //  for (int i=0; i < flux.size(); ++i)
 //    tmp[i] = multiplier * flux[i];
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field) {
-    PHX::MDField<ScalarT,Cell,IP> field_data = *field;
+  for (auto & field : field_multipliers) {
+    PHX::MDField<const ScalarT,Cell,IP> field_data = field;
 
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
@@ -173,7 +186,7 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
     for (std::size_t qp = 0; qp < num_qp; ++qp)
     {
       ScalarT tmpVar = 1.0;
-      for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
            field != field_multipliers.end(); ++field)
         tmpVar = tmpVar * (*field)(cell,qp);  
 
