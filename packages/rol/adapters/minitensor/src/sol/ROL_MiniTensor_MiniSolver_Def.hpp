@@ -76,7 +76,8 @@ MiniTensor_Minimizer<T, N>::
 solve(
     std::string const & algoname,
     Teuchos::ParameterList & params,
-    FN & fn, Intrepid2::Vector<T, N> & soln)
+    FN & fn,
+    Intrepid2::Vector<T, N> & soln)
 {
   step_method_name = algoname.c_str();
   function_name = FN::NAME;
