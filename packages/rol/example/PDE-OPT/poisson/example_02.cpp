@@ -192,6 +192,10 @@ int main(int argc, char *argv[]) {
     r_rcp->norm2(res.view(0,1));
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
+
+    // Get a summary from the time monitor.
+    Teuchos::TimeMonitor::summarize();
+
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

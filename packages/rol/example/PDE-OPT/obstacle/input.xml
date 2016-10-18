@@ -1,17 +1,10 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Control penalty parameter"   type="double"    value="1e-5"  />
-    <Parameter name="Control lower bound"         type="double"    value="0"     />
-    <Parameter name="Control upper bound"         type="double"    value="10"    />
-    <!--Parameter name="State lower bound"           type="double"    value="0"    -->
-    <!--Parameter name="State upper bound"           type="double"    value="0.9"  -->
     <Parameter name="Order of FE discretization"  type="int"       value="1"     />
+    <Parameter name="Cubature Degree"             type="int"       value="2"     />
     <Parameter name="Use State Riesz Map"         type="bool"      value="false" />
-    <Parameter name="Use Control Riesz Map"       type="bool"      value="false" />
-    <!-- SOLVER INFORMATION -->
-    <Parameter name="Use Direct Solver"           type="bool"    value="true"    />
-    <Parameter name="Direct Solver Type"          type="string"  value="KLU2"    />
+    <Parameter name="Load Magnitude"              type="double"    value="10.0"   />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
@@ -20,8 +13,8 @@
     <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="20"   />
-    <Parameter name="NY"                type="int"     value="20"   />
+    <Parameter name="NX"                type="int"     value="40"   />
+    <Parameter name="NY"                type="int"     value="40"   />
     <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
 
@@ -128,7 +121,7 @@
     <!-- ===========  PRIMAL DUAL ACTIVE SET  =========== -->
     <ParameterList name="Primal Dual Active Set">
       <Parameter name="Dual Scaling"                type="double" value="1.0"   />
-      <Parameter name="Iteration Limit"             type="int"    value="10"    />
+      <Parameter name="Iteration Limit"             type="int"    value="1"     />
       <Parameter name="Relative Step Tolerance"     type="double" value="1.e-8" />
       <Parameter name="Relative Gradient Tolerance" type="double" value="1.e-6" />
     </ParameterList>
@@ -207,9 +200,9 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-10"  />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"   />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"   />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="2000"     />
+    <Parameter name="Iteration Limit"      type="int"    value="40"      />
   </ParameterList>
 </ParameterList>

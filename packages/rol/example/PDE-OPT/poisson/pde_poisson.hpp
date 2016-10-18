@@ -79,6 +79,9 @@ private:
   // Indexing:  [sideset number][local side id](cell number, value at dof)
   std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellDofValues_;
 
+  bool useStateRiesz_;
+  bool useControlRiesz_;
+
   Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId) const {
     return 0;
   }
@@ -95,10 +98,12 @@ public:
     }
     basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
     // Quadrature rules.
-    shards::CellTopology cellType = basisPtr_->getBaseCellTopology();        // get the cell type from any basis
-    Intrepid::DefaultCubatureFactory<Real> cubFactory;                       // create cubature factory
-    int cubDegree = parlist.sublist("PDE Poisson").get("Cubature Degree",2); // set cubature degree, e.g., 2
-    cellCub_ = cubFactory.create(cellType, cubDegree);                       // create default cubature
+    shards::CellTopology cellType = basisPtr_->getBaseCellTopology();                  // get the cell type from any basis
+    Intrepid::DefaultCubatureFactory<Real> cubFactory;                                 // create cubature factory
+    int cubDegree = parlist.sublist("PDE Poisson").get("Cubature Degree",2);           // set cubature degree, e.g., 2
+    cellCub_ = cubFactory.create(cellType, cubDegree);                                 // create default cubature
+    useStateRiesz_  = parlist.sublist("Problem").get("Use State Riesz Map", true);     // use Riesz map for state variables?
+    useControlRiesz_  = parlist.sublist("Problem").get("Use Control Riesz Map", true); // use Riesz map for control variables?
   }
 
   void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
@@ -249,6 +254,13 @@ public:
   }
 
   void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+    // Optionally disable Riesz map ...
+    if (!useStateRiesz_) {
+      throw Exception::NotImplemented(">>> (PDE_Poisson::RieszMap_1): Not implemented.");
+    }
+
+    // ...otherwise ...
+
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     // INITILAIZE JACOBIAN
@@ -258,6 +270,13 @@ public:
   }
 
   void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+    // Optionally disable Riesz map ...
+    if (!useControlRiesz_) {
+      throw Exception::NotImplemented(">>> (PDE_Poisson::RieszMap_2): Not implemented.");
+    }
+
+    // ...otherwise ...
+
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     // INITILAIZE JACOBIAN
