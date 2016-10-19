@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -44,13 +44,25 @@
 //
 // @HEADER
 
-#ifndef MUELU_YAMLPARSER_DEF_H_
-#define MUELU_YAMLPARSER_DEF_H_
+#ifndef TEUCHOS_YAMLPARSER_DEF_H_
+#define TEUCHOS_YAMLPARSER_DEF_H_
 
-#include "MueLu_YamlParser_decl.hpp"
+#include "Teuchos_YamlParser_decl.hpp"
+#include "Teuchos_XMLParameterListCoreHelpers.hpp"
 
-namespace MueLu
+namespace Teuchos
 {
+
+template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node)
+{
+  Teuchos::Array<T> arr;
+  for(YAML::const_iterator it = node.begin(); it != node.end(); it++)
+  {
+    arr.push_back(it->as<T>());
+  }
+  return arr;
+}
+
 
 /* Helper functions */
 
@@ -98,59 +110,6 @@ Teuchos::RCP<Teuchos::ParameterList> getParametersFromYamlFile(const std::string
   return YAMLParameterList::parseYamlFile(yamlFileName);
 }
 
-void updateParametersFromYamlFileAndBroadcast(const std::string &yamlFileName, const Teuchos::Ptr<Teuchos::ParameterList> &paramList, const Teuchos::Comm<int> &comm, bool overwrite)
-{
-  struct SafeFile
-  {
-    SafeFile(const char* fname, const char* options)
-    {
-      handle = fopen(fname, options);
-    }
-    ~SafeFile()
-    {
-      if(handle)
-        fclose(handle);
-    }
-    FILE* handle;
-  };
-  //BMK note: see teuchos/comm/src/Teuchos_XMLParameterListHelpers.cpp
-  if(comm.getSize() == 1)
-  {
-    updateParametersFromYamlFile(yamlFileName, paramList);
-  }
-  else
-  {
-    if(comm.getRank() == 0)
-    {
-      //BMK: TODO! //reader.setAllowsDuplicateSublists(false);
-      //create a string and load file contents into it
-      //C way for readability and speed, same thing with C++ streams is slow & ugly
-      SafeFile yamlFile(yamlFileName.c_str(), "rb");
-      if(!yamlFile.handle)
-      {
-        throw std::runtime_error(std::string("Failed to open YAML file \"") + yamlFileName + "\"for reading.");
-      }
-      fseek(yamlFile.handle, 0, SEEK_END);
-      int strsize = ftell(yamlFile.handle) + 1;
-      rewind(yamlFile.handle);
-      //Make the array raii
-      Teuchos::ArrayRCP<char> contents(new char[strsize], 0, strsize, true);
-      fread((void*) contents.get(), strsize - 1, 1, yamlFile.handle);
-      contents.get()[strsize - 1] = 0;
-      Teuchos::broadcast<int, int>(comm, 0, &strsize);
-      Teuchos::broadcast<int, char>(comm, 0, strsize, contents.get());
-      updateParametersFromYamlCString(contents.get(), paramList, overwrite);
-    }
-    else
-    {
-      int strsize;
-      Teuchos::broadcast<int, int>(comm, 0, &strsize);
-      Teuchos::ArrayRCP<char> contents(new char[strsize], 0, strsize, true);
-      Teuchos::broadcast<int, char>(comm, 0, strsize, contents.get());
-      updateParametersFromYamlCString(contents.get(), paramList, overwrite);
-    }
-  }
-}
 
 std::string convertXmlToYaml(const std::string& xmlFileName)
 {
@@ -407,15 +366,7 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
   }
 }
 
-template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node)
-{
-  Teuchos::Array<T> arr;
-  for(YAML::const_iterator it = node.begin(); it != node.end(); it++)
-  {
-    arr.push_back(it->as<T>());
-  }
-  return arr;
-}
+
 
 void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterList>& pl)
 {
@@ -579,6 +530,6 @@ bool stringNeedsQuotes(const std::string& str)
 
 } //namespace YAMLParameterList
 
-} //namespace MueLu
+} //namespace Teuchos
 
 #endif

@@ -1,0 +1,161 @@
+<ParameterList>
+  <ParameterList name="Problem">
+    <Parameter name="Name" type="string" value="Aeras Hydrostatic"/> 
+    <Parameter name="Phalanx Graph Visualization Detail" type="int" value="1"/>
+    <!-- Parameter name="Solution Method" type="string" value="Transient"/> -->
+    <Parameter name="Solution Method" type="string" value="Aeras Hyperviscosity"/>
+    <ParameterList name="Hydrostatic Problem">
+    	<Parameter name="Topography Type" type="string" value="SphereMountain1"/>
+		<Parameter name="Number of Vertical Levels" type="int" value="15"/>
+		<Parameter name="P0" type="double" value="100000.0"/>
+		<Parameter name="Ptop" type="double" value="20544.8"/>
+		<Parameter name="NonRotating" type="bool" value="True"/>
+      	<Parameter name="Use Explicit Hyperviscosity" type="bool" value="True"/>
+      	<Parameter name="Hyperviscosity Type" type="string" value="Constant"/>
+      	<Parameter name="Hyperviscosity Tau" type="double" value="5e15"/>
+      	<Parameter name="Original Divergence" type="bool" value="False"/>
+    </ParameterList>
+    <ParameterList name="Initial Condition">
+       <Parameter name="Function" type="string" value="Aeras Resting Hydrostatic"/>
+       														<!-- numlevels, numtracers,  p_0,    p_top,   T_0,   Gamma,  mtnHeight --> 
+       <Parameter name="Function Data" type="Array(double)" value="{15,         0,    100000.0, 20544.8, 300.0, 0.0065, 2000.0}"/>
+    </ParameterList>
+    <ParameterList name="Response Functions">
+      <Parameter name="Number" type="int" value="1"/>
+      <Parameter name="Response 0" type="string" value="Solution Average"/>
+    </ParameterList>
+<!--
+    <ParameterList name="Parameters">
+      <Parameter name="Number" type="int" value="1"/>
+      <Parameter name="Parameter 0" type="string" value="Reynolds Number"/>
+    </ParameterList>
+-->
+  </ParameterList>
+  <ParameterList name="Debug Output">
+     <!--Parameter name="Write Jacobian to MatrixMarket" type="int" value="-1"/>
+     <Parameter name="Write Residual to MatrixMarket" type="int" value="-1"/-->
+     <Parameter name="Write Solution to MatrixMarket" type="bool" value="true"/>
+     <!--Parameter name="Write Solution to Standard Output" type="bool" value="true"/-->
+     <!--Parameter name="Write Jacobian to Standard Output" type="int" value="1"/>
+     <Parameter name="Write Residual to Standard Output" type="int" value="3"/-->
+  </ParameterList>
+  <ParameterList name="Discretization">
+    <Parameter name="Method" type="string" value="Exodus Aeras"/>
+    <Parameter name="Exodus Input File Name" type="string" value="../../grids/QUAD4/uniform_16_quad4.g"/>
+    <Parameter name="Element Degree" type="int" value="3"/>
+    <Parameter name="Workset Size" type="int" value="-1"/>
+    <Parameter name="Exodus Output File Name" type="string" value="sphere16_15lev_rk4_out.exo"/>
+    <Parameter name="Exodus Write Interval" type="int" value="1"/>
+    <!--Parameter name="NetCDF Output File Name" type="string" value="sphere10.nl"/>
+    <Parameter name="NetCDF Output Number of Latitudes" type="int"  value="128"/>
+    <Parameter name="NetCDF Output Number of Longitudes" type="int" value="256"/-->
+  </ParameterList>
+  <ParameterList name="Regression Results">
+  <!--  <Parameter  name="Number of Comparisons" type="int" value="1"/>
+    <Parameter  name="Test Values" type="Array(double)" value="{5380.35101725}"/>
+    <Parameter  name="Relative Tolerance" type="double" value="1.0e-5"/>
+    <Parameter  name="Absolute Tolerance" type="double" value="1.0e-3"/>
+    <Parameter  name="Number of Sensitivity Comparisons" type="int" value="0"/>
+    <Parameter  name="Sensitivity Test Values 0" type="Array(double)" value="{0.014918508627}"/> /-->
+  </ParameterList>
+  <ParameterList name="Piro">
+      <Parameter name="Solver Type" type="string" value="Rythmos"/>
+    <ParameterList name="Rythmos Solver">
+      <Parameter name="Invert Mass Matrix" type="bool" value="true"/>
+      <Parameter name="Lump Mass Matrix" type="bool" value="true"/>   
+      <ParameterList name="NonLinear Solver">
+         <ParameterList name="VerboseObject">
+            <Parameter name="Verbosity Level" type="string" value="low"/>
+         </ParameterList>
+      </ParameterList>
+      <ParameterList name="Rythmos">
+         <ParameterList name="Integrator Settings">
+           <Parameter name="Final Time" type="double" value="800.0"/>
+           <ParameterList name="Integrator Selection">
+             <Parameter name="Integrator Type" type="string" value="Default Integrator"/>
+             <ParameterList name="Default Integrator">
+                <ParameterList name="VerboseObject">
+                  <Parameter name="Verbosity Level" type="string" value="low"/>
+                </ParameterList>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+     
+         <ParameterList name="Stepper Settings">
+           <ParameterList name="Stepper Selection">
+              <Parameter name="Stepper Type" type="string" value="Explicit RK"/>
+           </ParameterList>
+     
+           <ParameterList name="Runge Kutta Butcher Tableau Selection">
+              <!--Parameter name="Runge Kutta Butcher Tableau Type" type="string"
+                   value="Singly Diagonal IRK 2 Stage 3rd order"/-->
+              <Parameter name="Runge Kutta Butcher Tableau Type" type="string"
+                   value="Explicit Trapezoidal"/>
+              <!-- value="Explicit 2 Stage 2nd order by Runge"/> -->
+              <!--Parameter name="Runge Kutta Butcher Tableau Type" type="string"
+                   value="IRK 1 Stage Theta Method"/-->
+           </ParameterList>
+         </ParameterList>
+
+         <ParameterList name="Integration Control Strategy Selection">
+           <Parameter name="Integration Control Strategy Type" type="string"
+                 value="Simple Integration Control Strategy"/>
+           <ParameterList name="Simple Integration Control Strategy">
+             <Parameter name="Take Variable Steps" type="bool" value="false"/>
+             <Parameter name="Number of Time Steps" type="int" value="8"/>
+             <ParameterList name="VerboseObject">
+               <Parameter name="Verbosity Level" type="string" value="low"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+      </ParameterList>
+      <ParameterList name="Stratimikos">
+        <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+        <ParameterList name="Linear Solver Types">
+          <ParameterList name="Belos">
+            <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+            <ParameterList name="Solver Types">
+              <ParameterList name="Block GMRES">
+                <Parameter name="Convergence Tolerance" type="double" value="1e-5"/>
+                <Parameter name="Output Frequency" type="int" value="10"/>
+                <Parameter name="Output Style" type="int" value="1"/>
+                <Parameter name="Verbosity" type="int" value="0"/>
+                <Parameter name="Maximum Iterations" type="int" value="100"/>
+                <Parameter name="Block Size" type="int" value="1"/>
+                <Parameter name="Num Blocks" type="int" value="100"/>
+                <Parameter name="Flexible Gmres" type="bool" value="0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="Preconditioner Type" type="string" value="Ifpack2"/>
+        <ParameterList name="Preconditioner Types">
+          <ParameterList name="Ifpack2">
+            <Parameter name="Prec Type" type="string" value="ILUT"/>
+            <Parameter name="Overlap" type="int" value="1"/>
+            <ParameterList name="Ifpack2 Settings">
+              <Parameter name="fact: ilut level-of-fill" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="ML">
+            <Parameter name="Base Method Defaults" type="string" value="SA"/>
+            <ParameterList name="ML Settings">
+              <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+              <Parameter name="coarse: max size" type="int" value="20"/>
+              <Parameter name="coarse: pre or post" type="string" value="post"/>
+              <Parameter name="coarse: sweeps" type="int" value="1"/>
+              <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+              <Parameter name="prec type" type="string" value="MGV"/>
+              <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+              <Parameter name="smoother: damping factor" type="double" value="0.66"/>
+              <Parameter name="smoother: pre or post" type="string" value="both"/>
+              <Parameter name="smoother: sweeps" type="int" value="1"/>
+              <Parameter name="ML output" type="int" value="1"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

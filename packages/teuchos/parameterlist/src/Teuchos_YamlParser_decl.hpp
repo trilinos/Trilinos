@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -44,17 +44,16 @@
 //
 // @HEADER
 
-#ifndef MUELU_YAMLPARSER_DECL_H_
-#define MUELU_YAMLPARSER_DECL_H_
+#ifndef TEUCHOS_YAMLPARSER_DECL_H_
+#define TEUCHOS_YAMLPARSER_DECL_H_
 
 #include "yaml-cpp/yaml.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_PtrDecl.hpp"
 #include "Teuchos_FileInputSource.hpp"
-#include "Teuchos_CommHelpers.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -63,7 +62,7 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace MueLu
+namespace Teuchos
 {
 
 #define MAKE_EXCEPTION_TYPE(Name) \
@@ -91,7 +90,6 @@ void updateParametersFromYamlCString(const char* const yamlData,
                                   const Teuchos::Ptr<Teuchos::ParameterList>& paramList,
                                   bool overwrite = true);
 Teuchos::RCP<Teuchos::ParameterList> getParametersFromYamlFile(const std::string& yamlFileName);
-void updateParametersFromYamlFileAndBroadcast(const std::string &yamlFileName, const Teuchos::Ptr<Teuchos::ParameterList> &paramList, const Teuchos::Comm<int> &comm, bool overwrite = true);
 
 std::string convertXmlToYaml(const std::string& xmlFileName); //returns filename of produced YAML file
 void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFileName); //writes to given filename
@@ -109,7 +107,7 @@ namespace YAMLParameterList
   //topLevel means to put sub-pairs directly into parent and not create named sublists
   void processMapNode(const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
   void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
-  template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node);
+  //  template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node);
   void writeParameterList(Teuchos::ParameterList& pl, std::ofstream& yaml, int indentLevel);
   void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ofstream& yaml, int indentLevel);    //throws if the entry's type is not supported
   void generalWriteString(const std::string& str, std::ofstream& yaml);

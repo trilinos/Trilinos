@@ -40,39 +40,64 @@
 // @HEADER
 
 
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_YamlParameterListHelpers.hpp"
 #include "Teuchos_FileInputSource.hpp"
-#include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
-void Teuchos::updateParametersFromXmlFileAndBroadcast(
-  const std::string &xmlFileName,
-  const Ptr<ParameterList> &paramList,
-  const Comm<int> &comm,
-  bool overwrite
-  )
+void Teuchos::updateParametersFromYamlFileAndBroadcast(
+  const std::string &yamlFileName, 
+  const Teuchos::Ptr<Teuchos::ParameterList> &paramList, 
+  const Teuchos::Comm<int> &comm, 
+  bool overwrite)
 {
-  if (comm.getSize()==1)
-    updateParametersFromXmlFile(xmlFileName, paramList);
-  else {
-    if (comm.getRank()==0) {
-      XMLParameterListReader xmlPLReader;
-      xmlPLReader.setAllowsDuplicateSublists( false );
-      FileInputSource xmlFile(xmlFileName);
-      XMLObject xmlParams = xmlFile.getObject();
-      std::string xmlString = toString(xmlParams);
-      int strsize = xmlString.size();
-      broadcast<int, int>(comm, 0, &strsize);
-      broadcast<int, char>(comm, 0, strsize, &xmlString[0]);
-      updateParametersFromXmlString(xmlString, paramList,overwrite);
+  struct SafeFile
+  {
+    SafeFile(const char* fname, const char* options)
+    {
+      handle = fopen(fname, options);
     }
-    else {
+    ~SafeFile()
+    {
+      if(handle)
+        fclose(handle);
+    }
+    FILE* handle;
+  };
+  //BMK note: see teuchos/comm/src/Teuchos_XMLParameterListHelpers.cpp
+  if(comm.getSize() == 1)
+  {
+    updateParametersFromYamlFile(yamlFileName, paramList);
+  }
+  else
+  {
+    if(comm.getRank() == 0)
+    {
+      //BMK: TODO! //reader.setAllowsDuplicateSublists(false);
+      //create a string and load file contents into it
+      //C way for readability and speed, same thing with C++ streams is slow & ugly
+      SafeFile yamlFile(yamlFileName.c_str(), "rb");
+      if(!yamlFile.handle)
+      {
+        throw std::runtime_error(std::string("Failed to open YAML file \"") + yamlFileName + "\"for reading.");
+      }
+      fseek(yamlFile.handle, 0, SEEK_END);
+      int strsize = ftell(yamlFile.handle) + 1;
+      rewind(yamlFile.handle);
+      //Make the array raii
+      Teuchos::ArrayRCP<char> contents(new char[strsize], 0, strsize, true);
+      fread((void*) contents.get(), strsize - 1, 1, yamlFile.handle);
+      contents.get()[strsize - 1] = 0;
+      Teuchos::broadcast<int, int>(comm, 0, &strsize);
+      Teuchos::broadcast<int, char>(comm, 0, strsize, contents.get());
+      updateParametersFromYamlCString(contents.get(), paramList, overwrite);
+    }
+    else
+    {
       int strsize;
-      broadcast<int, int>(comm, 0, &strsize);
-      std::string xmlString;
-      xmlString.resize(strsize);
-      broadcast<int, char>(comm, 0, strsize, &xmlString[0]);
-      updateParametersFromXmlString(xmlString, paramList,overwrite);
+      Teuchos::broadcast<int, int>(comm, 0, &strsize);
+      Teuchos::ArrayRCP<char> contents(new char[strsize], 0, strsize, true);
+      Teuchos::broadcast<int, char>(comm, 0, strsize, contents.get());
+      updateParametersFromYamlCString(contents.get(), paramList, overwrite);
     }
   }
 }
