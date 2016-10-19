@@ -1376,10 +1376,10 @@ public:
         parlistBelos.set( "Verbosity", Belos::IterationDetails + Belos::FinalSummary + Belos::StatusTestDetails );
         //parlistBelos.set( "Verbosity", Belos::Errors );
         Belos::LinearProblem<Real,MV,OP> problemBelos( pde_matJ1_trans_, u, r);
-        problemBelos.setRightPrec(this->mueLuPreconditioner_);
-        bool set = problemBelos.setProblem();
+        problemBelos.setRightPrec(this->mueLuPreconditioner_trans_);
+        problemBelos.setProblem();
         Belos::BlockGmresSolMgr<Real,MV,OP> solverBelos( Teuchos::rcp(&problemBelos,false), Teuchos::rcp(&parlistBelos,false) );
-        Belos::ReturnType ret = solverBelos.solve();
+        solverBelos.solve();
       }
       }//timer
     }
@@ -1410,9 +1410,9 @@ public:
         //parlistBelos.set( "Verbosity", Belos::Errors );
         Belos::LinearProblem<Real,MV,OP> problemBelos( pde_matJ1_, u, r);
         problemBelos.setRightPrec(this->mueLuPreconditioner_);
-        bool set = problemBelos.setProblem();
+        problemBelos.setProblem();
         Belos::BlockGmresSolMgr<Real,MV,OP> solverBelos( Teuchos::rcp(&problemBelos,false), Teuchos::rcp(&parlistBelos,false) );
-        Belos::ReturnType ret = solverBelos.solve();
+        solverBelos.solve();
       }
       }//timer
     }

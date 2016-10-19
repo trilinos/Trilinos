@@ -108,12 +108,15 @@ void computeUpperBound(const Teuchos::RCP<Tpetra::MultiVector<> > & ubVec,
   std::vector<Real> coord(d);
   for (int i = 0; i < c; ++i) {
     for (int j = 0; j < f; ++j) {
-      for (int k = 0; k < d; ++k) {
-        coord[k] = (*dofPoints)(i,j,k);
+      int fidx = (*cellDofs)(cellIds[i],j);
+      if (ubVec->getMap()->isNodeGlobalElement(fidx)) {
+        for (int k = 0; k < d; ++k) {
+          coord[k] = (*dofPoints)(i,j,k);
+        }
+        ubVec->replaceGlobalValue(fidx,
+                                  0,
+                                  evaluateUpperBound<Real>(coord));
       }
-      ubVec->replaceGlobalValue((*cellDofs)(cellIds[i],j),
-                                0,
-                                evaluateUpperBound<Real>(coord));
     }
   }
 } 

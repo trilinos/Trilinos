@@ -4,7 +4,7 @@
     <Parameter name="Order of FE discretization"  type="int"       value="1"     />
     <Parameter name="Cubature Degree"             type="int"       value="2"     />
     <Parameter name="Use State Riesz Map"         type="bool"      value="false" />
-    <Parameter name="Load Magnitude"              type="double"    value="10.0"   />
+    <Parameter name="Load Magnitude"              type="double"    value="10.0"  />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->

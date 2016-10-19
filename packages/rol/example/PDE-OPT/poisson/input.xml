@@ -10,8 +10,8 @@
     <Parameter name="Use State Riesz Map"         type="bool"      value="false" />
     <Parameter name="Use Control Riesz Map"       type="bool"      value="false" />
     <!-- SOLVER INFORMATION -->
-    <Parameter name="Use Direct Solver"           type="bool"    value="true"    />
-    <Parameter name="Direct Solver Type"          type="string"  value="KLU2"    />
+    <Parameter name="Use Direct Solver"           type="bool"      value="true"  />
+    <Parameter name="Direct Solver Type"          type="string"    value="KLU2"  />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
@@ -138,7 +138,7 @@
       <Parameter name="Output Level" type="int" value="0" />
       <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
       <ParameterList name="Optimality System Solver">
-        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-10"  />
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-8"  />
         <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
       </ParameterList>
       <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
