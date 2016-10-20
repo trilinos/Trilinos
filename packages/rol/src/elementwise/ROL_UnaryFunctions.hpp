@@ -66,6 +66,18 @@ private:
   Real value_;
 }; // class Fill
 
+// Used to shift every element in a vector by a specific value
+template<class Real>
+class Shift : public UnaryFunction<Real> {
+private:
+  Real value_;
+public:
+  Shift( const Real &value ) : value_(value) {}
+  Real apply( const Real &x ) const {
+    return x+value_;
+  }
+}; // class Shift
+
 
 // Get the elementwise reciprocal of a vector
 template<class Real> 
@@ -84,6 +96,23 @@ public:
     return std::abs(x); 
   }
 
+};
+
+template<class Real>
+class Sign : public Elementwise::UnaryFunction<Real> {
+private:
+  Real zero_;
+  Real one_;
+public:
+  Sign() : zero_(0), one_(1) {}
+  Real apply(const Real &x) const {
+    if(x==zero_) {
+      return zero_;
+    }
+    else {
+      return x>zero_ ? one_ : -one_;
+    }
+   }
 };
 
 

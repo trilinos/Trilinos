@@ -129,6 +129,33 @@ public:
   }
 };
 
+// Set x to one of two values based on whether y satisfies 
+// a comparative condition
+template<class Real>
+class ValueSet : public BinaryFunction<Real> {
+private:
+  Real threshold_;
+  int option_;
+  Real c1_;
+  Real c2_;
+public:
+  static const int LESS_THAN    = 0;
+  static const int EQUAL_TO     = 1;
+  static const int GREATER_THAN = 2;
+  ValueSet( const Real& threshold, const int option, const Real &c1=Real(1), const Real &c2=Real(0) ) :
+    threshold_(threshold), option_(option), c1_(c1), c2_(c2) {}
+  
+  Real apply(const Real &x, const Real &y ) const {
+    Real result;
+    switch( option_ ) {
+      case LESS_THAN:    { result = y <  threshold_ ? c1_ : c2_; break; }
+      case EQUAL_TO:     { result = y == threshold_ ? c1_ : c2_; break; }
+      case GREATER_THAN: { result = y >  threshold_ ? c1_ : c2_; break; }       
+    }   
+    return result;
+  }
+};
+
 
 // Evaluate g(f(x,y))
 template<class Real> 
