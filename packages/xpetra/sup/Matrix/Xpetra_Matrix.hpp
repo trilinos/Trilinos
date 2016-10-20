@@ -108,7 +108,9 @@ namespace Xpetra {
     typedef Node            node_type;
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+#endif
 #endif
 
     //! @name Constructor/Destructor Methods
@@ -579,8 +581,14 @@ namespace Xpetra {
 
     // ----------------------------------------------------------------------------------
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the underlying local Kokkos::CrsMatrix object
     virtual local_matrix_type getLocalMatrix () const = 0;
+#else
+#ifdef __GNUC__
+#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
+#endif
+#endif
 #endif
     // ----------------------------------------------------------------------------------
 
