@@ -311,9 +311,9 @@ printReport(std::ostream & os)
   os << "Initial X    : " << initial_guess << '\n';
   os << "Initial f(X) : " << std::setw(24) << initial_value << '\n';
   os << "Final X      : " << final_soln << '\n';
-  os << "FInal f(X)   : " << std::setw(24) << final_value << '\n';
+  os << "Final f(X)   : " << std::setw(24) << final_value << '\n';
   os << "Final Df(X)  : " << final_gradient << '\n';
-  os << "FInal DDf(X) : " << final_hessian << '\n';
+  os << "Final DDf(X) : " << final_hessian << '\n';
   os << '\n';
 
   return;
