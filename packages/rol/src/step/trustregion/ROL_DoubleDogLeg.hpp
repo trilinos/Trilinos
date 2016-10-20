@@ -90,7 +90,7 @@ public:
     Real tol = std::sqrt(ROL_EPSILON<Real>());
     const Real one(1), zero(0), half(0.5), p2(0.2), p8(0.8), two(2);
     // Set s to be the (projected) gradient
-    model.forwardTransform(*Hp_,*model.getGradient());
+    model.dualTransform(*Hp_,*model.getGradient());
     s.set(Hp_->dual());
     // Compute (quasi-)Newton step
     model.invHessVec(*s_,*Hp_,s,tol);
@@ -159,7 +159,7 @@ public:
         pRed_ = -(alpha*(half*alpha-one)*gsN + half*beta*beta*gBg + beta*(one-alpha)*gnorm2);
       }
     }
-    model.backwardTransform(*s_,s);
+    model.primalTransform(*s_,s);
     s.set(*s_);
     snorm = s.norm();
     TrustRegion<Real>::setPredictedReduction(pRed_);

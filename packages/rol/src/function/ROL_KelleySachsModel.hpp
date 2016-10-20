@@ -194,7 +194,7 @@ public:
     Mv.plus(*prim_);
   }
 
-  void forwardTransform( Vector<Real> &tv, const Vector<Real> &v ) {
+  void dualTransform( Vector<Real> &tv, const Vector<Real> &v ) {
     // Compute T(v) = P_I(v) where P_I is the projection onto the inactive indices
     const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
     const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
@@ -202,7 +202,7 @@ public:
     bnd_->pruneActive(tv,*gc,*xc,eps_);
   }
 
-  void backwardTransform( Vector<Real> &tv, const Vector<Real> &v ) {
+  void primalTransform( Vector<Real> &tv, const Vector<Real> &v ) {
     // Compute T(v) = P( x + v ) - x where P is the projection onto the feasible set
     const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     tv.set(*xc);

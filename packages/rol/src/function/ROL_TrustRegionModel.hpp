@@ -146,11 +146,11 @@ public:
     }
   }
 
-  virtual void forwardTransform( Vector<Real> &tv, const Vector<Real> &v ) { 
+  virtual void dualTransform( Vector<Real> &tv, const Vector<Real> &v ) { 
     tv.set(v);
   }
 
-  virtual void backwardTransform( Vector<Real> &tv, const Vector<Real> &v ) { 
+  virtual void primalTransform( Vector<Real> &tv, const Vector<Real> &v ) { 
     tv.set(v);
   }
 

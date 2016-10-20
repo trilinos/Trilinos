@@ -107,7 +107,7 @@ public:
     snorm = zero;
     Real snorm2(0), s1norm2(0);
     // Compute (projected) gradient
-    model.forwardTransform(*g_,*model.getGradient());
+    model.dualTransform(*g_,*model.getGradient());
     Real gnorm = g_->norm(), normg = gnorm;
     const Real gtol = std::min(tol1_,tol2_*gnorm);
     // Preconditioned (projected) gradient vector
@@ -178,7 +178,7 @@ public:
       iter++;
     }
     // Update norm of step and update model predicted reduction
-    model.backwardTransform(*s_,s);
+    model.primalTransform(*s_,s);
     s.set(*s_);
     snorm = s.norm();
     TrustRegion<Real>::setPredictedReduction(pRed_);

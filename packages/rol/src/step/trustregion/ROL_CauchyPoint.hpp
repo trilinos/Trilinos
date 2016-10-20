@@ -121,7 +121,7 @@ private:
                         TrustRegionModel<Real> &model) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
     // Set step to (projected) gradient
-    model.forwardTransform(*Hp_,*model.getGradient());
+    model.dualTransform(*Hp_,*model.getGradient());
     s.set(Hp_->dual());
     // Apply (reduced) Hessian to (projected) gradient
     model.hessVec(*Hp_,s,s,tol);
@@ -134,7 +134,7 @@ private:
     }
 
     s.scale(-alpha);
-    model.backwardTransform(*p_,s);
+    model.primalTransform(*p_,s);
     s.set(*p_);
     snorm = s.norm(); //alpha*gnorm;
     iflag = 0;
