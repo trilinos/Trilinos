@@ -156,8 +156,8 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
     // Create control direction vector.
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = assembler->createControlVector();
-    //dz_rcp->randomize();
-    dz_rcp->putScalar(0.1);
+    dz_rcp->randomize();
+    dz_rcp->scale(0.01);
     Teuchos::RCP<ROL::Vector<RealT> > dzp
       = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
 
@@ -181,11 +181,13 @@ int main(int argc, char *argv[]) {
     else {
       pdeWithFilter = con;
     }
+    pdeWithFilter->setSolveParameters(*parlist);
 
     // Initialize compliance objective function.
     up->zero();
     con->value(*rp, *up, *zp, tol);
     RealT objScaling = minDensity / rp->dot(*rp);
+    u_rcp->randomize();
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(1,Teuchos::null);
     qoi_vec[0] = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(),
                                                      pde->getLoad(),

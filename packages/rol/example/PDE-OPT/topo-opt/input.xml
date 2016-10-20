@@ -2,7 +2,7 @@
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
     <!-- OUTPUT -->
-    <Parameter name="Check derivatives"           type="bool"    value="true"          />
+    <Parameter name="Check derivatives"           type="bool"    value="false"          />
     <Parameter name="Number of output samples"    type="int"     value="4"             />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Number of samples"           type="int"     value="4"             />
@@ -15,7 +15,7 @@
     <Parameter name="Use Plain Stress"            type="bool"    value="true"          />
     <Parameter name="Load Magnitude"              type="double"  value="1.0"           />
     <Parameter name="Load Angle"                  type="string"  value="{270.0}"       />
-    <Parameter name="Load Location"               type="string"  value="{2.0, 0.5}"    />
+    <Parameter name="Load Location"               type="string"  value="{3.0, 0.5}"    />
     <Parameter name="Load Width"                  type="string"  value="{2e-2, 2e-2}"  />
     <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
     <Parameter name="Use Filter"                  type="bool"    value="true"          />
@@ -31,11 +31,11 @@
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Geometry">
     <!-- === rectangle === -->
-    <Parameter name="Width"             type="double"  value="2.0"  />
+    <Parameter name="Width"             type="double"  value="3.0"  />
     <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="20"   />
+    <Parameter name="NX"                type="int"     value="30"   />
     <Parameter name="NY"                type="int"     value="10"   />
     <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
@@ -43,8 +43,9 @@
   <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
   <ParameterList name="SimOpt">
     <ParameterList name="Solve">
-      <Parameter name="Residual Tolerance"            type="double"  value="1.e-8"  />
-      <Parameter name="Iteration Limit"               type="int"     value="20"     />
+      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-12" />
+      <Parameter name="Relative Residual Tolerance"   type="double"  value="1.e0"   />
+      <Parameter name="Iteration Limit"               type="int"     value="1"      />
       <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
       <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
       <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
@@ -127,7 +128,7 @@
     <ParameterList name="Secant">
       <Parameter name="Type"                   type="string" value="Limited-Memory BFGS" />
       <Parameter name="Use as Preconditioner"  type="bool"   value="false"               />
-      <Parameter name="Use as Hessian"         type="bool"   value="true"               />
+      <Parameter name="Use as Hessian"         type="bool"   value="true"                />
       <Parameter name="Maximum Storage"        type="int"    value="20"                  />
       <Parameter name="Barzilai-Borwein Type"  type="int"    value="1"                   />
     </ParameterList>
@@ -182,7 +183,7 @@
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
-      <Parameter name="Initial Radius"                       type="double" value="10.0"         />
+      <Parameter name="Initial Radius"                       type="double" value="100.0"        />
       <Parameter name="Maximum Radius"                       type="double" value="5.e8"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
       <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
@@ -239,7 +240,7 @@
     <ParameterList name="Augmented Lagrangian">
       <Parameter name="Level of Hessian Approximation"          type="int"    value="0"            />
       <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
-      <Parameter name="Initial Penalty Parameter"               type="double" value="1.e1"         />
+      <Parameter name="Initial Penalty Parameter"               type="double" value="1.e0"         />
       <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
       <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />
       <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->
@@ -251,9 +252,9 @@
       <Parameter name="Feasibility Tolerance Update Exponent"   type="double" value="0.1"          />
       <Parameter name="Feasibility Tolerance Decrease Exponent" type="double" value="0.9"          />
       <!-- ===========  SUBPROBLEM SOLVER  =========== -->
-      <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
+      <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"         />
       <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
-      <Parameter name="Subproblem Iteration Limit"              type="int"    value="240"         />
+      <Parameter name="Subproblem Iteration Limit"              type="int"    value="240"          />
     </ParameterList>
 
     <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
@@ -297,7 +298,7 @@
   <ParameterList name="Status Test">
     <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"   />
-    <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="100"     />
+    <Parameter name="Step Tolerance"       type="double" value="-1.e-14"  />
+    <Parameter name="Iteration Limit"      type="int"    value="20"     />
   </ParameterList>
 </ParameterList>

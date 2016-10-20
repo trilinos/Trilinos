@@ -190,8 +190,9 @@
   <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
   <ParameterList name="SimOpt">
     <ParameterList name="Solve">
-      <Parameter name="Residual Tolerance"            type="double"  value="1.e-8" />
-      <Parameter name="Iteration Limit"               type="int"     value="20"    />
+      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-8"  />
+      <Parameter name="Relative Residual Tolerance"   type="double"  value="1.e0"   />
+      <Parameter name="Iteration Limit"               type="int"     value="20"     />
       <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
       <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
       <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
