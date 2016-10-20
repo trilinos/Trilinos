@@ -79,62 +79,73 @@ public:
     Hp_ = g.clone();
   }
 
-  void run( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
-            const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) { 
-    Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1), zero(0), half(0.5), two(2);
-    // Compute quasi-Newton step
-    pObj.reducedInvHessVec(*s_,grad,x,grad,x,tol);
-    s_->scale(-one);
-    Real sNnorm = s_->norm();
-    Real gsN    = s_->dot(grad.dual());
-    bool negCurv = false;
-    if ( gsN >= zero ) {
-      negCurv = true;
-    }
-
+  void run( Vector<Real>           &s,
+            Real                   &snorm,
+            int                    &iflag,
+            int                    &iter,
+            const Real              del,
+            TrustRegionModel<Real> &model ) {
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+    const Real zero(0), half(0.5), one(1), two(2);
+    // Set s to be the (projected) gradient
+    model.forwardTransform(*Hp_,*model.getGradient());
+    s.set(Hp_->dual());
+    // Compute (quasi-)Newton step
+    model.invHessVec(*s_,*Hp_,s,tol);
+    Real sNnorm  = s_->norm();
+    Real gsN     = -s_->dot(s);
+    bool negCurv = (gsN > zero ? true : false);
+    // Check if (quasi-)Newton step is feasible
     if ( negCurv ) {
-      cpt_->run(s,snorm,del,iflag,iter,x,grad,gnorm,pObj);
+      // Use Cauchy point
+      cpt_->run(s,snorm,iflag,iter,del,model);
       pRed_ = cpt_->getPredictedReduction();
       iflag = 2;
-    }  
+    }
     else {
       // Approximately solve trust region subproblem using double dogleg curve
-      if (sNnorm <= del) {        // Use the quasi-Newton step
+      if (sNnorm <= del) { // Use the (quasi-)Newton step
         s.set(*s_); 
+        s.scale(-one);
         snorm = sNnorm;
         pRed_ = -half*gsN;
         iflag = 0;
       }
-      else {                      // quasi-Newton step is outside of trust region
-        pObj.reducedHessVec(*Hp_,grad.dual(),x,grad,x,tol);
-        Real alpha(0);
-        Real beta(0);
+      else { // The (quasi-)Newton step is outside of trust region
+        model.hessVec(*Hp_,s,s,tol);
+        Real alpha  = zero;
+        Real beta   = zero;
+        Real gnorm  = s.norm();
         Real gnorm2 = gnorm*gnorm;
-        Real gBg    = grad.dot(*Hp_);
+        Real gBg    = Hp_->dot(s.dual());
         Real gamma  = gnorm2/gBg;
         if ( gamma*gnorm >= del || gBg <= zero ) {
-            alpha = zero;
-            beta  = del/gnorm;
-            s.set(grad.dual()); 
-            s.scale(-beta); 
-            snorm = del;
-            iflag = 2;
+          // Use Cauchy point
+          alpha = zero;
+          beta  = del/gnorm;
+          s.scale(-beta); 
+          snorm = del;
+          iflag = 2;
         }
         else {
+          // Use a convex combination of Cauchy point and (quasi-)Newton step
           Real a = sNnorm*sNnorm + two*gamma*gsN + gamma*gamma*gnorm2;
           Real b = -gamma*gsN - gamma*gamma*gnorm2;
           Real c = gamma*gamma*gnorm2 - del*del;
           alpha  = (-b + sqrt(b*b - a*c))/a;
           beta   = gamma*(one-alpha);
-          s.set(grad.dual());
           s.scale(-beta);
-          s.axpy(alpha,*s_);
+          s.axpy(-alpha,*s_);
           snorm = del;
           iflag = 1;
         }
         pRed_ = (alpha*(half*alpha-one)*gsN - half*beta*beta*gBg + beta*(one-alpha)*gnorm2);
       }
     }
+    model.backwardTransform(*s_,s);
+    s.set(*s_);
+    snorm = s.norm();
+    // Update predicted reduction
     TrustRegion<Real>::setPredictedReduction(pRed_);
   }
 };

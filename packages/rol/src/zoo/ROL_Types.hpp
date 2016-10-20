@@ -122,8 +122,14 @@ std::string NumberToString( T Number )
     Teuchos::RCP<Vector<Real> > gradientVec;
     Teuchos::RCP<Vector<Real> > descentVec;
     Teuchos::RCP<Vector<Real> > constraintVec;
+    int nfval;
+    int ngrad;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
-    StepState(void) : gradientVec(Teuchos::null), descentVec(Teuchos::null), constraintVec(Teuchos::null),
+    StepState(void) : gradientVec(Teuchos::null),
+                      descentVec(Teuchos::null),
+                      constraintVec(Teuchos::null),
+                      nfval(0),
+                      ngrad(0),
                       searchSize(0) {}
   };  
       

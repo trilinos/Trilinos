@@ -1,6 +1,7 @@
 <ParameterList name="Inputs">
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
+    <Parameter name="Print Verbosity"                        type="int"    value="0"     />
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
@@ -79,7 +80,15 @@
       <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
       <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
       <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
+      <Parameter name="Sufficient Decrease Parameter"        type="double" value="1.e-2"        />
       <Parameter name="Safeguard Size"                       type="double" value="1.e2"         />
+
+      <ParameterList name="Postsmoothing">
+        <Parameter name="Function Evaluation Limit" type="int"    value="20"     />
+        <Parameter name="Initial Step Size"         type="double" value="1.0"    />
+        <Parameter name="Tolerance"                 type="double" value="0.9999" />
+        <Parameter name="Rate"                      type="double" value="0.01"   />
+      </ParameterList>
 
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">

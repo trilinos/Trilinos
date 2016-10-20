@@ -214,8 +214,8 @@ public:
                 g(\xi) < 0 \,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
       @param[in]       g   is the negative search direction.
+      @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
@@ -264,8 +264,8 @@ public:
                 g(\xi) > 0 \,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
       @param[in]       g   is the negative search direction.
+      @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
@@ -337,8 +337,8 @@ public:
          \mathcal{B}^+_\epsilon(x) = \mathcal{B}^+_\epsilon(x)\cap\mathcal{B}^-_\epsilon(x).
       \f]
       @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
       @param[in]       g   is the negative search direction.
+      @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {

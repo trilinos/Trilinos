@@ -66,7 +66,8 @@ template <class Real>
 class TrustRegionModel : public Objective<Real> {
 private:
   Teuchos::RCP<Objective<Real> > obj_;
-  Teuchos::RCP<Vector<Real> > x_, g_, dual_;
+  Teuchos::RCP<const Vector<Real> > x_, g_;
+  Teuchos::RCP<Vector<Real> > dual_;
   Teuchos::RCP<Secant<Real> > secant_;
 
   const bool useSecantPrecond_;
@@ -76,15 +77,17 @@ public:
 
   virtual ~TrustRegionModel() {}
 
-  TrustRegionModel(Objective<Real> &obj, Vector<Real> &x, Vector<Real> &g)
+  TrustRegionModel(Objective<Real> &obj, const Vector<Real> &x, const Vector<Real> &g, const bool init = true)
     : secant_(Teuchos::null), useSecantPrecond_(false), useSecantHessVec_(false) {
     obj_  = Teuchos::rcpFromRef(obj);
     x_    = Teuchos::rcpFromRef(x);
     g_    = Teuchos::rcpFromRef(g);
-    dual_ = g.clone();
+    if ( init ) {
+      dual_ = g.clone();
+    }
   }
 
-  TrustRegionModel(Objective<Real> &obj, Vector<Real> &x, Vector<Real> &g,
+  TrustRegionModel(Objective<Real> &obj, const Vector<Real> &x, const Vector<Real> &g,
                    const Teuchos::RCP<Secant<Real> > &secant,
                    const bool useSecantPrecond, const bool useSecantHessVec)
     : secant_(secant), useSecantPrecond_(useSecantPrecond), useSecantHessVec_(useSecantHessVec) {
@@ -101,7 +104,9 @@ public:
     else {
       obj_->hessVec(*dual_,s,*x_,tol);
     }
-    return g_->dot(s.dual()) + static_cast<Real>(0.5) * dual_->dot(s.dual());
+    dual_->scale(static_cast<Real>(0.5));
+    dual_->plus(*g_);
+    return dual_->dot(s.dual());
   }
 
   virtual void gradient( Vector<Real> &g, const Vector<Real> &s, Real &tol ) {
@@ -116,7 +121,7 @@ public:
 
   virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
     if ( useSecantHessVec_ ) {
-      secant_->applyB(hv,s);
+      secant_->applyB(hv,v);
     }
     else {
       obj_->hessVec(hv,v,*x_,tol);
@@ -125,7 +130,7 @@ public:
 
   virtual void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
     if ( useSecantHessVec_ ) {
-      secant_->applyH(hv,s);
+      secant_->applyH(hv,v);
     }
     else {
       obj_->invHessVec(hv,v,*x_,tol);
@@ -145,13 +150,27 @@ public:
     tv.set(v);
   }
 
-  virtual void backwardTransform( Vector<Real> &tiv, const Vector<Real> &v ) { 
-    tiv.set(v);
+  virtual void backwardTransform( Vector<Real> &tv, const Vector<Real> &v ) { 
+    tv.set(v);
   }
 
+  virtual const Teuchos::RCP<const Vector<Real> > getGradient(void) const {
+    return g_;
+  }
+
+  virtual const Teuchos::RCP<const Vector<Real> > getIterate(void) const {
+    return x_;
+  }
+
+  virtual const Teuchos::RCP<Objective<Real> > getObjective(void) const {
+    return obj_;
+  }
+
+  virtual const Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint(void) const {
+    return Teuchos::null;
+  }
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
-  virtual Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol );
 
 }; // class TrustRegionModel
 

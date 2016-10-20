@@ -54,10 +54,12 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
+//#include <fenv.h>
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
+//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
