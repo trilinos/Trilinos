@@ -24,6 +24,7 @@ doxygen_objdb_*.tmp
 /TerminalApplication/
 /DataTransferKit/
 /TeuchosWrappersExt
+/tempus/
 /packages/CTrilinos/
 /packages/ForTrilinos/
 /packages/Sundance/
