@@ -53,54 +53,37 @@
 # ************************************************************************
 # @HEADER
 
-  
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.dorksaber.gcc.cmake")
 
 #
-# Platform/compiler specific options for lightsaber using gcc
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+SET(COMM_TYPE SERIAL)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_DIR_NAME RELEASE_DEV_MueLu_Matlab)
+SET(CTEST_PARALLEL_LEVEL 3)
+SET(CTEST_TEST_TYPE Nightly)
+SET(CTEST_TEST_TIMEOUT 900)
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+SET(Trilinos_PACKAGES Amesos Epetra Ifpack Teuchos Tpetra ML MueLu Zoltan)
 
-  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+SET(EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DAmesos2_ENABLE_Basker:BOOL=ON"
+  "-DTpetra_INST_COMPLEX_DOUBLE=ON"
+  "-DTpetra_INST_INT_LONG_LONG=OFF"
+  "-DTPL_ENABLE_DLlib=ON"
+  "-DTPL_ENABLE_MATLAB:BOOL=ON"
+  "-DMATLAB_ROOT:STRING=/nfsshare/matlab/"
+  "-DMATLAB_ARCH:STRING=glnxa64"
+  "-DCMAKE_CXX_FLAGS:STRING='-g -fPIC'"
+  "-DCMAKE_C_FLAGS:STRING='-g -fPIC'"
+  "-DCMAKE_Fortran_FLAGS:STRING='-g -fPIC'"
+)
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  
-  SET( CTEST_BUILD_FLAGS "-j3 -i" )
-
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "3" )
-
-  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-
-  # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-  
-  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DBUILD_SHARED_LIBS:BOOL=OFF"
-    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-
-    "-DTPL_ENABLE_SuperLU:BOOL=OFF"
-
-    "-DTPL_ENABLE_BLAS:BOOL=ON"
-    "-DTPL_ENABLE_LAPACK:BOOL=ON"
-    "-DLAPACK_LIBRARY_DIRS:STRING=/home/csiefer/lapack-3.4.0/build/lib/"
-    "-DBLAS_LIBRARY_DIRS:STRING=/home/csiefer/lapack-3.4.0/build/lib/"
-
-    "-DTPL_ENABLE_MATLAB:BOOL=ON"
-    "-DMATLAB_ROOT:STRING=/nfsshare/matlab/"
-    "-DMATLAB_ARCH:STRING=glnxa64"
-    "-DTrilinos_EXTRA_LINK_FLAGS:STRING='-lrt -lm -lgfortran'"
-    "-DCMAKE_CXX_FLAGS:STRING='-g -fPIC'"
-    "-DCMAKE_C_FLAGS:STRING='-g -fPIC'"
-    "-DCMAKE_Fortran_FLAGS:STRING='-g -fPIC'"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.7.2")
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

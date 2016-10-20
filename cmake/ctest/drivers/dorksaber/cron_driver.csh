@@ -1,7 +1,7 @@
 #!/bin/csh
 
 echo
-echo "Starting nightly Trilinos development testing on lightsaber: `date`"
+echo "Starting nightly Trilinos development testing on dorksaber: `date`"
 echo
 
 #
@@ -43,5 +43,5 @@ echo "SCRIPT_DIR = " $SCRIPT_DIR
 $SCRIPT_DIR/../cron_driver.py
 
 echo
-echo "Ending nightly Trilinos development testing on lightsaber: `date`"
+echo "Ending nightly Trilinos development testing on dorksaber: `date`"
 echo
