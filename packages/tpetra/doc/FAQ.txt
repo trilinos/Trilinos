@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2016-01-16 18:41:36 loftuser"
+#+DATE: Time-stamp: "2016-10-20 16:13:25 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -10,7 +10,11 @@ following website: http://orgmode.org
 
 This file is best viewed and edited using Emacs (version >= 23), but
 you may view and edit it using any text editor.  Editors, please defer
-to the mark-up conventions already existing in this document.
+to the mark-up conventions already existing in this document.  For
+readers who are not familiar with org-mode, please note that text
+between tildes, like ~this~, denotes literal (verbatim) text.  We use
+this with source code, error messages, and other such things that call
+for literalness.
 
 * Questions about building Tpetra
 ** Weird C++ errors with Intel compiler
@@ -54,6 +58,25 @@ compilation aborted for
 You can tell the Intel compiler to use a specific set of GCC headers
 by setting its "-gxx-name" flag.  Please refer to the Intel
 compiler's documentation for details.
+
+** NVCC link errors in debug builds
+
+NVCC's linker may report errors of the following form:
+#+BEGIN_EXAMPLE
+nvcc error   : 'nvlink' died due to signal 11 (Invalid memory reference)
+nvcc error   : 'nvlink' core dumped
+#+END_EXAMPLE
+See [[https://github.com/trilinos/Trilinos/issues/655][#655]] for an example.  This is not a Tpetra issue; it usually
+manifests downstream.  The cause appears to be excessively large
+executables.  It manifests even with dynamic shared libraries enabled.
+
+One thing that can help is to set the CMake option
+~CMAKE_CXX_FLAGS_DEBUG:STRING="-g -Os"~.  The -Os flag tells the
+compiler to minimize code size.  You may do this in your debug build
+by adding the following to your CMake invocation line:
+#+BEGIN_EXAMPLE
+-D CMAKE_CXX_FLAGS_DEBUG:STRING="-g -Os"
+#+END_EXAMPLE
 
 * Thread safety
 ** Weak and strong thread safety
