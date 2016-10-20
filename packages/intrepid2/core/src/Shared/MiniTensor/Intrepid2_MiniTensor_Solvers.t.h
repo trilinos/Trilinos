@@ -51,7 +51,7 @@ T
 Function_Base<FunctionDerived, S, M>::
 value(FunctionDerived & f, Vector<T, N> const & x)
 {
-  assert(x.get_dimension() == DIMENSION);
+  assert(x.get_dimension() <= DIMENSION);
 
   Vector<T, N> const
   r = residual(f, x);
@@ -73,7 +73,7 @@ gradient(FunctionDerived & f, Vector<T, N> const & x)
   Index const
   dimension = x.get_dimension();
 
-  assert(dimension == DIMENSION);
+  assert(dimension <= DIMENSION);
 
   Vector<AD, N>
   x_ad(dimension);
@@ -121,7 +121,7 @@ hessian(FunctionDerived & f, Vector<T, N> const & x)
   Index const
   dimension = x.get_dimension();
 
-  assert(dimension == DIMENSION);
+  assert(dimension <= DIMENSION);
 
   Vector<AD, N>
   x_ad(dimension);
@@ -154,7 +154,7 @@ Vector<T, NC>
 Equality_Constraint<ConstraintDerived, S, NC, NV>::
 value(ConstraintDerived & c, Vector<T, N> const & x)
 {
-  assert(x.get_dimension() == NUM_VAR);
+  assert(x.get_dimension() <= NUM_VAR);
   return c.value(x);
 }
 
@@ -172,7 +172,7 @@ gradient(ConstraintDerived & c, Vector<T, N> const & x)
   Index const
   num_var = x.get_dimension();
 
-  assert(num_var == NUM_VAR);
+  assert(num_var <= NUM_VAR);
 
   Vector<AD, N>
   x_ad(num_var);
