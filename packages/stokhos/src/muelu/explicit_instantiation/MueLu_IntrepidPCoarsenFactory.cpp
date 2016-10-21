@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-
-
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_INTREPID
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -54,12 +54,12 @@
 // Sacado headers must be included first so that overloaded operators
 // are defined in the muelu template code
 #include "Stokhos_Sacado.hpp"
-#include "MueLu_FacadeClassFactory_def.hpp"
+#include "MueLu_IntrepidPCoarsenFactory_def.hpp"
 
 typedef Stokhos::StandardStorage<int,double> Storage;
 typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
-template class MueLu::FacadeClassFactory<pce_type, int, int>;
+template class MueLu::IntrepidPCoarsenFactory<pce_type, int, int>;
 
 #endif
 
-
+#endif
