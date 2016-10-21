@@ -57,7 +57,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
 // Intrepid Headers
@@ -131,8 +130,8 @@ Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > >  BasisF
     int degree=std::stoi(name.substr(pos2,1));
     if(degree<=0) throw std::runtime_error(myerror);
 
-    std::cout<<"String = "<<name<<" ";
-    std::cout<<"Parsed as = ("<<deriv<<","<<el<<","<<poly<<","<<degree<<")"<<std::endl;
+    //    std::cout<<"String = "<<name<<" ";
+    //    std::cout<<"Parsed as = ("<<deriv<<","<<el<<","<<poly<<","<<degree<<")"<<std::endl;
 
     
     // FIX: Allow for alternative point types for Kirby elements
@@ -171,6 +170,7 @@ void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid::Basis<Scalar,ArrayScalar
 }
 
 
+/*********************************************************************************************************/
 template <class LocalOrdinal>
 void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToNode,
 		       const std::vector<bool> & hi_nodeIsOwned,
@@ -211,7 +211,7 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
   // Flag the owned lo nodes
   lo_nodeIsOwned.resize(lo_numNodes,false);
   for(size_t i=0; i<hi_numNodes; i++) {
-    if(hi_nodeIsOwned[i])
+    if(is_low_order[i] && hi_nodeIsOwned[i])
       lo_nodeIsOwned[hi_to_lo_map[i]]=true;
   }  
 
@@ -221,11 +221,7 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
       lo_elemToNode(i,j) = hi_to_lo_map[lo_elemToNode(i,j)];    
 }
 
-
-		   
-
-
-
+		  
 }//end MueLu::MueLuIntrepid namespace
 
 

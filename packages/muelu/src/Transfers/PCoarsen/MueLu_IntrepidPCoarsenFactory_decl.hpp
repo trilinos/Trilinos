@@ -47,6 +47,7 @@
 #define MUELU_IPCFACTORY_DECL_HPP
 
 #include <string>
+#include <vector>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"
@@ -56,7 +57,7 @@
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_SingleLevelFactoryBase_fwd.hpp"
-#include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 #include "Intrepid_Basis.hpp"
@@ -153,6 +154,29 @@ namespace MueLu {
 
   }; //class IntrepidPCoarsenFactory
 
+
+  /* Utility functions for use with Intrepid */
+  namespace MueLuIntrepid {
+    template<class Scalar>
+    Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > >  BasisFactory(const std::string & name);
+
+    template <class Scalar, class ArrayScalar>
+    void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid::Basis<Scalar,ArrayScalar> > &hi_basis,
+			       const Teuchos::RCP<Intrepid::Basis<Scalar,ArrayScalar> > &lo_basis,
+			       std::vector<size_t> & lo_node_in_hi,
+			       ArrayScalar & hi_DofCoords);
+
+
+    template <class LocalOrdinal>
+    void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToNode,
+			   const std::vector<bool> & hi_nodeIsOwned,
+			   const std::vector<size_t> & lo_node_in_hi,
+			   Intrepid::FieldContainer<LocalOrdinal> & lo_elemToNode,
+			   std::vector<bool> & lo_nodeIsOwned,
+			   std::vector<LocalOrdinal> & hi_to_lo_map,
+			   int & lo_numOwnedNodes);
+
+  }//namespace MueLuIntrepid
 } //namespace MueLu
 
 #define MUELU_IPCFACTORY_SHORT

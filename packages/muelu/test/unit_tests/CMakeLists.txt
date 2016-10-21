@@ -22,6 +22,7 @@ APPEND_SET(SOURCES
 # CoupledAggregationFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
+  IntrepidPCoarsenFactory.cpp
   Level.cpp
   Memory.cpp
   MueLu_UnitTests.cpp
@@ -132,6 +133,14 @@ IF (${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
   ENDIF()
 
 ENDIF()
+
+
+IF (${PACKAGE_NAME}_ENABLE_Intrepid)
+APPEND_SET(SOURCES
+  IntrepidPCoarsenFactory.cpp
+)
+ENDIF()
+
 
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   APPEND_SET(SOURCES Zoltan.cpp

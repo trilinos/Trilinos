@@ -45,7 +45,6 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/User)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/SemiCoarsen)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 if (${PACKAGE_NAME}_ENABLE_Epetra)
@@ -58,7 +57,9 @@ if (${PACKAGE_NAME}_ENABLE_AmgX)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
 ENDIF()
 
-
+if (${PACKAGE_NAME}_ENABLE_Intrepid)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
+ENDIF()
 
 # Function to generate ETI (explicit template instantiation) files
 # from a template and list of class names
@@ -396,6 +397,9 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/SemiCoarsen NOSIERRABJA
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Utils NOSIERRABJAM)
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
+ENDIF()
+if (${PACKAGE_NAME}_ENABLE_Intrepid)
+  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/PCoarsen NOSIERRABJAM)
 ENDIF()
 
 INCLUDE_DIRECTORIES(${BDIR}/)
