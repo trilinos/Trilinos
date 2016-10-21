@@ -45,6 +45,7 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/User)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/SemiCoarsen)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 if (${PACKAGE_NAME}_ENABLE_Epetra)
@@ -444,6 +445,8 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
