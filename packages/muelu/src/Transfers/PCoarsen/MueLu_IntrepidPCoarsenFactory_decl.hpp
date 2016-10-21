@@ -63,6 +63,8 @@
 #include "Intrepid_Basis.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
+#include <Xpetra_Import.hpp>
+
 namespace MueLu {
 
   /*!
@@ -143,7 +145,7 @@ namespace MueLu {
     //@{
     void GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid::FieldContainer<LocalOrdinal> & Pn_elemToNode, 
 						 const std::vector<bool> & Pn_nodeIsOwned,
-						 const Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > > &PnBasis_rcp,
+						 const Intrepid:: FieldContainer<Scalar> PnDofCoords,
 						 const Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > > &P1Basis_rcp, 
 						 const Teuchos::RCP<const Map> & P1_colMap, 
 						 const Teuchos::RCP<const Map> & P1_domainMap, 
@@ -175,6 +177,11 @@ namespace MueLu {
 			   std::vector<bool> & lo_nodeIsOwned,
 			   std::vector<LocalOrdinal> & hi_to_lo_map,
 			   int & lo_numOwnedNodes);
+
+    template <class LocalOrdinal, class GlobalOrdinal, class Node> 
+    void GenerateColMapFromImport(const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & hi_importer,const std::vector<LocalOrdinal> &hi_to_lo_map,const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & lo_domainMap, const size_t & lo_columnMapLength, RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & lo_columnMap);
+
+
 
   }//namespace MueLuIntrepid
 } //namespace MueLu

@@ -219,6 +219,61 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
   for(size_t i=0; i<numElem; i++)
     for(size_t j=0; j<lo_nperel; j++) 
       lo_elemToNode(i,j) = hi_to_lo_map[lo_elemToNode(i,j)];    
+
+  
+  // Check for the [E|T]petra column map ordering property, namely LIDs for owned nodes should all appear first.  
+  // Since we're injecting from the higher-order mesh, it should be true, but we should add an error check & throw in case.
+  bool map_ordering_test_passed=true;
+  for(size_t i=0; i<lo_numNodes-1; i++)
+    if(!lo_nodeIsOwned[i] && lo_nodeIsOwned[i+1]) 
+      map_ordering_test_passed=false;
+  
+  if(!map_ordering_test_passed)
+    throw std::runtime_error("MueLu::MueLuIntrepid::BuildLoElemToNode failed map ordering test");
+
+}
+
+
+/*********************************************************************************************************/
+  template <class LocalOrdinal, class GlobalOrdinal, class Node> 
+  void GenerateColMapFromImport(const Xpetra::Import<LocalOrdinal,GlobalOrdinal, Node> & hi_importer,const std::vector<LocalOrdinal> &hi_to_lo_map,const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & lo_domainMap, const size_t & lo_columnMapLength, RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & lo_columnMap) {
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Node NO;
+  typedef Xpetra::Map<LO,GO,NO> Map;
+  typedef Xpetra::Vector<GO,LO,GO,NO> GOVector;
+
+  GO go_invalid = Teuchos::OrdinalTraits<GO>::invalid();
+  LO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+
+  RCP<const Map> hi_domainMap = hi_importer.getSourceMap();
+  RCP<const Map> hi_columnMap = hi_importer.getTargetMap();
+  // Figure out the GIDs of my non-owned P1 nodes
+  // HOW: We can build a GOVector(domainMap) and fill the values with either invalid() or the P1 domainMap.GID() for that guy.
+  // Then we can use A's importer to get a GOVector(colMap) with that information.
+
+  // FIXME: This assumes rowMap==colMap and [E|T]petra ordering of all the locals first in the colMap
+  RCP<GOVector> dvec = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(hi_domainMap);
+  ArrayRCP<GO> dvec_data = dvec->getDataNonConst(0);
+  for(size_t i=0; i<lo_domainMap.getNodeNumElements(); i++) {
+    if(hi_to_lo_map[i]!=lo_invalid) dvec_data[i] = hi_domainMap->getGlobalElement(hi_to_lo_map[i]);
+    else dvec_data[i] = go_invalid;
+  }
+  RCP<GOVector> cvec = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(hi_columnMap,true);
+  cvec->doImport(*dvec,hi_importer,Xpetra::ADD);
+
+  // Generate the lo_columnMap
+  // HOW: We can use the local ho_to_lo_map from the GID's in cvec to generate the non-contiguous colmap ids.
+  Array<GO> lo_col_data(lo_columnMapLength);
+  ArrayRCP<GO> cvec_data = cvec->getDataNonConst(0);
+  for(size_t i=0,idx=0; i<hi_columnMap->getNodeNumElements(); i++) {
+    if(hi_to_lo_map[i]!=lo_invalid) {
+      lo_col_data[idx] = cvec_data[i];
+      idx++;
+    }
+  }  
+  
+  lo_columnMap = Xpetra::MapFactory<LO,GO,NO>::Build(lo_domainMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),lo_col_data(),lo_domainMap.getIndexBase(),lo_domainMap.getComm());
 }
 
 		  
@@ -233,51 +288,30 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid::FieldContainer<LocalOrdinal> & Pn_elemToNode, 
 														 const std::vector<bool> & Pn_nodeIsOwned,
-														 const Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > > &PnBasis_rcp,
-														 const Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > > &P1Basis_rcp, 
+														 const Intrepid:: FieldContainer<Scalar> PnDofCoords,
+														 const Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > > &P1Basis_rcp,
 														 const Teuchos::RCP<const Map> & P1_colMap, 
 														 const Teuchos::RCP<const Map> & P1_domainMap, 
 														 const Teuchos::RCP<const Map> & Pn_map,
 														 Teuchos::RCP<Matrix>& P) const{
-  typedef Intrepid::FieldContainer<Scalar> FC;
-
-  // NOTE: For all of the basis functions we care about, the Pn Bais is a DofCoordsInterface.  It's just that "Basis" is not.
-  Teuchos::RCP<Intrepid::DofCoordsInterface<FC> > PnDCI_rcp;
-  // Sanity checks
-  assert(Pn_elemToNode.dimension(1) == PnBasis_rcp->getCardinality());
-  int degree = PnBasis_rcp->getDegree();
-
-  // Figure out which unknowns in Pn correspond to nodes on P1.  This varies by element type 
-  // NOTE: It would be nice if we could somehow integrate this into the Intrepid factory stuff.
-  std::vector<int> p1_node_in_pn;
-  if(!rcp_dynamic_cast<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> >(PnBasis_rcp).is_null()) {
-    // HGRAD QUAD Cn: Numbering as per the Kirby convention (straight across, bottom to top) 
-    p1_node_in_pn.insert(p1_node_in_pn.end(),{0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)});
-    PnDCI_rcp = rcp_dynamic_cast<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> >(PnBasis_rcp);
-  }
-  else
-    throw std::runtime_error("IntrepidPCoarsenFactory: Unknown element type");
-
-
-  // Get the reference coordinates for the Pn element  
-  int numFieldsPn = PnBasis_rcp->getCardinality();
-  int spaceDim    = PnBasis_rcp->getBaseCellTopology().getDimension();
-  Intrepid::FieldContainer<SC> PnDofCoords(numFieldsPn,spaceDim);
-  PnDCI_rcp->getDofCoords(PnDofCoords);
-
+  typedef Intrepid::FieldContainer<SC> FC;
   // Evaluate the linear basis functions at the Pn nodes
+  size_t numFieldsPn = Pn_elemToNode.dimension(1);
   size_t numFieldsP1 = P1Basis_rcp->getCardinality();
-  Intrepid::FieldContainer<SC> P1Values_at_PnDofs(numFieldsP1,numFieldsPn);
+  FC P1Values_at_PnDofs(numFieldsP1,numFieldsPn);
   P1Basis_rcp->getValues(P1Values_at_PnDofs, PnDofCoords, Intrepid::OPERATOR_VALUE);
 
   // Allocate P
-  P = rcp(new CrsMatrixWrap(Pn_map, 0));
-  RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  //  P = rcp(new CrsMatrixWrap(Pn_map,P1_colMap)); //FIX THIS LATER FOR FAST FILL
+  //  RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Extra slow fill
 
   // CMS: For this to work, P1_map has to be the *colmap* of P, we
   // need a separate domain map.
+
+#if 0
+  // FIXME: THERE IS STILL STUFF THAT DON'T WORK IN HERE
   size_t Nelem=Pn_elemToNode.dimension(0);  
   std::vector<bool> touched(Pn_map->getNodeNumElements(),false);
   Teuchos::Array<GO> col_gid(1); 
@@ -298,6 +332,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     }
   }
   P->fillComplete(P1_domainMap,Pn_map);
+
+#endif
 }
 
 
@@ -337,6 +373,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     typedef Intrepid::FieldContainer<LO> FCi;
     typedef Intrepid::Basis<SC,FC> Basis;
 
+    GO go_invalid = Teuchos::OrdinalTraits<GO>::invalid();
+    LO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
 
     // Level Get
     RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
@@ -360,13 +398,10 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
       if (APparams->isParameter("graph"))
         finalP = APparams->get< RCP<Matrix> >("graph");
     }
-
     const ParameterList& pL = GetParameterList();
 
-
     /*******************/
-    // FIXME: Allow these to be manually specified instead of intrepid
-
+    // FIXME: Allow these to be manually specified instead of Intrepid
     // Get the Intrepid bases
     RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("inc: hi basis"));
     RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("inc: lo basis"));
@@ -404,73 +439,19 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     std::vector<LO> hi_to_lo_map;
     int P1_numOwnedNodes;
     MueLuIntrepid::BuildLoElemToNode(*Pn_elemToNode,Pn_nodeIsOwned,lo_node_in_hi,P1_elemToNode,P1_nodeIsOwned,hi_to_lo_map,P1_numOwnedNodes);
+    assert(hi_to_lo_map.size() == colMap->getNodeNumElements());
 
-#if 0
- BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToNode,
-		       const std::vector<bool> & hi_nodeIsOwned,
-		       const std::vector<size_t> & lo_node_in_hi,
-		       Intrepid::FieldContainer<LocalOrdinal> & lo_elemToNode,
-		       std::vector<bool> & lo_nodeIsOwned,
-		       std::vector<LocalOrdinal> & hi_to_lo_map,
-		   int & lo_numOwnedNodes);
-#endif
+    // Generate the P1_domainMap
+    // HOW: Since we know how many each proc has, we can use the non-uniform contiguous map constructor to do the work for us
+    RCP<const Map> P1_domainMap = MapFactory::Build(rowMap->lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),P1_numOwnedNodes,rowMap->getIndexBase(),rowMap->getComm());
+    Set(coarseLevel, "CoarseMap", P1_domainMap);       
 
-    // Count the P1 owned nodes
-    
-        
-    // Generate p1_map
-    // NOTE: We need two maps here, a colmap and a domain map. 
-    // The below algorithm assumes that A->getDomainMap() == A->getRowMap().
-    // 1) The domain map can be generated by counting the number of owned LowOrder nodes in the RowMap and using the
-    //    non-uniform contiguous map constructor.
-    // 2) The LowOrder colmap can be used by building a Vector<GO> and filling that with either invalid() or the GID generated in (1).
-    //    At this point we can use A's importer to get a Vector<GO> of the GID's corresponding to the LowOrder columns in A.
-    // 3) With the Vector<GO> from (2) we can use the non-uniform non-contiguous constructor to generate the ColMap for P.
-
-    // Step 1: Generate the P1 domain map
-    // NTS: This is fixed for non-strided at the moment.  At some point, we need to expand this boy to handle multiple PDEs per node.
-
-    // CMS: This is the wrong size, at current
-
-    //    RCP<const Map> P1_domainMap = MapFactory::Build(rowMap->lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-    //						    num_owned_rows,rowMap->getIndexBase(),rowMap->getComm());
-
-
-    // Step 2: LowOrder colmap can be used by building a Vector<GO> and filling that with either invalid() or the GID generated in (1).
-    // At this point we can use A's importer to get a Vector<GO> of the GID's corresponding to the LowOrder columns in A.
-    //    RCP<GOVector> pn_domainvec = VectorFactory::Build(domainMap,true);
-    //    RCP<GOVector> pn_columnvec = VectorFactory::Build(colMap,true);
-    //   for(size_t i=0; i<domainMap->getNodeNumElements(); i++) {
-    //     if(Pn_nodeIsOwned[i]
-    //   }
-
-    Teuchos::RCP<Map> P1_colMap, P1_domainMap;
-#if 0
- RCP<const Map > reducedMap = MapFactory::Build( A->getRowMap()->lib(),
-                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                    gidsToImport, indexBase, A->getRowMap()->getComm()    );
-#endif
-    Set(coarseLevel, "CoarseMap", P1_domainMap);
-
-
-
-
+    // Generate the P1_columnMap
+    RCP<const Map> P1_colMap;
+    MueLuIntrepid::GenerateColMapFromImport<LO,GO,NO>(*Acrs.getCrsGraph()->getImporter(),hi_to_lo_map,*P1_domainMap,P1_nodeIsOwned.size(),P1_colMap);
 
     // Generate the coarsening
-    GenerateLinearCoarsening_pn_kirby_to_p1(*Pn_elemToNode,Pn_nodeIsOwned,hi_basis,lo_basis,P1_colMap,P1_domainMap,A->getRowMap(),finalP);
-
-#if 0
-GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid::FieldContainer<int> & Pn_elemToNode, 
-					const std::vector<bool> & Pn_nodeIsOwned,
-					const Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > > &PnBasis_rcp,
-					const Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > > &P1Basis_rcp, 
-					const Teuchos::RCP<const Map> & P1_map, 
-					const Teuchos::RCP<const Map> & Pn_map,
-					Teuchos::RCP<Matrix>& P) const;
-#endif
-
-
-
+    //    GenerateLinearCoarsening_pn_kirby_to_p1(*Pn_elemToNode,Pn_nodeIsOwned,hi_DofCoords,lo_basis,P1_colMap,P1_domainMap,A->getRowMap(),finalP);
 
     // Level Set
     if (!restrictionMode_) {

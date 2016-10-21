@@ -130,13 +130,14 @@ namespace MueLuTests {
     typedef Intrepid::FieldContainer<LO> FCi;
 
     out << "version: " << MueLu::Version() << std::endl;
+    int max_degree=5;
 
     {
       //QUAD
       // A one element test with Kirby-numbered nodes where the top edge is not owned      
       RCP<Intrepid::Basis_HGRAD_QUAD_C1_FEM<SC,FC> > lo = rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<SC,FC>());
       RCP<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> > hi;
-      for(int degree=2; degree < 5; degree++) {
+      for(int degree=2; degree < max_degree; degree++) {
 	hi = rcp(new Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC>(degree,Intrepid::POINTTYPE_EQUISPACED));
 	int Nn = (degree+1)*(degree+1);
 #ifdef DEBUG_BUILDLOE2N
@@ -184,6 +185,22 @@ namespace MueLuTests {
 
   }
 
+  /*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,GenerateColMapFromImport, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+  #   include "MueLu_UseShortNames.hpp"
+
+    // This function basically takes an existing domain->column importer (the "hi order" guy) and using the hi_to_lo_map, generates "lo order" version.  The domain map is already given to
+    // us here, so we just need to make tha column one.
+
+    // We'll test this by starting with some linearly distributed map for the "hi" domain map and a duplicated map as the "hi" column map.
+    // We then do a "lo" domain map, which just grabs the first GID on each proc.
+    // Testing this should be easy.
+
+#if 0
+ GenerateColMapFromImport(const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & hi_importer,const std::vector<LocalOrdinal> &hi_to_lo_map,const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & lo_domainMap, const size_t & lo_columnMapLength, RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & lo_columnMap);
+#endif
+  }
 
   /*********************************************************************************************************************/
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
