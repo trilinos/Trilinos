@@ -20,7 +20,6 @@ private:
   const bool useSecantHessVec_;
 
   Elementwise::Multiply<Real> mult_;
-  Elementwise::Divide<Real>   div_;
 
   void invert( Vector<Real> &x ) {
     const Real one(1);
