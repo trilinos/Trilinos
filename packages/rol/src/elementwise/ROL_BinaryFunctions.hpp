@@ -134,10 +134,10 @@ public:
 template<class Real>
 class ValueSet : public BinaryFunction<Real> {
 private:
-  Real threshold_;
-  int option_;
-  Real c1_;
-  Real c2_;
+  const Real threshold_;
+  const int option_;
+  const Real c1_;
+  const Real c2_;
 public:
   static const int LESS_THAN    = 0;
   static const int EQUAL_TO     = 1;
@@ -146,7 +146,7 @@ public:
     threshold_(threshold), option_(option), c1_(c1), c2_(c2) {}
  
   Real apply(const Real &x, const Real &y ) const {
-    Real result;
+    Real result(c2_);
     switch( option_ ) {
       case LESS_THAN:    { result = y <  threshold_ ? c1_ : c2_; break; }
       case EQUAL_TO:     { result = y == threshold_ ? c1_ : c2_; break; }
