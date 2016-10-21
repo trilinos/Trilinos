@@ -89,9 +89,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
-#TRIBITS_ADD_EXECUTABLE(
-#  ColemanLiModelCheck
-#  SOURCES test_11.cpp
-#  ADD_DIR_TO_NAME
-#  )
+TRIBITS_ADD_EXECUTABLE(
+  ColemanLiModelCheck
+  SOURCES test_11.cpp
+  ADD_DIR_TO_NAME
+  )
 

@@ -9,96 +9,44 @@ namespace ROL {
 
 template<class Real>
 class ColemanLiModel : public TrustRegionModel<Real> {
-
-  template <typename T> using RCP = Teuchos::RCP<T>;
-
-  typedef Objective<Real>                  OBJ;
-  typedef BoundConstraint<Real>            BND;
-  typedef Secant<Real>                     SEC; 
-  typedef Vector<Real>                     V;
-
-  typedef Elementwise::AbsoluteValue<Real> ABS;
-  typedef Elementwise::Divide<Real>        DIV;
-  typedef Elementwise::Fill<Real>          FILL;
-  typedef Elementwise::Multiply<Real>      MULT;
-  typedef Elementwise::Power<Real>         POW;
-  typedef Elementwise::Shift<Real>         SHIFT;
-  typedef Elementwise::ValueSet<Real>      VALSET;
-
 private:
+  Teuchos::RCP<BoundConstraint<Real> > bnd_;
+  Teuchos::RCP<Secant<Real> > sec_;
+  Teuchos::RCP<Vector<Real> > prim_, dual_;
+  Teuchos::RCP<Vector<Real> > di_;  // di_i=sqrt(abs(v_i))
+  Teuchos::RCP<Vector<Real> > j_;   // "Jacobian" of v
 
-  RCP<OBJ> obj_;
-  RCP<BND> bnd_;
-  RCP<SEC> sec_;
+  const bool useSecantPrecond_;
+  const bool useSecantHessVec_;
 
-  RCP<V>   x_;   // Optimization vector
-  RCP<V>   g_;   // Gradient
-  RCP<V>   di_;  // di_i=sqrt(abs(v_i))
-  RCP<V>   j_;   // "Jacobian" of v
+  Elementwise::Multiply<Real> mult_;
+  Elementwise::Divide<Real>   div_;
 
-  RCP<V>   z_;   // Scratch vector
-
-
-  Real one_  = Real(1);
-  Real zero_ = Real(0);
-  const Real inf_;
-  const Real ninf_;
-
-  static const int LESS_THAN    = 0;
-  static const int EQUAL_TO     = 1;
-  static const int GREATER_THAN = 2;
-
-  Real eps_;
-
-  MULT mult_;
-  DIV  div_;
-
-  bool useSecant_;
-
-  void applyB( V &Bv, const V &v ) {
-    if(useSecant_) {
-      sec_->applyB(Bv,v);
-    }
-    else {
-      obj_->hessVec(Bv,v,*x_,eps_);   
-    }
-  } 
-
-  void invert( V &x ) {
-    x.scale(-one_);
-    x.applyUnary(SHIFT(one_));
+  void invert( Vector<Real> &x ) {
+    const Real one(1);
+    x.scale(-one);
+    x.applyUnary(Elementwise::Shift<Real>(one));
   }
 
- public:
-
-  ColemanLiModel( OBJ &obj, BND &bnd, const V &x, const V &g ) :
-    ColemanLiModel(obj,bnd,Teuchos::null,x,g) {
-  }
-
-  ColemanLiModel( OBJ &obj, BND &bnd, const RCP<SEC> &sec, const V &x, const V &g ) :
-    sec_(sec),
-    x_(x.clone()),
-    g_(g.clone()),
-    di_(x.clone()),
-    j_(x.clone()),
-    z_(x.clone()),
-    inf_(ROL_INF<Real>()),
-    ninf_(ROL_NINF<Real>()) {
+  void initialize(Objective<Real> &obj, BoundConstraint<Real> &bnd,
+                  const Vector<Real> &x, const Vector<Real> &g) {
+    const Real zero(0), one(1), INF(ROL_INF<Real>()), NINF(ROL_NINF<Real>());
+    const int LESS_THAN    = 0;
+    const int EQUAL_TO     = 1;
+    const int GREATER_THAN = 2;
     
-    obj_ = Teuchos::rcpFromRef(obj);
     bnd_ = Teuchos::rcpFromRef(bnd);
 
-    eps_ = std::sqrt(ROL_EPSILON<Real>());
+    prim_ = x.clone();
+    dual_ = g.clone();
+    di_   = x.clone();
+    j_    = x.clone();
 
-    useSecant_ =  sec == Teuchos::null ? false : true;
+    Teuchos::RCP<Vector<Real> > l =  bnd.getLowerVectorRCP();
+    Teuchos::RCP<Vector<Real> > u =  bnd.getUpperVectorRCP();
 
-    x_->set(x);
-
-    RCP<V> l =  bnd.getLowerVectorRCP();
-    RCP<V> u =  bnd.getUpperVectorRCP();
-
-    RCP<V> m1 = x.clone();
-    RCP<V> m2 = x.clone();
+    Teuchos::RCP<Vector<Real> > m1 = x.clone();
+    Teuchos::RCP<Vector<Real> > m2 = x.clone();
 
     j_->set(g);
     j_->applyUnary(Elementwise::Sign<Real>());
@@ -106,139 +54,141 @@ private:
     di_->zero();
 
     // CASE (i)
-
-    z_->set(*u);
-    z_->axpy(-one_,x);
-
-    //  m_i = { 1 if g_i <  0
-    //        { 0 if g_i >= 0
-
-
-    m1->applyBinary(VALSET(zero_, LESS_THAN),*g_);          // Mask for gradient
-    m2->applyBinary(VALSET(inf_, LESS_THAN),*u); // Mask for finite upper bounds
-
-    j_->applyBinary(mult_,*m2);  // Zero out elements of Jacobian with u_i=inf
-
-    m2->applyBinary(mult_,*m1);  // Mask for g_i<0 and u_i<inf
-
-    z_->applyBinary(mult_,*m2);
- 
-    // z_i = { u_i-x_i if g_i <  0 and u_i<inf
-    //       { 0       otherwise
- 
-    di_->plus(*z_);
+    // Mask for negative gradient (m1 is 1 if g is negative and 0 otherwise)
+    m1->applyBinary(Elementwise::ValueSet<Real>(zero, LESS_THAN),g);
+    // Mask for finite upper bounds (m2 is 1 if u is finite and 0 otherwise)
+    m2->applyBinary(Elementwise::ValueSet<Real>(INF, LESS_THAN),*u);
+    // Zero out elements of Jacobian with u_i=inf
+    j_->applyBinary(mult_,*m2);
+    // Mask for g_i < 0 and u_i < inf
+    m2->applyBinary(mult_,*m1);
+    // prim_i = { u_i-x_i if g_i < 0 and u_i < inf
+    //          { 0       otherwise
+    prim_->set(*u); prim_->axpy(-one,x);
+    prim_->applyBinary(mult_,*m2);
+    // Add to D
+    di_->plus(*prim_);
 
     // CASE (iii)
-
-    z_->applyUnary(FILL(-one_)); 
-
-    m2->applyBinary(VALSET(inf_, EQUAL_TO),*u); // Mask for infinite upper bounds
-    m2->applyBinary(mult_,*m1);  // Mask for g_i<0 and u_i=inf
-   
-    z_->applyBinary(mult_,*m2);
-
-    di_->plus(*z_);
+    // Mask for infinite upper bounds
+    m2->applyBinary(Elementwise::ValueSet<Real>(INF, EQUAL_TO),*u);
+    // Mask for g_i < 0 and u_i = inf
+    m2->applyBinary(mult_,*m1);
+    // prim_i = { -1 if g_i < 0 and u_i = inf
+    //          { 0  otherwise
+    prim_->applyUnary(Elementwise::Fill<Real>(-one)); 
+    prim_->applyBinary(mult_,*m2);
+    // Add to D
+    di_->plus(*prim_);
 
     // CASE (ii)
-  
-    z_->set(x);
-    z_->axpy(-one_,*l);
-
     invert(*m1);
-
-    m2->applyBinary(VALSET(ninf_, GREATER_THAN),*l); // Mask for finite lower bounds
-
-    j_->applyBinary(mult_,*m2); // Zero out elements of Jacobian with l_i=-inf
-
+    // Mask for finite lower bounds
+    m2->applyBinary(Elementwise::ValueSet<Real>(NINF, GREATER_THAN),*l);
+    // Zero out elements of Jacobian with l_i=-inf
+    j_->applyBinary(mult_,*m2);
     m2->applyBinary(mult_,*m1);  
-
-
-    z_->applyBinary(mult_,*m2);
-
-    // z_i = { x_i-l_i if g_i >=  0 and l_i>-inf
-    //       { 0       otherwise
- 
-    di_->plus(*z_);
+    // prim_i = { x_i-l_i if g_i >= 0 and l_i > -inf
+    //          { 0       otherwise
+    prim_->set(x); prim_->axpy(-one,*l);
+    prim_->applyBinary(mult_,*m2);
+    // Add to D
+    di_->plus(*prim_);
 
     // CASE (iv)
-    
-    z_->applyUnary(FILL(one_));
-    
-    m2->applyBinary(VALSET(ninf_, EQUAL_TO),*l); // Mask for infinite lower bounds
-    m2->applyBinary(mult_,*m1);  // Mask for g_i>=0 and l_i=-inf
-
-    z_->applyBinary(mult_,*m2);
-
-    di_->plus(*z_);
-
+    // Mask for infinite lower bounds
+    m2->applyBinary(Elementwise::ValueSet<Real>(NINF, EQUAL_TO),*l);
+    // Mask for g_i>=0 and l_i=-inf
+    m2->applyBinary(mult_,*m1);
+    // prim_i = { 1 if g_i >= 0 and l_i = -inf
+    //          { 0 otherwise
+    prim_->applyUnary(Elementwise::Fill<Real>(one));
+    prim_->applyBinary(mult_,*m2);
+    // Add to D
+    di_->plus(*prim_);
+  
     // d_i = { u_i-x_i if g_i <  0, u_i<inf
     //       { -1      if g_i <  0, u_i=inf
     //       { x_i-l_i if g_i >= 0, l_i>-inf
     //       { 1       if g_i >= 0, l_i=-inf 
-  
-    di_->applyUnary(ABS());
-    di_->applyUnary(POW(0.5));
+    di_->applyUnary(Elementwise::AbsoluteValue<Real>());
+    di_->applyUnary(Elementwise::SquareRoot<Real>());
+  }
 
-    // Stored g is ghat
-    forwardTransform(*g_,g);
+ public:
 
+  ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
+                  const Vector<Real> &x, const Vector<Real> &g )
+    : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
+      sec_(Teuchos::null), useSecantPrecond_(false), useSecantHessVec_(false) {
+    initialize(obj,bnd,x,g);
+  }
+
+  ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
+                  const Vector<Real> &x, const Vector<Real> &g,
+                  const Teuchos::RCP<Secant<Real> > &sec,
+                  const bool useSecantPrecond, const bool useSecantHessVec)
+    : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
+      sec_(sec), useSecantPrecond_(useSecantPrecond), useSecantHessVec_(useSecantHessVec) {
+    initialize(obj,bnd,x,g);
   }
  
   // Note that s is the \f$\hat{s}\f$ and \f$\psi\f$ is the $\hat\psi$ from the paper
-  Real value( const V& s, Real &tol ) {
-
-    Real psi = g_->dot(s.dual()); // \f$\hat g^\top \hat s\f$
-
-    forwardTransform(*z_,s);    // z = inv(D)*s
-    applyB(*z_,*z_);            // y = B*inv(D)*s
-    forwardTransform(*z_,*z_);  // z = inv(D)*B*inv(D)*s   
-     
-    psi += 0.5*z_->dot(s);          
-
-    z_->set(s);                 // z = s
-    z_->applyBinary(mult_,*j_);  // z = J*z
-    z_->applyBinary(mult_,*g_);  // z = diag(g)*J*s
-    
-    psi += 0.5*s.dot(*z_); 
-
-    return psi;    
-
+  Real value( const Vector<Real> &s, Real &tol ) {
+    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    // Apply Hessian to s
+    hessVec(*dual_, s, s, tol);
+    dual_->scale(static_cast<Real>(0.5));
+    // Form inv(D) * g
+    prim_->set(gc->dual());
+    prim_->applyBinary(mult_,*di_);
+    // Add scaled gradient to Hessian in direction s
+    dual_->plus(prim_->dual());
+    return dual_->dot(s.dual());    
   }
 
-
-  void gradient( V& gs, const V& s, Real &tol ) {
-    hessVec( gs, s, s, tol );
-    gs.plus(*g_);    
+  void gradient( Vector<Real> &g, const Vector<Real> &s, Real &tol ) {
+    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    hessVec(g, s, s, tol);
+    dualTransform(*dual_,*gc);
+    g.plus(*dual_);    
   }
 
-  void hessVec( V& hv, const V& v, const V& s, Real &tol ) {
-    z_->set(v);
-    forwardTransform(hv,*z_);
-    applyB(*z_,hv);
-    forwardTransform(hv,*z_);
-
-    backwardTransform(*z_,v);
-    z_->applyBinary(mult_,*j_);
-    z_->applyBinary(mult_,*di_);
-    hv.plus(*z_); 
-    
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
+    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    // Build B = inv(D) * Hessian * inv(D)
+    primalTransform(*prim_, v);
+    if(useSecantHessVec_) {
+      sec_->applyB(*dual_, *prim_);
+    }
+    else {
+      const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+      TrustRegionModel<Real>::getObjective()->hessVec(*dual_, *prim_, *xc, tol);   
+    }
+    dualTransform(hv, *dual_);
+    // Build C = diag(g) J
+    prim_->set(v);
+    prim_->applyBinary(mult_, *j_);
+    prim_->applyBinary(mult_, gc->dual());
+    hv.plus(prim_->dual()); 
   }
   
-  void forwardTransform( Vector<Real> &tv, const Vector<Real> &v ) {
+  void dualTransform( Vector<Real> &tv, const Vector<Real> &v ) {
     tv.set(v);
     tv.applyBinary(mult_,*di_);
   }
 
-  void backwardTransform( Vector<Real> &tiv, const Vector<Real> &v ) { 
+  void primalTransform( Vector<Real> &tiv, const Vector<Real> &v ) { 
     tiv.set(v);
-    tiv.applyBinary(div_,*di_);
+    tiv.applyBinary(mult_,*di_);
   }
 
+  const Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint(void) const {
+    return bnd_;
+  }
 
 }; // class ColemanLiModel
 
-
 }
-
 
 #endif // ROL_COLEMANLIMODEL_HPP

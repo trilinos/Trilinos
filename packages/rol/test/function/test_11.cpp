@@ -52,10 +52,12 @@
 #include "ROL_RandomVector.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+//#include <fenv.h>
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
+//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   typedef ROL::Vector<RealT>          V;
   typedef ROL::Objective<RealT>       OBJ;

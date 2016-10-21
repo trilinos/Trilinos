@@ -45,6 +45,7 @@
 #define ROL_TRUSTREGIONMODEL_H
 
 #include "ROL_Objective.hpp"
+#include "ROL_BoundConstraint.hpp"
 #include "ROL_Secant.hpp"
 
 /** @ingroup func_group

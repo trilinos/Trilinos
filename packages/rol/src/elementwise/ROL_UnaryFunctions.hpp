@@ -130,6 +130,17 @@ public:
 }; // class Power
 
 
+// Compute the elementwise square root of a vector
+template<class Real> 
+class SquareRoot : public UnaryFunction<Real> {
+public:
+  SquareRoot( void ) {}
+
+  Real apply( const Real &x ) const {
+    return std::sqrt(x);
+  } 
+}; // class Power
+
 // Generate a uniformly distributed random number
 // between lower and upper
 template<class Real> 

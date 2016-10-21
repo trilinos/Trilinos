@@ -138,10 +138,12 @@ private:
   Teuchos::RCP<TrustRegion<Real> >      trustRegion_; ///< Container for trust-region solver object.
   Teuchos::RCP<TrustRegionModel<Real> > model_;       ///< Container for trust-region model.
   ETrustRegion                          etr_;         ///< Trust-region subproblem solver type.
+  ETrustRegionModel                     TRmodel_;     ///< Trust-region subproblem model type.
   Real                                  delMax_;      ///< Maximum trust-region radius.
   ETrustRegionFlag                      TRflag_;      ///< Trust-region exit flag.
   int                                   SPflag_;      ///< Subproblem solver termination flag.
   int                                   SPiter_;      ///< Subproblem solver iteration count.
+  bool                                  bndActive_;   ///< Flag whether bound is activated.
 
   // SECANT INFORMATION
   Teuchos::RCP<Secant<Real> > secant_;           ///< Container for secant approximation.
@@ -192,6 +194,7 @@ private:
     scale1_ = ilist.get("Relative Tolerance", static_cast<Real>(2)); 
     // Initialize Trust Region Subproblem Solver Object
     etr_              = StringToETrustRegion(list.get("Subproblem Solver", "Dogleg"));  
+    TRmodel_          = StringToETrustRegionModel(list.get("Subproblem Model", "Kelley-Sachs"));
     useProjectedGrad_ = glist.get("Projected Gradient Criticality Measure", false);
     trustRegion_      = TrustRegionFactory<Real>(parlist);
     // Scale for epsilon active sets
@@ -291,8 +294,9 @@ public:
     : Step<Real>(),
       xnew_(Teuchos::null), xold_(Teuchos::null), gp_(Teuchos::null),
       trustRegion_(Teuchos::null), model_(Teuchos::null),
-      etr_(TRUSTREGION_DOGLEG), delMax_(1e8),
-      TRflag_(TRUSTREGION_FLAG_SUCCESS), SPflag_(0), SPiter_(0),
+      etr_(TRUSTREGION_DOGLEG), TRmodel_(TRUSTREGION_MODEL_KELLEYSACHS),
+      delMax_(1e8), TRflag_(TRUSTREGION_FLAG_SUCCESS),
+      SPflag_(0), SPiter_(0), bndActive_(false),
       secant_(Teuchos::null), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
@@ -322,8 +326,9 @@ public:
     : Step<Real>(),
       xnew_(Teuchos::null), xold_(Teuchos::null), gp_(Teuchos::null),
       trustRegion_(Teuchos::null), model_(Teuchos::null),
-      etr_(TRUSTREGION_DOGLEG), delMax_(1e8),
-      TRflag_(TRUSTREGION_FLAG_SUCCESS), SPflag_(0), SPiter_(0),
+      etr_(TRUSTREGION_DOGLEG), TRmodel_(TRUSTREGION_MODEL_KELLEYSACHS),
+      delMax_(1e8), TRflag_(TRUSTREGION_FLAG_SUCCESS),
+      SPflag_(0), SPiter_(0), bndActive_(false),
       secant_(Teuchos::null), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
@@ -357,6 +362,7 @@ public:
                    AlgorithmState<Real> &algo_state ) {
     Real p1(0.1), oe10(1.e10), zero(0), one(1), half(0.5), three(3), two(2), six(6);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    bndActive_ = bnd.isActivated();
 
     trustRegion_->initialize(x,s,g);
 
@@ -466,17 +472,32 @@ public:
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     // Build trust-region model
     if (bnd.isActivated()) { 
+      if ( TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
 //      Real eps = scaleEps_*algo_state.gnorm;
-      Real eps = scaleEps_ * std::min(std::pow(algo_state.gnorm,static_cast<Real>(0.75)),
-                                      static_cast<Real>(0.01));
-      model_ = Teuchos::rcp(new ROL::KelleySachsModel<Real>(obj,
+        Real eps = scaleEps_ * std::min(std::pow(algo_state.gnorm,static_cast<Real>(0.75)),
+                                        static_cast<Real>(0.01));
+        model_ = Teuchos::rcp(new ROL::KelleySachsModel<Real>(obj,
+                                                              bnd,
+                                                              x,
+                                                              *(step_state->gradientVec),
+                                                              eps,
+                                                              secant_,
+                                                              useSecantPrecond_,
+                                                              useSecantHessVec_));
+      }
+      else if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
+        model_ = Teuchos::rcp(new ROL::ColemanLiModel<Real>(obj,
                                                             bnd,
                                                             x,
                                                             *(step_state->gradientVec),
-                                                            eps,
                                                             secant_,
                                                             useSecantPrecond_,
                                                             useSecantHessVec_));
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+          ">>> ERROR (ROL::TrustRegionStep): Invalid trust-region model!");
+      }
     }
     else {
       model_ = Teuchos::rcp(new ROL::TrustRegionModel<Real>(obj,
@@ -655,20 +676,23 @@ public:
   */
   std::string printName( void ) const {
     std::stringstream hist;
-    hist << "\n" << ETrustRegionToString(etr_) << " Trust-Region solver";
+    hist << "\n" << ETrustRegionToString(etr_) << " Trust-Region Solver";
     if ( useSecantPrecond_ || useSecantHessVec_ ) {
       if ( useSecantPrecond_ && !useSecantHessVec_ ) {
-        hist << " with " << ESecantToString(esec_) << " preconditioning\n";
+        hist << " with " << ESecantToString(esec_) << " Preconditioning\n";
       }
       else if ( !useSecantPrecond_ && useSecantHessVec_ ) {
-        hist << " with " << ESecantToString(esec_) << " Hessian approximation\n";
+        hist << " with " << ESecantToString(esec_) << " Hessian Approximation\n";
       }
       else {
-        hist << " with " << ESecantToString(esec_) << " preconditioning and Hessian approximation\n";
+        hist << " with " << ESecantToString(esec_) << " Preconditioning and Hessian Approximation\n";
       }
     }
     else {
       hist << "\n";
+    }
+    if ( bndActive_ ) {
+      hist << "Trust-Region Model: " << ETrustRegionModelToString(TRmodel_) << "\n";
     }
     return hist.str();
   }
