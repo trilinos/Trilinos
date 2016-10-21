@@ -145,6 +145,9 @@
 
 #include <sstream>
 
+
+#include "MueLu_IntrepidPCoarsenFactory.hpp"
+
 using namespace std;
 using namespace Intrepid;
 
@@ -2168,9 +2171,9 @@ void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContain
         int col_lid = Pn_elemToNode(i,p1_node_in_pn[k]);
 	int col_gid = P1_map.GID(col_lid);
         double val = P1Values_at_PnDofs(k,j);
-	if(Pn_nodeIsOwned[col_lid] && !touched[col_lid]) {
+	if(Pn_nodeIsOwned[row_lid] && !touched[row_lid]) {
 	  P->InsertGlobalValues(row_gid,1,&val,&col_gid);
-	  touched[col_lid]=1;
+	  touched[row_lid]=1;
 	}
       }
     }
