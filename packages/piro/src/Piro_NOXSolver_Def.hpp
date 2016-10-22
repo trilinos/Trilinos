@@ -89,7 +89,7 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
 
   if (jacobianSource == "Matrix-Free") {
     if (appParams->isParameter("Matrix-Free Perturbation")) {
-      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model,
+      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model_,
                            appParams->get<double>("Matrix-Free Perturbation")));
     }
     else 
