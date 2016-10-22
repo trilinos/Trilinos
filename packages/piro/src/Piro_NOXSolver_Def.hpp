@@ -44,6 +44,7 @@
 #define PIRO_NOXSOLVER_DEF_HPP
 
 #include "Piro_NOXSolver.hpp"
+#include "Piro_MatrixFreeDecorator.hpp"
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 
@@ -73,6 +74,7 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
   SteadyStateSolver<Scalar>(model_),
   appParams(appParams_),
   observer(observer_),
+  model(model_), 
   solver(new Thyra::NOXNonlinearSolver),
   out(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
@@ -82,7 +84,19 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
     Teuchos::sublist(appParams, "NOX", /*mustAlreadyExist =*/ false);
 
   solver->setParameterList(noxParams);
-  solver->setModel(model_);
+
+  std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
+
+  if (jacobianSource == "Matrix-Free") {
+    if (appParams->isParameter("Matrix-Free Perturbation")) {
+      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model,
+                           appParams->get<double>("Matrix-Free Perturbation")));
+    }
+    else 
+      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model_));
+  }
+  //end IKT additions 
+  solver->setModel(model);
 }
 
 template <typename Scalar>

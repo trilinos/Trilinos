@@ -88,6 +88,8 @@ class NOXSolver
   Teuchos::RCP<Thyra::NOXNonlinearSolver> solver;
 
   Teuchos::RCP<Teuchos::FancyOStream> out;
+
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
 };
 
 }
