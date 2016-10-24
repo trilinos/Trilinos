@@ -412,7 +412,7 @@ void PHX::DagManager<Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& vm)
 {
-  // Call each providers' post registration setup
+  // Call each evaluators' post registration setup
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
     nodes_[topoSortEvalIndex[n]].getNonConst()->postRegistrationSetup(d,vm);
 }

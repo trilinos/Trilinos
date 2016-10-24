@@ -93,7 +93,9 @@ postRegistrationSetup(typename Traits::SetupData d,
   // Figure out all evaluator dependencies
   if ( !(this->dag_manager_.sortingCalled()) )
     this->dag_manager_.sortAndOrderEvaluators();
-  
+
+
+  // Allocate memory for all fields that are needed
   const std::vector< Teuchos::RCP<PHX::FieldTag> >& var_list = 
     this->dag_manager_.getFieldTags();
 
@@ -107,7 +109,15 @@ postRegistrationSetup(typename Traits::SetupData d,
 			       "Error: PHX::EvaluationContainer::postRegistrationSetup(): could not build a Kokkos::View for field named \"" << (*var)->name() << "\" of type \"" << (*var)->dataTypeInfo().name() << "\" for the evaluation type \"" << PHX::typeAsString<EvalT>() << "\".");
   }
 
-  // Allow fields in evaluators to grab pointers to relevant field data
+  // Bind memory to all fields in all required evaluators
+  for (const auto& field : var_list)
+    this->bindField(*field,fields_[field->identifier()]);
+
+  // Allow users to perform special setup. This used to include
+  // manually binding memory for all fields in the evaluators via
+  // setFieldData(). NOTE: users should not have to bind memory
+  // anymore in the postRegistrationSetup() as we now do it for them
+  // above.
   this->dag_manager_.postRegistrationSetup(d,fm);
 
   post_registration_setup_called_ = true;
@@ -204,14 +214,14 @@ PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 // *************************************************************************
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
-setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a)
+bindField(const PHX::FieldTag& f, const PHX::any& a)
 {
   auto s = fields_.find(f.identifier());
 
   if (s == fields_.end()) {
     std::stringstream st;
-    st << "\n ERROR in PHX::EvaluationContainer<EvalT, Traits>::setUnmanagedField():\n" 
-       << " Failed to set Unmanaged field: \"" <<  f.identifier() << "\"\n" 
+    st << "\n ERROR in PHX::EvaluationContainer<EvalT, Traits>::bindField():\n" 
+       << " Failed to bind field: \"" <<  f.identifier() << "\"\n" 
        << " for evaluation type \"" << PHX::typeAsString<EvalT>() << "\".\n"
        << " This field is not used in the Evaluation DAG.\n";
     
@@ -224,7 +234,7 @@ setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a)
   // Loop through evalautors and rebind the field
   auto& evaluators = this->dag_manager_.getEvaluatorsBindingField(f);
   for (auto& e : evaluators)
-    e->bindUnmanagedField(f,a);
+    e->bindField(f,a);
 }
 
 // *************************************************************************

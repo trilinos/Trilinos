@@ -153,8 +153,7 @@ namespace PHX {
 
     virtual const std::string& getName() const override;
 
-    virtual void bindUnmanagedField(const PHX::FieldTag& ft,
-                                    const PHX::any& f) override;
+    virtual void bindField(const PHX::FieldTag& ft, const PHX::any& f) override;
 
   private:
 
@@ -166,8 +165,8 @@ namespace PHX {
 
     std::string name_;
 
-    //! binds memory for an unmanaged field
-    std::unordered_map<std::string,std::function<void(const PHX::any& f)>> unmanaged_field_binders_;
+    //! functors that bind memory for evaluator fields
+    std::unordered_map<std::string,std::function<void(const PHX::any& f)>> field_binders_;
   };
 
 }

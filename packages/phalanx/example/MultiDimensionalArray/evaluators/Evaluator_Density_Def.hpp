@@ -59,9 +59,6 @@ void Density<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& vm)
 {
-  this->utils.setFieldData(density,vm);
-  this->utils.setFieldData(temp,vm);
-
   cell_data_size = density.size() / density.dimension(0);
 }
 
