@@ -189,24 +189,65 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,GenerateColMapFromImport, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
   #   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO;
 
+    out << "version: " << MueLu::Version() << std::endl;
+
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+    GO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    int NumProcs = comm->getSize(); 
+    //    int MyPID    = comm->getRank(); 
     // This function basically takes an existing domain->column importer (the "hi order" guy) and using the hi_to_lo_map, generates "lo order" version.  The domain map is already given to
     // us here, so we just need to make tha column one.
 
     // We'll test this by starting with some linearly distributed map for the "hi" domain map and a duplicated map as the "hi" column map.
     // We then do a "lo" domain map, which just grabs the first GID on each proc.
-    // Testing this should be easy.
+    GO numGlobalElements =100;
+    Teuchos::Array<GO> hi_Cols(numGlobalElements);
+    for(size_t i=0; i<(size_t)numGlobalElements; i++)
+      hi_Cols[i] = i;
 
-#if 0
- GenerateColMapFromImport(const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & hi_importer,const std::vector<LocalOrdinal> &hi_to_lo_map,const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & lo_domainMap, const size_t & lo_columnMapLength, RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & lo_columnMap);
-#endif
+
+    RCP<Map> hi_domainMap   = MapFactory::Build(lib,numGlobalElements,0,comm);
+    RCP<Map> hi_colMap      = MapFactory::Build(lib,gst_invalid,hi_Cols(),0,comm);
+    RCP<Import> hi_importer = ImportFactory::Build(hi_domainMap,hi_colMap);
+    //Xpetra::Import<LocalOrdinal,GlobalOrdinal, Node> hi_importer(hi_domainMap,hi_colMap);
+
+    Teuchos::Array<GO> lo_Doms(1); lo_Doms[0]=hi_domainMap->getGlobalElement(0);
+    RCP<Map> lo_domainMap= MapFactory::Build(lib,gst_invalid,lo_Doms(),0,comm);
+
+    // Get the list of the first GID from each proc (aka the lo_colMap)
+    std::vector<GO> send_colgids(1);
+    std::vector<GO> recv_colgids(NumProcs); send_colgids[0] = hi_domainMap->getGlobalElement(0);
+    comm->gatherAll(1*sizeof(GO),(char*)send_colgids.data(),NumProcs*sizeof(GO),(char*)recv_colgids.data());
+
+    // Build the h2l map
+    std::vector<LO> hi_to_lo_map(hi_colMap->getNodeNumElements(),lo_invalid); 
+    for(size_t i=0; i<(size_t)NumProcs; i++) 
+      hi_to_lo_map[recv_colgids[i]]=i;
+
+    // Import
+    size_t lo_columnMapLength = NumProcs; // One col per proc
+    RCP<const Map> lo_colMap;
+    MueLu::MueLuIntrepid::GenerateColMapFromImport(*hi_importer,hi_to_lo_map,*lo_domainMap,lo_columnMapLength,lo_colMap);
+   
+    // Final test
+    for(size_t i=0; i<lo_colMap->getNodeNumElements(); i++)
+      TEST_EQUALITY(recv_colgids[i],lo_colMap->getGlobalElement(i));
+ 
   }
 
   /*********************************************************************************************************************/
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GetLoNodeInHi,Scalar,LO,GO,Node)  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BasisFactory,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildLoElemToNode,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildLoElemToNode,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GenerateColMapFromImport,Scalar,LO,GO,Node)
 
 
 #include <MueLu_ETI_4arg.hpp>
