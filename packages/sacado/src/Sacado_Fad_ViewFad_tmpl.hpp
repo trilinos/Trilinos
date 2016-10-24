@@ -96,6 +96,12 @@ namespace Sacado {
       ViewFad(ValueT* v, const int arg_size = 0, const int arg_stride = 0) :
         ExprType( StorageType(v,arg_size,arg_stride) ) {}
 
+      //! View-specific constructor
+      KOKKOS_INLINE_FUNCTION
+      ViewFad(ValueT* dx_ptr, ValueT* val_ptr, const int arg_size = 0,
+              const int arg_stride = 0) :
+        ExprType( StorageType(dx_ptr,val_ptr,arg_size,arg_stride) ) {}
+
       //@}
 
       //! Destructor

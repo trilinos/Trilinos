@@ -62,6 +62,12 @@ namespace Sacado {
         typedef SFad<T,Num> type;
       };
 
+      //! Replace static derivative length
+      template <int N>
+      struct apply_N {
+        typedef SFad<ValueT,N> type;
+      };
+
       /*!
        * @name Initialization methods
        */

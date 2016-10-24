@@ -27,37 +27,13 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_DISABLE_KOKKOS_CUDA_HPP
-#define SACADO_DISABLE_KOKKOS_CUDA_HPP
+#include "Sacado_DynamicArrayTraits.hpp"
 
-//
-// Include this file in any translation unit to disable the use of Sacado
-// classes on Cuda.  Several Sacado classes (e.g., Sacado::Fad::GeneralFad)
-// are setup to work with Kokkos, but don't work with Cuda with some choices
-// of their template parameters (e.g., Sacado::Fad::MemPoolStorage).  However
-// if Cuda is enabled then __device__ is added to the KOKKOS_*_FUNCTION macros
-// which prevents these classes from compiling.  By including this file, the
-// __device__ annotation will be removed allowing these classes to be compiled
-// by NVCC for host code.
-//
-
-// Include definitions of KOKKOS_*_FUNCTION macros
-#include "Sacado_ConfigDefs.h"
-
-// Redefine KOKKOS_*_FUNCTION macros to not include __device__
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-
-#undef KOKKOS_FUNCTION
-#undef KOKKOS_INLINE_FUNCTION
-#undef KOKKOS_FORCEINLINE_FUNCTION
-
-#define KOKKOS_FUNCTION /* */
-#define KOKKOS_INLINE_FUNCTION inline
-#define KOKKOS_FORCEINLINE_FUNCTION  inline
-
-#define SACADO_DISABLE_CUDA_IN_KOKKOS 1
-
+#if defined(HAVE_SACADO_KOKKOSCORE) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDACC__)
+namespace Sacado {
+  namespace Impl {
+    const Kokkos::Experimental::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_host = 0;
+    const Kokkos::Experimental::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_device = 0;
+  }
+}
 #endif
-
-
-#endif // SACADO_DISABLE_KOKKOS_CUDA_HPP

@@ -38,6 +38,65 @@
 using Kokkos::Cuda;
 VIEW_FAD_TESTS_D( Cuda )
 
+// Tests special size alignment for SFad on Cuda is correct
+TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaAligned)
+{
+  const int StaticDim = 64;
+  const int Stride = 32;
+  const int LocalDim = 2;
+  typedef Sacado::Fad::SFad<double,StaticDim> FadType;
+  typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
+  typedef Kokkos::Cuda Device;
+  typedef Kokkos::View<FadType*,Layout,Device> ViewType;
+
+  typedef typename ViewType::traits TraitsType;
+  typedef Kokkos::Experimental::Impl::ViewMapping< TraitsType , void > MappingType;
+  const int view_static_dim = MappingType::FadStaticDimension;
+  TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
+
+  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
+  const bool issfd = is_sfad<local_fad_type>::value;
+  const int static_dim = Sacado::StaticSize<local_fad_type>::value;
+  TEUCHOS_TEST_EQUALITY(issfd, true, out, success);
+  TEUCHOS_TEST_EQUALITY(static_dim, LocalDim, out, success);
+
+  const size_t num_rows = 11;
+  const size_t fad_size = StaticDim;
+
+  ViewType v("v", num_rows, fad_size+1);
+  const size_t span = v.span();
+  TEUCHOS_TEST_EQUALITY(span, num_rows*(StaticDim+1), out, success);
+}
+
+TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaNotAligned)
+{
+  const int StaticDim = 50;
+  const int Stride = 32;
+  const int LocalDim = 0;
+  typedef Sacado::Fad::SFad<double,StaticDim> FadType;
+  typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
+  typedef Kokkos::Cuda Device;
+  typedef Kokkos::View<FadType*,Layout,Device> ViewType;
+
+  typedef typename ViewType::traits TraitsType;
+  typedef Kokkos::Experimental::Impl::ViewMapping< TraitsType , void > MappingType;
+  const int view_static_dim = MappingType::FadStaticDimension;
+  TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
+
+  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
+  const bool issfd = is_sfad<local_fad_type>::value;
+  const int static_dim = Sacado::StaticSize<local_fad_type>::value;
+  TEUCHOS_TEST_EQUALITY(issfd, false, out, success);
+  TEUCHOS_TEST_EQUALITY(static_dim, LocalDim, out, success);
+
+  const size_t num_rows = 11;
+  const size_t fad_size = StaticDim;
+
+  ViewType v("v", num_rows, fad_size+1);
+  const size_t span = v.span();
+  TEUCHOS_TEST_EQUALITY(span, num_rows*(StaticDim+1), out, success);
+}
+
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 

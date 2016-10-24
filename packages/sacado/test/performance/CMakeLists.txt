@@ -80,6 +80,12 @@ IF (Sacado_ENABLE_Teuchos AND Sacado_ENABLE_KokkosCore)
     COMM serial mpi
     )
 
+  TRIBITS_ADD_EXECUTABLE(
+    fad_kokkos_hierarchical
+    SOURCES fad_kokkos_hierarchical.cpp
+    COMM serial mpi
+    )
+
 ENDIF()
 
 ADD_SUBDIRECTORY(fenl_assembly)

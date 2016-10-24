@@ -74,6 +74,15 @@ namespace Sacado {
         typedef SLFad<T,Num> type;
       };
 
+      //! Replace static derivative length
+      /*! For SLFad, N is treated as the static dimension, so we don't change
+       *  the array length.
+       */
+      template <int N>
+      struct apply_N {
+        typedef SLFad<ValueT,Num> type;
+      };
+
       /*!
        * @name Initialization methods
        */

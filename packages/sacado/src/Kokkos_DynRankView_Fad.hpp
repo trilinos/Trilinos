@@ -288,15 +288,15 @@ template <> struct AssignFadStride<7u> {
 };
 
 template <unsigned> struct AssignDim7 {
-  template <typename Src, typename Dst>
+  template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {}
+  static void eval(Dst& dst, const size_t& src_dim) {}
 };
 template <> struct AssignDim7<0u> {
-  template <typename Src, typename Dst>
+  template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N7 = src.m_dim.N7;
+  static void eval(Dst& dst, const size_t& src_dim) {
+    dst.m_dim.N7 = src_dim;
   }
 };
 
@@ -427,7 +427,7 @@ public:
 
       // Do this except for when Fad dim is static
       // dst.m_map.m_offset.m_dim.N7 = tempdst.m_dim.N7 ;
-      AssignDim7<FadStaticDim>::eval( dst.m_map.m_offset, tempdst );
+      AssignDim7<FadStaticDim>::eval( dst.m_map.m_offset, tempdst.m_dim.N7 );
 
       // Move last non-unit stride to S7
       // dst.m_map.m_offset.m_stride.S* = tempdst.m_stride.S*;
@@ -703,12 +703,25 @@ public:
 template <typename view_type>
 struct is_dynrankview_fad { static const bool value = false; };
 
+template <typename view_type>
+struct is_dynrankview_fad_contiguous { static const bool value = false; };
+
 template <typename T, typename ... P>
 struct is_dynrankview_fad< DynRankView<T,P...> > {
   typedef DynRankView<T,P...> view_type;
   static const bool value =
     std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFad >::value;
+                  Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
+};
+
+template <typename T, typename ... P>
+struct is_dynrankview_fad_contiguous< DynRankView<T,P...> > {
+  typedef DynRankView<T,P...> view_type;
+  static const bool value =
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
 template <typename T, typename ... P>
@@ -728,7 +741,9 @@ void deep_copy(
   const typename Sacado::ScalarType< typename DynRankView<DT,DP...>::value_type >::type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -746,7 +761,9 @@ void deep_copy(
   const typename DynRankView<DT,DP...>::value_type & value
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value
   )>::type * = 0 )
 {
   static_assert(
@@ -763,11 +780,15 @@ void deep_copy
   ( const DstType & dst
   , const SrcType & src
   , typename std::enable_if<(
-  std::is_same< typename DstType::traits::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  ( std::is_same< typename DstType::traits::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename DstType::traits::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
-  std::is_same< typename SrcType::traits::specialize
-              , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value
+  ( std::is_same< typename SrcType::traits::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename SrcType::traits::specialize
+                , Kokkos::Experimental::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
   ( Kokkos::Experimental::is_dyn_rank_view<DstType>::value || Kokkos::Experimental::is_dyn_rank_view<SrcType
 >::value )
@@ -906,5 +927,7 @@ using Kokkos::Experimental::deep_copy;
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #endif // defined(HAVE_SACADO_KOKKOSCONTAINERS)
+
+#include "Kokkos_DynRankView_Fad_Contiguous.hpp"
 
 #endif /* #ifndef KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP */

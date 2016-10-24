@@ -30,60 +30,53 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Fad_KokkosTests.hpp"
+// Re-test cuda with hierarchical cuda parallelism turned on (experimental)
+#define SACADO_VIEW_CUDA_HIERARCHICAL 1
+#define SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED 1
+#define SACADO_KOKKOS_USE_MEMORY_POOL 1
 
+#include "Fad_KokkosTests.hpp"
 #include "Kokkos_Core.hpp"
 
-// Instantiate tests for Serial device
-using Kokkos::Serial;
-VIEW_FAD_TESTS_D( Serial )
+typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,32> LeftContiguous32;
+typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,32> RightContiguous32;
+#undef VIEW_FAD_TESTS_FDC
+#define VIEW_FAD_TESTS_FDC( F, D )                                      \
+  VIEW_FAD_TESTS_FLD( F, LeftContiguous32, D )                          \
+  VIEW_FAD_TESTS_FLD( F, RightContiguous32, D )
 
-// Add a unit test verifying something from Albany compiles
-TEUCHOS_UNIT_TEST(Kokkos_View_Fad, DynRankMauroDeepCopy )
-{
-  Kokkos::DynRankView<Sacado::Fad::DFad<double>,Kokkos::Serial> v1(
-    "v1", 3, 5);
-  Kokkos::DynRankView<Sacado::Fad::DFad<double>,Kokkos::LayoutRight,Kokkos::HostSpace> v2("v2", 3 , 5);
+#undef VIEW_FAD_TESTS_SFDC
+#define VIEW_FAD_TESTS_SFDC( F, D )                                     \
+  VIEW_FAD_TESTS_SFLD( F, LeftContiguous32, D )                         \
+  VIEW_FAD_TESTS_SFLD( F, RightContiguous32, D )
 
-  Kokkos::deep_copy(v1, v2);
-
-  // We're just verifying this compiles
-  success = true;
-}
-
-// Tests assignment between ViewFad and Fad of different type
-TEUCHOS_UNIT_TEST(Kokkos_View_Fad, MixedViewFadTypes )
-{
-  const int StaticDim = 5;
-  typedef Sacado::Fad::SFad<double,StaticDim> FadType1;
-  typedef Sacado::Fad::SLFad<double,StaticDim> FadType2;
-  typedef Kokkos::View<FadType1*,Kokkos::Serial> ViewType;
-
-  const size_t num_rows = 11;
-  const size_t fad_size = StaticDim;
-  ViewType v("v", num_rows, fad_size+1);
-
-  FadType2 x = 0.0;
-  x = v(1);
-
-  int sz = x.size();
-  TEUCHOS_TEST_EQUALITY(sz, fad_size, out, success);
-}
+// Instantiate tests for Cuda device
+using Kokkos::Cuda;
+VIEW_FAD_TESTS_D( Cuda )
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Initialize serial
-  Kokkos::Serial::initialize();
-  if (!std::is_same<Kokkos::Serial, Kokkos::HostSpace::execution_space>::value)
-    Kokkos::HostSpace::execution_space::initialize();
+  // Initialize Cuda
+  Kokkos::HostSpace::execution_space::initialize();
+  Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
+  Kokkos::Cuda::print_configuration(std::cout);
+
+#if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
+  Sacado::createGlobalMemoryPool(
+    Kokkos::Cuda(),
+    2*32*global_fad_size*global_num_rows*global_num_cols*sizeof(double));
+#endif
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-  // Finalize serial
-  if (!std::is_same<Kokkos::Serial, Kokkos::HostSpace::execution_space>::value)
-    Kokkos::HostSpace::execution_space::finalize();
-  Kokkos::Serial::finalize();
+#if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
+  Sacado::destroyGlobalMemoryPool(Kokkos::Cuda());
+#endif
+
+  // Finalize Cuda
+  Kokkos::HostSpace::execution_space::finalize();
+  Kokkos::Cuda::finalize();
 
   return res;
 }

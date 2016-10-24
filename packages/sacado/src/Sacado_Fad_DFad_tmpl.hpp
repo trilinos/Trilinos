@@ -67,6 +67,12 @@ namespace Sacado {
         typedef DFad<T> type;
       };
 
+      //! Replace static derivative length
+      template <int N>
+      struct apply_N {
+        typedef DFad<ValueT> type;
+      };
+
       /*!
        * @name Initialization methods
        */
