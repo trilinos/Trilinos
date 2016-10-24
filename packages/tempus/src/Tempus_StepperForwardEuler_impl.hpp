@@ -56,10 +56,10 @@ void StepperForwardEuler<Scalar>::takeStep(
 
 
 /** \brief Provide a StepperState to the SolutionState.
- *  Forward Euler does not have any special state data,
+ *  This Stepper does not have any special state data,
  *  so just provide the base class StepperState with the
- *  ForwardEuler dsecription.  This can be checked to ensure
- *  that the input StepperState can be used by Forward Euler.
+ *  Stepper description.  This can be checked to ensure
+ *  that the input StepperState can be used by this Stepper.
  */
 template<class Scalar>
 Teuchos::RCP<Tempus::StepperState<Scalar> > StepperForwardEuler<Scalar>::

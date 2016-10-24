@@ -48,6 +48,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
 
     std::string RKMethod_ = RKMethods[m];
     std::replace(RKMethod_.begin(), RKMethod_.end(), ' ', '_');
+    std::replace(RKMethod_.begin(), RKMethod_.end(), '/', '.');
     std::vector<double> StepSize;
     std::vector<double> ErrorNorm;
     const int nTimeStepSizes = 7;
@@ -137,7 +138,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
     double error0 = 0.8*ErrorNorm[0];
     for (int n=0; n<nTimeStepSizes; n++) {
       ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-           << error0*(StepSize[n]/StepSize[0]) << std::endl;
+           << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
     }
     ftmp.close();
 

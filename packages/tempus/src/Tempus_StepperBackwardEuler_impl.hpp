@@ -1,10 +1,11 @@
 #ifndef Tempus_StepperBackwardEuler_impl_hpp
 #define Tempus_StepperBackwardEuler_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "NOX_Thyra.H"
+
 
 namespace Tempus {
 
@@ -128,14 +129,15 @@ void StepperBackwardEuler<Scalar>::computePredictor(
 
 
 /** \brief Provide a StepperState to the SolutionState.
- *  Backward Euler does not have any special state data,
+ *  This Stepper does not have any special state data,
  *  so just provide the base class StepperState with the
- *  BackwardEuler dsecription.  This can be checked to ensure
- *  that the input StepperState can be used by Backward Euler.
+ *  Stepper description.  This can be checked to ensure
+ *  that the input StepperState can be used by this Stepper.
  */
 template<class Scalar>
 Teuchos::RCP<Tempus::StepperState<Scalar> >
-StepperBackwardEuler<Scalar>::getDefaultStepperState()
+StepperBackwardEuler<Scalar>::
+getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
     rcp(new StepperState<Scalar>(description()));

@@ -189,9 +189,8 @@ class RKButcherTableau :
     void set_isDIRK() {
       isDIRK_ = true;
       for (size_t i = 0; i < this->numStages(); i++) {
-        if (A_(i,i) == 0.0) {
-          isDIRK_ = false;
-        } else {
+        if (A_(i,i) == 0.0) { isDIRK_ = false; }
+        else {
           for (size_t j = i+1; j < this->numStages(); j++)
             if (A_(i,j) != 0.0) isDIRK_ = false;
         }

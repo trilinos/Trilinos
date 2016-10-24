@@ -18,7 +18,7 @@ public:
   /// Constructor
   StepperBackwardEuler(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel );
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
 
   /// \name Basic stepper methods
   //@{
@@ -64,8 +64,8 @@ private:
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   Teuchos::RCP<Stepper<Scalar> >                    predictorStepper_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>         inArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>        outArgs_;
 
   // Compute the balancing time derivative as a function of x
   std::function<void (const Thyra::VectorBase<Scalar> &,

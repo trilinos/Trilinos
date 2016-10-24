@@ -203,6 +203,34 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     StepSize.push_back(dt);
+
+    // Output finest temporal solution for plotting
+    // This only works for ONE MPI process
+    if ((n == nTimeStepSizes-1) && (comm->NumProc() == 1)) {
+      std::ofstream ftmp("Tempus_BackwardEuler_CDR.dat");
+      ftmp << "TITLE=\"Backward Euler Solution to CDR\"\n"
+           << "VARIABLES=\"z\",\"T\"\n";
+      const double dx = std::fabs(left_end-right_end) /
+                        static_cast<double>(num_elements);
+      RCP<SolutionHistory<double> > solutionHistory =
+        integrator->getSolutionHistory();
+      int nStates = solutionHistory->getNumStates();
+      for (int i=0; i<nStates; i++) {
+        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<Thyra::VectorBase<double> > x = solutionState->getX();
+        double ttime = solutionState->getTime();
+        ftmp << "ZONE T=\"Time="<<ttime<<"\", I="
+             <<num_elements+1<<", F=BLOCK\n";
+        for (int j = 0; j < num_elements+1; j++) {
+          const double x_coord = left_end + static_cast<double>(j) * dx;
+          ftmp << x_coord << "   ";
+        }
+        ftmp << std::endl;
+        for (int j=0; j<num_elements+1; j++) ftmp << get_ele(*x, j) << "   ";
+        ftmp << std::endl;
+      }
+      ftmp.close();
+    }
   }
 
   // Calculate the error - use the most temporally refined mesh for
@@ -251,17 +279,17 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
     const double right_end = model_pl->get<double>("right end");
 
     const Thyra::VectorBase<double>& x = *(solutions[solutions.size()-1]);
-    
+
     std::ofstream ftmp("Tempus_BackwardEuler_CDR-Solution.dat");
     for (int n = 0; n < num_elements+1; n++) {
       const double dx = std::fabs(left_end-right_end) /
                         static_cast<double>(num_elements);
-      const double x_coord = left_end + static_cast<double>(n) * dx; 
+      const double x_coord = left_end + static_cast<double>(n) * dx;
       ftmp << x_coord << "   " <<  Thyra::get_ele(x,n) << std::endl;
     }
     ftmp.close();
   }
-  
+
 }
 
 } // namespace Tempus_Test
