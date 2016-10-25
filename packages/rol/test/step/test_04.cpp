@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_01.cpp
-    \brief Test line search.
+/*! \file  test_04.cpp
+    \brief Test bound constrained trust-region steps.
 */
 
 #define USE_HESSVEC 1

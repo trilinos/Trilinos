@@ -84,7 +84,7 @@
       <Parameter name="Sufficient Decrease Parameter"        type="double" value="1.e-2"        />
       <Parameter name="Safeguard Size"                       type="double" value="1.e2"         />
 
-      <ParameterList name="Postsmoothing">
+      <ParameterList name="Post-Smoothing">
         <Parameter name="Function Evaluation Limit" type="int"    value="20"     />
         <Parameter name="Initial Step Size"         type="double" value="1.0"    />
         <Parameter name="Tolerance"                 type="double" value="0.9999" />

@@ -158,8 +158,8 @@ private:
   // POST SMOOTHING PARAMETERS
   Real alpha_init_; ///< Initial line-search parameter for projected methods.
   int  max_fval_;   ///< Maximum function evaluations in line-search for projected methods.
-  Real mu_;         ///< Postsmoothing tolerance for projected methods.
-  Real beta_;       ///< Postsmoothing rate for projected methods.
+  Real mu_;         ///< Post-Smoothing tolerance for projected methods.
+  Real beta_;       ///< Post-Smoothing rate for projected methods.
 
   // COLEMAN-LI PARAMETERS
   Real stepBackMax_;
@@ -205,11 +205,11 @@ private:
     // Scale for epsilon active sets
     scaleEps_  = glist.get("Scale for Epsilon Active Sets", static_cast<Real>(1));
     verbosity_ = glist.get("Print Verbosity",               0);
-    // Postsmoothing parameters
-    max_fval_    = list.sublist("Postsmoothing").get("Function Evaluation Limit", 20);
-    alpha_init_  = list.sublist("Postsmoothing").get("Initial Step Size", static_cast<Real>(1));
-    mu_          = list.sublist("Postsmoothing").get("Tolerance",         static_cast<Real>(0.9999));
-    beta_        = list.sublist("Postsmoothing").get("Rate",              static_cast<Real>(0.01));
+    // Post-smoothing parameters
+    max_fval_    = list.sublist("Post-Smoothing").get("Function Evaluation Limit", 20);
+    alpha_init_  = list.sublist("Post-Smoothing").get("Initial Step Size", static_cast<Real>(1));
+    mu_          = list.sublist("Post-Smoothing").get("Tolerance",         static_cast<Real>(0.9999));
+    beta_        = list.sublist("Post-Smoothing").get("Rate",              static_cast<Real>(0.01));
     // Coleman-Li parameters
     stepBackMax_   = list.sublist("Coleman-Li").get("Maximum Step Back",  static_cast<Real>(0.9999));
     stepBackScale_ = list.sublist("Coleman-Li").get("Maximum Step Scale", static_cast<Real>(1));
