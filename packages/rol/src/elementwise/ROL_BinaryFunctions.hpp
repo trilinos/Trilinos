@@ -105,6 +105,26 @@ public:
 };
 
 
+template<class Real>
+class Min : public BinaryFunction<Real> {
+public:
+  Min() {}
+  Real apply(const Real &x, const Real &y) const {
+    return std::min(x,y);
+  }
+};
+
+
+template<class Real>
+class Max : public BinaryFunction<Real> {
+public:
+  Max() {}
+  Real apply(const Real &x, const Real &y) const {
+    return std::max(x,y);
+  }
+};
+
+
 template<class Real> 
 class Set : public BinaryFunction<Real> {
 public:

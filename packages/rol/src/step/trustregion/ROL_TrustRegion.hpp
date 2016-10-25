@@ -62,6 +62,8 @@ private:
 
   Teuchos::RCP<Vector<Real> > prim_, dual_;
 
+  ETrustRegionModel TRmodel_;
+
   Real delmax_;
   Real eta0_, eta1_, eta2_;
   Real gamma0_, gamma1_, gamma2_;
@@ -87,16 +89,17 @@ public:
     : ftol_old_(ROL_OVERFLOW<Real>()), cnt_(0), verbosity_(0) {
     // Trust-Region Parameters
     Teuchos::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
-    delmax_ = list.get("Maximum Radius",                       static_cast<Real>(5000.0));
-    eta0_   = list.get("Step Acceptance Threshold",            static_cast<Real>(0.05));
-    eta1_   = list.get("Radius Shrinking Threshold",           static_cast<Real>(0.05));
-    eta2_   = list.get("Radius Growing Threshold",             static_cast<Real>(0.9));
-    gamma0_ = list.get("Radius Shrinking Rate (Negative rho)", static_cast<Real>(0.0625));
-    gamma1_ = list.get("Radius Shrinking Rate (Positive rho)", static_cast<Real>(0.25));
-    gamma2_ = list.get("Radius Growing Rate",                  static_cast<Real>(2.5));
-    mu0_    = list.get("Sufficient Decrease Parameter",        static_cast<Real>(1.e-4));
-    TRsafe_ = list.get("Safeguard Size",                       static_cast<Real>(100.0));
-    eps_    = TRsafe_*ROL_EPSILON<Real>();
+    TRmodel_ = StringToETrustRegionModel(list.get("Subproblem Model", "Kelley-Sachs"));
+    delmax_  = list.get("Maximum Radius",                       static_cast<Real>(5000.0));
+    eta0_    = list.get("Step Acceptance Threshold",            static_cast<Real>(0.05));
+    eta1_    = list.get("Radius Shrinking Threshold",           static_cast<Real>(0.05));
+    eta2_    = list.get("Radius Growing Threshold",             static_cast<Real>(0.9));
+    gamma0_  = list.get("Radius Shrinking Rate (Negative rho)", static_cast<Real>(0.0625));
+    gamma1_  = list.get("Radius Shrinking Rate (Positive rho)", static_cast<Real>(0.25));
+    gamma2_  = list.get("Radius Growing Rate",                  static_cast<Real>(2.5));
+    mu0_     = list.get("Sufficient Decrease Parameter",        static_cast<Real>(1.e-4));
+    TRsafe_  = list.get("Safeguard Size",                       static_cast<Real>(100.0));
+    eps_     = TRsafe_*ROL_EPSILON<Real>();
     // General Inexactness Information
     Teuchos::ParameterList &glist = parlist.sublist("General");
     useInexact_.clear();
@@ -168,6 +171,10 @@ public:
     /***************************************************************************************************/
     // BEGIN COMPUTE RATIO OF ACTUAL AND PREDICTED REDUCTION
     /***************************************************************************************************/
+    // Modify Actual and Predicted Reduction According to Model
+    model.updateActualReduction(aRed,s);
+    model.updatePredictedReduction(pRed_,s);
+
     if ( verbosity_ > 0 ) {
       std::cout << std::endl;
       std::cout << "  Computation of actual and predicted reduction" << std::endl;
@@ -221,32 +228,34 @@ public:
     // BEGIN CHECK SUFFICIENT DECREASE FOR BOUND CONSTRAINED PROBLEMS
     /***************************************************************************************************/
     bool decr = true;
-    if ( bnd.isActivated() && rho >= eta0_ && (std::abs(aRed) > eps_) ) {
-      // Compute Criticality Measure || x - P( x - g ) ||
-      prim_->set(x);
-      prim_->axpy(-one,g.dual());
-      bnd.project(*prim_);
-      prim_->scale(-one);
-      prim_->plus(x);
-      Real pgnorm = prim_->norm();
-      // Compute Scaled Measure || x - P( x - lam * PI(g) ) ||
-      prim_->set(g.dual());
-      bnd.pruneActive(*prim_,g,x);
-      Real lam = std::min(one, del/prim_->norm());
-      prim_->scale(-lam);
-      prim_->plus(x);
-      bnd.project(*prim_);
-      prim_->scale(-one);
-      prim_->plus(x);
-      pgnorm *= prim_->norm();
-      // Sufficient decrease?
-      decr = ( aRed >= mu0_*eta0_*pgnorm );
-      flagTR = (!decr ? TRUSTREGION_FLAG_QMINSUFDEC : flagTR);
+    if ( bnd.isActivated() && TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
+      if ( rho >= eta0_ && (std::abs(aRed) > eps_) ) {
+        // Compute Criticality Measure || x - P( x - g ) ||
+        prim_->set(x);
+        prim_->axpy(-one,g.dual());
+        bnd.project(*prim_);
+        prim_->scale(-one);
+        prim_->plus(x);
+        Real pgnorm = prim_->norm();
+        // Compute Scaled Measure || x - P( x - lam * PI(g) ) ||
+        prim_->set(g.dual());
+        bnd.pruneActive(*prim_,g,x);
+        Real lam = std::min(one, del/prim_->norm());
+        prim_->scale(-lam);
+        prim_->plus(x);
+        bnd.project(*prim_);
+        prim_->scale(-one);
+        prim_->plus(x);
+        pgnorm *= prim_->norm();
+        // Sufficient decrease?
+        decr = ( aRed >= mu0_*eta0_*pgnorm );
+        flagTR = (!decr ? TRUSTREGION_FLAG_QMINSUFDEC : flagTR);
 
-      if ( verbosity_ > 0 ) {
-        std::cout << "    Decrease lower bound (constraints):      " << 0.1*eta0_*pgnorm  << std::endl;
-        std::cout << "    Trust-region flag (constraints):         " << flagTR            << std::endl;
-        std::cout << "    Is step feasible:                        " << bnd.isFeasible(x) << std::endl;
+        if ( verbosity_ > 0 ) {
+          std::cout << "    Decrease lower bound (constraints):      " << 0.1*eta0_*pgnorm  << std::endl;
+          std::cout << "    Trust-region flag (constraints):         " << flagTR            << std::endl;
+          std::cout << "    Is step feasible:                        " << bnd.isFeasible(x) << std::endl;
+        }
       }
     }
 

@@ -283,12 +283,12 @@ public:
   }
 
   /** \brief Return the ref count pointer to the lower bound vector */
-  virtual  const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) const {
+  virtual  const Teuchos::RCP<const Vector<Real> > getLowerVectorRCP( void ) const {
     return x_lo_;
   }
 
   /** \brief Return the ref count pointer to the upper bound vector */
-  virtual const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) const {
+  virtual const Teuchos::RCP<const Vector<Real> > getUpperVectorRCP( void ) const {
     return x_up_;
   }
 

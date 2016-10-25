@@ -161,6 +161,10 @@ private:
   Real mu_;         ///< Postsmoothing tolerance for projected methods.
   Real beta_;       ///< Postsmoothing rate for projected methods.
 
+  // COLEMAN-LI PARAMETERS
+  Real stepBackMax_;
+  Real stepBackScale_;
+
   // INEXACT COMPUTATION PARAMETERS
   std::vector<bool> useInexact_; ///< Flags for inexact (0) objective function, (1) gradient, (2) Hessian.
   Real              scale0_;     ///< Scale for inexact gradient computation.
@@ -205,6 +209,9 @@ private:
     alpha_init_  = list.sublist("Postsmoothing").get("Initial Step Size", static_cast<Real>(1));
     mu_          = list.sublist("Postsmoothing").get("Tolerance",         static_cast<Real>(0.9999));
     beta_        = list.sublist("Postsmoothing").get("Rate",              static_cast<Real>(0.01));
+    // Coleman-Li parameters
+    stepBackMax_   = list.sublist("Coleman-Li").get("Maximum Step Back",  static_cast<Real>(0.9999));
+    stepBackScale_ = list.sublist("Coleman-Li").get("Maximum Step Scale", static_cast<Real>(1));
   }
 
   /** \brief Update gradient to iteratively satisfy inexactness condition.
@@ -301,6 +308,7 @@ public:
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
+      stepBackMax_(0.9999), stepBackScale_(1),
       scale0_(1), scale1_(1),
       verbosity_(0) {
     // Parse input parameterlist
@@ -333,6 +341,7 @@ public:
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
+      stepBackMax_(0.9999), stepBackScale_(1),
       scale0_(1), scale1_(1),
       verbosity_(0) {
     // Parse input parameterlist
@@ -373,9 +382,42 @@ public:
     step_state->gradientVec = g.clone();
 
     if ( bnd.isActivated() ) {
+      // Make initial guess feasible
       bnd.project(x);
       xnew_ = x.clone();
       xold_ = x.clone();
+
+      // Make initial guess strictly feasible
+      if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
+        xold_->set(*bnd.getUpperVectorRCP());       // u
+        xold_->axpy(-one,*bnd.getLowerVectorRCP()); // u - l
+        Real minDiff = static_cast<Real>(1e-1)
+          * std::min(one, half * xold_->reduce(Elementwise::ReductionMin<Real>()));
+
+        class LowerFeasible : public Elementwise::BinaryFunction<Real> {
+        private:
+          const Real eps_;
+        public:
+          LowerFeasible(const Real eps) : eps_(eps) {}
+          Real apply( const Real &x, const Real &y ) const {
+            const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
+            return (x < y+tol) ? y+eps_ : x;
+          }
+        };
+        x.applyBinary(LowerFeasible(minDiff), *bnd.getLowerVectorRCP());
+
+        class UpperFeasible : public Elementwise::BinaryFunction<Real> {
+        private:
+          const Real eps_;
+        public:
+          UpperFeasible(const Real eps) : eps_(eps) {}
+          Real apply( const Real &x, const Real &y ) const {
+            const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
+            return (x > y-tol) ? y-eps_ : x;
+          }
+        };
+        x.applyBinary(UpperFeasible(minDiff), *bnd.getUpperVectorRCP());
+      }
     }
     gp_ = g.clone();
 
@@ -492,7 +534,10 @@ public:
                                                             *(step_state->gradientVec),
                                                             secant_,
                                                             useSecantPrecond_,
-                                                            useSecantHessVec_));
+                                                            useSecantHessVec_,
+                                                            step_state->searchSize,
+                                                            stepBackMax_,
+                                                            stepBackScale_));
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
@@ -552,7 +597,7 @@ public:
     if ( TRflag_ == TRUSTREGION_FLAG_SUCCESS || 
          TRflag_ == TRUSTREGION_FLAG_POSPREDNEG ) {  
       // Perform line search (smoothing) to ensure decrease 
-      if ( bnd.isActivated() ) {
+      if ( bnd.isActivated() && TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
         Real tol = std::sqrt(ROL_EPSILON<Real>());
         // Compute new gradient
         obj.gradient(*gp_,x,tol); // MUST DO SOMETHING HERE WITH TOL

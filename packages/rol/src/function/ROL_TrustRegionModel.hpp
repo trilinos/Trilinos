@@ -155,6 +155,10 @@ public:
     tv.set(v);
   }
 
+  virtual void updatePredictedReduction(Real &pred, const Vector<Real> &s) {}
+
+  virtual void updateActualReduction(Real &ared, const Vector<Real> &s) {}
+
   virtual const Teuchos::RCP<const Vector<Real> > getGradient(void) const {
     return g_;
   }
