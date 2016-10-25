@@ -75,10 +75,11 @@
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
-#include <BelosLinearProblem.hpp>
+#include <BelosBiCGStabSolMgr.hpp>
 #include <BelosBlockCGSolMgr.hpp>
-#include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
@@ -421,7 +422,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
           H->Iterate(*B, *X, maxIts);
         }
 
-      } else if (solveType == "cg" || solveType == "gmres") {
+      } else if (solveType == "cg" || solveType == "gmres" || solveType == "bicgstab") {
 #ifdef HAVE_MUELU_BELOS
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
 
@@ -472,6 +473,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
           solver = rcp(new Belos::PseudoBlockCGSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
         } else if (solveType == "gmres") {
           solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+        } else if (solveType == "bicgstab") {
+          solver = rcp(new Belos::BiCGStabSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
         }
 
         // Perform solve
