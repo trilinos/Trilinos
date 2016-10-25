@@ -64,7 +64,7 @@ convertToDimData(const Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
   Teuchos::ArrayView< const PYTRILINOS_GLOBAL_ORD > nodeBlockIDs;
 
   // Get the Teuchos::Comm
-  Teuchos::RCP< const Tpetra::Comm< int > > comm = tm->getComm();
+  Teuchos::RCP< const Teuchos::Comm< int > > comm = tm->getComm();
 
   // Get the number of dimensions.  The vector data constitutes one
   // dimension.  If the extraDim is greater than one, then that
