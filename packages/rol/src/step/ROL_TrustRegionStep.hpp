@@ -164,6 +164,7 @@ private:
   // COLEMAN-LI PARAMETERS
   Real stepBackMax_;
   Real stepBackScale_;
+  bool singleReflect_;
 
   // INEXACT COMPUTATION PARAMETERS
   std::vector<bool> useInexact_; ///< Flags for inexact (0) objective function, (1) gradient, (2) Hessian.
@@ -212,6 +213,7 @@ private:
     // Coleman-Li parameters
     stepBackMax_   = list.sublist("Coleman-Li").get("Maximum Step Back",  static_cast<Real>(0.9999));
     stepBackScale_ = list.sublist("Coleman-Li").get("Maximum Step Scale", static_cast<Real>(1));
+    singleReflect_ = list.sublist("Coleman-Li").get("Single Reflection",  true);
   }
 
   /** \brief Update gradient to iteratively satisfy inexactness condition.
@@ -308,7 +310,7 @@ public:
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
-      stepBackMax_(0.9999), stepBackScale_(1),
+      stepBackMax_(0.9999), stepBackScale_(1), singleReflect_(true),
       scale0_(1), scale1_(1),
       verbosity_(0) {
     // Parse input parameterlist
@@ -341,7 +343,7 @@ public:
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
-      stepBackMax_(0.9999), stepBackScale_(1),
+      stepBackMax_(0.9999), stepBackScale_(1), singleReflect_(true),
       scale0_(1), scale1_(1),
       verbosity_(0) {
     // Parse input parameterlist
@@ -537,7 +539,8 @@ public:
                                                             useSecantHessVec_,
                                                             step_state->searchSize,
                                                             stepBackMax_,
-                                                            stepBackScale_));
+                                                            stepBackScale_,
+                                                            singleReflect_));
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,

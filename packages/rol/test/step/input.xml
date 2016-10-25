@@ -91,6 +91,12 @@
         <Parameter name="Rate"                      type="double" value="0.01"   />
       </ParameterList>
 
+      <ParameterList name="Coleman-Li">
+        <Parameter name="Maximum Step Back"  type="double" value="0.9999" />
+        <Parameter name="Maximum Step Scale" type="double" value="1.0"    />
+        <Parameter name="Single Reflection"  type="bool"   value="true"   />
+      </ParameterList>
+
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">
 

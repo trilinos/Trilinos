@@ -1,3 +1,46 @@
+// @HEADER
+// ************************************************************************
+//
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
 #ifndef ROL_COLEMANLIMODEL_HPP
 #define ROL_COLEMANLIMODEL_HPP
 
@@ -5,50 +48,58 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Secant.hpp"
 
+/** @ingroup func_group
+    \class ROL::ColemanLiModel
+    \brief Provides the interface to evaluate interior trust-region model
+    functions from the Coleman-Li bound constrained trust-region algorithm.
+
+    -----
+*/
+
 namespace ROL {
 
 template<class Real>
 class ColemanLiModel : public TrustRegionModel<Real> {
 private:
-  Teuchos::RCP<BoundConstraint<Real> > bnd_;
-  Teuchos::RCP<Secant<Real> > sec_;
-  Teuchos::RCP<Vector<Real> > prim_, dual_, hv_;
-  Teuchos::RCP<Vector<Real> > step_;
-  Teuchos::RCP<Vector<Real> > cauchyStep_, cauchyScal_;   // For Cauchy Point
-  Teuchos::RCP<Vector<Real> > reflectStep_, reflectScal_; // For reflective step
-  Teuchos::RCP<Vector<Real> > Dmat_; // sqrt(abs(v))
-  Teuchos::RCP<Vector<Real> > Cmat_; // diag(g) * dv/dx
+  Teuchos::RCP<BoundConstraint<Real> > bnd_;              // Bound constraint
+  Teuchos::RCP<Secant<Real> > sec_;                       // Secant storage
 
-  const bool useSecantPrecond_;
-  const bool useSecantHessVec_;
+  Teuchos::RCP<Vector<Real> > prim_, dual_, hv_;          // Auxiliary storage
+  Teuchos::RCP<Vector<Real> > step_;                      // Step storage
+  Teuchos::RCP<Vector<Real> > cauchyStep_, cauchyScal_;   // Cauchy point vectors
+  Teuchos::RCP<Vector<Real> > reflectStep_, reflectScal_; // Reflective step vectors
+  Teuchos::RCP<Vector<Real> > Dmat_;                      // sqrt(abs(v))
+  Teuchos::RCP<Vector<Real> > Cmat_;                      // diag(g) * dv/dx
 
-  const Real TRradius_, stepBackMax_, stepBackScale_;
-  Real sCs_, pred_;
+  const bool useSecantPrecond_;                           // Use secant as preconditioner (unused)
+  const bool useSecantHessVec_;                           // Use secant as Hessian
 
-  Elementwise::Multiply<Real> mult_;
-  Elementwise::Divide<Real>   div_;
+  const Real TRradius_, stepBackMax_, stepBackScale_;     // Primal transform parameters
+  const bool singleReflect_;                              // Use single reflection
+  Real sCs_, pred_;                                       // Actual/predicted reduction
 
-  void invert( Vector<Real> &x ) {
-    const Real one(1);
-    x.scale(-one);
-    x.applyUnary(Elementwise::Shift<Real>(one));
-  }
+  Elementwise::Multiply<Real> mult_;                      // Elementwise multiply
+  Elementwise::Divide<Real>   div_;                       // Elementwise division
 
+  // Apply diagonal D matrix
   void applyD( Vector<Real> &Dv, const Vector<Real> &v ) {
     Dv.set(v);
     Dv.applyBinary(div_,*Dmat_);
   }
 
+  // Apply inverse of diagonal D matrix
   void applyInverseD( Vector<Real> &Dv, const Vector<Real> &v ) {
     Dv.set(v);
     Dv.applyBinary(mult_,*Dmat_);
   }
 
+  // Apply diagonal C matrix
   void applyC( Vector<Real> &Cv, const Vector<Real> &v ) {
     Cv.set(v);
     Cv.applyBinary(mult_, *Cmat_);
   }
 
+  // Build diagonal D and C matrices
   void initialize(Objective<Real> &obj, BoundConstraint<Real> &bnd,
                   const Vector<Real> &x, const Vector<Real> &g) {
     const Real zero(0), one(1), INF(ROL_INF<Real>()), NINF(ROL_NINF<Real>());
@@ -110,7 +161,9 @@ private:
     Dmat_->plus(*prim_);
 
     // CASE (ii)
-    invert(*m1);
+    // m1 = 1-m1
+    m1->scale(-one);
+    m1->applyUnary(Elementwise::Shift<Real>(one));
     // Mask for finite lower bounds
     m2->applyBinary(Elementwise::ValueSet<Real>(NINF, GREATER_THAN),*l);
     // Zero out elements of Jacobian with l_i=-inf
@@ -150,11 +203,12 @@ private:
 
   ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
                   const Vector<Real> &x, const Vector<Real> &g,
-                  const Real TRradius, const Real stepBackMax, const Real stepBackScale )
+                  const Real TRradius, const Real stepBackMax, const Real stepBackScale,
+                  const bool singleReflect = true )
     : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
       sec_(Teuchos::null), useSecantPrecond_(false), useSecantHessVec_(false),
       TRradius_(TRradius), stepBackMax_(stepBackMax), stepBackScale_(stepBackScale),
-      sCs_(0), pred_(0) {
+      singleReflect_(singleReflect), sCs_(0), pred_(0) {
     initialize(obj,bnd,x,g);
   }
 
@@ -162,11 +216,12 @@ private:
                   const Vector<Real> &x, const Vector<Real> &g,
                   const Teuchos::RCP<Secant<Real> > &sec,
                   const bool useSecantPrecond, const bool useSecantHessVec,
-                  const Real TRradius, const Real stepBackMax, const Real stepBackScale )
+                  const Real TRradius, const Real stepBackMax, const Real stepBackScale,
+                  const bool singleReflect = true )
     : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
       sec_(sec), useSecantPrecond_(useSecantPrecond), useSecantHessVec_(useSecantHessVec),
       TRradius_(TRradius), stepBackMax_(stepBackMax), stepBackScale_(stepBackScale),
-      sCs_(0), pred_(0) {
+      singleReflect_(singleReflect), sCs_(0), pred_(0) {
     initialize(obj,bnd,x,g);
   }
  
@@ -233,7 +288,12 @@ private:
     /**************************************************************************/
     /*      COMPUTE REFLECTIVE STEP: STORED IN reflectStep_ AND reflectScal_  */
     /**************************************************************************/
-    computeReflectiveStep(*reflectStep_, v, tiv);
+    if ( singleReflect_ ) {
+      computeReflectiveStep(*reflectStep_, v, tiv);
+    }
+    else {
+      computeFullReflectiveStep(*reflectStep_, v, tiv);
+    }
     applyInverseD(*reflectScal_, *reflectStep_);
     // Get bounds on scalar variable
     Real lowerBoundR(ROL_NINF<Real>()), upperBoundR(ROL_INF<Real>());
@@ -288,10 +348,6 @@ private:
 
     // Compute predicted reduction
     pred_ = -value(*step_,tol);
-
-//std::cout << "TAUV = " << tauV << "  TAUR = " << tauR << "  THETA = " << theta
-//  << "  CAUCHY = " << useCauchyPoint << "  REFLECT = " << useReflectStep
-//  << "  valueV = " << valueV << "  valueG = " << valueG << "  valueR = " << valueR << "\n";
   }
 
   void updatePredictedReduction(Real &pred, const Vector<Real> &s) {
@@ -299,7 +355,6 @@ private:
   }
 
   void updateActualReduction(Real &ared, const Vector<Real> &s) {
-//std::cout << "ACTUAL REDUCTION: " << ared << "  " << ared+sCs_ << "  " << sCs_ << "\n";
     ared += sCs_;
   }
 
@@ -410,6 +465,32 @@ private:
   }
 
   void computeReflectiveStep(Vector<Real> &Rv, const Vector<Real> &v, const Vector<Real> &Dv) {
+    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    Real alpha = computeAlpha(Dv);
+    Rv.set(v);
+
+    class LowerBound : public Elementwise::BinaryFunction<Real> {
+    public:
+      Real apply( const Real &x, const Real &y ) const {
+        return (x == y) ? static_cast<Real>(-1) : static_cast<Real>(1);
+      }
+    };
+    prim_->set(*xc); prim_->axpy(alpha,Dv);
+    prim_->applyBinary(LowerBound(),*bnd_->getLowerVectorRCP());
+    Rv.applyBinary(mult_,*prim_);
+
+    class UpperBound : public Elementwise::BinaryFunction<Real> {
+    public:
+      Real apply( const Real &x, const Real &y ) const {
+        return (x == y) ? static_cast<Real>(-1) : static_cast<Real>(1);
+      }
+    };
+    prim_->set(*xc); prim_->axpy(alpha,Dv);
+    prim_->applyBinary(UpperBound(),*bnd_->getUpperVectorRCP());
+    Rv.applyBinary(mult_,*prim_);
+  }
+
+  void computeFullReflectiveStep(Vector<Real> &Rv, const Vector<Real> &v, const Vector<Real> &Dv) {
     const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     Rv.set(v);
 
