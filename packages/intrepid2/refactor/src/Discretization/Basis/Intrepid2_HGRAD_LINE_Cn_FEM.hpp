@@ -175,7 +175,7 @@ namespace Intrepid2 {
 
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType scalarViewType;
 
     virtual
     void
@@ -195,6 +195,29 @@ namespace Intrepid2 {
                                                 inputPoints,
                                                 this->vinv_,
                                                 operatorType );
+    }
+
+    virtual
+    void
+    getValuesIntrBubble( /**/  outputViewType outputValues,
+                         const pointViewType  inputPoints,
+                         const ordinal_type   ort ) const {
+      // this evaluation is for orientation only
+      this->getValues(outputValues, inputPoints);
+
+      // this is not really designed for device function but it will still work
+      auto tmpValues = Kokkos::create_mirror_view(Kokkos::HostSpace(), outputValues);
+      Kokkos::deep_copy(tmpValues, outputValues);
+
+      // orientation change the sign when this function is used 
+      // for hcurl and hdiv elements as its gradient component.
+      // this should not be called to compute hgrad coeff matrix.
+      const typename scalarViewType::value_type ortVal[2] = { 1, -1 };
+      const ordinal_type card = this->getCardinality();
+      for (ordinal_type i=0;i<card;++i)
+        tmpValues(i) *= ortVal[ort]*(this->getDofTag(i)(0) == 1);
+
+      Kokkos::deep_copy(outputValues, tmpValues);
     }
 
     virtual
