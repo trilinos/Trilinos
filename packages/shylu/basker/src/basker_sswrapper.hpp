@@ -4,7 +4,7 @@
 #include "basker_types.hpp"
 
 #ifdef HAVE_AMESOS
-#include "amesos_btf_decl.h"
+#include "trilinos_btf_decl.h"
 #include "trilinos_amd.h"
 #endif
 
@@ -96,11 +96,11 @@ namespace BaskerNS
       
       //printf("before amesos call \n");
       /*
-        nblks = amesos_btf_strongcomp(M.ncol,&(M.col_ptr[0]),
+        nblks = trilinos_btf_strongcomp(M.ncol,&(M.col_ptr[0]),
         &(M.row_idx[0]), 
         &(perm_in[0]), p, r, work);
       */
-      nblks = amesos_btf_strongcomp(n, col_ptr,
+      nblks = trilinos_btf_strongcomp(n, col_ptr,
 				    row_idx, 
 				    perm_in, p, r, work);
       //printf("after amesos call \n");
@@ -251,17 +251,17 @@ namespace BaskerNS
       //l_Int work[n*4];
       l_Int *work = new l_Int[n*4];
       
-      //printf("before amesos call \n");
+      //printf("before trilinos call \n");
       /*
-        nblks = amesos_btf_l_strongcomp(M.ncol,&(M.col_ptr[0]),
+        nblks = trilinos_btf_l_strongcomp(M.ncol,&(M.col_ptr[0]),
         &(M.row_idx[0]), 
         &(perm_in[0]), p, r, work);
       */
-      nblks = amesos_btf_l_strongcomp(n,
+      nblks = trilinos_btf_l_strongcomp(n,
                                       col_ptr,
                                       row_idx, 
                                       perm_in, p, r, work);
-      //printf("after amesos call \n");
+      //printf("after trilinos call \n");
       
 
       

@@ -32,7 +32,7 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_Map.h>
 
-#include <amesos_btf_decl.h>
+#include <trilinos_btf_decl.h>
 
 using std::vector;
 
@@ -131,7 +131,7 @@ operator()( OriginalTypeRef orig )
   // if column j of A is the kth column of P*A*Q.  If rowperm[k] < 0, then the 
   // (k,k)th entry in P*A*Q is structurally zero.
 
-  numBlocks_ = amesos_btf_order( n, &Ap_tmp[0], &Ai_tmp[0], maxWork, &workPerf,
+  numBlocks_ = trilinos_btf_order( n, &Ap_tmp[0], &Ai_tmp[0], maxWork, &workPerf,
 			  &rowperm[0], &colperm[0], &blkPtr[0], 
 			  &numMatch, &work[0] );
 

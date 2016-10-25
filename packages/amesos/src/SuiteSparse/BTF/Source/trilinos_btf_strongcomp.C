@@ -10,11 +10,8 @@
  * with support from Sandia National Laboratories.  All Rights Reserved.
  */
 
-/* This file should make the long int version of BTF */
-#define DLONG 1
-
-#include "amesos_btf_decl.h"
-#include "amesos_btf_internal.h"
+#include "trilinos_btf_decl.h"
+#include "trilinos_btf_internal.h"
 
 #define UNVISITED (-2)	    /* Flag [j] = UNVISITED if node j not visited yet */
 #define UNASSIGNED (-1)	    /* Flag [j] = UNASSIGNED if node j has been visited,

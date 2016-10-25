@@ -32,7 +32,7 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_Map.h>
 
-#include <amesos_btf_decl.h>
+#include <trilinos_btf_decl.h>
 #include <trilinos_amd.h>
 
 using std::vector;

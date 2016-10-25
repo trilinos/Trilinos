@@ -2,8 +2,8 @@
 /* === btf_internal include file ============================================ */
 /* ========================================================================== */
 
-#ifndef AMESOS_BTF_INTERNAL_H
-#define AMESOS_BTF_INTERNAL_H
+#ifndef TRILINOS_BTF_INTERNAL_H
+#define TRILINOS_BTF_INTERNAL_H
 
 /*
  * Copyright (c) 2004-2007.  Tim Davis, University of Florida,
@@ -15,11 +15,11 @@
 #ifdef DLONG
 #define Int UF_long
 #define Int_id UF_long_id
-#define BTF(name) amesos_btf_l_ ## name
+#define BTF(name) trilinos_btf_l_ ## name
 #else
 #define Int int
 #define Int_id "%d"
-#define BTF(name) amesos_btf_ ## name
+#define BTF(name) trilinos_btf_ ## name
 #endif
 
 /* ========================================================================== */

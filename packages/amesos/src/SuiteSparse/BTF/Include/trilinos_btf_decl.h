@@ -85,8 +85,8 @@
  * matrix to MC21A and it will happily return a column permutation.
  */
 
-#ifndef AMESOS_BTF_DECL_H
-#define AMESOS_BTF_DECL_H
+#ifndef TRILINOS_BTF_DECL_H
+#define TRILINOS_BTF_DECL_H
 
 /* make it easy for C++ programs to include BTF */
 #ifdef __cplusplus
@@ -95,7 +95,7 @@ extern "C" {
 
 #include "amesos_UFconfig.h"
 
-int amesos_btf_maxtrans    /* returns # of columns matched */
+int trilinos_btf_maxtrans    /* returns # of columns matched */
 (
     /* --- input, not modified: --- */
     int nrow,	    /* A is nrow-by-ncol in compressed column form */
@@ -118,7 +118,7 @@ int amesos_btf_maxtrans    /* returns # of columns matched */
 ) ;
 
 /* long integer version (all "int" parameters become "UF_long") */
-UF_long amesos_btf_l_maxtrans (UF_long, UF_long, UF_long *, UF_long *, double,
+UF_long trilinos_btf_l_maxtrans (UF_long, UF_long, UF_long *, UF_long *, double,
     double *, UF_long *, UF_long *) ;
 
 
@@ -144,7 +144,7 @@ UF_long amesos_btf_l_maxtrans (UF_long, UF_long, UF_long *, UF_long *, double,
  * number of strongly connected components found.
  */
 
-int amesos_btf_strongcomp  /* return # of strongly connected components */
+int trilinos_btf_strongcomp  /* return # of strongly connected components */
 (
     /* input, not modified: */
     int n,	    /* A is n-by-n in compressed column form */
@@ -164,7 +164,7 @@ int amesos_btf_strongcomp  /* return # of strongly connected components */
     int Work [ ]    /* size 4n */
 ) ;
 
-UF_long amesos_btf_l_strongcomp (UF_long, UF_long *, UF_long *, UF_long *, UF_long *,
+UF_long trilinos_btf_l_strongcomp (UF_long, UF_long *, UF_long *, UF_long *, UF_long *,
     UF_long *, UF_long *) ;
 
 
@@ -191,7 +191,7 @@ UF_long amesos_btf_l_strongcomp (UF_long, UF_long *, UF_long *, UF_long *, UF_lo
  * number of strongly connected components found.
  */
 
-int amesos_btf_order	    /* returns number of blocks found */
+int trilinos_btf_order	    /* returns number of blocks found */
 (
     /* --- input, not modified: --- */
     int n,	    /* A is n-by-n in compressed column form */
@@ -201,7 +201,7 @@ int amesos_btf_order	    /* returns number of blocks found */
 		     * transversal; no limit if <= 0 */
 
     /* --- output, not defined on input --- */
-    double *work,   /* return value from amesos_btf_maxtrans */
+    double *work,   /* return value from trilinos_btf_maxtrans */
     int P [ ],	    /* size n, row permutation */
     int Q [ ],	    /* size n, column permutation */
     int R [ ],	    /* size n+1.  block b is in rows/cols R[b] ... R[b+1]-1 */
@@ -211,7 +211,7 @@ int amesos_btf_order	    /* returns number of blocks found */
     int Work [ ]    /* size 5n */
 ) ;
 
-UF_long amesos_btf_l_order (UF_long, UF_long *, UF_long *, double , double *,
+UF_long trilinos_btf_l_order (UF_long, UF_long *, UF_long *, double , double *,
     UF_long *, UF_long *, UF_long *, UF_long *, UF_long *) ;
 
 

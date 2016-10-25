@@ -157,8 +157,8 @@
 #define KLU_numeric klu_l_numeric
 #define KLU_common klu_l_common
 
-#define BTF_order amesos_btf_l_order
-#define BTF_strongcomp amesos_btf_l_strongcomp
+#define BTF_order trilinos_btf_l_order
+#define BTF_strongcomp trilinos_btf_l_strongcomp
 
 #define AMD_order trilinos_amd_l_order
 #define COLAMD amesos_colamd_l
@@ -181,8 +181,8 @@
 #define KLU_numeric klu_numeric
 #define KLU_common klu_common
 
-#define BTF_order amesos_btf_order
-#define BTF_strongcomp amesos_btf_strongcomp
+#define BTF_order trilinos_btf_order
+#define BTF_strongcomp trilinos_btf_strongcomp
 
 #define AMD_order trilinos_amd_order
 #define COLAMD amesos_colamd

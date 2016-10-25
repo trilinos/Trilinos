@@ -25,7 +25,7 @@
 
 #include "amesos_cholmod.h"
 #include "amesos_cholmod_internal.h"
-#include "amesos_btf_decl.h"
+#include "trilinos_btf_decl.h"
 #include "amesos_klu_decl.h"
 
 #ifndef NMPI
@@ -49,7 +49,7 @@
 #define KLU_free_numeric amesos_klu_l_free_numeric
 #define KLU_defaults amesos_klu_l_defaults
 
-#define BTF_order amesos_btf_l_order
+#define BTF_order trilinos_btf_l_order
 
 #define TAG0 0
 

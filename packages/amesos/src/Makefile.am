@@ -134,8 +134,8 @@ KLU_H = \
 	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_decl.h \
 	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_internal.h \
 	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_version.h \
-	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_decl.h \
-	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_internal.h \
+	$(srcdir)/SuiteSparse/BTF/Include/trilinos_btf_decl.h \
+	$(srcdir)/SuiteSparse/BTF/Include/trilinos_btf_internal.h \
 	$(srcdir)/Amesos_Klu.h
 
 KLU = \
@@ -157,9 +157,9 @@ KLU = \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_solve.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_sort.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_tsolve.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_order.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_maxtrans.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_strongcomp.c
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_order.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_maxtrans.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_strongcomp.c
 
 
 else
@@ -345,9 +345,9 @@ PARAKLETE = \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_memory.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_scale.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_solve.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_l_order.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_l_maxtrans.c \
-	$(srcdir)/SuiteSparse/BTF/Source/amesos_btf_l_strongcomp.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_l_order.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_l_maxtrans.c \
+	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_l_strongcomp.c \
 	$(srcdir)/Amesos_Paraklete.cpp
 else
 PARAKLETE_H =

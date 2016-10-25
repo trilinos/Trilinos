@@ -245,8 +245,8 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     SuiteSparse/KLU/Include/amesos_klu_decl.h
     SuiteSparse/KLU/Include/amesos_klu_internal.h
     SuiteSparse/KLU/Include/amesos_klu_version.h
-    SuiteSparse/BTF/Include/amesos_btf_decl.h
-    SuiteSparse/BTF/Include/amesos_btf_internal.h
+    SuiteSparse/BTF/Include/trilinos_btf_decl.h
+    SuiteSparse/BTF/Include/trilinos_btf_internal.h
     SuiteSparse/CCOLAMD/Include/amesos_ccolamd.h
     SuiteSparse/CAMD/Include/amesos_camd.h
     SuiteSparse/CAMD/Include/amesos_camd_internal.h
@@ -271,12 +271,12 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     SuiteSparse/KLU/Source/amesos_klu_solve.c
     SuiteSparse/KLU/Source/amesos_klu_sort.c
     SuiteSparse/KLU/Source/amesos_klu_tsolve.c
-    SuiteSparse/BTF/Source/amesos_btf_order.c
-    SuiteSparse/BTF/Source/amesos_btf_maxtrans.c
-    SuiteSparse/BTF/Source/amesos_btf_strongcomp.c
-    SuiteSparse/BTF/Source/amesos_btf_l_order.c
-    SuiteSparse/BTF/Source/amesos_btf_l_maxtrans.c
-    SuiteSparse/BTF/Source/amesos_btf_l_strongcomp.c
+    SuiteSparse/BTF/Source/trilinos_btf_order.c
+    SuiteSparse/BTF/Source/trilinos_btf_maxtrans.c
+    SuiteSparse/BTF/Source/trilinos_btf_strongcomp.c
+    SuiteSparse/BTF/Source/trilinos_btf_l_order.c
+    SuiteSparse/BTF/Source/trilinos_btf_l_maxtrans.c
+    SuiteSparse/BTF/Source/trilinos_btf_l_strongcomp.c
     SuiteSparse/CCOLAMD/Source/amesos_ccolamd.c
     SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c
     SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c
@@ -427,9 +427,9 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
     SuiteSparse/KLU/Source/amesos_klu_l_memory.c
     SuiteSparse/KLU/Source/amesos_klu_l_scale.c
     SuiteSparse/KLU/Source/amesos_klu_l_solve.c
-    SuiteSparse/BTF/Source/amesos_btf_l_order.c
-    SuiteSparse/BTF/Source/amesos_btf_l_maxtrans.c
-    SuiteSparse/BTF/Source/amesos_btf_l_strongcomp.c
+    SuiteSparse/BTF/Source/trilinos_btf_l_order.c
+    SuiteSparse/BTF/Source/trilinos_btf_l_maxtrans.c
+    SuiteSparse/BTF/Source/trilinos_btf_l_strongcomp.c
  )
 
     

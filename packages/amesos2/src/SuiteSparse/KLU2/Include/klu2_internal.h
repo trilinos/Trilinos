@@ -41,7 +41,7 @@
 #define _TKLU_INTERNAL_H
 
 #include "klu2.h" 
-#include "amesos_btf_decl.h"
+#include "trilinos_btf_decl.h"
 #include <stdio.h>
 #include <complex>
 #include "Teuchos_ScalarTraits.hpp"

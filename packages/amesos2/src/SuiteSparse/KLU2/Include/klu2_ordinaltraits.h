@@ -80,14 +80,14 @@ struct KLU_OrdinalTraits<int>
         double maxwork, double *work, int *P, int *Q, int *R, int *nmatch,
         int *Work)
     {
-        return (amesos_btf_order (n, Ap, Ai, maxwork, work, P, Q, R, nmatch,
+        return (trilinos_btf_order (n, Ap, Ai, maxwork, work, P, Q, R, nmatch,
                     Work)) ;
     }
 
     static inline int btf_strongcomp (int n, int *Ap, int *Ai, int *Q, int *P,
         int *R, int *Work)
     {
-        return (amesos_btf_strongcomp (n, Ap, Ai, Q, P, R, Work)) ;
+        return (trilinos_btf_strongcomp (n, Ap, Ai, Q, P, R, Work)) ;
     }
 
     static inline int amd_order (int n, int *Ap, int *Ai, int *P,
@@ -116,14 +116,14 @@ struct KLU_OrdinalTraits<long int>
         double maxwork, double *work, long int *P, long int *Q, long int *R, long int *nmatch,
         long int *Work)
     {
-        return (amesos_btf_l_order (n, Ap, Ai, maxwork, work, P, Q, R, nmatch,
+        return (trilinos_btf_l_order (n, Ap, Ai, maxwork, work, P, Q, R, nmatch,
                     Work));
     }
 
     static inline long int btf_strongcomp (long int n, long int *Ap, long int *Ai, long int *Q,
         long int *P, long int *R, long int *Work)
     {
-        return(amesos_btf_l_strongcomp (n, Ap, Ai, Q, P, R, Work)) ;
+        return(trilinos_btf_l_strongcomp (n, Ap, Ai, Q, P, R, Work)) ;
     }
 
     static inline long int amd_order (long int n, long int *Ap, long int *Ai, long int *P,
