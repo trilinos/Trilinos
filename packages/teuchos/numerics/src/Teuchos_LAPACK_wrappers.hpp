@@ -654,14 +654,15 @@ void PREFIX ZGEBAK_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* ilo, c
 //
 // However, we may only use those types if the C++ compiler supports
 // them.  C++11 implies C99 support generally, so asking whether the
-// compiler supports C++11 is a reasonable test.
-#ifdef HAVE_TEUCHOSCORE_CXX11
+// compiler supports C++11 is a reasonable test.  Unless you're using
+// Visual Studio, which supports subsets of C++11, but not this.
+#if (defined(HAVE_TEUCHOSCORE_CXX11) && !defined(_MSC_VER))
 float _Complex PREFIX CLARND_F77(const int* idist, int* seed);
 double _Complex PREFIX ZLARND_F77(const int* idist, int* seed);
-#else // NOT HAVE_TEUCHOSCORE_CXX11
+#else // NOT HAVE_TEUCHOSCORE_CXX11 || _MSC_VER
 std::complex<float> PREFIX CLARND_F77(const int* idist, int* seed);
 std::complex<double> PREFIX ZLARND_F77(const int* idist, int* seed);
-#endif // HAVE_TEUCHOSCORE_CXX11
+#endif
 
 
 void PREFIX CLARNV_F77(const int* idist, int* seed, const int* n, std::complex<float>* v);
