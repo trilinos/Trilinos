@@ -155,7 +155,7 @@ RCP< const ParameterList > getValidParameters()
                "the MDMap. If present for the MDComm constructor, the length "
                "of this parameter will set the number of dimensions.  If not "
                "present for the MDComm constructor, the number of dimensions "
-               "will be set by the length of the 'axis comm szies' parameter.",
+               "will be set by the length of the 'comm dimensions' parameter.",
                dimensionValidator);
 
     // Both boundary pad and communication pad use the same number and
