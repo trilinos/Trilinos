@@ -70,6 +70,7 @@
 #include "Intrepid_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
+
 namespace MueLuTests {
 
   /*********************************************************************************************************************/
@@ -242,12 +243,65 @@ namespace MueLuTests {
  
   }
 
+
+ /*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+  #   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+    GO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+
+    // Setup Levels
+    Level fineLevel, coarseLevel;
+    test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+    coarseLevel.SetFactoryManager(Teuchos::null);
+
+    // Build a pseudo-poisson test matrix
+    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(100,2,lib);
+
+    // only one NS vector 
+    LocalOrdinal NSdim = 1;
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    nullSpace->randomize();
+    fineLevel.Set("Nullspace",nullSpace);
+
+    // ParameterList
+    ParameterList Params;
+    Params.set("ipc: hi basis","hgrad_quad_c2");
+    Params.set("ipc: lo basis","hgrad_quad_c1");
+
+
+
+
+    //    RCP<IntrepidPCoarsenFactory> IPCFact = rcp(IntrepidPCoarsenFactory);
+
+    //    coarseLevel.Request("P",TentativePFact.get());  // request Ptent
+    //    coarseLevel.Request("Nullspace",TentativePFact.get());
+    //    coarseLevel.Request(*TentativePFact);
+    //    TentativePFact->Build(fineLevel,coarseLevel);
+
+  }
+
+
   /*********************************************************************************************************************/
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GetLoNodeInHi,Scalar,LO,GO,Node)  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BasisFactory,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildLoElemToNode,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GenerateColMapFromImport,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GenerateColMapFromImport,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson,Scalar,LO,GO,Node) \
 
 
 #include <MueLu_ETI_4arg.hpp>
