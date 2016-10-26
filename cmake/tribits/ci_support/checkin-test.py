@@ -45,6 +45,7 @@
 
 import os
 import sys
+import imp
 import traceback
 from optparse import OptionParser
 
@@ -235,10 +236,10 @@ extra builds specified with --st-extra-builds and --extra-builds):
   packages forward/downstream. You can manually select which packages get
   enabled (see the enable options above).  (done if --configure, --do-all, or
   --local-do-all is set.)
-  
+
   4.b) Build all configured code with 'make' (e.g. with -jN set through
   -j or --make-options).  (done if --build, --do-all, or --local-do-all is set.)
-  
+
   4.c) Run all BASIC tests for enabled packages.  (done if --test, --do-all,
   or --local-do-all is set.)
 
@@ -251,10 +252,10 @@ push (done if --push or --do-all is set)
   5.a) Do a final 'git pull' (done if --pull or --do-all is set)
 
   5.b) Do 'git rebase <remoterepo>/<remotebranch>' (done if --rebase is set)
-  
+
   5.c) Amend commit message of the most recent commit with the summary of the
   testing performed.  (done if --append-test-results is set.)
-  
+
   5.d) Push the local commits to the global repo (done if --push is set)
 
 6) Send out final on actions (i.e. 'DID PUSH' email if a push occurred).
@@ -407,7 +408,7 @@ COMMON USE CASES (EXAMPLES):
   ../checkin-test.py \
     --enable-packages=<P0>,<P1>,<P2> --no-enable-fwd-packages \
     --do-all
-  
+
   NOTE: This will override all logic in the script about which packages will
   be enabled based on file changes and only the given packages will be
   enabled.  When there are tens of thousands of changed files and hundreds of
@@ -458,20 +459,20 @@ COMMON USE CASES (EXAMPLES):
   Code and want to include the testing of this in your pre-push testing
   process along with the standard --default-builds build/test cases which can
   only include Primary Tested (PT) Code.  In this case you can run with:
-  
+
     ../checkin-test.py --extra-builds=<BUILD1>,<BUILD2>,... [other options]
-  
+
   For example, if you have a build that enables the TPL CUDA you would do:
-  
+
     echo "
     -DTPL_ENABLE_MPI:BOOL=ON
     -DTPL_ENABLE_CUDA:BOOL=ON
     " > MPI_DEBUG_CUDA.config
-  
+
   and then run with:
-  
+
     ../checkin-test.py --extra-builds=MPI_DEBUG_CUDA --do-all
-  
+
   This will do the standard --default-builds (e.g. MPI_DEBUG and
   SERIAL_RELEASE) build/test cases along with your non-standard MPI_DEBUG_CUDA
   build/test case.
@@ -485,7 +486,7 @@ COMMON USE CASES (EXAMPLES):
 
   You can also use the checkin-test.py script to continuously integrate
   multiple git repos containing add-on packages. To do so, just run:
-    
+
     ../checkin-test.py --extra-repos=<REPO1>,<REPO2>,... [options]
 
   NOTE: You have to create local commits in all of the extra repos where there
@@ -522,24 +523,24 @@ COMMON USE CASES (EXAMPLES):
   with:
 
     ../checkin-test.py --do-all --no-enable-fwd-packages
-  
+
   On your fast remote test machine, do a full test and push with:
-  
+
     ../checkin-test.py \
       --extra-pull-from=<remote-repo>:master \
       --do-all --push
 
   where <remote-name> is a git remote repo name pointing to
   mymachine:/some/dir/to/your/src (see 'git help remote').
-  
+
   NOTE: You can of course adjust the packages and/or build/test cases that get
   enabled on the different machines.
-  
+
   NOTE: Once you invoke the checkin-test.py script on the remote test machine
   and it has pulled the commits from mymachine, then you can start changing
   files again on your local development machine and just check your email to
   see what happens on the remote test machine.
-  
+
   NOTE: If something goes wrong on the remote test machine, you can either
   work on fixing the problem there or you can fix the problem on your local
   development machine and then do the process over again.
@@ -557,7 +558,7 @@ COMMON USE CASES (EXAMPLES):
 
   NOTE: This would also work for multiple repos if the remote name
   '<remote-repo>' pointed to the right remote repo in all the local repos.
-  
+
 (*) Check push readiness status:
 
   ../checkin-test.py
@@ -711,7 +712,7 @@ returned but that does *not* mean that it is okay to do a push.  Therefore, a
 return value of is a necessary but not sufficient condition for readiness to
 push, it depends on the requested actions.
 
-"""        
+"""
 
 # ToDo: Break up the above huge documentation block into different "topics"
 # and then display those topics with --help-topic=<topic>.  Also provide a
@@ -719,7 +720,7 @@ push, it depends on the requested actions.
 # standard documentation to produce where is there now.
 
 def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
-  
+
   clp = ConfigurableOptionParser(configuration.get('defaults', {}), usage=usageHelp)
 
   clp.add_option(
@@ -733,7 +734,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
       + " project's base directory, then --src-dir must be set to point to the" \
       + " project's base directory."
     )
-  
+
   clp.add_option(
     "--show-defaults", dest="showDefaults", action="store_true",
     help="Show the default option values and do nothing at all.",
@@ -1107,7 +1108,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   (options, args) = clp.parse_args(args=commandLineArgs)
 
-  # NOTE: Above, in the pairs of boolean options, the *last* add_option(...) 
+  # NOTE: Above, in the pairs of boolean options, the *last* add_option(...)
   # takes effect!  That is why the commands are ordered the way they are!
 
 
@@ -1161,7 +1162,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   else:
     print "  --no-show-all-tests \\"
   if options.withoutDefaultBuilds:
-    print "  --without-default-builds \\" 
+    print "  --without-default-builds \\"
   print "  --st-extra-builds='"+options.stExtraBuilds+"' \\"
   print "  --extra-builds='"+options.extraBuilds+"' \\"
   print "  --send-email-to='"+options.sendEmailTo+"' \\"
@@ -1297,30 +1298,52 @@ def getConfigurationSearchPaths():
   return result
 
 
+def load_source(filepath):
+  """Wrapper around the imp module load_source function.
+
+  If the imp module and/or imp.load_source do not exist, this function falls
+  back to the previous method of using __import__(...). An advantage of
+  imp.load_source over __import__ is that it can load files that do not have a
+  .py extension.
+
+  """
+  modulePath, moduleFile = os.path.split(filepath)
+  moduleName, extension = os.path.splitext(moduleFile)
+  try:
+    return imp.load_source(moduleName, filepath)
+  except (AttributeError, ImportError):
+    pass
+
+  # Version of python does not have the right version of imp module, use
+  # __import__ instead
+  sys_path_old = sys.path
+  sys.path = [modulePath] + sys_path_old
+  try:
+    return __import__(moduleName)
+  except ImportError, e:
+    print e
+    raise e
+  finally:
+    sys.path = sys_path_old
+
+
 def loadConfigurationFile(filepath):
   if os.path.exists(filepath):
-    sys_path_old = sys.path
     try:
-      modulePath = os.path.dirname(filepath)
-      moduleFile = os.path.basename(filepath)
-      moduleName, extension = os.path.splitext(moduleFile)
-      sys.path = [modulePath] + sys_path_old
-      try:
-        if debugDump:
-          print "\nLoading project configuration from %s..." % filepath
-          print "\nsys.path =", sys.path
-        configuration = __import__(moduleName).configuration
-        if debugDump:
-          print "\nSetting the default --src-dir='"+modulePath+"'"
-        configuration.get("defaults").update({"--src-dir" : modulePath})
-        return configuration
-      except Exception, e:
-        print e
-        raise e
-    finally:
-      sys.path = sys_path_old
       if debugDump:
-        print "\nsys.path =", sys.path
+        print "\nLoading project configuration from %s..." % filepath
+      module = load_source(filepath)
+      configuration = module.configuration
+      # Respect the --src-dir option in the configuration file, if given
+      modulePath = os.path.dirname(filepath)
+      configuration["defaults"].setdefault("--src-dir", modulePath)
+      if debugDump:
+        src_dir = configuration["defaults"]["--src-dir"]
+        print "\nSetting the default --src-dir=%r" % src_dir
+      return configuration
+    except Exception, e:
+      print e
+      raise e
   else:
     raise Exception('The file %s does not exist.' % filepath)
 
@@ -1332,18 +1355,32 @@ def getLocalCmndLineArgs():
   localProjectDefaultsFile = checkinTestDir+"/"+localProjectDefaultsBaseName+".py"
   #print "localProjectDefaultsFile = '"+localProjectDefaultsFile+"'"
   if os.path.exists(localProjectDefaultsFile):
-    sys_path_old = sys.path
+    module = load_source(localProjectDefaultsFile)
     try:
-      sys.path = [checkinTestDir] + sys_path_old
+      localDefaults.extend(module.defaults)
       if debugDump:
-        print "\nLoading local default command-line args from "+localProjectDefaultsFile+"..."
-        print "\nsys.path =", sys.path
-      localDefaults = __import__(localProjectDefaultsBaseName).defaults
-    finally:
-      sys.path = sys_path_old
-      if debugDump:
-        print "\nsys.path =", sys.path
+        print "\nReading command line options from %r" % localProjectDefaultsFile
+    except AttributeError, e:
+      print e
+      raise e
   return localDefaults
+
+
+def getProjectConfigFileCmndLineArgs(projectConfigFile=None):
+  projectDefaults = []
+  if projectConfigFile:
+    # check global project configuration file for defaults
+    if not os.path.isfile(projectConfigFile):
+      raise Exception('The file %s does not exist.' % projectConfigFile)
+    module = load_source(projectConfigFile)
+    try:
+      projectDefaults.extend(module.defaults)
+      if debugDump:
+        print "\nReading command line options from %r" % projectConfigFile
+    except AttributeError:
+      # global project default file did not define defaults list
+      pass
+  return projectDefaults
 
 
 def locateAndLoadConfiguration(path_hints = []):
@@ -1359,7 +1396,7 @@ def locateAndLoadConfiguration(path_hints = []):
     if os.path.exists(candidate):
       return loadConfigurationFile(candidate)
   return {}
-    
+
 
 #
 # Main
@@ -1390,22 +1427,33 @@ def main(cmndLineArgs):
     try:
       # See if there is a configuration file override.
       configuration = None
+      prj_config_file = None
       for arg in cmndLineArgs:
         if arg.startswith('--project-configuration='):
           print "Found configuration override %s..." % arg
-          configuration = loadConfigurationFile(arg.split('=')[1])
+          prj_config_file = arg.split('=')[1].strip()
+          configuration = loadConfigurationFile(prj_config_file)
+          # Read command line arguments from project configuration file
+          projectCmndLineArgs = getProjectConfigFileCmndLineArgs(
+            projectConfigFile=prj_config_file)
         elif not configuration and arg.startswith('--src-dir='):
           configuration = locateAndLoadConfiguration([arg.split('=')[1]])
+      if debugDump:
+        print "\ncmndLineArgs =", cmndLineArgs
       if not configuration:
         configuration = locateAndLoadConfiguration(getConfigurationSearchPaths())
+      if projectCmndLineArgs:
+        if debugDump:
+          print "\nprojectCmndLineArgs =", projectCmndLineArgs
+        cmndLineArgs = projectCmndLineArgs + cmndLineArgs
       localCmndLineArgs = getLocalCmndLineArgs()
       if localCmndLineArgs:
         if debugDump:
-          print "\ncmndLineArgs =", cmndLineArgs
           print "\nlocalCmndLineArgs =", localCmndLineArgs
         cmndLineArgs = localCmndLineArgs + cmndLineArgs
+      if projectCmndLineArgs or localCmndLineArgs:
         if debugDump:
-          print "\ncmndLineArgs =", cmndLineArgs
+          print "\nUpdated cmndLineArgs =", cmndLineArgs
       if debugDump:
         print "\nConfiguration loaded from configuration file =", configuration
       success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)
