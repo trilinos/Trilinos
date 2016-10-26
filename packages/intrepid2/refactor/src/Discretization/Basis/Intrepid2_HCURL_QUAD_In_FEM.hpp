@@ -71,7 +71,8 @@ namespace Intrepid2 {
                    const inputPointViewType  inputPoints,
                    /**/  workViewType        work,
                    const vinvViewType        vinvLine,
-                   const vinvViewType        vinvBubble );
+                   const vinvViewType        vinvBubble,
+                   const ordinal_type        ort = 0 );
       };
       
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -83,7 +84,8 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvLine,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
-                  const EOperator operatorType );
+                  const EOperator operatorType,
+                  const ordinal_type ort = 0 );
       
       template<typename outputValueViewType,
                typename inputPointViewType,
@@ -95,14 +97,16 @@ namespace Intrepid2 {
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinvLine;
         const vinvViewType        _vinvBubble;
-        
+        const ordinal_type        _ort; 
+
         KOKKOS_INLINE_FUNCTION
         Functor( outputValueViewType outputValues_,
                  inputPointViewType  inputPoints_,
                  vinvViewType        vinvLine_,
-                 vinvViewType        vinvBubble_)
+                 vinvViewType        vinvBubble_,
+                 const ordinal_type  ort_ = 0 )
           : _outputValues(outputValues_), _inputPoints(inputPoints_), 
-            _vinvLine(vinvLine_), _vinvBubble(vinvBubble_) {} 
+            _vinvLine(vinvLine_), _vinvBubble(vinvBubble_), _ort(ort_) {} 
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
@@ -122,7 +126,7 @@ namespace Intrepid2 {
           switch (opType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
-            Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble );
+            Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble, _ort );
             break;
           }
           case OPERATOR_CURL : {
@@ -190,43 +194,14 @@ namespace Intrepid2 {
     getValuesIntrBubble( /**/  outputViewType outputValues,
                          const pointViewType  inputPoints,
                          const ordinal_type   ort ) const {
-      this->getValues(outputValues, inputPoints);
-      
-      auto tmpValues = Kokkos::create_mirror_view(Kokkos::HostSpace(), outputValues);
-      Kokkos::deep_copy(tmpValues, outputValues);
-
-      const ordinal_type 
-        card = this->getCardinality()/2,
-        spaceDim = tmpValues.dimension(1);
-      
-      // swap components if ncessary
-      const ordinal_type swapOrt[8] = { 0, 1, 0, 1,
-                                        1, 0, 1, 0 };      
-      if (swapOrt[ort]) {
-        for (ordinal_type i=0;i<card;++i)
-          for (ordinal_type j=0;j<spaceDim;++j) {
-            const auto tmp = tmpValues(i,j);
-            tmpValues(i,j) = tmpValues(i+card,j);
-            tmpValues(i+card,j) = tmp;
-          }
-      }
-      
-      {
-        // x component
-        const ordinal_type ortVal[8] = { 1, -1, -1,  1,
-                                         1, -1, -1,  1 };
-        for (ordinal_type i=0;i<card;++i)
-          tmpValues(i) *= ortVal[ort]*(this->getDofTag(i)(0) == 2);
-      }
-      {
-        // y component
-        const ordinal_type ortVal[8] = { 1,  1, -1, -1,
-                                         1,  1, -1, -1 };
-        for (ordinal_type i=card;i<(2*card);++i)
-          tmpValues(i) *= ortVal[ort]*(this->getDofTag(i)(0) == 2);
-      }
-
-      Kokkos::deep_copy(outputValues, tmpValues);
+      constexpr ordinal_type numPtsPerEval = 1;
+      Impl::Basis_HCURL_QUAD_In_FEM::
+        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
+                                                inputPoints,
+                                                this->vinvLine_,
+                                                this->vinvBubble_,
+                                                OPERATOR_VALUE,
+                                                ort );
     }
 
     virtual

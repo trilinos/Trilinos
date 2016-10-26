@@ -90,7 +90,8 @@ namespace Intrepid2 {
                    const inputPointViewType  inputPoints,
                    /**/  workViewType        work,
                    const vinvViewType        vinv,
-                   const ordinal_type        operatorDn = 0 );
+                   const ordinal_type        operatorDn = 0,
+                   const ordinal_type        ort = 0 );
       };
 
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -101,7 +102,8 @@ namespace Intrepid2 {
       getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-                  const EOperator operatorType );
+                  const EOperator operatorType,
+                  const ordinal_type ort = 0 );
       
       template<typename outputValueViewType,
                typename inputPointViewType,
@@ -113,13 +115,15 @@ namespace Intrepid2 {
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinv;
         const ordinal_type        _opDn;
+        const ordinal_type        _ort;
         
         KOKKOS_INLINE_FUNCTION
         Functor( /**/  outputValueViewType outputValues_,
                  /**/  inputPointViewType  inputPoints_,
                  /**/  vinvViewType        vinv_,
-                 const ordinal_type        opDn_ = 0 )
-          : _outputValues(outputValues_), _inputPoints(inputPoints_), _vinv(vinv_), _opDn(opDn_) {}
+                 const ordinal_type        opDn_ = 0,
+                 const ordinal_type        ort_ = 0 )
+          : _outputValues(outputValues_), _inputPoints(inputPoints_), _vinv(vinv_), _opDn(opDn_), _ort(ort_) {}
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
@@ -139,7 +143,7 @@ namespace Intrepid2 {
           switch (opType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
-            Serial<opType>::getValues( output, input, work, _vinv );
+            Serial<opType>::getValues( output, input, work, _vinv, _ort );
             break;
           }
           case OPERATOR_Dn : {
@@ -202,24 +206,15 @@ namespace Intrepid2 {
     getValuesIntrBubble( /**/  outputViewType outputValues,
                          const pointViewType  inputPoints,
                          const ordinal_type   ort ) const {
-      // this evaluation is for orientation only
-      this->getValues(outputValues, inputPoints);
-
-      // this is not really designed for device function but it will still work
-      auto tmpValues = Kokkos::create_mirror_view(Kokkos::HostSpace(), outputValues);
-      Kokkos::deep_copy(tmpValues, outputValues);
-
-      // orientation change the sign when this function is used 
-      // for hcurl and hdiv elements as its gradient component.
-      // this should not be called to compute hgrad coeff matrix.
-      const typename scalarViewType::value_type ortVal[2] = { 1, -1 };
-      const ordinal_type card = this->getCardinality();
-      for (ordinal_type i=0;i<card;++i)
-        tmpValues(i) *= ortVal[ort]*(this->getDofTag(i)(0) == 1);
-
-      Kokkos::deep_copy(outputValues, tmpValues);
+      constexpr ordinal_type numPtsPerEval = 1;
+      Impl::Basis_HGRAD_LINE_Cn_FEM::
+        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
+                                                inputPoints,
+                                                this->vinv_,
+                                                OPERATOR_VALUE,
+                                                ort );
     }
-
+    
     virtual
     void
     getDofCoords( scalarViewType dofCoords ) const {
