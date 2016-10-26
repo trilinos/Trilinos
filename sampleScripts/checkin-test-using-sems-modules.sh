@@ -102,7 +102,7 @@
 # this script with the "--help" command-line option, like this:
 #
 #   $ source .checkin-test-using-sems-modules.sh --help
-#   
+#
 
 # Pick up command-line arguments (DO NOT CHANGE THIS)
 EXTRA_ARGS=$@
@@ -368,7 +368,7 @@ if [ "${USE_NINJA}" == 'ON' ]; then
   echo "-G Ninja" > COMMON.config
 else
   # Do this so we can append to COMMON.config below.
-  rm -f COMMON.confg
+  rm -f COMMON.config
 fi
 
 # Trilinos_ENABLE_EXPLICIT_INSTANTIATION: "Explict instantiation"
@@ -722,4 +722,3 @@ echo "
 ${TRILINOS_PATH}/checkin-test.py \
 --ctest-timeout=400 \
 $EXTRA_ARGS
-
