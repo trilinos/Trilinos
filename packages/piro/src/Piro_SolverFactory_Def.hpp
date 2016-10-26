@@ -99,17 +99,17 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
     else
       result = observedLocaSolver(piroParams, model, observer);
   } else
-#endif /* Piro_ENABLE_NOX */
-#ifdef Piro_ENABLE_Rythmos
+#endif /* HAVE_PIRO_NOX */
+#ifdef HAVE_PIRO_RYTHMOS
   if (solverType == "Rythmos") {
     result = rythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
-#endif /* Piro_ENABLE_Rythmos */
-#ifdef Piro_ENABLE_Tempus
+#endif /* HAVE_PIRO_RYTHMOS */
+#ifdef HAVE_PIRO_TEMPUS
   if (solverType == "Tempus") {
     result = tempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
-#endif /* Piro_ENABLE_Tempus */
+#endif /* HAVE_PIRO_TEMPUS */
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
         true,
@@ -135,7 +135,7 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 
   const std::string &solverType = piroParams->get("Solver Type", "NOX");
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
   if (solverType == "NOX") {
     result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, observer));
   } else
@@ -156,11 +156,11 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
     result = rythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
 #endif /* HAVE_PIRO_RYTHMOS */
-#ifdef Piro_ENABLE_Tempus
+#ifdef HAVE_PIRO_TEMPUS
   if (solverType == "Tempus") {
     result = tempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
-#endif /* Piro_ENABLE_Tempus */
+#endif /* HAVE_PIRO_TEMPUS */
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
         true,
