@@ -71,6 +71,7 @@ KLU2<Matrix,Vector>::KLU2(
   , nzvals_()                   // initialize to empty arrays
   , rowind_()
   , colptr_()
+  , transFlag_(0)
 {
   ::KLU2::klu_defaults<slu_type, local_ordinal_type> (&(data_.common_)) ;
   data_.symbolic_ = NULL;
@@ -222,11 +223,22 @@ KLU2<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-    ::KLU2::klu_solve<slu_type, local_ordinal_type>
-                (data_.symbolic_, data_.numeric_,
-                (local_ordinal_type)this->globalNumCols_,
-                (local_ordinal_type)nrhs,
-                bValues.getRawPtr(),  &(data_.common_)) ;
+    if (transFlag_ == 0)
+    {
+      ::KLU2::klu_solve<slu_type, local_ordinal_type>
+                  (data_.symbolic_, data_.numeric_,
+                  (local_ordinal_type)this->globalNumCols_,
+                  (local_ordinal_type)nrhs,
+                  bValues.getRawPtr(),  &(data_.common_)) ;
+    }
+    else
+    {
+      ::KLU2::klu_tsolve<slu_type, local_ordinal_type>
+                  (data_.symbolic_, data_.numeric_,
+                  (local_ordinal_type)this->globalNumCols_,
+                  (local_ordinal_type)nrhs,
+                  bValues.getRawPtr(),  &(data_.common_)) ;
+    }
 
     }
 
@@ -286,20 +298,14 @@ KLU2<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterLis
 
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
-  if(parameterList->isParameter("Trans"))
-    {}
-
-
-
-
+  transFlag_ = this->control_.useTranspose_ ? 1: 0;
   // The KLU2 transpose option can override the Amesos2 option
-  //if( parameterList->isParameter("Trans") ){
-    //RCP<const ParameterEntryValidator> trans_validator = valid_params->getEntry("Trans").validator();
-    //parameterList->getEntry("Trans").setValidator(trans_validator);
+  if( parameterList->isParameter("Trans") ){
+    RCP<const ParameterEntryValidator> trans_validator = valid_params->getEntry("Trans").validator();
+    parameterList->getEntry("Trans").setValidator(trans_validator);
 
-    //data_.options.Trans = getIntegralValue<SLU::trans_t>(*parameterList, "Trans");
-  //}
-
+    transFlag_ = getIntegralValue<int>(*parameterList, "Trans");
+  }
 }
 
 
@@ -307,15 +313,27 @@ template <class Matrix, class Vector>
 Teuchos::RCP<const Teuchos::ParameterList>
 KLU2<Matrix,Vector>::getValidParameters_impl() const
 {
+  using std::string;
+  using Teuchos::tuple;
   using Teuchos::ParameterList;
+  using Teuchos::setStringToIntegralParameter;
 
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
-  if( is_null(valid_params) ){
+  if( is_null(valid_params) )
+  {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
     pl->set("Equil", true, "Whether to equilibrate the system before solve, does nothing now");
 
+    setStringToIntegralParameter<int>("Trans", "NOTRANS",
+                                      "Solve for the transpose system or not",
+                                      tuple<string>("NOTRANS","TRANS","CONJ"),
+                                      tuple<string>("Solve with transpose",
+                                                    "Do not solve with transpose",
+                                                    "Solve with the conjugate transpose"),
+                                      tuple<int>(0, 1, 2),
+                                      pl.getRawPtr());
     valid_params = pl;
   }
 
