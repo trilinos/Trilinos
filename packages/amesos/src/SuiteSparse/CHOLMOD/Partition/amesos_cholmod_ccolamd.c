@@ -26,7 +26,7 @@
 #ifndef NPARTITION
 
 #include "amesos_cholmod_internal.h"
-#include "amesos_ccolamd.h"
+#include "trilinos_ccolamd.h"
 #include "amesos_cholmod_partition.h"
 
 #if (CCOLAMD_VERSION < CCOLAMD_VERSION_CODE (2,5))
@@ -72,9 +72,9 @@ static int ccolamd_interface
 
     /* get parameters */
 #ifdef LONG
-    amesos_ccolamd_l_set_defaults (knobs) ;
+    trilinos_ccolamd_l_set_defaults (knobs) ;
 #else
-    amesos_ccolamd_set_defaults (knobs) ;
+    trilinos_ccolamd_set_defaults (knobs) ;
 #endif
 
     if (Common->current < 0 || Common->current >= CHOLMOD_MAXMETHODS)
@@ -95,9 +95,9 @@ static int ccolamd_interface
     {
 
 #ifdef LONG
-	amesos_ccolamd_l (ncol, nrow, alen, C->i, C->p, knobs, stats, Cmember) ;
+	trilinos_ccolamd_l (ncol, nrow, alen, C->i, C->p, knobs, stats, Cmember) ;
 #else
-	amesos_ccolamd (ncol, nrow, alen, C->i, C->p, knobs, stats, Cmember) ;
+	trilinos_ccolamd (ncol, nrow, alen, C->i, C->p, knobs, stats, Cmember) ;
 #endif
 
 	ok = stats [CCOLAMD_STATUS] ;
@@ -169,9 +169,9 @@ int CHOLMOD(ccolamd)
     /* ---------------------------------------------------------------------- */
 
 #ifdef LONG
-    alen = amesos_ccolamd_l_recommended (A->nzmax, ncol, nrow) ;
+    alen = trilinos_ccolamd_l_recommended (A->nzmax, ncol, nrow) ;
 #else
-    alen = amesos_ccolamd_recommended (A->nzmax, ncol, nrow) ;
+    alen = trilinos_ccolamd_recommended (A->nzmax, ncol, nrow) ;
 #endif
 
     if (alen == 0)

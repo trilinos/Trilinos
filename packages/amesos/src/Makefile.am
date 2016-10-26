@@ -264,7 +264,7 @@ PARAKLETE_H = \
 	$(srcdir)/Amesos_Paraklete.h \
 	$(srcdir)/SuiteSparse/PARAKLETE/Include/amesos_paraklete_decl.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_complexity.h \
-	$(srcdir)/SuiteSparse/CCOLAMD/Include/amesos_ccolamd.h \
+	$(srcdir)/SuiteSparse/CCOLAMD/Include/trilinos_ccolamd.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_blas.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_cholesky.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_config.h \
@@ -332,8 +332,8 @@ PARAKLETE = \
 	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_l2.c \
 	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_l_postorder.c \
 	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c \
-	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c \
-	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c \
+	$(srcdir)/SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_l.c \
+	$(srcdir)/SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_global.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_analyze.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_analyze_given.c \

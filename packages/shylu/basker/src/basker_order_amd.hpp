@@ -9,7 +9,7 @@
 #ifdef HAVE_AMESOS
 #include "trilinos_amd.h"
 #include "amesos_colamd.h"
-#include "amesos_ccolamd.h"
+#include "trilinos_ccolamd.h"
 #endif
 
 namespace BaskerNS
@@ -49,7 +49,7 @@ namespace BaskerNS
     int    stats[CCOLAMD_STATS];
 
     //use default knob settings
-    amesos_ccolamd_set_defaults(knobs);
+    trilinos_ccolamd_set_defaults(knobs);
     knobs[0] = 10;
     knobs[1] = 0;
     knobs[2] = 2;
@@ -80,7 +80,7 @@ namespace BaskerNS
     long    stats[CCOLAMD_STATS];
 
     //use default knob settings
-    amesos_ccolamd_l_set_defaults(knobs);
+    trilinos_ccolamd_l_set_defaults(knobs);
     knobs[0] = 10;
     knobs[1] = 0;
     knobs[2] = 2;

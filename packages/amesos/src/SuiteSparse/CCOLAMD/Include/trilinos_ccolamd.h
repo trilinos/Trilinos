@@ -14,8 +14,8 @@
  *  csymamd, or the related macros and definitions.
  */
 
-#ifndef AMESOS_CCOLAMD_H
-#define AMESOS_CCOLAMD_H
+#ifndef TRILINOS_CCOLAMD_H
+#define TRILINOS_CCOLAMD_H
 
 /* make it easy for C++ programs to include CCOLAMD */
 #ifdef __cplusplus
@@ -116,7 +116,7 @@ extern "C" {
 /* define UF_long */
 #include "amesos_UFconfig.h"
 
-size_t amesos_ccolamd_recommended	/* returns recommended value of Alen, */
+size_t trilinos_ccolamd_recommended	/* returns recommended value of Alen, */
 				/* or 0 if input arguments are erroneous */
 (
     int nnz,			/* nonzeros in A */
@@ -124,7 +124,7 @@ size_t amesos_ccolamd_recommended	/* returns recommended value of Alen, */
     int n_col			/* number of columns in A */
 ) ;
 
-size_t amesos_ccolamd_l_recommended	/* returns recommended value of Alen, */
+size_t trilinos_ccolamd_l_recommended	/* returns recommended value of Alen, */
 				/* or 0 if input arguments are erroneous */
 (
     UF_long nnz,		/* nonzeros in A */
@@ -132,17 +132,17 @@ size_t amesos_ccolamd_l_recommended	/* returns recommended value of Alen, */
     UF_long n_col		/* number of columns in A */
 ) ;
 
-void amesos_ccolamd_set_defaults	/* sets default parameters */
+void trilinos_ccolamd_set_defaults	/* sets default parameters */
 (				/* knobs argument is modified on output */
     double knobs [CCOLAMD_KNOBS]	/* parameter settings for ccolamd */
 ) ;
 
-void amesos_ccolamd_l_set_defaults	/* sets default parameters */
+void trilinos_ccolamd_l_set_defaults	/* sets default parameters */
 (				/* knobs argument is modified on output */
     double knobs [CCOLAMD_KNOBS]	/* parameter settings for ccolamd */
 ) ;
 
-int amesos_ccolamd		/* returns (1) if successful, (0) otherwise*/
+int trilinos_ccolamd		/* returns (1) if successful, (0) otherwise*/
 (				/* A and p arguments are modified on output */
     int n_row,			/* number of rows in A */
     int n_col,			/* number of columns in A */
@@ -154,7 +154,7 @@ int amesos_ccolamd		/* returns (1) if successful, (0) otherwise*/
     int cmember [ ]		/* Constraint set of A, of size n_col */
 ) ;
 
-UF_long amesos_ccolamd_l	/* same as ccolamd, but with UF_long integers */
+UF_long trilinos_ccolamd_l	/* same as ccolamd, but with UF_long integers */
 (
     UF_long n_row,
     UF_long n_col,
@@ -196,12 +196,12 @@ UF_long amesos_csymamd_l		/* same as csymamd, but with UF_long integers */
     UF_long stype
 ) ;
 
-void amesos_ccolamd_report
+void trilinos_ccolamd_report
 (
     int stats [CCOLAMD_STATS]
 ) ;
 
-void amesos_ccolamd_l_report
+void trilinos_ccolamd_l_report
 (
     UF_long stats [CCOLAMD_STATS]
 ) ;
@@ -226,7 +226,7 @@ void amesos_csymamd_l_report
  * be called directly by the user.
  */
 
-int amesos_ccolamd2
+int trilinos_ccolamd2
 (				/* A and p arguments are modified on output */
     int n_row,			/* number of rows in A */
     int n_col,			/* number of columns in A */
@@ -246,7 +246,7 @@ int amesos_ccolamd2
     int cmember [ ]		/* Constraint set of A */
 ) ;
 
-UF_long amesos_ccolamd2_l	    /* same as ccolamd2, but with UF_long integers */
+UF_long trilinos_ccolamd2_l	    /* same as ccolamd2, but with UF_long integers */
 (
     UF_long n_row,
     UF_long n_col,
@@ -265,7 +265,7 @@ UF_long amesos_ccolamd2_l	    /* same as ccolamd2, but with UF_long integers */
     UF_long cmember [ ]
 ) ;
 
-void amesos_ccolamd_apply_order
+void trilinos_ccolamd_apply_order
 (
     int Front [ ],
     const int Order [ ],
@@ -274,7 +274,7 @@ void amesos_ccolamd_apply_order
     int nfr
 ) ;
 
-void amesos_ccolamd_l_apply_order
+void trilinos_ccolamd_l_apply_order
 (
     UF_long Front [ ],
     const UF_long Order [ ],
@@ -284,7 +284,7 @@ void amesos_ccolamd_l_apply_order
 ) ;
 
 
-void amesos_ccolamd_fsize
+void trilinos_ccolamd_fsize
 (
     int nn,
     int MaxFsize [ ],
@@ -294,7 +294,7 @@ void amesos_ccolamd_fsize
     int Npiv [ ]
 ) ;
 
-void amesos_ccolamd_l_fsize
+void trilinos_ccolamd_l_fsize
 (
     UF_long nn,
     UF_long MaxFsize [ ],
@@ -304,7 +304,7 @@ void amesos_ccolamd_l_fsize
     UF_long Npiv [ ]
 ) ;
 
-void amesos_ccolamd_postorder
+void trilinos_ccolamd_postorder
 (
     int nn,
     int Parent [ ],
@@ -318,7 +318,7 @@ void amesos_ccolamd_postorder
     int cmember [ ]
 ) ;
 
-void amesos_ccolamd_l_postorder
+void trilinos_ccolamd_l_postorder
 (
     UF_long nn,
     UF_long Parent [ ],
@@ -332,7 +332,7 @@ void amesos_ccolamd_l_postorder
     UF_long cmember [ ]
 ) ;
 
-int amesos_ccolamd_post_tree
+int trilinos_ccolamd_post_tree
 (
     int root,
     int k,
@@ -342,7 +342,7 @@ int amesos_ccolamd_post_tree
     int Stack [ ]
 ) ;
 
-UF_long amesos_ccolamd_l_post_tree
+UF_long trilinos_ccolamd_l_post_tree
 (
     UF_long root,
     UF_long k,
@@ -356,7 +356,7 @@ UF_long amesos_ccolamd_l_post_tree
 #define EXTERN extern
 #endif
 
-EXTERN int (*amesos_ccolamd_printf) (const char *, ...) ;
+EXTERN int (*trilinos_ccolamd_printf) (const char *, ...) ;
 
 #ifdef __cplusplus
 }

@@ -607,6 +607,9 @@
 #define NDEBUG
 #endif
 
+/* This file should make the long int version of CCOLAMD */
+#define DLONG 1
+
 /* turn on debugging by uncommenting the following line
  #undef NDEBUG
  */
@@ -615,7 +618,7 @@
 /* === Include files ======================================================== */
 /* ========================================================================== */
 
-#include "amesos_ccolamd.h"
+#include "trilinos_ccolamd.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -647,16 +650,16 @@
 #define ID  UF_long_id
 #define Int_MAX UF_long_max
 
-#define CCOLAMD_recommended amesos_ccolamd_l_recommended
-#define CCOLAMD_set_defaults amesos_ccolamd_l_set_defaults
-#define CCOLAMD_2 amesos_ccolamd2_l
-#define CCOLAMD_MAIN amesos_ccolamd_l
-#define CCOLAMD_apply_order amesos_ccolamd_l_apply_order
-#define CCOLAMD_postorder amesos_ccolamd_l_postorder
-#define CCOLAMD_post_tree amesos_ccolamd_l_post_tree
-#define CCOLAMD_fsize amesos_ccolamd_l_fsize
+#define CCOLAMD_recommended trilinos_ccolamd_l_recommended
+#define CCOLAMD_set_defaults trilinos_ccolamd_l_set_defaults
+#define CCOLAMD_2 trilinos_ccolamd2_l
+#define CCOLAMD_MAIN trilinos_ccolamd_l
+#define CCOLAMD_apply_order trilinos_ccolamd_l_apply_order
+#define CCOLAMD_postorder trilinos_ccolamd_l_postorder
+#define CCOLAMD_post_tree trilinos_ccolamd_l_post_tree
+#define CCOLAMD_fsize trilinos_ccolamd_l_fsize
 #define CSYMAMD_MAIN amesos_csymamd_l
-#define CCOLAMD_report amesos_ccolamd_l_report
+#define CCOLAMD_report trilinos_ccolamd_l_report
 #define CSYMAMD_report amesos_csymamd_l_report
 
 #else
@@ -665,16 +668,16 @@
 #define ID "%d"
 #define Int_MAX INT_MAX
 
-#define CCOLAMD_recommended amesos_ccolamd_recommended
-#define CCOLAMD_set_defaults amesos_ccolamd_set_defaults
-#define CCOLAMD_2 amesos_ccolamd2
-#define CCOLAMD_MAIN amesos_ccolamd
-#define CCOLAMD_apply_order amesos_ccolamd_apply_order
-#define CCOLAMD_postorder amesos_ccolamd_postorder
-#define CCOLAMD_post_tree amesos_ccolamd_post_tree
-#define CCOLAMD_fsize amesos_ccolamd_fsize
+#define CCOLAMD_recommended trilinos_ccolamd_recommended
+#define CCOLAMD_set_defaults trilinos_ccolamd_set_defaults
+#define CCOLAMD_2 trilinos_ccolamd2
+#define CCOLAMD_MAIN trilinos_ccolamd
+#define CCOLAMD_apply_order trilinos_ccolamd_apply_order
+#define CCOLAMD_postorder trilinos_ccolamd_postorder
+#define CCOLAMD_post_tree trilinos_ccolamd_post_tree
+#define CCOLAMD_fsize trilinos_ccolamd_fsize
 #define CSYMAMD_MAIN amesos_csymamd
-#define CCOLAMD_report amesos_ccolamd_report
+#define CCOLAMD_report trilinos_ccolamd_report
 #define CSYMAMD_report amesos_csymamd_report
 
 #endif
@@ -811,7 +814,7 @@ typedef struct CColamd_Row_struct
 #endif
 
 /* All output goes through the PRINTF macro.  */
-#define PRINTF(params) { if (amesos_ccolamd_printf != NULL) (void) amesos_ccolamd_printf params ; }
+#define PRINTF(params) { if (trilinos_ccolamd_printf != NULL) (void) trilinos_ccolamd_printf params ; }
 
 
 /* ========================================================================== */

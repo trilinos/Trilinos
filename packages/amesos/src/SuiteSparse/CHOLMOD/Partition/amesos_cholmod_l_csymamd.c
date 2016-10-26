@@ -28,7 +28,7 @@
 #define DLONG 1
 
 #include "amesos_cholmod_internal.h"
-#include "amesos_ccolamd.h"
+#include "trilinos_ccolamd.h"
 #include "amesos_cholmod_partition.h"
 
 #if (CCOLAMD_VERSION < CCOLAMD_VERSION_CODE (2,5))
@@ -94,9 +94,9 @@ int CHOLMOD(csymamd)
 
     /* get parameters */
 #ifdef LONG
-    amesos_ccolamd_l_set_defaults (knobs) ;
+    trilinos_ccolamd_l_set_defaults (knobs) ;
 #else
-    amesos_ccolamd_set_defaults (knobs) ;
+    trilinos_ccolamd_set_defaults (knobs) ;
 #endif
     if (Common->current >= 0 && Common->current < CHOLMOD_MAXMETHODS)
     {

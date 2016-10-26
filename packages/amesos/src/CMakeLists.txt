@@ -247,7 +247,7 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     SuiteSparse/KLU/Include/amesos_klu_version.h
     SuiteSparse/BTF/Include/trilinos_btf_decl.h
     SuiteSparse/BTF/Include/trilinos_btf_internal.h
-    SuiteSparse/CCOLAMD/Include/amesos_ccolamd.h
+    SuiteSparse/CCOLAMD/Include/trilinos_ccolamd.h
     SuiteSparse/CAMD/Include/trilinos_camd.h
     SuiteSparse/CAMD/Include/trilinos_camd_internal.h
     Amesos_Klu.h
@@ -277,9 +277,9 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     SuiteSparse/BTF/Source/trilinos_btf_l_order.c
     SuiteSparse/BTF/Source/trilinos_btf_l_maxtrans.c
     SuiteSparse/BTF/Source/trilinos_btf_l_strongcomp.c
-    SuiteSparse/CCOLAMD/Source/amesos_ccolamd.c
-    SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c
-    SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c
+    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd.c
+    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_l.c
+    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_global.c
     )
     
 
@@ -324,7 +324,7 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
   SET(PARAKLETE_HEADERS
     SuiteSparse/PARAKLETE/Include/amesos_paraklete_decl.h
     SuiteSparse/CHOLMOD/Include/amesos_cholmod_complexity.h
-    SuiteSparse/CCOLAMD/Include/amesos_ccolamd.h
+    SuiteSparse/CCOLAMD/Include/trilinos_ccolamd.h
     SuiteSparse/CHOLMOD/Include/amesos_cholmod_blas.h
     SuiteSparse/CHOLMOD/Include/amesos_cholmod_cholesky.h
     SuiteSparse/CHOLMOD/Include/amesos_cholmod_config.h
@@ -414,8 +414,8 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
     SuiteSparse/CAMD/Source/trilinos_camd_l2.c
     SuiteSparse/CAMD/Source/trilinos_camd_l_postorder.c
     SuiteSparse/COLAMD/Source/amesos_colamd_l.c
-    SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c
-    SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c
+    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_l.c
+    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_global.c
     SuiteSparse/KLU/Source/amesos_klu_l.c
     SuiteSparse/KLU/Source/amesos_klu_l_analyze.c
     SuiteSparse/KLU/Source/amesos_klu_l_analyze_given.c
