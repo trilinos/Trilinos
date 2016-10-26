@@ -11,7 +11,7 @@
 
 /* Perform a postordering (via depth-first search) of an assembly tree. */
 
-#include "amesos_camd_internal.h"
+#include "trilinos_camd_internal.h"
 
 GLOBAL Int CAMD_postorder
 (

@@ -17,7 +17,7 @@
  * This input condition is NOT checked.  This routine is not user-callable.
  */
 
-#include "amesos_camd_internal.h"
+#include "trilinos_camd_internal.h"
 
 /* ========================================================================= */
 /* === CAMD_preprocess ===================================================== */

@@ -232,8 +232,8 @@ PARAKLETE_KLU_COMMON = \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_memory.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_sparse.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_transpose.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_2.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_postorder.c
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_2.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_postorder.c
 
 PARAKLETE_KLU_COMMON_H = \
 	$(srcdir)/SuiteSparse/AMD/Include/trilinos_amd.h \
@@ -276,8 +276,8 @@ PARAKLETE_H = \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_solve.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_lsolve.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_ltsolve.c \
-	$(srcdir)/SuiteSparse/CAMD/Include/amesos_camd.h \
-	$(srcdir)/SuiteSparse/CAMD/Include/amesos_camd_internal.h 
+	$(srcdir)/SuiteSparse/CAMD/Include/trilinos_camd.h \
+	$(srcdir)/SuiteSparse/CAMD/Include/trilinos_camd_internal.h 
 
 #  Note:  PARAKLETE requires KLU (for colamd) 
 
@@ -328,9 +328,9 @@ PARAKLETE = \
 	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_post_tree.c \
 	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_preprocess.c \
 	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_l_valid.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_global.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_l2.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_l_postorder.c \
 	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c \

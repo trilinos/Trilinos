@@ -21,8 +21,8 @@
  * 886-905, 1996.
  */
 
-#ifndef AMESOS_CAMD_H
-#define AMESOS_CAMD_H
+#ifndef TRILINOS_CAMD_H
+#define TRILINOS_CAMD_H
 
 /* make it easy for C++ programs to include CAMD */
 #ifdef __cplusplus
@@ -35,7 +35,7 @@ extern "C" {
 /* define UF_long */
 #include "amesos_UFconfig.h"
 
-int amesos_camd_order		    /* returns CAMD_OK, CAMD_OK_BUT_JUMBLED,
+int trilinos_camd_order		    /* returns CAMD_OK, CAMD_OK_BUT_JUMBLED,
 			     * CAMD_INVALID, or CAMD_OUT_OF_MEMORY */
 (
     int n,		    /* A is n-by-n.  n must be >= 0. */
@@ -47,7 +47,7 @@ int amesos_camd_order		    /* returns CAMD_OK, CAMD_OK_BUT_JUMBLED,
     const int C [ ]	    /* Constraint set of A, of size n; can be NULL */
 ) ;
 
-UF_long amesos_camd_l_order	    /* see above for description of arguments */
+UF_long trilinos_camd_l_order	    /* see above for description of arguments */
 (
     UF_long n,
     const UF_long Ap [ ],
@@ -225,7 +225,7 @@ UF_long amesos_camd_l_order	    /* see above for description of arguments */
  * of the matrix for CAMD to destroy).  Refer to CAMD/Source/camd_2.c for a
  * description of each parameter. */
 
-void amesos_camd_2
+void trilinos_camd_2
 (
     int n,
     int Pe [ ],
@@ -246,7 +246,7 @@ void amesos_camd_2
     int BucketSet [ ] 
 ) ;
 
-void amesos_camd_l2
+void trilinos_camd_l2
 (
     UF_long n,
     UF_long Pe [ ],
@@ -280,7 +280,7 @@ void amesos_camd_l2
  * of columns of the matrix.  For its use in CAMD, these must both equal n.
  */
 
-int amesos_camd_valid
+int trilinos_camd_valid
 (
     int n_row,		    /* # of rows */
     int n_col,		    /* # of columns */
@@ -288,7 +288,7 @@ int amesos_camd_valid
     const int Ai [ ]	    /* row indices, of size Ap [n_col] */
 ) ;
 
-UF_long amesos_camd_l_valid
+UF_long trilinos_camd_l_valid
 (
     UF_long n_row,
     UF_long n_col,
@@ -303,13 +303,13 @@ UF_long amesos_camd_l_valid
 /* Returns TRUE if the constraint set is valid as input to camd_order,
  * FALSE otherwise. */
 
-int amesos_camd_cvalid
+int trilinos_camd_cvalid
 (
    int n,
    const int C [ ]
 ) ;
 
-UF_long amesos_camd_l_cvalid
+UF_long trilinos_camd_l_cvalid
 (
    UF_long n,
    const UF_long C [ ]
@@ -326,27 +326,27 @@ UF_long amesos_camd_l_cvalid
 #define EXTERN extern
 #endif
 
-EXTERN void *(*amesos_camd_malloc) (size_t) ;		    /* pointer to malloc */
-EXTERN void (*amesos_camd_free) (void *) ;		    /* pointer to free */
-EXTERN void *(*amesos_camd_realloc) (void *, size_t) ;	    /* pointer to realloc */
-EXTERN void *(*amesos_camd_calloc) (size_t, size_t) ;	    /* pointer to calloc */
-EXTERN int (*amesos_camd_printf) (const char *, ...) ;	    /* pointer to printf */
+EXTERN void *(*trilinos_camd_malloc) (size_t) ;		    /* pointer to malloc */
+EXTERN void (*trilinos_camd_free) (void *) ;		    /* pointer to free */
+EXTERN void *(*trilinos_camd_realloc) (void *, size_t) ;	    /* pointer to realloc */
+EXTERN void *(*trilinos_camd_calloc) (size_t, size_t) ;	    /* pointer to calloc */
+EXTERN int (*trilinos_camd_printf) (const char *, ...) ;	    /* pointer to printf */
 
 /* ------------------------------------------------------------------------- */
 /* CAMD Control and Info arrays */
 /* ------------------------------------------------------------------------- */
 
 /* camd_defaults:  sets the default control settings */
-void amesos_camd_defaults   (double Control [ ]) ;
-void amesos_camd_l_defaults (double Control [ ]) ;
+void trilinos_camd_defaults   (double Control [ ]) ;
+void trilinos_camd_l_defaults (double Control [ ]) ;
 
 /* camd_control: prints the control settings */
-void amesos_camd_control    (double Control [ ]) ;
-void amesos_camd_l_control  (double Control [ ]) ;
+void trilinos_camd_control    (double Control [ ]) ;
+void trilinos_camd_l_control  (double Control [ ]) ;
 
 /* camd_info: prints the statistics */
-void amesos_camd_info       (double Info [ ]) ;
-void amesos_camd_l_info     (double Info [ ]) ;
+void trilinos_camd_info       (double Info [ ]) ;
+void trilinos_camd_l_info     (double Info [ ]) ;
 
 #define CAMD_CONTROL 5	    /* size of Control array */
 #define CAMD_INFO 20	    /* size of Info array */

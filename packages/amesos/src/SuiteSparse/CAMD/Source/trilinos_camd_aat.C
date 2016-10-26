@@ -16,7 +16,7 @@
  * checked).
  */
 
-#include "amesos_camd_internal.h"
+#include "trilinos_camd_internal.h"
 
 GLOBAL size_t CAMD_aat	/* returns nz in A+A' */
 (

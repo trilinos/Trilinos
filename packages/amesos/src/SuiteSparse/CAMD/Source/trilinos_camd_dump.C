@@ -14,7 +14,7 @@
  * debugging.  Not user-callable.
  */
 
-#include "amesos_camd_internal.h"
+#include "trilinos_camd_internal.h"
 
 #ifndef NDEBUG
 

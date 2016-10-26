@@ -191,20 +191,20 @@ SET(PARAKLETE_KLU_COMMON
   SuiteSparse/CHOLMOD/Core/amesos_cholmod_memory.c
   SuiteSparse/CHOLMOD/Core/amesos_cholmod_sparse.c
   SuiteSparse/CHOLMOD/Core/amesos_cholmod_transpose.c
-  SuiteSparse/CAMD/Source/amesos_camd_1.c
-  SuiteSparse/CAMD/Source/amesos_camd_defaults.c
-  SuiteSparse/CAMD/Source/amesos_camd_l2.c
-  SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
-  SuiteSparse/CAMD/Source/amesos_camd_2.c
-  SuiteSparse/CAMD/Source/amesos_camd_dump.c
-  SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c
-  SuiteSparse/CAMD/Source/amesos_camd_valid.c
-  SuiteSparse/CAMD/Source/amesos_camd_aat.c
-  SuiteSparse/CAMD/Source/amesos_camd_global.c
-  SuiteSparse/CAMD/Source/amesos_camd_order.c
-  SuiteSparse/CAMD/Source/amesos_camd_control.c
-  SuiteSparse/CAMD/Source/amesos_camd_info.c
-  SuiteSparse/CAMD/Source/amesos_camd_postorder.c
+  SuiteSparse/CAMD/Source/trilinos_camd_1.c
+  SuiteSparse/CAMD/Source/trilinos_camd_defaults.c
+  SuiteSparse/CAMD/Source/trilinos_camd_l2.c
+  SuiteSparse/CAMD/Source/trilinos_camd_preprocess.c
+  SuiteSparse/CAMD/Source/trilinos_camd_2.c
+  SuiteSparse/CAMD/Source/trilinos_camd_dump.c
+  SuiteSparse/CAMD/Source/trilinos_camd_l_postorder.c
+  SuiteSparse/CAMD/Source/trilinos_camd_valid.c
+  SuiteSparse/CAMD/Source/trilinos_camd_aat.c
+  SuiteSparse/CAMD/Source/trilinos_camd_global.c
+  SuiteSparse/CAMD/Source/trilinos_camd_order.c
+  SuiteSparse/CAMD/Source/trilinos_camd_control.c
+  SuiteSparse/CAMD/Source/trilinos_camd_info.c
+  SuiteSparse/CAMD/Source/trilinos_camd_postorder.c
   )
 
 
@@ -248,8 +248,8 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     SuiteSparse/BTF/Include/trilinos_btf_decl.h
     SuiteSparse/BTF/Include/trilinos_btf_internal.h
     SuiteSparse/CCOLAMD/Include/amesos_ccolamd.h
-    SuiteSparse/CAMD/Include/amesos_camd.h
-    SuiteSparse/CAMD/Include/amesos_camd_internal.h
+    SuiteSparse/CAMD/Include/trilinos_camd.h
+    SuiteSparse/CAMD/Include/trilinos_camd_internal.h
     Amesos_Klu.h
     )
 
@@ -410,9 +410,9 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
     SuiteSparse/AMD/Source/trilinos_amd_l_post_tree.c
     SuiteSparse/AMD/Source/trilinos_amd_l_preprocess.c
     SuiteSparse/AMD/Source/trilinos_amd_l_valid.c
-    SuiteSparse/CAMD/Source/amesos_camd_global.c
-    SuiteSparse/CAMD/Source/amesos_camd_l2.c
-    SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c
+    SuiteSparse/CAMD/Source/trilinos_camd_global.c
+    SuiteSparse/CAMD/Source/trilinos_camd_l2.c
+    SuiteSparse/CAMD/Source/trilinos_camd_l_postorder.c
     SuiteSparse/COLAMD/Source/amesos_colamd_l.c
     SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c
     SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c

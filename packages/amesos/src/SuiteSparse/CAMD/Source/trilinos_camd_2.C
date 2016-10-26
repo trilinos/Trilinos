@@ -24,7 +24,7 @@
 /* True if i and j are in the same Constraint Set */
 #define InSameConstraintSet(C,i,j) ((C == NULL) ? 1 : (C [i] == C [j]))
 
-#include "amesos_camd_internal.h"
+#include "trilinos_camd_internal.h"
 
 /* ========================================================================= */
 /* === clear_flag ========================================================== */

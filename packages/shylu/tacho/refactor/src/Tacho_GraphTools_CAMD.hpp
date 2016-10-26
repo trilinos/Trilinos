@@ -8,7 +8,7 @@
 #include "Tacho_Util.hpp"
 
 #ifdef HAVE_SHYLUTACHO_AMESOS
-#include "amesos_camd.h"
+#include "trilinos_camd.h"
 #define TACHO_CHOLMOD(run) amesos_ ## run
 typedef UF_long SuiteSparse_long;
 #else

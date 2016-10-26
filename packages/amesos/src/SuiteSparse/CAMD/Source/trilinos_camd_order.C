@@ -13,7 +13,7 @@
  * documentation.
  */
 
-#include "amesos_camd_internal.h"
+#include "trilinos_camd_internal.h"
 
 /* ========================================================================= */
 /* === CAMD_order ========================================================== */
@@ -91,15 +91,15 @@ GLOBAL Int CAMD_order
     }
 
     /* allocate two size-n integer workspaces */
-    Len = amesos_camd_malloc (n * sizeof (Int)) ;
-    Pinv = amesos_camd_malloc (n * sizeof (Int)) ;
+    Len = trilinos_camd_malloc (n * sizeof (Int)) ;
+    Pinv = trilinos_camd_malloc (n * sizeof (Int)) ;
     mem += n ;
     mem += n ;
     if (!Len || !Pinv)
     {
 	/* :: out of memory :: */
-	amesos_camd_free (Len) ;
-	amesos_camd_free (Pinv) ;
+	trilinos_camd_free (Len) ;
+	trilinos_camd_free (Pinv) ;
 	if (info) Info [CAMD_STATUS] = CAMD_OUT_OF_MEMORY ;
 	return (CAMD_OUT_OF_MEMORY) ;
     }
@@ -108,17 +108,17 @@ GLOBAL Int CAMD_order
     {
 	/* sort the input matrix and remove duplicate entries */
 	CAMD_DEBUG1 (("Matrix is jumbled\n")) ;
-	Rp = amesos_camd_malloc ((n+1) * sizeof (Int)) ;
-	Ri = amesos_camd_malloc (MAX (nz,1) * sizeof (Int)) ;
+	Rp = trilinos_camd_malloc ((n+1) * sizeof (Int)) ;
+	Ri = trilinos_camd_malloc (MAX (nz,1) * sizeof (Int)) ;
 	mem += (n+1) ;
 	mem += MAX (nz,1) ;
 	if (!Rp || !Ri)
 	{
 	    /* :: out of memory :: */
-	    amesos_camd_free (Rp) ;
-	    amesos_camd_free (Ri) ;
-	    amesos_camd_free (Len) ;
-	    amesos_camd_free (Pinv) ;
+	    trilinos_camd_free (Rp) ;
+	    trilinos_camd_free (Ri) ;
+	    trilinos_camd_free (Len) ;
+	    trilinos_camd_free (Pinv) ;
 	    if (info) Info [CAMD_STATUS] = CAMD_OUT_OF_MEMORY ;
 	    return (CAMD_OUT_OF_MEMORY) ;
 	}
@@ -162,16 +162,16 @@ GLOBAL Int CAMD_order
     ok = ok && (slen < Int_MAX) ;	/* S[i] for Int i must be OK */
     if (ok)
     {
-	S = amesos_camd_malloc (slen * sizeof (Int)) ;
+	S = trilinos_camd_malloc (slen * sizeof (Int)) ;
     }
     CAMD_DEBUG1 (("slen %g\n", (double) slen)) ;
     if (!S)
     {
 	/* :: out of memory :: (or problem too large) */
-	amesos_camd_free (Rp) ;
-	amesos_camd_free (Ri) ;
-	amesos_camd_free (Len) ;
-	amesos_camd_free (Pinv) ;
+	trilinos_camd_free (Rp) ;
+	trilinos_camd_free (Ri) ;
+	trilinos_camd_free (Len) ;
+	trilinos_camd_free (Pinv) ;
 	if (info) Info [CAMD_STATUS] = CAMD_OUT_OF_MEMORY ;
 	return (CAMD_OUT_OF_MEMORY) ;
     }
@@ -191,11 +191,11 @@ GLOBAL Int CAMD_order
     /* free the workspace */
     /* --------------------------------------------------------------------- */
 
-    amesos_camd_free (Rp) ;
-    amesos_camd_free (Ri) ;
-    amesos_camd_free (Len) ;
-    amesos_camd_free (Pinv) ;
-    amesos_camd_free (S) ;
+    trilinos_camd_free (Rp) ;
+    trilinos_camd_free (Ri) ;
+    trilinos_camd_free (Len) ;
+    trilinos_camd_free (Pinv) ;
+    trilinos_camd_free (S) ;
     if (info) Info [CAMD_STATUS] = status ;
     return (status) ;	    /* successful ordering */
 }

@@ -30,7 +30,7 @@
  * Otherwise, CAMD_OK is returned.
  */
 
-#include "amesos_camd_internal.h"
+#include "trilinos_camd_internal.h"
 
 GLOBAL Int CAMD_valid
 (

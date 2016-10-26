@@ -27,7 +27,7 @@
 /* This file should make the long int version of CAMD */
 #define DLONG 1
 
-#include "amesos_camd_internal.h"
+#include "trilinos_camd_internal.h"
 
 /* ========================================================================= */
 /* === clear_flag ========================================================== */

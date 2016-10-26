@@ -171,21 +171,21 @@
 #define ID  UF_long_id
 #define Int_MAX UF_long_max
 
-#define CAMD_order amesos_camd_l_order
-#define CAMD_defaults amesos_camd_l_defaults
-#define CAMD_control amesos_camd_l_control
-#define CAMD_info amesos_camd_l_info
-#define CAMD_1 amesos_camd_l1
-#define CAMD_2 amesos_camd_l2
-#define CAMD_valid amesos_camd_l_valid
-#define CAMD_cvalid amesos_camd_l_cvalid
-#define CAMD_aat amesos_camd_l_aat
-#define CAMD_postorder amesos_camd_l_postorder
-#define CAMD_post_tree amesos_camd_l_post_tree
-#define CAMD_dump amesos_camd_l_dump
-#define CAMD_debug amesos_camd_l_debug
-#define CAMD_debug_init amesos_camd_l_debug_init
-#define CAMD_preprocess amesos_camd_l_preprocess
+#define CAMD_order trilinos_camd_l_order
+#define CAMD_defaults trilinos_camd_l_defaults
+#define CAMD_control trilinos_camd_l_control
+#define CAMD_info trilinos_camd_l_info
+#define CAMD_1 trilinos_camd_l1
+#define CAMD_2 trilinos_camd_l2
+#define CAMD_valid trilinos_camd_l_valid
+#define CAMD_cvalid trilinos_camd_l_cvalid
+#define CAMD_aat trilinos_camd_l_aat
+#define CAMD_postorder trilinos_camd_l_postorder
+#define CAMD_post_tree trilinos_camd_l_post_tree
+#define CAMD_dump trilinos_camd_l_dump
+#define CAMD_debug trilinos_camd_l_debug
+#define CAMD_debug_init trilinos_camd_l_debug_init
+#define CAMD_preprocess trilinos_camd_l_preprocess
 
 #else
 
@@ -193,21 +193,21 @@
 #define ID "%d"
 #define Int_MAX INT_MAX
 
-#define CAMD_order amesos_camd_order
-#define CAMD_defaults amesos_camd_defaults
-#define CAMD_control amesos_camd_control
-#define CAMD_info amesos_camd_info
-#define CAMD_1 amesos_camd_1
-#define CAMD_2 amesos_camd_2
-#define CAMD_valid amesos_camd_valid
-#define CAMD_cvalid amesos_camd_cvalid
-#define CAMD_aat amesos_camd_aat
-#define CAMD_postorder amesos_camd_postorder
-#define CAMD_post_tree amesos_camd_post_tree
-#define CAMD_dump amesos_camd_dump
-#define CAMD_debug amesos_camd_debug
-#define CAMD_debug_init amesos_camd_debug_init
-#define CAMD_preprocess amesos_camd_preprocess
+#define CAMD_order trilinos_camd_order
+#define CAMD_defaults trilinos_camd_defaults
+#define CAMD_control trilinos_camd_control
+#define CAMD_info trilinos_camd_info
+#define CAMD_1 trilinos_camd_1
+#define CAMD_2 trilinos_camd_2
+#define CAMD_valid trilinos_camd_valid
+#define CAMD_cvalid trilinos_camd_cvalid
+#define CAMD_aat trilinos_camd_aat
+#define CAMD_postorder trilinos_camd_postorder
+#define CAMD_post_tree trilinos_camd_post_tree
+#define CAMD_dump trilinos_camd_dump
+#define CAMD_debug trilinos_camd_debug
+#define CAMD_debug_init trilinos_camd_debug_init
+#define CAMD_preprocess trilinos_camd_preprocess
 
 #endif
 
@@ -216,13 +216,13 @@
 /* ========================================================================= */
 
 /* All output goes through the PRINTF macro.  */
-#define PRINTF(params) { if (amesos_camd_printf != NULL) (void) amesos_camd_printf params ; }
+#define PRINTF(params) { if (trilinos_camd_printf != NULL) (void) trilinos_camd_printf params ; }
 
 /* ------------------------------------------------------------------------- */
 /* CAMD routine definitions (user-callable) */
 /* ------------------------------------------------------------------------- */
 
-#include "amesos_camd.h"
+#include "trilinos_camd.h"
 
 /* ------------------------------------------------------------------------- */
 /* CAMD routine definitions (not user-callable) */

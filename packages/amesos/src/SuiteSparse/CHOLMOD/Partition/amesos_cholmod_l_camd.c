@@ -38,7 +38,7 @@
 #define DLONG 1
 
 #include "amesos_cholmod_internal.h"
-#include "amesos_camd.h"
+#include "trilinos_camd.h"
 #include "amesos_cholmod_partition.h"
 
 #if (CAMD_VERSION < CAMD_VERSION_CODE (2,0))
@@ -185,22 +185,22 @@ int CHOLMOD(camd)
 
     /* CAMD_2 does not use camd_malloc and camd_free, but set these pointers
      * just be safe. */
-    amesos_camd_malloc = Common->malloc_memory ;
-    amesos_camd_free = Common->free_memory ;
-    amesos_camd_calloc = Common->calloc_memory ;
-    amesos_camd_realloc = Common->realloc_memory ;
+    trilinos_camd_malloc = Common->malloc_memory ;
+    trilinos_camd_free = Common->free_memory ;
+    trilinos_camd_calloc = Common->calloc_memory ;
+    trilinos_camd_realloc = Common->realloc_memory ;
 
     /* CAMD_2 doesn't print anything either, but future versions might,
      * so set the camd_printf pointer too. */
-    amesos_camd_printf = Common->print_function ;
+    trilinos_camd_printf = Common->print_function ;
 
 #ifdef LONG
     /* DEBUG (camd_l_debug_init ("cholmod_l_camd")) ; */
-    amesos_camd_l2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
+    trilinos_camd_l2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
 	    Degree, Wi, Control, Info, Cmember, BucketSet) ;
 #else
     /* DEBUG (camd_debug_init ("cholmod_camd")) ; */
-    amesos_camd_2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
+    trilinos_camd_2 (n, C->p,  C->i, Len, C->nzmax, cnz, Nv, Next, Perm, Head, Elen,
 	    Degree, Wi, Control, Info, Cmember, BucketSet) ;
 #endif
 

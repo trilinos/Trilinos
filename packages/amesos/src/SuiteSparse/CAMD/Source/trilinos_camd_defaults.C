@@ -13,7 +13,7 @@
  * for details.
  */
 
-#include "amesos_camd_internal.h"
+#include "trilinos_camd_internal.h"
 
 /* ========================================================================= */
 /* === CAMD defaults ======================================================= */
