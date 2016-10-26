@@ -202,6 +202,15 @@ private:
  public:
 
   ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
+                  const Vector<Real> &x, const Vector<Real> &g)
+    : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
+      sec_(Teuchos::null), useSecantPrecond_(false), useSecantHessVec_(false),
+      TRradius_(1), stepBackMax_(0.9999), stepBackScale_(1),
+      singleReflect_(true), sCs_(0), pred_(0) {
+    initialize(obj,bnd,x,g);
+  }
+
+  ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
                   const Vector<Real> &x, const Vector<Real> &g,
                   const Real TRradius, const Real stepBackMax, const Real stepBackScale,
                   const bool singleReflect = true )
