@@ -58,6 +58,11 @@
 #include "Piro_RythmosSolver.hpp"
 #endif /* HAVE_PIRO_RYTHMOS */
 
+#ifdef HAVE_PIRO_TEMPUS
+#define ALBANY_BUILD
+#include "Piro_TempusSolver.hpp"  
+#endif
+
 #include "Teuchos_TestForException.hpp"
 
 #include <string>
@@ -100,6 +105,11 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
     result = rythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
 #endif /* Piro_ENABLE_Rythmos */
+#ifdef Piro_ENABLE_Tempus
+  if (solverType == "Tempus") {
+    result = tempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
+  } else
+#endif /* Piro_ENABLE_Tempus */
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
         true,
