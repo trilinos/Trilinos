@@ -156,6 +156,11 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
     result = rythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
 #endif /* HAVE_PIRO_RYTHMOS */
+#ifdef Piro_ENABLE_Tempus
+  if (solverType == "Tempus") {
+    result = tempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
+  } else
+#endif /* Piro_ENABLE_Tempus */
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
         true,
