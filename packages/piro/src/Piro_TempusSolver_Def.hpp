@@ -56,8 +56,6 @@
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_ImplicitBDFStepperRampingStepControl.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
-#include "Rythmos_CompositeIntegrationObserver.hpp"
-#include "Rythmos_IntegratorBuilder.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Array.hpp"
@@ -115,7 +113,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
-    const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer) :
+    const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > &observer) :
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
@@ -143,7 +141,7 @@ void Piro::TempusSolver<Scalar>::initialize(
 #endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
-    const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer)
+    const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > &observer)
 {
   std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 
@@ -161,180 +159,10 @@ void Piro::TempusSolver<Scalar>::initialize(
   *out << "\nA) Get the base parameter list ...\n";
   //
 
+  //IKT, 10/26/16, FIXME: convert the following to take in Tempus PL instead of Rythmos Solver. 
+/*  if (appParams->isSublist("Rythmos Solver")) {
 
-  if (appParams->isSublist("Rythmos")) {
-  RCP<Teuchos::ParameterList> rythmosPL = sublist(appParams, "Rythmos", true);
-  rythmosPL->validateParameters(*getValidRythmosParameters(),0);
-
-  {
-    const std::string verbosity = rythmosPL->get("Verbosity Level", "VERB_DEFAULT");
-    if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
-    else if (verbosity == "VERB_DEFAULT") solnVerbLevel = Teuchos::VERB_DEFAULT;
-    else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
-    else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
-    else if (verbosity == "VERB_HIGH")    solnVerbLevel = Teuchos::VERB_HIGH;
-    else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
-    else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,"Unknown verbosity option specified in Piro_TempusSolver.");
-  }
-
-  t_initial = rythmosPL->get("Initial Time", 0.0);
-  t_final = rythmosPL->get("Final Time", 0.1);
-
-  const std::string stepperType = rythmosPL->get("Stepper Type", "Backward Euler");
-
-  //
-  *out << "\nC) Create and initalize the forward model ...\n";
-  //
-
-  *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
-  //
-
-  if (rythmosPL->get<std::string>("Nonlinear Solver Type") == "Rythmos") {
-    Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<Scalar> > rythmosTimeStepSolver =
-      Rythmos::timeStepNonlinearSolver<Scalar>();
-    if (rythmosPL->getEntryPtr("NonLinear Solver")) {
-      RCP<Teuchos::ParameterList> nonlinePL =
-	sublist(rythmosPL, "NonLinear Solver", true);
-      rythmosTimeStepSolver->setParameterList(nonlinePL);
-    }
-    fwdTimeStepSolver = rythmosTimeStepSolver;
-  }
-  else if (rythmosPL->get<std::string>("Nonlinear Solver Type") == "NOX") {
-#ifdef HAVE_PIRO_NOX
-    Teuchos::RCP<Thyra::NOXNonlinearSolver> nox_solver =  Teuchos::rcp(new Thyra::NOXNonlinearSolver);
-    Teuchos::RCP<Teuchos::ParameterList> nox_params = Teuchos::rcp(new Teuchos::ParameterList);
-    *nox_params = appParams->sublist("NOX");
-    nox_solver->setParameterList(nox_params);
-    fwdTimeStepSolver = nox_solver;
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,"Requested NOX solver for a Rythmos Transient solve, Trilinos was not built with NOX enabled.  Please rebuild Trilinos or use the native Rythmos nonlinear solver.");
-#endif
-
-  }
-
-  if (stepperType == "Backward Euler") {
-    fwdStateStepper = Rythmos::backwardEulerStepper<Scalar> (model, fwdTimeStepSolver);
-    fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
-  }
-  else if (stepperType == "Forward Euler") {
-    fwdStateStepper = Rythmos::forwardEulerStepper<Scalar> (model);
-    fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
-  }
-  else if (stepperType == "Explicit RK") {
-    fwdStateStepper = Rythmos::explicitRKStepper<Scalar>(model);
-    fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
-  }
-  else if (stepperType == "BDF") {
-    Teuchos::RCP<Teuchos::ParameterList> BDFparams =
-      Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
-    Teuchos::RCP<Teuchos::ParameterList> BDFStepControlPL =
-      Teuchos::sublist(BDFparams,"Step Control Settings");
-
-    fwdStateStepper = Teuchos::rcp( new Rythmos::ImplicitBDFStepper<Scalar>(model,fwdTimeStepSolver,BDFparams) );
-    fwdStateStepper->setInitialCondition(model->getNominalValues());
-
-  } else if (stepperType == "Theta Stepper") {
-    
-    Teuchos::RCP<Teuchos::ParameterList> CrankNicholsonPL = 
-      Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
-    fwdStateStepper = Rythmos::thetaStepper<Scalar>(model, fwdTimeStepSolver, CrankNicholsonPL);    
-  }
-  else {
-    // first (before failing) check to see if the user has added stepper factory
-    typename std::map<std::string,Teuchos::RCP<Piro::RythmosStepperFactory<Scalar> > >::const_iterator
-        stepFactItr = stepperFactories.find(stepperType);
-    if(stepFactItr!=stepperFactories.end()) {
-      // the user has added it, hot dog lets build a new stepper!
-      Teuchos::RCP<Teuchos::ParameterList> stepperParams = Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
-
-      // build the stepper using the factory
-      fwdStateStepper = stepFactItr->second->buildStepper(model,fwdTimeStepSolver,stepperParams);
-
-      // the user decided to override the model being used (let them)
-      if(fwdStateStepper->getModel()!=model && fwdStateStepper->getModel()!=Teuchos::null) {
-        model = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar> >(fwdStateStepper->getModel());
-
-        num_p = in_model->Np();
-        num_g = in_model->Ng();
-      }
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-          true, Teuchos::Exceptions::InvalidParameter,
-          std::endl << "Error! Piro::TempusSolver: Invalid Steper Type: "
-          << stepperType << std::endl);
-    }
-  }
-
-  // Step control strategy
-  {
-    // If the stepper can accept a step control strategy, then attempt to build one.
-    RCP<Rythmos::StepControlStrategyAcceptingStepperBase<Scalar> > scsa_stepper =
-      Teuchos::rcp_dynamic_cast<Rythmos::StepControlStrategyAcceptingStepperBase<Scalar> >(fwdStateStepper);
-
-    if (Teuchos::nonnull(scsa_stepper)) {
-      const std::string step_control_strategy = rythmosPL->get("Step Control Strategy Type", "None");
-
-      if (step_control_strategy == "None") {
-        // don't do anything, stepper will build default
-      } else if (step_control_strategy == "ImplicitBDFRamping") {
-
-        const RCP<Rythmos::ImplicitBDFStepperRampingStepControl<Scalar> > rscs =
-          rcp(new Rythmos::ImplicitBDFStepperRampingStepControl<Scalar>);
-
-        const RCP<ParameterList> p = parameterList(rythmosPL->sublist("Rythmos Step Control Strategy"));
-        rscs->setParameterList(p);
-
-        scsa_stepper->setStepControlStrategy(rscs);
-      }
-    else {
-       // first (before failing) check to see if the user has added step control factory
-       typename std::map<std::string,Teuchos::RCP<Piro::RythmosStepControlFactory<Scalar> > >::const_iterator
-           stepControlFactItr = stepControlFactories.find(step_control_strategy);
-      if (stepControlFactItr != stepControlFactories.end())
-         {
-
-        const RCP<Rythmos::StepControlStrategyBase<Scalar> > rscs = stepControlFactItr->second->buildStepControl();
-
-        const RCP<ParameterList> p = parameterList(rythmosPL -> sublist("Rythmos Step Control Strategy"));
-
-        rscs->setParameterList(p);
-
-        scsa_stepper->setStepControlStrategy(rscs);
-        }
-        else {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-            true, std::logic_error,
-            "Error! Piro::TempusSolver: Invalid step control strategy type: "
-            << step_control_strategy << std::endl);
-      }
-    }
-  }
-}
-  {
-    const RCP<Teuchos::ParameterList> integrationControlPL =
-      Teuchos::sublist(rythmosPL, "Rythmos Integration Control", true);
-
-    RCP<Rythmos::DefaultIntegrator<Scalar> > defaultIntegrator;
-    if (rythmosPL->get("Rythmos Integration Control Strategy", "Simple") == "Simple") {
-      defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(Rythmos::simpleIntegrationControlStrategy<Scalar>(integrationControlPL));
-    }
-    else if(rythmosPL->get<std::string>("Rythmos Integration Control Strategy") == "Ramping") {
-      defaultIntegrator = Rythmos::controlledDefaultIntegrator<Scalar>(Rythmos::rampingIntegrationControlStrategy<Scalar>(integrationControlPL));
-    }
-    fwdStateIntegrator = defaultIntegrator;
-  }
-
-  fwdStateIntegrator->setParameterList(sublist(rythmosPL, "Rythmos Integrator", true));
-
-  if (Teuchos::nonnull(observer)) {
-    fwdStateIntegrator->setIntegrationObserver(observer);
-  }
- }
-
-  else if (appParams->isSublist("Rythmos Solver")) {
-    /** New parameter list format **/
-     RCP<Teuchos::ParameterList> rythmosSolverPL = sublist(appParams, "Rythmos Solver", true);
+    RCP<Teuchos::ParameterList> rythmosSolverPL = sublist(appParams, "Rythmos Solver", true);
     RCP<Teuchos::ParameterList> rythmosPL = sublist(rythmosSolverPL, "Rythmos", true);
 
     {
@@ -441,7 +269,7 @@ else {
         Teuchos::Exceptions::InvalidParameter, std::endl <<
         "Error! Piro::TempusSolver: must have either Rythmos or Rythmos Solver sublist ");
 
-  }
+  }*/
 
   isInitialized = true;
 }
@@ -453,8 +281,8 @@ Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TempusSolver(
 template <typename Scalar>
 Piro::TempusSolver<Scalar>::TempusSolver(
 #endif
-    const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
-    const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
+    const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+    const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar finalTime,
@@ -474,9 +302,10 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   isInitialized(true)
 {
   std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-  if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
+  //IKT, 10/16/16, FIXME: convert the following to Tempus 
+  /*if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
     fwdStateStepper->setNonconstModel(underlyingModel);
-  }
+  }*/
 }
 
 #ifdef ALBANY_BUILD
@@ -486,8 +315,8 @@ Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TempusSolver(
 template <typename Scalar>
 Piro::TempusSolver<Scalar>::TempusSolver(
 #endif
-    const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
-    const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
+    const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+    const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar initialTime,
@@ -508,9 +337,10 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   isInitialized(true)
 {
   std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-  if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
+  //IKT, 10/16/16, FIXME: convert the following to Tempus 
+  /*if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
     fwdStateStepper->setNonconstModel(underlyingModel);
-  }
+  }*/
 }
 
 #ifdef ALBANY_BUILD
@@ -799,7 +629,9 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
       std::cout << "Final Solution\n" << *finalSolution << std::endl;
     }
 
-  } else { // Computing sensitivities
+  }
+  //IKT, 10/26/16, FIXME: are sensitivities supported for Tempus?  
+  /*else { // Computing sensitivities
     //
     *out << "\nE) Solve the forward problem with Sensitivities...\n";
     //
@@ -968,7 +800,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
             Teuchos::ScalarTraits<Scalar>::one());
       }
     }
-  }
+  }*/
 
   *out << "\nF) Check the solution to the forward problem ...\n";
 
@@ -1021,69 +853,23 @@ Piro::TempusSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Teuchos::ParameterList>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidRythmosParameters() const
+Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidTempusParameters() const
 #else
 template <typename Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
-Piro::TempusSolver<Scalar>::getValidRythmosParameters() const
+Piro::TempusSolver<Scalar>::getValidTempusParameters() const
 #endif
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
-     Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosParams"));
-
-  validPL->set<std::string>("Nonlinear Solver Type", "");
-
-  Teuchos::setStringToIntegralParameter<int>(
-    "Nonlinear Solver Type",
-    "Rythmos",
-    "Determines which nonlinear solver to use.",
-    Teuchos::tuple<std::string>("Rythmos","NOX"),
-    validPL.get()
-    );
-
-  validPL->sublist("NonLinear Solver", false, "");
-  validPL->sublist("Rythmos Builder", false, "");
-
-
-  validPL->set<double>("Initial Time", 0.0, "");
-  validPL->set<double>("Final Time", 1.0, "");
-  validPL->sublist("Rythmos Stepper", false, "");
-  validPL->sublist("Rythmos Integrator", false, "");
-  validPL->set<std::string>("Rythmos Integration Control Strategy", "Simple", "");
-  validPL->set<std::string>("Step Control Strategy Type", "None", "");
-  validPL->sublist("Rythmos Step Control Strategy", false, "");
-  validPL->sublist("Rythmos Integration Control", false, "");
-  validPL->sublist("Stratimikos", false, "");
-  validPL->set<std::string>("Verbosity Level", "", "");
-  validPL->set<std::string>("Stepper Type", "", "");
-
-  validPL->set<double>("Alpha", 1.0, "");
-  validPL->set<double>("Beta", 1.0, "");
-  validPL->set<double>("Max State Error", 1.0, "");
-  validPL->set<std::string>("Name", "", "");
-  validPL->set<bool>("Invert Mass Matrix", false, "");
-
-  return validPL;
-}
-
-#ifdef ALBANY_BUILD
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<const Teuchos::ParameterList>
-Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidTempusSolverParameters() const
-#else
-template <typename Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
-Piro::TempusSolver<Scalar>::getValidTempusSolverParameters() const
-#endif
-{
-  Teuchos::RCP<Teuchos::ParameterList> validPL =
-    Teuchos::rcp(new Teuchos::ParameterList("ValidTempusSolverParams"));;
+    Teuchos::rcp(new Teuchos::ParameterList("ValidTempusSolverParams"));
+  //IKT, 10/26/16, FIXME: put correct parameter list validation for Tempus 
+  /*
   validPL->sublist("Rythmos", false, "");
   validPL->sublist("Stratimikos", false, "");
   validPL->sublist("NonLinear Solver", false, "");
   validPL->set<std::string>("Verbosity Level", "", "");
   validPL->set<bool>("Invert Mass Matrix", false, "");
-  validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "");*/
   return validPL;
 }
 
@@ -1094,7 +880,7 @@ void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
 #endif
-addStepperFactory(const std::string & stepperName,const Teuchos::RCP<Piro::RythmosStepperFactory<Scalar> > & factory)
+addStepperFactory(const std::string & stepperName,const Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > & factory)
 {
   stepperFactories[stepperName] = factory;
 }
@@ -1124,11 +910,14 @@ Piro::tempusSolver(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
 {
-  Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer;
-  if (Teuchos::nonnull(piroObserver)) {
+  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  //Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer;
+  Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > observer;
+  //IKT, 10/26/16, FIXME: implement Piro::ObserverToTempusIntegrationObserverAdapter class?  
+  /*if (Teuchos::nonnull(piroObserver)) {
     observer = Teuchos::rcp(
         new ObserverToRythmosIntegrationObserverAdapter<Scalar>(piroObserver));
-  }
+  }*/
 
 #ifdef ALBANY_BUILD
   return Teuchos::rcp(new TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, observer));

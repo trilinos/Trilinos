@@ -46,13 +46,18 @@
 #include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
-#include "Rythmos_DefaultIntegrator.hpp"
-#include "Rythmos_IntegrationObserverBase.hpp"
+//IKT, 10/26/16, FIXME: to include the following, it seems we need to rename finalTime_name
+//and finalTime_default in Tempus_IntegratorBasic_impl.cpp, b/c it conflicts with Rythmos. 
+#include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_IntegratorObserver.hpp"
+//IKT, 10/26/16, FIXME: figure out what the following include is for 
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 #include "Piro_ObserverBase.hpp"
 
-#include "Piro_RythmosStepperFactory.hpp"
+#include "Piro_TempusStepperFactory.hpp"
+//IKT, 10/26/16, FIXME: create Piro::TempusStepControlFactory class?  Need to understand
+//what this class does and whether everything for it exists in Rythmos. 
 #include "Piro_RythmosStepControlFactory.hpp"
 
 #ifdef ALBANY_BUILD
@@ -87,12 +92,12 @@ public:
   TempusSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer = Teuchos::null);
+      const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > &observer = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
   TempusSolver(
-      const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
-      const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
+      const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+      const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
@@ -102,8 +107,8 @@ public:
 
   /** \brief Initialize using prebuilt objects - supplying initial time value. */
   TempusSolver(
-      const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
-      const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
+      const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+      const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar initialTime,
@@ -115,7 +120,7 @@ public:
   void initialize(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer = Teuchos::null);
+      const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > &observer = Teuchos::null);
 
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
   //@{
@@ -130,8 +135,9 @@ public:
   //@}
 
   void addStepperFactory(const std::string & stepperName,
-                         const Teuchos::RCP<Piro::RythmosStepperFactory<Scalar> > & stepperFactories);
+                         const Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > & stepperFactories);
 
+  //IKT, 10/26/16, FIXME: rewrite the following using Tempus or remove if not needed 
   void addStepControlFactory(const std::string & stepControlName,
                              const Teuchos::RCP<Piro::RythmosStepControlFactory<Scalar> > & step_control_strategy);
 
@@ -150,9 +156,9 @@ private:
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op_impl(int j, int l) const;
 
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosParameters() const;
-  Teuchos::RCP<const Teuchos::ParameterList> getValidTempusSolverParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidTempusParameters() const;
 
+  //IKT, 10/26/16, FIXME: rewrite the following using Tempus or remove if not needed 
   Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > fwdStateIntegrator;
   Teuchos::RCP<Rythmos::StepperBase<Scalar> > fwdStateStepper;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver;
@@ -171,8 +177,9 @@ private:
   Teuchos::EVerbosityLevel solnVerbLevel;
 
   // used for adding user defined steppers externally, this gives us "the open-close principal"
-  std::map<std::string,Teuchos::RCP<Piro::RythmosStepperFactory<Scalar> > > stepperFactories;
+  std::map<std::string,Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > > stepperFactories;
 
+  //IKT, 10/26/16, FIXME: rewrite the following using Tempus or remove if not needed 
   std::map<std::string,Teuchos::RCP<Piro::RythmosStepControlFactory<Scalar> > > stepControlFactories;
 
   bool isInitialized;

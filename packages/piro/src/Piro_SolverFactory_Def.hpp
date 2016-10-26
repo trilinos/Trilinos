@@ -61,7 +61,7 @@
 #ifdef HAVE_PIRO_TEMPUS
 #define ALBANY_BUILD
 #include "Piro_TempusSolver.hpp"  
-#endif
+#endif /*HAVE_PIRO_TEMPUS */
 
 #include "Teuchos_TestForException.hpp"
 
