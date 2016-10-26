@@ -99,14 +99,117 @@ private:
     Cv.applyBinary(mult_, *Cmat_);
   }
 
-  // Build diagonal D and C matrices
-  void initialize(Objective<Real> &obj, BoundConstraint<Real> &bnd,
-                  const Vector<Real> &x, const Vector<Real> &g) {
+  void constructC(void) {
+    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const Teuchos::RCP<const Vector<Real> > l  = bnd_->getLowerVectorRCP();
+    const Teuchos::RCP<const Vector<Real> > u  = bnd_->getUpperVectorRCP();
+
+    // Set Cmat_ to be the sign of the gradient
+    Cmat_->set(gc->dual());
+    Cmat_->applyUnary(Elementwise::Sign<Real>());
+    // If g < 0 and u = INF then set Cmat_ to zero 
+    class NegGradInfU : public Elementwise::BinaryFunction<Real> {
+    public:
+      NegGradInfU(void) {}
+      Real apply(const Real &x, const Real &y) const {
+        const Real zero(0), one(1), INF(ROL_INF<Real>());
+        return (x < zero && y == INF) ? zero : one;
+      }
+    };
+    prim_->set(gc->dual());
+    prim_->applyBinary(NegGradInfU(), *u);
+    Cmat_->applyBinary(mult_, *prim_);
+    // If g >= 0 and l = -INF then set Cmat_ to zero
+    class PosGradNinfL : public Elementwise::BinaryFunction<Real> {
+    public:
+      PosGradNinfL(void) {}
+      Real apply(const Real &x, const Real &y) const {
+        const Real zero(0), one(1), NINF(ROL_NINF<Real>());
+        return (x >= zero && y == NINF) ? zero : one;
+      }
+    };
+    prim_->set(gc->dual());
+    prim_->applyBinary(PosGradNinfL(), *l);
+    Cmat_->applyBinary(mult_, *prim_);
+    // Pointwise multiply Cmat_ with the gradient
+    Cmat_->applyBinary(mult_, gc->dual());
+  }
+
+  void constructInverseD(void) {
+    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const Teuchos::RCP<const Vector<Real> > l  = bnd_->getLowerVectorRCP();
+    const Teuchos::RCP<const Vector<Real> > u  = bnd_->getUpperVectorRCP();
     const Real zero(0), one(1), INF(ROL_INF<Real>()), NINF(ROL_NINF<Real>());
     const int LESS_THAN    = 0;
     const int EQUAL_TO     = 1;
     const int GREATER_THAN = 2;
     
+    Dmat_->zero();
+    // CASE (i)
+    // Mask for negative gradient (m1 is 1 if g is negative and 0 otherwise)
+    reflectStep_->applyBinary(Elementwise::ValueSet<Real>(zero, LESS_THAN),gc->dual());
+    // Mask for finite upper bounds (m2 is 1 if u is finite and 0 otherwise)
+    reflectScal_->applyBinary(Elementwise::ValueSet<Real>(INF, LESS_THAN),*u);
+    // Mask for g_i < 0 and u_i < inf
+    reflectScal_->applyBinary(mult_,*reflectStep_);
+    // prim_i = { u_i-x_i if g_i < 0 and u_i < inf
+    //          { 0       otherwise
+    prim_->set(*u); prim_->axpy(-one,*xc);
+    prim_->applyBinary(mult_,*reflectScal_);
+    // Add to D
+    Dmat_->plus(*prim_);
+
+    // CASE (iii)
+    // Mask for infinite upper bounds
+    reflectScal_->applyBinary(Elementwise::ValueSet<Real>(INF, EQUAL_TO),*u);
+    // Mask for g_i < 0 and u_i = inf
+    reflectScal_->applyBinary(mult_,*reflectStep_);
+    // prim_i = { -1 if g_i < 0 and u_i = inf
+    //          { 0  otherwise
+    prim_->applyUnary(Elementwise::Fill<Real>(-one)); 
+    prim_->applyBinary(mult_,*reflectScal_);
+    // Add to D
+    Dmat_->plus(*prim_);
+
+    // CASE (ii)
+    // m1 = 1-m1
+    reflectStep_->scale(-one);
+    reflectStep_->applyUnary(Elementwise::Shift<Real>(one));
+    // Mask for finite lower bounds
+    reflectScal_->applyBinary(Elementwise::ValueSet<Real>(NINF, GREATER_THAN),*l);
+    // Zero out elements of Jacobian with l_i=-inf
+    reflectScal_->applyBinary(mult_,*reflectStep_);
+    // prim_i = { x_i-l_i if g_i >= 0 and l_i > -inf
+    //          { 0       otherwise
+    prim_->set(*xc); prim_->axpy(-one,*l);
+    prim_->applyBinary(mult_,*reflectScal_);
+    // Add to D
+    Dmat_->plus(*prim_);
+
+    // CASE (iv)
+    // Mask for infinite lower bounds
+    reflectScal_->applyBinary(Elementwise::ValueSet<Real>(NINF, EQUAL_TO),*l);
+    // Mask for g_i>=0 and l_i=-inf
+    reflectScal_->applyBinary(mult_,*reflectStep_);
+    // prim_i = { 1 if g_i >= 0 and l_i = -inf
+    //          { 0 otherwise
+    prim_->applyUnary(Elementwise::Fill<Real>(one));
+    prim_->applyBinary(mult_,*reflectScal_);
+    // Add to D
+    Dmat_->plus(*prim_);
+  
+    // d_i = { u_i-x_i if g_i <  0, u_i<inf
+    //       { -1      if g_i <  0, u_i=inf
+    //       { x_i-l_i if g_i >= 0, l_i>-inf
+    //       { 1       if g_i >= 0, l_i=-inf 
+    Dmat_->applyUnary(Elementwise::AbsoluteValue<Real>());
+    Dmat_->applyUnary(Elementwise::SquareRoot<Real>());
+  }
+
+  // Build diagonal D and C matrices
+  void initialize(Objective<Real> &obj, BoundConstraint<Real> &bnd,
+                  const Vector<Real> &x, const Vector<Real> &g) {
     bnd_ = Teuchos::rcpFromRef(bnd);
 
     prim_ = x.clone();
@@ -121,82 +224,8 @@ private:
     reflectStep_ = x.clone();
     reflectScal_ = x.clone();
 
-    const Teuchos::RCP<const Vector<Real> > l = bnd.getLowerVectorRCP();
-    const Teuchos::RCP<const Vector<Real> > u = bnd.getUpperVectorRCP();
-
-    Teuchos::RCP<Vector<Real> > m1 = x.clone();
-    Teuchos::RCP<Vector<Real> > m2 = x.clone();
-
-    Cmat_->set(g.dual());
-    Cmat_->applyUnary(Elementwise::Sign<Real>());
-
-    Dmat_->zero();
-
-    // CASE (i)
-    // Mask for negative gradient (m1 is 1 if g is negative and 0 otherwise)
-    m1->applyBinary(Elementwise::ValueSet<Real>(zero, LESS_THAN),g);
-    // Mask for finite upper bounds (m2 is 1 if u is finite and 0 otherwise)
-    m2->applyBinary(Elementwise::ValueSet<Real>(INF, LESS_THAN),*u);
-    // Zero out elements of Jacobian with u_i=inf
-    Cmat_->applyBinary(mult_,*m2);
-    // Mask for g_i < 0 and u_i < inf
-    m2->applyBinary(mult_,*m1);
-    // prim_i = { u_i-x_i if g_i < 0 and u_i < inf
-    //          { 0       otherwise
-    prim_->set(*u); prim_->axpy(-one,x);
-    prim_->applyBinary(mult_,*m2);
-    // Add to D
-    Dmat_->plus(*prim_);
-
-    // CASE (iii)
-    // Mask for infinite upper bounds
-    m2->applyBinary(Elementwise::ValueSet<Real>(INF, EQUAL_TO),*u);
-    // Mask for g_i < 0 and u_i = inf
-    m2->applyBinary(mult_,*m1);
-    // prim_i = { -1 if g_i < 0 and u_i = inf
-    //          { 0  otherwise
-    prim_->applyUnary(Elementwise::Fill<Real>(-one)); 
-    prim_->applyBinary(mult_,*m2);
-    // Add to D
-    Dmat_->plus(*prim_);
-
-    // CASE (ii)
-    // m1 = 1-m1
-    m1->scale(-one);
-    m1->applyUnary(Elementwise::Shift<Real>(one));
-    // Mask for finite lower bounds
-    m2->applyBinary(Elementwise::ValueSet<Real>(NINF, GREATER_THAN),*l);
-    // Zero out elements of Jacobian with l_i=-inf
-    Cmat_->applyBinary(mult_,*m2);
-    m2->applyBinary(mult_,*m1);  
-    // prim_i = { x_i-l_i if g_i >= 0 and l_i > -inf
-    //          { 0       otherwise
-    prim_->set(x); prim_->axpy(-one,*l);
-    prim_->applyBinary(mult_,*m2);
-    // Add to D
-    Dmat_->plus(*prim_);
-
-    // CASE (iv)
-    // Mask for infinite lower bounds
-    m2->applyBinary(Elementwise::ValueSet<Real>(NINF, EQUAL_TO),*l);
-    // Mask for g_i>=0 and l_i=-inf
-    m2->applyBinary(mult_,*m1);
-    // prim_i = { 1 if g_i >= 0 and l_i = -inf
-    //          { 0 otherwise
-    prim_->applyUnary(Elementwise::Fill<Real>(one));
-    prim_->applyBinary(mult_,*m2);
-    // Add to D
-    Dmat_->plus(*prim_);
-  
-    // d_i = { u_i-x_i if g_i <  0, u_i<inf
-    //       { -1      if g_i <  0, u_i=inf
-    //       { x_i-l_i if g_i >= 0, l_i>-inf
-    //       { 1       if g_i >= 0, l_i=-inf 
-    Dmat_->applyUnary(Elementwise::AbsoluteValue<Real>());
-    Dmat_->applyUnary(Elementwise::SquareRoot<Real>());
-
-    // C matrix
-    Cmat_->applyBinary(mult_, g.dual());
+    constructC();
+    constructInverseD();
   }
 
  public:
