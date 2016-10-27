@@ -78,44 +78,27 @@ namespace Intrepid2 {
       typedef Kokkos::DynRankView<value_type,host_space_type> DynRankViewHostType;
 
       ///
-      /// Function space
-      ///
-      
-      {
-        const std::string cellBasisName(cellBasis.getName());
-        if (cellBasisName.find("HCURL") != std::string::npos) {
-          const std::string subcellBasisName(subcellBasis.getName());
-          // edge hcurl is hgrad with gauss legendre points
-          // INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HCURL") == std::string::npos,
-          //                               std::logic_error,
-          //                               ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
-          //                               "subcellBasis function space is not consistent to cellBasis.");
-        }
-        // degree does not have to match each other unlike hgrad functions
-      }
-
-      ///
       /// Topology
       ///
 
       // populate points on a subcell and map to subcell
       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
       const shards::CellTopology subcellTopo = subcellBasis.getBaseCellTopology();
+      
+      const ordinal_type cellDim = cellTopo.getDimension();
+      const ordinal_type subcellDim = subcellTopo.getDimension();
+      
+      INTREPID2_TEST_FOR_EXCEPTION( subcellDim >= cellDim,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
+                                    "cellDim must be greater than subcellDim.");
 
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( subcellTopo.getBaseKey() != shards::Line<>::key,
-                                    std::logic_error,
-                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
-                                    "subcellBasis must have line topology for now.");
-      INTREPID2_TEST_FOR_EXCEPTION( cellTopo.getBaseKey() != shards::Quadrilateral<>::key,
-                                    std::logic_error,
-                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
-                                    "cellBasis must have quad topology for now.");
-#endif
+      const auto subcellBaseKey = subcellTopo.getBaseKey();
+      //const auto cellBaseKey = cellTopo.getBaseKey();
 
       // if node map has left handed system, orientation should be re-enumerated.
       ordinal_type ort = -1;
-      switch (subcellTopo.getBaseKey()) {
+      switch (subcellBaseKey) {
       case shards::Line<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  2)
           ort = subcellOrt;
@@ -129,18 +112,18 @@ namespace Intrepid2 {
       //   }
       //   break;
       // }
-      // case shards::Quadrilateral<>::key: {
-      //   if (subcellOrt >= 0 && subcellOrt <  8) {
-      //     const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 3);
-      //     const ordinal_type leftOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 };
-      //     ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
-      //   }
-      //   break;
-      // }
+      case shards::Quadrilateral<>::key: {
+        if (subcellOrt >= 0 && subcellOrt <  8) {
+          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 3);
+          const ordinal_type leftOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 };
+          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+        }
+        break;
+      }
       default: {
-        INTREPID2_TEST_FOR_EXCEPTION( subcellTopo.getBaseKey() != shards::Line<>::key ||
-                                      subcellTopo.getBaseKey() != shards::Quadrilateral<>::key ||
-                                      subcellTopo.getBaseKey() != shards::Triangle<>::key,
+        INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key ||
+                                      subcellBaseKey != shards::Quadrilateral<>::key ||
+                                      subcellBaseKey != shards::Triangle<>::key,
                                       std::logic_error,
                                       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
                                       "subcellBasis must have line, quad, or triangle topology.");
@@ -151,19 +134,37 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
                                     "Orientation is not properly setup.");
       
+
+      ///
+      /// Function space
+      ///
+
+      
+      {
+        const std::string cellBasisName(cellBasis.getName());
+        if (cellBasisName.find("HCURL") != std::string::npos) {
+          const std::string subcellBasisName(subcellBasis.getName());
+          // edge hcurl is hgrad with gauss legendre points
+          switch (subcellDim) {
+          case 1: {
+            INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+                                          std::logic_error,
+                                          ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
+                                          "subcellBasis function space is not consistent to cellBasis.");
+          }
+          case 2: {
+            INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HCURL") == std::string::npos,
+                                          std::logic_error,
+                                          ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
+                                          "subcellBasis function space is not consistent to cellBasis.");
+          }
+          }
+        }
+      }
+
       ///
       /// Collocation points
-      ///
-      
-      const ordinal_type cellDim = cellTopo.getDimension();
-      const ordinal_type subcellDim = subcellTopo.getDimension();
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( subcellDim >= cellDim,
-                                    std::logic_error,
-                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
-                                    "cellDim must be greater than subcellDim.");
-#endif
-
+      ///     
       const ordinal_type degree = cellBasis.getDegree();
 
       const ordinal_type numCellBasis = cellBasis.getCardinality();
@@ -218,20 +219,16 @@ namespace Intrepid2 {
 
       // evaluate values on the modified cell
       DynRankViewHostType outValues("outValues", numSubcellBasis, ndofSubcell, subcellDim);
-      if (subcellDim == 1) {
-        subcellBasis.getValues(Kokkos::subview(outValues, Kokkos::ALL(), Kokkos::ALL(), 0),
-                               ortPtsSubcell, OPERATOR_VALUE);
-        // account orientation of 1D basis 
-        if (subcellOrt == 1) {
-          const ordinal_type
-            iend = outValues.dimension(0),
-            jend = outValues.dimension(1);
-          for (ordinal_type i=0;i<iend;++i)
-            for (ordinal_type j=0;j<jend;++j)
-              outValues(i,j,0) *= (-1.0);
-        }
-      } else {
-        subcellBasis.getValues(outValues, ortPtsSubcell, OPERATOR_VALUE);
+      switch (subcellDim) {
+      case 1: {
+        auto out = Kokkos::subview(outValues, Kokkos::ALL(), Kokkos::ALL(), 0);
+        subcellBasis.getValuesIntrBubble(out, ortPtsSubcell, subcellOrt);
+        break;
+      }
+      case 2: {
+        subcellBasis.getValuesIntrBubble(outValues, ortPtsSubcell, subcellOrt);
+        break;
+      }
       }
 
       ///
@@ -247,7 +244,7 @@ namespace Intrepid2 {
           v(i) /= norm;
       };
       
-      switch (subcellTopo.getBaseKey()) {
+      switch (subcellBaseKey) {
       case shards::Line<>::key: {
         DynRankViewHostType edgeTan("edgeTan", cellDim);
         CellTools<host_space_type>::getReferenceEdgeTangent(edgeTan, subcellId, cellTopo);
@@ -262,6 +259,26 @@ namespace Intrepid2 {
         refValues = tmpValues;
         break;
       }
+      case shards::Quadrilateral<>::key: {
+        DynRankViewHostType faceTanU("faceTanU", cellDim), faceTanV("faceTanV", cellDim);
+        CellTools<host_space_type>::getReferenceFaceTangents(faceTanU, faceTanV,subcellId, cellTopo);
+
+        normalize(faceTanU);
+        normalize(faceTanV);
+        
+        DynRankViewHostType tmpValues("tmpValues", numCellBasis, ndofSubcell, subcellDim);
+        for (ordinal_type i=0;i<numCellBasis;++i)
+          for (ordinal_type j=0;j<ndofSubcell;++j)
+            for (ordinal_type k=0;k<cellDim;++k) {
+              tmpValues(i,j,0) += refValues(i,j,k)*faceTanU(k);
+              tmpValues(i,j,1) += refValues(i,j,k)*faceTanV(k);
+            }
+        refValues = tmpValues;
+        break;
+      }
+      // case shards::Triangle<>::key: {
+      //   // the procedure may not be as simple as quad
+      // }
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, "Should not come here" );        
       }

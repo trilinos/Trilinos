@@ -79,26 +79,6 @@ namespace Intrepid2 {
 
 
       ///
-      /// Function space
-      ///
-      
-      {
-        const std::string cellBasisName(cellBasis.getName());
-        if (cellBasisName.find("HGRAD") != std::string::npos) {
-          const std::string subcellBasisName(subcellBasis.getName());
-          INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
-                                        std::logic_error,
-                                        ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-                                        "subcellBasis function space is not consistent to cellBasis.");
-        }
-
-        INTREPID2_TEST_FOR_EXCEPTION( subcellBasis.getDegree() != cellBasis.getDegree(),
-                                      std::logic_error,
-                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-                                      "subcellBasis has a different polynomial degree from cellBasis' degree.");
-      }
-
-      ///
       /// Topology
       ///
 
@@ -106,10 +86,21 @@ namespace Intrepid2 {
       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
       const shards::CellTopology subcellTopo = subcellBasis.getBaseCellTopology();
 
+      const ordinal_type cellDim = cellTopo.getDimension();
+      const ordinal_type subcellDim = subcellTopo.getDimension();
+
+      INTREPID2_TEST_FOR_EXCEPTION( subcellDim >= cellDim,
+                                    std::logic_error,
+                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                    "cellDim must be greater than subcellDim.");
+
+      const auto subcellBaseKey = subcellTopo.getBaseKey();
+      //const auto cellBaseKey = cellTopo.getBaseKey();
+
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( subcellTopo.getBaseKey() != shards::Line<>::key ||
-                                    subcellTopo.getBaseKey() != shards::Quadrilateral<>::key ||
-                                    subcellTopo.getBaseKey() != shards::Triangle<>::key,
+      INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key ||
+                                    subcellBaseKey != shards::Quadrilateral<>::key ||
+                                    subcellBaseKey != shards::Triangle<>::key,
                                     std::logic_error,
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                     "subcellBasis must have line, quad, or triangle topology.");
@@ -117,7 +108,7 @@ namespace Intrepid2 {
 
       // if node map has left handed system, orientation should be re-enumerated.
       ordinal_type ort = -1;
-      switch (subcellTopo.getBaseKey()) {
+      switch (subcellBaseKey) {
       case shards::Line<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  2)
           ort = subcellOrt;
@@ -140,9 +131,9 @@ namespace Intrepid2 {
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_EXCEPTION( subcellTopo.getBaseKey() != shards::Line<>::key ||
-                                      subcellTopo.getBaseKey() != shards::Quadrilateral<>::key ||
-                                      subcellTopo.getBaseKey() != shards::Triangle<>::key,
+        INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key ||
+                                      subcellBaseKey != shards::Quadrilateral<>::key ||
+                                      subcellBaseKey != shards::Triangle<>::key,
                                       std::logic_error,
                                       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                       "subcellBasis must have line, quad, or triangle topology.");
@@ -153,19 +144,32 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                     "Orientation is not properly setup.");
 
+
+      ///
+      /// Function space
+      ///
+      
+      {
+        const std::string cellBasisName(cellBasis.getName());
+        if (cellBasisName.find("HGRAD") != std::string::npos) {
+          const std::string subcellBasisName(subcellBasis.getName());
+          INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+                                        std::logic_error,
+                                        ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                        "subcellBasis function space is not consistent to cellBasis.");
+        }
+
+        INTREPID2_TEST_FOR_EXCEPTION( subcellBasis.getDegree() != cellBasis.getDegree(),
+                                      std::logic_error,
+                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                      "subcellBasis has a different polynomial degree from cellBasis' degree.");
+      }
+
+
       ///
       /// Collocation points
       ///
       
-      const ordinal_type cellDim = cellTopo.getDimension();
-      const ordinal_type subcellDim = subcellTopo.getDimension();
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( subcellDim >= cellDim,
-                                    std::logic_error,
-                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-                                    "cellDim must be greater than subcellDim.");
-#endif
-
       const ordinal_type degree = cellBasis.getDegree();
 
       const ordinal_type numCellBasis = cellBasis.getCardinality();

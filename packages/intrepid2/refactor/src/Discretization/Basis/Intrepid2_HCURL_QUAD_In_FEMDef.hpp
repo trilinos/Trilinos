@@ -126,10 +126,6 @@ namespace Intrepid2 {
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
             getValues(outputLine, input_x, workLine, vinvLine);
 
-          for (ordinal_type j=0;j<cardBubble;++j) // y                
-            for (ordinal_type k=0;k<npts;++k)
-              outputBubble(j,k) *= signVal;
-          
           // y component (bubbleBasis(y) lineBasis(x))
           const auto output_x = outputLine;
           const auto output_y = outputBubble;

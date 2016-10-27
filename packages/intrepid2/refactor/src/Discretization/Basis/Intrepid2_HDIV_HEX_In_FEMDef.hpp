@@ -46,6 +46,9 @@
             Kokkorized by Kyungjoo Kim
 */
 
+#ifndef __INTREPID2_HDIV_HEX_IN_FEM_DEF_HPP__
+#define __INTREPID2_HDIV_HEX_IN_FEM_DEF_HPP__
+
 namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
@@ -198,7 +201,7 @@ namespace Intrepid2 {
 
         { // x - component
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
-            getValues(outputLineGrad, input_x, workLine, vinvLine, 1);
+            getValues(outputLine, input_x, workLine, vinvLine, 1);
 
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
             getValues(outputBubble_A, input_y, workLine, vinvBubble);
@@ -222,7 +225,7 @@ namespace Intrepid2 {
             getValues(outputBubble_A, input_x, workLine, vinvBubble);
 
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
-            getValues(outputLineGrad, input_y, workLine, vinvLine, 1);
+            getValues(outputLine, input_y, workLine, vinvLine, 1);
 
           // Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
           //   getValues(outputBubble_B, input_z, workLine, vinvBubble);
@@ -246,7 +249,7 @@ namespace Intrepid2 {
             getValues(outputBubble_B, input_y, workLine, vinvBubble);
 
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
-            getValues(outputLineGrad, input_z, workLine, vinvLine, 1);
+            getValues(outputLine, input_z, workLine, vinvLine, 1);
 
           // (bubbleBasis(z) bubbleBasis(y) lineBasis(x))
           const auto output_x  = outputBubble_A;
