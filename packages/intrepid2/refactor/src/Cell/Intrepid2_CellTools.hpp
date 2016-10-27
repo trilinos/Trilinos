@@ -1316,11 +1316,11 @@ namespace Intrepid2 {
         \param  threshold         [in]  - "tightness" of the inclusion test
         \return 1 if the point is in the closure of the specified reference cell and 0 otherwise.
     */
-    template<typename pointViewType>
+    template<typename pointValueType, class ...pointProperties>
     static bool 
-    checkPointInclusion( const pointViewType        point,
+    checkPointInclusion( const Kokkos::DynRankView<pointValueType,pointProperties...> point,
                          const shards::CellTopology cellTopo,
-                         const double               threshold = threshold() );
+                         const double               thres = threshold() );
 
     // /** \brief  Checks if a set of points belongs to a reference cell.
 
@@ -1341,82 +1341,83 @@ namespace Intrepid2 {
 
 
 
-    // /** \brief  Checks every point in a set for inclusion in a reference cell.
+    /** \brief  Checks every point in a set for inclusion in a reference cell.
 
-    //             Requires cell topology with a reference cell. Admissible ranks and dimensions of the
-    //             input point array and the corresponding rank and dimension of the output array are as follows:
-    //             \verbatim
-    //             |-------------------|-------------|-------------|-------------|
-    //             |  rank: (in)/(out) |    1/1      |     2/1     |    3/2      |
-    //             |-------------------|-------------|-------------|-------------|
-    //             |  points    (in)   |     (D)     |    (I, D)   |  (I, J, D)  |
-    //             |-------------------|-------------|-------------|-------------|
-    //             |  inRefCell (out)  |     (1)     |    (I)      |  (I, J)     |
-    //             |------------------ |-------------|-------------|-------------|
-    //             \endverbatim
-    //             Example: if \c points is rank-3 array with dimensions (I, J, D), then
-    //     \f[
-    //            \mbox{inRefCell}(i,j) =
-    //              \left\{\begin{array}{rl}
-    //                 1 & \mbox{if $points(i,j,*)\in\hat{\mathcal{C}}$} \\[2ex]
-    //                 0 & \mbox{if $points(i,j,*)\notin\hat{\mathcal{C}}$}
-    //              \end{array}\right.
-    //       \f]
-    //     \param  inRefCell         [out] - rank-1 or 2 array with results from the pointwise inclusion test
-    //     \param  refPoints         [in]  - rank-1,2 or 3 array (point, vector of points, matrix of points)
-    //     \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
-    //     \param  threshold         [in]  - "tightness" of the inclusion test
-    // */
-    // template<class ArrayIncl, class ArrayPoint>
-    // static void checkPointwiseInclusion(ArrayIncl &                   inRefCell,
-    //                                     const ArrayPoint &            points,
-    //                                     const shards::CellTopology &  cellTopo,
-    //                                     const double &                threshold = INTREPID2_THRESHOLD);
+                Requires cell topology with a reference cell. Admissible ranks and dimensions of the
+                input point array and the corresponding rank and dimension of the output array are as follows:
+                \verbatim
+                |-------------------|-------------|-------------|-------------|
+                |  rank: (in)/(out) |    1/1      |     2/1     |    3/2      |
+                |-------------------|-------------|-------------|-------------|
+                |  points    (in)   |     (D)     |    (I, D)   |  (I, J, D)  |
+                |-------------------|-------------|-------------|-------------|
+                |  inRefCell (out)  |     (1)     |    (I)      |  (I, J)     |
+                |------------------ |-------------|-------------|-------------|
+                \endverbatim
+                Example: if \c points is rank-3 array with dimensions (I, J, D), then
+        \f[
+               \mbox{inRefCell}(i,j) =
+                 \left\{\begin{array}{rl}
+                    1 & \mbox{if $points(i,j,*)\in\hat{\mathcal{C}}$} \\[2ex]
+                    0 & \mbox{if $points(i,j,*)\notin\hat{\mathcal{C}}$}
+                 \end{array}\right.
+          \f]
+        \param  inRefCell         [out] - rank-1 or 2 array with results from the pointwise inclusion test
+        \param  refPoints         [in]  - rank-1,2 or 3 array (point, vector of points, matrix of points)
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
+        \param  threshold         [in]  - "tightness" of the inclusion test
+    */
+    template<typename inCellValueType, class ...inCellProperties,                                                       
+             typename pointValueType, class ...pointProperties,
+             typename cellWorksetValueType, class ...cellWorksetProperties>  
+    static void checkPointwiseInclusion( /**/  Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,                     
+                                         const Kokkos::DynRankView<pointValueType,pointProperties...> points,                       
+                                         const shards::CellTopology cellTopo,                                                       
+                                         const double thres = threshold() );
 
+    /** \brief  Checks every point in a set or multiple sets for inclusion in physical cells from a cell workset.
 
+                There are two use cases:
+        \li     Checks every point from a \b single point set, stored in a rank-2 array (P,D) for inclusion
+                in a \b specified physical cell \f${\mathcal C}\f$ from a cell workset.
+        \li     Checks every point from \b multiple point sets indexed by a cell ordinal, and stored in a rank-3
+                (C,P,D) array, for inclusion in the physical cell having the same cell ordinal, for \b all
+                cells in a cell workset.
 
-    // /** \brief  Checks every point in a set or multiple sets for inclusion in physical cells from a cell workset.
+                For a single point set in a rank-2 array (P,D) and \c whichCell set to a valid cell ordinal
+                relative to \c cellWorkset returns a rank-1 (P) array such that
+        \f[
+                \mbox{inCell}(p) =
+                  \left\{\begin{array}{rl}
+                     1 & \mbox{if $points(p,*)\in {\mathcal{C}}$} \\ [2ex]
+                     0 & \mbox{if $points(p,*)\notin {\mathcal{C}}$}
+                  \end{array}\right.
+        \f]
+                For multiple point sets in a rank-3 array (C,P,D) and \c whichCell=-1 (default value)
+                returns a rank-2 (C,P) array such that
+        \f[
+                \mbox{inCell}(c,p) =
+                  \left\{\begin{array}{rl}
+                      1 & \mbox{if $points(c,p,*)\in {\mathcal{C}}$} \\ [2ex]
+                      0 & \mbox{if $points(c,p,*)\notin {\mathcal{C}}$}
+                \end{array}\right.
+        \f]
 
-    //             There are two use cases:
-    //     \li     Checks every point from a \b single point set, stored in a rank-2 array (P,D) for inclusion
-    //             in a \b specified physical cell \f${\mathcal C}\f$ from a cell workset.
-    //     \li     Checks every point from \b multiple point sets indexed by a cell ordinal, and stored in a rank-3
-    //             (C,P,D) array, for inclusion in the physical cell having the same cell ordinal, for \b all
-    //             cells in a cell workset.
-
-    //             For a single point set in a rank-2 array (P,D) and \c whichCell set to a valid cell ordinal
-    //             relative to \c cellWorkset returns a rank-1 (P) array such that
-    //     \f[
-    //             \mbox{inCell}(p) =
-    //               \left\{\begin{array}{rl}
-    //                  1 & \mbox{if $points(p,*)\in {\mathcal{C}}$} \\ [2ex]
-    //                  0 & \mbox{if $points(p,*)\notin {\mathcal{C}}$}
-    //               \end{array}\right.
-    //     \f]
-    //             For multiple point sets in a rank-3 array (C,P,D) and \c whichCell=-1 (default value)
-    //             returns a rank-2 (C,P) array such that
-    //     \f[
-    //             \mbox{inCell}(c,p) =
-    //               \left\{\begin{array}{rl}
-    //                   1 & \mbox{if $points(c,p,*)\in {\mathcal{C}}$} \\ [2ex]
-    //                   0 & \mbox{if $points(c,p,*)\notin {\mathcal{C}}$}
-    //             \end{array}\right.
-    //     \f]
-
-    //     \param  inCell            [out] - rank-1  array with results from the pointwise inclusion test
-    //     \param  points            [in]  - rank-2 array with dimensions (P,D) with the physical points
-    //     \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
-    //     \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
-    //     \param  whichCell         [in]  - ordinal of the cell used in the inclusion test
-    //     \param  threshold         [in]  - tolerance for inclusion tests on the input points
-    //   */
-    // template<class ArrayIncl, class ArrayPoint, class ArrayCell>
-    // static void checkPointwiseInclusion(ArrayIncl &                   inCell,
-    //                                     const ArrayPoint &            points,
-    //                                     const ArrayCell &             cellWorkset,
-    //                                     const shards::CellTopology &  cell,
-    //                                     const int &                   whichCell = -1,
-    //                                     const double &                threshold = INTREPID2_THRESHOLD);
+        \param  inCell            [out] - rank-1  array with results from the pointwise inclusion test
+        \param  points            [in]  - rank-2 array with dimensions (P,D) with the physical points
+        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
+        \param  whichCell         [in]  - ordinal of the cell used in the inclusion test
+        \param  threshold         [in]  - tolerance for inclusion tests on the input points
+      */
+    template<typename inCellValueType, class ...inCellProperties,                                                       
+             typename pointValueType, class ...pointProperties,                                                        
+             typename cellWorksetValueType, class ...cellWorksetProperties>  
+    static void checkPointwiseInclusion( /**/  Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,                     
+                                         const Kokkos::DynRankView<pointValueType,pointProperties...> points,                       
+                                         const Kokkos::DynRankView<cellWorksetValueType,cellWorksetProperties...> cellWorkset,      
+                                         const shards::CellTopology cellTopo,                                                       
+                                         const double thres = threshold() );
 
     // //============================================================================================//
     // //                                                                                            //

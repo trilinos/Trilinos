@@ -148,9 +148,9 @@ namespace {
   static int initialTime_default = 0; // Should be Scalar(0.0)
   static std::string initialTime_docs =
     "The initial time to start integration.";
-  static std::string finalTime_name = "Final Time";
-  static int finalTime_default = 1; // Should be Scalar(1.0)
-  static std::string finalTime_docs = "The final time to end integration.";
+  static std::string finalTimeRythmos_name = "Final Time";
+  static int finalTimeRythmos_default = 1; // Should be Scalar(1.0)
+  static std::string finalTimeRythmos_docs = "The final time to end integration.";
   static std::string landOnFinalTime_name = "Land On Final Time";
   static bool landOnFinalTime_default = true;
   static std::string landOnFinalTime_docs =
@@ -471,9 +471,9 @@ IntegratorBuilder<Scalar>::getValidParameters() const
                                Teuchos::as<Scalar>(initialTime_default),
                                initialTime_docs);
       // Final Time
-      integratorSettingsPL.set(finalTime_name,
-                               Teuchos::as<Scalar>(finalTime_default),
-                               finalTime_docs);
+      integratorSettingsPL.set(finalTimeRythmos_name,
+                               Teuchos::as<Scalar>(finalTimeRythmos_default),
+                               finalTimeRythmos_docs);
       // Land On Final Time
       integratorSettingsPL.set(landOnFinalTime_name,landOnFinalTime_default,
                                landOnFinalTime_docs);
@@ -892,11 +892,11 @@ IntegratorBuilder<Scalar>::create(
       );
     saStepper->setSolver(nlSolver);
   }
-  Scalar finalTime = integratorSettingsPL->get<Scalar>(
-    finalTime_name, Teuchos::as<Scalar>(finalTime_default));
+  Scalar finalTimeRythmos = integratorSettingsPL->get<Scalar>(
+    finalTimeRythmos_name, Teuchos::as<Scalar>(finalTimeRythmos_default));
   bool landOnFinalTime = integratorSettingsPL->get<bool>(
     landOnFinalTime_name, landOnFinalTime_default);
-  integrator->setStepper(stepper,finalTime,landOnFinalTime);
+  integrator->setStepper(stepper,finalTimeRythmos,landOnFinalTime);
   return integrator;
 }
 

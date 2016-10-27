@@ -3,18 +3,27 @@
 
 namespace stk{ namespace unit_test_util{ namespace sideset{
 
-void read_exo_file( stk::mesh::BulkData &bulkData, std::string filename, SideSetData &sideset_data, ReadMode read_mode)
+void setup_io_broker_for_read(stk::io::StkMeshIoBroker &stkIo, stk::mesh::BulkData &bulkData, std::string filename, ReadMode read_mode)
 {
-    StkMeshIoBrokerTester stkIo;
     if(read_mode == READ_SERIAL_AND_DECOMPOSE)
         stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
     stkIo.set_bulk_data(bulkData);
     stkIo.add_mesh_database(filename, stk::io::READ_MESH);
     stkIo.create_input_mesh();
     stkIo.add_all_mesh_fields_as_input_fields();
-    stkIo.populate_bulk_data();
+}
 
-    stkIo.fill_sideset_data(sideset_data);
+void load_mesh_and_fill_sideset_data(StkMeshIoBrokerTester &stkIo, SideSetData &sidesetData)
+{
+    stkIo.populate_bulk_data();
+    stkIo.fill_sideset_data(sidesetData);
+}
+
+void read_exo_file( stk::mesh::BulkData &bulkData, std::string filename, SideSetData &sidesetData, ReadMode read_mode)
+{
+    StkMeshIoBrokerTester stkIo;
+    setup_io_broker_for_read(stkIo, bulkData, filename, read_mode);
+    load_mesh_and_fill_sideset_data(stkIo, sidesetData);
 }
 
 void write_exo_file(BulkDataTester &bulkData, const std::string &filename, const SideSetData& sideset_data)

@@ -270,6 +270,11 @@ TEST(stk_search, coarse_search_octree)
   testCoarseSearchForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
 }
 
+TEST(stk_search, coarse_search_kdtree)
+{
+  testCoarseSearchForAlgorithm(stk::search::KDTREE, MPI_COMM_WORLD);
+}
+
 TEST(stk_search, coarse_search_boost_rtree_using_float_aa_boxes)
 {
     testCoarseSearchForAlgorithmUsingFloatAABoxes(BOOST_RTREE, MPI_COMM_WORLD);
@@ -413,7 +418,12 @@ TEST(stk_search, coarse_search_one_point_BOOST_RTREE)
     testCoarseSearchOnePoint(stk::search::BOOST_RTREE);
 }
 
-TEST(CoarseSearch, forDeterminingSharing)
+TEST(stk_search, coarse_search_one_point_KDTREE)
+{
+    testCoarseSearchOnePoint(stk::search::KDTREE);
+}
+
+void testCoarseSearchForDeterminingSharing(stk::search::SearchMethod searchMethod)
 {
     const stk::ParallelMachine comm = MPI_COMM_WORLD;
     const int p_rank = stk::parallel_machine_rank(comm);
@@ -431,7 +441,9 @@ TEST(CoarseSearch, forDeterminingSharing)
     source_bbox_vector.push_back(std::make_pair(node, id));
 
     SearchResults searchResults;
-    stk::search::coarse_search(source_bbox_vector, source_bbox_vector, stk::search::BOOST_RTREE, comm, searchResults);
+    stk::search::coarse_search(source_bbox_vector, source_bbox_vector, searchMethod, comm, searchResults);
+
+    EXPECT_GE(static_cast<int>(searchResults.size()), p_rank + 1);
 
     std::set<int> procs;
 
@@ -450,5 +462,16 @@ TEST(CoarseSearch, forDeterminingSharing)
         procCounter++;
     }
 }
+
+TEST(CoarseSearch, forDeterminingSharing_BOOST_RTREE)
+{
+  testCoarseSearchForDeterminingSharing(stk::search::BOOST_RTREE);
+}
+
+TEST(CoarseSearch, forDeterminingSharing_KDTREE)
+{
+  testCoarseSearchForDeterminingSharing(stk::search::KDTREE);
+}
+
 
 } //namespace

@@ -494,10 +494,12 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
 }
 
 namespace {
-void testAssociatedNeighbors(const STKConnManager<int>& connMngr, const int vals[][3],
-                             Teuchos::FancyOStream& out, bool& success)
+void testAssociatedNeighbors(const STKConnManager<int>& connMngr,
+  const std::vector<std::vector<int> > vals, Teuchos::FancyOStream& out,
+  bool& success)
 {
-  for (int i = 0; i < static_cast<int>(sizeof(vals)/sizeof(*vals)); ++i) {
+  for (int i = 0; i < static_cast<int>(vals.size()); ++i)
+  {
     const std::size_t sz = connMngr.getAssociatedNeighbors(vals[i][0]).size();
     TEST_EQUALITY(sz, vals[i][1]);
     if (sz)
@@ -532,13 +534,13 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks_interface)
    }
 
    if (numProcs == 1) {
-     const int vals[][3] = {{0, 0, 0}, {1, 1, 2}, {2, 1, 1}, {3, 0, 0}};
+     const std::vector<std::vector<int> > vals{{0, 0, 0}, {1, 1, 2}, {2, 1, 1}, {3, 0, 0}};
      testAssociatedNeighbors(connMngr, vals, out, success);
    } else if (numProcs == 2 && myRank == 0) {
-     const int vals[][3] = {{0, 0, 0}, {1, 1, 2}};
+     const std::vector<std::vector<int> > vals{{0, 0, 0}, {1, 1, 2}};
      testAssociatedNeighbors(connMngr, vals, out, success);
    } else if (numProcs == 2 && myRank == 1) {
-     const int vals[][3] = {{0, 1, 3}, {1, 0, 0}};
+     const std::vector<std::vector<int> > vals{{0, 1, 3}, {1, 0, 0}};
      testAssociatedNeighbors(connMngr, vals, out, success);
    }
    else {

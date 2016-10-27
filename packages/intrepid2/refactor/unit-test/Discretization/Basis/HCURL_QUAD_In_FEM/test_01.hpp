@@ -229,7 +229,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try {
-        const ordinal_type order = 3;
+        const ordinal_type order = 5;
         QuadBasisType quadBasis(order);
 
         const ordinal_type numFields = quadBasis.getCardinality();

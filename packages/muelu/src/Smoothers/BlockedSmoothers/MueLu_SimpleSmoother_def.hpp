@@ -314,7 +314,7 @@ namespace MueLu {
 #if 1// new implementation
 
     // create a new vector for storing the current residual in a blocked multi vector
-    RCP<MultiVector> res = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
+    RCP<MultiVector> res = MultiVectorFactory::Build(B.getMap(), B.getNumVectors(), true);
     RCP<BlockedMultiVector> residual = Teuchos::rcp(new BlockedMultiVector(rangeMapExtractor_,res));
 
     // create a new solution vector as a blocked multi vector
@@ -338,8 +338,8 @@ namespace MueLu {
 
       // 2) solve F * \Delta \tilde{x}_1 = r_1
       //    start with zero guess \Delta \tilde{x}_1
-      RCP<MultiVector> xtilde1 = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
-      xtilde1->putScalar(zero);
+      RCP<MultiVector> xtilde1 = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict, true);
+      //xtilde1->putScalar(zero);
 
       if(bFThyraSpecialTreatment == true) {
         xtilde1->replaceMap(domainMapExtractor_->getMap(0,true));
@@ -352,14 +352,14 @@ namespace MueLu {
 
       // 3) calculate rhs for SchurComp equation
       //    r_2 - D \Delta \tilde{x}_1
-      RCP<MultiVector> schurCompRHS = rangeMapExtractor_->getVector(1, B.getNumVectors(), bRangeThyraModeSchur);
+      RCP<MultiVector> schurCompRHS = rangeMapExtractor_->getVector(1, B.getNumVectors(), bRangeThyraModeSchur, false);
       D_->apply(*xtilde1,*schurCompRHS);
       schurCompRHS->update(one,*r2,-one);
 
       // 4) solve SchurComp equation
       //    start with zero guess \Delta \tilde{x}_2
-      RCP<MultiVector> xtilde2 = domainMapExtractor_->getVector(1, X.getNumVectors(), bDomainThyraModeSchur);
-      xtilde2->putScalar(zero);
+      RCP<MultiVector> xtilde2 = domainMapExtractor_->getVector(1, X.getNumVectors(), bDomainThyraModeSchur, true);
+      //xtilde2->putScalar(zero);
 
       // Special handling if SchurComplement operator was a 1x1 blocked operator in Thyra mode
       // Then, we have to translate the Xpetra offset GIDs to plain Thyra GIDs and vice versa
@@ -374,12 +374,12 @@ namespace MueLu {
 
       // 5) scale xtilde2 with omega
       //    store this in xhat2
-      RCP<MultiVector> xhat2 = domainMapExtractor_->getVector(1, X.getNumVectors(), bDomainThyraModeSchur);
+      RCP<MultiVector> xhat2 = domainMapExtractor_->getVector(1, X.getNumVectors(), bDomainThyraModeSchur, false);
       xhat2->update(omega,*xtilde2,zero);
 
       // 6) calculate xhat1
-      RCP<MultiVector> xhat1      = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
-      RCP<MultiVector> xhat1_temp = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
+      RCP<MultiVector> xhat1      = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict, false);
+      RCP<MultiVector> xhat1_temp = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict, false);
       G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
       xhat1->elementWiseMultiply(one/*/omega*/,*diagFinv_,*xhat1_temp,zero);
       xhat1->update(one,*xtilde1,-one);

@@ -1,12 +1,17 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Control penalty parameter"   type="double"  value="1e-5" />
-    <Parameter name="Control lower bound"         type="double"  value="0"    />
-    <Parameter name="Control upper bound"         type="double"  value="10"   />
-    <!--Parameter name="State lower bound"           type="double"  value="0"    -->
-    <!--Parameter name="State upper bound"           type="double"  value="0.9"  -->
-    <Parameter name="Order of FE discretization"  type="int"     value="1"    />
+    <Parameter name="Control penalty parameter"   type="double"    value="1e-5"  />
+    <Parameter name="Control lower bound"         type="double"    value="0"     />
+    <Parameter name="Control upper bound"         type="double"    value="10"    />
+    <!--Parameter name="State lower bound"           type="double"    value="0"    -->
+    <!--Parameter name="State upper bound"           type="double"    value="0.9"  -->
+    <Parameter name="Order of FE discretization"  type="int"       value="1"     />
+    <Parameter name="Use State Riesz Map"         type="bool"      value="false" />
+    <Parameter name="Use Control Riesz Map"       type="bool"      value="false" />
+    <!-- SOLVER INFORMATION -->
+    <Parameter name="Use Direct Solver"           type="bool"      value="true"  />
+    <Parameter name="Direct Solver Type"          type="string"    value="KLU2"  />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
@@ -133,7 +138,7 @@
       <Parameter name="Output Level" type="int" value="0" />
       <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
       <ParameterList name="Optimality System Solver">
-        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-10"  />
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-8"  />
         <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
       </ParameterList>
       <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->

@@ -281,23 +281,83 @@ namespace Amesos2 {
   }
 
 
-template <class Matrix, class Vector>
-void
-PardisoMKL<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
-{
-  iparm_[1]  = validators[2]->getIntegralValue(*parameterList, "IPARM(2)",
-					       validators[2]->getDefaultParameterName());
-  iparm_[3]  = parameterList->get<int>("IPARM(4)" , (int)iparm_[3]);
-  iparm_[7]  = parameterList->get<int>("IPARM(8)" , (int)iparm_[7]);
-  iparm_[9]  = parameterList->get<int>("IPARM(10)", (int)iparm_[9]);
-  iparm_[17] = parameterList->get<int>("IPARM(18)", (int)iparm_[17]);
-  iparm_[23] = validators[24]->getIntegralValue(*parameterList, "IPARM(24)",
-						validators[24]->getDefaultParameterName());
-  iparm_[24] = validators[25]->getIntegralValue(*parameterList, "IPARM(25)",
-						validators[25]->getDefaultParameterName());
-  iparm_[59] = validators[60]->getIntegralValue(*parameterList, "IPARM(60)",
-						validators[60]->getDefaultParameterName());
-}
+  template <class Matrix, class Vector>
+  void
+  PardisoMKL<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
+  {
+    using Teuchos::RCP;
+    using Teuchos::getIntegralValue;
+    using Teuchos::ParameterEntryValidator;
+
+    RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
+
+    if( parameterList->isParameter("IPARM(2)") )
+    {
+      RCP<const ParameterEntryValidator> fillin_validator = valid_params->getEntry("IPARM(2)").validator();
+      parameterList->getEntry("IPARM(2)").setValidator(fillin_validator);
+      iparm_[1] = getIntegralValue<int>(*parameterList, "IPARM(2)");
+    }
+
+    if( parameterList->isParameter("IPARM(4)") )
+    {
+      RCP<const ParameterEntryValidator> prec_validator = valid_params->getEntry("IPARM(4)").validator();
+      parameterList->getEntry("IPARM(4)").setValidator(prec_validator);
+      iparm_[3] = getIntegralValue<int>(*parameterList, "IPARM(4)");
+    }
+   
+    if( parameterList->isParameter("IPARM(8)") )
+    {
+      RCP<const ParameterEntryValidator> refine_validator = valid_params->getEntry("IPARM(8)").validator();
+      parameterList->getEntry("IPARM(8)").setValidator(refine_validator);
+      iparm_[7] = getIntegralValue<int>(*parameterList, "IPARM(8)");
+    }
+   
+    if( parameterList->isParameter("IPARM(10)") )
+    {
+      RCP<const ParameterEntryValidator> pivot_perturb_validator = valid_params->getEntry("IPARM(10)").validator();
+      parameterList->getEntry("IPARM(10)").setValidator(pivot_perturb_validator);
+      iparm_[9] = getIntegralValue<int>(*parameterList, "IPARM(10)");
+    }
+
+    // First check if the control object requests a transpose solve.
+    // Then solver specific options can override this.
+    iparm_[11] = this->control_.useTranspose_ ? 2 : 0;
+    
+    if( parameterList->isParameter("IPARM(12)") )
+    {
+      RCP<const ParameterEntryValidator> trans_validator = valid_params->getEntry("IPARM(12)").validator();
+      parameterList->getEntry("IPARM(12)").setValidator(trans_validator);
+      iparm_[11] = getIntegralValue<int>(*parameterList, "IPARM(12)");
+    }
+
+    if( parameterList->isParameter("IPARM(18)") )
+    {
+      RCP<const ParameterEntryValidator> report_validator = valid_params->getEntry("IPARM(18)").validator();
+      parameterList->getEntry("IPARM(18)").setValidator(report_validator);
+      iparm_[17] = getIntegralValue<int>(*parameterList, "IPARM(18)");
+    }
+   
+    if( parameterList->isParameter("IPARM(24)") )
+    {
+      RCP<const ParameterEntryValidator> par_fact_validator = valid_params->getEntry("IPARM(24)").validator();
+      parameterList->getEntry("IPARM(24)").setValidator(par_fact_validator);
+      iparm_[23] = getIntegralValue<int>(*parameterList, "IPARM(24)");
+    }
+  
+    if( parameterList->isParameter("IPARM(25)") )
+    {
+      RCP<const ParameterEntryValidator> par_fbsolve_validator = valid_params->getEntry("IPARM(25)").validator();
+      parameterList->getEntry("IPARM(25)").setValidator(par_fbsolve_validator);
+      iparm_[24] = getIntegralValue<int>(*parameterList, "IPARM(25)");
+    } 
+
+    if( parameterList->isParameter("IPARM(60)") )
+    {
+      RCP<const ParameterEntryValidator> ooc_validator = valid_params->getEntry("IPARM(60)").validator();
+      parameterList->getEntry("IPARM(60)").setValidator(ooc_validator);
+      iparm_[59] = getIntegralValue<int>(*parameterList, "IPARM(60)");
+    } 
+  }
 
 
 /*
@@ -332,10 +392,6 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
   using Teuchos::EnhancedNumberValidator;
   using Teuchos::setStringToIntegralParameter;
   using Teuchos::anyNumberParameterEntryValidator;
-  using Teuchos::stringToIntegralParameterEntryValidator;
-  typedef Teuchos::StringToIntegralParameterEntryValidator<int> STIPEV;
-  Teuchos::AnyNumberParameterEntryValidator::EPreferredType preferred_int =
-    Teuchos::AnyNumberParameterEntryValidator::PREFER_INT;
 
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
@@ -350,55 +406,62 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
                       const_cast<PMKL::_INTEGER_t*>(&mtype_temp),
                       const_cast<PMKL::_INTEGER_t*>(iparm_temp));
 
-    // Initialize our parameter validators, saving the string to int validators for later
-    RCP<STIPEV> iparm_2_validator
-      = stringToIntegralParameterEntryValidator<int>(tuple<string>("0", "2", "3"),
-						     tuple<string>("The minimum degree algorithm",
-								   "Nested dissection algorithm from METIS",
-								   "OpenMP parallel nested dissection algorithm"),
-						     tuple<int>(0, 2, 3),
-						     toString(iparm_temp[1]));
-    validators.insert( std::pair<int,RCP<STIPEV> >(2, iparm_2_validator) );
+    setStringToIntegralParameter<int>("IPARM(2)", toString(iparm_temp[1]),
+                                      "Fill-in reducing ordering for the input matrix",
+                                      tuple<string>("0", "2", "3"),
+                                      tuple<string>("The minimum degree algorithm",
+                                      "Nested dissection algorithm from METIS",
+                                      "OpenMP parallel nested dissection algorithm"),
+                                      tuple<int>(0, 2, 3),
+                                      pl.getRawPtr());
     
     Teuchos::RCP<EnhancedNumberValidator<int> > iparm_4_validator
       = Teuchos::rcp( new EnhancedNumberValidator<int>() );
     iparm_4_validator->setMin(0);
+    pl->set("IPARM(4)" , as<int>(iparm_temp[3]) , "Preconditioned CGS/CG",
+            iparm_4_validator);
 
-    RCP<STIPEV> iparm_24_validator
-      = stringToIntegralParameterEntryValidator<int>(tuple<string>("0", "1"),
-						     tuple<string>("PARDISO uses the previous algorithm for factorization",
-								   "PARDISO uses the new two-level factorization algorithm"),
-						     tuple<int>(0, 1),
-						     toString(iparm_temp[23]));
-    validators.insert( std::pair<int,RCP<STIPEV> >(24, iparm_24_validator) );
+    setStringToIntegralParameter<int>("IPARM(12)", toString(iparm_temp[11]),
+                                      "Solve with transposed or conjugate transposed matrix A",
+                                      tuple<string>("0", "1", "2"),
+                                      tuple<string>("Non-transposed",
+                                      "Conjugate-transposed",
+                                      "Transposed"),
+                                      tuple<int>(0, 1, 2),
+                                      pl.getRawPtr());
+    
+    setStringToIntegralParameter<int>("IPARM(24)", toString(iparm_temp[23]),
+                                      "Parallel factorization control",
+                                      tuple<string>("0", "1"),
+                                      tuple<string>("PARDISO uses the previous algorithm for factorization",
+                                      "PARDISO uses the new two-level factorization algorithm"),
+                                      tuple<int>(0, 1),
+                                      pl.getRawPtr());
 
-    RCP<STIPEV> iparm_25_validator
-      = stringToIntegralParameterEntryValidator<int>(tuple<string>("0", "1"),
-						     tuple<string>("PARDISO uses the parallel algorithm for the solve step",
-								   "PARDISO uses the sequential forward and backward solve"),
-						     tuple<int>(0, 1),
-						     toString(iparm_temp[24]));
-    validators.insert( std::pair<int,RCP<STIPEV> >(25, iparm_25_validator) );
+    setStringToIntegralParameter<int>("IPARM(25)", toString(iparm_temp[24]),
+                                      "Parallel forward/backward solve control",
+                                      tuple<string>("0", "1"),
+                                      tuple<string>("PARDISO uses the parallel algorithm for the solve step",
+                                      "PARDISO uses the sequential forward and backward solve"),
+                                      tuple<int>(0, 1),
+                                      pl.getRawPtr());
 
-    RCP<STIPEV> iparm_60_validator
-      = stringToIntegralParameterEntryValidator<int>(tuple<string>("0", "2"),
-						     tuple<string>("In-core PARDISO",
-								   "Out-of-core PARDISO.  The OOC PARDISO can solve very "
-								   "large problems by holding the matrix factors in files "
-								   "on the disk. Hence the amount of RAM required by OOC "
-								   "PARDISO is significantly reduced."),
-						     tuple<int>(0, 2),
-						     toString(iparm_temp[59]));
-    validators.insert( std::pair<int,RCP<STIPEV> >(60, iparm_60_validator) );
+    setStringToIntegralParameter<int>("IPARM(60)", toString(iparm_temp[59]),
+                                      "PARDISO mode (OOC mode)",
+                                      tuple<string>("0", "2"),
+                                      tuple<string>("In-core PARDISO",
+                                      "Out-of-core PARDISO.  The OOC PARDISO can solve very "
+                                      "large problems by holding the matrix factors in files "
+                                      "on the disk. Hence the amount of RAM required by OOC "
+                                      "PARDISO is significantly reduced."),
+                                      tuple<int>(0, 2),
+                                      pl.getRawPtr());
+
+    Teuchos::AnyNumberParameterEntryValidator::EPreferredType preferred_int =
+      Teuchos::AnyNumberParameterEntryValidator::PREFER_INT;
 
     Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes accept_int( false );
     accept_int.allowInt( true );
-
-    pl->set("IPARM(2)" , validators[2]->getDefaultParameterName(),
-	    "Fill-in reducing ordering for the input matrix", validators[2]);
-
-    pl->set("IPARM(4)" , as<int>(iparm_temp[3]) , "Preconditioned CGS/CG",
-            iparm_4_validator);
 
     pl->set("IPARM(8)" , as<int>(iparm_temp[8]) , "Iterative refinement step",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
@@ -408,15 +471,6 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("IPARM(18)", as<int>(iparm_temp[17]), "Report the number of non-zero elements in the factors",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
-
-    pl->set("IPARM(24)", validators[24]->getDefaultParameterName(),
-	    "Parallel factorization control", validators[24]);
-    
-    pl->set("IPARM(25)", validators[25]->getDefaultParameterName(),
-	    "Parallel forward/backward solve control", validators[25]);
-
-    pl->set("IPARM(60)", validators[60]->getDefaultParameterName(),
-	    "PARDISO mode (OOC mode)", validators[60]);
 
     valid_params = pl;
   }

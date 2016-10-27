@@ -95,10 +95,10 @@ namespace Intrepid2 {
     typedef Kokkos::View<EBasis,ExecSpaceType> ebasis_view_type;
     typedef Kokkos::View<ECoordinates,ExecSpaceType> ecoordiantes_view_type;
 
-    // ** tag interface 
+    // ** tag interface
     //  - tag interface is not decorated with Kokkos inline so it should be allocated on hostspace
 
-    // host array 
+    // host array
     typedef Kokkos::View<ordinal_type*  ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_1d_host;
     typedef Kokkos::View<ordinal_type** ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_2d_host;
     typedef Kokkos::View<ordinal_type***,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_3d_host;
@@ -116,7 +116,7 @@ namespace Intrepid2 {
     typedef typename ScalarTraits<pointValueType>::scalar_type scalarType;
 
   protected:
-    
+
     /** \brief  Cardinality of the basis, i.e., the number of basis functions/degrees-of-freedom
      */
     ordinal_type basisCardinality_;
@@ -179,7 +179,7 @@ namespace Intrepid2 {
       \param  posScOrd         [in]   - position in the tag, counting from 0, of the subcell ordinal
       \param  posDfOrd         [in]   - position in the tag, counting from 0, of DoF ordinal relative to the subcell
     */
-    template<typename OrdinalTypeView3D, 
+    template<typename OrdinalTypeView3D,
              typename OrdinalTypeView2D,
              typename OrdinalTypeView1D>
     void setOrdinalTagData( /**/  OrdinalTypeView3D &tagToOrdinal,
@@ -272,6 +272,16 @@ namespace Intrepid2 {
                const EOperator operatorType = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
+    }
+
+    // orientation specific bubble nodes for constructing transformation matrix
+    virtual
+    void
+    getValuesIntrBubble( /**/  outputViewType outputValues,
+                         const pointViewType  inputPoints,
+                         const ordinal_type   ort ) const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Basis::getValuesIntrBubble): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
     }
 
     /** \brief  Evaluation of an FVD basis evaluation on a <strong>physical cell</strong>.
@@ -408,7 +418,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( subcDofOrd < 0 || subcDofOrd >= static_cast<ordinal_type>(tagToOrdinal_.dimension(2)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofOrdinal): subcDofOrd is out of range");
 #endif
-      ordinal_type r_val = -1; 
+      ordinal_type r_val = -1;
       if ( subcDim    < tagToOrdinal_.dimension(0) &&
            subcOrd    < tagToOrdinal_.dimension(1) &&
            subcDofOrd < tagToOrdinal_.dimension(2) )

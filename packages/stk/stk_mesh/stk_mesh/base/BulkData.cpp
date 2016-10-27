@@ -956,7 +956,7 @@ void BulkData::add_node_sharing( Entity node, int sharing_proc )
 Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                  const PartVector & parts )
 {
-    m_check_invalid_rels = false;
+  m_check_invalid_rels = false;
 
   require_ok_to_modify();
 

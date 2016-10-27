@@ -124,13 +124,16 @@ public:
     }
 };
 
-SideSetData get_sideset_data_from_written_file(BulkDataTester &bulk, const std::string& output_file_name);
-void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& input_file_name, const std::string& output_file_name);
-void compare_sidesets(const std::string& input_file_name,
+void write_exo_file(BulkDataTester &bulkData, const std::string &filename, const SideSetData& sidesetData);
+void load_mesh_and_fill_sideset_data(StkMeshIoBrokerTester &stkIo, SideSetData &sidesetData);
+void setup_io_broker_for_read(stk::io::StkMeshIoBroker &stkIo, stk::mesh::BulkData &bulkData, std::string filename, ReadMode readMode);
+SideSetData get_sideset_data_from_written_file(BulkDataTester &bulk, const std::string& outputFileName);
+void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& inputFileName, const std::string& outputFileName);
+void compare_sidesets(const std::string& inputFileName,
                       BulkDataTester &bulk1,
-                      const SideSetData &sideset_data1,
+                      const SideSetData &sidesetData1,
                       BulkDataTester &bulk2,
-                      const SideSetData &sideset_data2);
+                      const SideSetData &sidesetData2);
 
 }
 }

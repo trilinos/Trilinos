@@ -73,15 +73,15 @@
 // Global Timers.
 #ifdef ROL_TIMERS
 Teuchos::RCP<Teuchos::Time> FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
-  TimeMonitor::getNewCounter("ROL: Factorization Time in PDEFEM");
+  Teuchos::TimeMonitor::getNewCounter("ROL: Factorization Time in PDEFEM");
 Teuchos::RCP<Teuchos::Time> LUSubstitutionTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
-  TimeMonitor::getNewCounter("ROL: LU Substitution Time in PDEFEM");
+  Teuchos::TimeMonitor::getNewCounter("ROL: LU Substitution Time in PDEFEM");
 Teuchos::RCP<Teuchos::Time> SolverUpdateTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
-  TimeMonitor::getNewCounter("ROL: Solver Update Time in PDEFEM");
+  Teuchos::TimeMonitor::getNewCounter("ROL: Solver Update Time in PDEFEM");
 Teuchos::RCP<Teuchos::Time> LocalAssemblyTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
-  TimeMonitor::getNewCounter("ROL: Local Assembly Time in PDEFEM");
+  Teuchos::TimeMonitor::getNewCounter("ROL: Local Assembly Time in PDEFEM");
 Teuchos::RCP<Teuchos::Time> ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB =
-  TimeMonitor::getNewCounter("ROL: Constraint Derivative Application Time in PDEFEM");
+  Teuchos::TimeMonitor::getNewCounter("ROL: Constraint Derivative Application Time in PDEFEM");
 #endif
 
 template<class Real>
@@ -837,6 +837,8 @@ public:
     #endif
     try {
       solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_);
+      //solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("PardisoMKL", matA_dirichlet_);
+      //solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("SuperLU", matA_dirichlet_);
     }
     catch (std::invalid_argument e) {
       std::cout << e.what() << std::endl;
@@ -849,6 +851,8 @@ public:
     // Construct solver using Amesos2 factory.
     try{
       solverA_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_trans_);
+      //solverA_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("PardisoMKL", matA_dirichlet_trans_);
+      //solverA_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("SuperLU", matA_dirichlet_trans_);
     } catch (std::invalid_argument e) {
       std::cout << e.what() << std::endl;
     }

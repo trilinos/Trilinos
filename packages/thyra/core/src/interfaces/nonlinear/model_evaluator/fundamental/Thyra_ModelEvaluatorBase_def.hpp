@@ -102,6 +102,8 @@ ModelEvaluatorBase::InArgs<Scalar>::InArgs()
   t_     = SMT::zero();
   alpha_ = ST::zero();
   beta_  = ST::zero();
+  step_size_ = ST::zero();
+  stage_number_ = ST::one();
 }
 
 
@@ -264,6 +266,23 @@ template<class Scalar>
 Scalar ModelEvaluatorBase::InArgs<Scalar>::get_beta() const
 { assert_supports(IN_ARG_beta); return beta_; }
 
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_step_size( Scalar step_size)
+{ assert_supports(IN_ARG_step_size); step_size_ = step_size; }
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_step_size() const
+{ assert_supports(IN_ARG_step_size); return step_size_; }
+
+template<class Scalar>
+Scalar ModelEvaluatorBase::InArgs<Scalar>::get_stage_number() const
+{ assert_supports(IN_ARG_stage_number); return stage_number_; }
+
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_stage_number( Scalar stage_number)
+{ assert_supports(IN_ARG_stage_number); stage_number_ = stage_number; }
+
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
@@ -326,6 +345,14 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
   if (inArgs.supports(IN_ARG_beta)) {
     if(supports(IN_ARG_beta) || !ignoreUnsupported)
       set_beta(inArgs.get_beta());
+  }
+  if (inArgs.supports(IN_ARG_step_size)) {
+    if(supports(IN_ARG_step_size) || !ignoreUnsupported)
+      set_step_size(inArgs.get_step_size());
+  }
+  if (inArgs.supports(IN_ARG_stage_number)) {
+    if(supports(IN_ARG_stage_number) || !ignoreUnsupported)
+      set_stage_number(inArgs.get_stage_number());
   }
 }
 
@@ -443,6 +470,12 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
     if (this->supports(IN_ARG_beta)) {
       *out << "beta = " << beta_ << endl;
     }
+    if (this->supports(IN_ARG_step_size)) {
+      *out << "step_size = " << step_size_ << endl;
+    }
+    if (this->supports(IN_ARG_stage_number)) {
+      *out << "stage_number = " << stage_number_ << endl;
+    }
   }
   
 }
@@ -511,6 +544,8 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated(
       this->_setSupports(IN_ARG_x_dot_poly,false);
       this->_setSupports(IN_ARG_alpha,false);
       this->_setSupports(IN_ARG_beta,false);
+      this->_setSupports(IN_ARG_step_size,false);
+      this->_setSupports(IN_ARG_stage_number,false);
       break;
     }
     default:

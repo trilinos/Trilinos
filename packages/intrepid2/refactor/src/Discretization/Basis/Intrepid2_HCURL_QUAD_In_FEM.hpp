@@ -187,6 +187,50 @@ namespace Intrepid2 {
 
     virtual
     void
+    getValuesIntrBubble( /**/  outputViewType outputValues,
+                         const pointViewType  inputPoints,
+                         const ordinal_type   ort ) const {
+      this->getValues(outputValues, inputPoints);
+      
+      auto tmpValues = Kokkos::create_mirror_view(Kokkos::HostSpace(), outputValues);
+      Kokkos::deep_copy(tmpValues, outputValues);
+
+      const ordinal_type 
+        card = this->getCardinality()/2,
+        spaceDim = tmpValues.dimension(1);
+      
+      // swap components if ncessary
+      const ordinal_type swapOrt[8] = { 0, 1, 0, 1,
+                                        1, 0, 1, 0 };      
+      if (swapOrt[ort]) {
+        for (ordinal_type i=0;i<card;++i)
+          for (ordinal_type j=0;j<spaceDim;++j) {
+            const auto tmp = tmpValues(i,j);
+            tmpValues(i,j) = tmpValues(i+card,j);
+            tmpValues(i+card,j) = tmp;
+          }
+      }
+      
+      {
+        // x component
+        const ordinal_type ortVal[8] = { 1, -1, -1,  1,
+                                         1, -1, -1,  1 };
+        for (ordinal_type i=0;i<card;++i)
+          tmpValues(i) *= ortVal[ort]*(this->getDofTag(i)(0) == 2);
+      }
+      {
+        // y component
+        const ordinal_type ortVal[8] = { 1,  1, -1, -1,
+                                         1,  1, -1, -1 };
+        for (ordinal_type i=card;i<(2*card);++i)
+          tmpValues(i) *= ortVal[ort]*(this->getDofTag(i)(0) == 2);
+      }
+
+      Kokkos::deep_copy(outputValues, tmpValues);
+    }
+
+    virtual
+    void
     getDofCoords( scalarViewType dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.

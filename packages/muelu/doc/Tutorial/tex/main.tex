@@ -28,7 +28,7 @@
 
 \usepackage{flowchart} % also loads tikz
 \usepackage{tikz}
-\usetikzlibrary{arrows,shapes}
+\usetikzlibrary{arrows,shapes,positioning}
 \usepackage{dot2texi}
 
 \usepackage[explicit]{titlesec}
@@ -1036,9 +1036,9 @@ Try to set up a multigrid hierarchy with unsmoothed transfer operators for the t
 \chapter{Rebalancing - Hypergraph repartitioning}
 
 \section{Basic concepts and parameters}
-It's a natural thing to use lesser processors for the coarse level problem than for the fine level problem. This is an elegant way to avoid the problems of the coupled aggregation strategy, by just using the uncoupled aggregation strategy with rebalancing on the coarser levels.
+Especially when using the uncoupled aggregation strategy it is essential to reduce the number of processors used on the coarser levels. A natural strategy is to make sure that each processor gets a minimum number of equations to solve and reduce the number of active processors accordingly.
 
-In this tutorial we use a hypergraph based repartitioning for the coarse level matrices $A_c$ to rebalance the problem. The repartitioning algorithm is implemented in the \zoltan package of \trilinos. The advantage of the hypergraph based repartitioning methods is, that they do not need additional information such as node coordinates and therefore are the consequent choice within algebraic multigrid preconditioners.
+In this tutorial we use a hypergraph based repartitioning for the coarse level matrices $A_c$ to rebalance the coarse level problems. The repartitioning algorithm is implemented in the \zoltan package of \trilinos. The advantage of the hypergraph based repartitioning methods is, that they do not need additional information such as node coordinates and therefore are the consequent choice within algebraic multigrid preconditioners.
 
 \begin{mycomment}
 Hypergraph partitioning algorithms as PHG are not available in the new \zoltantwo package of \trilinos, yet. Therefore we can use this type of repartitioning only in context of \epetra based applications. If you use the new templated \tpetra stack you have to use repartitioning algorithms which are available in \zoltantwo such as RCB.
@@ -1057,9 +1057,10 @@ Figure \ref{fig:rebalanceddesignpgamg} gives the extended factory design for smo
 
 The \verb|AmalgamationFactory| amalgamates the matrix, i.e. it generates some mapping between the actual degrees of freedom and the corresponding nodes or supernodes. In fact the \verb|AmalgamationFactory| is only important if there are more than one degree of freedom per node. Otherwise the mappings are trivial to build.
 
+The \verb|RepartitionHeuristicFactory| contains the rebalancing logic. Depending on the chosen repartitioning parameters it determines the number of partitions (variable name \verb|number of partitions|) for the coarse level problem.
 The \verb|IsorropiaInterface| class first builds internally the graph of the coarse level matrix $A_c$ using the information from the \verb|AmalgamationInformation| and then calls the repartitioning algorithm from \zoltan through the \isorropia interface\footnote{\isorropia is a \trilinos package which provides an easy-to-use interface to many partitioning algorithms in \zoltan.}. The output is an amalgamated repartitioning information. Then the \verb|RepartitionInterface| factory resembles the un-amalgamated repartitioning information which is put into the \verb|RepartitionFactory|.
 
-The \verb|RepartitionFactory| is the most important factory and responsible for the repartitioning. Therein the decision is made whether repartitioning is necessary at all. It creates the communication ``plan'' that is used to rebalance the transfer operators and the coarse level matrix.
+The \verb|RepartitionFactory| creates the communication ``plan'' that is used to rebalance the transfer operators and the coarse level matrix.
 
 \begin{figure}
 \begin{center}
@@ -1079,8 +1080,9 @@ The \verb|RepartitionFactory| is the most important factory and responsible for 
 \node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (GenericRFactory) {GenericRFactory};
 \node(RAPFactory) at(0,0) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RAPFactory};
 
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RAPFactory] (RebAmalgFactory) {AmalgamationFactory};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RebAmalgFactory] (IsorropiaInterface) {IsorropiaInterface};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below left = 1cm and -1cm of RAPFactory] (RebAmalgFactory) {AmalgamationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below right = 1cm and -1cm of RAPFactory] (RebHeuristicFactory) {RepartitionHeuristicFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below right = 1cm and -1cm of RebAmalgFactory] (IsorropiaInterface) {IsorropiaInterface};
 \node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=IsorropiaInterface] (RepartitionInterface) {RepartitionInterface};
 \node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RepartitionInterface] (RepartitionFactory) {RepartitionFactory};
 \node(RebalanceTransferFactory) at(-3,-10) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebalanceTransferFactory};
@@ -1090,6 +1092,8 @@ The \verb|RepartitionFactory| is the most important factory and responsible for 
 \node(A2) at (0,-14) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
 \node(P2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight,node distance=3cm, left of=A2]{$P$};
 \node(R2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight,node distance=3cm, right of=A2]{$R$};
+\node(H1) [left = 0.2cm of RebAmalgFactory]{};
+\node(H2) [left = 0.2cm of RebalanceTransferFactory]{};
 \draw[->] (A) -- (nothing);
 \draw[->] (nothing) -- (AggregationFactory);
 \draw[->] (A) to[out=270,in=25] node [near start, left] {} (TentativePFactory);
@@ -1102,21 +1106,27 @@ The \verb|RepartitionFactory| is the most important factory and responsible for 
 \draw[->] (SaPFactory) -- node [near start, below] {P} (RAPFactory);
 \draw[->] (GenericRFactory) -- node [near start, below] {R} (RAPFactory);
 %\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
-\draw[->] (RAPFactory) -- node [near start, left] {$A_c$} (RebAmalgFactory);
-\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (IsorropiaInterface);
-\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (RepartitionInterface);
-\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (RepartitionFactory);
-%\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (RebalanceAcFactory);
-\draw[->] (RebAmalgFactory) -- node [near start, left] {UnAmalg.Info} (IsorropiaInterface);
-\draw[->] (RebAmalgFactory) to[out=0,in=0] node [near start, right] {UnAmalg.Info} (RepartitionInterface);
+\draw[->] (RAPFactory) -- node [near start, right] {$A_c$} (RebAmalgFactory);
+\draw[->] (RAPFactory) -- node [near start, left] {$A_c$} (RebHeuristicFactory);
+\draw[->] (RAPFactory) -- node [near end, left] {$A_c$} (IsorropiaInterface);
+\draw[->] (RebHeuristicFactory) to[out=290,in=0] node {} (RepartitionInterface);
+\draw[->] (RebHeuristicFactory) to[out=290,in=0] node [near start, left] {number of part.} (IsorropiaInterface);
+\draw[->] (RebHeuristicFactory) to[out=290,in=0] node {} (RepartitionFactory);
+%\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (RepartitionInterface);
+%\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (RepartitionFactory);
+\draw[->] (RAPFactory) to[out=180,in=70] node [near end, left] {} (H1) to[out=250,in=180] node [near end, left] {$A_c$} (RepartitionFactory);
+\draw[->] (RAPFactory) to[out=180,in=70] node [near end, left] {} (H1) to[out=250,in=180] node [near end, left] {$A_c$} (RepartitionInterface);
+\draw[->] (H1) to[out=250,in=110] node [near end, left] {} (H2) to[out=290,in=180] node [below] {$A_c$} (RebalanceAcFactory);
+\draw[->] (RebAmalgFactory) to [out=250,in=180] node [near start, right] {UnAmalg.Info} (IsorropiaInterface);
+%\draw[->] (RebAmalgFactory) to[out=0,in=0] node [near start, right] {UnAmalg.Info} (RepartitionInterface);
 \draw[->] (IsorropiaInterface) -- node [near start, left] {Amalg.Partition} (RepartitionInterface);
 \draw[->] (RepartitionInterface) -- node [near start, left] {Partition} (RepartitionFactory);
 \draw[->] (RepartitionFactory) -- node [near start, left] {Importer} (RebalanceTransferFactory);
 \draw[->] (RepartitionFactory) -- node [near start, right] {Importer} (RebalanceTransferFactory2);
 \draw[->] (RepartitionFactory) -- node [near end, left] {Importer} (RebalanceAcFactory);
 \draw[->] (RebalanceAcFactory) -- node [near end, left] {} (A2);
-\draw[->] (SaPFactory) to[out=230,in=130] node [near end, left] {P} (RebalanceTransferFactory);
-\draw[->] (GenericRFactory) to[out=310,in=50] node [near end, left] {R} (RebalanceTransferFactory2);
+\draw[->] (SaPFactory) to[out=210,in=150] node [near end, right] {P} (RebalanceTransferFactory);
+\draw[->] (GenericRFactory) to[out=330,in=30] node [near end, left] {R} (RebalanceTransferFactory2);
 \draw[->] (RebalanceTransferFactory) -- (P2);
 \draw[->] (RebalanceTransferFactory2) -- (R2);
 \end{scope}

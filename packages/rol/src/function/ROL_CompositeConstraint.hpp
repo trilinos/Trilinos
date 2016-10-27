@@ -234,6 +234,14 @@ public:
 
   }
 
+  Teuchos::RCP<EqualityConstraint<Real> > getEqualityConstraint( void ) {
+    return eqcon_;
+  }
+
+  Teuchos::RCP<InequalityConstraint<Real> > getInequalityConstraint( void ) {
+    return incon_;
+  }
+
 }; // class CompositeConstraint
 
 } // namespace ROL

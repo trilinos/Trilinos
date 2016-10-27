@@ -44,6 +44,7 @@
 
 #include "Piro_ObserverToRythmosIntegrationObserverAdapter.hpp"
 #include "Piro_ValidPiroParameters.hpp"
+#include "Piro_MatrixFreeDecorator.hpp" 
 
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ForwardEulerStepper.hpp"
@@ -117,7 +118,18 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
-  initialize(appParams,in_model,observer);
+  std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
+  if (jacobianSource == "Matrix-Free") {
+    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
+    if (appParams->isParameter("Matrix-Free Perturbation")) {
+      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model,
+                           appParams->get<double>("Matrix-Free Perturbation")));
+    }
+    else model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model));
+    initialize(appParams, model, observer);
+  }
+  else 
+    initialize(appParams, in_model, observer);
 }
 
 #ifdef ALBANY_BUILD

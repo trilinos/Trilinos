@@ -99,6 +99,7 @@ private:
   Teuchos::RCP<Vector<Real> > jv_;
 
   // Default parameters for solve (backtracking Newton)
+  const Real DEFAULT_atol_;
   const Real DEFAULT_rtol_;
   const Real DEFAULT_stol_;
   const Real DEFAULT_factor_;
@@ -107,6 +108,7 @@ private:
   const bool DEFAULT_print_;
 
   // User-set parameters for solve (backtracking Newton)
+  Real atol_;
   Real rtol_;
   Real stol_;
   Real factor_;
@@ -121,13 +123,14 @@ public:
   EqualityConstraint_SimOpt()
     : EqualityConstraint<Real>(),
       unew_(Teuchos::null), jv_(Teuchos::null),
-      DEFAULT_rtol_(1.e-4*std::sqrt(ROL_EPSILON<Real>())),
+      DEFAULT_atol_(1.e-4*std::sqrt(ROL_EPSILON<Real>())),
+      DEFAULT_rtol_(1.e0),
       DEFAULT_stol_(std::sqrt(ROL_EPSILON<Real>())),
       DEFAULT_factor_(0.5),
       DEFAULT_decr_(1.e-4),
       DEFAULT_maxit_(500),
       DEFAULT_print_(false),
-      rtol_(DEFAULT_rtol_), stol_(DEFAULT_stol_), factor_(DEFAULT_factor_),
+      atol_(DEFAULT_atol_), rtol_(DEFAULT_rtol_), stol_(DEFAULT_stol_), factor_(DEFAULT_factor_),
       decr_(DEFAULT_decr_), maxit_(DEFAULT_maxit_), print_(DEFAULT_print_),
       firstSolve_(true) {}
 
@@ -197,6 +200,7 @@ public:
     update(u,z,true);
     value(c,u,z,tol);
     Real cnorm = c.norm(), alpha = 1.0, tmp = 0.0;
+    const Real ctol = std::min(atol_, rtol_*cnorm);
     int cnt = 0;
     if ( print_ ) {
       std::cout << "\n     Default EqualityConstraint_SimOpt::solve\n";
@@ -206,7 +210,7 @@ public:
       std::cout << std::setw(15) << std::left << "alpha";
       std::cout << "\n";
     }
-    while ( cnorm > rtol_ && cnt < maxit_) {
+    for (cnt = 0; cnt < maxit_; ++cnt) {
       // Compute Newton step
       applyInverseJacobian_1(*jv_,c,u,z,tol);
       unew_->set(u);
@@ -236,9 +240,11 @@ public:
       // Update iterate
       cnorm = tmp;
       u.set(*unew_);
+      if (cnorm < ctol) {
+        break;
+      }
       update(u,z,true);
       alpha = 1.0;
-      cnt++;
     }
   }
 
@@ -262,7 +268,8 @@ public:
   */
   virtual void setSolveParameters(Teuchos::ParameterList &parlist) {
     Teuchos::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
-    rtol_   = list.get("Residual Tolerance",            DEFAULT_rtol_);
+    atol_   = list.get("Absolute Residual Tolerance",   DEFAULT_atol_);
+    rtol_   = list.get("Relative Residual Tolerance",   DEFAULT_rtol_);
     maxit_  = list.get("Iteration Limit",               DEFAULT_maxit_);
     decr_   = list.get("Sufficient Decrease Tolerance", DEFAULT_decr_);
     stol_   = list.get("Step Tolerance",                DEFAULT_stol_);

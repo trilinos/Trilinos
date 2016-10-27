@@ -41,373 +41,368 @@
 // @HEADER
 
 /** \file   Intrepid_HDIV_QUAD_In_FEMDef.hpp
-    \brief  Definition file for FEM basis functions of degree n for H(div) functions on HEX cells.
+    \brief  Definition file for FEM basis functions of degree n for H(div) functions on QUAD cells.
     \author Created by R. Kirby, P. Bochev, D. Ridzal and K. Peterson.
+            Kokkorized by Kyungjoo Kim
 */
+
+#ifndef __INTREPID2_HDIV_QUAD_IN_FEM_DEF_HPP__
+#define __INTREPID2_HDIV_QUAD_IN_FEM_DEF_HPP__
 
 namespace Intrepid2 {
 
-  template<class Scalar, class ArrayScalar>
-  Basis_HDIV_QUAD_In_FEM<Scalar,ArrayScalar>::Basis_HDIV_QUAD_In_FEM( int order ,
-								      const ArrayScalar & ptsClosed ,
-								      const ArrayScalar & ptsOpen):
-    closedBasis_( order , ptsClosed ),
-    openBasis_( order-1 , ptsOpen ),
-    closedPts_( ptsClosed ),
-    openPts_( ptsOpen )
-  {
-    this -> basisDegree_       = order;
-    this -> basisCardinality_  = 2 * closedBasis_.getCardinality() * openBasis_.getCardinality(); 
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-    this -> basisType_         = BASIS_FEM_FIAT;
-    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
+  // -------------------------------------------------------------------------------------
+  namespace Impl {
 
-    Array<Array<RCP<Basis<Scalar,ArrayScalar > > > > bases(2);
-    bases[0].resize(2); bases[1].resize(2);
-    bases[0][0] = rcp( &closedBasis_ , false );
-    bases[0][1] = rcp( &openBasis_ , false );
-    bases[1][0] = rcp( &openBasis_ , false );
-    bases[1][1] = rcp( &closedBasis_ , false );
-    this->setBases( bases );
+    template<EOperator opType>
+    template<typename outputViewType,
+             typename inputViewType,
+             typename workViewType,
+             typename vinvViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    Basis_HDIV_QUAD_In_FEM::Serial<opType>::
+    getValues( /**/  outputViewType output,
+               const inputViewType  input,
+               /**/  workViewType   work,
+               const vinvViewType   vinvLine,
+               const vinvViewType   vinvBubble) {
+      const ordinal_type cardLine = vinvLine.dimension(0);
+      const ordinal_type cardBubble = vinvBubble.dimension(0);
 
-    initializeTags();
-    this->basisTagsAreSet_ = true;
+      const ordinal_type npts = input.dimension(0);
+
+      typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+      const auto input_x = Kokkos::subview(input, Kokkos::ALL(), range_type(0,1));
+      const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
+
+      switch (opType) {
+      case OPERATOR_VALUE: {
+        auto ptr = work.data();
+
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> workLine(ptr, cardLine, npts);
+        ptr += (cardLine*npts);
+
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> outputLine(ptr, cardLine, npts);
+        ptr += (cardLine*npts);
+
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> outputBubble(ptr, cardBubble, npts);
+        ptr += (cardBubble*npts);
+
+        // tensor product
+        ordinal_type idx = 0;
+        {
+          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+            getValues(outputBubble, input_x, workLine, vinvBubble);
+
+          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+            getValues(outputLine, input_y, workLine, vinvLine);
+
+          // x component (lineBasis(y) bubbleBasis(x))
+          const auto output_x = outputBubble;
+          const auto output_y = outputLine;
+
+          for (ordinal_type j=0;j<cardLine;++j) // y
+            for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
+              for (ordinal_type k=0;k<npts;++k) {
+                output(idx,k,0) = 0.0;
+                output(idx,k,1) = output_x(i,k)*output_y(j,k);
+              }
+        }
+        {
+          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+            getValues(outputBubble, input_y, workLine, vinvBubble);
+
+          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+            getValues(outputLine, input_x, workLine, vinvLine);
+
+          // y component (bubbleBasis(y) lineBasis(x))
+          const auto output_x = outputLine;
+          const auto output_y = outputBubble;
+          for (ordinal_type j=0;j<cardBubble;++j) // y
+            for (ordinal_type i=0;i<cardLine;++i,++idx) // x
+              for (ordinal_type k=0;k<npts;++k) {
+                output(idx,k,0) = output_x(i,k)*output_y(j,k);
+                output(idx,k,1) = 0.0;
+              }
+        }
+        break;
+      }
+      case OPERATOR_DIV: {
+        ordinal_type idx = 0;
+        { // x - component
+          auto ptr = work.data();
+
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> workLine(ptr, cardLine, npts);
+          ptr += (cardLine*npts);
+
+          // x bubble value
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> output_x(ptr, cardBubble, npts);
+          ptr += (cardBubble*npts);
+
+          // y line grad
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> output_y(ptr, cardLine, npts, 1);
+          ptr += (cardLine*npts);
+
+          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+            getValues(output_x, input_x, workLine, vinvBubble);
+
+          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
+            getValues(output_y, input_y, workLine, vinvLine, 1);
+
+          // tensor product (extra dimension of ouput x and y are ignored)
+          for (ordinal_type j=0;j<cardLine;++j) // y
+            for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
+              for (ordinal_type k=0;k<npts;++k)
+                output(idx,k) = output_x(i,k)*output_y(j,k,0);
+        }
+        { // y - component
+          auto ptr = work.data();
+
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> workLine(ptr, cardLine, npts);
+          ptr += (cardLine*npts);
+
+          // x line grad
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> output_x(ptr, cardLine, npts, 1);
+          ptr += (cardLine*npts);
+
+          // y bubble value
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> output_y(ptr, cardBubble, npts);
+          ptr += (cardBubble*npts);
+
+          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+            getValues(output_y, input_y, workLine, vinvBubble);
+
+          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
+            getValues(output_x, input_x, workLine, vinvLine, 1);
+
+          // tensor product (extra dimension of ouput x and y are ignored)
+          for (ordinal_type j=0;j<cardBubble;++j) // y
+            for (ordinal_type i=0;i<cardLine;++i,++idx) // x
+              for (ordinal_type k=0;k<npts;++k)
+                output(idx,k) = output_x(i,k,0)*output_y(j,k);
+        }
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_ABORT( true,
+                                  ">>> ERROR: (Intrepid2::Basis_HDIV_QUAD_In_FEM::Serial::getValues) operator is not supported" );
+      }
+      }
+    }
+
+    template<typename SpT, ordinal_type numPtsPerEval,
+             typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties,
+             typename vinvValueType,        class ...vinvProperties>
+    void
+    Basis_HDIV_QUAD_In_FEM::
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+               const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvLine,
+               const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
+               const EOperator operatorType ) {
+      typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+      typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+      typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
+      // loopSize corresponds to cardinality
+      const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
+      const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+      const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+
+      switch (operatorType) {
+      case OPERATOR_VALUE: {
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+            OPERATOR_VALUE,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble) );
+        break;
+      }
+      case OPERATOR_DIV: {
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+            OPERATOR_DIV,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble) );
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
+                                      ">>> ERROR (Basis_HDIV_QUAD_In_FEM): Operator type not implemented" );
+        break;
+      }
+      }
+    }
   }
 
-  template<class Scalar, class ArrayScalar>
-  Basis_HDIV_QUAD_In_FEM<Scalar,ArrayScalar>::Basis_HDIV_QUAD_In_FEM( int order , const EPointType &pointType ):
-    closedBasis_( order , pointType==POINTTYPE_SPECTRAL?POINTTYPE_SPECTRAL:POINTTYPE_EQUISPACED ),
-    openBasis_( order-1 , pointType==POINTTYPE_SPECTRAL?POINTTYPE_SPECTRAL_OPEN:POINTTYPE_EQUISPACED ),
-    closedPts_( order+1 , 1 ),
-    openPts_( order , 1 )
-  {
-    this -> basisDegree_       = order;
-    this -> basisCardinality_  = 2 * closedBasis_.getCardinality() * openBasis_.getCardinality(); 
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-    this -> basisType_         = BASIS_FEM_FIAT;
-    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
+  // -------------------------------------------------------------------------------------
+  template<typename SpT, typename OT, typename PT>
+  Basis_HDIV_QUAD_In_FEM<SpT,OT,PT>::
+  Basis_HDIV_QUAD_In_FEM( const ordinal_type order,
+                           const EPointType   pointType ) {
 
-    PointTools::getLattice<Scalar,ArrayScalar >( closedPts_ ,
-                                                            shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
-                                                            order ,
-                                                            0 ,
-                                                            pointType==POINTTYPE_SPECTRAL?POINTTYPE_WARPBLEND:POINTTYPE_EQUISPACED );
+    INTREPID2_TEST_FOR_EXCEPTION( !(pointType == POINTTYPE_EQUISPACED ||
+                                    pointType == POINTTYPE_WARPBLEND), std::invalid_argument,
+                                  ">>> ERROR (Basis_HDIV_QUAD_In_FEM): pointType must be either equispaced or warpblend.");
 
-    if (pointType == POINTTYPE_SPECTRAL)
+    // this should be in host
+    Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT> lineBasis( order, pointType );
+    Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
+
+    const ordinal_type
+      cardLine = lineBasis.getCardinality(),
+      cardBubble = bubbleBasis.getCardinality();
+
+    this->vinvLine_   = Kokkos::DynRankView<OT,SpT>("Hdiv::Quad::In::vinvLine", cardLine, cardLine);
+    this->vinvBubble_ = Kokkos::DynRankView<OT,SpT>("Hdiv::Quad::In::vinvBubble", cardBubble, cardBubble);
+
+    lineBasis.getVandermondeInverse(this->vinvLine_);
+    bubbleBasis.getVandermondeInverse(this->vinvBubble_);
+
+    this->basisCardinality_  = 2*cardLine*cardBubble;
+    this->basisDegree_       = order;
+    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+    this->basisType_         = BASIS_FEM_FIAT;
+    this->basisCoordinates_  = COORDINATES_CARTESIAN;
+
+    // initialize tags
+    {
+      // Basis-dependent initializations
+      const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
+      const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+      const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+
+      // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration
+      constexpr ordinal_type maxCardLine = Parameters::MaxOrder + 1;
+      ordinal_type tags[maxCardLine*maxCardLine][4];
+
+      const ordinal_type edge_x[2] = {0,2};
+      const ordinal_type edge_y[2] = {3,1};
       {
-	PointTools::getGaussPoints<Scalar,ArrayScalar >( openPts_ ,
-								    order - 1 );
+        ordinal_type idx = 0;
+        ///
+        /// Product rule: y -> x, x-normal first
+        ///
+
+        // since there are x/y components in the interior
+        // dof sum should be computed before the information
+        // is assigned to tags
+        const ordinal_type
+          intr_ndofs_per_direction = (cardLine-2)*cardBubble,
+          intr_ndofs = 2*intr_ndofs_per_direction;
+
+        // x component (lineBasis(y) bubbleBasis(x))
+        for (ordinal_type j=0;j<cardLine;++j) { // y
+          const auto tag_y = lineBasis.getDofTag(j);
+          for (ordinal_type i=0;i<cardBubble;++i,++idx) { // x
+            const auto tag_x = bubbleBasis.getDofTag(i);
+
+            if (tag_x(0) == 1 && tag_y(0) == 0) {
+              // edge: x edge, y vert
+              tags[idx][0] = 1; // edge dof
+              tags[idx][1] = edge_x[tag_y(1)];
+              tags[idx][2] = tag_x(2); // local dof id
+              tags[idx][3] = tag_x(3); // total number of dofs in this vertex
+            } else {
+              // interior
+              tags[idx][0] = 2; // interior dof
+              tags[idx][1] = 0;
+              tags[idx][2] = tag_x(2) + tag_x(3)*tag_y(2); // local dof id
+              tags[idx][3] = intr_ndofs; // total number of dofs in this vertex
+            }
+          }
+        }
+
+        // y component (bubbleBasis(y) lineBasis(x))
+        for (ordinal_type j=0;j<cardBubble;++j) { // y
+          const auto tag_y = bubbleBasis.getDofTag(j);
+          for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
+            const auto tag_x = lineBasis.getDofTag(i);
+
+            if (tag_x(0) == 0 && tag_y(0) == 1) {
+              // edge: x vert, y edge
+              tags[idx][0] = 1; // edge dof
+              tags[idx][1] = edge_y[tag_x(1)];
+              tags[idx][2] = tag_y(2); // local dof id
+              tags[idx][3] = tag_y(3); // total number of dofs in this vertex
+            } else {
+              // interior
+              tags[idx][0] = 2; // interior dof
+              tags[idx][1] = 0;
+              tags[idx][2] = intr_ndofs_per_direction + tag_x(2) + tag_x(3)*tag_y(2); // local dof id
+              tags[idx][3] = intr_ndofs; // total number of dofs in this vertex
+            }
+          }
+        }
+        INTREPID2_TEST_FOR_EXCEPTION( idx != this->basisCardinality_ , std::runtime_error,
+                                      ">>> ERROR (Basis_HDIV_QUAD_In_FEM): " \
+                                      "counted tag index is not same as cardinality." );
       }
-    else
-      {
-	PointTools::getLattice<Scalar,ArrayScalar >( openPts_ ,
-								shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
-								order - 1,
-								0 ,
-								POINTTYPE_EQUISPACED );
 
+      ordinal_type_array_1d_host tagView(&tags[0][0], this->basisCardinality_*4);
+
+      // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
+      // tags are constructed on host
+      this->setOrdinalTagData(this->tagToOrdinal_,
+                              this->ordinalToTag_,
+                              tagView,
+                              this->basisCardinality_,
+                              tagSize,
+                              posScDim,
+                              posScOrd,
+                              posDfOrd);
+    }
+
+    // dofCoords on host and create its mirror view to device
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
+
+    Kokkos::DynRankView<typename scalarViewType::value_type,SpT>
+      dofCoordsLine("dofCoordsLine", cardLine, 1),
+      dofCoordsBubble("dofCoordsBubble", cardBubble, 1);
+
+    lineBasis.getDofCoords(dofCoordsLine);
+    auto dofCoordsLineHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), dofCoordsLine);
+    Kokkos::deep_copy(dofCoordsLineHost, dofCoordsLine);
+
+    bubbleBasis.getDofCoords(dofCoordsBubble);
+    auto dofCoordsBubbleHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), dofCoordsBubble);
+    Kokkos::deep_copy(dofCoordsBubbleHost, dofCoordsBubble);
+
+    {
+      ordinal_type idx = 0;
+
+      // x component (lineBasis(y) bubbleBasis(x))
+      for (ordinal_type j=0;j<cardLine;++j) { // y
+        for (ordinal_type i=0;i<cardBubble;++i,++idx) { // x
+          dofCoordsHost(idx,0) = dofCoordsBubbleHost(i,0);
+          dofCoordsHost(idx,1) = dofCoordsLineHost(j,0);
+        }
       }
 
-    Array<Array<RCP<Basis<Scalar,ArrayScalar > > > > bases(2);
-    bases[0].resize(2); bases[1].resize(2);
-    bases[0][0] = rcp( &closedBasis_ , false );
-    bases[0][1] = rcp( &openBasis_ , false );
-    bases[1][0] = rcp( &openBasis_ , false );
-    bases[1][1] = rcp( &closedBasis_ , false );
-    this->setBases( bases );
-
-    initializeTags();
-    this->basisTagsAreSet_ = true;
-  }
-  
-  template<class Scalar, class ArrayScalar>
-  void Basis_HDIV_QUAD_In_FEM<Scalar, ArrayScalar>::initializeTags() {
-    
-    // Basis-dependent intializations
-    int tagSize  = 4;        // size of DoF tag
-    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-    int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-    int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-    
-    std::vector<int> tags( tagSize * this->getCardinality() );
-    
-    const std::vector<std::vector<int> >& closedDofTags = closedBasis_.getAllDofTags();
-    const std::vector<std::vector<int> >& openDofTags = openBasis_.getAllDofTags();
-
-    std::map<int,std::map<int,int> > total_dof_per_entity;
-    std::map<int,std::map<int,int> > current_dof_per_entity;
-
-    for (int i=0;i<4;i++) {
-      total_dof_per_entity[0][i] = 0;
-      current_dof_per_entity[0][i] = 0;
-    }
-    for (int i=0;i<4;i++) {
-      total_dof_per_entity[1][i] = 0;
-      current_dof_per_entity[1][i] = 0;
-    }
-    total_dof_per_entity[2][0] = 0;
-    current_dof_per_entity[2][0] = 0;
-
-    // tally dof on each facet.  none on vertex
-    for (int i=0;i<4;i++) {
-      total_dof_per_entity[1][i] = openBasis_.getCardinality();
-    }
-
-    total_dof_per_entity[2][0] = this->getCardinality() - 4 * openBasis_.getCardinality();
-
-    int tagcur = 0;
-    // loop over the x-component basis functions, which are (psi(x)phi(y),0)
-    // for psi in the closed basis and phi in the open
-    for (int j=0;j<openBasis_.getCardinality();j++) {
-      const int odim = openDofTags[j][0];
-      const int oent = openDofTags[j][1];
-      for (int i=0;i<closedBasis_.getCardinality();i++) {
-	const int cdim = closedDofTags[i][0];
-	const int cent = closedDofTags[i][1];
-	int dofdim;
-	int dofent;
-	ProductTopology::lineProduct2d(cdim,cent,odim,oent,dofdim,dofent);
-	tags[4*tagcur] = dofdim;
-	tags[4*tagcur+1] = dofent;
-	tags[4*tagcur+2] = current_dof_per_entity[dofdim][dofent];
-	current_dof_per_entity[dofdim][dofent]++;
-	tags[4*tagcur+3] = total_dof_per_entity[dofdim][dofent];
-	tagcur++;
-      }
-    }
-    // now we have to do it for the y-component basis functions, which are
-    // (0,phi(x)psi(y)) for psi in the closed basis and phi in the open
-    for (int j=0;j<closedBasis_.getCardinality();j++) {
-      const int cdim = closedDofTags[j][0];
-      const int cent = closedDofTags[j][1];
-      for (int i=0;i<openBasis_.getCardinality();i++) {
-	const int odim = openDofTags[i][0];
-	const int oent = openDofTags[i][1];
-	int dofdim;
-	int dofent;
-	ProductTopology::lineProduct2d(odim,oent,cdim,cent,dofdim,dofent);
-	tags[4*tagcur] = dofdim;
-	tags[4*tagcur+1] = dofent;
-	tags[4*tagcur+2] = current_dof_per_entity[dofdim][dofent];
-	current_dof_per_entity[dofdim][dofent]++;
-	tags[4*tagcur+3] = total_dof_per_entity[dofdim][dofent];
-	tagcur++;
+      // y component (bubbleBasis(y) lineBasis(x))
+      for (ordinal_type j=0;j<cardBubble;++j) { // y
+        for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
+          dofCoordsHost(idx,0) = dofCoordsLineHost(i,0);
+          dofCoordsHost(idx,1) = dofCoordsBubbleHost(j,0);
+        }
       }
     }
 
-//     for (int i=0;i<this->getCardinality();i++) {
-//       for (int j=0;j<4;j++) {
-// 	std::cout << tags[4*i+j] << " ";
-//       }
-//       std::cout << std::endl;
-//     }
-  
-    // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-    Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
-				this -> ordinalToTag_,
-				&(tags[0]),
-				this -> basisCardinality_,
-				tagSize,
-				posScDim,
-				posScOrd,
-				posDfOrd);
+    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoordsHost);
+    Kokkos::deep_copy(this->dofCoords_, dofCoordsHost);
   }
 
+}
 
-  template<class Scalar, class ArrayScalar>
-  void Basis_HDIV_QUAD_In_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-							      const ArrayScalar &  inputPoints,
-							      const EOperator      operatorType) const {
-    
-    // Verify arguments
-#ifdef HAVE_INTREPID2_DEBUG
-    Intrepid2::getValues_HDIV_Args<Scalar, ArrayScalar>(outputValues,
-						       inputPoints,
-						       operatorType,
-						       this -> getBaseCellTopology(),
-						       this -> getCardinality() );
 #endif
-    
-    // Number of evaluation points = dim 0 of inputPoints
-    int dim0 = inputPoints.dimension(0);
-    
-    // separate out points
-    ArrayScalar xPoints(dim0,1);
-    ArrayScalar yPoints(dim0,1);
-    
-    for (int i=0;i<dim0;i++) {
-      xPoints(i,0) = inputPoints(i,0);
-      yPoints(i,0) = inputPoints(i,1);
-    }
-    
-    switch (operatorType) {
-    case OPERATOR_VALUE:
-      {
-	ArrayScalar closedBasisValsXPts( closedBasis_.getCardinality() , dim0 );
-	ArrayScalar closedBasisValsYPts( closedBasis_.getCardinality() , dim0 );
-	ArrayScalar openBasisValsXPts( openBasis_.getCardinality() , dim0 );
-	ArrayScalar openBasisValsYPts( openBasis_.getCardinality() , dim0 );
-	
-	closedBasis_.getValues( closedBasisValsXPts , xPoints , OPERATOR_VALUE );
-	closedBasis_.getValues( closedBasisValsYPts , yPoints , OPERATOR_VALUE );
-	openBasis_.getValues( openBasisValsXPts , xPoints , OPERATOR_VALUE );
-	openBasis_.getValues( openBasisValsYPts , yPoints , OPERATOR_VALUE );
-	
-	int bfcur = 0;
-	// x component bfs are (closed(x) open(y),0)
-	for (int j=0;j<openBasis_.getCardinality();j++) {
-	  for (int i=0;i<closedBasis_.getCardinality();i++) {
-	    for (int l=0;l<dim0;l++) {
-	      outputValues(bfcur,l,0) = closedBasisValsXPts(i,l) * openBasisValsYPts(j,l);
-	      outputValues(bfcur,l,1) = 0.0;
-	    }
-	    bfcur++;
-	  }
-	}
-	
-	// y component bfs are (0,open(x) closed(y))
-	for (int j=0;j<closedBasis_.getCardinality();j++) {
-	  for (int i=0;i<openBasis_.getCardinality();i++) {
-	    for (int l=0;l<dim0;l++) {
-	      outputValues(bfcur,l,0) = 0.0;
-	      outputValues(bfcur,l,1) = openBasisValsXPts(i,l) * closedBasisValsYPts(j,l);
-	    }
-	    bfcur++;
-	  }
-	}
-      }
-      break;
-    case OPERATOR_DIV:
-      {
-	ArrayScalar closedBasisDerivsXPts( closedBasis_.getCardinality() , dim0 , 1 );
-	ArrayScalar closedBasisDerivsYPts( closedBasis_.getCardinality() , dim0 , 1 );
-	ArrayScalar openBasisValsXPts( openBasis_.getCardinality() , dim0 );
-	ArrayScalar openBasisValsYPts( openBasis_.getCardinality() , dim0 );
-	
-	closedBasis_.getValues( closedBasisDerivsXPts , xPoints , OPERATOR_D1 );
-	closedBasis_.getValues( closedBasisDerivsYPts , yPoints , OPERATOR_D1 );
-	openBasis_.getValues( openBasisValsXPts , xPoints , OPERATOR_VALUE );
-	openBasis_.getValues( openBasisValsYPts , yPoints , OPERATOR_VALUE );
-	
-	int bfcur = 0;
-	
-	// x component basis functions first
-	for (int j=0;j<openBasis_.getCardinality();j++) {
-	  for (int i=0;i<closedBasis_.getCardinality();i++) {
-	    for (int l=0;l<dim0;l++) {
-	      outputValues(bfcur,l) = closedBasisDerivsXPts(i,l,0) * openBasisValsYPts(j,l);
-	    }
-	    bfcur++;
-	  }
-	}
-	
-	// now y component basis functions
-	for (int j=0;j<closedBasis_.getCardinality();j++) {
-	  for (int i=0;i<openBasis_.getCardinality();i++) {
-	    for (int l=0;l<dim0;l++) {
-	      outputValues(bfcur,l) = openBasisValsXPts(i,l) * closedBasisDerivsYPts(j,l,0);
-	    }
-	    bfcur++;
-	  }
-	}
-      }
-      break;
-    case OPERATOR_CURL:
-      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
-			  ">>> ERROR (Basis_HDIV_QUAD_In_FEM): CURL is invalid operator for HDIV Basis Functions");
-      break;
-      
-    case OPERATOR_GRAD:
-      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_GRAD), std::invalid_argument,
-			  ">>> ERROR (Basis_HDIV_QUAD_In_FEM): GRAD is invalid operator for HDIV Basis Functions");
-      break;
-      
-    case OPERATOR_D1:
-    case OPERATOR_D2:
-    case OPERATOR_D3:
-    case OPERATOR_D4:
-    case OPERATOR_D5:
-    case OPERATOR_D6:
-    case OPERATOR_D7:
-    case OPERATOR_D8:
-    case OPERATOR_D9:
-    case OPERATOR_D10:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
-			    (operatorType == OPERATOR_D2)    ||
-			    (operatorType == OPERATOR_D3)    ||
-			    (operatorType == OPERATOR_D4)    ||
-			    (operatorType == OPERATOR_D5)    ||
-			    (operatorType == OPERATOR_D6)    ||
-			    (operatorType == OPERATOR_D7)    ||
-			    (operatorType == OPERATOR_D8)    ||
-			    (operatorType == OPERATOR_D9)    ||
-			    (operatorType == OPERATOR_D10) ),
-			  std::invalid_argument,
-			  ">>> ERROR (Basis_HDIV_QUAD_In_FEM): Invalid operator type");
-      break;
-      
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
-			    (operatorType != OPERATOR_GRAD)  &&
-			    (operatorType != OPERATOR_CURL)  &&
-			    (operatorType != OPERATOR_DIV)   &&
-			    (operatorType != OPERATOR_D1)    &&
-			    (operatorType != OPERATOR_D2)    &&
-			    (operatorType != OPERATOR_D3)    &&
-			    (operatorType != OPERATOR_D4)    &&
-			    (operatorType != OPERATOR_D5)    &&
-			    (operatorType != OPERATOR_D6)    &&
-			    (operatorType != OPERATOR_D7)    &&
-			    (operatorType != OPERATOR_D8)    &&
-			    (operatorType != OPERATOR_D9)    &&
-			    (operatorType != OPERATOR_D10) ),
-			  std::invalid_argument,
-			  ">>> ERROR (Basis_HDIV_QUAD_In_FEM): Invalid operator type");
-    }
-  }
-  
-  
-  
-  template<class Scalar, class ArrayScalar>
-  void Basis_HDIV_QUAD_In_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-							      const ArrayScalar &    inputPoints,
-							      const ArrayScalar &    cellVertices,
-							      const EOperator        operatorType) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-			">>> ERROR (Basis_HDIV_QUAD_In_FEM): FEM Basis calling an FVD member function");
-  }
-  
-  template<class Scalar, class ArrayScalar>
-  void Basis_HDIV_QUAD_In_FEM<Scalar,ArrayScalar>::getDofCoords(ArrayScalar & DofCoords) const
-  {
-    // x-component basis functions
-    int cur = 0;
-
-    for (int j=0;j<openPts_.dimension(0);j++)
-      {
-	for (int i=0;i<closedPts_.dimension(0);i++)
-	  {
-	    DofCoords(cur,0) = closedPts_(i,0);
-	    DofCoords(cur,1) = openPts_(j,0);
-	    cur++;
-	  }
-      }
-
-    // y-component basis functions
-    for (int j=0;j<closedPts_.dimension(0);j++)
-      {
-	for (int i=0;i<openPts_.dimension(0);i++)
-	  {
-	    DofCoords(cur,0) = openPts_(i,0);
-	    DofCoords(cur,1) = closedPts_(j,0);
-	    cur++;
-	  }
-      }
-
-    return;
-  }
-
-  
-}// namespace Intrepid2

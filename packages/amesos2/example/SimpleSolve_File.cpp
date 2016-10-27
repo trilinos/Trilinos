@@ -64,8 +64,6 @@
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   typedef double Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-  typedef int Ordinal;
 
   typedef double Scalar;
   typedef int LO;

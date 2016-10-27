@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
     data->outputTpetraVector(zscale_rcp, "weights.txt");
 
     // Get a summary from the time monitor.
-    TimeMonitor::summarize();
+    Teuchos::TimeMonitor::summarize();
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

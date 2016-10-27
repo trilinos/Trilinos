@@ -174,11 +174,22 @@ public:
 
   virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     // Apply objective Hessian to a vector
-    if (HessianApprox_ < 2) {
+    if (HessianApprox_ < 3) {
       con_->applyJacobian(*primalConVector_,v,x,tol);
       con_->applyAdjointJacobian(hv,primalConVector_->dual(),x,tol);
       if (!useScaling_) {
         hv.scale(penaltyParameter_);
+      }
+
+      if (HessianApprox_ == 1) {
+        // Apply Augmented Lagrangian Hessian to a vector
+        const Real one(1);
+        primalMultiplierVector_->set(*multiplier_);
+        if ( useScaling_ ) {
+          primalMultiplierVector_->scale(one/penaltyParameter_);
+        }
+        con_->applyAdjointHessian(*dualOptVector_,*primalMultiplierVector_,v,x,tol);
+        hv.plus(*dualOptVector_);
       }
 
       if (HessianApprox_ == 0) {

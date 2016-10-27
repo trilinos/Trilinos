@@ -99,9 +99,11 @@ public:
     ,IN_ARG_t ///< .
     ,IN_ARG_alpha ///< .
     ,IN_ARG_beta ///< .
+    ,IN_ARG_step_size///< .
+    ,IN_ARG_stage_number///< .
   };
   /** \brief .  */
-  static const int NUM_E_IN_ARGS_MEMBERS=9;
+  static const int NUM_E_IN_ARGS_MEMBERS=11;
 
   /** \brief .  */
   enum EInArgs_p_mp {
@@ -185,6 +187,14 @@ public:
     void set_beta( Scalar beta );
     /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
     Scalar get_beta() const;
+    /** \brief Precondition: <tt>supports(IN_ARG_step_size)==true</tt>.  */
+    void set_step_size( Scalar step_size);
+    /** \brief Precondition: <tt>supports(IN_ARG_step_size)==true</tt>.  */
+    Scalar get_step_size() const;
+    /** \brief Precondition: <tt>supports(IN_ARG_stage_number)==true</tt>.  */
+    void set_stage_number( Scalar stage_number);
+    /** \brief Precondition: <tt>supports(IN_ARG_stage_number)==true</tt>.  */
+    Scalar get_stage_number() const;
     /** \brief Set non-null arguments (does not overwrite non-NULLs with
      * NULLs) .  */
     void setArgs(
@@ -233,6 +243,8 @@ public:
     ScalarMag t_;
     Scalar alpha_;
     Scalar beta_;
+    Scalar step_size_;
+    Scalar stage_number_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
     Teuchos::Array<bool> supports_p_mp_; //Np
     // functions
@@ -1135,6 +1147,10 @@ std::string Thyra::toString(ModelEvaluatorBase::EInArgsMembers arg)
       return "IN_ARG_alpha";
     case ModelEvaluatorBase::IN_ARG_beta:
       return "IN_ARG_beta";
+    case ModelEvaluatorBase::IN_ARG_step_size:
+      return "IN_ARG_step_size";
+    case ModelEvaluatorBase::IN_ARG_stage_number:
+      return "IN_ARG_stage_number";
 #ifdef TEUCHOS_DEBUG
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);

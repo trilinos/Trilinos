@@ -90,7 +90,9 @@ namespace Xpetra {
 
     // The following typedefs are used by the Kokkos interface
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+#endif
 #endif
 
   public:
@@ -196,7 +198,8 @@ namespace Xpetra {
       mtx_=Tpetra::exportAndFillCompleteCrsMatrix<MyTpetraCrsMatrix>(tSourceMatrix.getTpetra_CrsMatrix(),toTpetra(RowExporter),toTpetra(*DomainExporter),myDomainMap,myRangeMap,params);
     }
 
-
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
     ///
@@ -217,12 +220,12 @@ namespace Xpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     TpetraCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
         const local_matrix_type& lclMatrix,
         const Teuchos::RCP<Teuchos::ParameterList>& params = null)
     : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(toTpetra(rowMap), toTpetra(colMap), lclMatrix, params))) {  }
+#endif
 #endif
 
     //! Destructor.
@@ -546,6 +549,7 @@ namespace Xpetra {
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
       if(isFillComplete() == false)
@@ -553,6 +557,7 @@ namespace Xpetra {
 
       return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
     }
+#endif
 #endif
 
    //@}
@@ -582,7 +587,9 @@ namespace Xpetra {
 
     // The following typedefs are used by the Kokkos interface
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+#endif
 #endif
 
   public:
@@ -657,6 +664,8 @@ namespace Xpetra {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
     ///
@@ -677,13 +686,13 @@ namespace Xpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     TpetraCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
         const local_matrix_type& lclMatrix,
         const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,int,int,EpetraNode>).name() , "TpetraCrsMatrix<int,int>", "int", typeid(EpetraNode).name() );
     }
+#endif
 #endif
 
     //! Destructor.
@@ -921,6 +930,7 @@ namespace Xpetra {
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrixNonConst() const { return Teuchos::null; } //TODO: remove
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
       if(isFillComplete() == false)
@@ -928,6 +938,7 @@ namespace Xpetra {
       local_matrix_type ret;
       return ret;
     }
+#endif
 #endif
 
    //@}
@@ -953,7 +964,9 @@ namespace Xpetra {
 
     // The following typedefs are used by the Kokkos interface
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+#endif
 #endif
 
   public:
@@ -1028,6 +1041,8 @@ namespace Xpetra {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     /// \brief Constructor specifying column Map and a local matrix,
     ///   which the resulting CrsMatrix views.
     ///
@@ -1048,13 +1063,13 @@ namespace Xpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     TpetraCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
         const local_matrix_type& lclMatrix,
         const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
+#endif
 #endif
 
     //! Destructor.
@@ -1292,6 +1307,7 @@ namespace Xpetra {
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrixNonConst() const { return Teuchos::null; } //TODO: remove
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
       if(isFillComplete() == false)
@@ -1299,6 +1315,7 @@ namespace Xpetra {
       local_matrix_type ret;
       return ret;
     }
+#endif
 #endif
 
    //@}

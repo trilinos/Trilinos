@@ -405,6 +405,7 @@ namespace Xpetra {
     RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return mtx_; } //TODO: remove
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
 
     local_matrix_type getLocalMatrix () const {
@@ -412,6 +413,7 @@ namespace Xpetra {
       local_matrix_type ret;
       return ret; // make compiler happy
     }
+#endif
 #endif
    //@}
 
@@ -755,6 +757,7 @@ namespace Xpetra {
     RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return Teuchos::null; }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
 
     local_matrix_type getLocalMatrix () const {
@@ -762,6 +765,7 @@ namespace Xpetra {
       local_matrix_type ret;
       return ret; // make compiler happy
     }
+#endif
 #endif
    //@}
 
@@ -1096,6 +1100,7 @@ namespace Xpetra {
     RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return Teuchos::null; }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
 
     local_matrix_type getLocalMatrix () const {
@@ -1103,6 +1108,7 @@ namespace Xpetra {
       local_matrix_type ret;
       return ret; // make compiler happy
     }
+#endif
 #endif
    //@}
 

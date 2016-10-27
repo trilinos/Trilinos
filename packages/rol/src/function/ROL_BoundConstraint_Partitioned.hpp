@@ -252,7 +252,7 @@ public:
     }
   }
  
-  const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) const {
+  const Teuchos::RCP<const Vector<Real> > getLowerVectorRCP( void ) const {
 
     std::vector<Teuchos::RCP<V> > vec;
 
@@ -266,7 +266,7 @@ public:
        
   
 
-  const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) const {
+  const Teuchos::RCP<const Vector<Real> > getUpperVectorRCP( void ) const {
 
     std::vector<Teuchos::RCP<V> > vec;
 

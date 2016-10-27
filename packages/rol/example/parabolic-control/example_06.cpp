@@ -75,7 +75,6 @@
 #include "ROL_EqualityConstraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_StdBoundConstraint.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -1071,7 +1070,7 @@ int main(int argc, char *argv[]) {
     xz.zero();
     std::clock_t timer_tr = std::clock();
     algo->run(xz, robj, true, *outStream);
-    *outStream << "Projected Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
+    *outStream << "Trust-Region Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
                << " seconds.\n";
 
     // Composite step.

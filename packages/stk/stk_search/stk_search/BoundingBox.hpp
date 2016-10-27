@@ -224,14 +224,14 @@ inline bool intersects(Box<T1> const& a, Sphere<T2> const& b)
 { return intersects(b,a); }
 
 // intersects: Box,Box
-template <typename T>
-inline bool intersects(Box<T> const& a, Box<T> const& b)
+template <typename T1, typename T2>
+inline bool intersects(Box<T1> const& a, Box<T2> const& b)
 {
-  Point<T> const& amin = a.min_corner();
-  Point<T> const& amax = a.max_corner();
+  Point<T1> const& amin = a.min_corner();
+  Point<T1> const& amax = a.max_corner();
 
-  Point<T> const& bmin = b.min_corner();
-  Point<T> const& bmax = b.max_corner();
+  Point<T2> const& bmin = b.min_corner();
+  Point<T2> const& bmax = b.max_corner();
 
   // check that the boxes are not disjoint
   return !((amax[0] < bmin[0]) || (bmax[0] < amin[0])
@@ -259,8 +259,8 @@ inline void scale_by(Box<T> &b, U const& c)
   }
 }
 
-template <typename T>
-inline void add_to_box(Box<T> &box, const Box<T>& addBox) {
+template <typename T1, typename T2>
+inline void add_to_box(Box<T1> &box, const Box<T2>& addBox) {
   box.set_box(std::min(box.get_x_min(), addBox.get_x_min()), 
               std::min(box.get_y_min(), addBox.get_y_min()), 
               std::min(box.get_z_min(), addBox.get_z_min()), 
@@ -269,6 +269,25 @@ inline void add_to_box(Box<T> &box, const Box<T>& addBox) {
               std::max(box.get_z_max(), addBox.get_z_max())); 
 }
 
+template <typename T1, typename T2>
+inline void add_to_box(Box<T1> &box, const Sphere<T2>& addBox) {
+  box.set_box(std::min(box.get_x_min(), addBox.get_x_min()), 
+              std::min(box.get_y_min(), addBox.get_y_min()), 
+              std::min(box.get_z_min(), addBox.get_z_min()), 
+              std::max(box.get_x_max(), addBox.get_x_max()),
+              std::max(box.get_y_max(), addBox.get_y_max()), 
+              std::max(box.get_z_max(), addBox.get_z_max())); 
+}
+
+template <typename T1, typename T2>
+inline void add_to_box(Box<T1> &box, const Point<T2>& addBox) {
+  box.set_box(std::min(box.get_x_min(), addBox.get_x_min()), 
+              std::min(box.get_y_min(), addBox.get_y_min()), 
+              std::min(box.get_z_min(), addBox.get_z_min()), 
+              std::max(box.get_x_max(), addBox.get_x_max()),
+              std::max(box.get_y_max(), addBox.get_y_max()), 
+              std::max(box.get_z_max(), addBox.get_z_max())); 
+}
 
 }} //namespace stk::search
 

@@ -108,8 +108,8 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
 
   Teuchos::RCP<const Map>  owned_face_map = Tpetra::createOneToOne(face_map);
   Graph graph(owned_face_map, 2);
-  for (int ielem=0;ielem< elem_to_face_.size(); ++ielem)
-    for (int iface=0; iface<elem_to_face_[ielem].size(); ++iface ) {
+  for (int ielem=0;ielem< static_cast<int>(elem_to_face_.size()); ++ielem)
+    for (int iface=0; iface<static_cast<int>(elem_to_face_[ielem].size()); ++iface ) {
       GlobalOrdinal go=elem_map->getGlobalElement(ielem);
       graph.insertGlobalIndices(elem_to_face_[ielem][iface], 1, &go);
     }
@@ -157,9 +157,9 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
   }
   face_to_node_ = Kokkos::View<GlobalOrdinal**>("face_to_node", face_to_elem_.dimension(0), face_to_node[0].size());
   Kokkos::deep_copy(face_to_node_, -1);
-  for (int ielem=0;ielem< elem_to_face_.size(); ++ielem) {
+  for (int ielem=0;ielem< static_cast<int>(elem_to_face_.size()); ++ielem) {
     const GlobalOrdinal * connectivity = conn_->getConnectivity(ielem);
-    for (int iface=0; iface <elem_to_face_[ielem].size(); ++iface ) {
+    for (int iface=0; iface <static_cast<int>(elem_to_face_[ielem].size()); ++iface ) {
       for (int inode=0; inode<face_to_node_.dimension(1); ++inode) {
         GlobalOrdinal g_face = elem_to_face_[ielem][iface];
         LocalOrdinal l_face = face_map->getLocalElement(g_face);
@@ -201,9 +201,9 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
     int num_cells = workset.num_cells;
     // Compute the rough cell face centroid
     for (int c=0; c<num_cells; ++c) {
-      for (int nface=0;nface <face_to_node.size(); ++nface) {
+      for (int nface=0;nface <static_cast<int>(face_to_node.size()); ++nface) {
         std::vector<double> center(dimension_, 0.0);
-        for (int nnode=0; nnode < face_to_node[nface].size(); ++nnode)
+        for (int nnode=0; nnode < static_cast<int>(face_to_node[nface].size()); ++nnode)
           for (int idim=0;idim<dimension_; ++idim)
             center[idim] += coords(c,face_to_node[nface][nnode], idim);
         for (int idim=0;idim<dimension_; ++idim)
@@ -216,15 +216,15 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
     for (int c=0; c<num_cells; ++c) {
 
       std::vector<double> center(3,0.);
-      for (int nface=0;nface <face_to_node.size(); ++nface)
+      for (int nface=0;nface <static_cast<int>(face_to_node.size()); ++nface)
         for (int idim=0;idim<dimension_; ++idim)
           center[idim] += face_centroid_(workset.cell_local_ids[c], nface, idim)/face_to_node.size();
 
-      for (int nface=0;nface <face_to_node.size(); ++nface) {
+      for (int nface=0;nface <static_cast<int>(face_to_node.size()); ++nface) {
         std::vector<double> normal(3,0);
 
         // Create centroid to node edges.
-        for (int nnode=0; nnode < face_to_node[nface].size(); ++nnode) {
+        for (int nnode=0; nnode < static_cast<int>(face_to_node[nface].size()); ++nnode) {
           for (int idim=0;idim<dimension_; ++idim)
             edges(nnode,idim) = coords(c,face_to_node[nface][nnode], idim) - face_centroid_(workset.cell_local_ids[c], nface, idim);
         }
@@ -240,7 +240,7 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
           normal[1] = -edges(0,0);
         } else {
           // One can do a cross product on these to get a normal direction
-          for (int nnode=0; nnode < face_to_node[nface].size(); ++nnode) {
+          for (int nnode=0; nnode < static_cast<int>(face_to_node[nface].size()); ++nnode) {
             int n1=nnode, n2=(nnode+1)%face_to_node[nface].size();
             normal[0] += edges(n1,1)*edges(n2,2) - edges(n1,2)*edges(n2,1);
             normal[1] += edges(n1,2)*edges(n2,0) - edges(n1,0)*edges(n2,2);

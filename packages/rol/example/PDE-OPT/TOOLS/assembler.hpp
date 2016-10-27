@@ -61,7 +61,20 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
+// Amesos2
 #include "Amesos2.hpp"
+
+// MueLu
+#include "MueLu.hpp"
+#include "MueLu_TpetraOperator.hpp"
+#include "MueLu_CreateTpetraPreconditioner.hpp"
+
+// Belos
+#include "BelosConfigDefs.hpp"
+#include "BelosLinearProblem.hpp"
+#include "BelosSolverFactory.hpp"
+#include "BelosTpetraAdapter.hpp"
+
 
 #include "fe.hpp"
 #include "pde.hpp"
@@ -71,16 +84,53 @@
 #include "boundarycells.hpp"
 
 //// Global Timers.
-//#ifdef ROL_TIMERS
-//Teuchos::RCP<Time> FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Factorization Time in PDEFEM");
-//Teuchos::RCP<Time> LUSubstitutionTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: LU Substitution Time in PDEFEM");
-//Teuchos::RCP<Time> SolverUpdateTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Solver Update Time in PDEFEM");
-//Teuchos::RCP<Time> LocalAssemblyTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Local Assembly Time in PDEFEM");
-//Teuchos::RCP<Time> ConstraintDerivativeTime_example_PDEOPT_TOOLS_PDEFEM_GLOB = TimeMonitor::getNewCounter("ROL: Constraint Derivative Application Time in PDEFEM");
-//#endif
+#ifdef ROL_TIMERS
+namespace ROL {
+  namespace PDEOPT {
+    Teuchos::RCP<Teuchos::Time> SolverConstruct_Jacobian1 = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Solver Construction Time for Jacobian1");
+    Teuchos::RCP<Teuchos::Time> SolverConstruct_Riesz1    = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Solver Construction Time for Riesz1");
+    Teuchos::RCP<Teuchos::Time> SolverConstruct_Riesz2    = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Solver Construction Time for Riesz2");
+    Teuchos::RCP<Teuchos::Time> SolverSolve_Jacobian1     = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Solver Solution Time for Jacobian1");
+    Teuchos::RCP<Teuchos::Time> SolverSolve_Riesz1        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Solver Solution Time for Riesz1");
+    Teuchos::RCP<Teuchos::Time> SolverSolve_Riesz2        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Solver Solution Time for Riesz2");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEResidual       = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Residual");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEJacobian1      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Jacobian1");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEJacobian2      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Jacobian2");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEJacobian3      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Jacobian3");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEHessian11      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian11");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEHessian12      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian12");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEHessian13      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian13");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEHessian21      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian21");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEHessian22      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian22");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEHessian23      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian23");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEHessian31      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian31");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEHessian32      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian32");
+    Teuchos::RCP<Teuchos::Time> AssemblePDEHessian33      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian33");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEJacobian1         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Jacobian1");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEJacobian2         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Jacobian2");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEJacobian3         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Jacobian3");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEHessian11         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Hessian11");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEHessian12         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Hessian12");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEHessian13         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Hessian13");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEHessian21         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Hessian21");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEHessian22         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Hessian22");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEHessian23         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Hessian23");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEHessian31         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Hessian31");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEHessian32         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Hessian32");
+    Teuchos::RCP<Teuchos::Time> ApplyPDEHessian33         = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Apply PDE Hessian33");
+  }
+}
+#endif
 
 template<class Real>
 class Assembler {
+
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::Map<>::node_type NO;
+  typedef Tpetra::MultiVector<Real,LO,GO,NO> MV;
+  typedef Tpetra::Operator<Real,LO,GO,NO> OP;
+
 private:
   // Timers
 //  Teuchos::RCP<Teuchos::Time::Time> timerSolverFactorization_;
@@ -176,13 +226,19 @@ private:
   Teuchos::RCP<Tpetra::CrsMatrix<> > matR1_;
   Teuchos::RCP<Tpetra::CrsMatrix<> > matR2_;
 
-  // Linear solvers for Jacobian and adjoint Jacobian
+  // Linear solvers and preconditioners for Jacobian and adjoint Jacobian
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_;
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_trans_;
+  Teuchos::RCP<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_;
+  Teuchos::RCP<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_trans_;
 
   // Linear solvers for Riesz maps
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverR1_;
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverR2_;
+
+  // Linear solver options.
+  bool useDirectSolver_;
+  std::string solverType_;
 
 private:
 
@@ -448,38 +504,53 @@ private:
 
   void constructSolver(const bool transpose = false) {
     // Construct solver using Amesos2 factory.
-//    #ifdef ROL_TIMERS
-//    Teuchos::TimeMonitor LocalTimer(*FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
-//    #endif
-    if ( transpose ) {
-      try{
-        solver_trans_
-          = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", pde_matJ1_trans_);
-      } catch (std::invalid_argument e) {
-        std::cout << e.what() << std::endl;
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::SolverConstruct_Jacobian1);
+    #endif
+    if (useDirectSolver_) { // using Amesos2 direct solver
+      if ( transpose ) {
+        try{
+          solver_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >(solverType_, pde_matJ1_trans_);
+        } catch (std::invalid_argument e) {
+          std::cout << e.what() << std::endl;
+        }
+        solver_trans_->numericFactorization();
       }
-      solver_trans_->numericFactorization();
+      else {
+        try {
+          solver_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >(solverType_, pde_matJ1_);
+        }
+        catch (std::invalid_argument e) {
+          std::cout << e.what() << std::endl;
+        }
+        solver_->numericFactorization();
+      }
     }
-    else {
-      try {
-        solver_
-          = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", pde_matJ1_);
+    else { // construct MueLu preconditioner, to be used with Belos solver
+      // Use MueLu.
+      Teuchos::ParameterList parlistMuelu;
+      //parlistMuelu.set("verbosity", "high");
+      parlistMuelu.set("verbosity", "none");
+      //parlistMuelu.set("problem: type", "Elasticity-2D");
+      parlistMuelu.set("number of equations", static_cast<int>(basisPtrs_.size()));
+      parlistMuelu.set("problem: symmetric", false);
+      parlistMuelu.set("multigrid algorithm", "sa");
+      if ( transpose ) {
+        mueLuPreconditioner_trans_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(Teuchos::RCP<OP>(pde_matJ1_trans_), parlistMuelu);
       }
-      catch (std::invalid_argument e) {
-        std::cout << e.what() << std::endl;
+      else {
+        mueLuPreconditioner_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(Teuchos::RCP<OP>(pde_matJ1_), parlistMuelu);
       }
-      solver_->numericFactorization();
     }
   }
 
   void constructSolverR1(void) {
     // Construct solver using Amesos2 factory.
-//    #ifdef ROL_TIMERS
-//    Teuchos::TimeMonitor LocalTimer(*FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
-//    #endif
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::SolverConstruct_Riesz1);
+    #endif
     try {
-      solverR1_
-        = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matR1_);
+      solverR1_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >(solverType_, matR1_);
     }
     catch (std::invalid_argument e) {
       std::cout << e.what() << std::endl;
@@ -489,12 +560,11 @@ private:
 
   void constructSolverR2(void) {
     // Construct solver using Amesos2 factory.
-//    #ifdef ROL_TIMERS
-//    Teuchos::TimeMonitor LocalTimer(*FactorTime_example_PDEOPT_TOOLS_PDEFEM_GLOB);
-//    #endif
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::SolverConstruct_Riesz2);
+    #endif
     try {
-      solverR2_
-        = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matR2_);
+      solverR2_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >(solverType_, matR2_);
     }
     catch (std::invalid_argument e) {
       std::cout << e.what() << std::endl;
@@ -538,6 +608,8 @@ public:
     setDiscretization(parlist,Teuchos::null,outStream);
     setParallelStructure(parlist,outStream);
     setCellNodes(outStream);
+    useDirectSolver_ = parlist.sublist("Problem").get("Use Direct Solver", true);
+    solverType_ = parlist.sublist("Problem").get("Direct Solver Type", "KLU2");
   }
 
   // Constructor: Discretization set from MeshManager input
@@ -573,6 +645,8 @@ public:
     setDiscretization(parlist,meshMgr,outStream);
     setParallelStructure(parlist,outStream);
     setCellNodes(outStream);
+    useDirectSolver_ = parlist.sublist("Problem").get("Use Direct Solver", true);
+    solverType_ = parlist.sublist("Problem").get("Direct Solver Type", "KLU2");
   }
 
   void setCellNodes(PDE<Real> &pde) const {
@@ -588,6 +662,9 @@ public:
                            const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                            const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                            const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEResidual);
+    #endif
     // Initialize residual vectors if not done so
     if ( pde_vecR_ == Teuchos::null ) { // Unique components of residual vector
       pde_vecR_ = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueResidualMap_, 1, true));
@@ -615,7 +692,7 @@ public:
       for (int j=0; j<numLocalDofs; ++j) {
         pde_vecR_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
                                               0,
-                                              (*res)[i*numLocalDofs+j]);
+                                              (*res)(i,j));
       }
     }
     // change map
@@ -627,6 +704,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEJacobian1);
+    #endif
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
@@ -672,6 +752,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEJacobian2);
+    #endif
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
@@ -715,6 +798,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEJacobian3);
+    #endif
     if ( z_param != Teuchos::null ) {
       try {
         int size = static_cast<int>(z_param->size());
@@ -770,6 +856,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEHessian11);
+    #endif
     try {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > hess; 
       // Get u_coeff from u and z_coeff from z
@@ -815,6 +904,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEHessian12);
+    #endif
     try {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > hess;
       // Get u_coeff from u and z_coeff from z
@@ -860,6 +952,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEHessian13);
+    #endif
     if ( z_param != Teuchos::null ) {
       try {
         int size = static_cast<int>(z_param->size());
@@ -917,6 +1012,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEHessian21);
+    #endif
     try {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > hess;
       // Get u_coeff from u and z_coeff from z
@@ -962,6 +1060,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEHessian22);
+    #endif
     try {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > hess;
       // Get u_coeff from u and z_coeff from z
@@ -1007,6 +1108,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEHessian23);
+    #endif
     if ( z_param != Teuchos::null ) {
       try {
         int size = static_cast<int>(z_param->size());
@@ -1064,6 +1168,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEHessian31);
+    #endif
     assemblePDEHessian13(pde,l,u,z,z_param);
   }
 
@@ -1072,6 +1179,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEHessian32);
+    #endif
     assemblePDEHessian23(pde,l,u,z,z_param);
   }
 
@@ -1080,6 +1190,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEHessian33);
+    #endif
     if ( z_param != Teuchos::null ) {
       try {
         int size = static_cast<int>(z_param->size());
@@ -1211,6 +1324,9 @@ public:
   void applyPDEJacobian1(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                          const bool transpose = false) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEJacobian1);
+    #endif
     if ( transpose ) {
       if (!isJ1Transposed_) {
         // Create matrix transposes.
@@ -1239,25 +1355,75 @@ public:
         constructSolver(true);
         isSolverTransConstructed_ = true;
       }
-      solver_trans_->setX(u);
-      solver_trans_->setB(r);
-      solver_trans_->solve();
+      {//timer
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::SolverSolve_Jacobian1);
+      #endif
+      if (useDirectSolver_) { // using Amesos2 direct solver
+        solver_trans_->setX(u);
+        solver_trans_->setB(r);
+        solver_trans_->solve();
+      }
+      else { // using Belos iterative solver with MueLu preconditioner
+        //Belos::OperatorTraits<Real,MV,OP>::Apply( *pde_matJ1_trans_, *u, *r );
+        //Belos::MultiVecTraits<Real,MV>::MvInit( *u, 0.0 );
+        Teuchos::ParameterList parlistBelos;
+        parlistBelos.set( "Block Size", 1 );
+        parlistBelos.set( "Maximum Iterations", 100 );
+        parlistBelos.set( "Convergence Tolerance", 1e-10 );
+        parlistBelos.set( "Output Style", Belos::Brief );
+        parlistBelos.set( "Output Frequency", 1 );
+        parlistBelos.set( "Verbosity", Belos::IterationDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+        //parlistBelos.set( "Verbosity", Belos::Errors );
+        Belos::LinearProblem<Real,MV,OP> problemBelos( pde_matJ1_trans_, u, r);
+        problemBelos.setRightPrec(this->mueLuPreconditioner_trans_);
+        problemBelos.setProblem();
+        Belos::BlockGmresSolMgr<Real,MV,OP> solverBelos( Teuchos::rcp(&problemBelos,false), Teuchos::rcp(&parlistBelos,false) );
+        solverBelos.solve();
+      }
+      }//timer
     }
     else {
       if (!isSolverConstructed_) {
         constructSolver(false);
         isSolverConstructed_ = true;
       }
-      solver_->setX(u);
-      solver_->setB(r);
-outputTpetraVector(r, "rhs");
-      solver_->solve();
+      {//timer
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::SolverSolve_Jacobian1);
+      #endif
+      if (useDirectSolver_) { // using Amesos2 direct solver
+        solver_->setX(u);
+        solver_->setB(r);
+        solver_->solve();
+      }
+      else {
+        //Belos::OperatorTraits<Real,MV,OP>::Apply( *pde_matJ1_, *u, *r );
+        //Belos::MultiVecTraits<Real,MV>::MvInit( *u, 0.0 );
+        Teuchos::ParameterList parlistBelos;
+        parlistBelos.set( "Block Size", 1 );
+        parlistBelos.set( "Maximum Iterations", 100 );
+        parlistBelos.set( "Convergence Tolerance", 1e-10 );
+        parlistBelos.set( "Output Style", Belos::Brief );
+        parlistBelos.set( "Output Frequency", 1 );
+        parlistBelos.set( "Verbosity", Belos::IterationDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+        //parlistBelos.set( "Verbosity", Belos::Errors );
+        Belos::LinearProblem<Real,MV,OP> problemBelos( pde_matJ1_, u, r);
+        problemBelos.setRightPrec(this->mueLuPreconditioner_);
+        problemBelos.setProblem();
+        Belos::BlockGmresSolMgr<Real,MV,OP> solverBelos( Teuchos::rcp(&problemBelos,false), Teuchos::rcp(&parlistBelos,false) );
+        solverBelos.solve();
+      }
+      }//timer
     }
   }
 
   void applyPDEJacobian2(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                          const bool transpose = false) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEJacobian2);
+    #endif
     if ( transpose ) {
       if (!isJ2Transposed_) {
         // Create matrix transposes.
@@ -1275,6 +1441,9 @@ outputTpetraVector(r, "rhs");
   void applyPDEJacobian3(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
                          const Teuchos::RCP<const std::vector<Real> > &v,
                          const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEJacobian3);
+    #endif
     if ( zeroOut ) {
       Jv->putScalar(static_cast<Real>(0));
     }
@@ -1298,17 +1467,26 @@ outputTpetraVector(r, "rhs");
 
   void applyPDEHessian11(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEHessian11);
+    #endif
     pde_matH11_->apply(*v,*Hv);
   }
 
   void applyPDEHessian12(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEHessian12);
+    #endif
     pde_matH12_->apply(*v,*Hv);
   }
 
   void applyPDEHessian13(const Teuchos::RCP<std::vector<Real> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                          const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEHessian13);
+    #endif
     const size_t size = static_cast<size_t>(Hv->size());
     if ( zeroOut ) {
       Hv->assign(size,static_cast<Real>(0));
@@ -1323,17 +1501,26 @@ outputTpetraVector(r, "rhs");
 
   void applyPDEHessian21(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEHessian21);
+    #endif
     pde_matH21_->apply(*v,*Hv);
   }
 
   void applyPDEHessian22(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEHessian22);
+    #endif
     pde_matH22_->apply(*v,*Hv);
   }
 
   void applyPDEHessian23(const Teuchos::RCP<std::vector<Real> > &Hv,
                          const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
                          const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEHessian23);
+    #endif
     const size_t size = static_cast<size_t>(Hv->size());
     if ( zeroOut ) {
       Hv->assign(size,static_cast<Real>(0));
@@ -1349,6 +1536,9 @@ outputTpetraVector(r, "rhs");
   void applyPDEHessian31(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const std::vector<Real> > &v,
                          const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEHessian31);
+    #endif
     if ( zeroOut ) {
       Hv->putScalar(static_cast<Real>(0));
     }
@@ -1362,6 +1552,9 @@ outputTpetraVector(r, "rhs");
   void applyPDEHessian32(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
                          const Teuchos::RCP<const std::vector<Real> > &v,
                          const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEHessian32);
+    #endif
     if ( zeroOut ) {
       Hv->putScalar(static_cast<Real>(0));
     }
@@ -1375,6 +1568,9 @@ outputTpetraVector(r, "rhs");
   void applyPDEHessian33(const Teuchos::RCP<std::vector<Real> > &Hv,
                          const Teuchos::RCP<const std::vector<Real> > &v,
                          const bool zeroOut = true ) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::ApplyPDEHessian33);
+    #endif
     const int size = Hv->size();
     if ( zeroOut ) {
       Hv->assign(size,static_cast<Real>(0));
@@ -2099,9 +2295,14 @@ outputTpetraVector(r, "rhs");
         constructSolverR1();
         isSolverR1Constructed_ = true;
       }
+      {//timer
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::SolverSolve_Riesz1);
+      #endif
       solverR1_->setX(Rv);
       solverR1_->setB(v);
       solverR1_->solve();
+      }//timer
     }
   }
   /***************************************************************************/
@@ -2173,9 +2374,14 @@ outputTpetraVector(r, "rhs");
         constructSolverR2();
         isSolverR2Constructed_ = true;
       }
+      {//timer
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::SolverSolve_Riesz2);
+      #endif
       solverR2_->setX(Rv);
       solverR2_->setB(v);
       solverR2_->solve();
+      }//timer
     }
   }
   /***************************************************************************/
@@ -2314,6 +2520,21 @@ outputTpetraVector(r, "rhs");
   /***************************************************************************/
   /* End of vector generation routines.                                      */
   /***************************************************************************/
+
+  /***************************************************************************/
+  /* Accessor routines.                                                      */
+  /***************************************************************************/
+  const Teuchos::RCP<DofManager<Real> > getDofManager(void) const {
+    return dofMgr_;
+  }
+
+  Teuchos::Array<int> getCellIds(void) const {
+    return myCellIds_;
+  }
+  /***************************************************************************/
+  /* End of accessor routines.                                               */
+  /***************************************************************************/
+
 
 }; // class Assembler
 

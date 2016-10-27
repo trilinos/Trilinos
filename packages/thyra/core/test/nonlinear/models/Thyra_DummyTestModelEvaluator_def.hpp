@@ -109,6 +109,8 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(p_space_.size());
   inArgs.setSupports(MEB::IN_ARG_x);
+  inArgs.setSupports(MEB::IN_ARG_step_size);
+  inArgs.setSupports(MEB::IN_ARG_stage_number);
   prototypeInArgs_ = inArgs;
   
   MEB::OutArgsSetup<Scalar> outArgs;

@@ -146,9 +146,12 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
    TEST_EQUALITY(b_offsets.size(),4);
    TEST_EQUALITY(e_offsets.size(),4);
 
-   for(std::size_t i=0;i<4;i++) out << u_offsets[i] << " "; out << std::endl;
-   for(std::size_t i=0;i<4;i++) out << b_offsets[i] << " "; out << std::endl;
-   for(std::size_t i=0;i<4;i++) out << e_offsets[i] << " "; out << std::endl;
+   for (std::size_t i = 0; i < 4; ++i)
+      out << u_offsets[i] << " " << std::endl;
+   for (std::size_t i = 0; i < 4; ++i)
+      out << b_offsets[i] << " " << std::endl;
+   for (std::size_t i = 0; i < 4; ++i)
+      out << e_offsets[i] << " " << std::endl;
 
    // unfortunatly this mesh is completly uniform
    double standardO[] = { 1.0, 1.0, -1.0, -1.0 };

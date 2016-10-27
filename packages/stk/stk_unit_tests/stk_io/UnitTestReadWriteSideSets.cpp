@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "stk_mesh/base/GetEntities.hpp"
 #include "stk_unit_test_utils/ReadWriteSidesetTester.hpp"
 
 TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
@@ -74,4 +75,55 @@ TEST(StkIo, test_side_membership)
         EXPECT_TRUE(does_entity_have_part(bulk, side, partProc0));
         EXPECT_TRUE(does_entity_have_part(bulk, side, partProc1));
     }
+}
+
+void test_serial_write_new_sideset(stk::unit_test_util::sideset::BulkDataTester &bulk,
+                                   stk::mesh::PartVector &parts,
+                                   const std::string &outputFileName)
+{
+  bulk.initialize_face_adjacent_element_graph();
+
+  stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEMENT_RANK, 1u);
+  EXPECT_TRUE(bulk.is_valid(element1));
+
+  stk::mesh::Entity element2 = bulk.get_entity(stk::topology::ELEMENT_RANK, 2u);
+  EXPECT_TRUE(bulk.is_valid(element2));
+
+  const stk::unit_test_util::sideset::SideSetData newSidesetData = {{1, {{element1, 5}, {element2, 1}}}};
+  bulk.create_side_entities(newSidesetData[0].sideSet, parts);
+
+  stk::mesh::EntityVector faces;
+  stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(bulk.mesh_meta_data().side_rank()), faces);
+  EXPECT_EQ(faces.size(), 1u);
+  ASSERT_EQ(2u, bulk.num_elements(faces[0]));
+
+  stk::unit_test_util::sideset::write_exo_file(bulk, outputFileName, newSidesetData);
+}
+
+TEST(StkIo, create_and_write_new_sideset)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const unsigned p_size = stk::parallel_machine_size(pm);
+  if(p_size == 1)
+  {
+      stk::mesh::MetaData meta;
+      stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
+
+      stk::unit_test_util::sideset::StkMeshIoBrokerTester stkIo;
+      stk::unit_test_util::sideset::setup_io_broker_for_read(stkIo, bulk, "Ae.e", stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
+
+      stk::mesh::PartVector parts;
+      stk::mesh::Part &part = meta.declare_part("surface_1", meta.side_rank());
+      meta.set_part_id(part, 1);
+      stk::io::put_io_part_attribute(part);
+      parts.push_back(&part);
+
+      stk::unit_test_util::sideset::SideSetData sidesetData;
+      stkIo.populate_bulk_data();
+      stkIo.fill_sideset_data(sidesetData);
+      EXPECT_TRUE(sidesetData.empty());
+
+      test_serial_write_new_sideset(bulk, parts, "Ae_with_ss.e");
+  }
 }

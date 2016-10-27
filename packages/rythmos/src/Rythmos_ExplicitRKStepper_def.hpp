@@ -255,9 +255,11 @@ Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
       }
     }
     TScalarMag ts = t_ + c(s)*dt;
+    TScalarMag scaled_dt = (s == 0)? Scalar(dt/stages) : c(s)*dt;
 
     // need to check here the status of the solver (the linear solve)
-    eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]));
+    //eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]));
+    eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]), scaled_dt, c(s));
     Thyra::Vt_S(k_vector_[s].ptr(),dt); // k_s = k_s*dt
   }
   // Sum for solution:
@@ -362,7 +364,9 @@ Scalar ExplicitRKStepper<Scalar>::takeFixedStep_(Scalar dt, StepSizeType flag)
       }
     }
     TScalarMag ts = t_ + c(s)*dt;
-    eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]));
+    TScalarMag scaled_dt = (s == 0)? Scalar(dt/stages) : c(s)*dt;
+
+    eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]), scaled_dt, c(s));
     Thyra::Vt_S(k_vector_[s].ptr(),dt); // k_s = k_s*dt
   }
   // Sum for solution:

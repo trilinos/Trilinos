@@ -43,96 +43,182 @@
 /** \file   Intrepid_HDIV_QUAD_In_FEM.hpp
     \brief  Header file for the Intrepid2::HDIV_QUAD_In_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal and K. Petrson.
- */
+            Kokkorized by Kyungjoo Kim
+*/
 
-#ifndef INTREPID2_HDIV_QUAD_In_FEM_HPP
-#define INTREPID2_HDIV_QUAD_In_FEM_HPP
-#include "Intrepid2_TensorBasis.hpp"
-#include "Intrepid2_ProductTopology.hpp"
+#ifndef __INTREPID2_HDIV_QUAD_IN_FEM_HPP__
+#define __INTREPID2_HDIV_QUAD_IN_FEM_HPP__
+
+#include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
-#include "Teuchos_RCP.hpp"
-using Teuchos::rcp;
 
 namespace Intrepid2 {
-  
-/** \class  Intrepid2::Basis_HDIV_QUAD_In_FEM
-    \brief  Implementation of the default H(div)-compatible FEM basis of degree 1 on Quadrilateral cell 
-  
-            Implements Raviart-Thomas basis of degree n on the reference Quadrilateral cell. The basis has
-            cardinality 2(n+1)n and spans a INCOMPLETE polynomial space. 
-  \endverbatim
-  
- */
-  
-template<class Scalar, class ArrayScalar> 
-class Basis_HDIV_QUAD_In_FEM : 
-    public TensorBasis<Scalar, ArrayScalar> ,
-    public DofCoordsInterface<ArrayScalar> {
-private:
-  
-  /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
-   */
-  void initializeTags();
-  
-  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> closedBasis_;
-  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> openBasis_;
 
-  ArrayScalar closedPts_;
-  ArrayScalar openPts_;
+  namespace Impl {
 
-  
-public:
-  /** \brief Destructor
-   */
-  virtual ~Basis_HDIV_QUAD_In_FEM() {;}
+    class Basis_HDIV_QUAD_In_FEM {
+    public:
 
-  /** \brief  Constructor.
-      \param order     [in] - order of polynomial space
-      \param ptsClosed [in] - pts that include the endpoints, used in the direction of normal continuity
-      \param ptsOpen   [in] - used in "off" direction
-    */
-  Basis_HDIV_QUAD_In_FEM( int order , 
-			  const ArrayScalar &ptsClosed ,
-			  const ArrayScalar &ptsOpen );
+      template<EOperator opType>
+      struct Serial {
+        template<typename outputValueViewType,
+                 typename inputPointViewType,
+                 typename workViewType,
+                 typename vinvViewType>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        getValues( /**/  outputValueViewType outputValues,
+                   const inputPointViewType  inputPoints,
+                   /**/  workViewType        work,
+                   const vinvViewType        vinvLine,
+                   const vinvViewType        vinvBubble );
+      };
 
-  /** \brief  Streamlined constructor that allows user to request equispaced points or
-      Gauss-Lobatto cross with Gauss-Legendre points in each vector component
-    */
-  Basis_HDIV_QUAD_In_FEM( int order , const EPointType &pointType );
+      template<typename ExecSpaceType, ordinal_type numPtsPerEval,
+               typename outputValueValueType, class ...outputValueProperties,
+               typename inputPointValueType,  class ...inputPointProperties,
+               typename vinvValueType,        class ...vinvProperties>
+      static void
+      getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+                  const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvLine,
+                  const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
+                  const EOperator operatorType );
 
-  
-    
-  /** \brief  Evaluation of a FEM basis on a <strong>reference Quadrilateral</strong> cell. 
-    
-              Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-              points in the <strong>reference Quadrilateral</strong> cell. For rank and dimensions of
-              I/O array arguments see Section \ref basis_md_array_sec.
-  
-      \param  outputValues      [out] - rank-3 or 4 array with the computed basis values
-      \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points  
-      \param  operatorType      [in]  - operator applied to basis functions    
-   */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const EOperator        operatorType) const;
-  
-  
-  /**  \brief  FVD basis evaluation: invocation of this method throws an exception.
-   */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const ArrayScalar &    cellVertices,
-                 const EOperator        operatorType = OPERATOR_VALUE) const;
+      template<typename outputValueViewType,
+               typename inputPointViewType,
+               typename vinvViewType,
+               EOperator opType,
+               ordinal_type numPtsEval>
+      struct Functor {
+        /**/  outputValueViewType _outputValues;
+        const inputPointViewType  _inputPoints;
+        const vinvViewType        _vinvLine;
+        const vinvViewType        _vinvBubble;
 
-  /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
-              <strong>reference cell</strong>; defined for interpolatory bases.
+        KOKKOS_INLINE_FUNCTION
+        Functor( outputValueViewType outputValues_,
+                 inputPointViewType  inputPoints_,
+                 vinvViewType        vinvLine_,
+                 vinvViewType        vinvBubble_)
+          : _outputValues(outputValues_), _inputPoints(inputPoints_),
+            _vinvLine(vinvLine_), _vinvBubble(vinvBubble_) {}
 
-      \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
-                                     dimensioned (F,D)
-   */
-   virtual void getDofCoords(ArrayScalar & DofCoords) const;
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const size_type iter) const {
+          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.dimension(0));
+          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
+
+          const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
+          const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
+
+          typedef typename outputValueViewType::value_type outputValueType;
+          constexpr ordinal_type bufSize = 3*(Parameters::MaxOrder+1)*numPtsEval;
+          outputValueType buf[bufSize];
+
+          Kokkos::DynRankView<outputValueType,
+            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+
+          switch (opType) {
+          case OPERATOR_VALUE : {
+            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+            Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble );
+            break;
+          }
+          case OPERATOR_DIV : {
+            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
+            Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble );
+            break;
+          }
+          default: {
+            INTREPID2_TEST_FOR_ABORT( true,
+                                      ">>> ERROR: (Intrepid2::Basis_HDIV_QUAD_In_FEM::Functor) operator is not supported");
+
+          }
+          }
+        }
+      };
+    };
+  }
+
+  /** \class  Intrepid2::Basis_HDIV_QUAD_In_FEM
+      \brief  Implementation of the default H(div)-compatible FEM basis on Quadrilateral cell    
+  */
   
-};
+  template<typename ExecSpaceType = void,
+           typename outputValueType = double,
+           typename pointValueType = double>
+  class Basis_HDIV_QUAD_In_FEM
+    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+  public:
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+
+    /** \brief  Constructor.
+     */
+    Basis_HDIV_QUAD_In_FEM(const ordinal_type order,
+                            const EPointType   pointType = POINTTYPE_EQUISPACED);
+
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+
+    virtual
+    void
+    getValues( /**/  outputViewType outputValues,
+               const pointViewType  inputPoints,
+               const EOperator operatorType = OPERATOR_VALUE ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+      Intrepid2::getValues_HDIV_Args(outputValues,
+                                      inputPoints,
+                                      operatorType,
+                                      this->getBaseCellTopology(),
+                                      this->getCardinality() );
+#endif
+      constexpr ordinal_type numPtsPerEval = 1;
+      Impl::Basis_HDIV_QUAD_In_FEM::
+        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
+                                                inputPoints,
+                                                this->vinvLine_,
+                                                this->vinvBubble_,
+                                                operatorType );
+    }
+    virtual
+    void
+    getDofCoords( scalarViewType dofCoords ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+      // Verify rank of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HDIV_QUAD_In_FEM::getDofCoords) rank = 2 required for dofCoords array");
+      // Verify 0th dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != this->getCardinality(), std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HDIV_QUAD_In_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
+      // Verify 1st dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HDIV_QUAD_In_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
+#endif
+      Kokkos::deep_copy(dofCoords, this->dofCoords_);
+    }
+
+    virtual
+    const char*
+    getName() const {
+      return "Intrepid2_HDIV_QUAD_In_FEM";
+    }
+
+    virtual
+    bool
+    requireOrientation() const {
+      return true;
+    }
+
+  private:
+
+    /** \brief inverse of Generalized Vandermonde matrix (isotropic order */
+    Kokkos::DynRankView<outputValueType,ExecSpaceType> vinvLine_, vinvBubble_;
+  };
+
 }// namespace Intrepid2
 
 #include "Intrepid2_HDIV_QUAD_In_FEMDef.hpp"

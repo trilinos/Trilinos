@@ -149,6 +149,11 @@ TEST(Performance, stkSearchUsingOcttreeUsingStkAABoxes)
     runStkSearchTestUsingStkAABoxes(stk::search::OCTREE);
 }
 
+TEST(Performance, stkSearchUsingKdtreeUsingStkAABoxes)
+{
+    runStkSearchTestUsingStkAABoxes(stk::search::KDTREE);
+}
+
 TEST(Performance, stkSearchUsingBoostUsingFloatAABoxes)
 {
     runStkSearchTestUsingFloatAABoxes(stk::search::BOOST_RTREE);
@@ -161,10 +166,8 @@ TEST(Performance, stkSearchUsingOcttreeUsingFloatAABoxes)
 
 TEST(Performance, stkSearchUsingKdtreeUsingFloatAABoxes)
 {
-    //Change OCTREE to KDTREE
-    runStkSearchTestUsingFloatAABoxes(stk::search::OCTREE);
+    runStkSearchTestUsingFloatAABoxes(stk::search::KDTREE);
 }
-
 
 void runStkSearchTestUsingFloatAABoxes(stk::search::SearchMethod searchMethod)
 {

@@ -45,6 +45,7 @@
 #define KLU2_TSOLVE_HPP
 
 #include "klu2_internal.h"
+#include "klu2.hpp"
 
 template <typename Entry, typename Int>
 Int KLU_tsolve
@@ -56,7 +57,7 @@ Int KLU_tsolve
     Int nrhs,               /* number of right-hand-sides */
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
-    double B [ ],           /* size n*nrhs, in column-oriented form, with
+    Entry B [ ],           /* size n*nrhs, in column-oriented form, with
                              * leading dimension d. */
 #ifdef COMPLEX
     Int conj_solve,         /* TRUE for conjugate transpose solve, FALSE for

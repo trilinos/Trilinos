@@ -180,8 +180,8 @@ namespace Intrepid2 {
               for (auto i=0;i<ndof;++i) {
                 const auto refOrd = cellBasis.getDofOrdinal(1, edgeId, i);
                 const auto outOrd = cellBasis.getDofOrdinal(1, edgeId, i);
-                s1 << std::setw(4) << refValuesHost(cell, refOrd);              
-                s2 << std::setw(4) << outValuesHost(cell, refOrd);              
+                s1 << std::setw(4) << refValuesHost(cell, outOrd);              
+                s2 << std::setw(4) << outValuesHost(cell, outOrd);              
 
                 flag += (std::abs(ortVal[orts[edgeId]]*outValuesHost(cell, outOrd) - refValuesHost(cell, refOrd)) > tol);
               }

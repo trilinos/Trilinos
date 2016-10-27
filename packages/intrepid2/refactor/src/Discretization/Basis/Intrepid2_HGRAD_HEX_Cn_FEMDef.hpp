@@ -306,7 +306,7 @@ namespace Intrepid2 {
       ordinal_type tags[maxCardLine*maxCardLine*maxCardLine][4];
   
       const ordinal_type vert[2][2][2] = { { {0,1}, {3,2} }, 
-                                        { {4,5}, {7,6} } }; //[z][y][x]
+                                           { {4,5}, {7,6} } }; //[z][y][x]
 
       const ordinal_type edge_x[2][2] = { {0, 4}, {2, 6} };
       const ordinal_type edge_y[2][2] = { {3, 7}, {1, 5} };

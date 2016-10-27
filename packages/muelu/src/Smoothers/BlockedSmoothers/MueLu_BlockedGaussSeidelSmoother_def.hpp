@@ -230,7 +230,7 @@ namespace MueLu {
     // new implementation uses BlockedMultiVectors
 
     // create a new vector for storing the current residual in a blocked multi vector
-    RCP<MultiVector> res = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
+    RCP<MultiVector> res = MultiVectorFactory::Build(B.getMap(), B.getNumVectors(), true);
     RCP<BlockedMultiVector> residual = Teuchos::rcp(new BlockedMultiVector(rangeMapExtractor_,res));
 
     // create a new solution vector as a blocked multi vector
@@ -264,7 +264,7 @@ namespace MueLu {
 
         Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(bX, i, bDomainThyraMode);
         Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, i, bRangeThyraMode);
-        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(i, X.getNumVectors(), bDomainThyraMode);
+        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(i, X.getNumVectors(), bDomainThyraMode, true);
 
         // apply solver/smoother
         Inverse_.at(i)->Apply(*tXi, *ri, false);
