@@ -383,9 +383,9 @@ void Piro::RythmosSolver<Scalar>::initialize(
      //
      *out << "\nC) Create and initalize the forward model ...\n";
      //
-     // C.1) Create the underlying EpetraExt::ModelEvaluator
+     // C.1) Create the underlying Thyra::ModelEvaluator
      // already constructed as "model". Decorate if needed.
-     // TODO: Generelize to any explicit method, option to invert mass matrix
+     // TODO: Generalize to any explicit method, option to invert mass matrix
      if (stepperType == "Explicit RK") {
       if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
