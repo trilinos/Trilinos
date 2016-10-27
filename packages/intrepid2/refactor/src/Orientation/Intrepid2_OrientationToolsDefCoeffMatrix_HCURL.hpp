@@ -151,12 +151,14 @@ namespace Intrepid2 {
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
                                           "subcellBasis function space is not consistent to cellBasis.");
+            break;
           }
           case 2: {
             INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HCURL") == std::string::npos,
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
                                           "subcellBasis function space is not consistent to cellBasis.");
+            break;
           }
           }
         }
