@@ -186,19 +186,72 @@ namespace Intrepid2 {
       const ordinal_type ndofSubcell = cellBasis.getDofTag(ordSubcell)(3);
 
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != PointTools::getLatticeSize(subcellTopo, degree, 1),
-                                    std::logic_error,
-                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-                                    "The number of DOFs does not match to the number of collocation points.");
+      switch (subcellBaseKey) {
+      case shards::Line<>::key: 
+      case shards::Triangle<>::key: {
+        INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != PointTools::getLatticeSize(subcellTopo, degree, 1),
+                                      std::logic_error,
+                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                      "The number of DOFs (Line,Triangle) does not match to the number of collocation points.");
+        break;
+      }
+      case shards::Quadrilateral<>::key: {
+        const auto lineTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
+        const ordinal_type ndofLine = PointTools::getLatticeSize(lineTopo, degree, 1);
+        INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != (ndofLine*ndofLine),
+                                      std::logic_error,
+                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                      "The number of DOFs (Quad) does not match to the number of collocation points.");
+        break;
+      }        
 #endif
 
       // reference points on a subcell
       DynRankViewHostType refPtsSubcell("refPtsSubcell", ndofSubcell, subcellDim);
-      PointTools::getLattice(refPtsSubcell,
-                             subcellTopo,
-                             degree,
-                             1, // offset by 1 so the points are located inside
-                             POINTTYPE_EQUISPACED);
+
+      switch (subcellBaseKey) {
+      case shards::Line<>::key: 
+      case shards::Triangle<>::key: {
+        PointTools::getLattice(refPtsSubcell,
+                               subcellTopo,
+                               degree,
+                               1, // offset by 1 so the points are located inside
+                               POINTTYPE_EQUISPACED);
+        break;
+      }
+      case shards::Quadrilateral<>::key: {
+        // tensor product of lines
+        const auto lineTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
+        const ordinal_type ndofLine = PointTools::getLatticeSize(lineTopo, degree, 1);
+        DynRankViewHostType refPtsLine("refPtsLine", ndofLine, 1);
+        PointTools::getLattice(refPtsLine,
+                               lineTopo,
+                               degree,
+                               1, // offset by 1 so the points are located inside
+                               POINTTYPE_EQUISPACED);
+        ordinal_type idx = 0;
+        for (ordinal_type j=0;j<ndofLine;++j) { // y
+          for (ordinal_type i=0;i<ndofLine;++i,++idx) { // x
+            refPtsSubcell(idx, 0) = refPtsLine(i);
+            refPtsSubcell(idx, 1) = refPtsLine(j);
+          } 
+        }
+        INTREPID2_TEST_FOR_EXCEPTION( idx != ndofSubcell, 
+                                      std::logic_error,
+                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                      "counted subcell points is different from ndofSubcell.");
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key ||
+                                      subcellBaseKey != shards::Quadrilateral<>::key ||
+                                      subcellBaseKey != shards::Triangle<>::key,
+                                      std::logic_error,
+                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                      "subcellBasis must have line, quad, or triangle topology.");
+      }
+      }
+
 
       // modified points with orientation
       DynRankViewHostType ortPtsSubcell("ortPtsSubcell", ndofSubcell, subcellDim);

@@ -71,23 +71,18 @@ namespace Intrepid2 {
                                   ">>> ERROR (PointTools::getLatticeSize): order and offset must be positive values." );
 #endif
     ordinal_type r_val = 0;
-    switch (cellType.getKey()) {
-    case shards::Tetrahedron<4>::key:
-    case shards::Tetrahedron<8>::key:
-    case shards::Tetrahedron<10>::key: {
+    switch (cellType.getBaseKey()) {
+    case shards::Tetrahedron<>::key: {
       const auto effectiveOrder = order - 4 * offset;
       r_val = (effectiveOrder < 0 ? 0 :(effectiveOrder+1)*(effectiveOrder+2)*(effectiveOrder+3)/6);
       break;
     }
-    case shards::Triangle<3>::key:
-    case shards::Triangle<4>::key:
-    case shards::Triangle<6>::key: {
+    case shards::Triangle<>::key: {
       const auto effectiveOrder = order - 3 * offset;
       r_val = (effectiveOrder < 0 ? 0 : (effectiveOrder+1)*(effectiveOrder+2)/2);
       break;
     }
-    case shards::Line<2>::key:
-    case shards::Line<3>::key: {
+    case shards::Line<>::key: {
       const auto effectiveOrder = order - 2 * offset;
       r_val = (effectiveOrder < 0 ? 0 : (effectiveOrder+1));
       break;
@@ -188,15 +183,10 @@ namespace Intrepid2 {
                         const shards::CellTopology cell,
                         const ordinal_type order,
                         const ordinal_type offset ) {
-    switch (cell.getKey()) {
-    // case shards::Tetrahedron<4>::key:
-    // case shards::Tetrahedron<8>::key:
-    // case shards::Tetrahedron<10>::key: getEquispacedLatticeTetrahedron( points, order, offset );  break;
-    // case shards::Triangle<3>::key:
-    // case shards::Triangle<4>::key:
-    // case shards::Triangle<6>::key:     getEquispacedLatticeTriangle   ( points, order, offset );  break;
-    case shards::Line<2>::key:
-    case shards::Line<3>::key:         getEquispacedLatticeLine       ( points, order, offset );  break;
+    switch (cell.getBaseKey()) {
+    // case shards::Tetrahedron<>::key: getEquispacedLatticeTetrahedron( points, order, offset );  break;
+    // case shards::Triangle<>::key:     getEquispacedLatticeTriangle   ( points, order, offset );  break;
+    case shards::Line<>::key:     getEquispacedLatticeLine       ( points, order, offset );  break;
     default: {
       INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
                                     ">>> ERROR (Intrepid2::PointTools::getEquispacedLattice): the specified cell type is not supported." );
@@ -211,15 +201,10 @@ namespace Intrepid2 {
                        const shards::CellTopology cell,
                        const ordinal_type order,
                        const ordinal_type offset ) {
-    switch (cell.getKey()) {
-    // case shards::Tetrahedron<4>::key:
-    // case shards::Tetrahedron<8>::key:
-    // case shards::Tetrahedron<10>::key: getWarpBlendLatticeTetrahedron( points, order, offset );  break;
-    // case shards::Triangle<3>::key:
-    // case shards::Triangle<4>::key:
-    // case shards::Triangle<6>::key:     getWarpBlendLatticeTriangle   ( points, order, offset );  break;
-    case shards::Line<2>::key:
-    case shards::Line<3>::key:         getWarpBlendLatticeLine       ( points, order, offset );  break;
+    switch (cell.getBaseKey()) {
+    // case shards::Tetrahedron<>::key: getWarpBlendLatticeTetrahedron( points, order, offset );  break;
+    // case shards::Triangle<>::key:     getWarpBlendLatticeTriangle   ( points, order, offset );  break;
+    case shards::Line<>::key:         getWarpBlendLatticeLine       ( points, order, offset );  break;
     default: {
       INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
                                     ">>> ERROR (Intrepid2::PointTools::getWarpBlendLattice): the specified cell type is not supported." );
