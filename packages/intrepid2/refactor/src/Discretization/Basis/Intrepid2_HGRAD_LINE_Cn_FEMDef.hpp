@@ -163,7 +163,7 @@ namespace Intrepid2 {
       case OPERATOR_VALUE: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, ort) );
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, 0, ort) );
         break;
       }
       case OPERATOR_GRAD:
@@ -180,7 +180,7 @@ namespace Intrepid2 {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
             OPERATOR_Dn,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv,
-                                                  getOperatorOrder(operatorType), ort) );
+                                                  getOperatorOrder(operatorType)) );
         break;
       }
       default: {

@@ -143,7 +143,7 @@ namespace Intrepid2 {
           switch (opType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
-            Serial<opType>::getValues( output, input, work, _vinv, _ort );
+            Serial<opType>::getValues( output, input, work, _vinv, 0, _ort );
             break;
           }
           case OPERATOR_Dn : {
