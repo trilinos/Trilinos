@@ -41,32 +41,48 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_EVALUATOR_ALIAS_FIELD_HPP
+#define PHX_EVALUATOR_ALIAS_FIELD_HPP
 
-#ifndef PHX_FIELD_EVALUATOR_DERIVED_HPP
-#define PHX_FIELD_EVALUATOR_DERIVED_HPP
+#include "Phalanx_config.hpp"
 
-#include <vector>
-
-#include "Phalanx_Evaluator_Base.hpp"
-#include "Phalanx_Evaluator_Utilities.hpp"
+#ifdef  PHX_ENABLE_KOKKOS_AMT
+#include "Phalanx_Evaluator_TaskBase.hpp"
+#else
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#endif
 
 namespace PHX {
 
+  //! Evaluator to help set dependencies for aliased fields
   template<typename EvalT, typename Traits>
-  class EvaluatorDerived : public PHX::EvaluatorBase<Traits> {
+  class AliasField :
+#ifdef PHX_ENABLE_KOKKOS_AMT
+    public PHX::TaskBase<Traits,PHX::AliasField<EvalT,Traits> >
+#else
+    public PHX::EvaluatorWithBaseImpl<Traits>
+#endif
+  {
     
   public:
+    AliasField(const PHX::FieldTag& aliasedField,
+               const PHX::FieldTag& targetField)
+    {
+      this->addEvaluatedField(aliasedField);
+      this->addDependentField(targetField);
+      this->setName("Alias Field: \"" + aliasedField.name()
+                    + "\" to \"" + targetField.name() + "\"");
+    }
     
-    EvaluatorDerived() {}
+    void postRegistrationSetup(typename Traits::SetupData ,
+                               PHX::FieldManager<Traits>& ) {}
+    
+    void evaluateFields(typename Traits::EvalData ) {}
 
-    virtual ~EvaluatorDerived() {}
-    
-  protected:
-    
-    PHX::EvaluatorUtilities<EvalT,Traits> utils;
-
+    KOKKOS_INLINE_FUNCTION
+    void operator () (const int ) const {}
   };
-
+  
 }
 
 #endif

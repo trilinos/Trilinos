@@ -42,12 +42,13 @@
 // @HEADER
 
 
-#ifndef PHX_SCALAR_CONTAINER_DEF_HPP
-#define PHX_SCALAR_CONTAINER_DEF_HPP
+#ifndef PHX_EVALUATION_CONTAINER_DEF_HPP
+#define PHX_EVALUATION_CONTAINER_DEF_HPP
 
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_Traits.hpp"
 #include "Phalanx_Evaluator.hpp"
+#include "Phalanx_Evaluator_AliasField.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_KokkosViewFactoryFunctor.hpp"
 #include <sstream>
@@ -84,6 +85,35 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
   this->dag_manager_.registerEvaluator(p);
 }
 
+// **************************************************************************
+template<typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
+aliasField(const PHX::FieldTag& aliasedField,
+           const PHX::FieldTag& targetField)
+{
+  // Check that dimensions are the same
+  TEUCHOS_TEST_FOR_EXCEPTION(aliasedField.dataLayout() != targetField.dataLayout(),
+                             std::runtime_error,
+                             "ERROR: The aliased field \"" << aliasedField.identifier()
+                             << "\" data layout does not match the target field \""
+                             << targetField.identifier() << "\" data layout!\n\n"
+                             << "Aliased Field DataLayout:\n" << aliasedField.dataLayout()
+                             << "Target Field DataLayout:\n" << targetField.dataLayout() << "\n");
+  // Check that the scalar types are the same
+  TEUCHOS_TEST_FOR_EXCEPTION(aliasedField.dataTypeInfo() != targetField.dataTypeInfo(),
+                             std::runtime_error,
+                             "ERROR: The aliased field \"" << aliasedField.identifier()
+                             << "\" scalar type does not match the target field \""
+                             << targetField.identifier() << "\" scalar type!\n");
+
+  Teuchos::RCP<PHX::Evaluator<Traits>> e =
+    Teuchos::rcp(new PHX::AliasField<EvalT,Traits>(aliasedField,targetField));
+  this->registerEvaluator(e);
+  
+  // Store off to assign memory during allocation phase
+  aliased_fields_[aliasedField.identifier()] = targetField.identifier();
+}
+
 // *************************************************************************
 template <typename EvalT, typename Traits> 
 void PHX::EvaluationContainer<EvalT, Traits>::
@@ -102,13 +132,22 @@ postRegistrationSetup(typename Traits::SetupData d,
   std::vector< Teuchos::RCP<PHX::FieldTag> >::const_iterator  var;
 
   for (var = var_list.begin(); var != var_list.end(); ++var) {
-    typedef typename PHX::eval_scalar_types<EvalT>::type EvalDataTypes;
-    Sacado::mpl::for_each<EvalDataTypes>(PHX::KokkosViewFactoryFunctor<EvalT>(fields_,*(*var),kokkos_extended_data_type_dimensions_));
-
-    TEUCHOS_TEST_FOR_EXCEPTION(fields_.find((*var)->identifier()) == fields_.end(),std::runtime_error,
-			       "Error: PHX::EvaluationContainer::postRegistrationSetup(): could not build a Kokkos::View for field named \"" << (*var)->name() << "\" of type \"" << (*var)->dataTypeInfo().name() << "\" for the evaluation type \"" << PHX::typeAsString<EvalT>() << "\".");
+    // skip allocation if this is an aliased field
+    if (aliased_fields_.find((*var)->identifier()) == aliased_fields_.end()) {
+      typedef typename PHX::eval_scalar_types<EvalT>::type EvalDataTypes;
+      Sacado::mpl::for_each<EvalDataTypes>(PHX::KokkosViewFactoryFunctor<EvalT>(fields_,*(*var),kokkos_extended_data_type_dimensions_));
+      
+      TEUCHOS_TEST_FOR_EXCEPTION(fields_.find((*var)->identifier()) == fields_.end(),std::runtime_error,
+                                 "Error: PHX::EvaluationContainer::postRegistrationSetup(): could not build a Kokkos::View for field named \""
+                                 << (*var)->name() << "\" of type \"" << (*var)->dataTypeInfo().name()
+                                 << "\" for the evaluation type \"" << PHX::typeAsString<EvalT>() << "\".");
+    }
   }
 
+  // Assign aliased fields to the target field memory
+  for (auto& field : aliased_fields_)
+    fields_[field.first] = fields_[field.second];
+  
   // Bind memory to all fields in all required evaluators
   for (const auto& field : var_list)
     this->bindField(*field,fields_[field->identifier()]);

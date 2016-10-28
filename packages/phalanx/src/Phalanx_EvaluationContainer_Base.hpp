@@ -65,6 +65,9 @@ namespace PHX {
 
     virtual void requireField(const PHX::FieldTag& v);
 
+    virtual void aliasField(const PHX::FieldTag& aliasedField,
+                            const PHX::FieldTag& targetField) = 0;
+    
     virtual void 
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
 
