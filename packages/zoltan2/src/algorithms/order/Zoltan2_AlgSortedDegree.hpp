@@ -82,7 +82,13 @@ class AlgSortedDegree : public Algorithm<Adapter>
   {
   }
 
-  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution)
+  int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution)
+  {
+     throw std::logic_error(
+       "AlgSortedDegree does not yet support global ordering.");
+  }
+
+  int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution)
   {
     int ierr= 0;
   
@@ -97,10 +103,8 @@ class AlgSortedDegree : public Algorithm<Adapter>
   
     // Get local graph.
     const size_t nVtx = model->getLocalNumVertices();
-    ArrayView<const gno_t> edgeIds;
     ArrayView<const lno_t> offsets;
-    ArrayView<StridedData<lno_t, scalar_t> > wgts;
-    model->getEdgeList(edgeIds, offsets, wgts);
+    model->getOffsets(offsets);
   
     // Store degrees together with index so we can sort.
     Teuchos::Array<std::pair<lno_t, size_t> >  degrees(nVtx);

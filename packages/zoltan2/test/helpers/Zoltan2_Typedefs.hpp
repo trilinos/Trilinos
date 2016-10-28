@@ -55,6 +55,7 @@
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Zoltan2_Metric.hpp>
+#include <Zoltan2_EvaluateBaseClass.hpp>
 //#include <Tpetra_Map.hpp>
 //#include <Xpetra_Vector_decl.hpp>
 //#include <Xpetra_CrsMatrix_decl.hpp>
@@ -171,6 +172,9 @@ namespace Zoltan2_TestingFramework {
   typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t>   xcrsGraph_adapter;
   typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t, tMVector_t> xcrsMatrix_adapter;
   typedef Zoltan2::BasicVectorAdapter<tMVector_t>                   basic_vector_adapter;
+
+  // Evaluate Class Types
+  typedef Zoltan2::EvaluateBaseClass<basic_id_t>                    base_evaluate_t;
 
 #ifdef HAVE_ZOLTAN2_PAMGEN
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t>                    pamgen_adapter_t;

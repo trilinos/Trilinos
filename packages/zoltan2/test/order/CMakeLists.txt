@@ -75,7 +75,7 @@ IF (${PACKAGE_NAME}_ENABLE_Scotch)
     SOURCES orderingScotch.cpp
     COMM serial mpi
     ARGS
-     "--inputFile=simple"
+     "--inputFile=simple_ordering"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -106,6 +106,7 @@ ENDIF()
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_order_tests
   SOURCE_FILES
     simple.mtx
+    simple_ordering.mtx
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

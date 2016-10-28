@@ -53,8 +53,10 @@
 #include "Zoltan2_MetricAnalyzer.hpp"
 #include <Zoltan2_Typedefs.hpp>
 #include <AdapterForTests.hpp>
+#include <Zoltan2_EvaluatePartition.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
+#include <Zoltan2_EvaluateOrdering.hpp>
 #include <Zoltan2_OrderingProblem.hpp>
 
 #include <Teuchos_DefaultComm.hpp>
@@ -103,7 +105,7 @@ public:
 
   // TODO:  Add method to print a timer summary:  max/min/avg over all procs
   
-  RCP<Zoltan2::EvaluatePartition<basic_id_t> > metricObject;
+  RCP<base_evaluate_t> evaluate;
   RCP<base_problem_t> problem;
   RCP<basic_id_t> adapter;
   RCP<Zoltan2::VectorAdapter<tMVector_t> > coordinateAdapterRCP;
@@ -118,6 +120,7 @@ class ComparisonHelper
 {
   
 public:
+  typedef Zoltan2::MetricAnalyzerInfo<zscalar_t> metric_analyzer_info_t;
   
   /* \brief Compare the solutions, metrics or timers of two Zoltan2 solutions.
    * \param pList is a parameter list defining the comparison
@@ -195,8 +198,8 @@ private:
    */
   static bool
   metricComparisonTest(const RCP<const Comm<int> > &comm,
-                       const MetricAnalyzerInfo & metric,
-                       const MetricAnalyzerInfo &ref_metric,
+                       const metric_analyzer_info_t & metric,
+                       const metric_analyzer_info_t &ref_metric,
                        const Teuchos::ParameterList & metricPlist,
                        ostringstream &msg);
   
@@ -628,11 +631,13 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
     metric_name = metrics.front().name();
 
     if (metric_name == "Metrics") { // special key word means compare the metrics list
-      std::vector<MetricAnalyzerInfo> metricInfoSetPrb;
-      std::vector<MetricAnalyzerInfo> metricInfoSetRef;
+      std::vector<metric_analyzer_info_t> metricInfoSetPrb;
+      std::vector<metric_analyzer_info_t> metricInfoSetRef;
 
-      MetricAnalyzer::LoadMetricInfo(metricInfoSetPrb, sourcePrb.get()->metricObject, metricsPlist.sublist("Metrics"));
-      MetricAnalyzer::LoadMetricInfo(metricInfoSetRef, sourceRef.get()->metricObject, metricsPlist.sublist("Metrics"));
+      MetricAnalyzer::LoadMetricInfo(metricInfoSetPrb,
+        sourcePrb.get()->evaluate, metricsPlist.sublist("Metrics"));
+      MetricAnalyzer::LoadMetricInfo(metricInfoSetRef,
+        sourceRef.get()->evaluate, metricsPlist.sublist("Metrics"));
 
       // there is some redundancy here because the metric info holds both the questions and the results
       // this happened because I wanted to reuse the MetricAnalyzer code for loading metric checks or comparisons
@@ -689,10 +694,10 @@ std::map<const string, const double> ComparisonHelper::timerDataToMap(const map<
 }
 
 bool ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
-                                       const MetricAnalyzerInfo & metric,
-                                       const MetricAnalyzerInfo & ref_metric,
-                                       const Teuchos::ParameterList & metricPlist,
-                                       ostringstream &msg)
+                        const metric_analyzer_info_t & metric,
+                        const metric_analyzer_info_t & ref_metric,
+                        const Teuchos::ParameterList & metricPlist,
+                        ostringstream &msg)
 {
   // run a comparison of min and max against a given metric
   // return an error message on failure

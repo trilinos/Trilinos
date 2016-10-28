@@ -54,7 +54,6 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
-
 #ifdef HAVE_ZOLTAN2_AMD
 #include "amd.h"
 #endif
@@ -116,8 +115,13 @@ class AlgAMD : public Algorithm<Adapter>
     ) : model(model__), pl(pl__), comm(comm__)
     { }
 
-    int order(const RCP<OrderingSolution<typename Adapter::lno_t,
-                                         typename Adapter::gno_t> > &solution)
+    int globalOrder(
+      const RCP<GlobalOrderingSolution<typename Adapter::gno_t> > &solution) {
+        throw std::logic_error("AlgAMD does not yet support global ordering.");
+    }
+
+    int localOrder(
+      const RCP<LocalOrderingSolution<typename Adapter::lno_t> > &solution)
     {
 #ifndef HAVE_ZOLTAN2_AMD
   throw std::runtime_error(

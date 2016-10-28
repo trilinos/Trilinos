@@ -52,9 +52,11 @@
 
 #include <Zoltan2_Standards.hpp>
 
-#define UNKNOWN_METRICS_TYPE_NAME "UnknownMetricClass" 		// this is an error - I kept the base class non virtual so we could work with stl maps for example
-#define IMBALANCE_METRICS_TYPE_NAME "ImbalanceMetrics"		// For the ImbalanceMetrics class
-#define GRAPH_METRICS_TYPE_NAME "GraphMetrics"				// For the GraphMetrics class
+// Add these names to static_allMetricNames_ below
+#define UNKNOWN_METRICS_TYPE_NAME "UnknownMetricClass"  // Unknown would be error
+#define IMBALANCE_METRICS_TYPE_NAME "ImbalanceMetrics"  // For the ImbalanceMetrics class
+#define GRAPH_METRICS_TYPE_NAME "GraphMetrics"          // For the GraphMetrics class
+#define ORDERING_METRICS_TYPE_NAME "OrderingMetrics"    // For the OrderingMetrics class
 
 #define METRICS_UNSET_STRING "unset"
 
@@ -75,7 +77,9 @@ void resetValues( int memCount ){
 /*! \name of this metric */
 std::string metricName_;
 
-/*! \array of values which is synchronized to constructed memCount in length and the getMetrics string  */
+/*! \array of values which is synchronized to constructed memCount in length
+ * and the getMetrics string.
+ */
 ArrayRCP<scalar_t> values_;
 
 protected:
@@ -91,7 +95,6 @@ public:
 /*! \brief Constructor - for compiling but not used */
 BaseClassMetrics() :
   metricName_(METRICS_UNSET_STRING), values_() {
-
 }
 
 /*! \brief Constructor */
@@ -109,14 +112,20 @@ BaseClassMetrics(int memCount) :
 /*! \virtual Deconstructor */
 virtual ~BaseClassMetrics() {}
 
-/*! \abstract printLine. Not abstract so that we can generically support stl containers like maps. */
+/*! \abstract printLine. Not abstract so that we can generically support
+ * stl containers like maps.
+*/
 virtual void printLine(std::ostream &os) const {};
 
-/*! \abstract getMetrics. Forces declaration of a static string list of the different metric types */
-virtual const std::vector<std::string> & getMetrics() const { return static_metricNames_; }
+/*! \abstract getMetrics. Forces declaration of a static string
+ * list of the different metric types
+ */
+virtual const std::vector<std::string> & getMetrics() const
+  { return static_metricNames_; }
 
 /*! \brief Get the class type of the metric. */
-virtual const std::string & getMetricType() const { return static_unknown_metricTypeName_; }
+virtual const std::string & getMetricType() const
+  { return static_unknown_metricTypeName_; }
 
 /*! \brief Get the name of the item measured. */
 const std::string &getName() const { return metricName_; }
@@ -132,7 +141,7 @@ bool hasMetricValue(const std::string & metric_name) const {
 /*! \ return a metric value specified by name */
 scalar_t getMetricValue(const std::string & metric_name) const
 {
-  size_t metricIndex = convertMetricNameToIndex( metric_name);
+  size_t metricIndex = convertMetricNameToIndex(metric_name);
   if( metricIndex == getMetrics().size() )
     return 0.0; // throw an error
   return values_[metricIndex];
@@ -141,40 +150,59 @@ scalar_t getMetricValue(const std::string & metric_name) const
 /*! \ set a metric value specified by name */
 void setMetricValue(const std::string & metric_name, scalar_t value) const
 {
-  size_t metricIndex = convertMetricNameToIndex( metric_name);
+  size_t metricIndex = convertMetricNameToIndex(metric_name);
   if( metricIndex != getMetrics().size() )
-    values_[metricIndex] = value;	// MDM - I'm doing this for the moment to build the behavior in the utility functions - but we probably want to error handle here for bad names
+    values_[metricIndex] = value;
 }
 
-/*! \utility function converts the name to an enum index. */
+/*! \utility function converts the name to an index. */
 size_t convertMetricNameToIndex(const std::string & metric_name) const
 {
   const std::vector<std::string> & metricNames = getMetrics();
-  size_t metricIndex = std::find(metricNames.begin(), metricNames.end(), metric_name) - metricNames.begin();
+  size_t metricIndex = std::find(metricNames.begin(), metricNames.end(),
+    metric_name) - metricNames.begin();
   return metricIndex; // this can return metricNames.size() if not found
 }
 
-/*! \setup a static string name indicating my class name. This stub name exists so that this base class is not virtual to resolve problems with using metrics with stl. It should never be used. */
+/*! \setup a static string name indicating my class name. This stub name exists
+ * so that this base class is not virtual to resolve problems with using metrics
+ * with stl. It should never be used.
+ */
 static std::string static_unknown_metricTypeName_;
 
-/*! \setup a static vector of strings. Non virtual so that we can generically support stl containers like maps. */
+/*! \setup a static vector of strings. Non virtual so that we can generically
+ * support stl containers like maps.
+ */
 static std::vector<std::string> static_metricNames_;
 
-/*! \This is a list of all possible types - it is used to generate a 'was not used' message, if that's you want. */
+/*! \This is a list of all possible types - it is used to generate a
+ * 'was not used' message, if that's you want.
+ */
 static std::vector<std::string> static_allMetricNames_;
 };
 
-/*! \static class name for string - used to identify by parameter lists. This name should never be used and allows us to be not abstract - so that we can generically support stl containers like maps. */
+/*! \static class name for string - used to identify by parameter lists. This
+ * name should never be used and allows us to be not abstract - so that we can
+ * generically support stl containers like maps.
+ */
 template <typename scalar_t>
-std::string BaseClassMetrics<scalar_t>::static_unknown_metricTypeName_ = UNKNOWN_METRICS_TYPE_NAME;
+std::string BaseClassMetrics<scalar_t>::static_unknown_metricTypeName_ =
+  UNKNOWN_METRICS_TYPE_NAME;
 
-/*! \synchronize this with the enum list. Empty list allows us to be not abstract - so that we can generically support stl containers like maps. */
+/*! \synchronize this with the enum list. Empty list allows us to be not
+ * abstract - so that we can generically support stl containers like maps.
+ */
 template <typename scalar_t>
 std::vector<std::string> BaseClassMetrics<scalar_t>::static_metricNames_ = {};
 
-/*! \This is a list of all possible types - it is used to generate an empty output for print messages when a metric does not appear in a list.*/
+/*! \This is a list of all possible types - it is used to generate an empty
+ * output for print messages when a metric does not appear in a list.
+ */
 template <typename scalar_t>
-std::vector<std::string> BaseClassMetrics<scalar_t>::static_allMetricNames_ = { IMBALANCE_METRICS_TYPE_NAME, GRAPH_METRICS_TYPE_NAME };
+std::vector<std::string> BaseClassMetrics<scalar_t>::static_allMetricNames_ =
+  { IMBALANCE_METRICS_TYPE_NAME,
+    GRAPH_METRICS_TYPE_NAME,
+    ORDERING_METRICS_TYPE_NAME };
 
 } // namespace Zoltan2
 #endif

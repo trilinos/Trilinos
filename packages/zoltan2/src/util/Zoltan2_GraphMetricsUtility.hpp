@@ -699,26 +699,18 @@ template <typename Adapter>
   typedef typename Adapter::part_t part_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  typedef GraphMetrics<scalar_t> mv_t;
   typedef Tpetra::CrsMatrix<part_t,lno_t,gno_t,node_t>  sparse_matrix_type;
   typedef Tpetra::Vector<part_t,lno_t,gno_t,node_t>     vector_t;
-  typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
+  typedef Tpetra::Map<lno_t, gno_t, node_t>             map_type;
   typedef Tpetra::global_size_t GST;
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
   using Teuchos::as;
 
-  // add some more metrics to the array
-  typedef typename ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > >::size_type array_size_type;
-  metrics.resize( metrics.size() + numMetrics );
-
-  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ) {
-    mv_t * newMetric = new mv_t;									// allocate the new memory
-    env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);		// check errors
-    metrics[n] = rcp( newMetric); 				// create the new members
-    }
-  array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
-
+  auto next = metrics.size(); // where we begin filling
+  typedef GraphMetrics<scalar_t> gm_t;
+  for (auto n = 0; n < numMetrics; ++n)  {
+    addNewMetric<gm_t, scalar_t>(env, metrics);
 
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.

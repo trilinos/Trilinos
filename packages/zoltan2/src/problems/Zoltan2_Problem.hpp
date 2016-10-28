@@ -132,7 +132,7 @@ public:
 
   /*! \brief Method that creates a solution.
    */
-  virtual void solve(bool updateInputData) = 0;
+  virtual void solve(bool updateInputData = true) = 0;
 
   /*! \brief Return the communicator passed to the problem
    */

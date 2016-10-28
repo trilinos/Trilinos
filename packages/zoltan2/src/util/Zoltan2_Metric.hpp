@@ -44,10 +44,13 @@
 // @HEADER
 
 /*! \file Zoltan2_Metric.hpp
- *  \Includes the files for working with MetricValues and GraphMetricValues classes.
+ *  \Includes the files for working with:
+ *  MetricValues, GraphMetricValues, and OrderingMetrics classes.
  */
 
 #include <Zoltan2_GraphMetrics.hpp>
 #include <Zoltan2_GraphMetricsUtility.hpp>
 #include <Zoltan2_ImbalanceMetrics.hpp>
 #include <Zoltan2_ImbalanceMetricsUtility.hpp>
+#include <Zoltan2_OrderingMetrics.hpp>
+#include <Zoltan2_OrderingMetricsUtility.hpp>

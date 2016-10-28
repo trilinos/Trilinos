@@ -139,7 +139,7 @@ public:
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
   
-  void solve(bool updateInputData=true); 
+  virtual void solve(bool updateInputData = true);
 
   /*! \brief Set up validators specific to this Problem
   */

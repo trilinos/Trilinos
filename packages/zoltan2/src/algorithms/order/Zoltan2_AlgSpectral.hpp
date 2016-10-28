@@ -62,8 +62,11 @@ template <typename Adapter>
 int AlgSpectral(
   const RCP<GraphModel<Adapter> > &model, 
   //const RCP<Adapter> &matrixadapter, // Hack: Use matrix adapter directly
-  const RCP<OrderingSolution<typename Adapter::lno_t,
-                             typename Adapter::gno_t> > &solution,
+
+  // TO DO - update this algorithm to have the proper formatting like
+  // the others.
+  const RCP<LocalOrderingSolution<typename Adapter::lno_t> >
+    &solution,
   const RCP<Teuchos::ParameterList> &pl,
   const RCP<const Teuchos::Comm<int> > &comm
 ) 
@@ -84,7 +87,6 @@ int AlgSpectral(
 
   HELLO;
 
-// TODO: Check params to do local or global ordering.
   bool localOrder = true;
 
   const size_t nVtx = model->getLocalNumVertices();
