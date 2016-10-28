@@ -18,9 +18,9 @@ namespace Experimental{
 
 namespace Graph{
 
-enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL,
+enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_VIENNA,
                      SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
-                     SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2};
+                     SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2, SPGEMM_KK_MEMSPEED};
 
 template <class lno_row_view_t_,
           class lno_nnz_view_t_,
@@ -168,6 +168,7 @@ public:
 #endif
 private:
   SPGEMMAlgorithm algorithm_type;
+  size_type result_nnz_size;
 
   bool called_symbolic;
   bool called_numeric;
@@ -177,7 +178,7 @@ private:
   nnz_lno_t max_nnz_inresult;
   nnz_lno_t max_nnz_compressed_result;
 
-  row_lno_temp_work_view_t compressed_b_rowmap, compressed_b_set_begins, compressed_b_set_nexts;
+  row_lno_temp_work_view_t compressed_b_rowmap;// compressed_b_set_begins, compressed_b_set_nexts;
   nnz_lno_temp_work_view_t compressed_b_set_indices, compressed_b_sets;
   row_lno_temp_work_view_t compressed_c_rowmap;
 
@@ -214,6 +215,20 @@ private:
 
     num_multi_colors = num_multi_colors_;
     num_used_colors = num_used_colors_;
+  }
+
+  /**
+   * \brief sets the result nnz size.
+   * \param result_nnz_size: size of the output matrix.
+   */
+  void set_c_nnz(size_type result_nnz_size_){
+    this->result_nnz_size = result_nnz_size_;
+  }
+  /**
+   * \brief returns the result nnz size.
+   */
+  void get_c_nnz(){
+    return this->result_nnz_size;
   }
 
   void set_multi_color_scale(double multi_color_scale_){
@@ -253,18 +268,7 @@ private:
 
 
 
-  void set_compressed_b(
-      row_lno_temp_work_view_t compressed_b_rowmap_,
-      nnz_lno_temp_work_view_t compressed_b_set_indices_,
-      nnz_lno_temp_work_view_t compressed_b_sets_,
-      row_lno_temp_work_view_t compressed_b_set_begins_,
-      row_lno_temp_work_view_t compressed_b_set_nexts_){
-    compressed_b_rowmap = compressed_b_rowmap_;
-    compressed_b_set_indices = compressed_b_set_indices_;
-    compressed_b_sets = compressed_b_sets_;
-    compressed_b_set_begins = compressed_b_set_begins_;
-    compressed_b_set_nexts = compressed_b_set_nexts_;
-  }
+
 
   void get_compressed_b(
       row_lno_temp_work_view_t &compressed_b_rowmap_,
@@ -275,15 +279,13 @@ private:
     compressed_b_rowmap_ = compressed_b_rowmap;
     compressed_b_set_indices_ = compressed_b_set_indices;
     compressed_b_sets_ = compressed_b_sets;
-    compressed_b_set_begins_ = compressed_b_set_begins;
-    compressed_b_set_nexts_ = compressed_b_set_nexts;
   }
 
   /**
    * \brief Default constructor.
    */
   SPGEMMHandle(SPGEMMAlgorithm gs = SPGEMM_DEFAULT):
-    algorithm_type(gs),
+    algorithm_type(gs), result_nnz_size(0),
     called_symbolic(false), called_numeric(false),
     suggested_vector_size(0), suggested_team_size(0), max_nnz_inresult(0),
     tranpose_a_xadj(), tranpose_b_xadj(), tranpose_c_xadj(),
@@ -372,6 +374,7 @@ private:
     }
 #endif
   }
+
 
 
 

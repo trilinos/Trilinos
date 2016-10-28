@@ -9,10 +9,15 @@
 #include <iostream>
 #include <limits>
 
+#include "utils/KokkosKernels_ExecSpaceUtils.hpp"
+#include "utils/KokkosKernels_SimpleUtils.hpp"
+#include "utils/KokkosKernels_SparseUtils.hpp"
+#include "utils/KokkosKernels_PrintUtils.hpp"
+#include "utils/KokkosKernels_VectorUtils.hpp"
+
 #ifndef _KOKKOSKERNELSUTILS_HPP
 #define _KOKKOSKERNELSUTILS_HPP
 
-#define KOKKOSKERNELS_MACRO_MIN(x,y) ((x) < (y) ? (x) : (y))
 
 namespace KokkosKernels{
 
@@ -20,56 +25,18 @@ namespace Experimental{
 
 namespace Util{
 
-enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_PTHREADS, Exec_QTHREADS, Exec_CUDA};
+
 template <typename ExecutionSpace>
 ExecSpaceType get_exec_space_type(){
+  return kk_get_exec_space_type<ExecutionSpace>();
+}
 
-#if defined( KOKKOS_HAVE_SERIAL )
-  if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
-    return Exec_SERIAL;
-  }
-#endif
-
-#if defined( KOKKOS_HAVE_PTHREAD )
-  if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
-    return Exec_PTHREADS;
-  }
-#endif
-
-#if defined( KOKKOS_HAVE_OPENMP )
-  if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-    return Exec_OMP;
-  }
-#endif
-
-#if defined( KOKKOS_HAVE_CUDA )
-  if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
-    return Exec_CUDA;
-  }
-#endif
-
-#if defined( KOKKOS_HAVE_QTHREAD)
-  if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
-    return Exec_QTHREADS;
-  }
-#endif
-  return Exec_SERIAL;
-
+inline int get_suggested_vector__size(
+    size_t nr, size_t nnz, ExecSpaceType exec_space){
+  return kk_get_suggested_vector_size(nr,nnz, exec_space);
 }
 
 
-template <typename in_lno_view_t,
-          typename out_lno_view_t>
-struct Histogram{
-  in_lno_view_t inview;
-  out_lno_view_t outview;
-  Histogram (in_lno_view_t inview_, out_lno_view_t outview_): inview(inview_), outview(outview_){}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t &ii) const {
-    Kokkos::atomic_fetch_add(&(outview(inview(ii))),1);
-  }
-};
 
 template <typename in_lno_view_t,
           typename out_lno_view_t,
@@ -78,9 +45,7 @@ void get_histogram(
     typename in_lno_view_t::size_type in_elements,
     in_lno_view_t in_view,
     out_lno_view_t histogram /*must be initialized with 0s*/){
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, in_elements), Histogram<in_lno_view_t, out_lno_view_t>(in_view, histogram));
-  MyExecSpace::fence();
+  kk_get_histogram<in_lno_view_t, out_lno_view_t, MyExecSpace>(in_elements, in_view, histogram);
 }
 
 template <typename idx, typename ExecutionSpace>
@@ -151,40 +116,6 @@ void get_suggested_vector_team_size(
 }
 
 
-inline int get_suggested_vector__size(
-    size_t nr, size_t nnz, ExecSpaceType exec_space){
-  int suggested_vector_size_ = 1;
-  switch (exec_space){
-  default:
-    break;
-  case Exec_SERIAL:
-  case Exec_OMP:
-  case Exec_PTHREADS:
-  case Exec_QTHREADS:
-    break;
-  case Exec_CUDA:
-   
-    suggested_vector_size_ = nnz / double (nr) + 0.5;
-    if (suggested_vector_size_ < 3){
-      suggested_vector_size_ = 2;
-    }
-    else if (suggested_vector_size_ <= 6){
-      suggested_vector_size_ = 4;
-    }
-    else if (suggested_vector_size_ <= 12){
-      suggested_vector_size_ = 8;
-    }
-    else if (suggested_vector_size_ <= 24){
-      suggested_vector_size_ = 16;
-    }
-    else {
-      suggested_vector_size_ = 32;
-    }
-    break;
-  }
-  return suggested_vector_size_;
-
-}
 
 template <typename idx_array_type,
           typename idx_edge_array_type,
@@ -496,40 +427,7 @@ struct FillSymmetricEdgeList_HashMap{
 };
 template <typename idx_array_type>
 void print_1Dview(idx_array_type view, bool print_all = false){
-
-  typedef typename idx_array_type::HostMirror host_type;
-  typedef typename idx_array_type::size_type idx;
-  host_type host_view = Kokkos::create_mirror_view (view);
-  Kokkos::deep_copy (host_view , view);
-  idx nr = host_view.dimension_0();
-  if (!print_all){
-
-
-    if (nr > 20){
-      idx n = 10;
-      for (idx i = 0; i < n; ++i){
-        std::cout << host_view(i) << " ";
-      }
-      std::cout << "... ... ... ";
-
-      for (idx i = nr-n; i < nr; ++i){
-        std::cout << host_view(i) << " ";
-      }
-      std::cout << std::endl;
-    }
-    else {
-      for (idx i = 0; i < nr; ++i){
-        std::cout << host_view(i) << " ";
-      }
-      std::cout << std::endl;
-    }
-  }
-  else {
-    for (idx i = 0; i < nr; ++i){
-      std::cout << host_view(i) << " ";
-    }
-    std::cout << std::endl;
-  }
+  kk_print_1Dview(view, print_all);
 }
 
 template <typename forward_map_type, typename reverse_map_type>
@@ -591,48 +489,16 @@ struct Fill_Reverse_Map{
 };
 
 
-template <typename array_type>
-struct InclusiveParallelPrefixSum{
-  typedef typename array_type::value_type idx;
-  array_type array_sum;
-  InclusiveParallelPrefixSum(array_type arr_): array_sum(arr_){}
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t ii, size_t& update, const bool final) const {
-    update += array_sum(ii);
-    if (final) {
-      array_sum(ii) = idx (update);
-    }
-  }
-};
 
 template <typename forward_array_type, typename MyExecSpace>
 void inclusive_parallel_prefix_sum(typename forward_array_type::value_type num_elements, forward_array_type arr){
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_scan( my_exec_space(0, num_elements), InclusiveParallelPrefixSum<forward_array_type>(arr));
+  kk_inclusive_parallel_prefix_sum<forward_array_type, MyExecSpace>(num_elements, arr);
 }
-
-template <typename array_type>
-struct ExclusiveParallelPrefixSum{
-  typedef typename array_type::value_type idx;
-  array_type array_sum;
-  ExclusiveParallelPrefixSum(array_type arr_): array_sum(arr_){}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t ii, size_t& update, const bool final) const {
-
-    idx val = array_sum(ii);
-    if (final) {
-      array_sum(ii) = idx (update);
-    }
-    update += val;
-  }
-};
 
 template <typename forward_array_type, typename MyExecSpace>
 void exclusive_parallel_prefix_sum(typename forward_array_type::value_type num_elements, forward_array_type arr){
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_scan( my_exec_space(0, num_elements), ExclusiveParallelPrefixSum<forward_array_type>(arr));
+  kk_exclusive_parallel_prefix_sum<forward_array_type, MyExecSpace>(num_elements, arr);
 }
 
 template <typename array_type>
@@ -662,52 +528,19 @@ struct PropogataMaxValstoZeros{
 
 };
 
-template <typename out_array_t, typename in_array_t, typename scalar_1, typename scalar_2>
-struct A_times_X_plus_B{
-
-  out_array_t out_view;
-  in_array_t in_view;
-  const scalar_1 a;
-  const scalar_2 b;
-  A_times_X_plus_B(
-      out_array_t out_view_,
-      in_array_t in_view_,
-      scalar_1 a_,
-      scalar_2 b_): out_view(out_view_),in_view(in_view_), a(a_), b(b_){}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t ii) const {
-    out_view(ii) = in_view(ii) * a + b;
-  }
-};
-
 template <typename out_array_t, typename in_array_t, typename scalar_1, typename scalar_2, typename MyExecSpace>
 void a_times_x_plus_b(typename in_array_t::value_type num_elements,
                   in_array_t out_arr, in_array_t in_arr,
                   scalar_1 a, scalar_2 b){
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, num_elements),
-      A_times_X_plus_B<out_array_t, in_array_t, scalar_1, scalar_2>(out_arr, in_arr, a, b));
+  kk_a_times_x_plus_b<out_array_t, in_array_t, scalar_1, scalar_2, MyExecSpace>
+  (num_elements, out_arr, in_arr,a, b);
 }
 
-template <typename out_array_type, typename in_array_type>
-struct ModularView{
-  typedef typename in_array_type::value_type vt;
-  out_array_type out_view;
-  in_array_type in_view;
-  const int modular_constant;
-  ModularView(out_array_type out_view_,in_array_type in_view_,int mod_factor_): out_view(out_view_),in_view(in_view_), modular_constant(mod_factor_){}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t ii) const {
-    out_view(ii) = in_view(ii) % modular_constant;
-  }
-};
 
 template <typename out_array_type, typename in_array_type, typename MyExecSpace>
 void modular_view(typename in_array_type::value_type num_elements, out_array_type out_arr, in_array_type in_arr, int mod_factor_){
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, num_elements), ModularView<out_array_type, in_array_type>(out_arr, in_arr, mod_factor_));
+  kk_modular_view<out_array_type, in_array_type, MyExecSpace>
+  (num_elements, out_arr, in_arr, mod_factor_);
 }
 
 template <typename array_type>
@@ -899,40 +732,19 @@ void create_reverse_map(
         tmp_color_xadj,
         multiply_shift_for_scale,
         division_shift_for_bucket);
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    Kokkos::Impl::Timer timer;
-#endif
     Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
     MyExecSpace::fence();
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    std::cout << "-CREATE_INIT_REVERSE_MAP:" << timer.seconds() << std::endl;
-    timer.reset();
-#endif
-    //print_1Dview(tmp_color_xadj, true);
 
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(tmp_reverse_size + 1, tmp_color_xadj);
     MyExecSpace::fence();
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    std::cout << "-CREATE_SCAN_REVERSE_MAP:" << timer.seconds() << std::endl;
-    //print_1Dview(tmp_color_xadj, true);
-#endif
 
     Kokkos::parallel_for (my_exec_space (0, num_reverse_elements + 1) , StridedCopy<reverse_array_type, reverse_array_type>(tmp_color_xadj, reverse_map_xadj, scale_size));
     MyExecSpace::fence();
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    //print_1Dview(tmp_color_xadj, true);
-    //print_1Dview(reverse_map_xadj,true);
-    timer.reset();
-#endif
     Fill_Reverse_Scale_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj,
         multiply_shift_for_scale, division_shift_for_bucket);
     Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
     MyExecSpace::fence();
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    std::cout << "-CREATE_FILL_REVERSE_MAP:" << timer.seconds() << std::endl;
-    //print_1Dview(reverse_map_adj);
-#endif
   }
   else
   //atomic implementation.
@@ -940,36 +752,19 @@ void create_reverse_map(
     reverse_array_type tmp_color_xadj (Kokkos::ViewAllocateWithoutInitializing("TMP_REVERSE_XADJ"), num_reverse_elements + 1);
 
     Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(forward_map, reverse_map_xadj);
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    Kokkos::Impl::Timer timer;
-#endif
 
     Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
     MyExecSpace::fence();
     //print_1Dview(reverse_map_xadj);
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    std::cout << "CREATE_INIT_REVERSE_MAP:" << timer.seconds() << std::endl;
-    timer.reset();
-#endif
 
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(num_reverse_elements + 1, reverse_map_xadj);
     MyExecSpace::fence();
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    //print_1Dview(reverse_map_xadj);
-    std::cout << "CREATE_SCAN_REVERSE_MAP:" << timer.seconds() << std::endl;
-#endif
     Kokkos::deep_copy (tmp_color_xadj, reverse_map_xadj);
     MyExecSpace::fence();
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    timer.reset();
-#endif
     Fill_Reverse_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj);
     Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
     MyExecSpace::fence();
-#ifdef KOKKOSKERNELS_TIME_REVERSE
-    std::cout << "CREATE_FILL_REVERSE_MAP:" << timer.seconds() << std::endl;
-#endif
   }
 }
 
@@ -1629,108 +1424,6 @@ struct MaxHeap{
 
 
 
-template <typename in_row_view_t,
-          typename in_nnz_view_t,
-          typename in_scalar_view_t,
-          typename out_row_view_t,
-          typename out_nnz_view_t,
-          typename out_scalar_view_t,
-          typename tempwork_row_view_t,
-          typename MyExecSpace>
-struct TransposeMatrix{
-
-  struct CountTag{};
-  struct FillTag{};
-
-  typedef struct CountTag CountTag;
-  typedef struct FillTag FillTag;
-  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
-  typedef typename team_count_policy_t::member_type team_count_member_t ;
-  typedef typename team_fill_policy_t::member_type team_fill_member_t ;
-
-  typedef typename in_nnz_view_t::non_const_value_type nnz_lno_t;
-  typedef typename in_row_view_t::non_const_value_type size_type;
-
-
-  typename in_nnz_view_t::non_const_value_type num_rows;
-  typename in_nnz_view_t::non_const_value_type num_cols;
-  in_row_view_t xadj;
-  in_nnz_view_t adj;
-  in_scalar_view_t vals;
-  out_row_view_t t_xadj; //allocated
-  out_nnz_view_t t_adj;  //allocated
-  out_nnz_view_t t_vals;  //allocated
-  tempwork_row_view_t tmp_txadj;
-  bool transpose_values;
-  nnz_lno_t team_work_size;
-
-  TransposeMatrix(
-      nnz_lno_t num_rows_,
-      nnz_lno_t num_cols_,
-      in_row_view_t xadj_,
-      in_nnz_view_t adj_,
-      in_scalar_view_t vals_,
-      out_row_view_t t_xadj_,
-      out_nnz_view_t t_adj_,
-      out_nnz_view_t t_vals_,
-      tempwork_row_view_t tmp_txadj_,
-      bool transpose_values_,
-      nnz_lno_t team_row_work_size_):
-        num_rows(num_rows_), num_cols(num_cols_),
-        xadj(xadj_), adj(adj_), vals(vals_),
-        t_xadj(t_xadj_),  t_adj(t_adj_), t_vals(t_vals_),
-        tmp_txadj(tmp_txadj_), transpose_values(transpose_values_), team_work_size(team_row_work_size_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const CountTag&, const team_count_member_t & teamMember) const {
-
-    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
-    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, num_rows);
-
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,team_row_begin,team_row_end), [&] (const nnz_lno_t& row_index) {
-      const size_type col_begin = xadj[row_index];
-      const size_type col_end = xadj[row_index + 1];
-      const nnz_lno_t left_work = col_end - col_begin;
-      Kokkos::parallel_for(
-          Kokkos::ThreadVectorRange(teamMember, left_work),
-          [&] (nnz_lno_t i) {
-        const size_type adjind = i + col_begin;
-        const nnz_lno_t colIndex = adj[adjind];
-        Kokkos::atomic_fetch_add(&(t_xadj(colIndex)),1);
-      });
-    });
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const FillTag&, const team_fill_member_t & teamMember) const {
-    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
-    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, num_rows);
-
-
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,team_row_begin,team_row_end), [&] (const nnz_lno_t& row_index) {
-    const nnz_lno_t teamsize = teamMember.team_size();
-    //for (nnz_lno_t row_index = team_row_begin + teamMember.team_rank(); row_index < team_row_end; row_index += teamsize){
-      const size_type col_begin = xadj[row_index];
-      const size_type col_end = xadj[row_index + 1];
-      const nnz_lno_t left_work = col_end - col_begin;
-      Kokkos::parallel_for(
-          Kokkos::ThreadVectorRange(teamMember, left_work),
-          [&] (nnz_lno_t i) {
-        const size_type adjind = i + col_begin;
-        const nnz_lno_t colIndex = adj[adjind];
-        const size_type pos = Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)),1);
-
-        t_adj(pos) = row_index;
-        if (transpose_values){
-          t_vals(pos) = vals[adjind];
-        }
-
-      });
-    //}
-    });
-  }
-};
 
 
 template <typename in_row_view_t,
@@ -1891,48 +1584,19 @@ void transpose_graph(
     int suggested_team_size = -1,
     typename in_nnz_view_t::non_const_value_type team_row_chunk_size = 256
     ){
-  //first count the number of entries in each column
-
-  tempwork_row_view_t tmp_row_view(Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), num_cols + 1);
-  in_nnz_view_t tmp1;
-  out_nnz_view_t tmp2;
-  typedef TransposeMatrix <in_row_view_t, in_nnz_view_t, in_nnz_view_t,
-      out_row_view_t, out_nnz_view_t, out_nnz_view_t,
-      tempwork_row_view_t, MyExecSpace>  TransposeFunctor_t;
-  TransposeFunctor_t tm (num_rows, num_cols, xadj, adj, tmp1, t_xadj, t_adj, tmp2, tmp_row_view, false, team_row_chunk_size);
-
-  typedef typename TransposeFunctor_t::team_count_policy_t tcp_t;
-  typedef typename TransposeFunctor_t::team_fill_policy_t tfp_t;
-
-  typename in_row_view_t::non_const_value_type nnz = adj.dimension_0();
-  if (vector_size == -1)
-    vector_size = get_suggested_vector__size(num_rows, nnz, get_exec_space_type<MyExecSpace>());
-
-  Kokkos::Impl::Timer timer1;
-  if (suggested_team_size == -1)
-    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
-  else
-    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
-
-  MyExecSpace::fence();
-
-
-  exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
-  MyExecSpace::fence();
-  Kokkos::deep_copy(tmp_row_view, t_xadj);
-  MyExecSpace::fence();
-
-  timer1.reset();
-  if (suggested_team_size == -1)
-    Kokkos::parallel_for(  tfp_t(num_rows / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
-  else
-    Kokkos::parallel_for(  tfp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
-
-  MyExecSpace::fence();
-
-
-
-
+  kk_transpose_graph<in_row_view_t,in_nnz_view_t,
+                      out_row_view_t, out_nnz_view_t, tempwork_row_view_t,
+                      MyExecSpace>(
+                          num_rows,
+                          num_cols,
+                          xadj,
+                          adj,
+                          t_xadj, //pre-allocated -- initialized with 0
+                          t_adj,  //pre-allocated -- no need for initialize
+                          vector_size,
+                          suggested_team_size,
+                          team_row_chunk_size
+                          );
 }
 
 //TODO: DELETE this one, old version.
