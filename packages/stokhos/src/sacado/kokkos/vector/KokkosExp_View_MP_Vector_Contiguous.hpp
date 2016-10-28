@@ -1408,7 +1408,6 @@ partition( const Kokkos::Experimental::View<D,P...> & src ,
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 // Specialization for deep_copy( view, view::value_type ) for Cuda
@@ -1416,7 +1415,7 @@ namespace Impl {
 template< class OutputView >
 struct ViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
-                                                        ViewMPVectorContiguous >::value &&
+                                                        Experimental::Impl::ViewMPVectorContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
                                                    Cuda >::value >::type >
 {
@@ -1490,7 +1489,6 @@ struct ViewFill< OutputView ,
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
 } // namespace Impl
-} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
