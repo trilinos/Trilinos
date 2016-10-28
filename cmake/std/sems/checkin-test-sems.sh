@@ -1,11 +1,45 @@
 #!/bin/bash
 
+#
 # Test (and push) Trilinos on any machine that has the SEMS Dev Env available
 #
-# To use, just symlink this script into the directory where you want to run it with:
+# A) Setup to CHECKIN directory and symlink to checkin-test-sems.sh script:
+#
+# To use on Linux, first one must create a directory to run from and then
+# symlink this script into it.
+#
+# On Linux, one can create any arbitrary directory and then symlink this
+# script into it:
 #
 #   $ cd <some-build-dir>/
 #   $ ln -s <trilinos-src-dir>/cmake/std/sems/checkin-test-sems.sh .
+#
+# On Linux, the directory path to Trilinos is picked up automatically from any
+# arbitrary location.
+#
+# However, on OSX, it can't pick up the path to Trilinos from the symlink.  In
+# this case, one can use one of the following standard directory structures
+# and it will just work:
+#
+#   Trilinos/
+#     CHECKIN/
+#       ./checkin-test-sems.sh   # symlink
+#
+# or
+#
+#   <some-base-dir>/
+#     Trilinos/
+#     BUILDS/
+#       CHECKIN/
+#         ./checkin-test-sems.sh  # symlink
+#
+# Otherwise, if one does not want to use one of the standard directory
+# structures and is not on Linux, then one will have to manually set the
+# variable TRILINOS_DIR in the env before calling this script like:
+#
+#   $ env TRILINOS_DIR=<trilinos-src-dir> ./checkin-test-sems.sh [other options]
+#
+# B) Local testing and pushing:
 #
 # For local builds, run with:
 #
@@ -29,22 +63,37 @@
 #
 # A) Get the path to the Trilinos source directory
 #
-# NOTE: Script must be symlinked into the Trilinos source tree for this to
-# work correctly.
+# This first tries the standard configurations (above).
+#
+# If that does not check out, then it tries to grab the directory path from
+# the symlink.  On Linux that will work.  On OSX, it will not.  In that case,
+# it just bombs out with an error message.
 #
 
 if [ "$TRILINOS_DIR" == "" ] ; then
-  _ABS_FILE_PATH=`readlink -f $0`
-  _SCRIPT_DIR=`dirname $_ABS_FILE_PATH`
-  TRILINOS_DIR=$_SCRIPT_DIR/../../..
+  # First try standard directory configurations
+  if [ -e ../../Trilinos ] ; then
+    TRILINOS_DIR=../../Trilinos
+  else
+    # Grab from the symlink (only works on Linux)
+    _ABS_FILE_PATH=`readlink -f $0` || \
+     echo "Could not follow symlink to set TRILINOS_DIR!"
+    if [ "$_ABS_FILE_PATH" != "" ] ; then
+      _SCRIPT_DIR=`dirname $_ABS_FILE_PATH`
+      TRILINOS_DIR=$_SCRIPT_DIR/../../..
+    fi
+  fi
 fi
 
-TRILINOS_DIR_ABS=$(readlink -f $TRILINOS_DIR)
-echo "TRILINOS_DIR_ABS = $TRILINOS_DIR_ABS"
+echo "TRILINOS_DIR = '$TRILINOS_DIR'"
+if [ "$TRILINOS_DIR" == "" ] ; then
+  echo "ERROR: Count not determine TRILINOS_DIR. Please use standard directory structure or set TRILINOS_DIR in env!"
+  exit 1
+fi
 
 # Make sure the right env is loaded!
 export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
-source $TRILINOS_DIR_ABS/cmake/load_ci_sems_dev_env.sh
+source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
 
 #
 # B) Set up the bulid configurations
@@ -126,7 +175,8 @@ fi
 #
 # To exclude tests, include the option:
 #
-#  \"--ctest-options=-E '(<test1>|<test2>|...)\",
+#  \"--ctest-options=-E '(test1|test2|...)\",
+#
 
 #
 # D) Run the checkin-test.py script!

@@ -75,13 +75,13 @@
 #
 
 # Module defaults
-sems_compiler_and_version_default=sems-gcc/4.8.4
+sems_compiler_and_version_default=sems-gcc/5.3.0
 sems_mpi_and_version_default=sems-openmpi/1.8.7
 sems_cmake_and_version_default=sems-cmake/3.5.2
 
 # Other defaults
 sems_python_and_version_default=sems-python/2.7.9
-sems_boost_and_version_default=sems-boost/1.55.0/base
+sems_boost_and_version_default=sems-boost/1.58.0/base
 # NOTE: If you change these versions, you also have to update the same list in
 # the unload_sems_dev_env.sh module as well!
 
@@ -153,7 +153,7 @@ module load sems-zlib/1.2.8/base
 module load sems-hdf5/1.8.12/parallel 
 module load sems-netcdf/4.3.2/parallel 
 module load sems-parmetis/4.0.3/parallel 
-module load sems-scotch/6.0.3/parallel 
+#module load sems-scotch/6.0.3/parallel 
 module load sems-superlu/4.3/base
 
 if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
