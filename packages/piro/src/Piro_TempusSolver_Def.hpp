@@ -230,6 +230,17 @@ void Piro::TempusSolver<Scalar>::initialize(
      *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
      //
      //IKT, 10/27/16, FIXME: figure out how to convert the following to Tempus
+
+     //Create Tempus integrator
+     fwdStateIntegrator = Tempus::integratorBasic<Scalar>(tempusPL, model, observer);
+
+     //Get stepper from integrator
+     fwdStateStepper = fwdStateIntegrator->getStepper();
+
+    //IKT, 10/28/16:
+    //There seems to be no analog of Rythmos::timeStepNonlinearSolver in Tempus. 
+    //Ask Curt / Roger.  It seems it is only needed for sensitivities, which may not be 
+    //supported in Tempus, so this may not matter.  
     /*fwdTimeStepSolver = Rythmos::timeStepNonlinearSolver<double>();
 
     if (rythmosSolverPL->getEntryPtr("NonLinear Solver")) {
@@ -606,15 +617,26 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     *out << "\nE) Solve the forward problem ...\n";
     //
 
-    fwdStateStepper->setInitialCondition(state_ic);
+    //IKT, 10/28/16: what is analog of setInitialCondition in Tempus::Stepper? 
+    //FIXME: convert the following to Tempus
+    //fwdStateStepper->setInitialCondition(state_ic);
 
-    fwdStateIntegrator->setStepper(fwdStateStepper, t_final, true);
+    //IKT, 10/28/16: what is analog of setStepper in Tempus::IntegratorBasic? 
+    //FIXME: convert the following to Tempus
+    //fwdStateIntegrator->setStepper(fwdStateStepper, t_final, true);
     *out << "T final : " << t_final << " \n";
 
-    Teuchos::Array<RCP<const Thyra::VectorBase<Scalar> > > x_final_array;
+    //IKT, 10/28/16: it seems analog of getFwdPoints in Tempus is getSolutionHistory.
+    /*Teuchos::Array<RCP<const Thyra::VectorBase<Scalar> > > x_final_array;
     fwdStateIntegrator->getFwdPoints(
         Teuchos::tuple<Scalar>(t_final), &x_final_array, NULL, NULL);
     finalSolution = x_final_array[0];
+    */
+
+    RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
+    RCP<Tempus::SolutionState<Scalar> > solutionState = (*solutionHistory)[0];
+    finalSolution = solutionState->getX();
+
 
     if (Teuchos::VERB_MEDIUM <= solnVerbLevel) {
       std::cout << "Final Solution\n" << *finalSolution << std::endl;
@@ -807,7 +829,8 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
         modelInArgs.set_p(l+1, p_in2);
       }
       //Set time to be final time at which the solve occurs (< t_final in the case we don't make it to t_final).
-      modelInArgs.set_t(fwdStateStepper->getTimeRange().lower());
+      //IKT, 10/28/16, FIXME: convert the following to Tempus 
+      //modelInArgs.set_t(fwdStateStepper->getTimeRange().lower());
     }
 
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
@@ -859,6 +882,7 @@ Piro::TempusSolver<Scalar>::getValidTempusParameters() const
   //validPL->set<std::string>("Verbosity Level", "", "");
   validPL->set<bool>("Invert Mass Matrix", false, "");
   validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<std::string>("Integrator Name", "Tempus Integrator", "");
   validPL->sublist("Tempus Integrator", false, "");
   validPL->sublist("Tempus Stepper", false, "");
   return validPL;
