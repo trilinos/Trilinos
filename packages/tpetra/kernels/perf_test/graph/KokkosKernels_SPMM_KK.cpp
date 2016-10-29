@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include "KokkosKernels_GraphHelpers.hpp"
 #include "KokkosKernels_SPGEMM.hpp"
@@ -157,6 +156,9 @@ int main (int argc, char ** argv){
       }
       else if ( 0 == strcasecmp( argv[i] , "VIENNA" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 12;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKMEMSPEED" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 13;
       }
       else {
         cmdline[ CMD_ERROR ] = 1 ;
@@ -966,6 +968,9 @@ crsMat_t run_experiment(
   case 12:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_VIENNA);
     break;
+  case 13:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMSPEED);
+    break;
 
 
   default:
@@ -998,6 +1003,7 @@ crsMat_t run_experiment(
     ExecSpace::fence();
     double symbolic_time = timer1.seconds();
 
+    /*
     Kokkos::Impl::Timer timer2;
     KokkosKernels::Experimental::Graph::spgemm_numeric(
         &kh,
@@ -1019,9 +1025,10 @@ crsMat_t run_experiment(
     );
     ExecSpace::fence();
     double numeric_time = timer2.seconds();
+    */
 
     Kokkos::Impl::Timer timer3;
-    KokkosKernels::Experimental::Graph::spgemm_apply(
+    KokkosKernels::Experimental::Graph::spgemm_numeric(
         &kh,
         m,
         n,
@@ -1040,13 +1047,12 @@ crsMat_t run_experiment(
         valuesC
     );
     ExecSpace::fence();
-    double apply_time = timer3.seconds();
+    double numeric_time = timer3.seconds();
 
     std::cout
-    << "mm_time:" << numeric_time + symbolic_time + apply_time
+    << "mm_time:" << symbolic_time + numeric_time
     << " symbolic_time:" << symbolic_time
-    << " numeric:" << numeric_time
-    << " apply:" << apply_time << std::endl;
+    << " numeric_time:" << numeric_time << std::endl;
   }
 
   std::cout << "row_mapC:" << row_mapC.dimension_0() << std::endl;
@@ -1054,7 +1060,7 @@ crsMat_t run_experiment(
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
 
 
-
+  if (0)
   {
 
 

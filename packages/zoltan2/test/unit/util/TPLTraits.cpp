@@ -506,11 +506,26 @@ int main(int argc, char *argv[])
     }
 
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN(zoltanGID, zgno);
-    if (zoltanGID[0] != 17 || zoltanGID[1] != 4 || 
-        zoltanGID[2] != 0 || zoltanGID[3] != 0) {
-      PRINTMSG("FAIL: long long to ZOLTAN_ID_PTR");
+    if (sizeof(ZOLTAN_ID_TYPE) == sizeof(unsigned int)) {
+      if (zoltanGID[0] != 17 || zoltanGID[1] != 4 || 
+          zoltanGID[2] != 0 || zoltanGID[3] != 0) {
+        PRINTMSG("FAIL: long long to ZOLTAN_ID_PTR");
+        ierr++;
+      }
+    }
+    else if (sizeof(ZOLTAN_ID_TYPE) == sizeof(unsigned long long)) {
+      if (test_t(zoltanGID[0]) != zgno || zoltanGID[1] != 0 ||
+          zoltanGID[2] != 0 || zoltanGID[3] != 0) {
+        PRINTMSG("FAIL: long long to ZOLTAN_ID_PTR");
+        ierr++;
+      }
+    }
+    else {
+      // should never get here 
+      PRINTMSG("FAIL: unknown sizeof(ZOLTAN_ID_TYPE)");
       ierr++;
     }
+
 
     test_t back;
     Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN(back, zoltanGID);
@@ -533,11 +548,27 @@ int main(int argc, char *argv[])
     }
 
     Zoltan2::TPL_Traits<ZOLTAN_ID_PTR,test_t>::ASSIGN(zoltanGID, zgno);
-    if (zoltanGID[0] != 25 || zoltanGID[1] != 16 || 
-        zoltanGID[2] != 0 || zoltanGID[3] != 0) {
-      PRINTMSG("FAIL: unsigned long long to ZOLTAN_ID_PTR");
+    if (sizeof(ZOLTAN_ID_TYPE) == sizeof(unsigned int)) {
+      if (zoltanGID[0] != 25 || zoltanGID[1] != 16 || 
+          zoltanGID[2] != 0 || zoltanGID[3] != 0) {
+        PRINTMSG("FAIL: unsigned long long to ZOLTAN_ID_PTR");
+        ierr++;
+      }
+    }
+    else if (sizeof(ZOLTAN_ID_TYPE) == sizeof(unsigned long long)) {
+      if (zoltanGID[0] != zgno || zoltanGID[1] != 0 ||
+          zoltanGID[2] != 0 || zoltanGID[3] != 0) {
+        PRINTMSG("FAIL: long long to ZOLTAN_ID_PTR");
+        ierr++;
+      }
+    }
+    else {
+      // should never get here 
+      PRINTMSG("FAIL: unknown sizeof(ZOLTAN_ID_TYPE)");
       ierr++;
     }
+
+
 
     test_t back;
     Zoltan2::TPL_Traits<test_t,ZOLTAN_ID_PTR>::ASSIGN(back, zoltanGID);

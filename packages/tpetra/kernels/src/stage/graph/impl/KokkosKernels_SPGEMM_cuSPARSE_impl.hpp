@@ -34,8 +34,9 @@ namespace Impl{
       bin_row_index_view_type row_mapB,
       bin_nonzero_index_view_type entriesB,
       bool transposeB,
-      cin_row_index_view_type &row_mapC,
-      cin_nonzero_index_view_type &entriesC){
+      cin_row_index_view_type row_mapC
+      //,cin_nonzero_index_view_type &entriesC
+      ){
 
 #ifdef KERNELS_HAVE_CUSPARSE
 
@@ -97,7 +98,7 @@ namespace Impl{
           cudaMemcpy(&baseC, c_xadj, sizeof(int), cudaMemcpyDeviceToHost);
           nnzC -= baseC;
       }
-      entriesC = cin_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"), nnzC);
+      //entriesC = cin_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"), nnzC);
     }
     else {
       std::cerr << "CUSPARSE requires integer values" << std::endl;

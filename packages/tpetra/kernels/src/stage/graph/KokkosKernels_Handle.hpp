@@ -1,11 +1,9 @@
 #include <KokkosKernels_GraphColorHandle.hpp>
 #include <KokkosKernels_GaussSeidelHandle.hpp>
 #include <KokkosKernels_SPGEMMHandle.hpp>
+#include "utils/KokkosKernels_ExecSpaceUtils.hpp"
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
-
-#define KOKKOSKERNELS_SPGEMM_SHMEMSIZE 16128//12032//16128//16384
-
 
 namespace KokkosKernels{
 
@@ -22,136 +20,40 @@ public:
   typedef TemporaryMemorySpace HandleTempMemorySpace;
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
-
-
-  //typedef row_index_view_type_ in_row_index_view_type;
-  //typedef lno_row_view_t_ in_row_index_view_type;
   typedef lno_row_view_t_ in_lno_row_view_t;
-
-  //typedef nonzero_index_view_type_ idx_edge_array_type;
-  //typedef lno_nnz_view_t_ in_nonzero_index_view_type;
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
-
-  //typedef nonzero_value_view_type_ value_array_type;
-  //typedef scalar_nnz_view_t_ in_nonzero_value_view_type;
   typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
 
-  //typedef typename row_index_view_type::value_type idx;
-  //typedef typename in_lno_row_view_t::non_const_value_type row_index_type;
-  //typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
   typedef typename in_lno_row_view_t::non_const_value_type size_type;
-
-  //typedef typename row_index_view_type::array_layout idx_array_layout;
   typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
-
-  //typedef typename row_index_view_type::device_type idx_device_type;
   typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
-
-  //typedef typename row_index_view_type::memory_traits idx_memory_traits;
   typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
-
-  //typedef typename row_index_view_type::HostMirror host_view_type;
   typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
-  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
-
-  //typedef typename nonzero_index_view_type::value_type idx_edge;
-  //typedef typename in_lno_nnz_view_t::non_const_value_type nonzero_index_type;
   typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-
-  //typedef typename nonzero_index_view_type::array_layout idx_edge_array_layout;
-  //typedef typename in_lno_nnz_view_t::array_layout nonzero_index_view_array_layout;
   typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
-
-  //typedef typename nonzero_index_view_type::device_type idx_edge_device_type;
-  //typedef typename in_lno_nnz_view_t::device_type nonzero_index_view_device_type;
   typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
-
-  //typedef typename nonzero_index_view_type::memory_traits idx_edge_memory_traits;
-  //typedef typename in_lno_nnz_view_t::memory_traits nonzero_index_view_memory_traits;
   typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
-
-  //typedef typename nonzero_index_view_type::HostMirror host_edge_view_type; //Host view type
-  //typedef typename in_lno_nnz_view_t::HostMirror nonzero_index_host_view_type; //Host view type
   typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
-
-
-  //typedef typename nonzero_value_view_type::value_type value_type;
-  //typedef typename in_scalar_nnz_view_t::non_const_value_type nonzero_value_type;
   typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
-
-
-  //typedef typename nonzero_value_view_type::array_layout value_type_array_layout;
-  //typedef typename in_scalar_nnz_view_t::array_layout nonzero_value_view_array_layout;
   typedef typename in_scalar_nnz_view_t::array_layout nnz_scalar_view_array_layout;
-
-  //typedef typename nonzero_value_view_type::device_type value_type_device_type;
-  //typedef typename in_scalar_nnz_view_t::device_type nonzero_value_view_device_type;
   typedef typename in_scalar_nnz_view_t::device_type nnz_scalar_view_device_t;
-
-  //typedef typename nonzero_value_view_type::memory_traits value_type_memory_traits;
-  //typedef typename in_scalar_nnz_view_t::memory_traits nonzero_value_view_memory_traits;
   typedef typename in_scalar_nnz_view_t::memory_traits nnz_scalar_view_memory_traits;
-
-  //typedef typename nonzero_value_view_type::HostMirror host_value_view_type; //Host view type
-  //typedef typename in_scalar_nnz_view_t::HostMirror nonzero_value_host_view_type; //Host view type
   typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
-
-
-  //typedef typename in_lno_row_view_t::const_data_type const_row_data_type;
   typedef typename in_lno_row_view_t::const_value_type const_row_lno_t;
   typedef typename in_lno_row_view_t::const_value_type const_size_type;
-
-  //typedef typename in_lno_row_view_t::non_const_data_type non_const_row_data_type;
   typedef typename in_lno_row_view_t::non_const_value_type non_const_row_lno_t;
-
-  //typedef typename in_row_index_view_type::memory_space row_view_memory_space;
-  //typedef typename Kokkos::View<const_row_lno_t, row_view_array_layout,
-  //    row_view_device_t, row_view_memory_traits> const_row_index_view_type;
-
   typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-
-  //typedef typename Kokkos::View<non_const_row_lno_t, row_view_array_layout,
-  //    row_view_device_t, row_view_memory_traits> non_const_row_index_view_type;
   typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
-
-
-  //typedef typename in_lno_nnz_view_t::const_data_type const_nonzero_index_data_type;
   typedef typename in_lno_nnz_view_t::const_value_type const_nnz_lno_t;
-
-  //typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nonzero_index_data_type;
-  //typedef typename in_lno_nnz_view_t::non_const_value_type non_const_nnz_lno_t;
-
-
-  //typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
-  //typedef typename Kokkos::View<const_nnz_lno_t, nnz_lno_view_array_layout,
-  //    nnz_lno_view_device_t, nnz_lno_view_memory_traits> const_nonzero_index_view_type;
   typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-
-  //typedef typename Kokkos::View<non_const_nnz_lno_t, nnz_lno_view_array_layout,
-  //    nnz_lno_view_device_t, nnz_lno_view_memory_traits> non_const_nonzero_index_view_type;
   typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
-
-
-  //typedef typename in_scalar_nnz_view_t::const_data_type const_nonzero_value_data_type; //nnz_scalar_t
   typedef typename in_scalar_nnz_view_t::const_data_type const_nnz_scalar_t; //nnz_scalar_t
-
-  //typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nonzero_value_data_type;
   typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nnz_scalar_t;
-
-
-  //typedef typename in_nonzero_value_view_type::memory_space nonzero_value_view_memory_space;
-  //typedef typename Kokkos::View<const_nnz_scalar_t, nnz_scalar_view_array_layout,
-  //      nnz_lno_view_device_t, nnz_scalar_view_memory_traits> const_nonzero_value_view_type;
   typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
-
-  //typedef typename Kokkos::View<non_const_nnz_scalar_t, nnz_scalar_view_array_layout,
-  //      nnz_lno_view_device_t, nnz_scalar_view_memory_traits> non_const_nonzero_value_view_type;
   typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
-
   typedef typename Graph::GraphColoringHandle
       <in_lno_row_view_t, non_const_lno_nnz_view_t, in_lno_nnz_view_t,
       ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GraphColoringHandleType;
-
   typedef typename Graph::GaussSeidelHandle
       <in_lno_row_view_t, in_lno_nnz_view_t, in_scalar_nnz_view_t,
       ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GaussSeidelHandleType;
@@ -160,35 +62,17 @@ public:
       <in_lno_row_view_t, in_lno_nnz_view_t, in_scalar_nnz_view_t,
       ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> SPGEMMHandleType;
 
-
-  //typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> idx_temp_work_array_type;
-  //typedef typename Kokkos::View<row_lno_t *, HandleTempMemorySpace> row_index_temp_work_view_type;
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
-
-  //typedef typename Kokkos::View<row_index_type *, HandlePersistentMemorySpace> idx_persistent_work_array_type;
-  //typedef typename Kokkos::View<row_lno_t *, HandlePersistentMemorySpace> row_index_persistent_work_view_type;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
-
-  //typedef typename row_index_persistent_work_view_type::HostMirror host_idx_persistent_view_type; //Host view type
-  //typedef typename lno_persistent_work_view_t::HostMirror row_index_persistent_host_view_type; //Host view type
   typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
   typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t; //Host view type
-
-  //typedef typename Kokkos::View<nonzero_value_type *, HandleTempMemorySpace> value_temp_work_array_type;
-  //typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> nonzero_value_temp_work_view_type;
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
-
-  //typedef typename Kokkos::View<nonzero_value_type *, HandlePersistentMemorySpace> value_persistent_work_array_type;
-  //typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> nonzero_value_persistent_work_view_type;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
-
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
-
-
   typedef typename Kokkos::View<bool *, HandlePersistentMemorySpace> bool_persistent_view_t;
   typedef typename Kokkos::View<bool *, HandleTempMemorySpace> bool_temp_view_t;
 
@@ -201,77 +85,142 @@ private:
   int suggested_team_size;
   KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space;
   bool use_dynamic_scheduling;
-  //idx_array_type row_map;
-  //idx_edge_array_type entries;
-  //value_array_type values;
 public:
 
 
 
   KokkosKernelsHandle():
       gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL),
-      team_work_size (-1), shared_memory_size(KOKKOSKERNELS_SPGEMM_SHMEMSIZE),
-      suggested_team_size(-1), my_exec_space(KokkosKernels::Experimental::Util::get_exec_space_type<HandleExecSpace>()),
+      team_work_size (-1), shared_memory_size(16128),
+      suggested_team_size(-1),
+      my_exec_space(KokkosKernels::Experimental::Util::kk_get_exec_space_type<HandleExecSpace>()),
       use_dynamic_scheduling(false){}
-  ~KokkosKernelsHandle(){
 
+  ~KokkosKernelsHandle(){
     this->destroy_gs_handle();
     this->destroy_graph_coloring_handle();
     this->destroy_spgemm_handle();
   }
 
-  int get_team_work_size(int team_size, int concurrency, nnz_lno_t overall_work_size){
+
+  /**
+   * \brief Sets the chunk size to be handled by each team.
+   * Big chunks are good, they reduce the overhead that occurs at the every iteration.
+   * However, too big chunks causes load-imbalances.
+   * If this is not set, the algorithm will use teamsize as chunk sizes.
+   * On GPUs, this is usually okay. On CPUs, we get better performance for bigger chunksizes.
+   * This depends on how big is your work. On SPGEMM a single work is the multiplication for a row.
+   * For laplace we had 50-500 FLOPs per row for AP and RxAP. Best was to use 256 chunks. ~12800 - 128K flops per team was fine.
+   * For brick we had 250 - 2500 FLOPs per  row for AP and RxAP. Best was to use 256 chunks. 64K to 640K flops per team was fine.
+   * But on EMPIRE 1200 - 20800 FLOPs per row for AP and RxAP. Best was to use 16 chunks. 19K to 330K was flops per team was fine.
+   * This bases on the load balancing issues introduced. A general way is to have 100K flops per team for SPGEMM.
+   * \param team_work_size_: input, the size of the chunks.
+   */
+  void set_team_work_size(const int team_work_size_){
+    this->team_work_size = team_work_size_;
+  }
+
+  /**
+   * \brief Returns the enum type for the execution space.
+   */
+  KokkosKernels::Experimental::Util::ExecSpaceType get_handle_exec_space(){
+    return this->my_exec_space;
+  }
+
+  /**
+   * \brief Returns the suggested team work size. If set with set_team_work_size,
+   * it will return the set value. Otherwise it will return the teamsize.
+   * \param team_size: input, team size used by the kernel.
+   * \param concurrency: input, the number of threads overall. Not used currently.
+   * \param overall_work_size: The overall work size.
+   */
+  int get_team_work_size(const int team_size, const int concurrency, const nnz_lno_t overall_work_size){
     if (this->team_work_size != -1){
       return this->team_work_size;
     }
     else {
-
+      return team_size;
+      /*
       if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
         return team_size;
       }
       else {
-        return team_size; //overall_work_size / (concurrency * team_size) ;
+        return overall_work_size / (concurrency * team_size) ;
       }
+      */
     }
-
   }
 
-  void set_dynamic_scheduling(bool is_dynamic){
+  /**
+   * \brief Sets whether to use dynamic scheduling or
+   * not for those kernels where load-imbalances might occur.
+   * \input is_dynamic: true or false -> dynamic or static scheduling.
+   */
+  void set_dynamic_scheduling(const bool is_dynamic){
     this->use_dynamic_scheduling = is_dynamic;
   }
 
+  /**
+   * \brief Returns true or false, use dynamic scheduling or not.
+   */
   bool is_dynamic_scheduling(){
     return this->use_dynamic_scheduling;
   }
 
-  void set_team_work_size(int team_work_size_){
-    this->team_work_size = team_work_size_;
-  }
 
-  size_t get_shmem_size(){
-    return shared_memory_size;
-  }
-  void set_shmem_size(size_t shared_memory_size_){
-    //std::cout << "setting shmem:" << shared_memory_size_ << std::endl;
+
+  /**
+   * \brief sets the shared memory size to be used by the kernels using shared memory on GPUs.
+   * \param shared_memory_size: input, shared memory size to be used by the kernel.   *
+   */
+  void set_shmem_size(const size_t shared_memory_size_){
     this->shared_memory_size = shared_memory_size_;
   }
 
-  int get_suggested_team_size(int vector_size){
+  /**
+   * \brief Returns the shared memory size suggested by the handle.
+   */
+  size_t get_shmem_size(){
+    return shared_memory_size;
+  }
+
+
+  /**
+   * \brief Returns the suggested vector size based on the execution space.
+   * Basically, it calculates the average degree, and rounds it up to the
+   * closes power of 2 on GPUs. on CPUs, it returns 1.
+   * \param nr: number of rows, of vertices.
+   * \param nnz: number of nonzeroes, or edges.
+   */
+  int get_suggested_vector_size(const size_t nr,const size_t nnz){
+    return KokkosKernels::Experimental::Util::kk_get_suggested_vector_size(nr, nnz, my_exec_space);
+  }
+
+  /**
+   * \brief Sets the team size to be used by the kernels. On GPUs and CPUs
+   * usually the defaults are fine. But on CPUs with hyperthreads it might be
+   * worth of trying different team sizes.
+   * \param suggested_team_size_: team size to set.
+   */
+  void set_suggested_team_size(const int suggested_team_size_){
+    this->suggested_team_size = suggested_team_size_;
+  }
+
+
+
+  /**
+   * \brief Returns the team size, either set by the user or suggested by the handle.
+   * \param vector_size: suggested vector size by the handle.
+   */
+  int get_suggested_team_size(const int vector_size){
     if (this->suggested_team_size != -1){
       return this->suggested_team_size;
     }
     else {
-      if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
-        return 256 / vector_size;
-      }
-      else {
-        return 1;
-      }
+      return KokkosKernels::Experimental::Util::kk_get_suggested_team_size(vector_size, my_exec_space);
     }
   }
-  void set_suggested_team_size(int suggested_team_size_){
-    this->suggested_team_size = suggested_team_size_;
-  }
+
 
 
 
@@ -324,18 +273,6 @@ public:
       this->gsHandle = NULL;
     }
   }
-
-
-
-  //idx_array_type get_row_map(){return this->row_map;}
-  //idx get_num_rows(){return this->row_map.dimension_0() - 1;}
-  //idx get_num_nonzeroes(){return this->entries.dimension_0();}
-
-  //idx_edge_array_type get_entries(){return this->entries;}
-  //value_array_type get_values(){return this->values;}
-  //void set_row_map(const idx_array_type &rm){this->row_map = rm;}
-  //void set_entries(const idx_edge_array_type &e){this->entries = e;}
-  //void set_values(const value_array_type &v){this->values = v;}
 
 
 
