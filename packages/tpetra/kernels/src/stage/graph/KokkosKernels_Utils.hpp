@@ -3,7 +3,6 @@
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Timer.hpp"
 #include "Kokkos_MemoryTraits.hpp"
-#include "KokkosKernels_SortKeyValue.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include <iostream>
@@ -1108,104 +1107,6 @@ void symmetrize_graph_symbolic_hashmap(
   MyExecSpace::fence();
 
 }
-
-template <typename idx_array_type, typename idx_edge_array_type,
-          typename idx_out_array_type, typename idx_out_edge_array_type, typename MyExecSpace>
-void symmetrize_graph_symbolic(
-    typename idx_array_type::value_type num_rows_to_symmetrize,
-    idx_array_type xadj,
-    idx_edge_array_type adj,
-    idx_out_array_type &sym_xadj,
-    idx_out_edge_array_type &sym_adj
-    ){
-
-  typedef typename idx_array_type::value_type idx;
-
-
-  idx nnz = adj.dimension_0();
-
-  idx_out_edge_array_type tmp_srcs("tmpsrc", nnz * 2);
-  idx_out_edge_array_type tmp_dsts("tmpdst",nnz * 2);
-
-  typedef Kokkos::TeamPolicy<MyExecSpace> team_policy ;
-  typedef typename team_policy::member_type team_member ;
-
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-
-  FillSymmetricEdges <idx_array_type,idx_edge_array_type,idx_out_edge_array_type, team_member> fse(
-      num_rows_to_symmetrize,
-      xadj,
-      adj,
-      tmp_srcs,
-      tmp_dsts
-      );
-
-
-
-  int teamSizeMax = 0;
-  int vector_size = 0;
-  int max_allowed_team_size = team_policy::team_size_max(fse);
-
-  get_suggested_vector_team_size<idx, MyExecSpace>(
-      max_allowed_team_size,
-      vector_size,
-      teamSizeMax,
-      xadj.dimension_0() - 1, nnz);
-  //std::cout << "max_allowed_team_size:" << max_allowed_team_size << " vs:" << vector_size << " tsm:" << teamSizeMax<< std::endl;
-
-  Kokkos::parallel_for(
-            team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
-            fse);
-  MyExecSpace::fence();
-
-#ifndef SLOWSORT
-  KokkosKernelsSorting::sort_key_value_views <idx_out_edge_array_type, idx_out_edge_array_type, MyExecSpace>(tmp_srcs, tmp_dsts);
-#else
-  {
-
-
-    typedef Kokkos::SortImpl::DefaultBinOp1D<idx_out_edge_array_type> CompType;
-    Kokkos::SortImpl::min_max<typename idx_out_edge_array_type::non_const_value_type> val;
-    Kokkos::parallel_reduce(tmp_srcs.dimension_0(),Kokkos::SortImpl::min_max_functor<idx_out_edge_array_type>(tmp_srcs),val);
-    Kokkos::fence();
-    Kokkos::BinSort<idx_out_edge_array_type, CompType> bin_sort(tmp_srcs,CompType(tmp_srcs.dimension_0()/2,val.min,val.max),true);
-    bin_sort.create_permute_vector();
-    bin_sort.sort(tmp_srcs);
-    bin_sort.sort(tmp_dsts);
-  }
-#endif
-
-
-  MyExecSpace::fence();
-
-  idx_out_edge_array_type pps("PPS", nnz * 2);
-
-  typename idx_out_edge_array_type::non_const_value_type num_symmetric_edges = 0;
-  if (nnz > 0)
-  Kokkos::parallel_reduce(
-            my_exec_space(0, nnz * 2),
-            MarkDuplicateSortedKeyValuePairs<idx_out_edge_array_type, idx_out_edge_array_type, idx_out_edge_array_type>(
-                tmp_srcs, tmp_dsts, pps, nnz * 2), num_symmetric_edges);
-
-  Kokkos::fence();
-  if (nnz > 0)
-  exclusive_parallel_prefix_sum<idx_out_edge_array_type, MyExecSpace>(nnz * 2, pps);
-
-  MyExecSpace::fence();
-  sym_xadj = idx_out_array_type("sym_xadj", num_rows_to_symmetrize + 1);
-  sym_adj = idx_out_edge_array_type("sym_adj", num_symmetric_edges);
-
-  MyExecSpace::fence();
-  Kokkos::parallel_for(
-        my_exec_space(0, nnz * 2),
-        FillSymmetricCSR<idx_out_edge_array_type, idx_out_edge_array_type, idx_out_edge_array_type, idx_out_array_type, idx_out_edge_array_type>
-  (tmp_srcs, tmp_dsts, pps, nnz * 2, sym_xadj, sym_adj));
-
-  MyExecSpace::fence();
-  remove_zeros_in_xadj_vector<idx_out_array_type, MyExecSpace>(num_rows_to_symmetrize + 1, sym_xadj);
-  MyExecSpace::fence();
-}
-
 
 template <typename from_vector, typename to_vector, typename MyExecSpace>
 void copy_vector(
