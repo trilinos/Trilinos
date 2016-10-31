@@ -94,47 +94,65 @@ namespace Intrepid2 {
         ptr += (cardBubble*npts);
         
         // tensor product
-        ordinal_type idx = 0;
         {
-          const ordinal_type ortBubble[8] = { 0, 0, 1, 1, 
-                                              0, 1, 1, 0 };
-
-          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
-            getValues(outputBubble, input_x, workLine, vinvBubble, 0, ortBubble[ort]);
-          
-          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
-            getValues(outputLine, input_y, workLine, vinvLine);
-          
-          // x component (lineBasis(y) bubbleBasis(x))
-          const auto output_x = outputBubble;
-          const auto output_y = outputLine;
-          
-          for (ordinal_type j=0;j<cardLine;++j) // y      
-            for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
-              for (ordinal_type k=0;k<npts;++k) {
-                output(idx,k,0) = output_x(i,k)*output_y(j,k);
-                output(idx,k,1) = 0.0;
-              }
+          ordinal_type idx = 0;
+          {
+            const ordinal_type ortBubble[8] = { 0, 0, 1, 1, 
+                                                0, 1, 1, 0 };
+            
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(outputBubble, input_x, workLine, vinvBubble, 0, ortBubble[ort]);
+            
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(outputLine, input_y, workLine, vinvLine);
+            
+            // x component (lineBasis(y) bubbleBasis(x))
+            const auto output_x = outputBubble;
+            const auto output_y = outputLine;
+            
+            for (ordinal_type j=0;j<cardLine;++j) // y      
+              for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
+                for (ordinal_type k=0;k<npts;++k) {
+                  output(idx,k,0) = output_x(i,k)*output_y(j,k);
+                  output(idx,k,1) = 0.0;
+                }
+          }
+          {
+            const ordinal_type ortBubble[8] = { 0, 1, 1, 0,
+                                                0, 0, 1, 1 };
+            
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(outputBubble, input_y, workLine, vinvBubble, 0, ortBubble[ort]);
+            
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(outputLine, input_x, workLine, vinvLine);
+            
+            // y component (bubbleBasis(y) lineBasis(x))
+            const auto output_x = outputLine;
+            const auto output_y = outputBubble;
+            for (ordinal_type j=0;j<cardBubble;++j) // y      
+              for (ordinal_type i=0;i<cardLine;++i,++idx) // x
+                for (ordinal_type k=0;k<npts;++k) {
+                  output(idx,k,0) = 0.0;
+                  output(idx,k,1) = output_x(i,k)*output_y(j,k);
+                }
+          }
         }
         {
-          const ordinal_type ortBubble[8] = { 0, 1, 1, 0,
-                                              0, 0, 1, 1 };
-
-          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
-            getValues(outputBubble, input_y, workLine, vinvBubble, 0, ortBubble[ort]);
-          
-          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
-            getValues(outputLine, input_x, workLine, vinvLine);
-
-          // y component (bubbleBasis(y) lineBasis(x))
-          const auto output_x = outputLine;
-          const auto output_y = outputBubble;
-          for (ordinal_type j=0;j<cardBubble;++j) // y      
-            for (ordinal_type i=0;i<cardLine;++i,++idx) // x
+          const ordinal_type ortFlip[8] = { 0, 1, 0, 1,
+                                            1, 0, 1, 0 };
+          if (ortFlip[ort]) {
+            const ordinal_type cardHalf = cardBubble*cardLine;
+            for (ordinal_type idx=0;idx<cardHalf;++idx) {
+              const ordinal_type 
+                idy = (idx%cardLine) + (idx/cardLine)*cardLine;
               for (ordinal_type k=0;k<npts;++k) {
-                output(idx,k,0) = 0.0;
-                output(idx,k,1) = output_x(i,k)*output_y(j,k);
+                const auto tmp = output(idx,k,0);
+                output(idx,k,0) = output(cardHalf+idy,k,1);
+                output(cardHalf+idy,k,1) = tmp;
               }
+            }
+          }
         }
         break;
       }
