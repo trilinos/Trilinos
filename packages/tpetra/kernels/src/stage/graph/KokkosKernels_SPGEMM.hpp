@@ -107,7 +107,7 @@ namespace Graph{
       blno_nnz_view_t_ entriesB,
       bscalar_nnz_view_t_ valuesB,
       bool transposeB,
-      clno_row_view_t_ &row_mapC,
+      clno_row_view_t_ row_mapC,
       clno_nnz_view_t_ &entriesC,
       cscalar_nnz_view_t_ &valuesC
       ){
@@ -131,7 +131,7 @@ namespace Graph{
     switch (sh->get_algorithm_type()){
     case SPGEMM_CUSPARSE:
       valuesC = typename cscalar_nnz_view_t_::non_const_type(Kokkos::ViewAllocateWithoutInitializing("valC"), entriesC.dimension_0());
-      std::cout << "SPGEMM_CUSPARSE" << std::endl;
+
       Impl::cuSPARSE_apply<spgemmHandleType>(
           sh,
           m,n,k,
@@ -140,7 +140,6 @@ namespace Graph{
           row_mapC, entriesC, valuesC);
       break;
     case SPGEMM_CUSP:
-      std::cout << "SPGEMM_CUSP" << std::endl;
       Impl::CUSP_apply<spgemmHandleType,
         alno_row_view_t_,
         alno_nnz_view_t_,
@@ -158,22 +157,20 @@ namespace Graph{
           row_mapC, entriesC, valuesC);
           break;
     case SPGEMM_MKL:
-      std::cout << "MKL" << std::endl;
       Impl::mkl_apply<spgemmHandleType>(
                 sh,
                 m,n,k,
                 row_mapA, entriesA, valuesA, transposeA,
                 row_mapB, entriesB, valuesB, transposeB,
-                row_mapC, entriesC, valuesC);
+                row_mapC, entriesC, valuesC, handle->get_verbose());
       break;
     case SPGEMM_VIENNA:
-      std::cout << "VIENNA" << std::endl;
       Impl::viennaCL_apply<spgemmHandleType>(
                 sh,
                 m,n,k,
                 row_mapA, entriesA, valuesA, transposeA,
                 row_mapB, entriesB, valuesB, transposeB,
-                row_mapC, entriesC, valuesC);
+                row_mapC, entriesC, valuesC, handle->get_verbose());
       break;
     case SPGEMM_KK_MEMSPEED:
     case SPGEMM_KK4:
@@ -193,6 +190,7 @@ namespace Graph{
       kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
       kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
     }
+    break;
 
     case SPGEMM_DEFAULT:
     case SPGEMM_SERIAL:

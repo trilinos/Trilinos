@@ -46,11 +46,11 @@ namespace Impl{
 
 
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
-      std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE" << std::endl;
+      throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       return;
     }
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
-      std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE" << std::endl;
+      throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       return;
     }
 
@@ -96,14 +96,15 @@ namespace Impl{
           cudaMemcpy(&baseC, c_xadj, sizeof(int), cudaMemcpyDeviceToHost);
           nnzC -= baseC;
       }
+      this->handle->get_spgemm_handle()->set_c_nnz(nnzC);
       //entriesC = cin_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"), nnzC);
     }
     else {
-      std::cerr << "CUSPARSE requires integer values" << std::endl;
+      throw std::runtime_error ("CUSPARSE requires local ordinals to be integer.\n");
       return;
     }
 #else
-    std::cerr << "CUSPARSE IS NOT DEFINED" << std::endl;
+    throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
     return;
 #endif
 
@@ -149,18 +150,18 @@ namespace Impl{
     typedef typename ain_row_index_view_type::device_type device1;
     typedef typename ain_nonzero_index_view_type::device_type device2;
     typedef typename ain_nonzero_value_view_type::device_type device3;
-    std::cout << "RUNNING CUSParse" << std::endl;
+
 
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
-      std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE" << std::endl;
+      throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       return;
     }
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
-      std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE" << std::endl;
+      throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       return;
     }
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
-      std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE" << std::endl;
+      throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       return;
     }
 
@@ -186,7 +187,6 @@ namespace Impl{
       value_type *c_ew = valuesC.ptr_on_device();
 
       if (Kokkos::Impl::is_same<value_type, float>::value){
-        std::cout << "float" << std::endl;
         cusparseScsrgemm(
             h->handle,
             h->transA,
@@ -210,7 +210,6 @@ namespace Impl{
             c_adj);
       }
       else if (Kokkos::Impl::is_same<value_type, double>::value){
-        std::cout << "double" << std::endl;
         cusparseDcsrgemm(
             h->handle,
             h->transA,
@@ -234,7 +233,7 @@ namespace Impl{
             c_adj);
       }
       else {
-        std::cerr << "CUSPARSE requires float or double values. cuComplex and cuDoubleComplex are not implemented yet." << std::endl;
+        throw std::runtime_error ("CUSPARSE requires float or double values. cuComplex and cuDoubleComplex are not implemented yet.\n");
         return;
       }
 
@@ -243,11 +242,11 @@ namespace Impl{
 
     }
     else {
-      std::cerr << "CUSPARSE requires integer values" << std::endl;
+      throw std::runtime_error ("CUSPARSE requires local ordinals to be integer.\n");
       return;
     }
 #else
-    std::cerr << "CUSPARSE IS NOT DEFINED" << std::endl;
+    throw std::runtime_error ("CUSPARSE IS NOT DEFINED\n");
     return;
 #endif
   }

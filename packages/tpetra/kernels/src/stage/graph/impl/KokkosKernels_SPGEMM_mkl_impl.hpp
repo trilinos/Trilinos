@@ -5,7 +5,7 @@
 //#define KERNELS_HAVE_MKL
 
 
-#ifdef KERNELS_HAVE_MKL
+#ifdef HAVE_TPETRAKERNELS_MKL
 #include "mkl_spblas.h"
 #endif
 
@@ -44,14 +44,21 @@ namespace Impl{
       bin_nonzero_index_view_type entriesB,
       bin_nonzero_value_view_type valuesB,
       bool transposeB,
-      cin_row_index_view_type &row_mapC,
+      cin_row_index_view_type row_mapC,
       cin_nonzero_index_view_type &entriesC,
-      cin_nonzero_value_view_type &valuesC){
+      cin_nonzero_value_view_type &valuesC,
+      bool verbose = false){
 
-#ifdef KERNELS_HAVE_MKL
+#ifdef HAVE_TPETRAKERNELS_MKL
 
     typedef typename KernelHandle::nnz_lno_t idx;
+    typedef typename KernelHandle::size_type size_type;
     typedef in_row_index_view_type idx_array_type;
+
+    typedef typename KernelHandle::HandleTempMemorySpace HandleTempMemorySpace;
+    typedef typename Kokkos::View<int *, HandleTempMemorySpace> int_temp_work_view_t;
+
+
 
     typedef typename KernelHandle::nnz_scalar_t value_type;
 
@@ -62,38 +69,68 @@ namespace Impl{
 
     typedef typename KernelHandle::HandleExecSpace MyExecSpace;
 
-    std::cout << "RUNNING MKL" << std::endl;
-
 #if defined( KOKKOS_HAVE_CUDA )
-    if (!Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
-      std::cerr << "MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL" << std::endl;
-      return;
-    }
-    if (!Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
-      std::cerr << "MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL" << std::endl;
-      return;
-    }
-    if (!Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
-      std::cerr << "MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL" << std::endl;
+    if (!Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value ||
+        !Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value ||
+        !Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
+      throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL\n");
       return;
     }
 #endif
 
     if (Kokkos::Impl::is_same<idx, int>::value){
-      int *a_xadj = (int *)row_mapA.ptr_on_device();
-      int *b_xadj = (int *)row_mapB.ptr_on_device();
-      int *c_xadj = (int *)row_mapC.ptr_on_device();
+
+      int *a_xadj = NULL;
+      int *b_xadj = NULL;
+      int_temp_work_view_t a_xadj_v, b_xadj_v;
+
+      if (Kokkos::Impl::is_same<size_type, int>::value){
+
+        a_xadj = (int *)row_mapA.ptr_on_device();
+        b_xadj = (int *)row_mapB.ptr_on_device();
+      }
+      else {
+
+
+        //TODO test this case.
+
+        Kokkos::Impl::Timer copy_time;
+        const int max_integer = 2147483647;
+        if (entriesB.dimension_0() > max_integer|| entriesA.dimension_0() > max_integer){
+          throw std::runtime_error ("MKL requires integer values for size type for SPGEMM. Copying to integer will cause overflow.\n");
+          return;
+        }
+        a_xadj_v = int_temp_work_view_t("tmpa", m + 1);
+        a_xadj = (int *) a_xadj_v.ptr_on_device();
+        b_xadj_v = int_temp_work_view_t("tmpb", n + 1);
+        b_xadj = (int *) b_xadj_v.ptr_on_device();
+
+        KokkosKernels::Experimental::Util::copy_vector<
+            in_row_index_view_type,
+            int_temp_work_view_t,
+            MyExecSpace> (m+1, row_mapA, a_xadj_v);
+
+        KokkosKernels::Experimental::Util::copy_vector<
+            in_row_index_view_type,
+            int_temp_work_view_t,
+            MyExecSpace> (m+1, row_mapB, b_xadj_v);
+
+        if (verbose)
+          std::cout << "MKL COPY size type to int TIME:" << copy_time.seconds() << std::endl;
+
+      }
+
 
       int *a_adj = (int *)entriesA.ptr_on_device();
       int *b_adj = (int *)entriesB.ptr_on_device();
-      int *c_adj = (int *)entriesC.ptr_on_device();
+
 
       int nnzA = entriesA.dimension_0();
       int nnzB = entriesB.dimension_0();
 
       value_type *a_ew = valuesA.ptr_on_device();
       value_type *b_ew = valuesB.ptr_on_device();
-      value_type *c_ew = valuesC.ptr_on_device();
+
 
       sparse_matrix_t A;
       sparse_matrix_t B;
@@ -104,12 +141,12 @@ namespace Impl{
 
 
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&A, SPARSE_INDEX_BASE_ZERO, m, n, a_xadj, a_xadj + 1, a_adj, (float *)a_ew)){
-          std::cerr << "CANNOT CREATE mkl_sparse_s_create_csr A" << std::endl;
+          throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
           return;
         }
 
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_s_create_csr (&B, SPARSE_INDEX_BASE_ZERO, n, k, b_xadj, b_xadj + 1, b_adj, (float *)b_ew)){
-          std::cerr << "CANNOT CREATE mkl_sparse_s_create_csr B" << std::endl;
+          throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
           return;
         }
 
@@ -122,17 +159,21 @@ namespace Impl{
           operation = SPARSE_OPERATION_NON_TRANSPOSE;
         }
         else {
-          std::cerr << "Ask both to transpose or non transpose for MKL SPGEMM" << std::endl;
+
+          throw std::runtime_error ("MKL either transpose both matrices, or none for SPGEMM\n");
           return;
         }
 
 
         Kokkos::Impl::Timer timer1;
         bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
+        if (verbose)
         std::cout << "Actual FLOAT MKL SPMM Time:" << timer1.seconds() << std::endl;
 
         if (success){
-          std::cerr << "CANNOT multiply mkl_sparse_spmm " << std::endl;
+          throw std::runtime_error ("ERROR at SPGEMM multiplication in mkl_sparse_spmm\n");
+
+
           return;
         }
         else{
@@ -144,12 +185,12 @@ namespace Impl{
           if (SPARSE_STATUS_SUCCESS !=
               mkl_sparse_s_export_csr (C,
                   &c_indexing, &c_rows, &c_cols, &rows_start, &rows_end, &columns, &values)){
-            std::cerr << "CANNOT export result matrix " << std::endl;
+            throw std::runtime_error ("ERROR at exporting result matrix in mkl_sparse_spmm\n");
             return;
           }
 
           if (SPARSE_INDEX_BASE_ZERO != c_indexing){
-            std::cerr << "C is not zero based indexed." << std::endl;
+            throw std::runtime_error ("C is not zero based indexed\n");
             return;
           }
 
@@ -167,16 +208,16 @@ namespace Impl{
 
 
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_destroy (A)){
-          std::cerr << "CANNOT DESTROY mkl_sparse_destroy A" << std::endl;
+          throw std::runtime_error ("Error at mkl_sparse_destroy A\n");
           return;
         }
 
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_destroy (B)){
-          std::cerr << "CANNOT DESTROY mkl_sparse_destroy B" << std::endl;
+          throw std::runtime_error ("Error at mkl_sparse_destroy B\n");
           return;
         }
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_destroy (C)){
-          std::cerr << "CANNOT DESTROY mkl_sparse_destroy C" << std::endl;
+          throw std::runtime_error ("Error at mkl_sparse_destroy C\n");
           return;
         }
       }
@@ -189,13 +230,13 @@ namespace Impl{
         std::cout << "a_adj[a_xadj[m] - 1]:" << a_adj[a_xadj[m] - 1] << " a_ew[a_xadj[m] - 1]:" << a_ew[a_xadj[m] - 1] << std::endl;
         */
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&A, SPARSE_INDEX_BASE_ZERO, m, n, a_xadj, a_xadj + 1, a_adj, (double *)a_ew)){
-          std::cerr << "CANNOT CREATE mkl_sparse_d_create_csr A" << std::endl;
+          throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr A matrix\n");
           return;
         }
 
         //std::cout << "create b" << std::endl;
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_d_create_csr (&B, SPARSE_INDEX_BASE_ZERO, n, k, b_xadj, b_xadj + 1, b_adj, (double *) b_ew)){
-          std::cerr << "CANNOT CREATE mkl_sparse_d_create_csr B" << std::endl;
+          throw std::runtime_error ("CANNOT CREATE mkl_sparse_s_create_csr B matrix\n");
           return;
         }
 
@@ -207,17 +248,18 @@ namespace Impl{
           operation = SPARSE_OPERATION_NON_TRANSPOSE;
         }
         else {
-          std::cerr << "Ask both to transpose or non transpose for MKL SPGEMM" << std::endl;
+          throw std::runtime_error ("MKL either transpose both matrices, or none for SPGEMM\n");
           return;
         }
 
 
         Kokkos::Impl::Timer timer1;
         bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
+        if (verbose)
         std::cout << "Actual DOUBLE MKL SPMM Time:" << timer1.seconds() << std::endl;
 
         if (success){
-          std::cerr << "CANNOT multiply mkl_sparse_spmm " << std::endl;
+          throw std::runtime_error ("ERROR at SPGEMM multiplication in mkl_sparse_spmm\n");
           return;
         }
         else{
@@ -230,12 +272,12 @@ namespace Impl{
           if (SPARSE_STATUS_SUCCESS !=
               mkl_sparse_d_export_csr (C,
                   &c_indexing, &c_rows, &c_cols, &rows_start, &rows_end, &columns, &values)){
-            std::cerr << "CANNOT export result matrix " << std::endl;
+            throw std::runtime_error ("ERROR at exporting result matrix in mkl_sparse_spmm\n");
             return;
           }
 
           if (SPARSE_INDEX_BASE_ZERO != c_indexing){
-            std::cerr << "C is not zero based indexed." << std::endl;
+            throw std::runtime_error ("C is not zero based indexed\n");
             return;
           }
           {
@@ -250,6 +292,7 @@ namespace Impl{
             KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
             KokkosKernels::Experimental::Util::copy_vector<double *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (nnz, values, valuesC);
             double copy_time_d = copy_time.seconds();
+            if (verbose)
             std::cout << "MKL COPYTIME:" << copy_time_d << std::endl;
           }
 
@@ -257,52 +300,33 @@ namespace Impl{
 
 
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_destroy (A)){
-          std::cerr << "CANNOT DESTROY mkl_sparse_destroy A" << std::endl;
+          throw std::runtime_error ("Error at mkl_sparse_destroy A\n");
           return;
         }
 
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_destroy (B)){
-          std::cerr << "CANNOT DESTROY mkl_sparse_destroy B" << std::endl;
+          throw std::runtime_error ("Error at mkl_sparse_destroy B\n");
           return;
         }
         if (SPARSE_STATUS_SUCCESS != mkl_sparse_destroy (C)){
-          std::cerr << "CANNOT DESTROY mkl_sparse_destroy C" << std::endl;
+          throw std::runtime_error ("Error at mkl_sparse_destroy C\n");
           return;
         }
 
       }
       else {
-        std::cerr << "CUSPARSE requires float or double values. cuComplex and cuDoubleComplex are not implemented yet." << std::endl;
+        throw std::runtime_error ("MKL requires float or double values. Complex values are not implemented yet.\n");
         return;
       }
     }
     else {
 
-      //int *a_xadj = row_mapA.ptr_on_device();
-      std::cerr << "MKL requires integer values" << std::endl;
 
-      if (Kokkos::Impl::is_same<idx, unsigned int>::value){
-        std::cerr << "MKL is given unsigned integer" << std::endl;
-      }
-      else if (Kokkos::Impl::is_same<idx, long>::value){
-        std::cerr << "MKL is given long" << std::endl;
-      }
-      else if (Kokkos::Impl::is_same<idx, const int>::value){
-        std::cerr << "MKL is given const int" << std::endl;
-      }
-      else if (Kokkos::Impl::is_same<idx, unsigned long>::value){
-        std::cerr << "MKL is given unsigned long" << std::endl;
-      }
-      else if (Kokkos::Impl::is_same<idx, const unsigned long>::value){
-        std::cerr << "MKL is given const unsigned long" << std::endl;
-      }
-      else{
-        std::cerr << "MKL is given something else" << std::endl;
-      }
+      throw std::runtime_error ("MKL requires local ordinals to be integer.\n");
       return;
     }
 #else
-    std::cerr << "MKL IS NOT DEFINED" << std::endl;
+    throw std::runtime_error ("MKL IS NOT DEFINED\n");
     return;
 #endif
   }

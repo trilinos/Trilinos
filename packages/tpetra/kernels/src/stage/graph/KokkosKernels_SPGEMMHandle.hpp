@@ -113,7 +113,7 @@ public:
       cusparseStatus_t status;
       status= cusparseCreate(&handle);
       if (status != CUSPARSE_STATUS_SUCCESS) {
-        std::cerr << ("cusparseCreate ERROR") << std::endl;
+        throw std::runtime_error ("cusparseCreate ERROR\n");
         return;
       }
       cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
@@ -134,7 +134,8 @@ public:
 
       status = cusparseCreateMatDescr(&a_descr);
       if (status != CUSPARSE_STATUS_SUCCESS) {
-        std::cerr << "cusparseCreateMatDescr a_descr ERROR" << std::endl;
+        throw std::runtime_error ("cusparseCreateMatDescr a_descr ERROR\n");
+
         return;
       }
       cusparseSetMatType(a_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -142,7 +143,8 @@ public:
 
       status = cusparseCreateMatDescr(&b_descr);
       if (status != CUSPARSE_STATUS_SUCCESS) {
-        std::cerr << ("cusparseCreateMatDescr b_descr ERROR") << std::endl;
+        throw std::runtime_error ("cusparseCreateMatDescr b_descr ERROR\n");
+
         return;
       }
       cusparseSetMatType(b_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -150,7 +152,7 @@ public:
 
       status = cusparseCreateMatDescr(&c_descr);
       if (status != CUSPARSE_STATUS_SUCCESS) {
-        std::cerr << ("cusparseCreateMatDescr  c_descr ERROR") << std::endl;
+        throw std::runtime_error ("cusparseCreateMatDescr  c_descr ERROR\n");
         return;
       }
       cusparseSetMatType(c_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -478,9 +480,7 @@ private:
       else {
         this->suggested_vector_size = 32;
       }
-      if (max_allowed_team_size < 32){
-        std::cerr << "max_allowed_team_size:" << max_allowed_team_size << std::endl;
-      }
+
       suggested_vector_size_ = this->suggested_vector_size;
       this->suggested_team_size= suggested_team_size_ = max_allowed_team_size / this->suggested_vector_size;
     }

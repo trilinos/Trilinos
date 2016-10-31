@@ -48,9 +48,10 @@ namespace Impl{
       bin_nonzero_index_view_type entriesB,
       bin_nonzero_value_view_type valuesB,
       bool transposeB,
-      cin_row_index_view_type &row_mapC,
+      cin_row_index_view_type row_mapC,
       cin_nonzero_index_view_type &entriesC,
-      cin_nonzero_value_view_type &valuesC){
+      cin_nonzero_value_view_type &valuesC,
+      bool verbose = false){
 
 #ifdef KERNELS_HAVE_VIENNACL
 
@@ -65,8 +66,6 @@ namespace Impl{
     typedef typename in_nonzero_value_view_type::device_type device3;
 
     typedef typename KernelHandle::HandleExecSpace MyExecSpace;
-
-    std::cout << "RUNNING VIENNACL" << std::endl;
 
     typedef typename viennacl::compressed_matrix<value_type>::handle_type it;
     typedef typename viennacl::compressed_matrix<value_type>::value_type vt;
@@ -107,12 +106,13 @@ namespace Impl{
       viennacl::compressed_matrix<value_type> B;
       A.set(a_xadj, a_adj, a_ew, m, n, nnzA);
       B.set(b_xadj, b_adj, b_ew, n, k, nnzB);
-      std::cout << "compress matrix create:" << timerset.seconds() << std::endl;
+      if (verbose)
+      std::cout << "VIENNACL compress matrix create:" << timerset.seconds() << std::endl;
 
 
-      std::cout << "Now running ViennaCL" << std::endl;
       Kokkos::Impl::Timer timer1;
       viennacl::compressed_matrix<value_type> C = viennacl::linalg::prod(A, B);
+      if (verbose)
       std::cout << "Actual VIENNACL SPMM Time:" << timer1.seconds() << std::endl;
 
       {
@@ -129,7 +129,7 @@ namespace Impl{
 
         {
           Kokkos::Impl::Timer copy_time;
-          row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
+          //row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
           entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , cnnz);
           valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  cnnz);
 
@@ -139,35 +139,17 @@ namespace Impl{
           KokkosKernels::Experimental::Util::copy_vector<unsigned int const *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
           KokkosKernels::Experimental::Util::copy_vector<value_type   const *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
           double copy_time_d = copy_time.seconds();
+          if (verbose)
           std::cout << "VIENNACL COPYTIME:" << copy_time_d << std::endl;
         }
 
       }
     }
     else {
-
-      //int *a_xadj = row_mapA.ptr_on_device();
-      std::cerr << "vienna requires (u) integer values" << std::endl;
-
-      if (Kokkos::Impl::is_same<idx, long>::value){
-        std::cerr << "MKL is given long" << std::endl;
-      }
-      else if (Kokkos::Impl::is_same<idx, const int>::value){
-        std::cerr << "MKL is given const int" << std::endl;
-      }
-      else if (Kokkos::Impl::is_same<idx, unsigned long>::value){
-        std::cerr << "MKL is given unsigned long" << std::endl;
-      }
-      else if (Kokkos::Impl::is_same<idx, const unsigned long>::value){
-        std::cerr << "MKL is given const unsigned long" << std::endl;
-      }
-      else{
-        std::cerr << "MKL is given something else" << std::endl;
-      }
-      return;
+      throw std::runtime_error ("VIENNACL requires local ordinals to be integer.\n");
     }
 #else
-    std::cerr << "VIENNACL IS NOT DEFINED" << std::endl;
+    throw std::runtime_error ("VIENNACL IS NOT DEFINED\n");
     return;
 #endif
   }

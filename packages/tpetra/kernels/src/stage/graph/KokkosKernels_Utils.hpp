@@ -97,9 +97,6 @@ void get_suggested_vector_team_size(
     else {
       suggested_vector_size_ = 32;
     }
-    if (max_allowed_team_size < 32){
-      std::cerr << "max_allowed_team_size:" << max_allowed_team_size << std::endl;
-    }
 
     suggested_team_size_ = max_allowed_team_size / suggested_vector_size_;
   }

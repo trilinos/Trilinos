@@ -101,7 +101,7 @@ void convert_edge_list_to_csr (idx nv, idx ne, idx *srcs, idx *dests, wt *ew, id
 
 template <typename idx, typename wt>
 void write_edgelist_bin(
-    idx ne,
+    size_t ne,
     const idx *edge_begins,
     const  idx *edge_ends,
     const  wt *ew,

@@ -487,7 +487,6 @@ public:
       nnz_lno_t num_cols,
       col_view_t_ col_map, lno_colnnz_view_t_ col_entries){
 
-    std::cout << "Optimized Sequential D2" << std::endl;
     num_phases = 1;
     color_host_view_t colors = Kokkos::create_mirror_view (d_colors);
     row_lno_host_view_t h_xadj = Kokkos::create_mirror_view (this->xadj);
@@ -671,8 +670,6 @@ public:
         colors(ii) = i + row_cs[ii] * color_size;
       }
     }
-    std::cout << "D2 Optimized Seq Color time:" << timer.seconds()  << std::endl;
-
     Kokkos::deep_copy (d_colors, colors); // Copy from host to device.
   }
 
