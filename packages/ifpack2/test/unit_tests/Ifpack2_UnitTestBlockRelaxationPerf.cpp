@@ -107,123 +107,127 @@ RCP<const Epetra_CrsMatrix> create_testmat_e(const Epetra_Map& rowmap)
 TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
 {
   using Teuchos::ArrayRCP;
-  puts("Starting performance test.");
   //use the same types as epetra for fair comparison
   auto tcomm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  Epetra_SerialComm ecomm;
-  if(tcomm->getSize() > 1)
-    throw std::runtime_error("Performance tests use 1 MPI process.");
-  //Configure ranges of testing
-  const vector<int> blockSizes = {2, 4, 5, 8, 10, 20, 50};
-  string container = "TriDi";
-  const int localRows = 5000;
-  auto tmap = rcp(new TMap(localRows, 0, tcomm));
-  Epetra_Map emap(localRows, 0, ecomm);
-  auto tmat = create_testmat_t(tmap);
-  auto emat = create_testmat_e(emap);
-  //set up matrix
-  typedef Tpetra::RowMatrix<double,int,int,NO> ROW;
-  typedef Tpetra::Vector<double,int,int,NO> TVec;
-  TVec lhs(tmap);
-  TVec rhs(tmap);
-  rhs.putScalar(2.0);
-  //set up output file
-  FILE* csv = fopen("BlockRelax.csv", "w");
-  fputs("lib,blockSize,setup,apply\n", csv);
-  //////////////////////////
-  //-- New Ifpack2 test --//
-  //////////////////////////
-  Teuchos::ParameterList ilist;
-  ilist.set("partitioner: type", "user");
-  ilist.set("relaxation: sweeps", 5);
-  ilist.set("relaxation: type", "Gauss-Seidel");
-  int* partMap = new int[localRows];
-  Teuchos::Time timer("");
-  puts("Testing Ifpack2 block G-S");
-  //run up to maxTrials on each library
-  const int maxTrials = 1;
-  //target for total running time
-  const double maxTotalTime = 10.0;
-  //proportion of total time to spend on ifpack2
-  //adjust depending on relative speeds to balance trial count
-  const double ifpack2TimeProportion = 0.9;
-  const double ifpack2TimePerSet = (ifpack2TimeProportion * maxTotalTime) / blockSizes.size();
-  const double mlTimePerSet = ((1.0 - ifpack2TimeProportion) * maxTotalTime) / blockSizes.size();
-  for(auto blockSize : blockSizes)
+  if(tcomm->getSize() == 1)
   {
-    printf("    Testing block size: %i ", blockSize);
-    for(int i = 0; i < localRows; i++)
-      partMap[i] = i / blockSize;
-    ArrayRCP<int> PMrcp(partMap, 0, localRows, false);
-    ilist.set("partitioner: map", PMrcp);
-    ilist.set("partitioner: local parts", partMap[localRows - 1] + 1);
-    ilist.set("relaxation: container", container);
-    Ifpack2::BlockRelaxation<ROW> relax(tmat);
-    relax.setParameters(ilist);
-    relax.initialize();
-    relax.compute();
-    timer.reset();
-    timer.start();
-    int trials = 0;
-    do
-    {
-      relax.apply(rhs, lhs);
-      trials++;
-    }
-    while(timer.totalElapsedTime(true) < ifpack2TimePerSet);
-    timer.stop();
-    printf("(%i trials)\n", trials);
-    double applyTime = timer.totalElapsedTime() / trials;
-    fprintf(csv, "Ifpack2,%i,%f\n", blockSize, applyTime);
-  }
-  delete[] partMap;
-  /////////////////
-  //-- ML test --//
-  /////////////////
-  puts("Testing ML block gs");
-  {
-    using ML_Epetra::MultiLevelPreconditioner;
-    Epetra_Vector X(emap);
-    Epetra_Vector Y(emap);
-    double* yval;
-    Y.ExtractView(&yval);
-    for(int i = 0; i < localRows; i++)
-      yval[i] = 2;
-    double* xval;
-    X.ExtractView(&xval);
-    Teuchos::ParameterList mllist;
-    mllist.set("max levels", 1);
-    mllist.set("smoother: type", "block Gauss-Seidel");
-    mllist.set("smoother: sweeps", 5);
-    mllist.set("smoother: pre or post", "pre");
-    mllist.set("smoother: damping factor", 1.0);
-    mllist.set("ML output", 0);
+    //Configure ranges of testing
+    const vector<int> blockSizes = {2, 4, 5, 8, 10, 20, 50};
+    string container = "TriDi";
+    const int localRows = 5000;
+    auto tmap = rcp(new TMap(localRows, 0, tcomm));
+    auto tmat = create_testmat_t(tmap);
+#ifdef EPETRA_MPI
+    Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+#else
+    Epetra_SerialComm ecomm;
+#endif
+    Epetra_Map emap(localRows, 0, ecomm);
+    auto emat = create_testmat_e(emap);
+    //set up matrix
+    typedef Tpetra::RowMatrix<double,int,int,NO> ROW;
+    typedef Tpetra::Vector<double,int,int,NO> TVec;
+    TVec lhs(tmap);
+    TVec rhs(tmap);
+    rhs.putScalar(2.0);
+    //set up output file
+    FILE* csv = fopen("BlockRelax.csv", "w");
+    fputs("lib,blockSize,setup,apply\n", csv);
+    //////////////////////////
+    //-- New Ifpack2 test --//
+    //////////////////////////
+    Teuchos::ParameterList ilist;
+    ilist.set("partitioner: type", "user");
+    ilist.set("relaxation: sweeps", 5);
+    ilist.set("relaxation: type", "Gauss-Seidel");
+    int* partMap = new int[localRows];
+    Teuchos::Time timer("");
+    out << "Testing Ifpack2 block G-S\n";
+    //run up to maxTrials on each library
+    const int maxTrials = 1;
+    //target for total running time
+    const double maxTotalTime = 6.0;
+    //proportion of total time to spend on ifpack2
+    //adjust depending on relative speeds to balance trial count
+    const double ifpack2TimeProportion = 0.9;
+    const double ifpack2TimePerSet = (ifpack2TimeProportion * maxTotalTime) / blockSizes.size();
+    const double mlTimePerSet = ((1.0 - ifpack2TimeProportion) * maxTotalTime) / blockSizes.size();
     for(auto blockSize : blockSizes)
     {
-      //manually set dofs per node
-      mllist.set("PDE equations", blockSize);
-      MultiLevelPreconditioner prec(*emat, mllist, true);
-      prec.ComputePreconditioner();
-      auto ml = prec.GetML();
-      auto sm = ml->pre_smoother;
-      printf("    Testing block size: %i ", blockSize);
+      out << "    Testing block size: " << blockSize << '\n';
+      for(int i = 0; i < localRows; i++)
+        partMap[i] = i / blockSize;
+      ArrayRCP<int> PMrcp(partMap, 0, localRows, false);
+      ilist.set("partitioner: map", PMrcp);
+      ilist.set("partitioner: local parts", partMap[localRows - 1] + 1);
+      ilist.set("relaxation: container", container);
+      Ifpack2::BlockRelaxation<ROW> relax(tmat);
+      relax.setParameters(ilist);
+      relax.initialize();
+      relax.compute();
       timer.reset();
       timer.start();
       int trials = 0;
       do
       {
-        ML_Smoother_BlockGS(sm, localRows, xval, localRows, yval);
+        relax.apply(rhs, lhs);
         trials++;
       }
-      while(timer.totalElapsedTime(true) < mlTimePerSet);
+      while(timer.totalElapsedTime(true) < ifpack2TimePerSet);
       timer.stop();
-      printf("(%i trials)\n", trials);
+      out << '(' << trials << " trials)\n";
       double applyTime = timer.totalElapsedTime() / trials;
-      fprintf(csv,"ML,%i,%f\n", blockSize, applyTime);
+      fprintf(csv, "Ifpack2,%i,%f\n", blockSize, applyTime);
     }
+    delete[] partMap;
+    /////////////////
+    //-- ML test --//
+    /////////////////
+    out << "Testing ML block gs\n";
+    {
+      using ML_Epetra::MultiLevelPreconditioner;
+      Epetra_Vector X(emap);
+      Epetra_Vector Y(emap);
+      double* yval;
+      Y.ExtractView(&yval);
+      for(int i = 0; i < localRows; i++)
+        yval[i] = 2;
+      double* xval;
+      X.ExtractView(&xval);
+      Teuchos::ParameterList mllist;
+      mllist.set("max levels", 1);
+      mllist.set("smoother: type", "block Gauss-Seidel");
+      mllist.set("smoother: sweeps", 5);
+      mllist.set("smoother: pre or post", "pre");
+      mllist.set("smoother: damping factor", 1.0);
+      mllist.set("ML output", 0);
+      for(auto blockSize : blockSizes)
+      {
+        //manually set dofs per node
+        mllist.set("PDE equations", blockSize);
+        MultiLevelPreconditioner prec(*emat, mllist, true);
+        prec.ComputePreconditioner();
+        auto ml = prec.GetML();
+        auto sm = ml->pre_smoother;
+        out << "    Testing block size: " << blockSize << '\n';
+        timer.reset();
+        timer.start();
+        int trials = 0;
+        do
+        {
+          ML_Smoother_BlockGS(sm, localRows, xval, localRows, yval);
+          trials++;
+        }
+        while(timer.totalElapsedTime(true) < mlTimePerSet);
+        timer.stop();
+        out << '(' << trials << " trials)\n";
+        double applyTime = timer.totalElapsedTime() / trials;
+        fprintf(csv,"ML,%i,%f\n", blockSize, applyTime);
+      }
+    }
+    out << "Done with performance testing: data written to BlockRelax.csv\n";
+    fclose(csv);
   }
-  puts("Done with performance testing: data written to BlockRelax.csv");
-  fclose(csv);
 }
 
 IFPACK2_ETI_MANGLING_TYPEDEFS()
