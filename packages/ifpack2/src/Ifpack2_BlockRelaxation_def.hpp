@@ -79,7 +79,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 template<class MatrixType,class ContainerType>
 BlockRelaxation<MatrixType,ContainerType>::
 BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
-: A_ (A),
+:
   Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::BlockRelaxation"))),
   Container_ (Teuchos::null),
   Partitioner_ (Teuchos::null),
@@ -93,7 +93,6 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   hasBlockCrsMatrix_ (false),
   OverlapLevel_ (0),
   DampingFactor_ (STS::one ()),
-  IsParallel_ (false),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -106,7 +105,9 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   NumGlobalNonzeros_ (0),
   W_ (Teuchos::null),
   Importer_ (Teuchos::null)
-{}
+{
+  setMatrix(A);
+}
 
 template<class MatrixType,class ContainerType>
 BlockRelaxation<MatrixType,ContainerType>::
