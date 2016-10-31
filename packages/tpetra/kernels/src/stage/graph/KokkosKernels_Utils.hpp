@@ -1206,25 +1206,14 @@ void symmetrize_graph_symbolic(
   MyExecSpace::fence();
 }
 
-template <typename from_vector, typename to_vector>
-struct CopyVector{
-  from_vector from;
-  to_vector to;
 
-  CopyVector(from_vector &from_, to_vector to_): from(from_), to(to_){}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t &i) const {
-    to[i] = from[i];
-  }
-};
 template <typename from_vector, typename to_vector, typename MyExecSpace>
 void copy_vector(
                 size_t num_elements,
                 from_vector from, to_vector to){
 
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0,num_elements), CopyVector<from_vector, to_vector>(from, to));
+  kk_copy_vector<from_vector, to_vector, MyExecSpace>
+      (num_elements, from, to);
 
 }
 

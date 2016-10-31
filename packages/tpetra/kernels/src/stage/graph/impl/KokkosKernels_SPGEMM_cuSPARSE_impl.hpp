@@ -20,8 +20,7 @@ namespace Impl{
   typename ain_nonzero_index_view_type,
   typename bin_row_index_view_type,
   typename bin_nonzero_index_view_type,
-  typename cin_row_index_view_type,
-  typename cin_nonzero_index_view_type>
+  typename cin_row_index_view_type>
   void cuSPARSE_symbolic(
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
@@ -35,7 +34,6 @@ namespace Impl{
       bin_nonzero_index_view_type entriesB,
       bool transposeB,
       cin_row_index_view_type row_mapC
-      //,cin_nonzero_index_view_type &entriesC
       ){
 
 #ifdef KERNELS_HAVE_CUSPARSE
@@ -57,7 +55,7 @@ namespace Impl{
     }
 
     if (Kokkos::Impl::is_same<idx, int>::value){
-      row_mapC = cin_row_index_view_type("rowMapC", m + 1);
+
       const idx *a_xadj = row_mapA.ptr_on_device();
       const idx *b_xadj = row_mapB.ptr_on_device();
       idx *c_xadj = row_mapC.ptr_on_device();
@@ -137,9 +135,9 @@ namespace Impl{
       bin_nonzero_index_view_type entriesB,
       bin_nonzero_value_view_type valuesB,
       bool transposeB,
-      cin_row_index_view_type &row_mapC,
-      cin_nonzero_index_view_type &entriesC,
-      cin_nonzero_value_view_type &valuesC){
+      cin_row_index_view_type row_mapC,
+      cin_nonzero_index_view_type entriesC,
+      cin_nonzero_value_view_type valuesC){
 
 #ifdef KERNELS_HAVE_CUSPARSE
     typedef typename KernelHandle::nnz_lno_t idx;

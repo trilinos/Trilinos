@@ -154,7 +154,7 @@ namespace Impl{
           }
 
 
-          row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
+          //row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
           entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
           valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
 
@@ -162,7 +162,7 @@ namespace Impl{
           idx nnz = row_mapC(m) =  rows_end[m - 1];
 
           KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename cin_nonzero_index_view_type::non_const_type , MyExecSpace> (nnz, columns, entriesC);
-          KokkosKernels::Experimental::Util::copy_vector<float *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
+          KokkosKernels::Experimental::Util::copy_vector<float *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (nnz, values, valuesC);
         }
 
 
@@ -240,7 +240,7 @@ namespace Impl{
           }
           {
             Kokkos::Impl::Timer copy_time;
-            row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
+            //row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
             entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
             valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
 
@@ -248,7 +248,7 @@ namespace Impl{
             idx nnz = row_mapC(m) =  rows_end[m - 1];
 
             KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
-            KokkosKernels::Experimental::Util::copy_vector<double *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
+            KokkosKernels::Experimental::Util::copy_vector<double *, typename cin_nonzero_value_view_type::non_const_type, MyExecSpace> (nnz, values, valuesC);
             double copy_time_d = copy_time.seconds();
             std::cout << "MKL COPYTIME:" << copy_time_d << std::endl;
           }

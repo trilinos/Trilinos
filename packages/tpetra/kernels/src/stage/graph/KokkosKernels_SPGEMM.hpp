@@ -19,8 +19,7 @@ namespace Graph{
   typename alno_nnz_view_t_,
   typename blno_row_view_t_,
   typename blno_nnz_view_t_,
-  typename clno_row_view_t_,
-  typename clno_nnz_view_t_>
+  typename clno_row_view_t_>
   void spgemm_symbolic(
       KernelHandle *handle,
       typename KernelHandle::nnz_lno_t m,
@@ -32,9 +31,7 @@ namespace Graph{
       blno_row_view_t_ row_mapB,
       blno_nnz_view_t_ entriesB,
       bool transposeB,
-      clno_row_view_t_/*::non_const_type*/ &row_mapC,
-      clno_nnz_view_t_/*::non_const_type*/ &entriesC
-      ){
+      clno_row_view_t_ row_mapC){
 
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
     spgemmHandleType *sh = handle->get_spgemm_handle();
@@ -47,9 +44,7 @@ namespace Graph{
       alno_nnz_view_t_,
       blno_row_view_t_,
       blno_nnz_view_t_,
-      clno_row_view_t_,
-      clno_nnz_view_t_
-      >(sh, m,n,k,
+      clno_row_view_t_>(sh, m,n,k,
           row_mapA, entriesA, transposeA,
           row_mapB, entriesB, transposeB,
           row_mapC);
@@ -73,7 +68,7 @@ namespace Graph{
         alno_row_view_t_, alno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t,
         blno_row_view_t_, blno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t>
       kspgemm (handle,m,n,k,row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);
-      kspgemm.KokkosSPGEMM_symbolic(row_mapC, entriesC);
+      kspgemm.KokkosSPGEMM_symbolic(row_mapC);
     }
       break;
 
@@ -121,13 +116,14 @@ namespace Graph{
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
     spgemmHandleType *sh = handle->get_spgemm_handle();
     if (!sh->is_symbolic_called()){
-      spgemm_symbolic<KernelHandle,alno_row_view_t_, alno_nnz_view_t_,
-    blno_row_view_t_, blno_nnz_view_t_,
-    clno_row_view_t_, clno_nnz_view_t_>(
+      spgemm_symbolic<KernelHandle,
+                    alno_row_view_t_, alno_nnz_view_t_,
+                    blno_row_view_t_, blno_nnz_view_t_,
+                    clno_row_view_t_>(
           handle, m, n, k,
           row_mapA, entriesA, transposeA,
           row_mapB, entriesB, transposeB,
-          row_mapC, entriesC
+          row_mapC
           );
     }
 
@@ -195,7 +191,7 @@ namespace Graph{
       alno_row_view_t_, alno_nnz_view_t_, ascalar_nnz_view_t_,
       blno_row_view_t_, blno_nnz_view_t_,  bscalar_nnz_view_t_>
       kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
-      kspgemm.KokkosSPGEMM_apply(row_mapC, entriesC, valuesC);
+      kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
     }
 
     case SPGEMM_DEFAULT:

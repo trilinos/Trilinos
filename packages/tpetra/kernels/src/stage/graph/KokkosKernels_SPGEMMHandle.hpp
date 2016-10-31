@@ -182,6 +182,7 @@ private:
   nnz_lno_temp_work_view_t compressed_b_set_indices, compressed_b_sets;
   row_lno_temp_work_view_t compressed_c_rowmap;
 
+  nnz_lno_temp_work_view_t c_column_indices;
 
   row_lno_temp_work_view_t tranpose_a_xadj, tranpose_b_xadj, tranpose_c_xadj;
   nnz_lno_temp_work_view_t tranpose_a_adj, tranpose_b_adj, tranpose_c_adj;
@@ -201,6 +202,15 @@ private:
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
 #endif
   public:
+
+  void set_c_column_indices(nnz_lno_temp_work_view_t c_col_indices_){
+    this->c_column_indices = c_col_indices_;
+  }
+
+  nnz_lno_temp_work_view_t get_c_column_indices(){
+    return this->c_column_indices;
+  }
+
   void set_color_xadj(
       nnz_lno_t num_colors_,
       nnz_lno_persistent_work_host_view_t color_xadj_,
@@ -227,7 +237,7 @@ private:
   /**
    * \brief returns the result nnz size.
    */
-  void get_c_nnz(){
+  size_type get_c_nnz(){
     return this->result_nnz_size;
   }
 
@@ -270,6 +280,7 @@ private:
 
 
 
+
   void get_compressed_b(
       row_lno_temp_work_view_t &compressed_b_rowmap_,
       nnz_lno_temp_work_view_t &compressed_b_set_indices_,
@@ -288,6 +299,7 @@ private:
     algorithm_type(gs), result_nnz_size(0),
     called_symbolic(false), called_numeric(false),
     suggested_vector_size(0), suggested_team_size(0), max_nnz_inresult(0),
+    c_column_indices(),
     tranpose_a_xadj(), tranpose_b_xadj(), tranpose_c_xadj(),
     tranpose_a_adj(), tranpose_b_adj(), tranpose_c_adj(),
     transpose_a(false),transpose_b(false), transpose_c_symbolic(false),

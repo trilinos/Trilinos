@@ -51,6 +51,19 @@ struct ModularView{
 };
 
 
+template <typename from_vector, typename to_vector>
+struct CopyVectorFunctor{
+  from_vector from;
+  to_vector to;
+
+  CopyVectorFunctor(from_vector &from_, to_vector to_): from(from_), to(to_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i) const {
+    to[i] = from[i];
+  }
+};
+
 /**
  * \brief given a input view in_arr, sets the corresponding index of out_arr by
  * out_arr(ii) = in_arr(ii) * a + b;
@@ -83,6 +96,16 @@ inline void kk_modular_view(typename in_array_type::value_type num_elements, out
   Kokkos::parallel_for( my_exec_space(0, num_elements), ModularView<out_array_type, in_array_type>(out_arr, in_arr, mod_factor_));
 }
 
+
+
+template <typename from_vector, typename to_vector, typename MyExecSpace>
+void kk_copy_vector(
+    size_t num_elements,
+    from_vector from, to_vector to){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_for( my_exec_space(0,num_elements), CopyVectorFunctor<from_vector, to_vector>(from, to));
+
+}
 }
 }
 }
