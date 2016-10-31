@@ -489,34 +489,34 @@ namespace Intrepid2 {
       ordinal_type idx = 0;
 
       // x component (lineBasis(z) lineBasis(y) bubbleBasis(x))
-      for (ordinal_type k=0;k<cardLine;++k) { // z
-        for (ordinal_type j=0;j<cardLine;++j) { // y
-          for (ordinal_type i=0;i<cardBubble;++i,++idx) { // x
-            dofCoordsHost(idx,0) = dofCoordsBubbleHost(i,0);
-            dofCoordsHost(idx,1) = dofCoordsLineHost(j,0);
-            dofCoordsHost(idx,2) = dofCoordsLineHost(k,0);
+      for (ordinal_type k=0;k<cardBubble;++k) { // z
+        for (ordinal_type j=0;j<cardBubble;++j) { // y
+          for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
+            dofCoordsHost(idx,0) = dofCoordsLineHost(i,0);
+            dofCoordsHost(idx,1) = dofCoordsBubbleHost(j,0);
+            dofCoordsHost(idx,2) = dofCoordsBubbleHost(k,0);
           }
         }
       }
 
       // y component (lineBasis(z) bubbleBasis(y) lineBasis(x))
-      for (ordinal_type k=0;k<cardLine;++k) { // z
-        for (ordinal_type j=0;j<cardBubble;++j) { // y
-          for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
-            dofCoordsHost(idx,0) = dofCoordsLineHost(i,0);
-            dofCoordsHost(idx,1) = dofCoordsBubbleHost(j,0);
-            dofCoordsHost(idx,2) = dofCoordsLineHost(k,0);
+      for (ordinal_type k=0;k<cardBubble;++k) { // z
+        for (ordinal_type j=0;j<cardLine;++j) { // y
+          for (ordinal_type i=0;i<cardBubble;++i,++idx) { // x
+            dofCoordsHost(idx,0) = dofCoordsBubbleHost(i,0);
+            dofCoordsHost(idx,1) = dofCoordsLineHost(j,0);
+            dofCoordsHost(idx,2) = dofCoordsBubbleHost(k,0);
           }
         }
       }
 
       // z component (bubbleBasis(z) lineBasis(y) lineBasis(x))
-      for (ordinal_type k=0;k<cardBubble;++k) { // z
-        for (ordinal_type j=0;j<cardLine;++j) { // y
-          for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
-            dofCoordsHost(idx,0) = dofCoordsLineHost(i,0);
-            dofCoordsHost(idx,2) = dofCoordsLineHost(j,0);
-            dofCoordsHost(idx,1) = dofCoordsBubbleHost(k,0);
+      for (ordinal_type k=0;k<cardLine;++k) { // z
+        for (ordinal_type j=0;j<cardBubble;++j) { // y
+          for (ordinal_type i=0;i<cardBubble;++i,++idx) { // x
+            dofCoordsHost(idx,0) = dofCoordsBubbleHost(i,0);
+            dofCoordsHost(idx,2) = dofCoordsBubbleHost(j,0);
+            dofCoordsHost(idx,1) = dofCoordsLineHost(k,0);
           }
         }
       }

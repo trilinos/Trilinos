@@ -284,6 +284,42 @@ namespace Intrepid2 {
             }
             ots::clearCoeffMatrix();
           }
+
+          {
+            // I do not know how I can provide reference permutation for hexa or any 3D elements
+            const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+            const ordinal_type order = testOrder;
+          
+            {
+              *outStream << "\n -- Testing Hexahedral HDIV \n\n";
+              Basis_HDIV_HEX_In_FEM<DeviceSpaceType> cellBasis(order);
+              const auto matData = ots::createCoeffMatrix(&cellBasis);
+
+              auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
+              Kokkos::deep_copy(matDataHost, matData);
+            
+              // check face only
+              const ordinal_type faceDim = 2, numFace = 6, numOrt = 8;
+              for (auto faceId=0;faceId<numFace;++faceId) {
+                const auto ordFace = cellBasis.getDofOrdinal(faceDim, faceId, 0);
+                const auto ndofFace = cellBasis.getDofTag(ordFace)(3);
+              
+                const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofFace);            
+                for (auto faceOrt=0;faceOrt<numOrt;++faceOrt) {
+                  *outStream << "\n faceId = " << faceId << " faceOrt = " << faceOrt << "\n";
+                  const auto mat = Kokkos::subview(matDataHost, faceId, faceOrt, range, range);
+                  for (auto i=0;i<ndofFace;++i) {
+                    for (auto j=0;j<ndofFace;++j)
+                      *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
+                    *outStream << "\n";
+                  }
+                } 
+              }
+            }
+            ots::clearCoeffMatrix();
+          }
+
+
         }
 
       } catch (std::exception err) {

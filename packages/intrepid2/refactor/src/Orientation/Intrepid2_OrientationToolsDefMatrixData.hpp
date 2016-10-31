@@ -156,6 +156,16 @@ namespace Intrepid2 {
 
       init_HDIV_QUAD_In_FEM(matData, order);
     } 
+    else if (name == "Intrepid2_HDIV_HEX_In_FEM") {
+      const ordinal_type matDim = ordinalToTag(tagToOrdinal(2, 0, 0), 3), numSubcells = 6, numOrts = 8;
+      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HDIV_HEX_In_FEM",
+                                        numSubcells,
+                                        numOrts,
+                                        matDim, 
+                                        matDim);
+
+      init_HDIV_HEX_In_FEM(matData, order);
+    } 
 
     //
     // 2D H(Curl/Div) I1 Elements
@@ -258,6 +268,10 @@ namespace Intrepid2 {
     }
     return matData;
   }
+
+  ///
+  /// Quad elements
+  ///
   
   template<typename SpT>
   void
@@ -320,7 +334,11 @@ namespace Intrepid2 {
                                                     edgeId, edgeOrt);
       }
   }
-  
+
+  ///
+  /// Hexahedral elements
+  ///
+
   template<typename SpT>
   void
   OrientationTools<SpT>::
@@ -362,24 +380,6 @@ namespace Intrepid2 {
   template<typename SpT>
   void
   OrientationTools<SpT>::
-  init_HGRAD_TRI_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                        const ordinal_type order) {
-    INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                  ">>> ERROR (OrientationTools::init_HGRAD_TRI_Cn_FEM): basis is not converted yet to dynrankview." );
-  }
-
-  template<typename SpT>
-  void
-  OrientationTools<SpT>::
-  init_HGRAD_TET_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                        const ordinal_type order) {
-    INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                  ">>> ERROR (OrientationTools::init_HGRAD_TET_Cn_FEM): basis is not converted yet to dynrankview." );
-  }
-
-  template<typename SpT>
-  void
-  OrientationTools<SpT>::
   init_HCURL_HEX_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                         const ordinal_type order) {
     Basis_HGRAD_LINE_Cn_FEM<SpT> bubbleBasis(order-1, POINTTYPE_GAUSS);
@@ -412,6 +412,59 @@ namespace Intrepid2 {
         }
     }
   }
+
+  template<typename SpT>
+  void
+  OrientationTools<SpT>::
+  init_HDIV_HEX_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                       const ordinal_type order) {
+    Basis_HDIV_QUAD_Bn_FEM<SpT> quadBasis(order);
+    Basis_HDIV_HEX_In_FEM<SpT> cellBasis(order);
+
+    const ordinal_type numFace = 6;    
+    {
+      const ordinal_type numOrt = 8;
+      for (ordinal_type faceId=0;faceId<numFace;++faceId)
+        for (ordinal_type faceOrt=0;faceOrt<numOrt;++faceOrt) {
+          auto mat = Kokkos::subview(matData, 
+                                     faceId, faceOrt,
+                                     Kokkos::ALL(), Kokkos::ALL());
+          Impl::OrientationTools::getCoeffMatrix_HDIV(mat,
+                                                      quadBasis, cellBasis, 
+                                                      faceId, faceOrt);
+        }
+    }
+  }
+  
+  ///
+  /// Triangle elements
+  ///
+
+  template<typename SpT>
+  void
+  OrientationTools<SpT>::
+  init_HGRAD_TRI_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                        const ordinal_type order) {
+    INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                  ">>> ERROR (OrientationTools::init_HGRAD_TRI_Cn_FEM): basis is not converted yet to dynrankview." );
+  }
+
+  ///
+  /// Tetrahedral elements
+  ///
+  
+  template<typename SpT>
+  void
+  OrientationTools<SpT>::
+  init_HGRAD_TET_Cn_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
+                        const ordinal_type order) {
+    INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                  ">>> ERROR (OrientationTools::init_HGRAD_TET_Cn_FEM): basis is not converted yet to dynrankview." );
+  }
+
+  ///
+  /// Lower order I1 elements
+  ///
   
   template<typename SpT>
   void

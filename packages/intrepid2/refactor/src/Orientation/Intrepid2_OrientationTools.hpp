@@ -271,6 +271,10 @@ namespace Intrepid2 {
     static void init_HDIV_QUAD_In_FEM(CoeffMatrixDataViewType matData,
                                       const ordinal_type order);
 
+    inline
+    static void init_HDIV_HEX_In_FEM(CoeffMatrixDataViewType matData,
+                                     const ordinal_type order);
+
     //
     // I1 element specialization
     //

@@ -180,37 +180,24 @@ namespace Intrepid2 {
                                     "Invalid subcellId returns -1 ordSubcell.");
 
       const ordinal_type ndofSubcell = cellBasis.getDofTag(ordSubcell)(3);
-      switch (subcellBaseKey) {
-      case shards::Line<>::key: 
-      case shards::Triangle<>::key: {
-        INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != PointTools::getLatticeSize(subcellTopo, degree, 1),
-                                      std::logic_error,
-                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-                                      "The number of DOFs (Line,Triangle) does not match to the number of collocation points.");
-        break;
-      }
-      case shards::Quadrilateral<>::key: {
-        const auto lineTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
-        const ordinal_type ndofLine = PointTools::getLatticeSize(lineTopo, degree, 1);
-        INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != (ndofLine*ndofLine),
-                                      std::logic_error,
-                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-                                      "The number of DOFs (Quad) does not match to the number of collocation points.");
-        break;
-      }     
-      }
 
       // reference points on a subcell
-      DynRankViewHostType refPtsSubcell("refPtsSubcell", ndofSubcell, subcellDim);
+      DynRankViewHostType refPtsSubcell;
 
       switch (subcellBaseKey) {
       case shards::Line<>::key: 
       case shards::Triangle<>::key: {
+        const ordinal_type ndofLine = PointTools::getLatticeSize(subcellTopo, degree, 1);
+        refPtsSubcell = DynRankViewHostType("refPtsSubcell", ndofLine, subcellDim);
         PointTools::getLattice(refPtsSubcell,
                                subcellTopo,
                                degree,
                                1, // offset by 1 so the points are located inside
                                POINTTYPE_EQUISPACED);
+        INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != ndofLine,
+                                      std::logic_error,
+                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
+                                      "The number of DOFs in line should be equal to the number of collocation points.");
         break;
       }
       case shards::Quadrilateral<>::key: {
@@ -223,6 +210,8 @@ namespace Intrepid2 {
                                degree,
                                1, // offset by 1 so the points are located inside
                                POINTTYPE_EQUISPACED);
+
+        refPtsSubcell = DynRankViewHostType("refPtsSubcell", ndofLine*ndofLine, subcellDim);
         ordinal_type idx = 0;
         for (ordinal_type j=0;j<ndofLine;++j) { // y
           for (ordinal_type i=0;i<ndofLine;++i,++idx) { // x
@@ -245,17 +234,18 @@ namespace Intrepid2 {
                                       "subcellBasis must have line, quad, or triangle topology.");
       }
       }
-
+      
+      const ordinal_type nptsSubcell = refPtsSubcell.dimension(0);
 
       // modified points with orientation
-      DynRankViewHostType ortPtsSubcell("ortPtsSubcell", ndofSubcell, subcellDim);
+      DynRankViewHostType ortPtsSubcell("ortPtsSubcell", nptsSubcell, subcellDim);
       Impl::OrientationTools::mapToModifiedReference(ortPtsSubcell,
                                                      refPtsSubcell,
                                                      subcellTopo,
                                                      subcellOrt);
 
       // map to reference coordinates
-      DynRankViewHostType refPtsCell("refPtsCell", ndofSubcell, cellDim);
+      DynRankViewHostType refPtsCell("refPtsCell", nptsSubcell, cellDim);
       CellTools<host_space_type>::mapToReferenceSubcell(refPtsCell,
                                                         refPtsSubcell,
                                                         subcellDim,
@@ -267,11 +257,11 @@ namespace Intrepid2 {
       ///
 
       // evaluate values on the reference cell
-      DynRankViewHostType refValues("refValues", numCellBasis, ndofSubcell);
+      DynRankViewHostType refValues("refValues", numCellBasis, nptsSubcell);
       cellBasis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
 
       // evaluate values on the modified cell
-      DynRankViewHostType outValues("outValues", numSubcellBasis, ndofSubcell);
+      DynRankViewHostType outValues("outValues", numSubcellBasis, nptsSubcell);
       subcellBasis.getValues(outValues, ortPtsSubcell, OPERATOR_VALUE);
 
       ///
@@ -286,15 +276,15 @@ namespace Intrepid2 {
 
       // construct collocation matrix; using lapack, it should be left layout
       Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space_type>
-        refMat("refMat", ndofSubcell, ndofSubcell),
-        ortMat("ortMat", ndofSubcell, ndofSubcell),
-        pivVec("pivVec", ndofSubcell, 1);
+        refMat("refMat", nptsSubcell, ndofSubcell),
+        ortMat("ortMat", nptsSubcell, ndofSubcell),
+        pivVec("pivVec", nptsSubcell, 1);
 
       for (ordinal_type i=0;i<ndofSubcell;++i) {
         const ordinal_type iref = cellBasis.getDofOrdinal(subcellDim, subcellId, i);
         const ordinal_type iout = subcellBasis.getDofOrdinal(subcellDim, 0, i);
 
-        for (ordinal_type j=0;j<ndofSubcell;++j) {
+        for (ordinal_type j=0;j<nptsSubcell;++j) {
           refMat(j,i) = refValues(iref,j);
           ortMat(j,i) = outValues(iout,j);
         }
@@ -305,7 +295,7 @@ namespace Intrepid2 {
         Teuchos::LAPACK<ordinal_type,value_type> lapack;
         ordinal_type info = 0;
 
-        lapack.GESV(ndofSubcell, ndofSubcell,
+        lapack.GESV(nptsSubcell, ndofSubcell,
                     refMat.data(),
                     refMat.stride_1(),
                     (ordinal_type*)pivVec.data(),
