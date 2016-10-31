@@ -17,11 +17,26 @@ public:
 
   /// Constructor
   StepperBackwardEuler(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+    Teuchos::RCP<Teuchos::ParameterList>                      pList,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
 
   /// \name Basic stepper methods
   //@{
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+    virtual void setNonConstModel(
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+
+    /// Set the solver
+    void setSolver(std::string solverName);
+    void setSolver(Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
+    /// Set the predictor
+    void setPredictor(std::string predictorName);
+    void setPredictor(Teuchos::RCP<Teuchos::ParameterList> predPL=Teuchos::null);
+
+    /// Initialize during construction and after changing input parameters.
+    virtual void initialize();
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
@@ -31,11 +46,11 @@ public:
     virtual Scalar getOrder() const {return 1.0;}
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 1.0;}
-
-    /// Compute predictor given the supplied stepper
-    virtual void computePredictor(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
   //@}
+
+  /// Compute predictor given the supplied stepper
+  virtual void computePredictor(
+    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
   /// \name ParameterList methods
   //@{

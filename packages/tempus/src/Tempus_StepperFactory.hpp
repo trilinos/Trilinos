@@ -27,8 +27,8 @@ public:
 
   /// Very simple factory method
   Teuchos::RCP<Stepper<Scalar> > createStepper(
-    Teuchos::RCP<Teuchos::ParameterList>                stepperPL,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model         )
+    Teuchos::RCP<Teuchos::ParameterList>                      stepperPL,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model     )
   {
     using Teuchos::rcp;
     std::string stepper = stepperPL->get<std::string>("Stepper Type");

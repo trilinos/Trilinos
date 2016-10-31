@@ -19,11 +19,20 @@ public:
 
   /// Constructor
   StepperExplicitRK(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+    Teuchos::RCP<Teuchos::ParameterList>                      pList,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
 
   /// \name Basic stepper methods
   //@{
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
+    virtual void setNonConstModel(
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+    void setTableau(std::string stepperType = "");
+
+    /// Initialize during construction and after changing input parameters.
+    virtual void initialize();
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);

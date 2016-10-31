@@ -43,6 +43,13 @@ namespace Tempus {
  *       with ModelEvaluator C using Solver B
  *   - Steppers may maintain their own time history of the solution, e.g.,
  *     BDF steppers.
+ *
+ * <b> CS Design Considerations</b>
+ *   - Steppers will be fully constructed with input or default parameters.
+ *   - All input parameters (i.e., ParameterList) can be set by public methods.
+ *   - The Stepper ParameterList must be consistent.
+ *     - The "set" methods which update parameters in the ParameterList
+ *       must update the Stepper ParameterList.
  */
 template<class Scalar>
 class Stepper
@@ -54,11 +61,21 @@ public:
 
   /// \name Basic stepper methods
   //@{
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel
+      ) = 0;
+    virtual void setNonConstModel(
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel) = 0;
+
+    /// Initialize during construction and after changing input parameters.
+    virtual void initialize() = 0;
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() = 0;
+    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState()
+       = 0;
     virtual Scalar getOrder() const = 0;
     virtual Scalar getOrderMin() const = 0;
     virtual Scalar getOrderMax() const = 0;
@@ -72,8 +89,9 @@ public:
      *  xdot=null and hopefully the ModelEvaluator can handle it.
      */
     void validExplicitODE(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model) const
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const
     {
+      TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
       typedef Thyra::ModelEvaluatorBase MEB;
       const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
       const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
@@ -97,8 +115,9 @@ public:
 
     /// Validate that the model supports implicit ODE/DAE evaluation, f(xdot,x,t) [= 0]
     void validImplicitODE_DAE(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model) const
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model) const
     {
+      TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
       typedef Thyra::ModelEvaluatorBase MEB;
       const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
       const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();

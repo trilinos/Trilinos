@@ -9,17 +9,32 @@ namespace Tempus {
 // StepperForwardEuler definitions:
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel )
+  Teuchos::RCP<Teuchos::ParameterList>                      pList,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel )
 {
+  // Set all the input parameters and call initialize
   this->setParameterList(pList);
+  this->setModel(transientModel);
+  this->initialize();
+}
 
+template<class Scalar>
+void StepperForwardEuler<Scalar>::setModel(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+{
   this->validExplicitODE(transientModel);
   eODEModel_ = transientModel;
 
   inArgs_  = eODEModel_->createInArgs();
   outArgs_ = eODEModel_->createOutArgs();
   inArgs_  = eODEModel_->getNominalValues();
+}
+
+template<class Scalar>
+void StepperForwardEuler<Scalar>::setNonConstModel(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+{
+  this->setModel(transientModel);
 }
 
 template<class Scalar>

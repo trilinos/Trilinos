@@ -32,34 +32,154 @@ StepperBackwardEuler<Scalar>::xDotFunction(
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel )
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel )
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
+  // Set all the input parameters and call initialize
   this->setParameterList(pList);
+  this->setModel(transientModel);
+  this->initialize();
+}
 
+
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::setModel(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+{
   this->validImplicitODE_DAE(transientModel);
+  if (residualModel_ != Teuchos::null) residualModel_ = Teuchos::null;
   residualModel_ =
     Teuchos::rcp(new ResidualModelEvaluator<Scalar>(transientModel));
 
   inArgs_  = residualModel_->getNominalValues();
   outArgs_ = residualModel_->createOutArgs();
+}
 
-  // Construct solver
-  std::string solverName = pList_->get<std::string>("Solver Name");
+
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::setNonConstModel(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+{
+  this->setModel(transientModel);
+}
+
+
+/** \brief Set the solver to a pre-defined solver in the ParameterList.
+ *  The solver is set to solverName sublist in the Stepper's ParameterList.
+ *  The solverName sublist should already be defined in the Stepper's
+ *  ParameterList.  Otherwise it will fail.
+ */
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::setSolver(std::string solverName)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
   RCP<ParameterList> solverPL = Teuchos::sublist(pList_, solverName, true);
-  RCP<ParameterList> noxPL    = Teuchos::sublist(solverPL, "NOX", true);
+  pList_->set("Solver Name", solverName);
+  if (solver_ != Teuchos::null) solver_ = Teuchos::null;
   solver_ = rcp(new Thyra::NOXNonlinearSolver());
+  RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
   solver_->setParameterList(noxPL);
+}
 
-  // Construct predictor
-  std::string predictorName = pList_->get<std::string>("Predictor Name","None");
-  if (predictorName != "None") {
-    RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
-    RCP<ParameterList> predPL = Teuchos::sublist(pList_, predictorName, true);
-    predictorStepper_ = sf->createStepper(predPL, transientModel);
+
+/** \brief Set the solver to the supplied Parameter sublist.
+ *  This adds a new solver Parameter sublist to the Stepper's ParameterList.
+ *  If the solver sublist is null, the solver is set to the solver name
+ *  in the Stepper's ParameterList.
+ */
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::setSolver(
+  Teuchos::RCP<Teuchos::ParameterList> solverPL)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  std::string solverName = pList_->get<std::string>("Solver Name");
+  if (is_null(solverPL)) {
+    solverPL = Teuchos::sublist(pList_, solverName, true);
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION( solverName == solverPL->name(),
+      std::logic_error,
+         "Error - Trying to add a solver that is already in ParameterList!\n"
+      << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n"
+      << "  Solver Name  = "<<solverName<<"\n");
+    solverName = solverPL->name();
+    pList_->set("Solver Name", solverName);
+    pList_->set(solverName, solverPL);      // Add sublist
   }
+  if (solver_ != Teuchos::null) solver_ = Teuchos::null;
+  solver_ = rcp(new Thyra::NOXNonlinearSolver());
+  RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
+  solver_->setParameterList(noxPL);
+}
+
+
+/** \brief Set the predictor to a pre-defined predictor in the ParameterList.
+ *  The predictor is set to predictorName sublist in the Stepper's
+ *  ParameterList.  The predictorName sublist should already be defined
+ *  in the Stepper's ParameterList.  Otherwise it will fail.
+ */
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::setPredictor(std::string predictorName)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  RCP<ParameterList> predPL = Teuchos::sublist(pList_, predictorName, true);
+  pList_->set("Predictor Name", predictorName);
+  if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
+  RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
+}
+
+
+/** \brief Set the predictor to the supplied Parameter sublist.
+ *  This adds a new predictor Parameter sublist to the Stepper's ParameterList.
+ *  If the predictor sublist is null, it tests if the predictor is set in
+ *  the Stepper's ParameterList.
+ */
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::setPredictor(
+  Teuchos::RCP<Teuchos::ParameterList> predPL)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  std::string predictorName = pList_->get<std::string>("Predictor Name","None");
+  if (is_null(predPL)) {
+    if (predictorName != "None") {
+      RCP<ParameterList> predPL = Teuchos::sublist(pList_, predictorName, true);
+      RCP<StepperFactory<Scalar> > sf =
+        Teuchos::rcp(new StepperFactory<Scalar>());
+      predictorStepper_ =
+        sf->createStepper(predPL, residualModel_->getTransientModel());
+    }
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION( predictorName == predPL->name(),
+      std::logic_error,
+         "Error - Trying to add a predictor that is already in ParameterList!\n"
+      << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n"
+      << "  Predictor Name  = "<<predictorName<<"\n");
+    predictorName = predPL->name();
+    pList_->set("Predictor Name", predictorName);
+    pList_->set(predictorName, predPL);           // Add sublist
+    if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
+    RCP<StepperFactory<Scalar> > sf =
+      Teuchos::rcp(new StepperFactory<Scalar>());
+    predictorStepper_ =
+      sf->createStepper(predPL, residualModel_->getTransientModel());
+  }
+}
+
+
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::initialize()
+{
+  this->setSolver();
+  this->setPredictor();
 }
 
 

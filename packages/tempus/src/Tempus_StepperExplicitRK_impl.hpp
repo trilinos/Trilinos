@@ -11,25 +11,45 @@ namespace Tempus {
 // StepperExplicitRK definitions:
 template<class Scalar>
 StepperExplicitRK<Scalar>::StepperExplicitRK(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel )
+  Teuchos::RCP<Teuchos::ParameterList>                      pList,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel )
 {
   this->setParameterList(pList);
-  std::string stepperType = pList_->get<std::string>("Stepper Type");
+  this->setModel(transientModel);
+  this->initialize();
+}
 
-  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType);
-  description_ = ERK_ButcherTableau_->description();
-  TEUCHOS_TEST_FOR_EXCEPTION( ERK_ButcherTableau_->isImplicit() == true,
-    std::logic_error,
-       "Error - StepperExplicitRK received an implicit Butcher Tableau!\n"
-    << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n");
-
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setModel(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
+{
   this->validExplicitODE(transientModel);
   eODEModel_ = transientModel;
 
   inArgs_  = eODEModel_->createInArgs();
   outArgs_ = eODEModel_->createOutArgs();
   inArgs_  = eODEModel_->getNominalValues();
+}
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setNonConstModel(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+{
+  this->setModel(transientModel);
+}
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
+{
+  if (stepperType == "")
+    stepperType = pList_->get<std::string>("Stepper Type");
+
+  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType);
+  TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
+    std::logic_error,
+       "Error - StepperExplicitRK received an implicit Butcher Tableau!\n"
+    << "  Stepper Type = "<< pList_->get<std::string>("Stepper Type") << "\n");
+  description_ = ERK_ButcherTableau_->description();
 
   stageX_ = Thyra::createMember(eODEModel_->get_f_space());
   // Initialize the stage vectors
@@ -38,6 +58,12 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
   for (int i=0; i<numStages; ++i) {
     stagef_.push_back(Thyra::createMember(eODEModel_->get_f_space()));
   }
+}
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::initialize()
+{
+  this->setTableau();
 }
 
 template<class Scalar>

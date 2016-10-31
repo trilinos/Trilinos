@@ -24,7 +24,7 @@ public:
 
   /// Constructor
   ResidualModelEvaluator(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel)
     : transientModel_(transientModel)
   {}
 
