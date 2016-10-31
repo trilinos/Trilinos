@@ -2,18 +2,18 @@ adj = load('cell_to_node_quad.txt') + 1;  %% load node adjacency table, incremen
 
 nodes = load('nodes.txt');  %% load node coordinates
 
-data_obj = importdata('mean_state.txt', ' ', 2);  %% we need to skip the first two lines
+data_obj = importdata('state.txt', ' ', 2);  %% we need to skip the first two lines
 state = data_obj.data;
-figure(1)
+subplot(1,2,1)
 trisurf(adj, nodes(:,1), nodes(:,2), state);
 shading interp;
 view(0,90)
-axis equal
-axis tight
+axis square
 
 data_obj = importdata('control.txt', ' ', 2);  %% we need to skip the first two lines
 control = data_obj.data;
-figure(2)
-ind = find(nodes(:,2)==0);
-plot(nodes(ind,1),control(ind),'b','linewidth',3)
+subplot(1,2,2)
+trisurf(adj, nodes(:,1), nodes(:,2), control);
+shading interp;
+view(0,90)
 axis square

@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     const RealT domainWidth  = parlist->sublist("Geometry").get("Width", 1.0);
     const RealT domainHeight = parlist->sublist("Geometry").get("Height", 1.0);
     const RealT volFraction  = parlist->sublist("Problem").get("Volume Fraction", 0.4);
-    const RealT minDensity   = parlist->sublist("Problem").get("Minimum Density", 1e-4);
+    const RealT objFactor    = parlist->sublist("Problem").get("Objective Scaling", 1e-4);
 
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr
@@ -122,11 +122,12 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new PDE_Filter<RealT>(*parlist));
     Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > conFilter
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pdeFilter,meshMgr,comm,*parlist,*outStream));
-    // Get the assembler.
-    Teuchos::RCP<Assembler<RealT> > assembler
-      = (Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con))->getAssembler();
+    // Cast the constraint and get the assembler.
+    Teuchos::RCP<PDE_Constraint<RealT> > pdecon
+      = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
+    Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
-    assembler->printMeshData(*outStream);
+    pdecon->printMeshData(*outStream);
 
     // Create state vector.
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
@@ -141,6 +142,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = assembler->createControlVector();
     //z_rcp->randomize();
     z_rcp->putScalar(volFraction);
+    //z_rcp->putScalar(0);
     Teuchos::RCP<ROL::Vector<RealT> > zp
       = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
     // Create residual vector.
@@ -186,7 +188,10 @@ int main(int argc, char *argv[]) {
     // Initialize compliance objective function.
     up->zero();
     con->value(*rp, *up, *zp, tol);
-    RealT objScaling = minDensity / rp->dot(*rp);
+    RealT objScaling = objFactor;
+    if (rp->dot(*rp) > 1e2*ROL::ROL_EPSILON<RealT>()) {
+      objScaling /= rp->dot(*rp);
+    }
     u_rcp->randomize();
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(1,Teuchos::null);
     qoi_vec[0] = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(),
@@ -326,13 +331,13 @@ int main(int argc, char *argv[]) {
 
     Teuchos::Array<RealT> res(1,0);
     con->solve(*rp,*up,*zp,tol);
-    assembler->outputTpetraVector(u_rcp,"state.txt");
-    assembler->outputTpetraVector(z_rcp,"density.txt");
+    pdecon->outputTpetraVector(u_rcp,"state.txt");
+    pdecon->outputTpetraVector(z_rcp,"density.txt");
     con->value(*rp,*up,*zp,tol);
     r_rcp->norm2(res.view(0,1));
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
-    //assembler->outputTpetraData();
+    pdecon->outputTpetraData();
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

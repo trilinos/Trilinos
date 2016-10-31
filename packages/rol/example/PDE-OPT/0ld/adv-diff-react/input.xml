@@ -1,122 +1,23 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Is problem nonsmooth?"               type="bool"    value="false"   />
-    <!-- OBJECTIVE FUNCTION -->
-    <Parameter name="Desired engine temperature"          type="double"  value="363.0"   />
-    <Parameter name="Use exponential engine cost model"   type="bool"    value="false"   />
-    <Parameter name="Exponential engine cost rate"        type="double"  value="0.1"     />
-    <Parameter name="State Cost"                          type="double"  value="1e0"     />
-    <Parameter name="Desired control temperature"         type="double"  value="293.0"   />
-    <Parameter name="Use exponential control cost model"  type="bool"    value="false"   />
-    <Parameter name="Exponential lower control cost rate" type="double"  value="0.1"     />
-    <Parameter name="Exponential upper control cost rate" type="double"  value="0.01"    />
-    <Parameter name="Control Cost"                        type="double"  value="1e-1"    />
-    <Parameter name="Advection Cost"                      type="double"  value="1e-1"    />
-    <!-- PDE COEFFICIENTS -->
-    <Parameter name="Engine: Ambient Temperature"         type="double"  value="500.0"   />
-    <Parameter name="Air: Ambient Temperature"            type="double"  value="293.0"   />
-    <Parameter name="Water: Ambient Temperature"          type="double"  value="303.0"   />
-    <Parameter name="Lower Control Bound"                 type="double"  value="280.0"   />
-    <Parameter name="Upper Control Bound"                 type="double"  value="370.0"   />
-    <Parameter name="Advection Magnitude"                 type="double"  value="450.0"   />
-    <Parameter name="Lower Advection Bound"               type="double"  value="-100.0"  />
-    <Parameter name="Upper Advection Bound"               type="double"  value="100.0"   />
-    <Parameter name="Use Stefan-Boltzmann"                type="bool"    value="true"    />
-    <Parameter name="Use Nonlinear Conductivities"        type="bool"    value="true"    />
-    <!-- STOCHASTIC INFORMATION -->
-    <Parameter name="Statistic Initial Guess"             type="double"  value="5.0"     />
-    <Parameter name="Number of Samples"                   type="int"     value="4"       />
-    <!-- OUTPUT -->
-    <Parameter name="Check Derivatives"                   type="bool"    value="true"    />
-    <Parameter name="Print Mean Value State"              type="bool"    value="false"   />
-    <Parameter name="Number of Output Samples"            type="int"     value="4"       />
-    <!-- FINITE ELEMENT INFORMATION -->
-    <Parameter name="Basis Order"                         type="int"     value="1"       />
-    <Parameter name="Volume Cubature Degree"              type="int"     value="2"       />
-    <Parameter name="Boundary Cubature Degree"            type="int"     value="4"       />
+    <Parameter name="Penalty parameter"             type="double"  value="1e-1" />
+    <Parameter name="Diffusivity"                   type="double"  value="1e-1" />
+    <Parameter name="Advection Horizontal"          type="double"  value="1e+0" />
+    <Parameter name="Advection Vertical"            type="double"  value="1e+0" />
+    <Parameter name="Order of FE discretization"    type="int"     value="1"    />
+    <Parameter name="Fraction of nonzero weights"   type="double"  value="1.0" />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Geometry">
-    <Parameter name="Channel height"         type="double"  value="1.0"  />
-    <Parameter name="Channel width"          type="double"  value="5.0"  />
-    <Parameter name="Step height"            type="double"  value="0.5"  />
-    <Parameter name="Step width"             type="double"  value="1.0"  />
-    <Parameter name="Observation width"      type="double"  value="3.0"  />
-    <Parameter name="Refinement level"       type="int"     value="2"    />
-    <Parameter name="Partition type"         type="int"     value="1"    />
-  </ParameterList>
-
-  <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
-  <ParameterList name="SimOpt">
-    <ParameterList name="Solve">
-      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-8"  />
-      <Parameter name="Relative Residual Tolerance"   type="double"  value="1.e0"   />
-      <Parameter name="Iteration Limit"               type="int"     value="20"     />
-      <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
-      <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
-      <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
-      <Parameter name="Output Iteration History"      type="bool"    value="false"  />
-    </ParameterList>
-  </ParameterList>
-
-  <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
-  <ParameterList name="SOL">
-    <Parameter name="Stochastic Optimization Type" type="string" value="Mean Value"   />
-    <!--
-      <Parameter name="Stochastic Optimization Type" type="string" value="Risk Averse"  />
-      <Parameter name="Stochastic Optimization Type" type="string" value="Risk Neutral" />
-      <Parameter name="Stochastic Optimization Type" type="string" value="BPOE"         />
-    -->
-    <ParameterList name="Risk Measure">
-      <Parameter name="Name" type="string" value="Exponential Utility" />
-      <!--
-        <Parameter name="Name" type="string" value="KL Divergence" />
-        <Parameter name="Name" type="string" value="Quantile-Based Quadrangle" />
-        <Parameter name="Name" type="string" value="Log-Quantile Quadrangle" />
-      -->
-
-      <ParameterList name="KL Divergence">
-        <Parameter name="Threshold" type="double" value="1.e-4" />
-      </ParameterList>
-
-      <ParameterList name="Quantile-Based Quadrangle">
-        <Parameter name="Confidence Level"             type="double" value="0.95"  />
-        <Parameter name="Convex Combination Parameter" type="double" value="0.0"   />
-        <Parameter name="Smoothing Parameter"          type="double" value="1.e-4" />
-        <ParameterList name="Distribution">
-          <Parameter name="Name" type="string" value="Parabolic" />
-          <ParameterList name="Parabolic">
-            <Parameter name="Lower Bound" type="double" value="0.0" />
-            <Parameter name="Upper Bound" type="double" value="1.0" />
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="Exponential Utility">
-        <Parameter name="Rate" type="double" value="2.0" />
-      </ParameterList>
-
-      <ParameterList name="Log-Quantile Quadrangle">
-        <Parameter name="Slope for Linear Growth"     type="double" value="0.0"   />
-        <Parameter name="Rate for Exponential Growth" type="double" value="2.0"   />
-        <Parameter name="Smoothing Parameter"         type="double" value="1.e-4" />
-        <ParameterList name="Distribution">
-          <Parameter name="Name" type="string" value="Parabolic" />
-          <ParameterList name="Parabolic">
-            <Parameter name="Lower Bound" type="double" value="0.0" />
-            <Parameter name="Upper Bound" type="double" value="1.0" />
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-    </ParameterList>
-
-    <ParameterList name="BPOE">
-      <Parameter name="Moment Order" type="double" value="2.0" />
-      <Parameter name="Threshold"    type="double" value="6.0" />
-    </ParameterList>
+    <Parameter name="Width"             type="double"  value="1.0"  />
+    <Parameter name="Height"            type="double"  value="1.0"  />
+    <Parameter name="X0"                type="double"  value="0.0"  />
+    <Parameter name="Y0"                type="double"  value="0.0"  />
+    <Parameter name="NX"                type="int"     value="32"   />
+    <Parameter name="NY"                type="int"     value="32"   />
+    <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
@@ -197,7 +98,7 @@
       <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
       <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
       <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
-      <Parameter name="Safeguard Size"                       type="double" value="1.e1"         />
+      <Parameter name="Safeguard Size"                       type="double" value="1.e8"         />
 
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">
@@ -237,7 +138,7 @@
       </ParameterList>
       <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
       <ParameterList name="Tangential Subproblem Solver">
-        <Parameter name="Iteration Limit"    type="int"    value="20"   />
+        <Parameter name="Iteration Limit"    type="int"    value="100"  />
         <Parameter name="Relative Tolerance" type="double" value="1e-2" />
       </ParameterList>
     </ParameterList>
@@ -304,6 +205,6 @@
     <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
-    <Parameter name="Iteration Limit"      type="int"    value="10"    />
+    <Parameter name="Iteration Limit"      type="int"    value="200"    />
   </ParameterList>
 </ParameterList>

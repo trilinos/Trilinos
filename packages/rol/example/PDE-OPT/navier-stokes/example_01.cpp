@@ -104,11 +104,11 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new PDE_NavierStokes<RealT>(*parlist));
     Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
-    // Get the assembler.
-    Teuchos::RCP<Assembler<RealT> > assembler
-      = (Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con))->getAssembler();
+    // Cast the constraint and get the assembler.
+    Teuchos::RCP<PDE_Constraint<RealT> > pdecon
+      = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
+    Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
-    assembler->printMeshData(*outStream);
 
     // Create state vector and set to zeroes
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
@@ -190,16 +190,18 @@ int main(int argc, char *argv[]) {
       algo->run(*zp,*robj,true,*outStream);
     }
 
+    // Output.
+    assembler->printMeshData(*outStream);
     RealT tol(1.e-8);
     Teuchos::Array<RealT> res(1,0);
     con->solve(*rp,*up,*zp,tol);
-    assembler->outputTpetraVector(u_rcp,"state.txt");
-    assembler->outputTpetraVector(z_rcp,"control.txt");
+    pdecon->outputTpetraVector(u_rcp,"state.txt");
+    pdecon->outputTpetraVector(z_rcp,"control.txt");
     con->value(*rp,*up,*zp,tol);
     r_rcp->norm2(res.view(0,1));
     *outStream << "Residual Norm: " << res[0] << std::endl;
     errorFlag += (res[0] > 1.e-6 ? 1 : 0);
-    assembler->outputTpetraData();
+    //pdecon->outputTpetraData();
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

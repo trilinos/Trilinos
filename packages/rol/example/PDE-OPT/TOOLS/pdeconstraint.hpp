@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  constraint.hpp
-    \brief Defines the SimOpt constraint for the 'poisson' example.
+/*! \file  pdeconstraint.hpp
+    \brief Defines the SimOpt constraint for the PDE-OPT examples.
 */
 
 #ifndef ROL_PDEOPT_PDECONSTRAINT_H
@@ -51,18 +51,321 @@
 #include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
 #include "pde.hpp"
 #include "assembler.hpp"
+#include "solver.hpp"
 #include "pdevector.hpp"
+
+
+//// Global Timers.
+#ifdef ROL_TIMERS
+namespace ROL {
+  namespace PDEOPT {
+    Teuchos::RCP<Teuchos::Time> PDEConstraintSolverConstruct_Jacobian1        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Solver Construction Time for Jacobian1");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintSolverConstruct_AdjointJacobian1 = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Solver Construction Time for Adjoint Jacobian1");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintSolverSolve_Jacobian1            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Solver Solution Time for Jacobian1");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintSolverSolve_AdjointJacobian1     = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Solver Solution Time for Adjoint Jacobian1");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyJacobian1                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Jacobian1");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyJacobian2                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Jacobian2");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyJacobian3                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Jacobian3");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyAdjointJacobian1            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Adjoint Jacobian1");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyAdjointJacobian2            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Adjoint Jacobian2");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyAdjointJacobian3            = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Adjoint Jacobian3");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyHessian11                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Hessian11");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyHessian12                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Hessian12");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyHessian13                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Hessian13");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyHessian21                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Hessian21");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyHessian22                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Hessian22");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyHessian23                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Hessian23");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyHessian31                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Hessian31");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyHessian32                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Hessian32");
+    Teuchos::RCP<Teuchos::Time> PDEConstraintApplyHessian33                   = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Constraint Apply Hessian33");
+  }
+}
+#endif
+
 
 template<class Real>
 class PDE_Constraint : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<PDE<Real> > pde_;
   Teuchos::RCP<Assembler<Real> > assembler_;
+  Teuchos::RCP<Solver<Real> > solver_;
+
+  Teuchos::RCP<Tpetra::MultiVector<> >           vecR_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             matJ1_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             matJ2_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           vecJ3_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             matH11_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             matH12_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           vecH13_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             matH21_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >             matH22_;
+  Teuchos::RCP<Tpetra::MultiVector<> >           vecH23_;
+  Teuchos::RCP<std::vector<std::vector<Real> > > matH33_;
 
   bool computeJ1_,  computeJ2_,  computeJ3_;
   bool computeH11_, computeH12_, computeH13_;
   bool computeH21_, computeH22_, computeH23_;
   bool computeH31_, computeH32_, computeH33_;
+  bool setSolver_;
+  bool isJ1zero_, isJ1notImplemented_;
+  bool isJ2zero_, isJ2notImplemented_;
+  bool isJ3zero_, isJ3notImplemented_;
+
+  // Assemble the PDE Jacobian.
+  void assembleJ1(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
+    if ( !isJ1zero_ && !isJ1notImplemented_ ) {
+      try {
+        if (computeJ1_) {
+          Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+          Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+          Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+          assembler_->assemblePDEJacobian1(matJ1_,pde_,uf,zf,zp);
+          computeJ1_ = false;
+          setSolver_ = true;
+        }
+      }
+      catch ( Exception::Zero & ez ) {
+        isJ1zero_ = true;
+      }
+      catch ( Exception::NotImplemented & eni ) {
+        isJ1notImplemented_ = true;
+      }
+    }
+  }
+
+  // Assemble the PDE Jacobian.
+  void assembleJ2(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
+    if ( !isJ2zero_ && !isJ2notImplemented_ ) {
+      try {
+        if (computeJ2_) {
+          Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+          Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+          Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+          assembler_->assemblePDEJacobian2(matJ2_,pde_,uf,zf,zp);
+          computeJ2_ = false;
+        }
+      }
+      catch ( Exception::Zero & ez ) {
+        isJ2zero_ = true;
+      }
+      catch ( Exception::NotImplemented & eni ) {
+        isJ2notImplemented_ = true;
+      }
+    }
+  }
+
+  // Assemble the PDE Jacobian.
+  void assembleJ3(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
+    if ( !isJ3zero_ && !isJ3notImplemented_ ) {
+      try {
+        if (computeJ3_) {
+          Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+          Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+          Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+          assembler_->assemblePDEJacobian3(vecJ3_,pde_,uf,zf,zp);
+          computeJ3_ = false;
+        }
+      }
+      catch ( Exception::Zero & ez ) {
+        isJ3zero_ = true;
+      }
+      catch ( Exception::NotImplemented & eni ) {
+        isJ3notImplemented_ = true;
+      }
+    }
+  }
+
+  void applyJacobian1(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
+                      const Teuchos::RCP<const Tpetra::MultiVector<> > &v) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyJacobian1);
+    #endif
+    matJ1_->apply(*v,*Jv);
+  }
+
+  void applyAdjointJacobian1(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
+                             const Teuchos::RCP<const Tpetra::MultiVector<> > &v) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyAdjointJacobian1);
+    #endif
+    matJ1_->apply(*v,*Jv,Teuchos::TRANS);
+  }
+
+  void applyJacobian2(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
+                      const Teuchos::RCP<const Tpetra::MultiVector<> > &v) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyJacobian2);
+    #endif
+    matJ2_->apply(*v,*Jv);
+  }
+
+  void applyAdjointJacobian2(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
+                             const Teuchos::RCP<const Tpetra::MultiVector<> > &v) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyAdjointJacobian2);
+    #endif
+    matJ2_->apply(*v,*Jv,Teuchos::TRANS);
+  }
+
+  // Application routines
+  void applyJacobian3(const Teuchos::RCP<Tpetra::MultiVector<> > &Jv,
+                      const Teuchos::RCP<const std::vector<Real> > &v,
+                      const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyJacobian3);
+    #endif
+    if ( zeroOut ) {
+      Jv->putScalar(static_cast<Real>(0));
+    }
+    const size_t size = static_cast<size_t>(v->size());
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      Jv->update((*v)[i],*(vecJ3_->subView(col)),static_cast<Real>(1));
+    }
+  }
+
+  void applyAdjointJacobian3(const Teuchos::RCP<std::vector<Real> > &Jv,
+                             const Teuchos::RCP<const Tpetra::MultiVector<> > &v) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyJacobian3);
+    #endif
+    Teuchos::Array<Real> val(1,0);
+    const size_t size = static_cast<size_t>(Jv->size());
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      vecJ3_->subView(col)->dot(*v, val.view(0,1));
+      (*Jv)[i] = val[0];
+    }
+  }
+
+  void applyHessian13(const Teuchos::RCP<std::vector<Real> > &Hv,
+                      const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
+                      const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyHessian13);
+    #endif
+    const size_t size = static_cast<size_t>(Hv->size());
+    if ( zeroOut ) {
+      Hv->assign(size,static_cast<Real>(0));
+    }
+    Teuchos::Array<Real> val(1,0);
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      vecH13_->subView(col)->dot(*v, val.view(0,1));
+      (*Hv)[i] += val[0];
+    }
+  }
+
+  void applyHessian31(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
+                      const Teuchos::RCP<const std::vector<Real> > &v,
+                      const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyHessian31);
+    #endif
+    if ( zeroOut ) {
+      Hv->putScalar(static_cast<Real>(0));
+    }
+    const size_t size = static_cast<size_t>(v->size());
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      Hv->update((*v)[i],*(vecH13_->subView(col)),static_cast<Real>(1));
+    }
+  }
+
+  void applyHessian23(const Teuchos::RCP<std::vector<Real> > &Hv,
+                      const Teuchos::RCP<const Tpetra::MultiVector<> > &v,
+                      const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyHessian23);
+    #endif
+    const size_t size = static_cast<size_t>(Hv->size());
+    if ( zeroOut ) {
+      Hv->assign(size,static_cast<Real>(0));
+    }
+    Teuchos::Array<Real> val(1,0);
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      vecH23_->subView(col)->dot(*v, val.view(0,1));
+      (*Hv)[i] += val[0];
+    }
+  }
+
+  void applyHessian32(const Teuchos::RCP<Tpetra::MultiVector<> > &Hv,
+                      const Teuchos::RCP<const std::vector<Real> > &v,
+                      const bool zeroOut = true) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyHessian32);
+    #endif
+    if ( zeroOut ) {
+      Hv->putScalar(static_cast<Real>(0));
+    }
+    const size_t size = static_cast<size_t>(v->size());
+    for (size_t i = 0; i < size; ++i) {
+      Teuchos::ArrayView<const size_t> col(&i,1);
+      Hv->update((*v)[i],*(vecH23_->subView(col)),static_cast<Real>(1));
+    }
+  }
+
+  void applyHessian33(const Teuchos::RCP<std::vector<Real> > &Hv,
+                      const Teuchos::RCP<const std::vector<Real> > &v,
+                      const bool zeroOut = true ) const {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyHessian33);
+    #endif
+    const int size = Hv->size();
+    if ( zeroOut ) {
+      Hv->assign(size,static_cast<Real>(0));
+    }
+    for (int i = 0; i < size; ++i) {
+      for (int j = 0; j < size; ++j) {
+        (*Hv)[i] += (*matH33_)[i][j]*(*v)[j];
+      }
+    }
+  }
+
+  // Set the Jacobian matrix in the solver object.
+  // Assumes assembleJ1 has already been called.
+  void setSolver(void) {
+    solver_->setA(matJ1_);
+    setSolver_= false;
+  }
+
+  // Solve using the Jacobian.
+  // Assumes assembleJ1 has already been called.
+  void solveForward(Teuchos::RCP<Tpetra::MultiVector<> > &x,
+                    const Teuchos::RCP<const Tpetra::MultiVector<> > &b) {
+    if (setSolver_) {
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintSolverConstruct_Jacobian1);
+      #endif
+      setSolver();
+    }
+
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintSolverSolve_Jacobian1);
+    #endif
+    solver_->solve(x,b,false);
+  }
+
+  // Solve using the adjoint Jacobian.
+  // Assumes assembleJ1 has already been called.
+  void solveAdjoint(Teuchos::RCP<Tpetra::MultiVector<> > &x,
+                    const Teuchos::RCP<const Tpetra::MultiVector<> > &b) {
+    if (setSolver_) {
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintSolverConstruct_AdjointJacobian1);
+      #endif
+      setSolver();
+    }
+
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintSolverSolve_AdjointJacobian1);
+    #endif
+    solver_->solve(x,b,true);
+  }
 
 public:
   PDE_Constraint(const Teuchos::RCP<PDE<Real> > &pde,
@@ -75,19 +378,29 @@ public:
       computeJ1_(true),  computeJ2_(true),  computeJ3_(true),
       computeH11_(true), computeH12_(true), computeH13_(true),
       computeH21_(true), computeH22_(true), computeH23_(true),
-      computeH31_(true), computeH32_(true), computeH33_(true) {
+      computeH31_(true), computeH32_(true), computeH33_(true),
+      setSolver_(true),
+      isJ1zero_(false),  isJ1notImplemented_(false),
+      isJ2zero_(false),  isJ2notImplemented_(false),
+      isJ3zero_(false),  isJ3notImplemented_(false) {
     assembler_ = Teuchos::rcp(new Assembler<Real>(pde_->getFields(),meshMgr,comm,parlist,outStream));
     assembler_->setCellNodes(*pde_);
+    solver_ = Teuchos::rcp(new Solver<Real>(parlist.sublist("Solver")));
   }
 
-  PDE_Constraint(const Teuchos::RCP<PDE<Real> > &pde,
-                 const Teuchos::RCP<Assembler<Real> > &assembler)
+  PDE_Constraint(const Teuchos::RCP<PDE<Real> >       &pde,
+                 const Teuchos::RCP<Assembler<Real> > &assembler,
+                 const Teuchos::RCP<Solver<Real> >    &solver)
     : ROL::ParametrizedEqualityConstraint_SimOpt<Real>(),
-      pde_(pde), assembler_(assembler),
+      pde_(pde), assembler_(assembler), solver_(solver),
       computeJ1_(true),  computeJ2_(true),  computeJ3_(true),
       computeH11_(true), computeH12_(true), computeH13_(true),
       computeH21_(true), computeH22_(true), computeH23_(true),
-      computeH31_(true), computeH32_(true), computeH33_(true) {
+      computeH31_(true), computeH32_(true), computeH33_(true),
+      setSolver_(true),
+      isJ1zero_(false),  isJ1notImplemented_(false),
+      isJ2zero_(false),  isJ2notImplemented_(false),
+      isJ3zero_(false),  isJ3notImplemented_(false) {
     assembler_->setCellNodes(*pde_);
   }
 
@@ -96,6 +409,7 @@ public:
     computeH11_ = true; computeH12_ = true; computeH13_ = true;
     computeH21_ = true; computeH22_ = true; computeH23_ = true;
     computeH31_ = true; computeH32_ = true; computeH33_ = true;
+    setSolver_  = true;
     ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
     pde_->setParameter(param);
   }
@@ -107,10 +421,13 @@ public:
   using ROL::EqualityConstraint_SimOpt<Real>::update_1;
   void update_1(const ROL::Vector<Real> &u, bool flag = true, int iter = -1) {
     computeJ1_ = (flag ? true : computeJ1_);
+    computeJ2_ = (flag ? true : computeJ2_);
+    computeJ3_ = (flag ? true : computeJ3_);
   }
 
   using ROL::EqualityConstraint_SimOpt<Real>::update_2;
   void update_2(const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
+    computeJ1_ = (flag ? true : computeJ1_);
     computeJ2_ = (flag ? true : computeJ2_);
     computeJ3_ = (flag ? true : computeJ3_);
   }
@@ -137,39 +454,27 @@ public:
     Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
     Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-    Real one(1);
-    assembler_->assemblePDEResidual(pde_,uf,zf,zp);
-    cf->scale(one,*(assembler_->getPDEResidual()));
+    assembler_->assemblePDEResidual(vecR_,pde_,uf,zf,zp);
+    cf->scale(static_cast<Real>(1),*vecR_);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv,
                  const ROL::Vector<Real> &v,
                  const ROL::Vector<Real> &u,
                  const ROL::Vector<Real> &z, Real &tol) {
-    jv.zero();
-    try {
-      if (computeJ1_) {
-        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-
-        assembler_->assemblePDEJacobian1(pde_,uf,zf,zp);
-        computeJ1_ = false;
-      }
-    }
-    catch ( Exception::Zero & ez ) {
-     computeJ1_ = true;
-    }
-    catch ( Exception::NotImplemented & eni ) {
+    assembleJ1(u,z);
+    if (isJ1notImplemented_) {
       ROL::EqualityConstraint_SimOpt<Real>::applyJacobian_1(jv,v,u,z,tol);
     }
-    if ( computeJ1_ ) {
-      jv.zero();
-    }
     else {
-      Teuchos::RCP<Tpetra::MultiVector<> >      jvf = getField(jv);
-      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEJacobian1(jvf,vf,false);
+      if (isJ1zero_) {
+        jv.zero();
+      }
+      else {
+        Teuchos::RCP<Tpetra::MultiVector<> >      jvf = getField(jv);
+        Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+        applyJacobian1(jvf,vf);
+      }
     }
   }
 
@@ -178,55 +483,36 @@ public:
                  const ROL::Vector<Real> &v,
                  const ROL::Vector<Real> &u,
                  const ROL::Vector<Real> &z, Real &tol) {
-    // Apply Jacobian of field controls to vector
-    jv.zero();
     int NotImplemented(0), IsZero(0);
-    try {
-      if (computeJ2_) {
-        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-
-        assembler_->assemblePDEJacobian2(pde_,uf,zf,zp);
-        computeJ2_ = false;
-      }
-    }
-    catch ( Exception::Zero & ez ) {
-      computeJ2_ = true;
-      IsZero++;
-    }
-    catch ( Exception::NotImplemented & eni ) {
-      computeJ2_ = true;
+    // Apply Jacobian of field controls to vector
+    assembleJ2(u,z);
+    if (isJ2notImplemented_) {
       NotImplemented++;
     }
-    if ( !computeJ2_ ) {
-      Teuchos::RCP<Tpetra::MultiVector<> >      jvf = getField(jv);
-      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEJacobian2(jvf,vf,false);
+    else {
+      if (isJ2zero_) {
+        IsZero++;
+      }
+      else {
+        Teuchos::RCP<Tpetra::MultiVector<> >      jvf = getField(jv);
+        Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+        applyJacobian2(jvf,vf);
+      }
     }
     // Apply Jacobian of parametric controls to vector
-    try {
-      if (computeJ3_) {
-        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-
-        assembler_->assemblePDEJacobian3(pde_,uf,zf,zp);
-        computeJ3_ = false;
-      }
-    }
-    catch ( Exception::Zero & ez ) {
-      computeJ3_ = true;
-      IsZero++;
-    }
-    catch ( Exception::NotImplemented & eni ) {
-      computeJ3_ = true;
+    assembleJ3(u,z);
+    if (isJ3notImplemented_) {
       NotImplemented++;
     }
-    if ( !computeJ3_ ) {
-      Teuchos::RCP<Tpetra::MultiVector<> >  jvf = getField(jv);
-      Teuchos::RCP<const std::vector<Real> > vp = getConstParameter(v);
-      assembler_->applyPDEJacobian3(jvf,vp,false);
+    else {
+      if (isJ3zero_) {
+        IsZero++;
+      }
+      else {
+        Teuchos::RCP<Tpetra::MultiVector<> >  jvf = getField(jv);
+        Teuchos::RCP<const std::vector<Real> > vp = getConstParameter(v);
+        applyJacobian3(jvf,vp);
+      }
     }
     // Zero Jacobian if all routines return Exception::Zero
     if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
@@ -243,30 +529,19 @@ public:
                         const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
-    ajv.zero();
-    try {
-      if (computeJ1_) {
-        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-
-        assembler_->assemblePDEJacobian1(pde_,uf,zf,zp);
-        computeJ1_ = false;
-      }
-    }
-    catch ( Exception::Zero & ez ) {
-     computeJ1_ = true;
-    }
-    catch ( Exception::NotImplemented & eni ) {
+    assembleJ1(u,z);
+    if (isJ1notImplemented_) {
       ROL::EqualityConstraint_SimOpt<Real>::applyAdjointJacobian_1(ajv,v,u,z,tol);
     }
-    if ( computeJ1_ ) {
-      ajv.zero();
-    }
     else {
-      Teuchos::RCP<Tpetra::MultiVector<> >     ajvf = getField(ajv);
-      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEJacobian1(ajvf,vf,true);
+      if (isJ1zero_) {
+        ajv.zero();
+      }
+      else {
+        Teuchos::RCP<Tpetra::MultiVector<> >     ajvf = getField(ajv);
+        Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+        applyAdjointJacobian1(ajvf,vf);
+      }
     }
   }
 
@@ -275,55 +550,36 @@ public:
                         const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
-    // Apply Jacobian of field controls to vector
-    ajv.zero();
     int NotImplemented(0), IsZero(0);
-    try {
-      if (computeJ2_) {
-        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-
-        assembler_->assemblePDEJacobian2(pde_,uf,zf,zp);
-        computeJ2_ = false;
-      }
-    }
-    catch ( Exception::Zero & ez ) {
-      computeJ2_ = true;
-      IsZero++;
-    }
-    catch ( Exception::NotImplemented & eni ) {
-      computeJ2_ = true;
+    // Apply Jacobian of field controls to vector
+    assembleJ2(u,z);
+    if (isJ2notImplemented_) {
       NotImplemented++;
     }
-    if ( !computeJ2_ ) {
-      Teuchos::RCP<Tpetra::MultiVector<> >     ajvf = getField(ajv);
-      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEJacobian2(ajvf,vf,true);
+    else {
+      if (isJ2zero_) {
+        IsZero++;
+      }
+      else {
+        Teuchos::RCP<Tpetra::MultiVector<> >     ajvf = getField(ajv);
+        Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+        applyAdjointJacobian2(ajvf,vf);
+      }
     }
     // Apply Jacobian of parametric controls to vector
-    try {
-      if (computeJ3_) {
-        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-
-        assembler_->assemblePDEJacobian3(pde_,uf,zf,zp);
-        computeJ3_ = false;
-      }
-    }
-    catch ( Exception::Zero & ez ) {
-      computeJ3_ = true;
-      IsZero++;
-    }
-    catch ( Exception::NotImplemented & eni ) {
-      computeJ3_ = true;
+    assembleJ3(u,z);
+    if (isJ3notImplemented_) {
       NotImplemented++;
     }
-    if ( !computeJ3_ ) {
-      Teuchos::RCP<std::vector<Real> >         ajvp = getParameter(ajv);
-      Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEAdjointJacobian3(ajvp,vf);
+    else {
+      if (isJ3zero_) {
+        IsZero++;
+      }
+      else {
+        Teuchos::RCP<std::vector<Real> >         ajvp = getParameter(ajv);
+        Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+        applyAdjointJacobian3(ajvp,vf);
+      }
     }
     // Zero Jacobian if all routines return Exception::Zero
     if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
@@ -349,7 +605,7 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
         Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-        assembler_->assemblePDEHessian11(pde_,wf,uf,zf,zp);
+        assembler_->assemblePDEHessian11(matH11_,pde_,wf,uf,zf,zp);
         computeH11_ = false;
       }
     }
@@ -365,7 +621,10 @@ public:
     else {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEHessian11(ahwvf,vf);
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyHessian11);
+      #endif
+      matH11_->apply(*vf,*ahwvf);
     }
   }
 
@@ -385,7 +644,7 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
         Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-        assembler_->assemblePDEHessian12(pde_,wf,uf,zf,zp);
+        assembler_->assemblePDEHessian12(matH12_,pde_,wf,uf,zf,zp);
         computeH12_ = false;
       }
     }
@@ -400,7 +659,10 @@ public:
     if ( !computeH12_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEHessian12(ahwvf,vf);
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyHessian12);
+      #endif
+      matH12_->apply(*vf,*ahwvf);
     }
     // Apply Jacobian of parametric controls to vector
     try {
@@ -410,7 +672,7 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
         Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-        assembler_->assemblePDEHessian13(pde_,wf,uf,zf,zp);
+        assembler_->assemblePDEHessian13(vecH13_,pde_,wf,uf,zf,zp);
         computeH13_ = false;
       }
     }
@@ -425,7 +687,7 @@ public:
     if ( !computeH13_ ) {
       Teuchos::RCP<std::vector<Real> >        ahwvp = getParameter(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEHessian13(ahwvp,vf,true);
+      applyHessian13(ahwvp,vf,true);
     }
     // Zero Jacobian if all routines return Exception::Zero
     if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
@@ -453,7 +715,7 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
         Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-        assembler_->assemblePDEHessian21(pde_,wf,uf,zf,zp);
+        assembler_->assemblePDEHessian21(matH21_,pde_,wf,uf,zf,zp);
         computeH21_ = false;
       }
     }
@@ -470,7 +732,10 @@ public:
     if ( !computeH21_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEHessian21(ahwvf,vf);
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyHessian21);
+      #endif
+      matH21_->apply(*vf,*ahwvf);
     }
     // Apply Jacobian of parametric controls to vector
     try {
@@ -480,7 +745,7 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
         Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-        assembler_->assemblePDEHessian31(pde_,wf,uf,zf,zp);
+        assembler_->assemblePDEHessian31(vecH13_,pde_,wf,uf,zf,zp);
         computeH31_ = false;
       }
     }
@@ -495,7 +760,7 @@ public:
     if ( !computeH31_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
       Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
-      assembler_->applyPDEHessian31(ahwvf,vp,false);
+      applyHessian31(ahwvf,vp,false);
     }
     // Zero Jacobian if all routines return Exception::Zero
     if ( IsZero == 2 || (IsZero == 1 && NotImplemented == 1) ) {
@@ -523,7 +788,7 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
         Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-        assembler_->assemblePDEHessian22(pde_,wf,uf,zf,zp);
+        assembler_->assemblePDEHessian22(matH22_,pde_,wf,uf,zf,zp);
         computeH22_ = false;
       }
     }
@@ -540,7 +805,10 @@ public:
     if ( !computeH22_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEHessian22(ahwvf,vf);
+      #ifdef ROL_TIMERS
+        Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEConstraintApplyHessian22);
+      #endif
+      matH22_->apply(*vf,*ahwvf);
     }
     // Apply Hessian wrt field controls to parametric control vector
     try {
@@ -550,7 +818,7 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
         Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-        assembler_->assemblePDEHessian23(pde_,wf,uf,zf,zp);
+        assembler_->assemblePDEHessian23(vecH23_,pde_,wf,uf,zf,zp);
         computeH23_ = false;
       }
     }
@@ -575,7 +843,7 @@ public:
     if ( !computeH23_ ) {
       Teuchos::RCP<std::vector<Real> >        ahwvp = getParameter(ahwv);
       Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-      assembler_->applyPDEHessian23(ahwvp,vf,true);
+      applyHessian23(ahwvp,vf,true);
     }
     // Apply Hessian wrt parametric controls to field control vector
     try {
@@ -585,7 +853,7 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
         Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-        assembler_->assemblePDEHessian32(pde_,wf,uf,zf,zp);
+        assembler_->assemblePDEHessian32(vecH23_,pde_,wf,uf,zf,zp);
         computeH32_ = false;
       }
     }
@@ -600,7 +868,7 @@ public:
     if ( !computeH32_ ) {
       Teuchos::RCP<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
       Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
-      assembler_->applyPDEHessian32(ahwvf,vp,false);
+      applyHessian32(ahwvf,vp,false);
     }
     // Apply Hessian wrt parametric controls to field control vector
     try {
@@ -610,7 +878,7 @@ public:
         Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
         Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
 
-        assembler_->assemblePDEHessian33(pde_,wf,uf,zf,zp);
+        assembler_->assemblePDEHessian33(matH33_,pde_,wf,uf,zf,zp);
         computeH33_ = false;
       }
     }
@@ -625,7 +893,7 @@ public:
     if ( !computeH33_ ) {
       Teuchos::RCP<std::vector<Real> >        ahwvp = getParameter(ahwv);
       Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
-      assembler_->applyPDEHessian33(ahwvp,vp,false);
+      applyHessian33(ahwvp,vp,false);
     }
     // Zero Jacobian if all routines return Exception::Zero
     if ( IsZero > 0 && (IsZero + NotImplemented == 4) ) {
@@ -642,23 +910,20 @@ public:
                         const ROL::Vector<Real> &v,
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
-    ijv.zero();
-    try {
-      if (computeJ1_) {
-        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-
-        assembler_->assemblePDEJacobian1(pde_,uf,zf,zp);
-        computeJ1_ = false;
-      }
-    }
-    catch ( Exception::NotImplemented & eni ) {
+    assembleJ1(u,z);
+    if (isJ1notImplemented_) {
       ROL::EqualityConstraint_SimOpt<Real>::applyInverseJacobian_1(ijv,v,u,z,tol);
     }
-    Teuchos::RCP<Tpetra::MultiVector<> >     ijvf = getField(ijv);
-    Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-    assembler_->applyInverseJacobian1(ijvf,vf,false);
+    else {
+      if (isJ1zero_) {
+        throw Exception::Zero(">>> (PDE_Constraint::applyInverseJacobian_1): Jacobian is zero!");
+      }
+      else {
+        Teuchos::RCP<Tpetra::MultiVector<> >     ijvf = getField(ijv);
+        Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+        solveForward(ijvf,vf);
+      }
+    }
   }
 
 
@@ -666,24 +931,66 @@ public:
                                const ROL::Vector<Real> &v,
                                const ROL::Vector<Real> &u,
                                const ROL::Vector<Real> &z, Real &tol) {
-    iajv.zero();
-    try {
-      if (computeJ1_) {
-        Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-        Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-        Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-
-        assembler_->assemblePDEJacobian1(pde_,uf,zf,zp);
-        computeJ1_ = false;
-      }
-    }
-    catch ( Exception::NotImplemented & eni ) {
+    assembleJ1(u,z);
+    if (isJ1notImplemented_) {
       ROL::EqualityConstraint_SimOpt<Real>::applyInverseAdjointJacobian_1(iajv,v,u,z,tol);
     }
-    Teuchos::RCP<Tpetra::MultiVector<> >    iajvf = getField(iajv);
-    Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
-    assembler_->applyInverseJacobian1(iajvf,vf,true);
+    else {
+      if (isJ1zero_) {
+        throw Exception::Zero(">>> (PDE_Constraint::applyAdjointInverseJacobian_1): Jacobian is zero!");
+      }
+      else {
+        Teuchos::RCP<Tpetra::MultiVector<> >    iajvf = getField(iajv);
+        Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
+        solveAdjoint(iajvf,vf);
+      }
+    }
   }
+
+
+  /***************************************************************************/
+  /* Output routines.                                                        */
+  /***************************************************************************/
+  void printMeshData(std::ostream &outStream) const {
+    assembler_->printMeshData(outStream);
+  }
+
+  void outputTpetraData() const {
+    Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > matWriter;
+    if (matJ1_ != Teuchos::null) {
+      matWriter.writeSparseFile("jacobian1.txt", matJ1_);
+    }
+    else {
+      std::ofstream emptyfile;
+      emptyfile.open("jacobian1.txt");
+      emptyfile.close();
+    }
+    if (matJ2_ != Teuchos::null) {
+      matWriter.writeSparseFile("jacobian2.txt", matJ2_);
+    }
+    else {
+      std::ofstream emptyfile;
+      emptyfile.open("jacobian2.txt");
+      emptyfile.close();
+    }
+    if (vecR_ != Teuchos::null) {
+      matWriter.writeDenseFile("residual.txt", vecR_);
+    }
+    else {
+      std::ofstream emptyfile;
+      emptyfile.open("residual.txt");
+      emptyfile.close();
+    }
+  }
+
+  void outputTpetraVector(const Teuchos::RCP<const Tpetra::MultiVector<> > &vec,
+                          const std::string &filename) const {
+    Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > vecWriter;
+    vecWriter.writeDenseFile(filename, vec);
+  }
+  /***************************************************************************/
+  /* End of output routines.                                                 */
+  /***************************************************************************/
 
 private: // Vector accessor functions
 

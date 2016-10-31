@@ -34,20 +34,16 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     SOURCES example_03.cpp
     ARGS PrintItAll
     NUM_MPI_PROCS 4
-    CATEGORIES CONTINUOUS
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    StochasticStefanBoltzmannDataCopy
+    OldStefanBoltzmannDataCopy
     SOURCE_FILES
       input.xml
-      input_app.xml
       SROMinput.xml
       plotresults.m
-      plotstats.m
-      process.sh
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

@@ -106,7 +106,6 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new PDE_Poisson_TopOpt<RealT>(*parlist));
     Teuchos::RCP<PDE_Constraint<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
-    con->getAssembler()->printMeshData(*outStream);
     // Initialize quadratic objective function
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(1,Teuchos::null);
     qoi_vec[0] = Teuchos::rcp(new QoI_Energy_Poisson_TopOpt<RealT>(pde->getFE(),pde->getForce()));
@@ -203,10 +202,12 @@ int main(int argc, char *argv[]) {
     ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
     algo.run(*zp,*c2p,augLag,*vcon,*bnd,true,*outStream);
 
+    // Output.
+    con->getAssembler()->printMeshData(*outStream);
     RealT tol(1.e-8);
     con->solve(*rp,*up,*zp,tol);
-    con->getAssembler()->outputTpetraVector(u_rcp,"state.txt");
-    con->getAssembler()->outputTpetraVector(z_rcp,"control.txt");
+    con->outputTpetraVector(u_rcp,"state.txt");
+    con->outputTpetraVector(z_rcp,"control.txt");
 
     Teuchos::Array<RealT> res(1,0);
     con->value(*rp,*up,*zp,tol);

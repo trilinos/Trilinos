@@ -132,11 +132,11 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new PDE_NavierStokes<RealT>(*parlist));
     Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
-    // Get the assembler.
-    Teuchos::RCP<Assembler<RealT> > assembler
-      = (Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con))->getAssembler();
+    // Cast the constraint and get the assembler.
+    Teuchos::RCP<PDE_Constraint<RealT> > pdecon
+      = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
+    Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
-    assembler->printMeshData(*outStream);
 
     /*************************************************************************/
     /***************** BUILD VECTORS *****************************************/
@@ -268,8 +268,9 @@ int main(int argc, char *argv[]) {
     /***************** OUTPUT RESULTS ****************************************/
     /*************************************************************************/
     std::clock_t timer_print = std::clock();
+    assembler->printMeshData(*outStream);
     // Output control to file
-    assembler->outputTpetraVector(z_rcp,"control.txt");
+    pdecon->outputTpetraVector(z_rcp,"control.txt");
     // Output expected state and samples to file
     *outStream << std::endl << "Print Expected Value of State" << std::endl;
     up->zero(); pp->zero(); dup->zero();
@@ -295,25 +296,25 @@ int main(int argc, char *argv[]) {
     }
     file_samp.close();
     bman_Eu->sumAll(*up,*pp);
-    assembler->outputTpetraVector(p_rcp,"mean_state.txt");
+    pdecon->outputTpetraVector(p_rcp,"mean_state.txt");
     // Output extreme cases
     std::vector<RealT> param(stochDim,0);
     param[0] = -one; param[1] = -one;
     con->setParameter(param);
     con->solve(*rp,*dup,*zp,tol);
-    assembler->outputTpetraVector(du_rcp,"state_m1_m1.txt");
+    pdecon->outputTpetraVector(du_rcp,"state_m1_m1.txt");
     param[0] =  one; param[1] = -one;
     con->setParameter(param);
     con->solve(*rp,*dup,*zp,tol);
-    assembler->outputTpetraVector(du_rcp,"state_p1_m1.txt");
+    pdecon->outputTpetraVector(du_rcp,"state_p1_m1.txt");
     param[0] = -one; param[1] =  one;
     con->setParameter(param);
     con->solve(*rp,*dup,*zp,tol);
-    assembler->outputTpetraVector(du_rcp,"state_m1_p1.txt");
+    pdecon->outputTpetraVector(du_rcp,"state_m1_p1.txt");
     param[0] =  one; param[1] =  one;
     con->setParameter(param);
     con->solve(*rp,*dup,*zp,tol);
-    assembler->outputTpetraVector(du_rcp,"state_p1_p1.txt");
+    pdecon->outputTpetraVector(du_rcp,"state_p1_p1.txt");
     // Build objective function distribution
     *outStream << std::endl << "Print Objective CDF" << std::endl;
     RealT val1(0), val2(0);

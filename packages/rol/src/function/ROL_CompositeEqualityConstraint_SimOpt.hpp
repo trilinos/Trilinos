@@ -88,7 +88,6 @@ private:
 
   void solveConRed(const Vector<Real> &z, Real &tol) {
     if ( !isSolved_ ) {
-      conRed_->update_2(z, true);
       conRed_->solve(*primRed_, *Sz_, z, tol);
       isSolved_ = true;
     }
@@ -123,12 +122,13 @@ public:
   }
 
   void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {
+    Real ctol = std::sqrt(ROL_EPSILON<Real>());
     update_1(u, flag, iter);
-    if ( flag ) {
-      update_2(z, flag, iter);
-      conRed_->update(*Sz_, z, flag, iter);
-      conVal_->update(u, *Sz_, flag, iter);
-    }
+    update_2(z, flag, iter);
+    isSolved_ = false;
+    solveConRed(z, ctol);
+    conRed_->update(*Sz_, z, flag, iter);
+    conVal_->update(u, *Sz_, flag, iter);
   }
 
   void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {
@@ -136,9 +136,7 @@ public:
   }
 
   void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {
-    Real ctol = std::sqrt(ROL_EPSILON<Real>());
-    isSolved_ = (flag ? false : isSolved_);
-    solveConRed(z, ctol);
+    conRed_->update_2(z, flag, iter);
   }
 
   void value(Vector<Real> &c, const Vector<Real> &u, const Vector<Real> &z, Real &tol) {

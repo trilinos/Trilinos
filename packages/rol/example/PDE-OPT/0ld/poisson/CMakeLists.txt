@@ -1,3 +1,4 @@
+
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
    ${PROJECT_NAME}_ENABLE_Epetra   AND
    ${PROJECT_NAME}_ENABLE_Amesos   AND
@@ -6,30 +7,23 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
 
   # Need ROL_TpetraMultiVector.hpp
   INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
-  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/sol)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_01
     SOURCES example_01.cpp
     ARGS PrintItAll
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 4
     PASS_REGULAR_EXPRESSION "TEST PASSED"
-    ADD_DIR_TO_NAME
-    CATEGORIES HEAVY  # Currently tasks 18m to run (see #442)!
-  )
-
-  TRIBITS_ADD_EXECUTABLE(
-    example_02
-    SOURCES example_02.cpp
     ADD_DIR_TO_NAME
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    ElasticitySIMPOperatorsCopy
+    OldPoissonDataCopy
     SOURCE_FILES
-      input.xml stochastic.xml plotdensity.m plotstate.m plotnodaldensity.m
+      input.xml plotresults.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
+
 
 ENDIF()
