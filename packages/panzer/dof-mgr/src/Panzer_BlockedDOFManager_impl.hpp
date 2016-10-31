@@ -299,33 +299,103 @@ BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(cons
    return finalFieldOffsets;
 }
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinal> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename LocalOrdinalT, typename GlobalOrdinalT>
+void BlockedDOFManager<LocalOrdinalT, GlobalOrdinalT>::getOwnedIndices(
+  std::vector<GlobalOrdinal>& indices) const
 {
-   // loop over field block manager and grab indices
-   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
-      std::vector<GlobalOrdinalT> fieldBlockOwned;
+  for (std::size_t fbm = 0; fbm < fieldBlockManagers_.size(); ++fbm)
+  {
+    std::vector<GlobalOrdinalT> fieldBlockOwned;
+    fieldBlockManagers_[fbm]->getOwnedIndices(fieldBlockOwned);
+    for (std::size_t i = 0; i < fieldBlockOwned.size(); ++i) 
+      indices.push_back(std::make_pair(fbm, fieldBlockOwned[i]));
+  }
+} // end of getOwnedIndices()
 
-      fieldBlockManagers_[fbm]->getOwnedIndices(fieldBlockOwned);
-
-      for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
-         indices.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
-   }
-}
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndGhostedIndices(std::vector<GlobalOrdinal> & indices) const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename LocalOrdinalT, typename GlobalOrdinalT>
+void BlockedDOFManager<LocalOrdinalT, GlobalOrdinalT>::getGhostedIndices(
+  std::vector<GlobalOrdinal>& indices) const
 {
-   // loop over field block manager and grab indices
-   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
-      std::vector<GlobalOrdinalT> fieldBlockOwned;
+  for (std::size_t fbm = 0; fbm < fieldBlockManagers_.size(); ++fbm)
+  {
+    std::vector<GlobalOrdinalT> fieldBlockGhosted;
+    fieldBlockManagers_[fbm]->getGhostedIndices(fieldBlockGhosted);
+    for (std::size_t i = 0; i < fieldBlockGhosted.size(); ++i)
+      indices.push_back(std::make_pair(fbm, fieldBlockGhosted[i]));
+  }
+} // end of getGhostedIndices()
 
-      fieldBlockManagers_[fbm]->getOwnedAndGhostedIndices(fieldBlockOwned);
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedAndGhostedIndices()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename LocalOrdinalT, typename GlobalOrdinalT>
+void BlockedDOFManager<LocalOrdinalT, GlobalOrdinalT>::
+getOwnedAndGhostedIndices(std::vector<GlobalOrdinal>& indices) const
+{
+  for (std::size_t fbm = 0; fbm < fieldBlockManagers_.size(); ++fbm)
+  {
+    std::vector<GlobalOrdinalT> fieldBlockOwnedAndGhosted;
+    fieldBlockManagers_[fbm]->getOwnedAndGhostedIndices(
+      fieldBlockOwnedAndGhosted);
+    for (std::size_t i = 0; i < fieldBlockOwnedAndGhosted.size(); ++i) 
+      indices.push_back(std::make_pair(fbm, fieldBlockOwnedAndGhosted[i]));
+  }
+} // end of getOwnedAndGhostedIndices()
 
-      for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
-         indices.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
-   }
-}
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwned()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename LocalOrdinalT, typename GlobalOrdinalT>
+int BlockedDOFManager<LocalOrdinalT, GlobalOrdinalT>::getNumOwned() const
+{
+  int result(0);
+  for (std::size_t fbm = 0; fbm < fieldBlockManagers_.size(); ++fbm)
+    result += fieldBlockManagers_[fbm]->getNumOwned();
+  return result;
+} // end of getNumOwned()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename LocalOrdinalT, typename GlobalOrdinalT>
+int BlockedDOFManager<LocalOrdinalT, GlobalOrdinalT>::getNumGhosted() const
+{
+  int result(0);
+  for (std::size_t fbm = 0; fbm < fieldBlockManagers_.size(); ++fbm)
+    result += fieldBlockManagers_[fbm]->getNumGhosted();
+  return result;
+} // end of getNumGhosted()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getNumOwnedAndGhosted()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename LocalOrdinalT, typename GlobalOrdinalT>
+int BlockedDOFManager<LocalOrdinalT, GlobalOrdinalT>::getNumOwnedAndGhosted()
+  const
+{
+  int result(0);
+  for (std::size_t fbm = 0; fbm < fieldBlockManagers_.size(); ++fbm)
+    result += fieldBlockManagers_[fbm]->getNumOwnedAndGhosted();
+  return result;
+} // end of getNumOwnedAndGhosted()
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinal> & indices,std::vector<bool> & isOwned) const

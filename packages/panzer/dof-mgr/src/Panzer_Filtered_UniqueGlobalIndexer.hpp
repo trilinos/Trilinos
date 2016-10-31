@@ -138,8 +138,20 @@ public:
    virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint="") const 
    { base_->getElementGIDs(localElmtId,gids,blockIdHint); }
 
+   virtual void getGhostedIndices(std::vector<GlobalOrdinalT> & indices) const 
+   { base_->getGhostedIndices(indices); }
+
    virtual void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const 
    { base_->getOwnedAndGhostedIndices(indices); }
+
+   virtual int getNumOwned() const
+   { return base_->getNumOwned(); }
+
+   virtual int getNumGhosted() const
+   { return base_->getNumGhosted(); }
+
+   virtual int getNumOwnedAndGhosted() const
+   { return base_->getNumOwnedAndGhosted(); }
 
    virtual int getElementBlockGIDCount(const std::string & blockId) const 
    { return base_->getElementBlockGIDCount(blockId); }

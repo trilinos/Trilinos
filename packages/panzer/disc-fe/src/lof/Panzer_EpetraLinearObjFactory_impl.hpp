@@ -640,7 +640,7 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::bui
    std::vector<int> indices;
 
    // get the global indices
-   gidProvider_->getOwnedAndGhostedIndices(indices);
+   gidProvider_->getGhostedIndices(indices);
 
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
 }
@@ -655,7 +655,7 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::bui
    std::vector<int> indices;
 
    // get the global indices
-   colGidProvider_->getOwnedAndGhostedIndices(indices);
+   colGidProvider_->getGhostedIndices(indices);
 
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
 }

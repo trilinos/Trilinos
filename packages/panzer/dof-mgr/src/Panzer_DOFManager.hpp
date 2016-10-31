@@ -135,8 +135,29 @@ public:
     */
   Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const;
 
-  void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
-  void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const;
+  /** Get the set of indices owned by this processor.
+   */
+  void getOwnedIndices(std::vector<GlobalOrdinalT>& indices) const;
+
+  /** Get the set of indices ghosted for this processor.
+   */
+  void getGhostedIndices(std::vector<GlobalOrdinalT>& indices) const;
+
+  /** Get the set of owned and ghosted indices for this processor.
+   */
+  void getOwnedAndGhostedIndices(std::vector<GlobalOrdinalT>& indices) const;
+
+  /** Get the number of indices owned by this processor.
+   */
+  int getNumOwned() const;
+
+  /** Get the number of indices ghosted for this processor.
+   */
+  int getNumGhosted() const;
+
+  /** Get the number of owned and ghosted indices for this processor.
+   */
+  int getNumOwnedAndGhosted() const;
 
   //! gets the number of fields
   int getNumFields() const;
