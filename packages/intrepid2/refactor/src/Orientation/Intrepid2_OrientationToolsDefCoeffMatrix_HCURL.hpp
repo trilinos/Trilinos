@@ -330,6 +330,17 @@ namespace Intrepid2 {
              << info;
           INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
         }
+
+        // clean up numerical noise            
+        {
+          const double eps = threshold();
+          const ordinal_type 
+            iend = ortMat.dimension(0),
+            jend = ortMat.dimension(1);
+          for (ordinal_type i=0;i<iend;++i)
+            for (ordinal_type j=0;j<jend;++j)
+              if (std::abs(ortMat(i,j)) < eps) ortMat(i,j) = 0;
+        }
       }
 
       {

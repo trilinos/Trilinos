@@ -300,7 +300,7 @@ namespace Intrepid2 {
         const ordinal_type iref = cellBasis.getDofOrdinal(subcellDim, subcellId, i);
         const ordinal_type iout = subcellBasis.getDofOrdinal(subcellDim, 0, i);
 
-        for (auto j=0;j<ndofSubcell;++j) {
+        for (ordinal_type j=0;j<ndofSubcell;++j) {
           refMat(j,i) = refValues(iref,j);
           ortMat(j,i) = outValues(iout,j);
         }
@@ -325,6 +325,17 @@ namespace Intrepid2 {
              << "LAPACK return with error code: "
              << info;
           INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
+        }
+
+        // clean up numerical noise
+        {
+          const double eps = threshold();
+          const ordinal_type
+            iend = ortMat.dimension(0),
+            jend = ortMat.dimension(1);
+          for (ordinal_type i=0;i<iend;++i)
+            for (ordinal_type j=0;j<jend;++j)
+              if (std::abs(ortMat(i,j)) < eps) ortMat(i,j) = 0;
         }
       }
 
