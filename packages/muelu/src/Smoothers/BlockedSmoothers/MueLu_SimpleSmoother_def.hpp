@@ -353,7 +353,10 @@ namespace MueLu {
       // 3) calculate rhs for SchurComp equation
       //    r_2 - D \Delta \tilde{x}_1
       RCP<MultiVector> schurCompRHS = rangeMapExtractor_->getVector(1, B.getNumVectors(), bRangeThyraModeSchur, false);
-      D_->apply(*xtilde1,*schurCompRHS);
+      if(D_.is_null() == false)
+        D_->apply(*xtilde1,*schurCompRHS);
+      else
+        schurCompRHS->putScalar(zero);
       schurCompRHS->update(one,*r2,-one);
 
       // 4) solve SchurComp equation
@@ -380,7 +383,10 @@ namespace MueLu {
       // 6) calculate xhat1
       RCP<MultiVector> xhat1      = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict, false);
       RCP<MultiVector> xhat1_temp = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict, false);
-      G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
+      if(G_.is_null() == false)
+        G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
+      else
+        xhat1_temp->putScalar(zero);
       xhat1->elementWiseMultiply(one/*/omega*/,*diagFinv_,*xhat1_temp,zero);
       xhat1->update(one,*xtilde1,-one);
 
