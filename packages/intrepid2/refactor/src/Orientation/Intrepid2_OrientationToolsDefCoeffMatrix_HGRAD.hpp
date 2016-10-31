@@ -97,14 +97,12 @@ namespace Intrepid2 {
       const auto subcellBaseKey = subcellTopo.getBaseKey();
       //const auto cellBaseKey = cellTopo.getBaseKey();
 
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key ||
-                                    subcellBaseKey != shards::Quadrilateral<>::key ||
+      INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key &&
+                                    subcellBaseKey != shards::Quadrilateral<>::key &&
                                     subcellBaseKey != shards::Triangle<>::key,
                                     std::logic_error,
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                     "subcellBasis must have line, quad, or triangle topology.");
-#endif
 
       // if node map has left handed system, orientation should be re-enumerated.
       ordinal_type ort = -1;
@@ -176,16 +174,12 @@ namespace Intrepid2 {
       const ordinal_type numSubcellBasis = subcellBasis.getCardinality();
 
       const ordinal_type ordSubcell = cellBasis.getDofOrdinal(subcellDim, subcellId, 0);
-#ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( ordSubcell == -1,
                                     std::logic_error,
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                     "Invalid subcellId returns -1 ordSubcell.");
-#endif
 
       const ordinal_type ndofSubcell = cellBasis.getDofTag(ordSubcell)(3);
-
-#ifdef HAVE_INTREPID2_DEBUG
       switch (subcellBaseKey) {
       case shards::Line<>::key: 
       case shards::Triangle<>::key: {
@@ -203,8 +197,8 @@ namespace Intrepid2 {
                                       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                       "The number of DOFs (Quad) does not match to the number of collocation points.");
         break;
-      }        
-#endif
+      }     
+      }
 
       // reference points on a subcell
       DynRankViewHostType refPtsSubcell("refPtsSubcell", ndofSubcell, subcellDim);

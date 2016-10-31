@@ -259,6 +259,10 @@ namespace Intrepid2 {
     static void init_HCURL_QUAD_In_FEM(CoeffMatrixDataViewType matData,
                                        const ordinal_type order);
 
+    inline
+    static void init_HCURL_HEX_In_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+
     //
     // High order elements transformation matrices for HDIV
     // 
