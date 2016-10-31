@@ -372,20 +372,22 @@ private:
     /*      ENSURE CHOSEN STEP IS STRICTLY FEASIBLE                           */
     /**************************************************************************/
     // Computed predicted reduction based on input step
-    Real snorm = step_->norm();
-    Real theta = std::max( stepBackMax_, static_cast<Real>(1) - stepBackScale_ * snorm);
-    if ( isStrictlyFeasibleStep(tiv) ) {
-      theta = static_cast<Real>(1);
+    if ( !isStrictlyFeasibleStep(tiv) ) {
+      Real snorm = step_->norm();
+      Real theta = std::max( stepBackMax_, static_cast<Real>(1) - stepBackScale_ * snorm);
+      tiv.scale(theta);
+      step_->scale(theta);
+      // Compute predicted reduction
+      pred_ = -value(*step_,tol);
     }
-    tiv.scale(theta);
-    step_->scale(theta);
+    else { // Theta is one
+      // Compute predicted reduction
+      pred_ = -VALUE;
+    }
 
     // Compute update for actual reduction
     applyC(*prim_, *step_);
     sCs_ = static_cast<Real>(-0.5) * prim_->dot(*step_);
-
-    // Compute predicted reduction
-    pred_ = -value(*step_,tol);
   }
 
   void updatePredictedReduction(Real &pred, const Vector<Real> &s) {
