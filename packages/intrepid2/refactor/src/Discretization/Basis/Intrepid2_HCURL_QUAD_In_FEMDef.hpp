@@ -96,6 +96,9 @@ namespace Intrepid2 {
         // tensor product
         {
           ordinal_type idx = 0;
+          const ordinal_type ortFlip[8] = { 0, 1, 0, 1,
+                                            1, 0, 1, 0 };
+          const bool flip = ortFlip[ort];
           {
             const ordinal_type ortBubble[8] = { 0, 0, 1, 1, 
                                                 0, 1, 1, 0 };
@@ -110,12 +113,22 @@ namespace Intrepid2 {
             const auto output_x = outputBubble;
             const auto output_y = outputLine;
             
-            for (ordinal_type j=0;j<cardLine;++j) // y      
-              for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
-                for (ordinal_type k=0;k<npts;++k) {
-                  output(idx,k,0) = output_x(i,k)*output_y(j,k);
-                  output(idx,k,1) = 0.0;
-                }
+            if (flip) {
+              // do something 
+              for (ordinal_type j=0;j<cardLine;++j) // y      
+                for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
+                  for (ordinal_type k=0;k<npts;++k) {
+                    output(idx,k,0) = 0.0;
+                    output(idx,k,1) = output_x(i,k)*output_y(j,k);
+                  }
+            } else {
+              for (ordinal_type j=0;j<cardLine;++j) // y      
+                for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
+                  for (ordinal_type k=0;k<npts;++k) {
+                    output(idx,k,0) = output_x(i,k)*output_y(j,k);
+                    output(idx,k,1) = 0.0;
+                  }
+            }
           }
           {
             const ordinal_type ortBubble[8] = { 0, 1, 1, 0,
@@ -130,27 +143,21 @@ namespace Intrepid2 {
             // y component (bubbleBasis(y) lineBasis(x))
             const auto output_x = outputLine;
             const auto output_y = outputBubble;
-            for (ordinal_type j=0;j<cardBubble;++j) // y      
-              for (ordinal_type i=0;i<cardLine;++i,++idx) // x
-                for (ordinal_type k=0;k<npts;++k) {
-                  output(idx,k,0) = 0.0;
-                  output(idx,k,1) = output_x(i,k)*output_y(j,k);
-                }
-          }
-        }
-        {
-          const ordinal_type ortFlip[8] = { 0, 1, 0, 1,
-                                            1, 0, 1, 0 };
-          if (ortFlip[ort]) {
-            const ordinal_type cardHalf = cardBubble*cardLine;
-            for (ordinal_type idx=0;idx<cardHalf;++idx) {
-              const ordinal_type 
-                idy = (idx%cardLine) + (idx/cardLine)*cardLine;
-              for (ordinal_type k=0;k<npts;++k) {
-                const auto tmp = output(idx,k,0);
-                output(idx,k,0) = output(cardHalf+idy,k,1);
-                output(cardHalf+idy,k,1) = tmp;
-              }
+
+            if (flip) {
+              for (ordinal_type j=0;j<cardBubble;++j) // y      
+                for (ordinal_type i=0;i<cardLine;++i,++idx) // x
+                  for (ordinal_type k=0;k<npts;++k) {
+                    output(idx,k,0) = output_x(i,k)*output_y(j,k);
+                    output(idx,k,1) = 0.0;
+                  }
+            } else {
+              for (ordinal_type j=0;j<cardBubble;++j) // y      
+                for (ordinal_type i=0;i<cardLine;++i,++idx) // x
+                  for (ordinal_type k=0;k<npts;++k) {
+                    output(idx,k,0) = 0.0;
+                    output(idx,k,1) = output_x(i,k)*output_y(j,k);
+                  }
             }
           }
         }
