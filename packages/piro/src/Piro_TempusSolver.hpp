@@ -48,8 +48,6 @@
 
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_IntegratorObserver.hpp"
-//IKT, 10/26/16, FIXME: figure out what the following include is for 
-#include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 #include "Piro_ObserverBase.hpp"
 
@@ -67,7 +65,7 @@
 
 namespace Piro {
 
-/** \brief Thyra-based Model Evaluator for Rythmos solves
+/** \brief Thyra-based Model Evaluator for Tempus solves
  *  \ingroup Piro_Thyra_solver_grp
  * */
 #ifdef ALBANY_BUILD
@@ -156,9 +154,6 @@ private:
   /** \brief . */
   Teuchos::RCP<const Teuchos::ParameterList> getValidTempusParameters() const;
 
-  //IKT, 10/26/16, FIXME: rewrite the following using Tempus or remove if not needed 
-  //Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > fwdStateIntegrator;
-  //Teuchos::RCP<Rythmos::StepperBase<Scalar> > fwdStateStepper;
   Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > fwdStateIntegrator;
   Teuchos::RCP<Tempus::Stepper<Scalar> > fwdStateStepper;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver;
