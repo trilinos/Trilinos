@@ -1,7 +1,6 @@
 #!/bin/bash
 rm -rf CMakeCache.txt CMakeFiles
 cmake \
--D Trilinos_EXTRA_REPOSITORIES="tempus" \
 -D CMAKE_INSTALL_PREFIX="/home/rppawlo/JUNK" \
 -D CMAKE_MACOSX_RPATH:BOOL=ON \
 -D CMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_PREFIX}/lib \

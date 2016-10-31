@@ -2,7 +2,6 @@
 rm -rf CMakeCache.txt CMakeFiles
 
 cmake \
-    -D Trilinos_EXTRA_REPOSITORIES="tempus" \
     -D CMAKE_INSTALL_PREFIX:PATH=/Users/ccober/myOffice/ATDM/build \
     -D Trilinos_ENABLE_DEBUG=OFF \
     -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \

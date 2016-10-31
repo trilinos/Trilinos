@@ -1,7 +1,6 @@
 #!/bin/bash
 rm -rf CMakeCache.txt CMakeFiles
 cmake \
--D Trilinos_EXTRA_REPOSITORIES="tempus" \
 -D CMAKE_INSTALL_PREFIX="/home/rppawlo/JUNK" \
 -D Trilinos_ENABLE_DEBUG=OFF \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
@@ -36,3 +35,5 @@ cmake \
 -D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH="" \
 -D Trilinos_TPL_SYSTEM_INCLUDE_DIRS:BOOL=ON \
 ../Trilinos
+
+##-D Trilinos_EXTRA_REPOSITORIES="tempus" \

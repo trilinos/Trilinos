@@ -20,7 +20,7 @@ echo -D Trilinos_ENABLE_OpenMP=${USE_OPENMP}
 INSTALL_DIR=$WORKSPACE/Trilinos/install-for-drekar/$COMPILER-$BUILD_TYPE
 
 cmake \
--D Trilinos_EXTRA_REPOSITORIES="tempus,DrekarResearch,DrekarBase" \
+-D Trilinos_EXTRA_REPOSITORIES="DrekarResearch,DrekarBase" \
 -D Drekar_SYSTEM_TESTS_DIRECTORY:FILEPATH="$WORKSPACE/DrekarSystemTests" \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -D Trilinos_ENABLE_INSTALL_CMAKE_CONFIG_FILES:BOOL=ON \
