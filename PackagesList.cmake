@@ -118,6 +118,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Moertel               packages/moertel                  PS
   MueLu                 packages/muelu                    SS
   Rythmos               packages/rythmos                  PS
+  Tempus                tempus                            ST
   MOOCHO                packages/moocho                   ST
   Stokhos               packages/stokhos                  SS
   ROL                   packages/rol                      SS
@@ -152,6 +153,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_stk)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_zoltan)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECma)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECpumi)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Tempus)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MOOCHO)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Sundance)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(CTrilinos)
