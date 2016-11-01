@@ -74,8 +74,8 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
     
-    template<typename QuadBasisType, typename DeviceSpaceType>
-    int Orientation_Test06(const bool verbose) {
+    template<typename DeviceSpaceType>
+    int OrientationToolsModifyBasis_QUAD_HCURLI1(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -99,7 +99,7 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|            Unit Test (OrientationTools, getModifiedHcurl/Hdiv_In_Basis)     |\n"
+        << "|                 Unit Test (OrientationTools, getModifiedHcurl_I1_Basis)     |\n"
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
@@ -112,11 +112,7 @@ namespace Intrepid2 {
         {
           *outStream << "\n -- Testing Quadrilateral \n\n";
 
-          const ordinal_type order = 3;
-          QuadBasisType cellBasis(order);
-
-          *outStream << "\n --- " << cellBasis.getName() << "\n";
-
+          Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> cellBasis;
           const auto cellTopo = cellBasis.getBaseCellTopology();
           const ordinal_type ndofBasis = cellBasis.getCardinality();
           
@@ -134,7 +130,6 @@ namespace Intrepid2 {
                                          { 4, 3,12, 9 },
                                          { 3,11,13,12 },
                                          {11,15,16,13 } };
-
           const ordinal_type numCells = 9, numVerts = 4, numEdges = 4;
 
           // view to import refMesh from host          
@@ -155,9 +150,9 @@ namespace Intrepid2 {
           Kokkos::DynRankView<double,DeviceSpaceType> refValues("refValues", numCells, ndofBasis);
           
           auto refValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), refValues);
-          for (ordinal_type cell=0;cell<numCells;++cell)           
-            for (ordinal_type bf=0;bf<ndofBasis;++bf) 
-              refValuesHost(cell, bf) = bf;
+          for (auto cell=0;cell<numCells;++cell)           
+            for (auto bf=0;bf<ndofBasis;++bf) 
+              refValuesHost(cell, bf) = (bf+1);
           Kokkos::deep_copy(refValues, refValuesHost);
 
           // modify refValues accounting for orientations
@@ -169,36 +164,26 @@ namespace Intrepid2 {
           auto outValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), outValues);
           Kokkos::deep_copy(outValuesHost, outValues);
 
-          for (ordinal_type cell=0;cell<numCells;++cell) {
+          for (auto cell=0;cell<numCells;++cell) {
             int flag = 0 ;
             std::stringstream s1, s2;
-            s1 << std::fixed << std::setprecision(0);
-            s2 << std::fixed << std::setprecision(0);
-
+            
             ordinal_type orts[numEdges];
             elemOrtsHost(cell).getEdgeOrientation(orts, numEdges);
             
-            const double ortVal[4][2] = { {  1.0 , -1.0 },
-                                          {  1.0 , -1.0 },
-                                          { -1.0 ,  1.0 },
-                                          { -1.0 ,  1.0 } };
+            const double ortVal[2] = { 1.0 , - 1.0 };
 
             s1 << " :: edge(0000) = " ;
             s2 << " :: edge(" << orts[0] << orts[1] << orts[2] << orts[3] << ") = ";
-            for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
-              const ordinal_type ort = orts[edgeId];
-              const ordinal_type ndof = cellBasis.getDofTag(cellBasis.getDofOrdinal(1, edgeId, 0))(3);
-              for (ordinal_type i=0;i<ndof;++i) {
-                const double signVal = ortVal[edgeId][ort];
-                const ordinal_type ii = (signVal < 0 ? (ndof - i - 1) : i);
-
-                const ordinal_type refOrd = cellBasis.getDofOrdinal(1, edgeId, ii);
-                const ordinal_type outOrd = cellBasis.getDofOrdinal(1, edgeId, i);
+            for (auto edgeId=0;edgeId<numEdges;++edgeId) {
+              const auto ndof = cellBasis.getDofTag(cellBasis.getDofOrdinal(1, edgeId, 0))(3);
+              for (auto i=0;i<ndof;++i) {
+                const auto refOrd = cellBasis.getDofOrdinal(1, edgeId, i);
+                const auto outOrd = cellBasis.getDofOrdinal(1, edgeId, i);
                 s1 << std::setw(4) << refValuesHost(cell, outOrd);              
                 s2 << std::setw(4) << outValuesHost(cell, outOrd);              
 
-
-                flag += (std::abs(signVal*outValuesHost(cell, outOrd) - refValuesHost(cell, refOrd)) > tol);
+                flag += (std::abs(ortVal[orts[edgeId]]*outValuesHost(cell, outOrd) - refValuesHost(cell, refOrd)) > tol);
               }
 
               s1 << " // ";

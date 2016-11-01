@@ -47,14 +47,14 @@
 
 #include "Kokkos_Core.hpp"
 
-#include "test_05.hpp"
+#include "test_orientationtools_modify_basis_quad_hgrad.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
   
-  const int r_val = Intrepid2::Test::Orientation_Test05<Kokkos::Serial>(verbose);
+  const int r_val = Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HGRAD<Kokkos::Serial>(verbose);
 
   Kokkos::finalize();
   return r_val;

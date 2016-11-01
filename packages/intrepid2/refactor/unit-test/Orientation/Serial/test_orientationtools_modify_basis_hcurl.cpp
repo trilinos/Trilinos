@@ -47,15 +47,17 @@
 
 #include "Kokkos_Core.hpp"
 
-#include "test_01.hpp"
+#include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
+
+#include "test_orientationtools_modify_basis_quad_hcurl.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
   
-  const int r_val = Intrepid2::Test::Orientation_Test01<Kokkos::Serial>(verbose);
-
+  const int r_val = Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HCURL<Intrepid2::Basis_HCURL_QUAD_In_FEM<Kokkos::Serial>, Kokkos::Serial>(verbose);
+  
   Kokkos::finalize();
   return r_val;
 }
