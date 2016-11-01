@@ -136,6 +136,7 @@ private:
   typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
   typedef typename Container<MatrixType>::vector_type vector_type;
   typedef typename Container<MatrixType>::partitioner_type partitioner_type;
+  typedef typename Container<MatrixType>::import_type import_type;
 
   typedef typename Container<MatrixType>::HostView HostView;
   typedef typename local_mv_type::dual_view_type::t_host HostViewLocal;
@@ -177,6 +178,7 @@ public:
   ///       with kl+ku superdiagonals, as we need the addtional storage for the LU decomposition.
   BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                    const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                   const Teuchos::RCP<const import_type>& importer,
                    int OverlapLevel,
                    scalar_type DampingFactor);
 

@@ -148,11 +148,13 @@ public:
   ///   local rows of the input matrix to blocks.
   Container (const Teuchos::RCP<const row_matrix_type>& matrix,
              const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+             const Teuchos::RCP<const import_type>& importer,
              int OverlapLevel,
              scalar_type DampingFactor) :
     inputMatrix_ (matrix),
     OverlapLevel_ (OverlapLevel),
-    DampingFactor_ (DampingFactor)
+    DampingFactor_ (DampingFactor),
+    Importer_ (importer)
   {
     using Teuchos::Ptr;
     using Teuchos::RCP;
@@ -163,10 +165,10 @@ public:
     NumLocalRows_ = inputMatrix_->getNodeNumRows();
     NumGlobalRows_ = inputMatrix_->getGlobalNumRows();
     NumGlobalNonzeros_ = inputMatrix_->getGlobalNumEntries();
-    IsParallel_ = inputMatrix_->getRowMap()->getComm()->getSize() > 1;
-    const block_crs_matrix_type* global_bcrs =
-      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(inputMatrix_).get();
-    hasBlockCrs_ = global_bcrs;
+    IsParallel_ = inputMatrix_->getRowMap()->getComm()->getSize() != 1;
+    auto global_bcrs =
+      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(inputMatrix_);
+    hasBlockCrs_ = !global_bcrs.is_null();
     if(hasBlockCrs_)
       bcrsBlockSize_ = global_bcrs->getBlockSize();
     else
@@ -193,7 +195,8 @@ public:
     blockRows_ (1),
     partitionIndices_ (1),
     OverlapLevel_ (0),
-    DampingFactor_ (STS::one())
+    DampingFactor_ (STS::one()),
+    Importer_ (Teuchos::null)
   {
     NumLocalRows_ = inputMatrix_->getNodeNumRows();
     NumGlobalRows_ = inputMatrix_->getGlobalNumRows();
@@ -210,16 +213,6 @@ public:
       bcrsBlockSize_ = 1;
     for(local_ordinal_type i = 0; i < localRows.size(); i++)
       partitions_[i] = localRows[i];
-    ownsImporter_ = false;
-    if(IsParallel_)
-    {
-      Importer_ = ptr(inputMatrix_->getGraph()->getImporter().get());
-      if(Importer_.is_null())
-      {
-        Importer_ = ptr(new import_type(inputMatrix_->getDomainMap(), inputMatrix_->getColMap()));
-        ownsImporter_ = true; //delete the importer in destructor
-      }
-    }
   }
 
   //! Destructor.
@@ -302,8 +295,8 @@ public:
 
   void DoJacobi(HostView& X, HostView& Y, int stride) const;
   void DoOverlappingJacobi(HostView& X, HostView& Y, HostView& W, int stride) const;
-  void DoGaussSeidel(HostView& X, HostView& Y, int stride) const;
-  void DoSGS(HostView& X, HostView& Y, int stride) const;
+  void DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2, int stride) const;
+  void DoSGS(HostView& X, HostView& Y, HostView& Y2, int stride) const;
 
   //! Set parameters.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
@@ -417,9 +410,7 @@ protected:
   //! Damping factor, passed to apply() as alpha.
   scalar_type DampingFactor_;
   //! Importer for importing off-process elements of MultiVectors.
-  Teuchos::Ptr<const Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>> Importer_;
-  //! True if Importer_ was created in the Container, false if it was given by BlockRelaxation.
-  bool ownsImporter_;
+  Teuchos::RCP<const Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>> Importer_;
   //! Number of local rows in input matrix.
   local_ordinal_type NumLocalRows_; 
   //! Number of global rows in input matrix.
@@ -487,7 +478,7 @@ void Container<MatrixType>::DoOverlappingJacobi(HostView& X, HostView& Y, HostVi
 }
 
 template<class MatrixType>
-void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, int stride) const
+void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2, int stride) const
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -534,10 +525,14 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, int stride) 
             {
               const local_ordinal_type col = Indices[k];
               for (int localR = 0; localR < bcrsBlockSize_; localR++)
+              {
                 for(int localC = 0; localC < bcrsBlockSize_; localC++)
+                {
                   Resid(LID * bcrsBlockSize_ + localR, m) -=
                     Values[k * bcrsBlockSize_ * bcrsBlockSize_ + localR + localC * bcrsBlockSize_]
-                    * Y(col * bcrsBlockSize_ + localC, m);
+                    * Y2(col * bcrsBlockSize_ + localC, m);
+                }
+              }
             }
           }
           else
@@ -546,7 +541,7 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, int stride) 
             for (size_t k = 0; k < NumEntries; ++k)
             {
               const local_ordinal_type col = Indices[k];
-              Resid(LID, m) -= Values[k] * Y(col, m);
+              Resid(LID, m) -= Values[k] * Y2(col, m);
             }
           }
         }
@@ -557,7 +552,7 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, int stride) 
       // and Y2 have the same ordering for on-proc unknowns.
       //
       // Note: Add flop counts for inverse apply
-      apply(Resid, Y, i, stride, Teuchos::NO_TRANS, DampingFactor_, one);
+      apply(Resid, Y2, i, stride, Teuchos::NO_TRANS, DampingFactor_, one);
     }
     else if(blockRows_[i] == 1)
     {
@@ -571,14 +566,25 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, int stride) 
       {
         impl_scalar_type x = X(LRID, m);
         impl_scalar_type newy = x * d;
-        Y(LRID, m) = newy;
+        Y2(LRID, m) = newy;
      }
     } // end else
   } // end for numBlocks_ 
+  if(IsParallel_)
+  {
+    auto numMyRows = inputMatrix_->getNodeNumRows();
+    for (size_t m = 0; m < numVecs; ++m)
+    {
+      for (size_t i = 0; i < numMyRows * bcrsBlockSize_; ++i)
+      {
+        Y(i, m) = Y2(i, m);
+      }
+    }
+  }
 }
 
 template<class MatrixType>
-void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, int stride) const
+void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, HostView& Y2, int stride) const
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -628,7 +634,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, int stride) const
                 for(int localC = 0; localC < bcrsBlockSize_; localC++)
                   Resid(LID * bcrsBlockSize_ + localR, m) -=
                     Values[k * (bcrsBlockSize_ * bcrsBlockSize_) + (localR + localC * bcrsBlockSize_)]
-                    * Y(col * bcrsBlockSize_ + localC, m);
+                    * Y2(col * bcrsBlockSize_ + localC, m);
               }
             }
           }
@@ -638,7 +644,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, int stride) const
             for(size_t k = 0; k < NumEntries; k++)
             {
               local_ordinal_type col = Indices[k];
-              Resid(LID, m) -= Values[k] * Y(col, m);
+              Resid(LID, m) -= Values[k] * Y2(col, m);
             }
           }
         }
@@ -649,7 +655,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, int stride) const
       // and Y2 have the same ordering for on-proc unknowns.
       //
       // Note: Add flop counts for inverse apply
-      apply(Resid, Y, i, stride, Teuchos::NO_TRANS, DampingFactor_, one);
+      apply(Resid, Y2, i, stride, Teuchos::NO_TRANS, DampingFactor_, one);
       // operations for all getrow's
     }
     else // singleton, can't access Containers_[i] as it was never filled and may be null.
@@ -662,7 +668,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, int stride) const
       {
         impl_scalar_type x = X(LRID, m);
         impl_scalar_type newy = x * d;
-        Y(LRID, m) = newy;
+        Y2(LRID, m) = newy;
       }
     } // end else
   } // end forward sweep over NumLocalBlocks
@@ -701,7 +707,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, int stride) const
                 for(int localC = 0; localC < bcrsBlockSize_; localC++)
                   Resid(LID*bcrsBlockSize_+localR, m) -=
                     Values[k * (bcrsBlockSize_ * bcrsBlockSize_) + (localR + localC * bcrsBlockSize_)]
-                    * Y(col * bcrsBlockSize_ + localC, m);
+                    * Y2(col * bcrsBlockSize_ + localC, m);
               }
             }
           }
@@ -711,7 +717,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, int stride) const
             for(size_t k = 0; k < NumEntries; ++k)
             {
               local_ordinal_type col = Indices[k];
-              Resid(LID, m) -= Values[k] * Y(col, m);
+              Resid(LID, m) -= Values[k] * Y2(col, m);
             }
           }
         }
@@ -722,11 +728,22 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, int stride) const
       // and Y2 have the same ordering for on-proc unknowns.
       //
       // Note: Add flop counts for inverse apply
-      apply(Resid, Y, i - 1, stride, Teuchos::NO_TRANS, DampingFactor_, one);
+      apply(Resid, Y2, i - 1, stride, Teuchos::NO_TRANS, DampingFactor_, one);
       // operations for all getrow's
     } // end  Partitioner_->numRowsInPart (i) != 1 )
     // else do nothing, as by definition with a singleton, the residuals are zero.
   } //end reverse sweep
+  if(IsParallel_)
+  {
+    auto numMyRows = inputMatrix_->getNodeNumRows();
+    for (size_t m = 0; m < numVecs; ++m)
+    {
+      for (size_t i = 0; i < numMyRows * bcrsBlockSize_; ++i)
+      {
+        Y(i, m) = Y2(i, m);
+      }
+    }
+  }
 }
 
 template<class MatrixType>

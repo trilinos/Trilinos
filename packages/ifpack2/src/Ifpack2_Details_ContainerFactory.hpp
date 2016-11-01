@@ -80,6 +80,9 @@ Teuchos::RCP< ::Ifpack2::Container< ::Tpetra::RowMatrix<typename MatrixType::sca
 createContainer (const std::string& containerName,
                  const Teuchos::RCP< const MatrixType>& A,
                  const Teuchos::Array< Teuchos::Array< typename MatrixType::local_ordinal_type> >& localRows,
+                 const Teuchos::RCP<const Tpetra::Import<typename MatrixType::local_ordinal_type,
+                                                         typename MatrixType::global_ordinal_type,
+                                                         typename MatrixType::node_type> > importer,
                  int OverlapLevel,
                  typename MatrixType::scalar_type DampingFactor)
 {
@@ -93,21 +96,21 @@ createContainer (const std::string& containerName,
                  "MatrixType must be a Tpetra::RowMatrix specialization.");
 
   if (containerName == "TriDi") {
-    return rcp (new TriDiContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows, OverlapLevel, DampingFactor));
+    return rcp (new TriDiContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows, importer, OverlapLevel, DampingFactor));
   }
   else if (containerName == "Dense") {
-    return rcp (new DenseContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows, OverlapLevel, DampingFactor));
+    return rcp (new DenseContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows, importer, OverlapLevel, DampingFactor));
   }
   else if (containerName == "SparseILUT") {
-    return rcp (new SparseContainer<MatrixType, ILUT<MatrixType> > (A, localRows, OverlapLevel, DampingFactor));
+    return rcp (new SparseContainer<MatrixType, ILUT<MatrixType> > (A, localRows, importer, OverlapLevel, DampingFactor));
   }
 #ifdef HAVE_IFPACK2_AMESOS2
   else if (containerName == "SparseAmesos2" || containerName == "SparseAmesos") {
-    return rcp (new SparseContainer<MatrixType, Amesos2Wrapper<MatrixType> > (A, localRows, OverlapLevel, DampingFactor));
+    return rcp (new SparseContainer<MatrixType, Amesos2Wrapper<MatrixType> > (A, localRows, importer, OverlapLevel, DampingFactor));
   }
 #endif
   else if (containerName == "Banded") {
-    return rcp (new BandedContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows, OverlapLevel, DampingFactor));
+    return rcp (new BandedContainer<MatrixType, typename MatrixType::scalar_type> (A, localRows, importer, OverlapLevel, DampingFactor));
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION
