@@ -144,22 +144,10 @@ namespace Intrepid2 {
         if (cellBasisName.find("HDIV") != std::string::npos) {
           const std::string subcellBasisName(subcellBasis.getName());
           // edge hdiv is hgrad with gauss legendre points
-          switch (subcellDim) {
-          case 1: {
-            INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
-                                          std::logic_error,
-                                          ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
-                                          "subcellBasis function space (1d) is not consistent to cellBasis.");
-            break;
-          }
-          case 2: {
-            INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HDIV") == std::string::npos,
-                                          std::logic_error,
-                                          ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
-                                          "subcellBasis function space (2d) is not consistent to cellBasis.");
-            break;
-          }
-          }
+          INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+                                        std::logic_error,
+                                        ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
+                                        "subcellBasis function space is not consistent to cellBasis.");
         }
       }
 

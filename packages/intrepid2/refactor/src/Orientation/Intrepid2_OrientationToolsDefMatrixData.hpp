@@ -418,7 +418,7 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HDIV_HEX_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                        const ordinal_type order) {
-    Basis_HDIV_QUAD_Bn_FEM<SpT> quadBasis(order);
+    Basis_HGRAD_QUAD_Cn_FEM<SpT> quadBasis(order-1, POINTTYPE_GAUSS);
     Basis_HDIV_HEX_In_FEM<SpT> cellBasis(order);
 
     const ordinal_type numFace = 6;    
