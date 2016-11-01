@@ -1,5 +1,5 @@
-#ifndef TEMPUS_TEST_SINCOS_MODEL_HPP
-#define TEMPUS_TEST_SINCOS_MODEL_HPP
+#ifndef TEMPUS_TEST_SINCOS_MODEL_DECL_HPP
+#define TEMPUS_TEST_SINCOS_MODEL_DECL_HPP
 
 #include "Thyra_ModelEvaluator.hpp" // Interface
 #include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
@@ -81,8 +81,9 @@ namespace Tempus_Test {
   * \f]
   */
 
+template<class Scalar>
 class SinCosModel
-  : public Thyra::StateFuncModelEvaluatorBase<double>,
+  : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
     public Teuchos::ParameterListAcceptorDefaultBase
 {
   public:
@@ -91,25 +92,25 @@ class SinCosModel
   SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList);
 
   // Exact solution
-  ModelEvaluatorBase::InArgs<double> getExactSolution(double t) const;
+  ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
 
   // Exact sensitivity solution
-  ModelEvaluatorBase::InArgs<double> getExactSensSolution(int j, double t) const;
+  ModelEvaluatorBase::InArgs<Scalar> getExactSensSolution(int j, double t) const;
 
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_x_space() const;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_f_space() const;
-  ModelEvaluatorBase::InArgs<double> getNominalValues() const;
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > create_W() const;
-  Teuchos::RCP<Thyra::LinearOpBase<double> > create_W_op() const;
-  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > get_W_factory() const;
-  ModelEvaluatorBase::InArgs<double> createInArgs() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
+  ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_p_space(int l) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
   Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_g_space(int j) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
 
   //@}
 
@@ -125,10 +126,10 @@ private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
-  ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const;
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   void evalModelImpl(
-    const ModelEvaluatorBase::InArgs<double> &inArgs_bar,
-    const ModelEvaluatorBase::OutArgs<double> &outArgs_bar
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar
     ) const;
   //@}
 
@@ -143,24 +144,24 @@ private:
   bool haveIC_;     ///< false => no nominal values are provided (default=true)
   bool acceptModelParams_; ///< Changes inArgs to require parameters
   mutable bool isInitialized_;
-  mutable ModelEvaluatorBase::InArgs<double>  inArgs_;
-  mutable ModelEvaluatorBase::OutArgs<double> outArgs_;
-  mutable ModelEvaluatorBase::InArgs<double>  nominalValues_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > x_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > f_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > p_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > g_space_;
+  mutable ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
+  mutable ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
+  mutable ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
 
   // Parameters for the model:  x_0(t) = a + b*sin(f*t+phi)
   //                            x_1(t) = b*f*cos(f*t+phi)
-  double a_;     ///< Model parameter
-  double f_;     ///< Model parameter
-  double L_;     ///< Model parameter
-  double phi_;   ///< Parameter determined from the IC
-  double b_;     ///< Parameter determined from the IC
-  double t0_ic_; ///< Time value where the initial condition is specified
-  double x0_ic_; ///< Initial condition for x0
-  double x1_ic_; ///< Initial condition for x1
+  Scalar a_;     ///< Model parameter
+  Scalar f_;     ///< Model parameter
+  Scalar L_;     ///< Model parameter
+  Scalar phi_;   ///< Parameter determined from the IC
+  Scalar b_;     ///< Parameter determined from the IC
+  Scalar t0_ic_; ///< Time value where the initial condition is specified
+  Scalar x0_ic_; ///< Initial condition for x0
+  Scalar x1_ic_; ///< Initial condition for x1
 };
 
 
@@ -174,4 +175,4 @@ private:
 
 
 } // namespace Tempus_Test
-#endif // TEMPUS_TEST_SINCOS_MODEL_HPP
+#endif // TEMPUS_TEST_SINCOS_MODEL_DECL_HPP

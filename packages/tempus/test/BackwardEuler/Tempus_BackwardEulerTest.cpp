@@ -51,8 +51,9 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
 
     // Setup the SinCosModel
     RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-    //RCP<SinCosModel> model    = sineCosineModel(scm_pl);
-    RCP<SinCosModel> model    = Teuchos::rcp(new SinCosModel(scm_pl));
+    //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
+    RCP<SinCosModel<double> > model =
+      Teuchos::rcp(new SinCosModel<double>(scm_pl));
 
     dt /= 2;
 
