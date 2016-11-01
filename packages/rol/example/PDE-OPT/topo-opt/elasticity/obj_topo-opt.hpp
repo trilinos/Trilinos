@@ -45,38 +45,55 @@
     \brief Provides the interface for local (cell-based) objective function computations.
 */
 
-#ifndef PDEOPT_QOI_ENERGY_POISSON_TOPOPT_HPP
-#define PDEOPT_QOI_ENERGY_POISSON_TOPOPT_HPP
+#ifndef PDEOPT_QOI_TOPOOPT_HPP
+#define PDEOPT_QOI_TOPOOPT_HPP
 
-#include "../TOOLS/qoi.hpp"
-#include "pde_poisson_topOpt.hpp"
+#include "../../TOOLS/qoi.hpp"
+#include "pde_topo-opt.hpp"
 
 template <class Real>
-class QoI_Energy_Poisson_TopOpt : public QoI<Real> {
+class QoI_TopoOpt : public QoI<Real> {
 private:
   const Teuchos::RCP<FE<Real> > fe_;
-  const Teuchos::RCP<Intrepid::FieldContainer<Real> > force_eval_;
+  const Teuchos::RCP<Load<Real> > load_;
+  const Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
+  const Real scale_;
 
 public:
-  QoI_Energy_Poisson_TopOpt(const Teuchos::RCP<FE<Real> > &fe,
-                            const Teuchos::RCP<Intrepid::FieldContainer<Real> > &force_eval)
-    : fe_(fe), force_eval_(force_eval) {}
+  QoI_TopoOpt(const Teuchos::RCP<FE<Real> > &fe,
+              const Teuchos::RCP<Load<Real> > &load,
+              const Teuchos::RCP<FieldHelper<Real> > &fieldHelper,
+              const Real scale = 1.0)
+    : fe_(fe), load_(load), fieldHelper_(fieldHelper), scale_(scale) {}
 
   Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
              const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Get relevant dimensions
-    int c = fe_->cubPts()->dimension(0);
-    int p = fe_->cubPts()->dimension(1);
+    int c = fe_->gradN()->dimension(0);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
     // Initialize output val
     val = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
-    // Evaluate state on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    fe_->evaluateValue(valU_eval, u_coeff);
-    // Compute energy
-    fe_->computeIntegral(val,valU_eval,force_eval_);
+    // Get components of the control
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U;
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    // Evaluate on FE basis
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > valU_eval(d);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > load_eval(d);
+    for (int i=0; i<d; ++i) {
+      valU_eval[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      load_eval[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    }
+    for (int i=0; i<d; ++i) {
+      fe_->evaluateValue(valU_eval[i], U[i]);
+    }
+    load_->compute(load_eval, fe_, QoI<Real>::getParameter());
+    for (int i=0; i<d; ++i) {
+      fe_->computeIntegral(val,load_eval[i],valU_eval[i],true);
+    }
+    Intrepid::RealSpaceTools<Real>::scale(*val, scale_);
     return static_cast<Real>(0);
   }
 
@@ -85,22 +102,39 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Get relevant dimensions
-    int c = fe_->N()->dimension(0);
-    int f = fe_->N()->dimension(1);
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
     // Initialize output grad
-    grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-    // Compute gradient of energy
-    Intrepid::FunctionSpaceTools::integrate<Real>(*grad,
-                                                  *force_eval_,
-                                                  *(fe_->NdetJ()),
-                                                  Intrepid::COMP_CPP, false);
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > G(d);
+    for (int i=0; i<d; ++i) {
+      G[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    }
+    // Evaluate on FE basis
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > load_eval(d);
+    for (int i=0; i<d; ++i) {
+      load_eval[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    }
+    load_->compute(load_eval, fe_, QoI<Real>::getParameter());
+    // Build local gradient of state tracking term
+    for (int i=0; i<d; ++i) {
+      Intrepid::FunctionSpaceTools::integrate<Real>(*G[i],
+                                                    *load_eval[i],
+                                                    *(fe_->NdetJ()),
+                                                    Intrepid::COMP_CPP,
+                                                    false);
+      Intrepid::RealSpaceTools<Real>::scale(*G[i], scale_);
+    }
+
+    fieldHelper_->combineFieldCoeff(grad, G);
   }
 
   void gradient_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_L2Tracking_Poisson::gradient_2 is zero.");
+    throw Exception::Zero(">>> QoI_TopoOpt::gradient_2 is zero.");
   }
 
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -108,7 +142,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_11 is zero.");
+    throw Exception::Zero(">>> QoI_TopoOpt::HessVec_12 is zero.");
   }
 
   void HessVec_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -116,7 +150,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_12 is zero.");
+    throw Exception::Zero(">>> QoI_TopoOpt::HessVec_12 is zero.");
   }
 
   void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -124,7 +158,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_21 is zero.");
+    throw Exception::Zero(">>> QoI_TopoOpt::HessVec_21 is zero.");
   }
 
   void HessVec_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -132,23 +166,26 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Energy_Poisson_TopOpt::HessVec_22 is zero.");
+    throw Exception::Zero(">>> QoI_TopoOpt::HessVec_22 is zero.");
   }
 
-}; // QoI_Energy
+}; // QoI_TopoOpt
+
 
 template <class Real>
-class QoI_Volume_Poisson_TopOpt : public QoI<Real> {
+class QoI_Volume_TopoOpt : public QoI<Real> {
 private:
   const Teuchos::RCP<FE<Real> > fe_;
+  const Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > ones_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > volFrac_;
 
 public:
-  QoI_Volume_Poisson_TopOpt(const Teuchos::RCP<FE<Real> > &fe,
-                            Teuchos::ParameterList &parlist)
-    : fe_(fe) {
-    Real v0 = parlist.sublist("Volume Constraint Poisson TopOpt").get("Volume Fraction",0.4);
+  QoI_Volume_TopoOpt(const Teuchos::RCP<FE<Real> > &fe,
+                     const Teuchos::RCP<FieldHelper<Real> > &fieldHelper,
+                     Teuchos::ParameterList &parlist)
+  : fe_(fe), fieldHelper_(fieldHelper) {
+    Real v0 = parlist.sublist("Problem").get("Volume Fraction",0.4);
     // Get relevant dimensions
     int c = fe_->cubPts()->dimension(0);
     int p = fe_->cubPts()->dimension(1);
@@ -167,15 +204,21 @@ public:
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
              const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Get relevant dimensions
-    int c = fe_->cubPts()->dimension(0);
-    int p = fe_->cubPts()->dimension(1);
+    int c = fe_->gradN()->dimension(0);
+    int p = fe_->gradN()->dimension(2);
+
     // Initialize output val
     val = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
-    // Evaluate state on FE basis
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    fe_->evaluateValue(valZ_eval, z_coeff);
+
+    // Get components of the control
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > Z;
+    fieldHelper_->splitFieldCoeff(Z, z_coeff);
+    // Evaluate on FE basis
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    fe_->evaluateValue(valZ_eval, Z[0]);
     Intrepid::RealSpaceTools<Real>::subtract(*valZ_eval,*volFrac_);
+
     // Compute energy
     fe_->computeIntegral(val,valZ_eval,ones_);
     return static_cast<Real>(0);
@@ -185,7 +228,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson::gradient_1 is zero.");
+    throw Exception::Zero(">>> QoI_Volume_TopoOpt::gradient_1 is zero.");
   }
 
   void gradient_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
@@ -193,15 +236,23 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
     // Get relevant dimensions
-    int c = fe_->N()->dimension(0);
-    int f = fe_->N()->dimension(1);
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int d = fe_->gradN()->dimension(3);
+
     // Initialize output grad
-    grad = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > G(d);
+    for (int i=0; i<d; ++i) {
+      G[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    }
+
     // Compute gradient of energy
-    Intrepid::FunctionSpaceTools::integrate<Real>(*grad,
+    Intrepid::FunctionSpaceTools::integrate<Real>(*G[0],
                                                   *ones_,
                                                   *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, false);
+
+    fieldHelper_->combineFieldCoeff(grad, G);
   }
 
   void HessVec_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -209,7 +260,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_11 is zero.");
+    throw Exception::Zero(">>> QoI_Volume_TopoOpt::HessVec_11 is zero.");
   }
 
   void HessVec_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -217,7 +268,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_12 is zero.");
+    throw Exception::Zero(">>> QoI_Volume_TopoOpt::HessVec_12 is zero.");
   }
 
   void HessVec_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -225,7 +276,7 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_21 is zero.");
+    throw Exception::Zero(">>> QoI_Volume_TopoOpt::HessVec_21 is zero.");
   }
 
   void HessVec_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
@@ -233,15 +284,16 @@ public:
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
                   const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
                   const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    throw Exception::Zero(">>> QoI_Volume_Poisson_TopOpt::HessVec_22 is zero.");
+    throw Exception::Zero(">>> QoI_Volume_TopoOpt::HessVec_22 is zero.");
   }
 
 }; // QoI_Volume
 
+
 template <class Real>
-class StdObjective_Poisson_TopOpt : public ROL::ParametrizedStdObjective<Real> {
+class StdObjective_TopoOpt : public ROL::ParametrizedStdObjective<Real> {
 public:
-  StdObjective_Poisson_TopOpt() {}
+  StdObjective_TopoOpt() {}
 
   Real value(const std::vector<Real> &x, Real &tol) {
     return x[0];
@@ -257,6 +309,6 @@ public:
     hv[0] = zero;
   }
 
-}; // OBJ_SCALAR
+}; // StdObjective_TopOpt
 
 #endif

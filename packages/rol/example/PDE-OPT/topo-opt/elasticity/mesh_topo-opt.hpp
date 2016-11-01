@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-#include "../TOOLS/meshmanager.hpp"
+#include "../../TOOLS/meshmanager.hpp"
 
 template <class Real>
 class MeshManager_TopoOpt : public MeshManager_Rectangle<Real> {

@@ -61,11 +61,11 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_BoundConstraint.hpp"
 
-#include "../TOOLS/meshmanager.hpp"
-#include "../TOOLS/pdeconstraint.hpp"
-#include "../TOOLS/pdeobjective.hpp"
-#include "../TOOLS/pdevector.hpp"
-#include "../TOOLS/integralconstraint.hpp"
+#include "../../TOOLS/meshmanager.hpp"
+#include "../../TOOLS/pdeconstraint.hpp"
+#include "../../TOOLS/pdeobjective.hpp"
+#include "../../TOOLS/pdevector.hpp"
+#include "../../TOOLS/integralconstraint.hpp"
 #include "pde_poisson_topOpt.hpp"
 #include "obj_poisson_topOpt.hpp"
 

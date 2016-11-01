@@ -48,8 +48,8 @@
 #ifndef PDE_POISSON_HPP
 #define PDE_POISSON_HPP
 
-#include "../TOOLS/pde.hpp"
-#include "../TOOLS/fe.hpp"
+#include "../../TOOLS/pde.hpp"
+#include "../../TOOLS/fe.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"

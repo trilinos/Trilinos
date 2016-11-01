@@ -64,11 +64,11 @@
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
-#include "../TOOLS/meshmanager.hpp"
-#include "../TOOLS/pdeconstraint.hpp"
-#include "../TOOLS/pdeobjective.hpp"
-#include "../TOOLS/pdevector.hpp"
-#include "../TOOLS/batchmanager.hpp"
+#include "../../TOOLS/meshmanager.hpp"
+#include "../../TOOLS/pdeconstraint.hpp"
+#include "../../TOOLS/pdeobjective.hpp"
+#include "../../TOOLS/pdevector.hpp"
+#include "../../TOOLS/batchmanager.hpp"
 #include "pde_navier-stokes.hpp"
 #include "obj_navier-stokes.hpp"
 

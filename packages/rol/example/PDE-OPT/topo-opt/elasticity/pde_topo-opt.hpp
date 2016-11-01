@@ -49,8 +49,8 @@
 #ifndef PDE_TOPOOPT_HPP
 #define PDE_TOPOOPT_HPP
 
-#include "../TOOLS/pde.hpp"
-#include "../TOOLS/fe.hpp"
+#include "../../TOOLS/pde.hpp"
+#include "../../TOOLS/fe.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
