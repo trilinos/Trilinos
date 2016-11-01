@@ -5,6 +5,9 @@
 #    COMM mpi
 #    )
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ML)
+IF(${PACKAGE_NAME}_ENABLE_ML)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     belos_driver
     SOURCES shylu_belos_driver.cpp
@@ -99,3 +102,4 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
     EXEDEPS belos_driver iqr_driver epetra_interface
     )
 
+ENDIF()

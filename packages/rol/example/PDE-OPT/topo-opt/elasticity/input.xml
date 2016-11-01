@@ -18,7 +18,7 @@
     <Parameter name="Load Location"               type="string"  value="{2.0, 0.5}"    />
     <Parameter name="Load Width"                  type="string"  value="{1e-2, 1e-2}"  />
     <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
-    <Parameter name="Objective Scaling"           type="double"  value="1e-3"          />
+    <Parameter name="Objective Scaling"           type="double"  value="1e-2"          />
     <Parameter name="Use Filter"                  type="bool"    value="true"          />
     <Parameter name="Filter Radius"               type="double"  value="0.1"           />
     <Parameter name="Use State Riesz Map"         type="bool"    value="false"         />
