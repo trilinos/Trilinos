@@ -384,10 +384,10 @@ public:
           }
           else if ( risk == "Chebyshev-Kusuoka" ) {
             ChebyshevKusuoka<Real> sqq(*parlist_);
-            val = static_cast<SingletonKusuoka<Real> >(sqq).computeStatistic(*vec_);
+            val = static_cast<SpectralRisk<Real> >(sqq).computeStatistic(*vec_);
           }
-          else if ( risk == "Singleton Kusuoka" ) {
-            SingletonKusuoka<Real> sqq(*parlist_);
+          else if ( risk == "Spectral Risk" ) {
+            SpectralRisk<Real> sqq(*parlist_);
             val = sqq.computeStatistic(*vec_);
           }
           else if ( risk == "Quantile-Radius Quadrangle" ) {

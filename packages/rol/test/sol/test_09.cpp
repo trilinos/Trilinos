@@ -200,14 +200,14 @@ int main(int argc, char* argv[]) {
     RealT one(1), err(0);
     int nQuadLo = 0, nQuadUp = 21, order = 0;
     std::vector<RealT> norm(nQuadUp-nQuadLo), obj(nQuadUp-nQuadLo);
-    *outStream << "\nSINGLETON KUSUOKA RISK MEASURE\n";
+    *outStream << "\nSPECTRAL RISK MEASURE\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Singleton Kusuoka");
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Spectral Risk");
     std::vector<Teuchos::RCP<std::vector<RealT> > > hist(nQuadUp-nQuadLo,Teuchos::null);
     std::vector<Teuchos::RCP<ROL::StdVector<RealT> > > hvec(nQuadUp-nQuadLo,Teuchos::null);
     for (int i = nQuadLo; i < nQuadUp; ++i) {
       order = i+1;
-      list.sublist("SOL").sublist("Risk Measure").sublist("Singleton Kusuoka").set("Number of Quadrature Points",order);
+      list.sublist("SOL").sublist("Risk Measure").sublist("Spectral Risk").set("Number of Quadrature Points",order);
       setRandomVector(*x_rcp);
       obj[i-nQuadLo] = setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
       norm[i]  = x->norm();

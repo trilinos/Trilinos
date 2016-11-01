@@ -365,9 +365,9 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* CHEBYSHEV 3 KUSUOKA ************************************************/
     /**********************************************************************************************/
-    *outStream << "\nSINGLETON KUSUOKA RISK MEASURE\n";
+    *outStream << "\nSPECTRAL RISK MEASURE\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Singleton Kusuoka");
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Spectral Risk");
     setRandomVector(*x_rcp);
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
