@@ -46,8 +46,10 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
 
+#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -62,9 +64,13 @@ ProjectToFaces(
     basis = p.get< Teuchos::RCP<PureBasis> >("Basis");
   else
     basis = p.get< Teuchos::RCP<const PureBasis> >("Basis");
-
+ 
+  quad_degree = 0;
+  if(p.isType<int>("Quadrature Order"))
+    quad_degree = p.get<int>("Quadrature Order");
+    
   Teuchos::RCP<PHX::DataLayout> basis_layout  = basis->functional;
-  Teuchos::RCP<PHX::DataLayout> vector_layout = basis->functional_grad;
+  Teuchos::RCP<PHX::DataLayout> vector_layout  = basis->functional_grad;
 
   // some sanity checks
   TEUCHOS_ASSERT(basis->isVectorBasis());
@@ -72,10 +78,35 @@ ProjectToFaces(
   result = PHX::MDField<ScalarT,Cell,BASIS>(dof_name,basis_layout);
   this->addEvaluatedField(result);
 
-  vector_values = PHX::MDField<ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector",vector_layout);
-  normals      = PHX::MDField<ScalarT,Cell,BASIS,Dim>(dof_name+"_Normals",vector_layout);
-  this->addDependentField(vector_values);
+  normals       = PHX::MDField<ScalarT,Cell,BASIS,Dim>(dof_name+"_Normals",vector_layout);
   this->addDependentField(normals);
+
+  if(quad_degree > 0){
+    const shards::CellTopology & parentCell = *basis->getCellTopology();                                                                                    
+    Intrepid2::DefaultCubatureFactory<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> quadFactory;                         
+    Teuchos::RCP< Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> > quadRule                    
+        = quadFactory.create(parentCell.getCellTopologyData(2,0), quad_degree);
+    int numQPoints = quadRule->getNumPoints(); 
+ 
+    vector_values.resize(numQPoints);
+    for(unsigned qp = 0; qp < numQPoints; ++qp){
+      vector_values[qp] = PHX::MDField<ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector"+"_qp_"+std::to_string(qp),vector_layout);
+      this->addDependentField(vector_values[qp]);
+    }
+
+    // setup the orientation field
+    std::string orientationFieldName = basis->name() + " Orientation";
+    dof_orientation = PHX::MDField<ScalarT,Cell,NODE>(orientationFieldName,basis_layout);
+    this->addDependentField(dof_orientation);
+
+    gatherFieldNormals = PHX::MDField<ScalarT,Cell,NODE,Dim>(dof_name+"_Normals",basis->functional_grad);
+    this->addEvaluatedField(gatherFieldNormals);
+
+  } else {
+    vector_values.resize(1);
+    vector_values[0] = PHX::MDField<ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector",vector_layout);
+    this->addDependentField(vector_values[0]);
+  }
 
   this->setName("Project To Faces");
 }
@@ -88,14 +119,20 @@ postRegistrationSetup(typename Traits::SetupData d,
 {
   // setup the field data object
   this->utils.setFieldData(result,fm);
-  this->utils.setFieldData(vector_values,fm);
+  for(unsigned qp = 0; qp < vector_values.size(); ++qp)
+    this->utils.setFieldData(vector_values[qp],fm);
   this->utils.setFieldData(normals,fm);
 
-  num_pts = vector_values.dimension(1);
-  num_dim = vector_values.dimension(2);
+  if(quad_degree > 0){
+    this->utils.setFieldData(dof_orientation,fm);
+    this->utils.setFieldData(gatherFieldNormals,fm);
+  }
 
-  TEUCHOS_ASSERT(vector_values.dimension(1) == normals.dimension(1));
-  TEUCHOS_ASSERT(vector_values.dimension(2) == normals.dimension(2));
+  num_pts  = result.dimension(1);
+  num_dim  = vector_values[0].dimension(2);
+
+  TEUCHOS_ASSERT(result.dimension(1) == normals.dimension(1));
+  TEUCHOS_ASSERT(vector_values[0].dimension(2) == normals.dimension(2));
 }
 
 // **********************************************************************
@@ -111,32 +148,128 @@ evaluateFields(typename Traits::EvalData workset)
   // For higher order, a distinction between "cell" and Gauss points will need
   // to be made so the field is appropriately projected.
   const shards::CellTopology & parentCell = *basis->getCellTopology();
-  const int intDegree = basis->order();
-  TEUCHOS_ASSERT(intDegree == 1);
   Intrepid2::DefaultCubatureFactory<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> quadFactory;
   Teuchos::RCP< Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> > faceQuad;
+  PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
+  int subcell_dim = 2;
 
-  // Collect the reference face information. For now, do nothing with the quadPts.
-  const unsigned num_faces = parentCell.getFaceCount();
-  std::vector<double> refFaceWt(num_faces, 0.0);
-  for (unsigned f=0; f<num_faces; f++) {
-    faceQuad = quadFactory.create(parentCell.getCellTopologyData(2,f), intDegree);
-    const int numQPoints = faceQuad->getNumPoints();
-    Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
-    Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
-    faceQuad->getCubature(quadPts,quadWts);
-    for (int q=0; q<numQPoints; q++)
-      refFaceWt[f] += quadWts(q);
-  }
+  // One point quadrature if higher order quadrature not requested
+  if (quad_degree == 0){
 
-  // Loop over the faces of the workset cells. An inner quadrature loop should exist too.
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int p = 0; p < num_pts; ++p) {
-      result(cell,p) = ScalarT(0.0);
-      for (int dim = 0; dim < num_dim; ++dim)
-        result(cell,p) += vector_values(cell,p,dim) * normals(cell,p,dim);
-      result(cell,p) *= refFaceWt[p];
+    // Collect the reference face information. For now, do nothing with the quadPts.
+    const unsigned num_faces = parentCell.getFaceCount();
+    std::vector<double> refFaceWt(num_faces, 0.0);
+    for (unsigned f=0; f<num_faces; f++) {
+      faceQuad = quadFactory.create(parentCell.getCellTopologyData(2,f), 1);
+      const int numQPoints = faceQuad->getNumPoints();
+      Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
+      Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
+      faceQuad->getCubature(quadPts,quadWts);
+      for (int q=0; q<numQPoints; q++)
+        refFaceWt[f] += quadWts(q);
     }
+  
+    
+    // Loop over the faces of the workset cells.
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+      for (int p = 0; p < num_pts; ++p) {
+        result(cell,p) = ScalarT(0.0);
+        for (int dim = 0; dim < num_dim; ++dim)
+          result(cell,p) += vector_values[0](cell,p,dim) * normals(cell,p,dim);
+        result(cell,p) *= refFaceWt[p];
+      }
+    }
+
+  } else {
+
+    // to compute normals at qps (copied from GatherNormals)
+    int numFaces = gatherFieldNormals.dimension(1);
+    Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanU = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"refFaceTanU",numFaces,num_dim);
+    Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanV = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"refFaceTanV",numFaces,num_dim);
+    for(int i=0;i<numFaces;i++) {
+      Kokkos::DynRankView<double,PHX::Device> refTanU = Kokkos::DynRankView<double,PHX::Device>("refTanU",num_dim);
+      Kokkos::DynRankView<double,PHX::Device> refTanV = Kokkos::DynRankView<double,PHX::Device>("refTanV",num_dim);
+      Intrepid2::CellTools<double>::getReferenceFaceTangents(refTanU, refTanV, i, parentCell);
+      for(int d=0;d<num_dim;d++) {
+        refFaceTanU(i,d) = refTanU(d);
+        refFaceTanV(i,d) = refTanV(d);
+      }
+    }
+
+    // Loop over the faces of the workset cells
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+
+      // get nodal coordinates for this cell 
+      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.dimension(1),num_dim);
+      for (int point = 0; point < vertex_coords.dimension(1); ++point){
+        for(int ict = 0; ict < num_dim; ict++){
+           physicalNodes(0,point,ict) = vertex_coords(cell,point,ict);
+        }
+      }
+
+      // loop over faces
+      for (int p = 0; p < num_pts; ++p){
+        result(cell,p) = ScalarT(0.0);
+
+        // get quad weights/pts on reference 2d cell
+        const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);     
+        faceQuad = quadFactory.create(subcell, quad_degree);
+        TEUCHOS_ASSERT(faceQuad->getNumPoints() == vector_values.size());
+        Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",faceQuad->getNumPoints());
+        Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",faceQuad->getNumPoints(),subcell_dim);
+        faceQuad->getCubature(quadPts,quadWts);
+
+        // map 2d quad pts to reference cell (3d)
+        Kokkos::DynRankView<double,PHX::Device> refQuadPts("refQuadPts",faceQuad->getNumPoints(),num_dim);
+        Intrepid2::CellTools<double>::mapToReferenceSubcell(refQuadPts, quadPts, subcell_dim, p, parentCell);
+
+
+        // Calculate side jacobian
+        Kokkos::DynRankView<double,PHX::Device> jacobianSide("jacobianSide", 1, faceQuad->getNumPoints(), num_dim, num_dim);
+        Intrepid2::CellTools<double>::setJacobian(jacobianSide, refQuadPts, physicalNodes, parentCell);
+
+        // Calculate weighted measure at quadrature points
+        Kokkos::DynRankView<double,PHX::Device> weighted_measure("weighted_measure",1,faceQuad->getNumPoints());
+        Intrepid2::FunctionSpaceTools::computeFaceMeasure<double> (weighted_measure, jacobianSide, quadWts, p, parentCell);
+
+        // loop over quadrature points
+        for (int qp = 0; qp < faceQuad->getNumPoints(); ++qp) {
+
+          // get normal vector at quad points
+          std::vector<double> faceTanU(3);
+          std::vector<double> faceTanV(3);
+          for(int i = 0; i < 3; i++) {
+            faceTanU[i] = Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,0)*refFaceTanU(p,0))
+                        + Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,1)*refFaceTanU(p,1))
+                        + Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,2)*refFaceTanU(p,2));
+            faceTanV[i] = Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,0)*refFaceTanV(p,0))
+                        + Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,1)*refFaceTanV(p,1))
+                        + Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,2)*refFaceTanV(p,2));
+          }
+
+          // normal = TanU x TanV
+          std::vector<ScalarT> normal(3,0.0);
+          normal[0] = (faceTanU[1]*faceTanV[2] - faceTanU[2]*faceTanV[1])*dof_orientation(cell,p);
+          normal[1] = (faceTanU[2]*faceTanV[0] - faceTanU[0]*faceTanV[2])*dof_orientation(cell,p);
+          normal[2] = (faceTanU[0]*faceTanV[1] - faceTanU[1]*faceTanV[0])*dof_orientation(cell,p);
+
+          // compute the magnitude of the normal vector
+          ScalarT nnorm(0.0);
+          for(int dim = 0; dim < num_dim; ++dim){
+            nnorm += normal[dim]*normal[dim];
+          }
+          nnorm = std::sqrt(nnorm);
+
+          // integrate vector dot n
+          // normalize n since jacobian information is factored into both weighted measure and normal
+          for (int dim = 0; dim < num_dim; ++dim)
+            result(cell,p) += weighted_measure(0,qp) * vector_values[qp](cell,p,dim) * normal[dim] / nnorm;
+
+        }
+      }
+
+    }
+
   }
 
 }
