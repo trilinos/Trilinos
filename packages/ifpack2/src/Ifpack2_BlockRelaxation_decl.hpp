@@ -402,20 +402,24 @@ private:
   //! Which type of point relaxation approach to use
   Details::RelaxationType PrecType_;
 
-  //! Damping factor.
-  scalar_type DampingFactor_;
-
   //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
 
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
 
+  //! True when the input matrix is a Tpetra::BlockCrsMatrix, which
+  //! means that multiple DOFs can be counted as a single "row"
+  bool hasBlockCrsMatrix_;
+
   //! Backward-Mode Gauss Seidel
   bool DoBackwardGS_;
 
   //! Number of rows of overlap between adjacent blocks.
   int OverlapLevel_;
+
+  //! Damping factor.
+  scalar_type DampingFactor_;
 
   //! If \c true, the preconditioner has been computed successfully.
   bool IsInitialized_;
@@ -456,9 +460,6 @@ private:
 
   mutable Teuchos::RCP<const Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>> Importer_;
 
-  //! True when the input matrix is a Tpetra::BlockCrsMatrix, which
-  //! means that multiple DOFs can be counted as a single "row"
-  bool hasBlockCrsMatrix_;
   //@}
 }; //class BlockRelaxation
 

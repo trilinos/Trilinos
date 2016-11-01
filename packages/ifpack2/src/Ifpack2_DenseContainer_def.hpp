@@ -61,9 +61,10 @@ template<class MatrixType, class LocalScalarType>
 DenseContainer<MatrixType, LocalScalarType>::
 DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                const Teuchos::RCP<const import_type>& importer,
                 int OverlapLevel,
                 scalar_type DampingFactor) :
-  Container<MatrixType> (matrix, partitions, OverlapLevel,
+  Container<MatrixType> (matrix, partitions, importer, OverlapLevel,
                          DampingFactor),
   scalars_ (nullptr),
   scalarOffsets_ (this->numBlocks_)
@@ -107,10 +108,10 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
     const size_type numRows = localRows.size ();
     bool rowIndicesValid = true;
     Array<local_ordinal_type> invalidLocalRowIndices;
-    for(size_type j = 0; i < numRows; i++) {
-      if(!rowMap.isNodeLocalElement(localRows[i])) {
+    for(size_type j = 0; j < numRows; j++) {
+      if(!rowMap.isNodeLocalElement(localRows[j])) {
         rowIndicesValid = false;
-        invalidLocalRowIndices.push_back(localRows[i]);
+        invalidLocalRowIndices.push_back(localRows[j]);
         break;
       }
     }
@@ -156,12 +157,12 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
     const size_type numRows = localRows.size ();
     bool rowIndicesValid = true;
     Array<local_ordinal_type> invalidLocalRowIndices;
-    for(size_type j = 0; i < numRows; i++)
+    for(size_type j = 0; j < numRows; j++)
     {
-      if(!rowMap.isNodeLocalElement(localRows[i]))
+      if(!rowMap.isNodeLocalElement(localRows[j]))
       {
         rowIndicesValid = false;
-        invalidLocalRowIndices.push_back(localRows[i]);
+        invalidLocalRowIndices.push_back(localRows[j]);
         break;
       }
     }
@@ -483,7 +484,6 @@ applyBlockCrs (HostView& XIn,
   using Teuchos::rcp;
 
   const size_t numRows = this->blockRows_[blockIndex];
-  const size_t xRows = XIn.dimension_0();
 
   // The local operator might have a different Scalar type than
   // MatrixType.  This means that we might have to convert X and Y to
@@ -610,7 +610,6 @@ apply (HostView& X,
     return;
   }
   const size_t numVecs = X.dimension_1();
-  const size_t numRows = this->blockRows_[blockIndex];
 
   // The local operator might have a different Scalar type than
   // MatrixType.  This means that we might have to convert X and Y to

@@ -59,9 +59,10 @@ template<class MatrixType, class InverseType>
 SparseContainer<MatrixType,InverseType>::
 SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                 const Teuchos::RCP<const import_type>& importer,
                  int OverlapLevel,
                  scalar_type DampingFactor) :
-  Container<MatrixType> (matrix, partitions, OverlapLevel,
+  Container<MatrixType> (matrix, partitions, importer, OverlapLevel,
                          DampingFactor),
   IsInitialized_ (false),
   IsComputed_ (false),

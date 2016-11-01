@@ -158,7 +158,7 @@ private:
   typedef typename Container<MatrixType>::map_type map_type;
   typedef typename Container<MatrixType>::vector_type vector_type;
   typedef typename Container<MatrixType>::partitioner_type partitioner_type;
-
+  typedef typename Container<MatrixType>::import_type import_type;
 
   typedef typename InverseType::scalar_type InverseScalar;
   typedef typename InverseType::local_ordinal_type InverseLocalOrdinal;
@@ -199,6 +199,7 @@ public:
   /// \brief partitioner [in] The BlockRelaxation partitioner.
   SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                    const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                   const Teuchos::RCP<const import_type>& importer,
                    int OverlapLevel,
                    scalar_type DampingFactor);
 

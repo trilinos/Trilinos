@@ -138,6 +138,7 @@ private:
   typedef typename Container<MatrixType>::map_type map_type;
   typedef typename Container<MatrixType>::vector_type vector_type;
   typedef typename Container<MatrixType>::partitioner_type partitioner_type;
+  typedef typename Container<MatrixType>::import_type import_type;
 
   typedef typename Container<MatrixType>::HostView HostView;
   typedef typename local_mv_type::dual_view_type::t_host HostViewLocal;
@@ -177,6 +178,7 @@ public:
   ///   different processes.
   DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                   const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                  const Teuchos::RCP<const import_type>& importer,
                   int OverlapLevel,
                   scalar_type DampingFactor);
 

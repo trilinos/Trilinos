@@ -61,9 +61,10 @@ template<class MatrixType, class LocalScalarType>
 BandedContainer<MatrixType, LocalScalarType>::
 BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                 const Teuchos::RCP<const import_type>& importer,
                  int OverlapLevel,
                  scalar_type DampingFactor) :
-  Container<MatrixType>(matrix, partitions, OverlapLevel, DampingFactor),
+  Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor),
   ipiv_(this->partitions_.size()),
   kl_(this->numBlocks_, -1),
   ku_(this->numBlocks_, -1),
@@ -445,7 +446,6 @@ apply (HostView& X,
 
   // Tpetra::MultiVector specialization corresponding to MatrixType.
   Details::MultiVectorLocalGatherScatter<mv_type, local_mv_type> mvgs;
-  size_t numRows = this->blockRows_[blockIndex];
   const size_t numVecs = X.dimension_1();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -477,8 +477,6 @@ apply (HostView& X,
   //
   // FIXME (mfh 20 Aug 2013) This "local permutation" functionality
   // really belongs in Tpetra.
-
-  const local_ordinal_type numRows_ = this->blockRows_[blockIndex];
 
   if(X_local.size() == 0)
   {

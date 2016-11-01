@@ -133,9 +133,9 @@ TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
     //set up output file
     FILE* csv = fopen("BlockRelax.csv", "w");
     fputs("lib,blockSize,setup,apply\n", csv);
-    //////////////////////////
-    //-- New Ifpack2 test --//
-    //////////////////////////
+    //////////////////////
+    //-- Ifpack2 test --//
+    //////////////////////
     Teuchos::ParameterList ilist;
     ilist.set("partitioner: type", "user");
     ilist.set("relaxation: sweeps", 5);
@@ -143,8 +143,6 @@ TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
     int* partMap = new int[localRows];
     Teuchos::Time timer("");
     out << "Testing Ifpack2 block G-S\n";
-    //run up to maxTrials on each library
-    const int maxTrials = 1;
     //target for total running time
     const double maxTotalTime = 6.0;
     //proportion of total time to spend on ifpack2

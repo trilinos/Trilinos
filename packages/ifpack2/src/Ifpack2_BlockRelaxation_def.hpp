@@ -61,10 +61,12 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     IsComputed_ = false;
     Partitioner_ = Teuchos::null;
     W_ = Teuchos::null;
-    hasBlockCrsMatrix_ = false;
 
     if (! A.is_null ()) {
-      IsParallel_ = (A->getRowMap ()->getComm ()->getSize () > 1);
+      IsParallel_ = (A->getRowMap ()->getComm ()->getSize () != 1);
+      Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+        Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A);
+      hasBlockCrsMatrix_ = !A_bcrs.is_null();
     }
     if (! Container_.is_null ()) {
       Container_->clearBlocks();
@@ -89,8 +91,8 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   containerType_ ("Dense"),
   PrecType_ (Ifpack2::Details::JACOBI),
   ZeroStartingSolution_ (true),
-  DoBackwardGS_ (false),
   hasBlockCrsMatrix_ (false),
+  DoBackwardGS_ (false),
   OverlapLevel_ (0),
   DampingFactor_ (STS::one ()),
   IsInitialized_ (false),
@@ -664,7 +666,7 @@ ExtractSubmatrices ()
     }
   }
   Container_ = Teuchos::rcp_static_cast<Container<MatrixType>>
-    (Details::createContainer<row_matrix_type> (containerType, A_, localRows,
+    (Details::createContainer<row_matrix_type> (containerType, A_, localRows, Importer_,
       OverlapLevel_, DampingFactor_));
   Container_->setParameters(List_);
   Container_->initialize();
@@ -728,20 +730,35 @@ ApplyInverseGS (const MV& X, MV& Y) const
   size_t numVecs = X.getNumVectors();
   //Get view of X (is never modified in this function)
   typename ContainerType::HostView XView = X.template getLocalView<Kokkos::HostSpace>();
-  //Pre-import Y, if parallel 
+  typename ContainerType::HostView YView = Y.template getLocalView<Kokkos::HostSpace>();
+  //Pre-import Y, if parallel
   Ptr<MV> Y2;
   bool deleteY2 = false;
   if(IsParallel_)
   {
     Y2 = ptr(new MV(Importer_->getTargetMap(), numVecs));
-    Y2->doImport(Y, *Importer_, Tpetra::INSERT);
     deleteY2 = true;
   }
   else
     Y2 = ptr(&Y);
-  typename ContainerType::HostView YView = Y2->template getLocalView<Kokkos::HostSpace>();
-  for(int j = 0; j < NumSweeps_; ++j)
-    Container_->DoGaussSeidel(XView, YView, X.getStride());
+  if(IsParallel_)
+  {
+    for(int j = 0; j < NumSweeps_; ++j)
+    {
+      //do import once per sweep
+      Y2->doImport(Y, *Importer_, Tpetra::INSERT);
+      typename ContainerType::HostView Y2View = Y2->template getLocalView<Kokkos::HostSpace>();
+      Container_->DoGaussSeidel(XView, YView, Y2View, X.getStride());
+    }
+  }
+  else
+  {
+    typename ContainerType::HostView Y2View = Y2->template getLocalView<Kokkos::HostSpace>();
+    for(int j = 0; j < NumSweeps_; ++j)
+    {
+      Container_->DoGaussSeidel(XView, YView, Y2View, X.getStride());
+    }
+  }
   if(deleteY2)
     delete Y2.get();
 }
@@ -755,20 +772,35 @@ ApplyInverseSGS (const MV& X, MV& Y) const
   using Teuchos::ptr;
   //Get view of X (is never modified in this function)
   typename ContainerType::HostView XView = X.template getLocalView<Kokkos::HostSpace>();
+  typename ContainerType::HostView YView = Y.template getLocalView<Kokkos::HostSpace>();
   //Pre-import Y, if parallel 
   Ptr<MV> Y2;
   bool deleteY2 = false;
   if(IsParallel_)
   {
     Y2 = ptr(new MV(Importer_->getTargetMap(), X.getNumVectors()));
-    Y2->doImport(Y, *Importer_, Tpetra::INSERT);
     deleteY2 = true;
   }
   else
     Y2 = ptr(&Y);
-  typename ContainerType::HostView YView = Y2->template getLocalView<Kokkos::HostSpace>();
-  for(int j = 0; j < NumSweeps_; ++j)
-    Container_->DoSGS(XView, YView, X.getStride());
+  if(IsParallel_)
+  {
+    for(int j = 0; j < NumSweeps_; ++j)
+    {
+      //do import once per sweep
+      Y2->doImport(Y, *Importer_, Tpetra::INSERT);
+      typename ContainerType::HostView Y2View = Y2->template getLocalView<Kokkos::HostSpace>();
+      Container_->DoSGS(XView, YView, Y2View, X.getStride());
+    }
+  }
+  else
+  {
+    typename ContainerType::HostView Y2View = Y2->template getLocalView<Kokkos::HostSpace>();
+    for(int j = 0; j < NumSweeps_; ++j)
+    {
+      Container_->DoSGS(XView, YView, Y2View, X.getStride());
+    }
+  }
   if(deleteY2)
     delete Y2.get();
 }
@@ -791,7 +823,7 @@ void BlockRelaxation<MatrixType,ContainerType>::computeImporter () const
         rcp_dynamic_cast<const block_crs_matrix_type>(A_);
       int bs_ = bcrs->getBlockSize();
       RCP<const map_type> oldDomainMap = A_->getDomainMap();
-      Ptr<const map_type> oldColMap = Ptr<const map_type>(A_->getColMap().get());
+      RCP<const map_type> oldColMap = A_->getColMap();
       // Because A is a block CRS matrix, import will not do what you think it does
       // We have to construct the correct maps for it
       global_size_t numGlobalElements = oldColMap->getGlobalNumElements() * bs_;
@@ -808,7 +840,7 @@ void BlockRelaxation<MatrixType,ContainerType>::computeImporter () const
       // Create the importer
       Importer_ = rcp(new import_type(oldDomainMap, colMap));
     }
-    else
+    else if(!A_.is_null())
     {
       Importer_ = A_->getGraph()->getImporter();
       if(Importer_.is_null())
