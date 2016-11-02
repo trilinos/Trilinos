@@ -577,6 +577,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     Teuchos::nonnull(dgxdp_out) || !dgdp_deriv_out.isEmpty();
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
+  RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
   if (!requestedSensitivities) 
   {
     //
@@ -586,7 +587,6 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     *out << "T final : " << t_final << " \n";
 
     //Get final solution from solutionHistory.
-    RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
     RCP<Tempus::SolutionState<Scalar> > solutionState = (*solutionHistory)[0];
     finalSolution = solutionState->getX();
 
@@ -619,10 +619,16 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
         modelInArgs.set_p(l+1, p_in2);
       }
       //Set time to be final time at which the solve occurs (< t_final in the case we don't make it to t_final).
-      //IKT, 10/31/16, FIXME:
-      //Have Curt add capability to return end of timestep time to Tempus.  Once this is available, 
-      //we can call the new routine below and uncomment this line. 
-      //modelInArgs.set_t(fwdStateStepper->getTimeRange().lower());
+      //IKT: get final time from solutionHistory workingSpace, which is different than how it is done in Piro::RythmosSolver class.
+      //IKT, 11/1/16, FIXME: workingState pointer is null right now, so the following 
+      //code is commented out for now.  Instead just set t to t_final which makes sense unless we don't make 
+      //it to t_final.
+      /*RCP<Tempus::SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
+      const Scalar time = workingState->getTime();
+      const Scalar dt   = workingState->getTimeStep();
+      const Scalar t = time + dt;
+      modelInArgs.set_t(t);*/
+      modelInArgs.set_t(t_final);
     }
 
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
