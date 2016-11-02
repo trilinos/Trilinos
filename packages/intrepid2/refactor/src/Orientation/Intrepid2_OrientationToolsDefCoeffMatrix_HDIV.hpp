@@ -253,8 +253,31 @@ namespace Intrepid2 {
 
       // evaluate values on the modified cell
       DynRankViewHostType outValues("outValues", numSubcellBasis, nptsSubcell);
-      subcellBasis.getValuesIntrBubble(outValues, ortPtsSubcell, ort);
+      subcellBasis.getValues(outValues, ortPtsSubcell);
 
+      auto orient_values = [&](const ordinal_type c) { 
+        for (ordinal_type i=0;i<ndofSubcell;++i) {
+          const ordinal_type ii = subcellBasis.getDofOrdinal(subcellDim, 0, i);
+          for (ordinal_type j=0;j<nptsSubcell;++j) 
+            outValues(ii,j) *= c;
+        }
+      };
+
+      switch (subcellBaseKey) {
+      case shards::Line<>::key: {
+        // second dimension is dummy
+        const ordinal_type c[2] = { 1, -1 };
+        orient_values(c[ort]);
+        break;
+      }
+      case shards::Quadrilateral<>::key: {
+        const ordinal_type c[8] = {  1,  1,  1,  1,
+                                    -1, -1, -1, -1 };
+        orient_values(c[ort]);
+        break;
+      }
+      }
+      
       ///
       /// Restrict vector valued basis functions on the subcell dimensions
       ///

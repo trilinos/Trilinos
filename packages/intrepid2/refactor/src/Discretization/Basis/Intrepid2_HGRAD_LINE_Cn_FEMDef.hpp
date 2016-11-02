@@ -66,8 +66,7 @@ namespace Intrepid2 {
                const inputViewType  input,
                /**/  workViewType   work,
                const vinvViewType   vinv,
-               const ordinal_type   operatorDn,
-               const ordinal_type   ort ) {    
+               const ordinal_type   operatorDn ) {    
       ordinal_type opDn = operatorDn;
 
       const auto card = vinv.dimension(0);
@@ -75,21 +74,14 @@ namespace Intrepid2 {
 
       const auto order = card - 1;
       const double alpha = 0.0, beta = 0.0;
-      
+
       switch (opType) {
       case OPERATOR_VALUE: {
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> phis(work.data(), card, npts);
 
-        const double sign[2] = { 1.0, -1.0 };
-        const double signVal = sign[ort];
-
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta);
-
-        for (ordinal_type i=0;i<card;++i)
-          for (ordinal_type j=0;j<npts;++j)
-            phis(i,j) *= signVal;
 
         for (auto i=0;i<card;++i) 
           for (auto j=0;j<npts;++j) {
@@ -146,8 +138,7 @@ namespace Intrepid2 {
     getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-               const EOperator operatorType,
-               const ordinal_type ort ) {
+               const EOperator operatorType ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
@@ -163,7 +154,7 @@ namespace Intrepid2 {
       case OPERATOR_VALUE: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, 0, ort) );
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
         break;
       }
       case OPERATOR_GRAD:

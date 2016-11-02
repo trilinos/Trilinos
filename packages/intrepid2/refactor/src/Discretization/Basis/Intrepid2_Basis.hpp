@@ -274,16 +274,6 @@ namespace Intrepid2 {
                                     ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
     }
 
-    // orientation specific bubble nodes for constructing transformation matrix
-    virtual
-    void
-    getValuesIntrBubble( /**/  outputViewType outputValues,
-                         const pointViewType  inputPoints,
-                         const ordinal_type   ort ) const {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Basis::getValuesIntrBubble): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
-    }
-
     /** \brief  Evaluation of an FVD basis evaluation on a <strong>physical cell</strong>.
 
         Returns values of <var>operatorType</var> acting on FVD basis functions for a set of

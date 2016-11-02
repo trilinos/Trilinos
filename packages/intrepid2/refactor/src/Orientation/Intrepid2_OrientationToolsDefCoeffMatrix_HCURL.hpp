@@ -264,18 +264,55 @@ namespace Intrepid2 {
 
       // evaluate values on the modified cell
       DynRankViewHostType outValues("outValues", numSubcellBasis, nptsSubcell, subcellDim);
-      switch (subcellDim) {
-      case 1: {
-        auto out = Kokkos::subview(outValues, Kokkos::ALL(), Kokkos::ALL(), 0);
-        subcellBasis.getValuesIntrBubble(out, ortPtsSubcell, ort);
-        break;
-      }
-      case 2: {
-        subcellBasis.getValuesIntrBubble(outValues, ortPtsSubcell, ort);
-        break;
-      }
-      }
 
+      auto orient_values = [&](const ordinal_type c[][2]) { 
+        for (ordinal_type i=0;i<ndofSubcell;++i) {
+          const ordinal_type ii = subcellBasis.getDofOrdinal(subcellDim, 0, i);
+          for (ordinal_type j=0;j<nptsSubcell;++j) {
+            value_type tmp[2] = {};
+            for (ordinal_type k=0;k<subcellDim;++k) 
+              for (ordinal_type l=0;l<subcellDim;++l) 
+                tmp[k] += c[k][l] * outValues(ii,j,l);
+            for (ordinal_type k=0;k<subcellDim;++k) 
+              outValues(ii,j,k) = tmp[k];
+          }
+        }
+      };
+
+      switch (subcellBaseKey) {
+      case shards::Line<>::key: {
+        auto out = Kokkos::subview(outValues, Kokkos::ALL(), Kokkos::ALL(), 0);
+        subcellBasis.getValues(out, ortPtsSubcell);
+
+        // second dimension is dummy
+        const ordinal_type c[2][1][2] = { { {  1, 0 } },     // 0
+                                          { { -1, 0 } } };   // 1
+        orient_values(c[ort]);
+        break;
+      }
+      case shards::Quadrilateral<>::key: {
+        subcellBasis.getValues(outValues, ortPtsSubcell);
+        const ordinal_type c[8][2][2] = { { {  1,  0 },
+                                            {  0,  1 } }, // 0
+                                          { {  0, -1 },
+                                            {  1,  0 } }, // 1
+                                          { { -1,  0 },
+                                            {  0, -1 } }, // 2
+                                          { {  0,  1 },
+                                            { -1,  0 } }, // 3
+                                          { {  0,  1 },
+                                            {  1,  0 } }, // 4
+                                          { { -1,  0 },
+                                            {  0,  1 } }, // 5
+                                          { {  0, -1 },
+                                            { -1,  0 } }, // 6
+                                          { {  1,  0 },
+                                            {  0, -1 } } }; // 7
+        orient_values(c[ort]);
+        break;
+      }
+      }
+      
       ///
       /// Restrict vector valued basis functions on the subcell dimensions
       ///

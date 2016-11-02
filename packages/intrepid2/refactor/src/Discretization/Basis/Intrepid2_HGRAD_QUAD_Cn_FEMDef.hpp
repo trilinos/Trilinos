@@ -66,8 +66,7 @@ namespace Intrepid2 {
                const inputViewType  input,
                /**/  workViewType   work,
                const vinvViewType   vinv,
-               const ordinal_type   operatorDn,
-               const ordinal_type   ort ) {
+               const ordinal_type   operatorDn ) {
       ordinal_type opDn = operatorDn;
       
       const auto card = vinv.dimension(0);
@@ -99,14 +98,12 @@ namespace Intrepid2 {
         Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
           getValues(output_y, input_y, work_line, vinv);
 
-        const double signVal = (ort > 3 ? -1.0 : 1.0);
-
         // tensor product
         ordinal_type idx = 0;
         for (auto j=0;j<card;++j) // y
           for (auto i=0;i<card;++i,++idx)  // x
             for (auto k=0;k<npts;++k) 
-              output(idx,k) = signVal*output_x(i,k)*output_y(j,k);
+              output(idx,k) = output_x(i,k)*output_y(j,k);
         break;
       }
       case OPERATOR_CURL: {
@@ -242,8 +239,7 @@ namespace Intrepid2 {
     getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-               const EOperator operatorType,
-               const ordinal_type ort ) {
+               const EOperator operatorType ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
@@ -259,7 +255,7 @@ namespace Intrepid2 {
       case OPERATOR_VALUE: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, 0, ort) );
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
         break;
       }
       case OPERATOR_CURL: {

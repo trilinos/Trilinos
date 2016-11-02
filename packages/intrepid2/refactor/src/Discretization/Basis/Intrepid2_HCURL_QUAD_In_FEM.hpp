@@ -71,8 +71,7 @@ namespace Intrepid2 {
                    const inputPointViewType  inputPoints,
                    /**/  workViewType        work,
                    const vinvViewType        vinvLine,
-                   const vinvViewType        vinvBubble,
-                   const ordinal_type        ort = 0 );
+                   const vinvViewType        vinvBubble );
       };
       
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -84,8 +83,7 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvLine,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
-                  const EOperator operatorType,
-                  const ordinal_type ort = 0 );
+                  const EOperator operatorType );
       
       template<typename outputValueViewType,
                typename inputPointViewType,
@@ -97,16 +95,14 @@ namespace Intrepid2 {
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinvLine;
         const vinvViewType        _vinvBubble;
-        const ordinal_type        _ort; 
-
+        
         KOKKOS_INLINE_FUNCTION
         Functor( outputValueViewType outputValues_,
                  inputPointViewType  inputPoints_,
                  vinvViewType        vinvLine_,
-                 vinvViewType        vinvBubble_,
-                 const ordinal_type  ort_ = 0 )
+                 vinvViewType        vinvBubble_)
           : _outputValues(outputValues_), _inputPoints(inputPoints_), 
-            _vinvLine(vinvLine_), _vinvBubble(vinvBubble_), _ort(ort_) {} 
+            _vinvLine(vinvLine_), _vinvBubble(vinvBubble_) {} 
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
@@ -126,7 +122,7 @@ namespace Intrepid2 {
           switch (opType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
-            Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble, _ort );
+            Serial<opType>::getValues( output, input, work, _vinvLine, _vinvBubble );
             break;
           }
           case OPERATOR_CURL : {
@@ -187,21 +183,6 @@ namespace Intrepid2 {
                                                 this->vinvLine_,
                                                 this->vinvBubble_,
                                                 operatorType );
-    }
-
-    virtual
-    void
-    getValuesIntrBubble( /**/  outputViewType outputValues,
-                         const pointViewType  inputPoints,
-                         const ordinal_type   ort ) const {
-      constexpr ordinal_type numPtsPerEval = 1;
-      Impl::Basis_HCURL_QUAD_In_FEM::
-        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
-                                                inputPoints,
-                                                this->vinvLine_,
-                                                this->vinvBubble_,
-                                                OPERATOR_VALUE,
-                                                ort );
     }
 
     virtual
