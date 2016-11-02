@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Irina Tezaur (ikalash@sandia.gov), Sandia
+// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -52,9 +52,7 @@
 #include "Piro_ObserverBase.hpp"
 
 #include "Piro_TempusStepperFactory.hpp"
-//IKT, 10/26/16, FIXME: create Piro::TempusStepControlFactory class?  Need to understand
-//what this class does and whether everything for it exists in Rythmos. 
-#include "Piro_RythmosStepControlFactory.hpp"
+#include "Piro_TempusStepControlFactory.hpp"
 
 #ifdef ALBANY_BUILD
 #include "Kokkos_DefaultNode.hpp"
@@ -133,9 +131,8 @@ public:
   void addStepperFactory(const std::string & stepperName,
                          const Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > & stepperFactories);
 
-  //IKT, 10/26/16, FIXME: rewrite the following using Tempus or remove if not needed 
   void addStepControlFactory(const std::string & stepControlName,
-                             const Teuchos::RCP<Piro::RythmosStepControlFactory<Scalar> > & step_control_strategy);
+                             const Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > & step_control_strategy);
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
@@ -174,8 +171,7 @@ private:
   // used for adding user defined steppers externally, this gives us "the open-close principal"
   std::map<std::string,Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > > stepperFactories;
 
-  //IKT, 10/26/16, FIXME: rewrite the following using Tempus or remove if not needed 
-  std::map<std::string,Teuchos::RCP<Piro::RythmosStepControlFactory<Scalar> > > stepControlFactories;
+  std::map<std::string,Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > > stepControlFactories;
 
   bool isInitialized;
 };

@@ -620,7 +620,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
       }
       //Set time to be final time at which the solve occurs (< t_final in the case we don't make it to t_final).
       //IKT: get final time from solutionHistory workingSpace, which is different than how it is done in Piro::RythmosSolver class.
-      //IKT, 11/1/16, FIXME: workingState pointer is null right now, so the following 
+      //IKT, 11/1/16, FIXME? workingState pointer is null right now, so the following 
       //code is commented out for now.  Use t_final and soln_dt in set_t instead for now.
       /*RCP<Tempus::SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
       const Scalar time = workingState->getTime();
@@ -699,7 +699,6 @@ addStepperFactory(const std::string & stepperName,const Teuchos::RCP<Piro::Tempu
 }
 
 
-//IKT, 10/31/16, FIXME: replace argument in the following function to be based on Tempus, not Rythmos. 
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -708,7 +707,7 @@ template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
 #endif
 addStepControlFactory(const std::string & stepControlName,
-                      const Teuchos::RCP<Piro::RythmosStepControlFactory<Scalar>> & step_control_strategy)
+                      const Teuchos::RCP<Piro::TempusStepControlFactory<Scalar>> & step_control_strategy)
 {
   stepControlFactories[stepControlName] = step_control_strategy;
 }

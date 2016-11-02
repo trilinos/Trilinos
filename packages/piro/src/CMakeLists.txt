@@ -133,6 +133,7 @@ IF (Piro_ENABLE_Tempus)
     Piro_TempusSolver.hpp
     Piro_TempusSolver_Def.hpp 
     Piro_TempusStepperFactory.hpp
+    Piro_TempusStepControlFactory.hpp
     Piro_ObserverToTempusIntegrationObserverAdapter.hpp 
     Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp) 
 ENDIF()
