@@ -148,6 +148,7 @@ namespace Anasazi {
     const ScalarType one      = SCT::one();
     const ScalarType zero     = SCT::zero();
     const MagType    zero_mag = Teuchos::ScalarTraits<MagType>::zero();
+    const MagType    errBound = SCT::eps()*10;
 
     // Don't change these two without checking the initialization of ind below
     const int numvecs   = 10;
@@ -344,7 +345,6 @@ namespace Anasazi {
 
       MVT::MvInit(*B,one);
       MVT::MvNorm(*B, norms);
-      bool BadNormWarning = false;
       for (int i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
           om->stream(Warnings)
@@ -352,13 +352,12 @@ namespace Anasazi {
             << "Vector had negative norm." << endl;
           return false;
         }
-        else if ( norms[i] != SCT::squareroot(MVT::GetGlobalLength(*B)) && !BadNormWarning ) {
+        else if ( SCT::magnitude(norms[i]-SCT::squareroot(MVT::GetGlobalLength(*B))) > errBound ) {
           om->stream(Warnings)
             << endl
             << "Warning testing MultiVecTraits::MvInit()." << endl
             << "Ones vector should have norm sqrt(dim)." << endl
             << "norms[i]: " << norms[i] << "\tdim: " << MVT::GetGlobalLength(*B) << endl << endl;
-          BadNormWarning = true;
         }
       }
     }
@@ -597,7 +596,7 @@ namespace Anasazi {
       for (int i=0; i<numvecs; i++) {
         if (i % 2 == 0) {
           // should be a vector from C
-          if ( normsB2[i] != normsC1[i/2] ) {
+          if ( SCT::magnitude(normsB2[i]-normsC1[i/2]) > errBound ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
               << "Copied vectors do not agree." << endl;
@@ -606,7 +605,7 @@ namespace Anasazi {
         }
         else {
           // should be an original vector
-          if ( normsB1[i] != normsB2[i] ) {
+          if ( SCT::magnitude(normsB1[i]-normsB2[i]) > errBound ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
               << "Incorrect vectors were modified." << endl;
@@ -618,7 +617,7 @@ namespace Anasazi {
       MVT::MvNorm(*B,normsB1);
       // verify that we copied and didn't reference
       for (int i=0; i<numvecs; i++) {
-        if ( normsB1[i] != normsB2[i] ) {
+        if ( SCT::magnitude(normsB1[i]-normsB2[i]) > errBound ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
             << "Copied vectors were not independent." << endl;
@@ -862,7 +861,7 @@ namespace Anasazi {
             << "Input arguments were modified." << endl;
           return false;
         }
-        else if ( normsC1[i] != normsD1[i] ) {
+        else if ( SCT::magnitude(normsC1[i]-normsD1[i]) > errBound ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
             << "Assignment did not work." << endl;
