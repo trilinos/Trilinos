@@ -47,14 +47,14 @@
 
 #include "Kokkos_Core.hpp"
 
-#include "test_03.hpp"
+#include "test_orientation_encoding.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
   
-  const int r_val = Intrepid2::Test::Orientation_Test03<Kokkos::Serial>(verbose);
+  const int r_val = Intrepid2::Test::OrientationEncoding<Kokkos::Serial>(verbose);
 
   Kokkos::finalize();
   return r_val;

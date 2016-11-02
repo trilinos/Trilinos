@@ -74,7 +74,7 @@ namespace Intrepid2 {
     }
     
     template<typename DeviceSpaceType>
-    int Orientation_Test01(const bool verbose) {
+    int OrientationEncoding(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing

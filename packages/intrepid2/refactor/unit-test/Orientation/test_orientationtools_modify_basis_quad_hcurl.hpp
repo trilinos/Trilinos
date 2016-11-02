@@ -75,7 +75,7 @@ namespace Intrepid2 {
     }
     
     template<typename QuadBasisType, typename DeviceSpaceType>
-    int Orientation_Test06(const bool verbose) {
+    int OrientationToolsModifyBasis_QUAD_HCURL(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -157,7 +157,7 @@ namespace Intrepid2 {
           auto refValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), refValues);
           for (ordinal_type cell=0;cell<numCells;++cell)           
             for (ordinal_type bf=0;bf<ndofBasis;++bf) 
-              refValuesHost(cell, bf) = bf;
+              refValuesHost(cell, bf) = (bf+1);
           Kokkos::deep_copy(refValues, refValuesHost);
 
           // modify refValues accounting for orientations
