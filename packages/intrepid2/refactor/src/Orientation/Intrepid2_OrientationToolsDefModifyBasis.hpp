@@ -178,23 +178,23 @@ namespace Intrepid2 {
         auto in  = Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         
         // vertex copy (no orientation)
-        for (auto vertId=0;vertId<numVerts;++vertId) {
-          const auto i = tagToOrdinal(0, vertId, 0);
+        for (ordinal_type vertId=0;vertId<numVerts;++vertId) {
+          const ordinal_type i = tagToOrdinal(0, vertId, 0);
           if (i != -1) // if dof does not exist i returns with -1
-            for (auto j=0;j<numPoints;++j)
-              for (auto k=0;k<dimBasis;++k)
+            for (ordinal_type j=0;j<numPoints;++j)
+              for (ordinal_type k=0;k<dimBasis;++k)
                 out(i, j, k) = in(i, j, k);
         }
         
         // interior copy
         {
-          const auto ordIntr = tagToOrdinal(intrDim, 0, 0);
+          const ordinal_type ordIntr = tagToOrdinal(intrDim, 0, 0);
           if (ordIntr != -1) {
-            const auto ndofIntr = ordinalToTag(ordIntr, 3);
-            for (auto i=0;i<ndofIntr;++i) {
-              const auto ii = tagToOrdinal(intrDim, 0, i);
-              for (auto j=0;j<numPoints;++j)
-                for (auto k=0;k<dimBasis;++k)
+            const ordinal_type ndofIntr = ordinalToTag(ordIntr, 3);
+            for (ordinal_type i=0;i<ndofIntr;++i) {
+              const ordinal_type ii = tagToOrdinal(intrDim, 0, i);
+              for (ordinal_type j=0;j<numPoints;++j)
+                for (ordinal_type k=0;k<dimBasis;++k)
                   out(ii, j, k) = in(ii, j, k);
             }
           }
@@ -206,23 +206,23 @@ namespace Intrepid2 {
           orts(cell).getEdgeOrientation(ortEdges, numEdges);
           
           // apply coeff matrix
-          for (auto edgeId=0;edgeId<numEdges;++edgeId) {
-            const auto ordEdge = tagToOrdinal(1, edgeId, 0);
+          for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
+            const ordinal_type ordEdge = tagToOrdinal(1, edgeId, 0);
             
             if (ordEdge != -1) {
-              const auto ndofEdge = ordinalToTag(ordEdge, 3);
+              const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
               const auto mat = Kokkos::subview(matData, 
                                                edgeId, ortEdges[edgeId], 
                                                Kokkos::ALL(), Kokkos::ALL());
               
-              for (auto j=0;j<numPoints;++j) 
-                for (auto i=0;i<ndofEdge;++i) {
-                  const auto ii = tagToOrdinal(1, edgeId, i);
+              for (ordinal_type j=0;j<numPoints;++j) 
+                for (ordinal_type i=0;i<ndofEdge;++i) {
+                  const ordinal_type ii = tagToOrdinal(1, edgeId, i);
                   
-                  for (auto k=0;k<dimBasis;++k) {
+                  for (ordinal_type k=0;k<dimBasis;++k) {
                     double temp = 0.0;
-                    for (auto l=0;l<ndofEdge;++l) {
-                      const auto ll = tagToOrdinal(1, edgeId, l);
+                    for (ordinal_type l=0;l<ndofEdge;++l) {
+                      const ordinal_type ll = tagToOrdinal(1, edgeId, l);
                       temp += mat(i,l)*in(ll, j, k);
                     }
                     out(ii, j, k) = temp;
@@ -238,23 +238,23 @@ namespace Intrepid2 {
           orts(cell).getFaceOrientation(ortFaces, numFaces);
           
           // apply coeff matrix
-          for (auto faceId=0;faceId<numFaces;++faceId) {
-            const auto ordFace = tagToOrdinal(2, faceId, 0);
+          for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
+            const ordinal_type ordFace = tagToOrdinal(2, faceId, 0);
             
             if (ordFace != -1) {
-              const auto ndofFace = ordinalToTag(ordFace, 3);
+              const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
               const auto mat = Kokkos::subview(matData, 
                                                numEdges+faceId, ortFaces[faceId], 
                                                Kokkos::ALL(), Kokkos::ALL());
               
-              for (auto j=0;j<numPoints;++j) 
-                for (auto i=0;i<ndofFace;++i) {
-                  const auto ii = tagToOrdinal(2, faceId, i);
+              for (ordinal_type j=0;j<numPoints;++j) 
+                for (ordinal_type i=0;i<ndofFace;++i) {
+                  const ordinal_type ii = tagToOrdinal(2, faceId, i);
                   
-                  for (auto k=0;k<dimBasis;++k) {
+                  for (ordinal_type k=0;k<dimBasis;++k) {
                     double temp = 0.0;
-                    for (auto l=0;l<ndofFace;++l) {
-                      const auto ll = tagToOrdinal(2, faceId, l);
+                    for (ordinal_type l=0;l<ndofFace;++l) {
+                      const ordinal_type ll = tagToOrdinal(2, faceId, l);
                       temp += mat(i,l)*in(ll, j, k);
                     }
                     out(ii, j, k) = temp;

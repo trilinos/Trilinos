@@ -1,7 +1,7 @@
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_01
-  SOURCES test_01.cpp
+  Test_OrientationEncoding
+  SOURCES test_orientation_encoding.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -9,8 +9,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_02
-  SOURCES test_02.cpp
+  Test_OrientationToolsCoeffMatrix
+  SOURCES test_orientationtools_coeff_matrix.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -18,8 +18,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_03
-  SOURCES test_03.cpp
+  Test_OrientationToolsMesh
+  SOURCES test_orientationtools_mesh.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -27,8 +27,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_04
-  SOURCES test_04.cpp
+  Test_OrientationToolsModifyBasis_LowerOrder
+  SOURCES test_orientationtools_modify_basis_lower_order.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -36,8 +36,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_05
-  SOURCES test_05.cpp
+  Test_OrientationToolsModifyBasis_HGRAD
+  SOURCES test_orientationtools_modify_basis_hgrad.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -45,8 +45,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_06
-  SOURCES test_06.cpp
+  Test_OrientationToolsModifyBasis_HCURL
+  SOURCES test_orientationtools_modify_basis_hcurl.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Test_OrientationToolsModifyBasis_HDIV
+  SOURCES test_orientationtools_modify_basis_hdiv.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"

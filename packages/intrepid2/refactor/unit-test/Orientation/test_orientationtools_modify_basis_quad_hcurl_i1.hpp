@@ -75,7 +75,7 @@ namespace Intrepid2 {
     }
     
     template<typename DeviceSpaceType>
-    int Orientation_Test03(const bool verbose) {
+    int OrientationToolsModifyBasis_QUAD_HCURLI1(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -99,12 +99,12 @@ namespace Intrepid2 {
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
-        << "|                 Unit Test (OrientationTools, getOrientation)                |\n"
+        << "|                 Unit Test (OrientationTools, getModifiedHcurl_I1_Basis)     |\n"
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
       int errorFlag = 0;
-      //const double tol = tolerence();
+      const double tol = tolerence();
 
       typedef OrientationTools<DeviceSpaceType> ots;
       try {
@@ -112,6 +112,10 @@ namespace Intrepid2 {
         {
           *outStream << "\n -- Testing Quadrilateral \n\n";
 
+          Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> cellBasis;
+          const auto cellTopo = cellBasis.getBaseCellTopology();
+          const ordinal_type ndofBasis = cellBasis.getCardinality();
+          
           // 
           // 9 12 13 16
           // 4  3 11 15
@@ -126,55 +130,75 @@ namespace Intrepid2 {
                                          { 4, 3,12, 9 },
                                          { 3,11,13,12 },
                                          {11,15,16,13 } };
-          
-          const ordinal_type refOrts[9][4] = { { 0,1,0,1 },
-                                            { 0,0,1,0 },
-                                            { 0,0,1,1 },
-                                            { 1,0,0,0 },
-                                            { 0,0,1,1 },
-                                            { 0,0,1,1 },
-                                            { 1,0,1,1 },
-                                            { 0,0,1,1 },
-                                            { 0,0,1,1 } };
-
           const ordinal_type numCells = 9, numVerts = 4, numEdges = 4;
-          const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
 
-          // view to store orientation 
-          Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
-
-          // view to import refMesh from host
+          // view to import refMesh from host          
           Kokkos::DynRankView<ordinal_type,Kokkos::LayoutRight,HostSpaceType> 
             elemNodesHost(&refMesh[0][0], numCells, numVerts);
           auto elemNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), elemNodesHost);
           Kokkos::deep_copy(elemNodes, elemNodesHost);
           
+          // compute orientations for cells (one time computation)
+          Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
           ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
-          // for comparison move data to host
           auto elemOrtsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), elemOrts);
+          Kokkos::deep_copy(elemOrtsHost, elemOrts);
           
-          for (auto cell=0;cell<numCells;++cell) {
-            // decode edge orientations
-            ordinal_type orts[4];
-            elemOrtsHost(cell).getEdgeOrientation(orts, numEdges);
+          // cell specific modified basis 
+          Kokkos::DynRankView<double,DeviceSpaceType> outValues("outValues", numCells, ndofBasis);
+          Kokkos::DynRankView<double,DeviceSpaceType> refValues("refValues", numCells, ndofBasis);
+          
+          auto refValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), refValues);
+          for (auto cell=0;cell<numCells;++cell)           
+            for (auto bf=0;bf<ndofBasis;++bf) 
+              refValuesHost(cell, bf) = (bf+1);
+          Kokkos::deep_copy(refValues, refValuesHost);
 
-            int flag = 0;
+          // modify refValues accounting for orientations
+          ots::modifyBasisByOrientation(outValues,
+                                        refValues,
+                                        elemOrts,
+                                        &cellBasis);
+
+          auto outValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), outValues);
+          Kokkos::deep_copy(outValuesHost, outValues);
+
+          for (auto cell=0;cell<numCells;++cell) {
+            int flag = 0 ;
             std::stringstream s1, s2;
+            
+            ordinal_type orts[numEdges];
+            elemOrtsHost(cell).getEdgeOrientation(orts, numEdges);
+            
+            const double ortVal[2] = { 1.0 , - 1.0 };
+
+            s1 << " :: edge(0000) = " ;
+            s2 << " :: edge(" << orts[0] << orts[1] << orts[2] << orts[3] << ") = ";
             for (auto edgeId=0;edgeId<numEdges;++edgeId) {
-              s1 << orts[edgeId] << "  ";
-              s2 << refOrts[cell][edgeId] << "  ";
-              flag += (orts[edgeId] != refOrts[cell][edgeId]);              
+              const auto ndof = cellBasis.getDofTag(cellBasis.getDofOrdinal(1, edgeId, 0))(3);
+              for (auto i=0;i<ndof;++i) {
+                const auto refOrd = cellBasis.getDofOrdinal(1, edgeId, i);
+                const auto outOrd = cellBasis.getDofOrdinal(1, edgeId, i);
+                s1 << std::setw(4) << refValuesHost(cell, outOrd);              
+                s2 << std::setw(4) << outValuesHost(cell, outOrd);              
+
+                flag += (std::abs(ortVal[orts[edgeId]]*outValuesHost(cell, outOrd) - refValuesHost(cell, refOrd)) > tol);
+              }
+
+              s1 << " // ";
+              s2 << " // ";
             }
-            *outStream << " cell id = " << cell 
-                       << "  computed edge ort = " << s1.str() 
-                       << " :: ref edge ort = " << s2.str() 
-                       << " \n";
+
+            *outStream << "\n cell = " << cell << "\n"
+                       << " - refValues = " << s1.str() << "\n"
+                       << " - outValues = " << s2.str() << "\n";
             if (flag) {
+              *outStream << "                      ^^^^^^^^^^^^ FAILURE\n";
               errorFlag += flag;
-              *outStream << "                    ^^^^^^^^^^^^^^ FAILURE\n ";
             }
           }
+          ots::clearCoeffMatrix();
         }
 
       } catch (std::exception err) {

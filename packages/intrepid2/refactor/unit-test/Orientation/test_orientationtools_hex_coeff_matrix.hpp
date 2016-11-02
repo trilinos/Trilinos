@@ -75,8 +75,8 @@ namespace Intrepid2 {
     }
     
     template<typename DeviceSpaceType>
-    int Orientation_Test02(const bool verbose) {
-
+    int OrientationToolsHexCoeffMatrix(const bool verbose) {
+      
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
 
@@ -104,7 +104,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       int errorFlag = 0;
-      const double tol = tolerence();
+      //const double tol = tolerence();
 
       typedef OrientationTools<DeviceSpaceType> ots;
       try {
@@ -114,109 +114,6 @@ namespace Intrepid2 {
           *outStream << "\n -- Testing order " << testOrder << "\n" 
                      << "===============================================================================\n"
                      << "\n";
-          {
-            // reference permutation is either inorder or inverse order
-            const ordinal_type refCoeff[4][2] = { { 0, 1 },
-                                                  { 0, 1 },
-                                                  { 1, 0 },
-                                                  { 1, 0 } };
-            const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-            const ordinal_type order = testOrder;
-
-            {
-              *outStream << "\n -- Testing Quadrilateral HGRAD \n\n";
-              Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType> cellBasis(order);
-              const auto matData = ots::createCoeffMatrix(&cellBasis);
-
-              auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-              Kokkos::deep_copy(matDataHost, matData);
-            
-              const ordinal_type lineDim = 1, numEdge = 4, numOrt = 2;
-              for (auto edgeId=0;edgeId<numEdge;++edgeId) {
-                const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
-                const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
-              
-                const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);            
-                for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-                  *outStream << "\n edgeId = " << edgeId << " edgeOrt = " << edgeOrt << "\n";
-                  const auto mat = Kokkos::subview(matDataHost, edgeId, edgeOrt, range, range);
-                  for (auto i=0;i<ndofEdge;++i) {
-                    for (auto j=0;j<ndofEdge;++j)
-                      *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
-                    *outStream << "\n";
-                  
-                    switch (refCoeff[edgeId][edgeOrt]) {
-                    case 0: errorFlag += (std::abs(mat(i,i) - 1.0) > tol); break;
-                    case 1: errorFlag += (std::abs(mat(i,ndofEdge-i-1) - 1.0) > tol); break;
-                    }
-                  
-                  }
-                } 
-              }
-            }
-            {
-              *outStream << "\n -- Testing Quadrilateral HCURL \n\n";
-              Basis_HCURL_QUAD_In_FEM<DeviceSpaceType> cellBasis(order);
-              const auto matData = ots::createCoeffMatrix(&cellBasis);
-
-              auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-              Kokkos::deep_copy(matDataHost, matData);
-          
-              const ordinal_type lineDim = 1, numEdge = 4, numOrt = 2;
-              for (auto edgeId=0;edgeId<numEdge;++edgeId) {
-                const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
-                const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
-              
-                const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);            
-                for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-                  *outStream << "\n edgeId = " << edgeId << " edgeOrt = " << edgeOrt << "\n";
-                  const auto mat = Kokkos::subview(matDataHost, edgeId, edgeOrt, range, range);
-                  for (auto i=0;i<ndofEdge;++i) {
-                    for (auto j=0;j<ndofEdge;++j)
-                      *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
-                    *outStream << "\n";
-                  
-                    switch (refCoeff[edgeId][edgeOrt]) {
-                    case 0: errorFlag += (std::abs(mat(i,i) - 1.0) > tol); break;
-                    case 1: errorFlag += (std::abs(mat(i,ndofEdge-i-1) + 1.0) > tol); break;
-                    }
-                  }
-                } 
-              }
-            }
-            {
-              *outStream << "\n -- Testing Quadrilateral HDIV \n\n";
-              Basis_HDIV_QUAD_In_FEM<DeviceSpaceType> cellBasis(order);
-              const auto matData = ots::createCoeffMatrix(&cellBasis);
-
-              auto matDataHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), matData);
-              Kokkos::deep_copy(matDataHost, matData);
-          
-              const ordinal_type lineDim = 1, numEdge = 4, numOrt = 2;
-              for (auto edgeId=0;edgeId<numEdge;++edgeId) {
-                const auto ordEdge = cellBasis.getDofOrdinal(lineDim, edgeId, 0);
-                const auto ndofEdge = cellBasis.getDofTag(ordEdge)(3);
-              
-                const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofEdge);            
-                for (auto edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-                  *outStream << "\n edgeId = " << edgeId << " edgeOrt = " << edgeOrt << "\n";
-                  const auto mat = Kokkos::subview(matDataHost, edgeId, edgeOrt, range, range);
-                  for (auto i=0;i<ndofEdge;++i) {
-                    for (auto j=0;j<ndofEdge;++j)
-                      *outStream << std::setw(5) << std::fixed << std::setprecision(1) << mat(i,j);
-                    *outStream << "\n";
-                  
-                    switch (refCoeff[edgeId][edgeOrt]) {
-                    case 0: errorFlag += (std::abs(mat(i,i) - 1.0) > tol); break;
-                    case 1: errorFlag += (std::abs(mat(i,ndofEdge-i-1) + 1.0) > tol); break;
-                    }
-                  }
-                } 
-              }
-            }
-            ots::clearCoeffMatrix();
-          }
-
           {
             // I do not know how I can provide reference permutation for hexa or any 3D elements
             const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
