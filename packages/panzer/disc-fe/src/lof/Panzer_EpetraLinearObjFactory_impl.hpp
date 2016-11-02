@@ -633,31 +633,34 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::bui
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
 }
 
-// build the ghosted map
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildGhostedMap() const
+// Build the ghosted map.
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
+buildGhostedMap() const
 {
-   std::vector<int> indices;
-
-   // get the global indices
-   gidProvider_->getGhostedIndices(indices);
-
-   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
+  std::vector<int> indices;
+//  if (newWay)                                                                  // JMG:  We probably need these ifs in here, but
+//    gidProvider_->getGhostedIndices(indices);                                  //       I'm trying to get things working where
+//  else                                                                         //       the ghosted map actually pertains to the
+    gidProvider_->getOwnedAndGhostedIndices(indices);                            //       owned and ghosted indices.
+  return Teuchos::rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0,
+    *comm_));
 }
 
-// build the ghosted map
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildGhostedColMap() const
+// Build the ghosted map.
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
+buildGhostedColMap() const
 {
-   if(!hasColProvider_)  
-     return buildGhostedMap();
-
-   std::vector<int> indices;
-
-   // get the global indices
-   colGidProvider_->getGhostedIndices(indices);
-
-   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
+  if (!hasColProvider_)  
+    return buildGhostedMap();
+  std::vector<int> indices;
+//  if (newWay)
+//    colGidProvider_->getGhostedIndices(indices);
+//  else
+    colGidProvider_->getOwnedAndGhostedIndices(indices);
+  return Teuchos::rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0,
+    *comm_));
 }
 
 // get the graph of the crs matrix

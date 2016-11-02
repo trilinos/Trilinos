@@ -215,56 +215,63 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   std::vector<int> LIDs;
+  std::vector<int> LIDs;
 
-   // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  // For convenience, pull out some objects from the workset.
+  std::string blockId = this->wda(workset).block_id;
+  const std::vector<std::size_t>& localCellIds =
+    this->wda(workset).cell_local_ids;
 
-   // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
-   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   //       may be more expensive!
+  // NOTE: A reordering of these loops will likely improve performance
+  //       The "getGIDFieldOffsets may be expensive.  However the
+  //       "getElementGIDs" can be cheaper. However the lookup for LIDs
+  //       may be more expensive!
 
-   // gather operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+  // Gather operation for each cell in the workset.
+  int numOwnedIndices = globalIndexer_->getNumOwned();
+  for (std::size_t worksetCellIndex = 0;
+    worksetCellIndex < localCellIds.size(); ++worksetCellIndex)
+  {
+    std::size_t cellLocalId = localCellIds[worksetCellIndex];
+    LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+    // Loop over the fields to be gathered.
+    for (std::size_t fieldIndex = 0; fieldIndex < gatherFields_.size();
+      ++fieldIndex)
+    {
+      int fieldNum = fieldIds_[fieldIndex];
+      const std::vector<int>& elmtOffset =
+        globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
 
-      // loop over the fields to be gathered
-      for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-         // loop over basis functions and fill the fields
-         for (std::size_t basis = 0; basis < elmtOffset.size(); ++basis)
-         {
-            int offset = elmtOffset[basis];
-            int lid    = LIDs[offset];
-            if (x_.is_null())
-            {
-              if (lid < globalIndexer_->getNumOwned())
-              {
-                Thyra::ConstDetachedVectorView<double> xOwned(xOwned_);
-                (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
-                  xOwned[lid];
-              }
-              else
-              {
-                Epetra_Vector& xGhosted = *xGhosted_;
-                (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
-                  xGhosted[lid];
-              }
-            }
-            else
-            {
-              Epetra_Vector& x = *x_;
-              (gatherFields_[fieldIndex])(worksetCellIndex, basis) = x[lid];
-            }
-         }
+      // Loop over the basis functions and fill the fields.
+      for (std::size_t basis = 0; basis < elmtOffset.size(); ++basis)
+      {
+        int offset = elmtOffset[basis];
+        int lid    = LIDs[offset];
+        if (x_.is_null())
+        {
+          if (lid < numOwnedIndices)
+          {
+            Thyra::ConstDetachedVectorView<double> xOwned(xOwned_);
+            (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
+              xOwned[lid];
+          }
+          else
+          {
+            Epetra_Vector& xGhosted = *xGhosted_;
+            (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
+//              xGhosted[lid - numOwnedIndices];                                 // JMG:  This is what it should be but it's
+              xGhosted[lid];                                                     //       commented out because I'm trying to get
+          }                                                                      //       things working where xGhosted_ is
+        }                                                                        //       actually the owned and ghosted indices.
+        else
+        {
+          Epetra_Vector& x = *x_;
+          (gatherFields_[fieldIndex])(worksetCellIndex, basis) = x[lid];
+        }
       }
-   }
+    }
+  }
 }
 
 // **********************************************************************
