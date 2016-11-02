@@ -104,14 +104,14 @@ namespace Intrepid2 {
           ort = subcellOrt;
         break;
       }
-      // case shards::Triangle<>::key: {
-      //   if (subcellOrt >= 0 && subcellOrt <  6) {
-      //     const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
-      //     const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
-      //     ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
-      //   }
-      //   break;
-      // }
+      case shards::Triangle<>::key: {
+        if (subcellOrt >= 0 && subcellOrt <  6) {
+          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
+          const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
+          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+        }
+        break;
+      }
       case shards::Quadrilateral<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  8) {
           const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 3);
@@ -267,6 +267,12 @@ namespace Intrepid2 {
       case shards::Line<>::key: {
         // second dimension is dummy
         const ordinal_type c[2] = { 1, -1 };
+        orient_values(c[ort]);
+        break;
+      }
+      case shards::Triangle<>::key: {
+        const ordinal_type c[6] = {  1,  1,  1,
+                                    -1, -1, -1 };
         orient_values(c[ort]);
         break;
       }

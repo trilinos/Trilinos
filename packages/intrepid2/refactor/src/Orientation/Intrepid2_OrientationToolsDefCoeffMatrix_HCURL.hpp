@@ -104,14 +104,14 @@ namespace Intrepid2 {
           ort = subcellOrt;
         break;
       }
-      // case shards::Triangle<>::key: {
-      //   if (subcellOrt >= 0 && subcellOrt <  6) {
-      //     const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
-      //     const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
-      //     ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
-      //   }
-      //   break;
-      // }
+      case shards::Triangle<>::key: {
+        if (subcellOrt >= 0 && subcellOrt <  6) {
+          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
+          const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
+          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+        }
+        break;
+      }
       case shards::Quadrilateral<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  8) {
           const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 3);
@@ -287,6 +287,23 @@ namespace Intrepid2 {
         // second dimension is dummy
         const ordinal_type c[2][1][2] = { { {  1, 0 } },     // 0
                                           { { -1, 0 } } };   // 1
+        orient_values(c[ort]);
+        break;
+      }
+      case shards::Triangle<>::key: {
+        subcellBasis.getValues(outValues, ortPtsSubcell);
+        const ordinal_type c[8][2][2] = { { {  1,  0 },
+                                            {  0,  1 } }, // 0
+                                          { {  0,  1 },
+                                            { -1, -1 } }, // 1
+                                          { { -1, -1 },
+                                            {  1,  0 } }, // 2
+                                          { {  0,  1 },
+                                            {  1,  0 } }, // 3
+                                          { { -1, -1 },
+                                            {  0,  1 } }, // 4
+                                          { {  1,  0 },
+                                            { -1, -1 } } }; // 5
         orient_values(c[ort]);
         break;
       }
