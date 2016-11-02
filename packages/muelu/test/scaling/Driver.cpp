@@ -127,6 +127,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   std::string domainMapFile;                         clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
   std::string rangeMapFile;                          clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
   std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,        "matrix data file");
+  std::string rhsFile;                               clp.setOption("rhs",                   &rhsFile,           "rhs data file");
   std::string coordFile;                             clp.setOption("coords",                &coordFile,         "coordinates data file");
   std::string nullFile;                              clp.setOption("nullspace",             &nullFile,          "nullspace data file");
   int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
@@ -270,6 +271,24 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       nullspace = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(nullFile, map);
   }
 
+  RCP<MultiVector> X = VectorFactory::Build(map);
+  RCP<MultiVector> B = VectorFactory::Build(map);
+
+  if (rhsFile.empty()) {
+    // we set seed for reproducibility
+    Utilities::SetRandomSeed(*comm);
+    X->randomize();
+    A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
+
+    Teuchos::Array<typename STS::magnitudeType> norms(1);
+    B->norm2(norms);
+    B->scale(one/norms[0]);
+
+  } else {
+    // read in B
+    B = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(rhsFile, map);
+  }
+
   comm->barrier();
   tm = Teuchos::null;
 
@@ -383,21 +402,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       // =========================================================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
-
-      RCP<Vector> X = VectorFactory::Build(map);
-      RCP<Vector> B = VectorFactory::Build(map);
-
-      {
-        // we set seed for reproducibility
-        Utilities::SetRandomSeed(*comm);
-        X->randomize();
-        A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
-
-        Teuchos::Array<typename STS::magnitudeType> norms(1);
-        B->norm2(norms);
-        B->scale(one/norms[0]);
-        X->putScalar(zero);
-      }
+      X->putScalar(zero);
       tm = Teuchos::null;
 
       if (writeMatricesOPT > -2) {

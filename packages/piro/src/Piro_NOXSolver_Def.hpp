@@ -95,7 +95,6 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
     else 
       model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model_));
   }
-  //end IKT additions 
   solver->setModel(model);
 }
 

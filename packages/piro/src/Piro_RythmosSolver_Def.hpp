@@ -383,9 +383,9 @@ void Piro::RythmosSolver<Scalar>::initialize(
      //
      *out << "\nC) Create and initalize the forward model ...\n";
      //
-     // C.1) Create the underlying EpetraExt::ModelEvaluator
+     // C.1) Create the underlying Thyra::ModelEvaluator
      // already constructed as "model". Decorate if needed.
-     // TODO: Generelize to any explicit method, option to invert mass matrix
+     // TODO: Generalize to any explicit method, option to invert mass matrix
      if (stepperType == "Explicit RK") {
       if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
@@ -986,6 +986,8 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
         modelInArgs.set_p(l+1, p_in2);
       }
       //Set time to be final time at which the solve occurs (< t_final in the case we don't make it to t_final).
+      //IKT, 11/1/16: it seems that the argument of set_t should be fwdStateStepper->getTimeRange().upper()
+      //not fwdStateStepper->getTimeRange().lower() ...
       modelInArgs.set_t(fwdStateStepper->getTimeRange().lower());
     }
 

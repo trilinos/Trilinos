@@ -59,13 +59,23 @@
 
 #include "Intrepid2_Basis.hpp"
 
+// -- HGRAD family
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
+// -- HCURL family
+//#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
-#include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
+#include "Intrepid2_HCURL_HEX_In_FEM.hpp"
 
+// -- HDIV family
+//#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
+//#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HDIV_HEX_In_FEM.hpp"
+
+// -- Lower order family
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 #include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
 
@@ -249,6 +259,10 @@ namespace Intrepid2 {
     static void init_HCURL_QUAD_In_FEM(CoeffMatrixDataViewType matData,
                                        const ordinal_type order);
 
+    inline
+    static void init_HCURL_HEX_In_FEM(CoeffMatrixDataViewType matData,
+                                      const ordinal_type order);
+
     //
     // High order elements transformation matrices for HDIV
     // 
@@ -256,6 +270,10 @@ namespace Intrepid2 {
     inline
     static void init_HDIV_QUAD_In_FEM(CoeffMatrixDataViewType matData,
                                       const ordinal_type order);
+
+    inline
+    static void init_HDIV_HEX_In_FEM(CoeffMatrixDataViewType matData,
+                                     const ordinal_type order);
 
     //
     // I1 element specialization

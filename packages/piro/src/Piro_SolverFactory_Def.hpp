@@ -51,15 +51,19 @@
 #include "Piro_TrapezoidRuleSolver.hpp"
 #endif /* HAVE_PIRO_NOX */
 
-#ifdef HAVE_PIRO_RYTHMOS
-// This "define" turns on the extended template interface in RythmosSolver. This should be cleaned up at some
-// point.
+
+// This "define" turns on the extended template interface in RythmosSolver and TempusSolver.
+// This should be cleaned up at some.
+#if defined(HAVE_PIRO_RYTHMOS) || defined(HAVE_PIRO_TEMPUS) 
 #define ALBANY_BUILD
+#endif
+
+#ifdef HAVE_PIRO_RYTHMOS
+// point.
 #include "Piro_RythmosSolver.hpp"
 #endif /* HAVE_PIRO_RYTHMOS */
 
 #ifdef HAVE_PIRO_TEMPUS
-#define ALBANY_BUILD
 #include "Piro_TempusSolver.hpp"  
 #endif /*HAVE_PIRO_TEMPUS */
 

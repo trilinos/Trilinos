@@ -157,7 +157,6 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<EnergyObjective<RealT> > obj
       = Teuchos::rcp(new EnergyObjective<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     Teuchos::RCP<Assembler<RealT> > assembler = obj->getAssembler();
-    assembler->printMeshData(*outStream);
 
     // Create state vector and set to zeroes
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
@@ -206,6 +205,8 @@ int main(int argc, char *argv[]) {
                << static_cast<RealT>(std::clock()-timerPDAS)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
 
+    // Output.
+    assembler->printMeshData(*outStream);
     assembler->outputTpetraVector(u_rcp,"state.txt");
     assembler->outputTpetraVector(hi_rcp,"upperBound.txt");
 

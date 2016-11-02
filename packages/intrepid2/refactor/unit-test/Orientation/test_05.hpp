@@ -152,7 +152,7 @@ namespace Intrepid2 {
           auto refValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), refValues);
           for (auto cell=0;cell<numCells;++cell)           
             for (auto bf=0;bf<ndofBasis;++bf) 
-              refValuesHost(cell, bf) = bf;
+              refValuesHost(cell, bf) = (bf+1);
           Kokkos::deep_copy(refValues, refValuesHost);
 
           // modify refValues accounting for orientations

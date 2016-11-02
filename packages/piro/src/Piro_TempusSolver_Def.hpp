@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Irina Tezaur (ikalash@sandia.gov), Sandia
+// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -42,20 +42,9 @@
 
 #include "Piro_TempusSolver.hpp"
 
-#include "Piro_ObserverToRythmosIntegrationObserverAdapter.hpp"
+#include "Piro_ObserverToTempusIntegrationObserverAdapter.hpp"
 #include "Piro_ValidPiroParameters.hpp"
 #include "Piro_MatrixFreeDecorator.hpp" 
-
-#include "Rythmos_BackwardEulerStepper.hpp"
-#include "Rythmos_ForwardEulerStepper.hpp"
-#include "Rythmos_ExplicitRKStepper.hpp"
-#include "Rythmos_ImplicitBDFStepper.hpp"
-#include "Rythmos_ThetaStepper.hpp"
-#include "Rythmos_SimpleIntegrationControlStrategy.hpp"
-#include "Rythmos_RampingIntegrationControlStrategy.hpp"
-#include "Rythmos_ForwardSensitivityStepper.hpp"
-#include "Rythmos_ImplicitBDFStepperRampingStepControl.hpp"
-#include "Rythmos_StepperAsModelEvaluator.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Array.hpp"
@@ -101,7 +90,7 @@ Piro::TempusSolver<Scalar>::TempusSolver() :
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 }
 
 #ifdef ALBANY_BUILD
@@ -117,7 +106,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
   std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
   if (jacobianSource == "Matrix-Free") {
     Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
@@ -143,7 +132,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > &observer)
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -159,117 +148,94 @@ void Piro::TempusSolver<Scalar>::initialize(
   *out << "\nA) Get the base parameter list ...\n";
   //
 
-  //IKT, 10/26/16, FIXME: convert the following to take in Tempus PL instead of Rythmos Solver. 
-/*  if (appParams->isSublist("Rythmos Solver")) {
+  if (appParams->isSublist("Tempus")) {
+    RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
+    *out << "tempusPL = " << *tempusPL << "\n"; 
+    RCP<Teuchos::ParameterList> integratorPL = sublist(tempusPL, "Tempus Integrator", true);
+    *out << "integratorPL = " << *integratorPL << "\n"; 
+    //IKT, 10/31/16, FIXME: currently there is no Verbosity Sublist in Tempus, but 
+    //Curt will add this at some point.  When this option is added, set Verbosity 
+    //based on that sublist, rather than hard-coding it here.
+    solnVerbLevel = Teuchos::VERB_HIGH;
 
-    RCP<Teuchos::ParameterList> rythmosSolverPL = sublist(appParams, "Rythmos Solver", true);
-    RCP<Teuchos::ParameterList> rythmosPL = sublist(rythmosSolverPL, "Rythmos", true);
-
-    {
-      const std::string verbosity = rythmosSolverPL->get("Verbosity Level", "VERB_DEFAULT");
-      if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
-      else if (verbosity == "VERB_DEFAULT") solnVerbLevel = Teuchos::VERB_DEFAULT;
-      else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
-      else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
-      else if (verbosity == "VERB_HIGH")    solnVerbLevel = Teuchos::VERB_HIGH;
-      else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
-      else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-         "Unknown verbosity option specified in Piro_TempusSolver.");
-    }
-
-    t_initial = rythmosPL->sublist("Integrator Settings").get("Initial Time", 0.0);
-    t_final = rythmosPL->sublist("Integrator Settings").get("Final Time", 0.1);
-
-    const std::string stepperType = rythmosPL->sublist("Stepper Settings")
-      .sublist("Stepper Selection").get("Stepper Type", "Backward Euler");
-     //
-     //    *out << "\nB) Create the Stratimikos linear solver factory ...\n";
-     //
-     // This is the linear solve strategy that will be used to solve for the
-     // linear system with the W.
-     //
-     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    t_initial = integratorPL->get<Scalar>("Initial Time", 0.0);
+    t_final = integratorPL->get<Scalar>("Final Time", 0.1);
+    RCP<Teuchos::ParameterList> stepperPL = sublist(tempusPL, "Tempus Stepper", true);
+    *out << "stepperPL = " << *stepperPL << "\n"; 
+    const std::string stepperType = stepperPL->get<std::string>("Stepper Type", "Backward Euler");
+    *out << "Stepper Type = " << stepperType << "\n"; 
+     
+    //
+    // *out << "\nB) Create the Stratimikos linear solver factory ...\n";
+    //
+    // This is the linear solve strategy that will be used to solve for the
+    // linear system with the W.
+    //
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
 #ifdef HAVE_PIRO_IFPACK2
-     typedef Thyra::PreconditionerFactoryBase<double> Base;
+    typedef Thyra::PreconditionerFactoryBase<double> Base;
 #ifdef ALBANY_BUILD
-     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, LocalOrdinal, GlobalOrdinal, Node> > Impl;
+    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, LocalOrdinal, GlobalOrdinal, Node> > Impl;
 #else
-     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
+    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
 #endif
-     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif
 #ifdef HAVE_PIRO_MUELU
 #ifdef ALBANY_BUILD
-     Stratimikos::enableMueLu<LocalOrdinal, GlobalOrdinal, Node>(linearSolverBuilder);
+    Stratimikos::enableMueLu<LocalOrdinal, GlobalOrdinal, Node>(linearSolverBuilder);
 #else
-     Stratimikos::enableMueLu(linearSolverBuilder);
+    Stratimikos::enableMueLu(linearSolverBuilder);
 #endif
 #endif
 
-     linearSolverBuilder.setParameterList(sublist(rythmosSolverPL, "Stratimikos", true));
-     rythmosSolverPL->validateParameters(*getValidTempusSolverParameters(),0);
-     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
-                                  createLinearSolveStrategy(linearSolverBuilder);
-     //
-     *out << "\nC) Create and initalize the forward model ...\n";
-     //
-     // C.1) Create the underlying EpetraExt::ModelEvaluator
-     // already constructed as "model". Decorate if needed.
-     // TODO: Generelize to any explicit method, option to invert mass matrix
-     if (stepperType == "Explicit RK") {
-      if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
+    linearSolverBuilder.setParameterList(sublist(tempusPL, "Stratimikos", true));
+    tempusPL->validateParameters(*getValidTempusParameters(),0);
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
+     
+    //
+    *out << "\nC) Create and initalize the forward model ...\n";
+
+    //
+    // C.1) Create the underlying Thyra::ModelEvaluator
+    // already constructed as "model". Decorate if needed.
+    // TODO: Generalize to any explicit method, option to invert mass matrix
+    if (stepperType == "Explicit RK") {
+      if (tempusPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-        rythmosSolverPL->get("Lump Mass Matrix", false);  //JF line does not do anything
+        tempusPL->get("Lump Mass Matrix", false);  //JF line does not do anything
 #ifdef ALBANY_BUILD
         model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
 #else
         model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
 #endif
-              sublist(rythmosSolverPL,"Stratimikos", true), origModel,
-              true,rythmosSolverPL->get("Lump Mass Matrix", false),false));
+        sublist(tempusPL,"Stratimikos", true), origModel, true, tempusPL->get("Lump Mass Matrix", false),false));
       }
-     }
-     // C.2) Create the Thyra-wrapped ModelEvaluator
+    }
+    // C.2) Create the Thyra-wrapped ModelEvaluator
 
-      thyraModel = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model, lowsFactory));
+    thyraModel = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model, lowsFactory));
 
-    const RCP<const Thyra::VectorSpaceBase<double> > x_space =
-      thyraModel->get_x_space();
+    const RCP<const Thyra::VectorSpaceBase<double> > x_space = thyraModel->get_x_space();
 
     //
     *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
-    //
-    fwdTimeStepSolver = Rythmos::timeStepNonlinearSolver<double>();
+     
+    //Create Tempus integrator with observer using tempusPL and model.
+    fwdStateIntegrator = Tempus::integratorBasic<Scalar>(tempusPL, model, observer);
 
-    if (rythmosSolverPL->getEntryPtr("NonLinear Solver")) {
-      const RCP<Teuchos::ParameterList> nonlinePL =
-                                 sublist(rythmosSolverPL, "NonLinear Solver", true);
-      fwdTimeStepSolver->setParameterList(nonlinePL);
-    }
-    // Force Default Integrator since this is needed for Observers
-        rythmosPL->sublist("Integrator Settings").sublist("Integrator Selection").
-      set("Integrator Type","Default Integrator");
+    //Get stepper from integrator
+    fwdStateStepper = fwdStateIntegrator->getStepper();
 
-    RCP<Rythmos::IntegratorBuilder<double> > ib = Rythmos::integratorBuilder<double>();
-    ib->setParameterList(rythmosPL);
-    Thyra::ModelEvaluatorBase::InArgs<double> ic = thyraModel->getNominalValues();
-    RCP<Rythmos::IntegratorBase<double> > integrator = ib->create(thyraModel,ic,fwdTimeStepSolver);
-    fwdStateIntegrator = Teuchos::rcp_dynamic_cast<Rythmos::DefaultIntegrator<double> >(integrator,true);
-
-    fwdStateStepper = fwdStateIntegrator->getNonconstStepper();
-
-    if (Teuchos::nonnull(observer))
-      fwdStateIntegrator->setIntegrationObserver(observer);
+  } 
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        appParams->isSublist("Tempus"),
+        Teuchos::Exceptions::InvalidParameter, std::endl <<
+        "Error! Piro::TempusSolver: must have Tempus sublist ");
 
   }
-else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        appParams->isSublist("Rythmos") || appParams->isSublist("Rythmos Solver"),
-        Teuchos::Exceptions::InvalidParameter, std::endl <<
-        "Error! Piro::TempusSolver: must have either Rythmos or Rythmos Solver sublist ");
-
-  }*/
 
   isInitialized = true;
 }
@@ -301,11 +267,11 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   solnVerbLevel(verbosityLevel),
   isInitialized(true)
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-  //IKT, 10/16/16, FIXME: convert the following to Tempus 
-  /*if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
-    fwdStateStepper->setNonconstModel(underlyingModel);
-  }*/
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+   TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter, std::endl <<
+        "Error! Piro::TempusSolver: constructor which changes underlying model is not yet supported!"); 
 }
 
 #ifdef ALBANY_BUILD
@@ -336,11 +302,12 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   solnVerbLevel(verbosityLevel),
   isInitialized(true)
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-  //IKT, 10/16/16, FIXME: convert the following to Tempus 
-  /*if (fwdStateStepper->acceptsModel() && fwdStateStepper->getModel() != underlyingModel) {
-    fwdStateStepper->setNonconstModel(underlyingModel);
-  }*/
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+   TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter, std::endl <<
+        "Error! Piro::TempusSolver: constructor which changes underlying model is not yet supported!"); 
 }
 
 #ifdef ALBANY_BUILD
@@ -353,7 +320,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TempusSolver<Scalar>::get_p_space(int l) const
 #endif
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p || l < 0,
       Teuchos::Exceptions::InvalidParameter,
@@ -375,7 +342,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TempusSolver<Scalar>::get_g_space(int j) const
 #endif
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g || j < 0,
       Teuchos::Exceptions::InvalidParameter,
@@ -402,7 +369,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TempusSolver<Scalar>::getNominalValues() const
 #endif
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
   Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model->getNominalValues();
   for (int l = 0; l < num_p; ++l) {
@@ -421,7 +388,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TempusSolver<Scalar>::createInArgs() const
 #endif
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(num_p);
@@ -438,7 +405,7 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 Piro::TempusSolver<Scalar>::createOutArgsImpl() const
 #endif
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
 
@@ -517,7 +484,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -610,197 +577,33 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     Teuchos::nonnull(dgxdp_out) || !dgdp_deriv_out.isEmpty();
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
-  if (!requestedSensitivities) {
+  RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
+  if (!requestedSensitivities) 
+  {
     //
     *out << "\nE) Solve the forward problem ...\n";
     //
-
-    fwdStateStepper->setInitialCondition(state_ic);
-
-    fwdStateIntegrator->setStepper(fwdStateStepper, t_final, true);
+    //
     *out << "T final : " << t_final << " \n";
 
-    Teuchos::Array<RCP<const Thyra::VectorBase<Scalar> > > x_final_array;
-    fwdStateIntegrator->getFwdPoints(
-        Teuchos::tuple<Scalar>(t_final), &x_final_array, NULL, NULL);
-    finalSolution = x_final_array[0];
+    //Get final solution from solutionHistory.
+    RCP<Tempus::SolutionState<Scalar> > solutionState = (*solutionHistory)[0];
+    finalSolution = solutionState->getX();
 
     if (Teuchos::VERB_MEDIUM <= solnVerbLevel) {
       std::cout << "Final Solution\n" << *finalSolution << std::endl;
     }
 
   }
-  //IKT, 10/26/16, FIXME: are sensitivities supported for Tempus?  
-  /*else { // Computing sensitivities
+  else { 
     //
     *out << "\nE) Solve the forward problem with Sensitivities...\n";
     //
-    RCP<Rythmos::ForwardSensitivityStepper<Scalar> > stateAndSensStepper =
-      Rythmos::forwardSensitivityStepper<Scalar>();
-    stateAndSensStepper->initializeSyncedSteppers(
-        model, l, model->getNominalValues(),
-        fwdStateStepper, fwdTimeStepSolver);
-
-    //
-    // Set the initial condition for the state and forward sensitivities
-    //
-
-    const RCP<Thyra::VectorBase<Scalar> > s_bar_init =
-      Thyra::createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
-    const RCP<Thyra::VectorBase<Scalar> > s_bar_dot_init =
-      Thyra::createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
-
-    if (Teuchos::is_null(initialConditionModel)) {
-      // The initial condition is assumed to be independent from the parameters
-      // Therefore, the initial condition for the sensitivity is zero
-      Thyra::assign(s_bar_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-    } else {
-      // Use initialConditionModel to compute initial condition for sensitivity
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> initCondInArgs = initialConditionModel->createInArgs();
-      initCondInArgs.set_p(l, inArgs.get_p(l));
-
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> initCondOutArgs = initialConditionModel->createOutArgs();
-      typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
-      const RCP<DMVPV> s_bar_init_downcasted = Teuchos::rcp_dynamic_cast<DMVPV>(s_bar_init);
-      const Thyra::ModelEvaluatorBase::Derivative<Scalar> initCond_deriv(
-          s_bar_init_downcasted->getNonconstMultiVector(),
-          Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-      initCondOutArgs.set_DgDp(initCondOutArgs.Ng() - 1, l, initCond_deriv);
-
-      initialConditionModel->evalModel(initCondInArgs, initCondOutArgs);
-    }
-    Thyra::assign(s_bar_dot_init.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-
-    RCP<const Rythmos::StateAndForwardSensitivityModelEvaluator<Scalar> >
-      stateAndSensModel = stateAndSensStepper->getStateAndFwdSensModel();
-
-    Thyra::ModelEvaluatorBase::InArgs<Scalar>
-      state_and_sens_ic = stateAndSensStepper->getModel()->createInArgs();
-
-    // Copy time, parameters etc.
-    state_and_sens_ic.setArgs(state_ic);
-    // Set initial condition for x_bar = [ x; s_bar ]
-    state_and_sens_ic.set_x(stateAndSensModel->create_x_bar_vec(state_ic.get_x(), s_bar_init));
-    // Set initial condition for x_bar_dot = [ x_dot; s_bar_dot ]
-    state_and_sens_ic.set_x_dot(stateAndSensModel->create_x_bar_vec(state_ic.get_x_dot(), s_bar_dot_init));
-
-    stateAndSensStepper->setInitialCondition(state_and_sens_ic);
-
-    //
-    // Use a StepperAsModelEvaluator to integrate the state+sens
-    //
-
-    const RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
-      stateAndSensIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
-          Teuchos::rcp_implicit_cast<Rythmos::StepperBase<Scalar> >(stateAndSensStepper),
-          Teuchos::rcp_implicit_cast<Rythmos::IntegratorBase<Scalar> >(fwdStateIntegrator),
-          state_and_sens_ic);
-    // StepperAsModelEvaluator outputs the solution as its last response
-    const int stateAndSensModelStateResponseIndex = stateAndSensIntegratorAsModel->Ng() - 1;
-
-    *out << "\nUse the StepperAsModelEvaluator to integrate state + sens x_bar(p,t_final) ... \n";
-    Teuchos::OSTab tab(out);
-
-    // Solution sensitivity in column-oriented (Jacobian) MultiVector form
-    RCP<const Thyra::MultiVectorBase<Scalar> > dxdp;
-
-    const RCP<Thyra::VectorBase<Scalar> > x_bar_final =
-      Thyra::createMember(stateAndSensIntegratorAsModel->get_g_space(stateAndSensModelStateResponseIndex));
-    // Extract pieces of x_bar_final to prepare output
-    {
-      const RCP<const Thyra::ProductVectorBase<Scalar> > x_bar_final_downcasted =
-        Thyra::productVectorBase<Scalar>(x_bar_final);
-
-      // Solution
-      const int solutionBlockIndex = 0;
-      finalSolution = x_bar_final_downcasted->getVectorBlock(solutionBlockIndex);
-
-      // Sensitivity
-      const int sensitivityBlockIndex = 1;
-      const RCP<const Thyra::VectorBase<Scalar> > s_bar_final =
-        x_bar_final_downcasted->getVectorBlock(sensitivityBlockIndex);
-      {
-        typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
-        const RCP<const DMVPV> s_bar_final_downcasted = Teuchos::rcp_dynamic_cast<const DMVPV>(s_bar_final);
-
-        dxdp = s_bar_final_downcasted->getMultiVector();
-      }
-    }
-
-    Thyra::eval_g(
-        *stateAndSensIntegratorAsModel,
-        l, *state_ic.get_p(l),
-        t_final,
-        stateAndSensModelStateResponseIndex, x_bar_final.get()
-        );
-
-    *out
-      << "\nx_bar_final = x_bar(p,t_final) evaluated using "
-      << "stateAndSensIntegratorAsModel:\n"
-      << Teuchos::describe(*x_bar_final,solnVerbLevel);
-
-    if (Teuchos::nonnull(dgxdp_out)) {
-      Thyra::assign(dgxdp_out.ptr(), *dxdp);
-    }
-
-    if (!dgdp_deriv_out.isEmpty()) {
-      RCP<Thyra::DefaultAddedLinearOp<Scalar> > dgdp_op_out;
-      {
-        const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv_out.getLinearOp();
-        if (Teuchos::nonnull(dgdp_op)) {
-          dgdp_op_out = Teuchos::rcp_dynamic_cast<Thyra::DefaultAddedLinearOp<Scalar> >(dgdp_op);
-          dgdp_op_out.assert_not_null();
-        }
-      }
-
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model->createInArgs();
-      {
-        modelInArgs.set_x(finalSolution);
-        if (num_p > 0) {
-          modelInArgs.set_p(l, p_in);
-        }
-      }
-
-      // require dgdx, dgdp from model
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
-      {
-        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_deriv(model->create_DgDx_op(j));
-        modelOutArgs.set_DgDx(j, dgdx_deriv);
-
-        Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv;
-        if (Teuchos::nonnull(dgdp_op_out)) {
-          dgdp_deriv = model->create_DgDp_op(j, l);
-        } else {
-          dgdp_deriv = dgdp_deriv_out;
-        }
-        modelOutArgs.set_DgDp(j, l, dgdp_deriv);
-      }
-
-      model->evalModel(modelInArgs, modelOutArgs);
-
-      const RCP<const Thyra::LinearOpBase<Scalar> > dgdx =
-        modelOutArgs.get_DgDx(j).getLinearOp();
-
-      // dgdp_out = dgdp + <dgdx, dxdp>
-      if (Teuchos::nonnull(dgdp_op_out)) {
-        Teuchos::Array<RCP<const Thyra::LinearOpBase<Scalar> > > op_args(2);
-        {
-          op_args[0] = modelOutArgs.get_DgDp(j, l).getLinearOp();
-          op_args[1] = Thyra::multiply<Scalar>(dgdx, dxdp);
-        }
-        dgdp_op_out->initialize(op_args);
-      } else {
-        const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv_out = dgdp_deriv_out.getMultiVector();
-        Thyra::apply(
-            *dgdx,
-            Thyra::NOTRANS,
-            *dxdp,
-            dgdp_mv_out.ptr(),
-            Teuchos::ScalarTraits<Scalar>::one(),
-            Teuchos::ScalarTraits<Scalar>::one());
-      }
-    }
-  }*/
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter, std::endl <<
+        "Error! Piro::TempusSolver: sensitivities with Tempus are not yet supported!");
+  }
 
   *out << "\nF) Check the solution to the forward problem ...\n";
 
@@ -816,7 +619,16 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
         modelInArgs.set_p(l+1, p_in2);
       }
       //Set time to be final time at which the solve occurs (< t_final in the case we don't make it to t_final).
-      modelInArgs.set_t(fwdStateStepper->getTimeRange().lower());
+      //IKT: get final time from solutionHistory workingSpace, which is different than how it is done in Piro::RythmosSolver class.
+      //IKT, 11/1/16, FIXME: workingState pointer is null right now, so the following 
+      //code is commented out for now.  Instead just set t to t_final which makes sense unless we don't make 
+      //it to t_final.
+      /*RCP<Tempus::SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
+      const Scalar time = workingState->getTime();
+      const Scalar dt   = workingState->getTimeStep();
+      const Scalar t = time + dt;
+      modelInArgs.set_t(t);*/
+      modelInArgs.set_t(t_final);
     }
 
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();
@@ -862,14 +674,15 @@ Piro::TempusSolver<Scalar>::getValidTempusParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
     Teuchos::rcp(new Teuchos::ParameterList("ValidTempusSolverParams"));
-  //IKT, 10/26/16, FIXME: put correct parameter list validation for Tempus 
-  /*
-  validPL->sublist("Rythmos", false, "");
+  validPL->sublist("Tempus", false, "");
   validPL->sublist("Stratimikos", false, "");
   validPL->sublist("NonLinear Solver", false, "");
-  validPL->set<std::string>("Verbosity Level", "", "");
+  //validPL->set<std::string>("Verbosity Level", "", "");
   validPL->set<bool>("Invert Mass Matrix", false, "");
-  validPL->set<bool>("Lump Mass Matrix", false, "");*/
+  validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<std::string>("Integrator Name", "Tempus Integrator", "");
+  validPL->sublist("Tempus Integrator", false, "");
+  validPL->sublist("Tempus Stepper", false, "");
   return validPL;
 }
 
@@ -885,6 +698,8 @@ addStepperFactory(const std::string & stepperName,const Teuchos::RCP<Piro::Tempu
   stepperFactories[stepperName] = factory;
 }
 
+
+//IKT, 10/31/16, FIXME: replace argument in the following function to be based on Tempus, not Rythmos. 
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -910,13 +725,13 @@ Piro::tempusSolver(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
 {
-  std::cout << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-  //Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer;
+  Teuchos::RCP<Teuchos::FancyOStream> out(Teuchos::VerboseObjectBase::getDefaultOStream());
+  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
   Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > observer;
-  //IKT, 10/26/16, FIXME: implement Piro::ObserverToTempusIntegrationObserverAdapter class?  
+  //IKT, 10/31/16, FIXME: guts of ObserverToTempusIntegrationObserverAdapter class need to be filled in.
+  //Then uncomment the following.
   /*if (Teuchos::nonnull(piroObserver)) {
-    observer = Teuchos::rcp(
-        new ObserverToRythmosIntegrationObserverAdapter<Scalar>(piroObserver));
+    observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(piroObserver));
   }*/
 
 #ifdef ALBANY_BUILD
@@ -926,4 +741,3 @@ Piro::tempusSolver(
 #endif
 
 }
-

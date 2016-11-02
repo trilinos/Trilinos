@@ -66,7 +66,8 @@ namespace Intrepid2 {
                const inputViewType  input,
                /**/  workViewType   work,
                const vinvViewType   vinvLine,
-               const vinvViewType   vinvBubble) {
+               const vinvViewType   vinvBubble,
+               const ordinal_type   ort ) {
       const ordinal_type cardLine = vinvLine.dimension(0);
       const ordinal_type cardBubble = vinvBubble.dimension(0);
 
@@ -93,41 +94,72 @@ namespace Intrepid2 {
         ptr += (cardBubble*npts);
         
         // tensor product
-        ordinal_type idx = 0;
         {
-          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
-            getValues(outputBubble, input_x, workLine, vinvBubble);
-          
-          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
-            getValues(outputLine, input_y, workLine, vinvLine);
-          
-          // x component (lineBasis(y) bubbleBasis(x))
-          const auto output_x = outputBubble;
-          const auto output_y = outputLine;
-          
-          for (ordinal_type j=0;j<cardLine;++j) // y      
-            for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
-              for (ordinal_type k=0;k<npts;++k) {
-                output(idx,k,0) = output_x(i,k)*output_y(j,k);
-                output(idx,k,1) = 0.0;
-              }
-        }
-        {
-          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
-            getValues(outputBubble, input_y, workLine, vinvBubble);
-          
-          Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
-            getValues(outputLine, input_x, workLine, vinvLine);
+          ordinal_type idx = 0;
+          const ordinal_type ortFlip[8] = { 0, 1, 0, 1,
+                                            1, 0, 1, 0 };
+          const bool flip = ortFlip[ort];
+          {
+            const ordinal_type ortBubble[8] = { 0, 0, 1, 1, 
+                                                0, 1, 1, 0 };
+            
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(outputBubble, input_x, workLine, vinvBubble, 0, ortBubble[ort]);
+            
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(outputLine, input_y, workLine, vinvLine);
+            
+            // x component (lineBasis(y) bubbleBasis(x))
+            const auto output_x = outputBubble;
+            const auto output_y = outputLine;
+            
+            if (flip) {
+              // do something 
+              for (ordinal_type j=0;j<cardLine;++j) // y      
+                for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
+                  for (ordinal_type k=0;k<npts;++k) {
+                    output(idx,k,0) = 0.0;
+                    output(idx,k,1) = output_x(i,k)*output_y(j,k);
+                  }
+            } else {
+              for (ordinal_type j=0;j<cardLine;++j) // y      
+                for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
+                  for (ordinal_type k=0;k<npts;++k) {
+                    output(idx,k,0) = output_x(i,k)*output_y(j,k);
+                    output(idx,k,1) = 0.0;
+                  }
+            }
+          }
+          {
+            const ordinal_type ortBubble[8] = { 0, 1, 1, 0,
+                                                0, 0, 1, 1 };
+            
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(outputBubble, input_y, workLine, vinvBubble, 0, ortBubble[ort]);
+            
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(outputLine, input_x, workLine, vinvLine);
+            
+            // y component (bubbleBasis(y) lineBasis(x))
+            const auto output_x = outputLine;
+            const auto output_y = outputBubble;
 
-          // y component (bubbleBasis(y) lineBasis(x))
-          const auto output_x = outputLine;
-          const auto output_y = outputBubble;
-          for (ordinal_type j=0;j<cardBubble;++j) // y      
-            for (ordinal_type i=0;i<cardLine;++i,++idx) // x
-              for (ordinal_type k=0;k<npts;++k) {
-                output(idx,k,0) = 0.0;
-                output(idx,k,1) = output_x(i,k)*output_y(j,k);
-              }
+            if (flip) {
+              for (ordinal_type j=0;j<cardBubble;++j) // y      
+                for (ordinal_type i=0;i<cardLine;++i,++idx) // x
+                  for (ordinal_type k=0;k<npts;++k) {
+                    output(idx,k,0) = output_x(i,k)*output_y(j,k);
+                    output(idx,k,1) = 0.0;
+                  }
+            } else {
+              for (ordinal_type j=0;j<cardBubble;++j) // y      
+                for (ordinal_type i=0;i<cardLine;++i,++idx) // x
+                  for (ordinal_type k=0;k<npts;++k) {
+                    output(idx,k,0) = 0.0;
+                    output(idx,k,1) = output_x(i,k)*output_y(j,k);
+                  }
+            }
+          }
         }
         break;
       }
@@ -210,7 +242,8 @@ namespace Intrepid2 {
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvLine,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
-               const EOperator operatorType ) {
+               const EOperator operatorType,
+               const ordinal_type ort ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
@@ -226,7 +259,7 @@ namespace Intrepid2 {
       case OPERATOR_VALUE: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble) );
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, ort) );
         break;
       }
       case OPERATOR_CURL: {

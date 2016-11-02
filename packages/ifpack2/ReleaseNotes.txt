@@ -2,6 +2,37 @@
 Release Notes for Trilinos Package Ifpack2
 ------------------------------------------
 
+Development version (12.9)
+--------------------------
+
+* Experimental multithreaded Gauss-Seidel
+
+This uses a new thread-parallel graph coloring algorithm implemented
+in KokkosKernels.  Ifpack2's support for this lives in
+Ifpack2::Relaxation.  Currently, building it is disabled by default
+(see #288).  Enabling it requires enabling the following CMake options
+that are currently OFF by default:
+
+  - TpetraKernels_ENABLE_Experimental
+  - Ifpack2_ENABLE_Experimental
+  - Ifpack2_ENABLE_Experimental_KokkosKernels_Features
+
+* Ifpack2::Krylov is really SUPER deprecated now
+
+It's been deprecated for a LONG time, complete with deprecated
+warnings.  This didn't suffice for warning some users, so I moved the
+class to the new Ifpack2::DeprecatedAndMayDisappearAtAnyTime
+namespace.
+
+* Encapsulate local sparse triangular solves in a new class,
+  LocalSparseTriangularSolver
+
+* Fix various issues
+
+Issues fix include (but are not limited to) #672, #570, #567, #558,
+#551, #544, #409, #234, and #64.
+
+
 Trilinos 12.6:
 ---------------
 

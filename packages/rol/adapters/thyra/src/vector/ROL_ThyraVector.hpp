@@ -267,7 +267,8 @@ public:
   /** \brief Returns \f$ \| y \| \f$ where \f$y = \mbox{*this}\f$.
   */
   Real norm() const {
-    return ::Thyra::norm_2<Real>(*thyra_vec_);
+    // return ::Thyra::norm_2<Real>(*thyra_vec_);
+    return std::sqrt(dot(*this));
   } 
 
   /** \brief Clone to make a new (uninitialized) vector.

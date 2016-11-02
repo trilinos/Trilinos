@@ -126,6 +126,9 @@ template <class Matrix, class Vector>
 int
 KLU2<Matrix,Vector>::symbolicFactorization_impl()
 {
+  if (data_.symbolic_ != NULL)
+      ::KLU2::klu_free_symbolic<slu_type, local_ordinal_type>
+                         (&(data_.symbolic_), &(data_.common_)) ;
   data_.symbolic_ = ::KLU2::klu_analyze<slu_type, local_ordinal_type>
                 ((local_ordinal_type)this->globalNumCols_, colptr_.getRawPtr(),
                  rowind_.getRawPtr(), &(data_.common_)) ;
@@ -160,6 +163,9 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
 
+    if (data_.numeric_ != NULL)
+      ::KLU2::klu_free_numeric<slu_type, local_ordinal_type>
+                         (&(data_.numeric_), &(data_.common_)) ;
     data_.numeric_ = ::KLU2::klu_factor<slu_type, local_ordinal_type>
                 (colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr(),
                 data_.symbolic_, &(data_.common_)) ;

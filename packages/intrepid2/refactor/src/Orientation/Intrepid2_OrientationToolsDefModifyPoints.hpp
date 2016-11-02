@@ -150,13 +150,14 @@ namespace Intrepid2 {
       
       switch (ort) {
       case 0: ot0 = lambda[0][0]; ot1 = lambda[1][0]; break;
-      case 1: ot0 = lambda[1][0]; ot1 = lambda[0][1]; break;
-      case 2: ot0 = lambda[0][1]; ot1 = lambda[0][1]; break;
-      case 3: ot0 = lambda[1][1]; ot1 = lambda[0][0]; break;
+      case 1: ot0 = lambda[1][1]; ot1 = lambda[0][0]; break;
+      case 2: ot0 = lambda[0][1]; ot1 = lambda[1][1]; break;
+      case 3: ot0 = lambda[1][0]; ot1 = lambda[0][1]; break;
+        // flip
       case 4: ot0 = lambda[1][0]; ot1 = lambda[0][0]; break;
-      case 5: ot0 = lambda[0][0]; ot1 = lambda[1][1]; break;
-      case 6: ot0 = lambda[1][1]; ot1 = lambda[1][1]; break;
-      case 7: ot0 = lambda[0][1]; ot1 = lambda[1][0]; break;
+      case 5: ot0 = lambda[0][1]; ot1 = lambda[1][0]; break;
+      case 6: ot0 = lambda[1][1]; ot1 = lambda[0][1]; break;
+      case 7: ot0 = lambda[0][0]; ot1 = lambda[1][1]; break;
       default:
         INTREPID2_TEST_FOR_ABORT( true, 
                                   ">>> ERROR (Intrepid2::OrientationTools::getModifiedQuadrilateralPoint): " \

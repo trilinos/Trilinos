@@ -619,7 +619,7 @@ private:
       this->eb_num_initial_colors = 1;
       break;
     default:
-      std::cerr << "Unknown Coloring Algorithm" << std::endl;
+      throw std::runtime_error ("Unknown Coloring Algorithm\n");
       break;
     }
   }

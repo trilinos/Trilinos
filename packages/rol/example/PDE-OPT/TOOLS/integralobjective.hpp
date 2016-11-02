@@ -54,6 +54,20 @@ class IntegralObjective : public ROL::ParametrizedObjective_SimOpt<Real> {
 private:
   const Teuchos::RCP<QoI<Real> > qoi_;
   const Teuchos::RCP<Assembler<Real> > assembler_;
+
+  Teuchos::RCP<Tpetra::MultiVector<> > vecG1_;
+  Teuchos::RCP<Tpetra::MultiVector<> > vecG2_;
+  Teuchos::RCP<std::vector<Real> >     vecG3_;
+  Teuchos::RCP<Tpetra::MultiVector<> > vecH11_;
+  Teuchos::RCP<Tpetra::MultiVector<> > vecH12_;
+  Teuchos::RCP<Tpetra::MultiVector<> > vecH13_;
+  Teuchos::RCP<Tpetra::MultiVector<> > vecH21_;
+  Teuchos::RCP<Tpetra::MultiVector<> > vecH22_;
+  Teuchos::RCP<Tpetra::MultiVector<> > vecH23_;
+  Teuchos::RCP<std::vector<Real> >     vecH31_;
+  Teuchos::RCP<std::vector<Real> >     vecH32_;
+  Teuchos::RCP<std::vector<Real> >     vecH33_;
+
 public:
   IntegralObjective(const Teuchos::RCP<QoI<Real> > &qoi,
                     const Teuchos::RCP<Assembler<Real> > &assembler)
@@ -79,8 +93,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIGradient1(qoi_,uf,zf,zp);
-      gf->scale(static_cast<Real>(1),*(assembler_->getQoIGradient1()));
+      assembler_->assembleQoIGradient1(vecG1_,qoi_,uf,zf,zp);
+      gf->scale(static_cast<Real>(1),*vecG1_);
     }
     catch ( Exception::Zero & ez ) {
       g.zero();
@@ -101,8 +115,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
       Teuchos::RCP<Tpetra::MultiVector<> >       gf = getField(g);
-      assembler_->assembleQoIGradient2(qoi_,uf,zf,zp);
-      gf->scale(static_cast<Real>(1),*(assembler_->getQoIGradient2()));
+      assembler_->assembleQoIGradient2(vecG2_,qoi_,uf,zf,zp);
+      gf->scale(static_cast<Real>(1),*vecG2_);
     }
     catch ( Exception::Zero & ez ) {
       IsZero++;
@@ -117,9 +131,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
       Teuchos::RCP<std::vector<Real> >           gp = getParameter(g);
-      assembler_->assembleQoIGradient3(qoi_,uf,zf,zp);
-      gp->assign(assembler_->getQoIGradient3()->begin(),
-                 assembler_->getQoIGradient3()->end());
+      assembler_->assembleQoIGradient3(vecG3_,qoi_,uf,zf,zp);
+      gp->assign(vecG3_->begin(),vecG3_->end());
     }
     catch ( Exception::Zero & ez ) {
       IsZero++;
@@ -146,8 +159,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIHessVec11(qoi_,vf,uf,zf,zp);
-      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec11()));
+      assembler_->assembleQoIHessVec11(vecH11_,qoi_,vf,uf,zf,zp);
+      hvf->scale(static_cast<Real>(1),*vecH11_);
     }
     catch (Exception::Zero &ez) {
       hv.zero();
@@ -168,8 +181,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIHessVec12(qoi_,vf,uf,zf,zp);
-      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec12()));
+      assembler_->assembleQoIHessVec12(vecH12_,qoi_,vf,uf,zf,zp);
+      hvf->scale(static_cast<Real>(1),*vecH12_);
     }
     catch (Exception::Zero &ez) {
       hv.zero();
@@ -187,8 +200,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIHessVec13(qoi_,vp,uf,zf,zp);
-      hvf->update(static_cast<Real>(1),*(assembler_->getQoIHessVec13()),static_cast<Real>(1));
+      assembler_->assembleQoIHessVec13(vecH13_,qoi_,vp,uf,zf,zp);
+      hvf->update(static_cast<Real>(1),*vecH13_,static_cast<Real>(1));
     }
     catch ( Exception::Zero & ez ) {
       IsZero++;
@@ -218,8 +231,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIHessVec21(qoi_,vf,uf,zf,zp);
-      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec21()));
+      assembler_->assembleQoIHessVec21(vecH21_,qoi_,vf,uf,zf,zp);
+      hvf->scale(static_cast<Real>(1),*vecH21_);
     }
     catch ( Exception::Zero & ez ) {
       hv.zero();
@@ -237,10 +250,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIHessVec31(qoi_,vf,uf,zf,zp);
-      hvp->assign(assembler_->getQoIHessVec31()->begin(),
-                  assembler_->getQoIHessVec31()->end());
-      throw Exception::NotImplemented("");
+      assembler_->assembleQoIHessVec31(vecH31_,qoi_,vf,uf,zf,zp);
+      hvp->assign(vecH31_->begin(),vecH31_->end());
     }
     catch ( Exception::Zero & ez ) {
       IsZero++;
@@ -269,8 +280,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIHessVec22(qoi_,vf,uf,zf,zp);
-      hvf->scale(static_cast<Real>(1),*(assembler_->getQoIHessVec22()));
+      assembler_->assembleQoIHessVec22(vecH22_,qoi_,vf,uf,zf,zp);
+      hvf->scale(static_cast<Real>(1),*vecH22_);
     }
     catch (Exception::Zero &ez) {
       hv.zero();
@@ -288,8 +299,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIHessVec23(qoi_,vp,uf,zf,zp);
-      hvf->update(static_cast<Real>(1),*(assembler_->getQoIHessVec23()),static_cast<Real>(1));
+      assembler_->assembleQoIHessVec23(vecH23_,qoi_,vp,uf,zf,zp);
+      hvf->update(static_cast<Real>(1),*vecH23_,static_cast<Real>(1));
     }
     catch ( Exception::Zero & ez ) {
       IsZero++;
@@ -304,9 +315,8 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIHessVec32(qoi_,vf,uf,zf,zp);
-      hvp->assign(assembler_->getQoIHessVec32()->begin(),
-                  assembler_->getQoIHessVec32()->end());
+      assembler_->assembleQoIHessVec32(vecH32_,qoi_,vf,uf,zf,zp);
+      hvp->assign(vecH32_->begin(),vecH32_->end());
     }
     catch (Exception::Zero &ez) {
       Teuchos::RCP<std::vector<Real> > hvp = getParameter(hv);
@@ -331,10 +341,10 @@ public:
       Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
       Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
       Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-      assembler_->assembleQoIHessVec33(qoi_,vp,uf,zf,zp);
+      assembler_->assembleQoIHessVec33(vecH33_,qoi_,vp,uf,zf,zp);
       const int size = hvp->size();
       for (int i = 0; i < size; ++i) {
-        (*hvp)[i] += (*(assembler_->getQoIHessVec33()))[i];
+        (*hvp)[i] += (*vecH33_)[i];
       }
     }
     catch (Exception::Zero &ez) {

@@ -244,6 +244,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION( inCell.dimension(i) != points.dimension(i), std::invalid_argument, 
                                       ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): dimension mismatch between inCell and points.");  
       }
+    }
 #endif
 
     // do we really need to support 3 ranks ? 

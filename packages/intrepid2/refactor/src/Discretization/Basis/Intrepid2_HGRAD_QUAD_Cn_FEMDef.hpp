@@ -66,7 +66,8 @@ namespace Intrepid2 {
                const inputViewType  input,
                /**/  workViewType   work,
                const vinvViewType   vinv,
-               const ordinal_type   operatorDn ) {
+               const ordinal_type   operatorDn,
+               const ordinal_type   ort ) {
       ordinal_type opDn = operatorDn;
       
       const auto card = vinv.dimension(0);
@@ -98,12 +99,14 @@ namespace Intrepid2 {
         Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
           getValues(output_y, input_y, work_line, vinv);
 
+        const double signVal = (ort > 3 ? -1.0 : 1.0);
+
         // tensor product
         ordinal_type idx = 0;
         for (auto j=0;j<card;++j) // y
           for (auto i=0;i<card;++i,++idx)  // x
             for (auto k=0;k<npts;++k) 
-              output(idx,k) = output_x(i,k)*output_y(j,k);
+              output(idx,k) = signVal*output_x(i,k)*output_y(j,k);
         break;
       }
       case OPERATOR_CURL: {
@@ -239,7 +242,8 @@ namespace Intrepid2 {
     getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-               const EOperator operatorType ) {
+               const EOperator operatorType,
+               const ordinal_type ort ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
@@ -255,7 +259,7 @@ namespace Intrepid2 {
       case OPERATOR_VALUE: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, 0, ort) );
         break;
       }
       case OPERATOR_CURL: {
@@ -295,9 +299,9 @@ namespace Intrepid2 {
   Basis_HGRAD_QUAD_Cn_FEM<SpT,OT,PT>::
   Basis_HGRAD_QUAD_Cn_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
-    INTREPID2_TEST_FOR_EXCEPTION( !(pointType == POINTTYPE_EQUISPACED ||
-                                    pointType == POINTTYPE_WARPBLEND), std::invalid_argument,
-                                  ">>> ERROR (Basis_HGRAD_QUAD_Cn_FEM): pointType must be either equispaced or warpblend." );
+    // INTREPID2_TEST_FOR_EXCEPTION( !(pointType == POINTTYPE_EQUISPACED ||
+    //                                 pointType == POINTTYPE_WARPBLEND), std::invalid_argument,
+    //                               ">>> ERROR (Basis_HGRAD_QUAD_Cn_FEM): pointType must be either equispaced or warpblend." );
 
     // this should be in host
     Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT> lineBasis( order, pointType );

@@ -15,15 +15,18 @@ private:
   Teuchos::RCP<Tpetra::MultiVector<> > cvec_;
   Teuchos::RCP<Tpetra::MultiVector<> > uvec_;
 
+  Teuchos::RCP<Tpetra::MultiVector<> > res_;
+  Teuchos::RCP<Tpetra::CrsMatrix<> >   jac_;
+
   void assemble(void) {
     // Assemble affine term.
     if (assembleRHS_) {
-      assembler_->assemblePDEResidual(pde_,uvec_);
+      assembler_->assemblePDEResidual(res_,pde_,uvec_);
     }
     assembleRHS_ = false;
     // Assemble jacobian_1.
     if (assembleJ1_) {
-      assembler_->assemblePDEJacobian1(pde_,uvec_);
+      assembler_->assemblePDEJacobian1(jac_,pde_,uvec_);
     }
     assembleJ1_ = false;
   }
@@ -52,8 +55,8 @@ public:
   Real value(const ROL::Vector<Real> &u, Real &tol) {
     Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
     const Real half(0.5), one(1);
-    assembler_->applyPDEJacobian1(cvec_,uf,false);
-    cvec_->update(one,*(assembler_->getPDEResidual()),half);
+    jac_->apply(*uf,*cvec_);
+    cvec_->update(one,*res_,half);
     Teuchos::Array<Real> val(1,0);
     cvec_->dot(*uf, val.view(0,1));
     return val[0];
@@ -63,8 +66,8 @@ public:
     Teuchos::RCP<Tpetra::MultiVector<> >       gf = getField(g);
     Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
     const Real one(1);
-    gf->scale(one,*(assembler_->getPDEResidual()));
-    assembler_->applyPDEJacobian1(cvec_,uf,false);
+    gf->scale(one,*res_);
+    jac_->apply(*uf,*cvec_);
     gf->update(one,*cvec_,one);
   }
 
@@ -72,7 +75,7 @@ public:
     Teuchos::RCP<Tpetra::MultiVector<> >      hvf = getField(hv);
     Teuchos::RCP<const Tpetra::MultiVector<> > vf = getConstField(v);
     Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
-    assembler_->applyPDEJacobian1(hvf,vf,false);
+    jac_->apply(*vf,*hvf);
   }
 
   void precond(ROL::Vector<Real> &Pv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, Real &tol) {

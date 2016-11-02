@@ -2,6 +2,46 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Development version (12.9)
+--------------------------
+
+* Build time and size improvements (fix #700)
+
+KokkosKernels now only pre-builds the sparse matrix-vector multiply
+kernels that Tpetra needs.  Also, for integer Scalar types,
+KokkosKernels no longer optimizes sparse matrix-vector multiply for
+multiple right-hand sides.  It does so only for non-integer (e.g.,
+floating-point) Scalar types.  This reduces build time and size.  (See
+Github Issue #700.)  Furthermore, KokkosKernels now only pre-builds
+sparse matrix-vector multiply for the default offset type.
+
+* Removed "using Teuchos::*" declarations from Tpetra_ConfigDefs.hpp
+
+Tpetra no longer imports Teuchos classes like Comm and RCP (among
+others) into the Tpetra namespace.  This will help us eventually
+remove all the Teuchos_*.hpp header file includes from
+Tpetra_ConfigDefs.hpp, thus improving build time.
+
+* MultiVector: Add new two-argument randomize(min,max)
+
+* MultiVector: Get rid of old-interface DistObject methods
+
+Tpetra::MultiVector implements the new DistObject interface.  Thus, it
+no longer needs to provide implementations for the following three
+old-interface DistObject methods:
+
+  - createViews
+  - createViewsNonConst
+  - releaseViews
+
+* Optimize Map::replaceCommWithSubset for MPI_COMM_SELF (#673)
+
+* Fixed many other issues
+
+Issues fixed include (but are not limited to) #699, #680, #638, #617,
+#607, #603, #601, #597, #561, and #46.
+
+
 Trilinos 12.8
 -------------
 

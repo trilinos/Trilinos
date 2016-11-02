@@ -187,7 +187,7 @@ int Zoltan_RB_find_bisector(
   int     indexlo=0, indexhi=0;      /* indices of dots closest to bisector */
   int     breakflag=0;               /* for breaking out of bisector iteration */
   int     markactive;                /* which side of cut is active = 0/1 */
-  int     iteration;                 /* bisection iteration no. */
+  int     iteration = 0;             /* bisection iteration no. */
   int     i, j, k, numlist;
   int     tfs_early_exit = 0;        /* Flag used only with Tflops_Special,
                                         indicating early exit when all weight

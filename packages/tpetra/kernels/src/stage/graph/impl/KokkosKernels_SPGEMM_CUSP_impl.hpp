@@ -55,7 +55,7 @@ void CUSP_apply(
     bin_nonzero_index_view_type entriesB,
     bin_nonzero_value_view_type valuesB,
     bool transposeB,
-    cin_row_index_view_type &row_mapC,
+    cin_row_index_view_type row_mapC,
     cin_nonzero_index_view_type &entriesC,
     cin_nonzero_value_view_type &valuesC){
 #ifdef KERNELS_HAVE_CUSP1
@@ -66,17 +66,17 @@ void CUSP_apply(
   typedef typename ain_nonzero_index_view_type::device_type device2;
   typedef typename ain_nonzero_value_view_type::device_type device3;
 
-  std::cout << "RUNNING CUSP" << std::endl;
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
-    std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP" << std::endl;
+    throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
+
     return;
   }
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value){
-    std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP" << std::endl;
+    throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
     return;
   }
   if (Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
-    std::cerr << "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP" << std::endl;
+    throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSP\n");
     return;
   }
 
@@ -146,11 +146,16 @@ void CUSP_apply(
 
   cusp::multiply(A,B,C);
 
-  std::cout << " C.column_indices.size():" <<  C.column_indices.size() << std::endl;
-  std::cout << " C.values.size():" <<  C.values.size() << std::endl;
-  row_mapC = typename cin_row_index_view_type::non_const_type("rowmapC", m + 1);
-  entriesC = typename cin_nonzero_index_view_type::non_const_type ("EntriesC" ,  C.column_indices.size());
-  valuesC = typename cin_nonzero_value_view_type::non_const_type ("valuesC" ,  C.values.size());
+
+  //std::cout << " C.column_indices.size():" <<  C.column_indices.size() << std::endl;
+  //std::cout << " C.values.size():" <<  C.values.size() << std::endl;
+  //row_mapC = typename cin_row_index_view_type::non_const_type("rowmapC", m + 1);
+
+
+  this->handle->get_spgemm_handle()->set_c_nnz( C.values.size());
+
+  entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") ,  C.column_indices.size());
+  valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC"),  C.values.size());
 
   Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<typename cin_row_index_view_type::non_const_type,
       idx >(row_mapC, (idx *) thrust::raw_pointer_cast(C.row_offsets.data())));
@@ -160,7 +165,7 @@ void CUSP_apply(
       value_type>(valuesC, (value_type *) thrust::raw_pointer_cast(C.values.data())));
 
 #else
-  std::cerr << "CUSP IS NOT DEFINED" << std::endl;
+  throw std::runtime_error ("CUSP IS NOT DEFINED\n");
   return;
 #endif
 }

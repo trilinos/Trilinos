@@ -98,6 +98,47 @@ void convert_edge_list_to_csr (idx nv, idx ne, idx *srcs, idx *dests, wt *ew, id
 
 }
 
+
+template <typename idx, typename wt>
+void write_edgelist_bin(
+    size_t ne,
+    const idx *edge_begins,
+    const  idx *edge_ends,
+    const  wt *ew,
+    const  char *filename){
+  std::ofstream myFile (filename, std::ios::out | std::ios::binary);
+  myFile.write((char *) &ne, sizeof(idx));
+  myFile.write((char *) edge_begins, sizeof(idx) * (ne));
+  myFile.write((char *) edge_ends, sizeof(idx) * (ne));
+  myFile.write((char *) ew, sizeof(wt) * (ne));
+  myFile.close();
+}
+
+template <typename idx, typename wt>
+void read_edgelist_bin(
+    idx *ne,
+    idx **edge_begins,
+    idx **edge_ends,
+    wt **ew,
+    const  char *filename){
+
+  std::cout << "filename:" << filename << std::endl;
+  std::ifstream myFile (filename, std::ios::in | std::ios::binary);
+
+
+  myFile.read((char *) ne, sizeof(idx));
+  md_malloc<idx>(edge_begins, *ne);
+  md_malloc<idx>(edge_ends, *ne);
+  md_malloc<wt> (ew, *ne);
+  myFile.read((char *) *edge_begins, sizeof(idx) * (*ne));
+  myFile.read((char *) *edge_ends, sizeof(idx) * (*ne));
+  myFile.read((char *) *ew, sizeof(wt) * (*ne));
+  myFile.close();
+  std::cout << " nnz:" << *ne << std::endl;
+}
+
+
+
 template <typename idx, typename wt>
 void write_graph_bin(idx nv, idx ne,const idx *xadj,const  idx *adj,const  wt *ew,const  char *filename){
   std::ofstream myFile (filename, std::ios::out | std::ios::binary);

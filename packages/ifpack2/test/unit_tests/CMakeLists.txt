@@ -49,7 +49,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     unit_tests
     SOURCES ${SOURCES}
-    ARGS ""
+    ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
     COMM serial mpi
   )
 
