@@ -244,7 +244,7 @@ namespace Intrepid2 {
       Impl::OrientationTools::mapToModifiedReference(ortPtsSubcell,
                                                      refPtsSubcell,
                                                      subcellTopo,
-                                                     subcellOrt);
+                                                     ort);
       
       // map to reference coordinates
       DynRankViewHostType refPtsCell("refPtsCell", nptsSubcell, cellDim);
@@ -267,11 +267,11 @@ namespace Intrepid2 {
       switch (subcellDim) {
       case 1: {
         auto out = Kokkos::subview(outValues, Kokkos::ALL(), Kokkos::ALL(), 0);
-        subcellBasis.getValuesIntrBubble(out, ortPtsSubcell, subcellOrt);
+        subcellBasis.getValuesIntrBubble(out, ortPtsSubcell, ort);
         break;
       }
       case 2: {
-        subcellBasis.getValuesIntrBubble(outValues, ortPtsSubcell, subcellOrt);
+        subcellBasis.getValuesIntrBubble(outValues, ortPtsSubcell, ort);
         break;
       }
       }

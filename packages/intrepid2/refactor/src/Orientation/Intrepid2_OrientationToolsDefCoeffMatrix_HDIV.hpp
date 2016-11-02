@@ -233,7 +233,7 @@ namespace Intrepid2 {
       Impl::OrientationTools::mapToModifiedReference(ortPtsSubcell,
                                                      refPtsSubcell,
                                                      subcellTopo,
-                                                     subcellOrt);
+                                                     ort);
       
       // map to reference coordinates
       DynRankViewHostType refPtsCell("refPtsCell", nptsSubcell, cellDim);
@@ -253,7 +253,7 @@ namespace Intrepid2 {
 
       // evaluate values on the modified cell
       DynRankViewHostType outValues("outValues", numSubcellBasis, nptsSubcell);
-      subcellBasis.getValuesIntrBubble(outValues, ortPtsSubcell, subcellOrt);
+      subcellBasis.getValuesIntrBubble(outValues, ortPtsSubcell, ort);
 
       ///
       /// Restrict vector valued basis functions on the subcell dimensions

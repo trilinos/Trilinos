@@ -242,7 +242,7 @@ namespace Intrepid2 {
       Impl::OrientationTools::mapToModifiedReference(ortPtsSubcell,
                                                      refPtsSubcell,
                                                      subcellTopo,
-                                                     subcellOrt);
+                                                     ort);
 
       // map to reference coordinates
       DynRankViewHostType refPtsCell("refPtsCell", nptsSubcell, cellDim);
