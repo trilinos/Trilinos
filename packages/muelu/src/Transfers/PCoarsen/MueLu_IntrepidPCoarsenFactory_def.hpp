@@ -59,14 +59,16 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
 
+#include "Teuchos_ScalarTraits.hpp"
+
 // Intrepid Headers
 
 //Intrepid_HGRAD_HEX_C1_FEM.hpp
 //Intrepid_HGRAD_HEX_C2_FEM.hpp
 //Intrepid_HGRAD_HEX_Cn_FEM.hpp
 //Intrepid_HGRAD_HEX_I2_FEM.hpp
-//Intrepid_HGRAD_LINE_C1_FEM.hpp
-//Intrepid_HGRAD_LINE_Cn_FEM.hpp
+#include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
+#include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
 //Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp
 //Intrepid_HGRAD_POLY_C1_FEM.hpp
 //Intrepid_HGRAD_PYR_C1_FEM.hpp
@@ -130,14 +132,14 @@ Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > >  BasisF
     int degree=std::stoi(name.substr(pos2,1));
     if(degree<=0) throw std::runtime_error(myerror);
 
-    //    std::cout<<"String = "<<name<<" ";
-    //    std::cout<<"Parsed as = ("<<deriv<<","<<el<<","<<poly<<","<<degree<<")"<<std::endl;
-
-    
     // FIX: Allow for alternative point types for Kirby elements
     if(deriv=="hgrad" && el=="quad" && poly=="c"){
       if(degree==1) return rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Scalar,Intrepid::FieldContainer<Scalar> >());
       else          return rcp(new Intrepid::Basis_HGRAD_QUAD_Cn_FEM<Scalar,Intrepid::FieldContainer<Scalar> >(degree,Intrepid::POINTTYPE_EQUISPACED));
+    }
+    else if(deriv=="hgrad" && el=="line" && poly=="c"){
+      if(degree==1) return rcp(new Intrepid::Basis_HGRAD_LINE_C1_FEM<Scalar,Intrepid::FieldContainer<Scalar> >());
+      else          return rcp(new Intrepid::Basis_HGRAD_LINE_Cn_FEM<Scalar,Intrepid::FieldContainer<Scalar> >(degree,Intrepid::POINTTYPE_EQUISPACED));
     }
 
     // Error out
@@ -161,6 +163,11 @@ void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid::Basis<Scalar,ArrayScalar
     lo_node_in_hi.insert(lo_node_in_hi.end(),{0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)});
     hi_dci = rcp_dynamic_cast<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar> >(hi_basis);
   }
+  else if(!rcp_dynamic_cast<Intrepid::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> >(hi_basis).is_null()) {
+    // HGRAD LINE Cn: Numbering as per the Kirby convention (straight across) 
+    lo_node_in_hi.insert(lo_node_in_hi.end(),{0,degree});
+    hi_dci = rcp_dynamic_cast<Intrepid::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> >(hi_basis);
+  } 
   else
     throw std::runtime_error("IntrepidPCoarsenFactory: Unknown element type");
   
@@ -181,6 +188,7 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
 		       int & lo_numOwnedNodes) {
   typedef LocalOrdinal LO;
   using Teuchos::RCP;
+  //  printf("CMS:BuildLoElemToNode: hi_elemToNode.rank() = %d hi_elemToNode.size() = %d\n",hi_elemToNode.rank(), hi_elemToNode.size());
 
   size_t numElem     = hi_elemToNode.dimension(0);
   size_t hi_numNodes = hi_nodeIsOwned.size();
@@ -252,7 +260,11 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
   // HOW: We can build a GOVector(domainMap) and fill the values with either invalid() or the P1 domainMap.GID() for that guy.
   // Then we can use A's importer to get a GOVector(colMap) with that information.
 
-  // FIXME: This assumes rowMap==colMap and [E|T]petra ordering of all the locals first in the colMap
+
+  // FIXME: Something is busted here --- stuff in the domainmap isn't showing up in the colmap.
+  // is the hi_to_lo_map busted on input or am I doing something wrong in here?
+
+  // NOTE: This assumes rowMap==colMap and [E|T]petra ordering of all the locals first in the colMap
   RCP<GOVector> dvec = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(hi_domainMap);
   ArrayRCP<GO> dvec_data = dvec->getDataNonConst(0);
   for(size_t i=0; i<lo_domainMap.getNodeNumElements(); i++) {
@@ -263,7 +275,7 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
   cvec->doImport(*dvec,hi_importer,Xpetra::ADD);
 
   // Generate the lo_columnMap
-  // HOW: We can use the local ho_to_lo_map from the GID's in cvec to generate the non-contiguous colmap ids.
+  // HOW: We can use the local hi_to_lo_map from the GID's in cvec to generate the non-contiguous colmap ids.
   Array<GO> lo_col_data(lo_columnMapLength);
   ArrayRCP<GO> cvec_data = cvec->getDataNonConst(0);
   for(size_t i=0,idx=0; i<hi_columnMap->getNodeNumElements(); i++) {
@@ -281,59 +293,76 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
 
 
 
-
-
 /*********************************************************************************************************/
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid::FieldContainer<LocalOrdinal> & Pn_elemToNode, 
-														 const std::vector<bool> & Pn_nodeIsOwned,
-														 const Intrepid:: FieldContainer<Scalar> PnDofCoords,
-														 const Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > > &P1Basis_rcp,
-														 const Teuchos::RCP<const Map> & P1_colMap, 
-														 const Teuchos::RCP<const Map> & P1_domainMap, 
-														 const Teuchos::RCP<const Map> & Pn_map,
+void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToNode, 
+														 const std::vector<bool> & hi_nodeIsOwned,
+														 const Intrepid:: FieldContainer<Scalar> hi_DofCoords,
+														 const std::vector<size_t> &lo_node_in_hi,
+														 const Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > &lo_basis,
+														 const Teuchos::RCP<const Map> & lo_colMap, 
+														 const Teuchos::RCP<const Map> & lo_domainMap, 
+														 const Teuchos::RCP<const Map> & hi_map,
 														 Teuchos::RCP<Matrix>& P) const{
   typedef Intrepid::FieldContainer<SC> FC;
   // Evaluate the linear basis functions at the Pn nodes
-  size_t numFieldsPn = Pn_elemToNode.dimension(1);
-  size_t numFieldsP1 = P1Basis_rcp->getCardinality();
-  FC P1Values_at_PnDofs(numFieldsP1,numFieldsPn);
-  P1Basis_rcp->getValues(P1Values_at_PnDofs, PnDofCoords, Intrepid::OPERATOR_VALUE);
+  size_t numFieldsHi = hi_elemToNode.dimension(1);
+  size_t numFieldsLo = lo_basis.getCardinality();
+  FC LoValues_at_HiDofs(numFieldsLo,numFieldsHi);
+  lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid::OPERATOR_VALUE);
+
+  typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
+  SC effective_zero = Teuchos::ScalarTraits<SClo>::eps();
+
+  //DEBUG
+  printf("*** LoValues_at_HiDofs ***\n");
+  for(size_t i=0; i<numFieldsLo; i++) {
+    for(size_t j=0; j<numFieldsHi; j++)
+      printf("%6.4e ",LoValues_at_HiDofs(i,j));
+    printf("\n");
+  }
+  printf("**************************\n");
+
+
+
+  printf("[%d] lo_colMap = ",lo_colMap->getComm()->getRank());
+  for(size_t i=0;i<lo_colMap->getNodeNumElements();i++)
+    printf("%d ",(int)lo_colMap->getGlobalElement(i));
+  printf("\n");
+  //end DEBUG
 
   // Allocate P
-  //  P = rcp(new CrsMatrixWrap(Pn_map,P1_colMap)); //FIX THIS LATER FOR FAST FILL
-  //  RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,0)); //FIX THIS LATER FOR FAST FILL
+  RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
-  // Extra slow fill
-
-  // CMS: For this to work, P1_map has to be the *colmap* of P, we
-  // need a separate domain map.
-
-#if 0
-  // FIXME: THERE IS STILL STUFF THAT DON'T WORK IN HERE
-  size_t Nelem=Pn_elemToNode.dimension(0);  
-  std::vector<bool> touched(Pn_map->getNodeNumElements(),false);
+  // Slow fill
+  // NOTE: Can we clean this up to remove hard zeros?
+  size_t Nelem=hi_elemToNode.dimension(0);  
+  std::vector<bool> touched(hi_map->getNodeNumElements(),false);
   Teuchos::Array<GO> col_gid(1); 
   Teuchos::Array<SC> val(1);
   for(size_t i=0; i<Nelem; i++) {
-    for(int j=0; j<numFieldsPn; j++) {
-      LO row_lid = Pn_elemToNode(i,j);
-      GO row_gid = Pn_map->getGlobalElement(row_lid);
-      for(size_t k=0; k<numFieldsP1; k++) {
-        LO col_lid = Pn_elemToNode(i,p1_node_in_pn[k]);
-	col_gid[0]= {P1_colMap->getGlobalElement(col_lid)};
-	val[0] = P1Values_at_PnDofs(k,j);
-	if(Pn_nodeIsOwned[row_lid] && !touched[row_lid]) {
-	  P->insertGlobalValues(row_gid,col_gid(),val());
-	  touched[row_lid]=true;
+    for(size_t j=0; j<numFieldsHi; j++) {
+      LO row_lid = hi_elemToNode(i,j);
+      GO row_gid = hi_map->getGlobalElement(row_lid);
+      if(hi_nodeIsOwned[row_lid] && !touched[row_lid]) {
+	for(size_t k=0; k<numFieldsLo; k++) {
+	  LO col_lid = hi_elemToNode(i,lo_node_in_hi[k]);
+
+	  col_gid[0] = {lo_colMap->getGlobalElement(col_lid)};
+	  printf("[CMS] Inserting value in column %d(lid=%d)\n",(int)col_gid[0],col_lid);
+	  val[0]     = LoValues_at_HiDofs(k,j);
+	  
+	  // Skip near-zeros
+	  if(std::abs(val[0]) >= effective_zero)
+	    P->insertGlobalValues(row_gid,col_gid(),val());
 	}
+	touched[row_lid]=true;// Is the touched detection working?
       }
     }
   }
-  P->fillComplete(P1_domainMap,Pn_map);
-
-#endif
+  P->fillComplete(lo_domainMap,hi_map);
 }
 
 
@@ -345,16 +374,20 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("ipc: hi basis");
     SET_VALID_ENTRY("ipc: lo basis");
-    SET_VALID_ENTRY("inc: element to node map");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    
+    validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Generating factory of the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("ipc: element to node map",          Teuchos::null, "Generating factory of the element to node map");
     return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
+    Input(fineLevel, "Nullspace");
+    Input(fineLevel, "ipc: element to node map");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -403,8 +436,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     /*******************/
     // FIXME: Allow these to be manually specified instead of Intrepid
     // Get the Intrepid bases
-    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("inc: hi basis"));
-    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("inc: lo basis"));
+    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("ipc: hi basis"));
+    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("ipc: lo basis"));
 
     // Get reference coordinates and the lo-to-hi injection list for the reference element
     std::vector<size_t> lo_node_in_hi;
@@ -412,17 +445,18 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     MueLuIntrepid::IntrepidGetLoNodeInHi(hi_basis,lo_basis,lo_node_in_hi,hi_DofCoords);
 
     /*******************/    
-    // Get the higher-order element-to-node map
-    const Teuchos::RCP<FCi> &Pn_elemToNode = pL.get<Teuchos::RCP<FCi> >("inc: element to node map");
+    // Get the higher-order element-to-node map 
+    const Teuchos::RCP<FCi> Pn_elemToNode = Get<Teuchos::RCP<FCi> >(fineLevel,"ipc: element to node map");
 
     // Calculate node ownership (the quick and dirty way)
     // NOTE: This exploits two things: 
     //  1) domainMap == rowMap
     //  2) Standard [e|t]petra ordering (namely the local unknowns are always numbered first).  
-    // This routine does not work in general.
+    // This routine does not work in general.    
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = Acrs.getColMap();
     RCP<const Map> domainMap = A->getDomainMap();
+    int NumProc = rowMap->getComm()->getSize();
     assert(&*rowMap == &*domainMap);
     std::vector<bool> Pn_nodeIsOwned(colMap->getNodeNumElements(),false);
     LO num_owned_rows = 0;
@@ -448,10 +482,29 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
     // Generate the P1_columnMap
     RCP<const Map> P1_colMap;
-    MueLuIntrepid::GenerateColMapFromImport<LO,GO,NO>(*Acrs.getCrsGraph()->getImporter(),hi_to_lo_map,*P1_domainMap,P1_nodeIsOwned.size(),P1_colMap);
+    if(NumProc==1) P1_colMap = P1_domainMap;
+    else MueLuIntrepid::GenerateColMapFromImport<LO,GO,NO>(*Acrs.getCrsGraph()->getImporter(),hi_to_lo_map,*P1_domainMap,P1_nodeIsOwned.size(),P1_colMap);
+
+
+#if 1
+	{
+	  printf("[%d] IPC P1 DomainMap = ",P1_domainMap->getComm()->getRank());
+	  for(size_t i=0; i<P1_domainMap->getNodeNumElements(); i++)
+	    printf("%d ",(int) P1_domainMap->getGlobalElement(i));
+	  printf("\n");	
+	  fflush(stdout);
+
+	  printf("[%d] IPC P1 ColMap = ",P1_colMap->getComm()->getRank());
+	  for(size_t i=0; i<P1_colMap->getNodeNumElements(); i++)
+	    printf("%d ",(int) P1_colMap->getGlobalElement(i));
+	  printf("\n");	
+	  fflush(stdout);
+	}
+#endif
+
 
     // Generate the coarsening
-    //    GenerateLinearCoarsening_pn_kirby_to_p1(*Pn_elemToNode,Pn_nodeIsOwned,hi_DofCoords,lo_basis,P1_colMap,P1_domainMap,A->getRowMap(),finalP);
+    GenerateLinearCoarsening_pn_kirby_to_p1(*Pn_elemToNode,Pn_nodeIsOwned,hi_DofCoords,lo_node_in_hi,*lo_basis,P1_colMap,P1_domainMap,A->getRowMap(),finalP);
 
     // Level Set
     if (!restrictionMode_) {

@@ -143,13 +143,14 @@ namespace MueLu {
   private:
     //! @name Internal Utilities
     //@{
-    void GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid::FieldContainer<LocalOrdinal> & Pn_elemToNode, 
-						 const std::vector<bool> & Pn_nodeIsOwned,
-						 const Intrepid:: FieldContainer<Scalar> PnDofCoords,
-						 const Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > > &P1Basis_rcp, 
-						 const Teuchos::RCP<const Map> & P1_colMap, 
-						 const Teuchos::RCP<const Map> & P1_domainMap, 
-						 const Teuchos::RCP<const Map> & Pn_map,
+    void GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToNode, 
+						 const std::vector<bool> & hi_nodeIsOwned,
+						 const Intrepid:: FieldContainer<Scalar> hi_DofCoords,
+						 const std::vector<size_t> &lo_node_in_hi,
+						 const Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > &lo_Basis,
+						 const Teuchos::RCP<const Map> & lo_colMap, 
+						 const Teuchos::RCP<const Map> & lo_domainMap, 
+						 const Teuchos::RCP<const Map> & hi_map,
 						 Teuchos::RCP<Matrix>& P) const;
     //@}
 
