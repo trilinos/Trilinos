@@ -196,28 +196,28 @@ public:
 
   void applyAdjointHessian_21(Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
                               const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
-    applySens(*primZ_, v.dual(), z, tol);
-    conVal_->applyAdjointHessian_21(ahwv, w, primZ_->dual(), u, *Sz_, tol);
+    applySens(*primZ_, v, z, tol);
+    conVal_->applyAdjointHessian_21(ahwv, w, *primZ_, u, *Sz_, tol);
   }
 
   void applyAdjointHessian_22(Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
                               const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
     ahwv.zero();
-    applySens(*primZ_, v.dual(), z, tol);
+    applySens(*primZ_, v, z, tol);
 
     conVal_->applyAdjointJacobian_2(*dualZ_, w, u, *Sz_, tol);
     conRed_->applyInverseAdjointJacobian_1(*dualRed_, *dualZ_, *Sz_, z, tol);
     conRed_->applyAdjointHessian_22(*dualZ_, *dualRed_, v, *Sz_, z, tol);
     ahwv.axpy(static_cast<Real>(-1), *dualZ_);
-    conRed_->applyAdjointHessian_12(*dualZ_, *dualRed_, primZ_->dual(), *Sz_, z, tol);
+    conRed_->applyAdjointHessian_12(*dualZ_, *dualRed_, *primZ_, *Sz_, z, tol);
     ahwv.axpy(static_cast<Real>(-1), *dualZ_);
 
-    conRed_->applyAdjointHessian_11(*dualZ1_, *dualRed_, primZ_->dual(), *Sz_, z, tol);
+    conRed_->applyAdjointHessian_11(*dualZ1_, *dualRed_, *primZ_, *Sz_, z, tol);
     conRed_->applyAdjointHessian_21(*dualZ_, *dualRed_, v, *Sz_, z, tol);
     dualZ1_->plus(*dualZ_); 
     dualZ1_->scale(static_cast<Real>(-1));
     
-    conVal_->applyAdjointHessian_22(*dualZ_, w, primZ_->dual(), u, *Sz_, tol);
+    conVal_->applyAdjointHessian_22(*dualZ_, w, *primZ_, u, *Sz_, tol);
     dualZ1_->plus(*dualZ_); 
 
     applyAdjointSens(*dualZ_, *dualZ1_, z, tol);

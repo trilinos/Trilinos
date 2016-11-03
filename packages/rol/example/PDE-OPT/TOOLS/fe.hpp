@@ -436,70 +436,70 @@ public:
 
   /** \brief  Returns cell Jacobian matrices at cubature points.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > J() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > J() const {
     return cellJac_;
   }
 
   /** \brief  Returns inverses of cell Jacobians at cubature points.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > invJ() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > invJ() const {
     return cellJacInv_;
   }
 
   /** \brief  Returns determinants of cell Jacobians at cubature points.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > detJ() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > detJ() const {
     return cellJacDet_;
   }
 
   /** \brief  Returns values of FE basis at cubature points in reference space.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > Nref() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > Nref() const {
     return valReference_;
   }
 
   /** \brief  Returns gradients of FE basis at cubature points in reference space.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradNref() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > gradNref() const {
     return gradReference_;
   }
 
   /** \brief  Returns value of FE basis at cubature points in physical space.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > N() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > N() const {
     return valPhysical_;
   }
 
   /** \brief  Returns value of FE basis at cubature points in physical space,
               multiplied by weighted cell measures.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > NdetJ() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > NdetJ() const {
     return valPhysicalWeighted_;
   }
 
   /** \brief  Returns gradient of FE basis at cubature points in physical space.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradN() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > gradN() const {
     return gradPhysical_;
   }
 
   /** \brief  Returns gradient of FE basis at cubature points in physical space,
               multiplied by weighted cell measures.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > gradNdetJ() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > gradNdetJ() const {
     return gradPhysicalWeighted_;
   }
 
   /** \brief  Returns divergence of FE basis at cubature points in physical space.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > divN() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > divN() const {
     return divPhysical_;
   }
 
   /** \brief  Returns divergence of FE basis at cubature points in physical space,
               multiplied by weighted cell measures.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > divNdetJ() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > divNdetJ() const {
     return divPhysicalWeighted_;
   }
 
@@ -508,7 +508,7 @@ public:
 
       \param  coord    [in]   - coordinate index (x=0, y=1, z=2)
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > DND(const int & coord) const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > DND(const int & coord) const {
     if (coord == 0) {
       return gradPhysicalX_;
     }
@@ -530,7 +530,7 @@ public:
 
       \param  coord    [in]   - coordinate index (x=0, y=1, z=2)
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > DNDdetJ(const int & coord) const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > DNDdetJ(const int & coord) const {
     if (coord == 0) {
       return gradPhysicalXWeighted_;
     }
@@ -548,19 +548,19 @@ public:
 
   /** \brief  Returns stiffness matrices on cells.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > stiffMat() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > stiffMat() const {
     return gradgradMats_;
   }
 
   /** \brief  Returns mass matrices on cells.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > massMat() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > massMat() const {
     return valvalMats_;
   }
 
   /** \brief Returns cubature points on cells in physical space.
   */
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > cubPts() const {
+  Teuchos::RCP<const Intrepid::FieldContainer<Real> > cubPts() const {
     return cubPointsPhysical_;
   }
 

@@ -243,7 +243,6 @@ private:
   Real minDensity_;
   Real maxDensity_;
   Real powerSIMP_;
-  bool useStateRiesz_;
   Teuchos::RCP<Load<Real> > load_; 
   std::vector<std::vector<Real> > materialMat_;
 
@@ -527,7 +526,6 @@ public:
     minDensity_     = parlist.sublist("Problem").get("Minimum Density",     1e-4);
     maxDensity_     = parlist.sublist("Problem").get("Maximum Density",     1.0);
     powerSIMP_      = parlist.sublist("Problem").get("SIMP Power",          3.0);
-    useStateRiesz_  = parlist.sublist("Problem").get("Use State Riesz Map", true);
     computeMaterialTensor(d);
 
     load_  = Teuchos::rcp(new Load<Real>(parlist.sublist("Problem")));
@@ -1093,12 +1091,7 @@ public:
   }
 
   void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
-    // Optionally disable Riesz map ...
-    if (!useStateRiesz_) {
-      throw Exception::NotImplemented(">>> (PDE_TopoOpt::RieszMap_1): Not implemented.");
-    }
-
-    // ...otherwise ...
+    //throw Exception::NotImplemented(">>> (PDE_TopoOpt::RieszMap_1): Not implemented.");
 
     // Retrieve dimensions.
     int c = fe_->gradN()->dimension(0);
@@ -1114,7 +1107,7 @@ public:
     }
 
     for (int i=0; i<d; ++i) {
-      J[i][i] = fe_->stiffMat();
+      *(J[i][i]) = *(fe_->stiffMat());
       Intrepid::RealSpaceTools<Real>::add(*(J[i][i]),*(fe_->massMat()));
     }
 
@@ -1123,7 +1116,27 @@ public:
   }
 
   void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
-    throw Exception::NotImplemented(">>> (PDE_TopoOpt::RieszMap_2): Not implemented.");
+    //throw Exception::NotImplemented(">>> (PDE_TopoOpt::RieszMap_2): Not implemented.");
+
+    // Retrieve dimensions.
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int d = fe_->gradN()->dimension(3);
+ 
+    // Initialize Jacobians.
+    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J(d);
+    for (int i=0; i<d; ++i) {
+      for (int j=0; j<d; ++j) {
+        J[i].push_back(Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,f,f)));
+      }
+    }
+
+    for (int i=0; i<d; ++i) {
+      *(J[i][i]) = *(fe_->massMat());
+    }
+
+    // Combine the jacobians.
+    fieldHelper_->combineFieldCoeff(riesz, J);
   }
 
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
@@ -1409,7 +1422,7 @@ public:
     }
 
     for (int i=0; i<d; ++i) {
-      J[i][i] = fe_->stiffMat();
+      *(J[i][i]) = *(fe_->stiffMat());
       Intrepid::RealSpaceTools<Real>::add(*(J[i][i]),*(fe_->massMat()));
     }
 

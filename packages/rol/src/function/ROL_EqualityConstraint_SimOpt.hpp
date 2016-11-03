@@ -551,19 +551,20 @@ public:
       "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
-             \f$c_{uu}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{U}^*), \mathcal{U}^*)\f$,
-             to vector \f$v\f$ in direction \f$w\f$.
+  /** \brief Apply the simulation-space derivative of the adjoint of the constraint
+             simulation-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{uu}(u,z)(v,\cdot)^*w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual simulation-space vector
+             @param[out]      ahwv is the result of applying the simulation-space derivative of the adjoint of the constraint simulation-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual simulation-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual simulation-space vector
+             @param[in]       v    is a simulation-space vector
              @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahwv} = c_{uu}(u,z)^*(w,v) \f$, where
-             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}^*\f$, and \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
+             On return, \f$\mathsf{ahwv} = c_{uu}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
 
              ---
   */
@@ -595,19 +596,20 @@ public:
   }
 
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
-             \f$c_{uz}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{U}^*), \mathcal{Z}^*)\f$,
-             to vector \f$v\f$ in direction \f$w\f$.
+  /** \brief Apply the optimization-space derivative of the adjoint of the constraint
+             simulation-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{uz}(u,z)(v,\cdot)^*w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the optimization-space derivative of the adjoint of the constraint simulation-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual simulation-space vector
+             @param[in]       v    is a simulation-space vector
              @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahwv} = c_{uz}(u,z)^*(w,v) \f$, where
-             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}^*\f$, and \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
+             On return, \f$\mathsf{ahwv} = c_{uz}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
 
              ---
   */
@@ -639,19 +641,20 @@ public:
   }
 
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
-             \f$c_{zu}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{Z}^*), \mathcal{U}^*)\f$,
-             to vector \f$v\f$ in direction \f$w\f$.
+  /** \brief Apply the simulation-space derivative of the adjoint of the constraint
+             optimization-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{zu}(u,z)(v,\cdot)^*w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual simulation-space vector
+             @param[out]      ahwv is the result of applying the simulation-space derivative of the adjoint of the constraint optimization-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual simulation-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual optimization-space vector
+             @param[in]       v    is a optimization-space vector
              @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahwv} = c_{zu}(u,z)^*(w,v) \f$, where
-             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}^*\f$, and \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
+             On return, \f$\mathsf{ahwv} = c_{zu}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
 
              ---
   */
@@ -682,19 +685,20 @@ public:
     ahwv.scale(1.0/h);
   }
 
-  /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
-             \f$c_{zz}(u,z)^* \in L(L(\mathcal{C}^*, \mathcal{Z}^*), \mathcal{Z}^*)\f$,
-             to vector \f$v\f$ in direction \f$w\f$.
+  /** \brief Apply the optimization-space derivative of the adjoint of the constraint
+             optimization-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{zz}(u,z)(v,\cdot)^*w\f$.
 
-             @param[out]      ahwv is the result of applying the adjoint of the constraint Hessian to @b v at @b \f$(u,z)\f$ in direction @b w; a dual optimization-space vector
+             @param[out]      ahwv is the result of applying the optimization-space derivative of the adjoint of the constraint optimization-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual optimization-space vector
              @param[in]       w    is the direction vector; a dual constraint-space vector
-             @param[in]       v    is a dual optimization-space vector
+             @param[in]       v    is a optimization-space vector
              @param[in]       u    is the constraint argument; a simulation-space vector
              @param[in]       z    is the constraint argument; an optimization-space vector
              @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
 
-             On return, \f$ \mathsf{ahwv} = c_{zz}(u,z)^*(w,v) \f$, where
-             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}^*\f$, and \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$. 
+             On return, \f$\mathsf{ahwv} = c_{zz}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
 
              ---
   */

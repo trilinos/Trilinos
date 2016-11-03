@@ -133,42 +133,47 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
     u_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler,*parlist));
     Teuchos::RCP<Tpetra::MultiVector<> > p_rcp = assembler->createStateVector();
     p_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > pp
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler,*parlist));
     // Create control vector.
     Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = assembler->createControlVector();
     //z_rcp->randomize();
     z_rcp->putScalar(volFraction);
     //z_rcp->putScalar(0);
     Teuchos::RCP<ROL::Vector<RealT> > zp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler,*parlist));
     // Create residual vector.
     Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = assembler->createResidualVector();
     r_rcp->putScalar(0.0);
     Teuchos::RCP<ROL::Vector<RealT> > rp
-      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler,*parlist));
     // Create state direction vector.
     Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = assembler->createStateVector();
     du_rcp->randomize();
     //du_rcp->putScalar(0);
     Teuchos::RCP<ROL::Vector<RealT> > dup
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler,*parlist));
     // Create control direction vector.
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = assembler->createControlVector();
     dz_rcp->randomize();
     dz_rcp->scale(0.01);
     Teuchos::RCP<ROL::Vector<RealT> > dzp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler,*parlist));
+    // Create control test vector.
+    Teuchos::RCP<Tpetra::MultiVector<> > rz_rcp = assembler->createControlVector();
+    rz_rcp->randomize();
+    Teuchos::RCP<ROL::Vector<RealT> > rzp
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(rz_rcp,pde,assembler,*parlist));
 
     Teuchos::RCP<Tpetra::MultiVector<> > dualu_rcp = assembler->createStateVector();
     Teuchos::RCP<ROL::Vector<RealT> > dualup
-      = Teuchos::rcp(new PDE_DualSimVector<RealT>(dualu_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(dualu_rcp,pde,assembler,*parlist));
     Teuchos::RCP<Tpetra::MultiVector<> > dualz_rcp = assembler->createControlVector();
     Teuchos::RCP<ROL::Vector<RealT> > dualzp
-      = Teuchos::rcp(new PDE_DualOptVector<RealT>(dualz_rcp,pde,assembler));
+      = Teuchos::rcp(new PDE_DualOptVector<RealT>(dualz_rcp,pde,assembler,*parlist));
 
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
@@ -186,11 +191,19 @@ int main(int argc, char *argv[]) {
     pdeWithFilter->setSolveParameters(*parlist);
 
     // Initialize compliance objective function.
+    Teuchos::ParameterList list(*parlist);
+    list.sublist("Vector").sublist("Sim").set("Use Riesz Map",true);
+    list.sublist("Vector").sublist("Sim").set("Lump Riesz Map",false);
+    // Has state Riesz map enabled for mesh-independent compliance scaling.
+    Teuchos::RCP<Tpetra::MultiVector<> > f_rcp = assembler->createResidualVector();
+    f_rcp->putScalar(0.0);
+    Teuchos::RCP<ROL::Vector<RealT> > fp
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(f_rcp,pde,assembler,list));
     up->zero();
-    con->value(*rp, *up, *zp, tol);
-    RealT objScaling = objFactor;
-    if (rp->dot(*rp) > 1e2*ROL::ROL_EPSILON<RealT>()) {
-      objScaling /= rp->dot(*rp);
+    con->value(*fp, *up, *zp, tol);
+    RealT objScaling = objFactor, fnorm2 = fp->dot(*fp);
+    if (fnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
+      objScaling /= fnorm2;
     }
     u_rcp->randomize();
     std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(1,Teuchos::null);
@@ -235,6 +248,9 @@ int main(int argc, char *argv[]) {
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
     if ( checkDeriv ) {
+      *outStream << "\n\nCheck Opt Vector\n";
+      zp->checkVector(*dzp,*rzp,true,*outStream);
+
       *outStream << "\n\nCheck Gradient of Full Objective Function\n";
       obj->checkGradient(x,d,true,*outStream);
       *outStream << "\n\nCheck Hessian of Full Objective Function\n";
