@@ -676,4 +676,4 @@ std::string SparseContainer<MatrixType, InverseType>::getName()
     template class Ifpack2::SparseContainer< Tpetra::RowMatrix<S,LO,GO,N>, \
                                              Ifpack2::ILUT<Tpetra::RowMatrix<S, LO, GO, N> > >;
 #endif
-#endif // IFPACK2_SPARSECONTAINER_HPP
+#endif // IFPACK2_SPARSECONTAINER_DEF_HPP

@@ -57,7 +57,7 @@
 namespace Ifpack2 {
 
 template<class MatrixType, class LocalScalarType>
-TriDiContainer<MatrixType, LocalScalarType>::
+TriDiContainer<MatrixType, LocalScalarType, true>::
 TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                 const Teuchos::RCP<const import_type>& importer,
@@ -102,7 +102,6 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 
   // FIXME (mfh 25 Aug 2013) What if the matrix's row Map has a
   // different index base than zero?
-  const global_ordinal_type indexBase = 0;
   //compute scalar array offsets (probably different from partitionIndices_)
   local_ordinal_type scalarTotal = 0;
   for(local_ordinal_type i = 0; i < this->numBlocks_; i++)
@@ -121,7 +120,7 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 }
 
 template<class MatrixType, class LocalScalarType>
-TriDiContainer<MatrixType, LocalScalarType>::
+TriDiContainer<MatrixType, LocalScalarType, true>::
 TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                 const Teuchos::Array<local_ordinal_type>& localRows) :
   Container<MatrixType> (matrix, localRows),
@@ -157,39 +156,38 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   }
   // FIXME (mfh 25 Aug 2013) What if the matrix's row Map has a
   // different index base than zero?
-  const global_ordinal_type indexBase = 0;
   //for single block, let the SerialTriDiMat own the scalar memory, as there would be no speed gain
   diagBlocks_.emplace_back(this->blockRows_[0], this->blockRows_[0], true);
 }
 
 template<class MatrixType, class LocalScalarType>
-TriDiContainer<MatrixType, LocalScalarType>::~TriDiContainer ()
+TriDiContainer<MatrixType, LocalScalarType, true>::~TriDiContainer ()
 {
   if(scalars_)
     delete[] scalars_;
 }
 
 template<class MatrixType, class LocalScalarType>
-bool TriDiContainer<MatrixType, LocalScalarType>::isInitialized () const
+bool TriDiContainer<MatrixType, LocalScalarType, true>::isInitialized () const
 {
   return IsInitialized_;
 }
 
 template<class MatrixType, class LocalScalarType>
-bool TriDiContainer<MatrixType, LocalScalarType>::isComputed () const
+bool TriDiContainer<MatrixType, LocalScalarType, true>::isComputed () const
 {
   return IsComputed_;
 }
 
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::
+void TriDiContainer<MatrixType, LocalScalarType, true>::
 setParameters (const Teuchos::ParameterList& /* List */)
 {
   // the solver doesn't currently take any parameters
 }
 
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::initialize ()
+void TriDiContainer<MatrixType, LocalScalarType, true>::initialize ()
 {
   for(int i = 0; i < this->numBlocks_; i++)
     diagBlocks_[i].putScalar(Teuchos::ScalarTraits<local_scalar_type>::zero());
@@ -201,7 +199,7 @@ void TriDiContainer<MatrixType, LocalScalarType>::initialize ()
 }
 
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::compute ()
+void TriDiContainer<MatrixType, LocalScalarType, true>::compute ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     ipiv_.size () != this->partitions_.size(), std::logic_error,
@@ -221,7 +219,7 @@ void TriDiContainer<MatrixType, LocalScalarType>::compute ()
 }
 
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::clearBlocks ()
+void TriDiContainer<MatrixType, LocalScalarType, true>::clearBlocks ()
 {
   std::vector<HostViewLocal> empty1;
   std::swap(empty1, X_local);
@@ -231,7 +229,7 @@ void TriDiContainer<MatrixType, LocalScalarType>::clearBlocks ()
 }
 
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::factor ()
+void TriDiContainer<MatrixType, LocalScalarType, true>::factor ()
 {
   for(int i = 0; i < this->numBlocks_; i++)
   {
@@ -263,7 +261,7 @@ void TriDiContainer<MatrixType, LocalScalarType>::factor ()
 }
 
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::
+void TriDiContainer<MatrixType, LocalScalarType, true>::
 applyImpl (HostViewLocal& X,
            HostViewLocal& Y,
            int blockIndex,
@@ -362,7 +360,7 @@ applyImpl (HostViewLocal& X,
 }
 
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::
+void TriDiContainer<MatrixType, LocalScalarType, true>::
 apply (HostView& X,
        HostView& Y,
        int blockIndex,
@@ -390,8 +388,6 @@ apply (HostView& X,
     "You may call the apply() method as many times as you want after calling "
     "compute() once, but you must have called compute() at least once.");
 
-
-  const size_t numRows = this->blockRows_[blockIndex];
   const size_t numVecs = X.dimension_1();
 
   if(numVecs == 0) {
@@ -459,7 +455,7 @@ apply (HostView& X,
 }
 
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::
+void TriDiContainer<MatrixType, LocalScalarType, true>::
 weightedApply (HostView& X, 
                HostView& Y,
                HostView& D,
@@ -601,7 +597,7 @@ weightedApply (HostView& X,
 }
 
 template<class MatrixType, class LocalScalarType>
-std::ostream& TriDiContainer<MatrixType, LocalScalarType>::print(std::ostream& os) const
+std::ostream& TriDiContainer<MatrixType, LocalScalarType, true>::print(std::ostream& os) const
 {
   Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
   fos.setOutputToRootOnly(0);
@@ -610,7 +606,7 @@ std::ostream& TriDiContainer<MatrixType, LocalScalarType>::print(std::ostream& o
 }
 
 template<class MatrixType, class LocalScalarType>
-std::string TriDiContainer<MatrixType, LocalScalarType>::description() const
+std::string TriDiContainer<MatrixType, LocalScalarType, true>::description() const
 {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
@@ -632,7 +628,7 @@ std::string TriDiContainer<MatrixType, LocalScalarType>::description() const
 
 template<class MatrixType, class LocalScalarType>
 void
-TriDiContainer<MatrixType, LocalScalarType>::
+TriDiContainer<MatrixType, LocalScalarType, true>::
 describe (Teuchos::FancyOStream& os,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -649,7 +645,7 @@ describe (Teuchos::FancyOStream& os,
 
 template<class MatrixType, class LocalScalarType>
 void
-TriDiContainer<MatrixType, LocalScalarType>::
+TriDiContainer<MatrixType, LocalScalarType, true>::
 extract ()
 {
   using Teuchos::Array;
@@ -805,9 +801,128 @@ extract ()
 }
 
 template<class MatrixType, class LocalScalarType>
-std::string TriDiContainer<MatrixType, LocalScalarType>::getName()
+std::string TriDiContainer<MatrixType, LocalScalarType, true>::getName()
 {
   return "TriDi";
+}
+
+template<class MatrixType, class LocalScalarType>
+TriDiContainer<MatrixType, LocalScalarType, false>::
+TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                const Teuchos::RCP<const import_type>& importer,
+                int OverlapLevel,
+                scalar_type DampingFactor) :
+  Container<MatrixType> (matrix, partitions, importer, OverlapLevel,
+                         DampingFactor)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Ifpack2::TriDiContainer: Not implemented for "
+     "LocalScalarType = " << Teuchos::TypeNameTraits<LocalScalarType>::name ()
+     << ".");
+}
+
+template<class MatrixType, class LocalScalarType>
+TriDiContainer<MatrixType, LocalScalarType, false>::
+TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                const Teuchos::Array<local_ordinal_type>& localRows) :
+  Container<MatrixType> (matrix, localRows)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Ifpack2::TriDiContainer: Not implemented for "
+     "LocalScalarType = " << Teuchos::TypeNameTraits<LocalScalarType>::name ()
+     << ".");
+}
+
+template<class MatrixType, class LocalScalarType>
+TriDiContainer<MatrixType, LocalScalarType, false>::~TriDiContainer () {}
+
+template<class MatrixType, class LocalScalarType>
+bool TriDiContainer<MatrixType, LocalScalarType, false>::isInitialized () const
+{
+  return false;
+}
+
+template<class MatrixType, class LocalScalarType>
+bool TriDiContainer<MatrixType, LocalScalarType, false>::isComputed () const
+{
+  return false;
+}
+
+template<class MatrixType, class LocalScalarType>
+void TriDiContainer<MatrixType, LocalScalarType, false>::
+setParameters (const Teuchos::ParameterList& /* List */) {}
+
+template<class MatrixType, class LocalScalarType>
+void TriDiContainer<MatrixType, LocalScalarType, false>::initialize () {}
+
+template<class MatrixType, class LocalScalarType>
+void TriDiContainer<MatrixType, LocalScalarType, false>::compute () {}
+
+template<class MatrixType, class LocalScalarType>
+void TriDiContainer<MatrixType, LocalScalarType, false>::clearBlocks () {}
+
+template<class MatrixType, class LocalScalarType>
+void TriDiContainer<MatrixType, LocalScalarType, false>::factor () {}
+
+template<class MatrixType, class LocalScalarType>
+void TriDiContainer<MatrixType, LocalScalarType, false>::
+applyImpl (HostViewLocal& X,
+           HostViewLocal& Y,
+           int blockIndex,
+           int stride,
+           Teuchos::ETransp mode,
+           local_scalar_type alpha,
+           local_scalar_type beta) const {}
+
+template<class MatrixType, class LocalScalarType>
+void TriDiContainer<MatrixType, LocalScalarType, false>::
+apply (HostView& X,
+       HostView& Y,
+       int blockIndex,
+       int stride,
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const {}
+
+template<class MatrixType, class LocalScalarType>
+void TriDiContainer<MatrixType, LocalScalarType, false>::
+weightedApply (HostView& X, 
+               HostView& Y,
+               HostView& D,
+               int blockIndex,
+               int stride,
+               Teuchos::ETransp mode,
+               scalar_type alpha,
+               scalar_type beta) const {}
+
+template<class MatrixType, class LocalScalarType>
+std::ostream& TriDiContainer<MatrixType, LocalScalarType, false>::print(std::ostream& os) const
+{
+  return os;
+}
+
+template<class MatrixType, class LocalScalarType>
+std::string TriDiContainer<MatrixType, LocalScalarType, false>::description() const
+{
+  return "";
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+TriDiContainer<MatrixType, LocalScalarType, false>::
+describe (Teuchos::FancyOStream& os,
+          const Teuchos::EVerbosityLevel verbLevel) const {}
+
+template<class MatrixType, class LocalScalarType>
+void
+TriDiContainer<MatrixType, LocalScalarType, false>::
+extract () {}
+
+template<class MatrixType, class LocalScalarType>
+std::string TriDiContainer<MatrixType, LocalScalarType, false>::getName()
+{
+  return "";
 }
 
 #define IFPACK2_TRIDICONTAINER_INSTANT(S,LO,GO,N) \
