@@ -250,10 +250,11 @@ namespace MueLuTests {
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef Scalar SC;
     typedef GlobalOrdinal GO;
     typedef LocalOrdinal LO; 
+    typedef Node  NO; 
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
-
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -269,7 +270,10 @@ namespace MueLuTests {
     coarseLevel.SetFactoryManager(Teuchos::null);
 
     // Build a pseudo-poisson test matrix
-    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(100,2,lib);
+    Intrepid::FieldContainer<LocalOrdinal> elem_to_node;
+    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(10,2,elem_to_node,lib);
+    fineLevel.Set("A",A);
+    fineLevel.Set("ipc: element to node map",rcp(&elem_to_node,false));
 
     // only one NS vector 
     LocalOrdinal NSdim = 1;
@@ -279,18 +283,37 @@ namespace MueLuTests {
 
     // ParameterList
     ParameterList Params;
-    Params.set("ipc: hi basis","hgrad_quad_c2");
-    Params.set("ipc: lo basis","hgrad_quad_c1");
+    Params.set("ipc: hi basis","hgrad_line_c2");
+    Params.set("ipc: lo basis","hgrad_line_c1");
+
+    // Build P
+    RCP<MueLu::IntrepidPCoarsenFactory<SC,LO,GO,NO> > IPCFact = rcp(new MueLu::IntrepidPCoarsenFactory<SC,LO,GO,NO>());
+    IPCFact->SetParameterList(Params);
+    coarseLevel.Request("P",IPCFact.get());  // request Ptent
+    coarseLevel.Request("Nullspace",IPCFact.get());
+    coarseLevel.Request("CoarseMap",IPCFact.get());
+    coarseLevel.Request(*IPCFact);
+    IPCFact->Build(fineLevel,coarseLevel);
 
 
+    // Test P
+    RCP<Matrix> P;
+    coarseLevel.Get("P",P,IPCFact.get());
+    RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    printf("CMS: Matrix P is %dx%d\n",(int)P->getRangeMap()->getGlobalNumElements(),(int)P->getDomainMap()->getGlobalNumElements());
 
+    for(size_t i=0; i<P->getRowMap()->getNodeNumElements(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      Pcrs->getLocalRowView((LO)i,indices,values);
 
-    //    RCP<IntrepidPCoarsenFactory> IPCFact = rcp(IntrepidPCoarsenFactory);
-
-    //    coarseLevel.Request("P",TentativePFact.get());  // request Ptent
-    //    coarseLevel.Request("Nullspace",TentativePFact.get());
-    //    coarseLevel.Request(*TentativePFact);
-    //    TentativePFact->Build(fineLevel,coarseLevel);
+      //      printf("[%d] Prow[%d] = ",P->getRowMap()->getComm()->getRank(),(int)i);
+      printf("[*] Prow[%d] = ",(int)P->getRowMap()->getGlobalElement(i));
+      for(size_t j=0; j<(size_t)indices.size(); j++)
+	printf("%d(%6.4e) ",(int)P->getColMap()->getGlobalElement(indices[j]),values[j]);
+      printf("\n");
+    }
+    fflush(stdout);
 
   }
 
@@ -301,7 +324,7 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BasisFactory,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildLoElemToNode,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GenerateColMapFromImport,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson,Scalar,LO,GO,Node)
 
 
 #include <MueLu_ETI_4arg.hpp>

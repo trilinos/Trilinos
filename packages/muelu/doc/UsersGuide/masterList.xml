@@ -697,6 +697,22 @@
 
 
     <parameter>
+      <name>ipc: hi basis</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Higher order basis for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>ipc: lo basis</name>
+      <type>string</type>
+      <default>""</default>
+      <description>Lower order basis for IntrepidPCoarsening</description>
+      <visible>false</visible>
+    </parameter>
+  
+    <parameter>
       <name>filtered matrix: use lumping</name>
       <type>bool</type>
       <default>true</default>

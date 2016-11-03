@@ -148,6 +148,7 @@ namespace MueLu {
 						 const Intrepid:: FieldContainer<Scalar> hi_DofCoords,
 						 const std::vector<size_t> &lo_node_in_hi,
 						 const Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > &lo_Basis,
+						 const std::vector<LocalOrdinal> & hi_to_lo_map,
 						 const Teuchos::RCP<const Map> & lo_colMap, 
 						 const Teuchos::RCP<const Map> & lo_domainMap, 
 						 const Teuchos::RCP<const Map> & hi_map,

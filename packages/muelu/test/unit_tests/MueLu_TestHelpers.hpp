@@ -371,7 +371,6 @@ namespace MueLuTests {
 	Teuchos::scan(*comm,Teuchos::REDUCE_SUM,1,&num_edge_dofs,&edge_start);
 	edge_start -=num_edge_dofs;
 	GO go_edge_start = global_num_nodes + edge_start;
-	printf("\n[%d] go_edge_start = %d\n",MyPID,(int)go_edge_start);
 
 	// Build owned pn map
 	Teuchos::Array<GO> pn_owned_dofs(local_num_nodes+num_edge_dofs);
@@ -408,7 +407,7 @@ namespace MueLuTests {
 
 	RCP<const Map> pn_colmap = MapFactory::Build(lib,go_invalid,pn_col_dofs(),p1_rowmap->getIndexBase(),comm);
 
-#if 1
+#if 0
 	{
 	  printf("[%d] TH P1 RowMap = ",MyPID);
 	  for(size_t i=0; i<p1_rowmap->getNodeNumElements(); i++)
@@ -469,7 +468,7 @@ namespace MueLuTests {
 	    elem_to_node(i,1+j) = pn_colmap->getLocalElement(go_edge_start + i*(degree-1)+j);
 	}
 
-#if 1
+#if 0
 	printf("\n[%d] Pn elem_to_node = \n***\n",MyPID);
 	for(size_t i=0; i<(size_t)elem_to_node.dimension(0); i++) {
 	  for(size_t j=0; j<(size_t)elem_to_node.dimension(1); j++)
