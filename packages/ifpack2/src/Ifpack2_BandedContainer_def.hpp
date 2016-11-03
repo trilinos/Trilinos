@@ -58,7 +58,7 @@
 namespace Ifpack2 {
 
 template<class MatrixType, class LocalScalarType>
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                  const Teuchos::RCP<const import_type>& importer,
@@ -97,7 +97,7 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 }
 
 template<class MatrixType, class LocalScalarType>
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                  const Teuchos::Array<local_ordinal_type>& localRows) :
   Container<MatrixType>(matrix, localRows),
@@ -128,7 +128,7 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 }
 
 template<class MatrixType, class LocalScalarType>
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 ~BandedContainer ()
 {
   if(scalars_)
@@ -136,7 +136,7 @@ BandedContainer<MatrixType, LocalScalarType>::
 }
 
 template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType, LocalScalarType>::
+void BandedContainer<MatrixType, LocalScalarType, true>::
 setParameters (const Teuchos::ParameterList& List)
 {
   typedef typename Teuchos::ArrayView<const local_ordinal_type>::size_type size_type;
@@ -204,7 +204,7 @@ setParameters (const Teuchos::ParameterList& List)
 
 template<class MatrixType, class LocalScalarType>
 void
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 initialize ()
 {
   using Teuchos::null;
@@ -241,7 +241,7 @@ initialize ()
 
 template<class MatrixType, class LocalScalarType>
 void
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 compute ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -263,7 +263,7 @@ compute ()
 
 template<class MatrixType, class LocalScalarType>
 void
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 clearBlocks ()
 {
   std::vector<HostViewLocal> empty1;
@@ -275,7 +275,7 @@ clearBlocks ()
 
 template<class MatrixType, class LocalScalarType>
 void
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 factor ()
 {
   Teuchos::LAPACK<int, local_scalar_type> lapack;
@@ -318,7 +318,7 @@ factor ()
 
 template<class MatrixType, class LocalScalarType>
 void
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 applyImpl (HostViewLocal& X,
            HostViewLocal& Y,
            int blockIndex,
@@ -424,7 +424,7 @@ applyImpl (HostViewLocal& X,
 
 template<class MatrixType, class LocalScalarType>
 void
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 apply (HostView& X,
        HostView& Y,
        int blockIndex,
@@ -515,7 +515,7 @@ apply (HostView& X,
 
 template<class MatrixType, class LocalScalarType>
 void
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 weightedApply (HostView& X,
                HostView& Y,
                HostView& D,
@@ -676,7 +676,7 @@ weightedApply (HostView& X,
 
 template<class MatrixType, class LocalScalarType>
 std::ostream&
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 print (std::ostream& os) const
 {
   Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
@@ -687,7 +687,7 @@ print (std::ostream& os) const
 
 template<class MatrixType, class LocalScalarType>
 std::string
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 description () const
 {
   std::ostringstream oss;
@@ -709,7 +709,7 @@ description () const
 
 template<class MatrixType, class LocalScalarType>
 void
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 describe (Teuchos::FancyOStream& os,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -730,7 +730,7 @@ describe (Teuchos::FancyOStream& os,
 
 template<class MatrixType, class LocalScalarType>
 void
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 extract ()
 {
   using Teuchos::Array;
@@ -883,9 +883,131 @@ extract ()
 }
 
 template<class MatrixType, class LocalScalarType>
-std::string BandedContainer<MatrixType, LocalScalarType>::getName()
+std::string BandedContainer<MatrixType, LocalScalarType, true>::getName()
 {
   return "Banded";
+}
+
+template<class MatrixType, class LocalScalarType>
+BandedContainer<MatrixType, LocalScalarType, false>::
+BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                 const Teuchos::RCP<const import_type>& importer,
+                 int OverlapLevel,
+                 scalar_type DampingFactor) :
+  Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Ifpack2::BandedContainer: Not implemented for "
+     "LocalScalarType = " << Teuchos::TypeNameTraits<LocalScalarType>::name ()
+     << ".");
+}
+
+template<class MatrixType, class LocalScalarType>
+BandedContainer<MatrixType, LocalScalarType, false>::
+BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                 const Teuchos::Array<local_ordinal_type>& localRows) :
+  Container<MatrixType>(matrix, localRows)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Ifpack2::BandedContainer: Not implemented for "
+     "LocalScalarType = " << Teuchos::TypeNameTraits<LocalScalarType>::name ()
+     << ".");
+}
+
+template<class MatrixType, class LocalScalarType>
+BandedContainer<MatrixType, LocalScalarType, false>::
+~BandedContainer () {}
+
+template<class MatrixType, class LocalScalarType>
+void BandedContainer<MatrixType, LocalScalarType, false>::
+setParameters (const Teuchos::ParameterList& List) {}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+initialize () {}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+compute () {}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+clearBlocks () {}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+factor () {}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+applyImpl (HostViewLocal& X,
+           HostViewLocal& Y,
+           int blockIndex,
+           int stride,
+           Teuchos::ETransp mode,
+           const local_scalar_type alpha,
+           const local_scalar_type beta) const {}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+apply (HostView& X,
+       HostView& Y,
+       int blockIndex,
+       int stride,
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const {}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+weightedApply (HostView& X,
+               HostView& Y,
+               HostView& D,
+               int blockIndex,
+               int stride,
+               Teuchos::ETransp mode,
+               scalar_type alpha,
+               scalar_type beta) const {}
+
+template<class MatrixType, class LocalScalarType>
+std::ostream&
+BandedContainer<MatrixType, LocalScalarType, false>::
+print (std::ostream& os) const
+{
+  return os;
+}
+
+template<class MatrixType, class LocalScalarType>
+std::string
+BandedContainer<MatrixType, LocalScalarType, false>::
+description () const
+{
+  return "";
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+describe (Teuchos::FancyOStream& os,
+          const Teuchos::EVerbosityLevel verbLevel) const {}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+extract () {}
+
+template<class MatrixType, class LocalScalarType>
+std::string BandedContainer<MatrixType, LocalScalarType, false>::getName()
+{
+  return "";
 }
 
 } // namespace Ifpack2
