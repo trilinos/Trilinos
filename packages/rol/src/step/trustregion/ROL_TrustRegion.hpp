@@ -187,6 +187,8 @@ public:
     // Compute Ratio of Actual and Predicted Reduction
     Real EPS = eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
     Real aRed_safe = aRed + EPS, pRed_safe = pRed_ + EPS;
+    // aRed  -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
+    // pRed_ -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
     Real rho(0);
     //if ((std::abs(aRed) < eps_ && std::abs(fold1) > eps_) || aRed == pRed_) {
     if (((std::abs(aRed_safe) < eps_) && (std::abs(pRed_safe) < eps_)) || aRed == pRed_) {
@@ -275,7 +277,8 @@ public:
       if (rho < zero) { // Negative reduction, interpolate to find new trust-region radius
         Real gs(0);
         if ( bnd.isActivated() ) {
-          gs = model.getGradient()->dot(s.dual());
+          model.dualTransform(*dual_, *model.getGradient());
+          gs = dual_->dot(s.dual());
         }
         else {
           gs = g.dot(s.dual());
@@ -284,9 +287,11 @@ public:
         modelVal += fold1;
         Real theta = (one-eta2_)*gs/((one-eta2_)*(fold1+gs)+eta2_*modelVal-fnew);
         del = std::max(gamma1_*std::min(snorm,del),std::max(gamma0_,theta)*del);
+        //del = std::max(gamma1_*snorm,std::max(gamma0_,theta)*del);
       }
       else { // Shrink trust-region radius
         del = gamma1_*std::min(snorm,del);
+        //del = gamma1_*snorm;
       }
       obj.update(x,true,iter);
     }
