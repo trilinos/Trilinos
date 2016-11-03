@@ -41,6 +41,7 @@
 // @HEADER
 */
 
+#include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 
 #include "Teuchos_UnitTestHarness.hpp"
@@ -51,18 +52,14 @@
 
 #define NUM_GLOBAL_ELEMENTS 100
 
-using Teuchos::RCP;
-using Teuchos::Array;
-using Teuchos::ArrayView;
-typedef int LO;
-typedef int GO;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-typedef Tpetra::Map<LO, GO, Node> Map;
-typedef Tpetra::Directory<LO, GO, Node> Directory;
+namespace { // (anonymous)
 
 
-namespace {
+  using Teuchos::RCP;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
   template <typename LO,typename GO>
   class GotoLowTieBreak : public Tpetra::Details::TieBreak<LO,GO> {
@@ -76,22 +73,22 @@ namespace {
           index = i;
         }
       }
-
       return index;
     }
   };
 
   // Create a contiguous Map that is already one-to-one, and test
   // whether createOneToOne returns a Map that is the same.
-  TEUCHOS_UNIT_TEST( OneToOne, AlreadyOneToOneContig)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, AlreadyOneToOneContig, LO, GO, NT)
   {
+    typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<Node> node = platform.getNode();
+    RCP<NT> node = platform.getNode();
 
-    RCP<const Map> map = Tpetra::createUniformContigMapWithNode<LO, GO, Node> (NUM_GLOBAL_ELEMENTS, comm, node);
+    RCP<const Map> map = Tpetra::createUniformContigMapWithNode<LO, GO, NT> (NUM_GLOBAL_ELEMENTS, comm, node);
 
-    RCP<const Map> new_map = Tpetra::createOneToOne<LO, GO, Node> (map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO, GO, NT> (map);
 
     TEST_ASSERT(map->isSameAs(*new_map));
   }
@@ -99,16 +96,19 @@ namespace {
   // Create a noncontiguous Map that is already one-to-one, and test
   // whether createOneToOne returns a Map that is the same.
   // Use index base 0.
-  TEUCHOS_UNIT_TEST( OneToOne, AlreadyOneToOneNonContigIndexBaseZero )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne,
+                                    AlreadyOneToOneNonContigIndexBaseZero,
+                                    LO, GO, NT)
   {
     using Teuchos::Array;
     using Teuchos::outArg;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
 
+    typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
-    RCP<Node> node = platform.getNode ();
+    RCP<NT> node = platform.getNode ();
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
     const GO indexBase = 0;
@@ -136,7 +136,7 @@ namespace {
 
     RCP<const Map> inputMap =
       Teuchos::rcp (new Map (globalNumElts, myElts (), indexBase, comm, node));
-    RCP<const Map> outputMap = Tpetra::createOneToOne<LO, GO, Node> (inputMap);
+    RCP<const Map> outputMap = Tpetra::createOneToOne<LO, GO, NT> (inputMap);
 
     TEST_ASSERT(inputMap->isSameAs(*outputMap));
   }
@@ -145,16 +145,19 @@ namespace {
   // Create a noncontiguous Map that is already one-to-one, and test
   // whether createOneToOne returns a Map that is the same.
   // Use index base 1, just to make sure that it works.
-  TEUCHOS_UNIT_TEST( OneToOne, AlreadyOneToOneNonContigIndexBaseOne )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne,
+                                    AlreadyOneToOneNonContigIndexBaseOne,
+                                    LO, GO, NT)
   {
     using Teuchos::Array;
     using Teuchos::outArg;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
 
+    typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
-    RCP<Node> node = platform.getNode ();
+    RCP<NT> node = platform.getNode ();
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
     const GO indexBase = 1;
@@ -188,18 +191,19 @@ namespace {
 
     RCP<const Map> inputMap =
       Teuchos::rcp (new Map (globalNumElts, myElts (), indexBase, comm, node));
-    RCP<const Map> outputMap = Tpetra::createOneToOne<LO, GO, Node> (inputMap);
+    RCP<const Map> outputMap = Tpetra::createOneToOne<LO, GO, NT> (inputMap);
 
     TEST_ASSERT(inputMap->isSameAs(*outputMap));
   }
 
 
-  TEUCHOS_UNIT_TEST(OneToOne, LargeOverlap)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, LargeOverlap, LO, GO, NT)
   {
     //Creates a map with large overlaps
+    typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<Node> node = platform.getNode();
+    RCP<NT> node = platform.getNode();
     const int myRank = comm->getRank();
     const int numProc = comm->getSize();
 
@@ -234,7 +238,7 @@ namespace {
 
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
     //std::cout<<map->description();
-    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map);
     //std::cout<<new_map->description();
     //Now we need to test if we lost anything.
 
@@ -263,13 +267,14 @@ namespace {
     }
   }
 
-  TEUCHOS_UNIT_TEST(OneToOne, AllOnOneProc)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, AllOnOneProc, LO, GO, NT)
   {
     //Will create a non-contig map with all of the elements on a single
     //processor. Nothing should change.
+    typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<Node> node = platform.getNode();
+    RCP<NT> node = platform.getNode();
     const int myRank = comm->getRank();
 
     Array<GO> elementList;
@@ -286,34 +291,36 @@ namespace {
       elementList = Array<GO>(0);
     }
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
-    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map);
     TEST_ASSERT(map->isSameAs(*new_map));
   }
 
-  TEUCHOS_UNIT_TEST(OneToOne, NoIDs)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, NoIDs, LO, GO, NT)
   {
     //An empty map.
+    typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<Node> node = platform.getNode();
+    RCP<NT> node = platform.getNode();
 
     Array<GO> elementList (0);
 
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
-    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map);
     TEST_ASSERT(map->isSameAs(*new_map));
 
 
   }
 
-  TEUCHOS_UNIT_TEST(OneToOne, AllOwnEvery)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, AllOwnEvery, LO, GO, NT)
   {
     //Every processor starts by owning all of them.
     //After one-to-one, only the last processor should own all of them.
 
+    typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<Node> node = platform.getNode();
+    RCP<NT> node = platform.getNode();
     const int myRank = comm->getRank();
     const int numProc = comm->getSize();
 
@@ -324,7 +331,7 @@ namespace {
       elementList[i]=i;
     }
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
-    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map);
 
     if(myRank<numProc-1)//I shouldn't have any elements.
     {
@@ -336,12 +343,13 @@ namespace {
     }
   }
 
-  TEUCHOS_UNIT_TEST(OneToOne, TieBreak)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, TieBreak, LO, GO, NT)
   {
     //Creates a map with large overlaps
+    typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<Node> node = platform.getNode();
+    RCP<NT> node = platform.getNode();
     const int myRank = comm->getRank();
     const int numProc = comm->getSize();
 
@@ -376,7 +384,7 @@ namespace {
 
     GotoLowTieBreak<LO,GO> tie_break;
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
-    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map,tie_break);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map,tie_break);
     //Now we need to test if we lost anything.
 
     Array<int> nodeIDlist(num_loc_elems); //This is unimportant. It's only used in the following function.
@@ -401,6 +409,22 @@ namespace {
       }
     }
   }
-}
 
+  //
+  // Instantiations of tests
+  //
+#define UNIT_TEST_GROUP( LO, GO, NT ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, AlreadyOneToOneNonContigIndexBaseZero, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, AlreadyOneToOneContig, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, AlreadyOneToOneNonContigIndexBaseOne, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, LargeOverlap, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, AllOnOneProc, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, NoIDs, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, AllOwnEvery, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(OneToOne, TieBreak, LO, GO, NT)
 
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+  TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
+
+} // namespace (anonymous)
