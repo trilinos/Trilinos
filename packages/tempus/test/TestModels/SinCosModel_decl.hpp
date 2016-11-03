@@ -27,7 +27,7 @@ namespace Tempus_Test {
   *   \frac{d}{dt}x_{0}(t) & = & x_{1}(t)\\
   *   \frac{d}{dt}x_{1}(t) & = & \left(\frac{f}{L}\right)^{2}(a-x_{0}(t))
   * \f}
-  * where the default parameter values are $a=0$, $f=1$, and $L=1$,
+  * where the default parameter values are \f$a=0\f$, \f$f=1\f$, and \f$L=1\f$,
   * and the initial conditions
   * \f{eqnarray*}{
   *   x_{0}(t_{0}=0) & = & \gamma_{0}[=0]\\
@@ -53,7 +53,7 @@ namespace Tempus_Test {
   *   F_{1} & = & \left(\frac{f}{L}\right)^{2}(a-x_{0})
   * \f}
 
-  * The exact sensitivities, $\mathbf{s}=\partial\mathbf{x}/\partial\mathbf{p}$,
+  * The exact sensitivities, \f$\mathbf{s}=\partial\mathbf{x}/\partial\mathbf{p}\f$,
   * for the problem are specified as
   * \f[
   *   \mathbf{s}(t)=\left[\begin{array}{cc}
@@ -62,7 +62,7 @@ namespace Tempus_Test {
   *   -\frac{b\, f\, t}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)
   *   \end{array}\right]
   * \f]
-  * and for the default initial conditions, $\phi=0$ and $b=1$
+  * and for the default initial conditions, \f$\phi=0\f$ and \f$b=1\f$
   * \f[
   *   \mathbf{s}(t=0)=\left[\begin{array}{cc}
   *   1 & 0\\

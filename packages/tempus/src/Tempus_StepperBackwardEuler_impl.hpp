@@ -294,7 +294,7 @@ void StepperBackwardEuler<Scalar>::setParameterList(
   std::string stepperType = pList_->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Backward Euler",
     std::logic_error,
-       "Error - Stepper sublist is not 'Backward Euler'!\n"
+       "Error - Stepper Type is not 'Backward Euler'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
 
   std::string solverName = pList_->get<std::string>("Solver Name");

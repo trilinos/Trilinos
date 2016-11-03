@@ -115,7 +115,7 @@ void StepperForwardEuler<Scalar>::setParameterList(
   std::string stepperType = pList_->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Forward Euler",
     std::logic_error,
-       "Error - Stepper sublist is not 'Forward Euler'!\n"
+       "Error - Stepper Type is not 'Forward Euler'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
 
   Teuchos::readVerboseObjectSublist(&*pList_,this);
