@@ -185,27 +185,27 @@ public:
     }
 
     // Compute Ratio of Actual and Predicted Reduction
-    aRed  -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
-    pRed_ -= eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
+    Real EPS = eps_*((one > std::abs(fold1)) ? one : std::abs(fold1));
+    Real aRed_safe = aRed + EPS, pRed_safe = pRed_ + EPS;
     Real rho(0);
     //if ((std::abs(aRed) < eps_ && std::abs(fold1) > eps_) || aRed == pRed_) {
-    if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
+    if (((std::abs(aRed_safe) < eps_) && (std::abs(pRed_safe) < eps_)) || aRed == pRed_) {
       rho = one;
       flagTR = TRUSTREGION_FLAG_SUCCESS;
     }
-    else if ( std::isnan(aRed) || std::isnan(pRed_) ) {
+    else if ( std::isnan(aRed_safe) || std::isnan(pRed_safe) ) {
       rho = -one;
       flagTR = TRUSTREGION_FLAG_NAN;
     }
     else {
-      rho = aRed/pRed_;
-      if (pRed_ < zero && aRed > zero) {
+      rho = aRed_safe/pRed_safe;
+      if (pRed_safe < zero && aRed_safe > zero) {
         flagTR = TRUSTREGION_FLAG_POSPREDNEG;
       }
-      else if (aRed <= zero && pRed_ > zero) {
+      else if (aRed_safe <= zero && pRed_safe > zero) {
         flagTR = TRUSTREGION_FLAG_NPOSPREDPOS;
       }
-      else if (aRed <= zero && pRed_ < zero) {
+      else if (aRed_safe <= zero && pRed_safe < zero) {
         flagTR = TRUSTREGION_FLAG_NPOSPREDNEG;
       }
       else {
@@ -214,10 +214,11 @@ public:
     }
 
     if ( verbosity_ > 0 ) {
-      std::cout << "    Actual reduction with safeguard:         " << aRed   << std::endl;
-      std::cout << "    Predicted reduction with safeguard:      " << pRed_  << std::endl;
-      std::cout << "    Ratio of actual and predicted reduction: " << rho    << std::endl;
-      std::cout << "    Trust-region flag:                       " << flagTR << std::endl;
+      std::cout << "    Safeguard:                               " << eps_      << std::endl;
+      std::cout << "    Actual reduction with safeguard:         " << aRed_safe << std::endl;
+      std::cout << "    Predicted reduction with safeguard:      " << pRed_safe << std::endl;
+      std::cout << "    Ratio of actual and predicted reduction: " << rho       << std::endl;
+      std::cout << "    Trust-region flag:                       " << flagTR    << std::endl;
     }
     /***************************************************************************************************/
     // FINISH COMPUTE RATIO OF ACTUAL AND PREDICTED REDUCTION
@@ -229,7 +230,7 @@ public:
     /***************************************************************************************************/
     bool decr = true;
     if ( bnd.isActivated() && TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
-      if ( rho >= eta0_ && (std::abs(aRed) > eps_) ) {
+      if ( rho >= eta0_ && (std::abs(aRed_safe) > eps_) ) {
         // Compute Criticality Measure || x - P( x - g ) ||
         prim_->set(x);
         prim_->axpy(-one,g.dual());
@@ -248,7 +249,7 @@ public:
         prim_->plus(x);
         pgnorm *= prim_->norm();
         // Sufficient decrease?
-        decr = ( aRed >= mu0_*eta0_*pgnorm );
+        decr = ( aRed_safe >= mu0_*eta0_*pgnorm );
         flagTR = (!decr ? TRUSTREGION_FLAG_QMINSUFDEC : flagTR);
 
         if ( verbosity_ > 0 ) {
@@ -258,10 +259,6 @@ public:
         }
       }
     }
-
-    if ( verbosity_ > 0 ) {
-      std::cout << std::endl;
-    }
     /***************************************************************************************************/
     // FINISH CHECK SUFFICIENT DECREASE FOR BOUND CONSTRAINED PROBLEMS
     /***************************************************************************************************/
@@ -269,13 +266,16 @@ public:
     /***************************************************************************************************/
     // BEGIN STEP ACCEPTANCE AND TRUST REGION RADIUS UPDATE
     /***************************************************************************************************/
+    if ( verbosity_ > 0 ) {
+      std::cout << "    Norm of step:                            " << snorm << std::endl;
+      std::cout << "    Trust-region radius before update:       " << del   << std::endl;
+    }
     if ((rho < eta0_ && flagTR == TRUSTREGION_FLAG_SUCCESS) || flagTR >= 2 || !decr ) { // Step Rejected
       fnew = fold1;
       if (rho < zero) { // Negative reduction, interpolate to find new trust-region radius
         Real gs(0);
         if ( bnd.isActivated() ) {
-          model.gradient(*dual_,x,tol);
-          gs = dual_->dot(s.dual());
+          gs = model.getGradient()->dot(s.dual());
         }
         else {
           gs = g.dot(s.dual());
@@ -283,10 +283,10 @@ public:
         Real modelVal = model.value(s,tol);
         modelVal += fold1;
         Real theta = (one-eta2_)*gs/((one-eta2_)*(fold1+gs)+eta2_*modelVal-fnew);
-        del = std::min(gamma1_*snorm,std::max(gamma0_,theta)*del);
+        del = std::max(gamma1_*std::min(snorm,del),std::max(gamma0_,theta)*del);
       }
       else { // Shrink trust-region radius
-        del = gamma1_*snorm;
+        del = gamma1_*std::min(snorm,del);
       }
       obj.update(x,true,iter);
     }
@@ -297,6 +297,10 @@ public:
       if (rho >= eta2_) { // Increase trust-region radius
         del = std::min(gamma2_*del,delmax_);
       }
+    }
+    if ( verbosity_ > 0 ) {
+      std::cout << "    Trust-region radius after update:        " << del << std::endl;
+      std::cout << std::endl;
     }
     /***************************************************************************************************/
     // FINISH STEP ACCEPTANCE AND TRUST REGION RADIUS UPDATE
