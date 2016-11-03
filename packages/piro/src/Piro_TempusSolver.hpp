@@ -86,7 +86,7 @@ public:
   TempusSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > &observer = Teuchos::null);
+      const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
   TempusSolver(
@@ -114,7 +114,7 @@ public:
   void initialize(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > &observer = Teuchos::null);
+      const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
 
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
   //@{
@@ -172,7 +172,7 @@ private:
   std::map<std::string,Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > > stepperFactories;
 
   std::map<std::string,Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > > stepControlFactories;
-
+    
   bool isInitialized;
 };
 

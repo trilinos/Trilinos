@@ -102,7 +102,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
-    const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > &observer) :
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver):
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
@@ -115,10 +115,10 @@ Piro::TempusSolver<Scalar>::TempusSolver(
                            appParams->get<double>("Matrix-Free Perturbation")));
     }
     else model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model));
-    initialize(appParams, model, observer);
+    initialize(appParams, model, piroObserver);
   }
   else 
-    initialize(appParams, in_model, observer);
+    initialize(appParams, in_model, piroObserver);
 }
 
 #ifdef ALBANY_BUILD
@@ -130,7 +130,7 @@ void Piro::TempusSolver<Scalar>::initialize(
 #endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
-    const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > &observer)
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
 {
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 
@@ -223,10 +223,32 @@ void Piro::TempusSolver<Scalar>::initialize(
     *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
      
     //Create Tempus integrator with observer using tempusPL and model.
-    fwdStateIntegrator = Tempus::integratorBasic<Scalar>(tempusPL, model, observer);
+    fwdStateIntegrator = Tempus::integratorBasic<Scalar>(tempusPL, model);
 
     //Get stepper from integrator
     fwdStateStepper = fwdStateIntegrator->getStepper();
+
+    //Set observer 
+    Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > observer = Teuchos::null; 
+    if (Teuchos::nonnull(piroObserver)) {
+      //Get solutionHistory from integrator
+      const RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
+      //Get timeStepControl from integrator/stepper
+      //IKT, 11/3/16, FIXME: is there a getTimeStepControl() method in Tempus?  Does not appear to be.  For now, setting this to a null pointer.
+      const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = Teuchos::null;
+      //Create Tempus::IntegratorObserver object 
+      observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory, timeStepControl, piroObserver));
+    }
+    //IKT, 11/3/16, FIXME: waiting for Curt to add setObserver() and initialize() routines 
+    //in Tempus::IntegratorBasic class.  Uncomment the following code once those functions have been added. 
+    /*
+    if (Teuchos::nonnull(observer)) {
+      //Set observer in integrator
+      fwdStateIntegrator->setObserver(observer);
+      //Reinitialize everything in integrator class, since we have changed the observer. 
+      fwdStateIntegrator->initialize(); 
+    }*/
+
 
   } 
   else {
@@ -726,17 +748,10 @@ Piro::tempusSolver(
 {
   Teuchos::RCP<Teuchos::FancyOStream> out(Teuchos::VerboseObjectBase::getDefaultOStream());
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-  Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > observer;
-  //IKT, 10/31/16, FIXME: guts of ObserverToTempusIntegrationObserverAdapter class need to be filled in.
-  //Then uncomment the following.
-  /*if (Teuchos::nonnull(piroObserver)) {
-    observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(piroObserver));
-  }*/
-
 #ifdef ALBANY_BUILD
-  return Teuchos::rcp(new TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, observer));
+  return Teuchos::rcp(new TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, piroObserver));
 #else
-  return Teuchos::rcp(new TempusSolver<Scalar>(appParams, in_model, observer));
+  return Teuchos::rcp(new TempusSolver<Scalar>(appParams, in_model, piroObserver));
 #endif
 
 }

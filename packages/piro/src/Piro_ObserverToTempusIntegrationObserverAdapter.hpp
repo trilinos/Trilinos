@@ -53,12 +53,24 @@ namespace Piro {
 
 template <typename Scalar>
 class ObserverToTempusIntegrationObserverAdapter : public Tempus::IntegratorObserver<Scalar> {
+ 
+ 
 public:
-  explicit ObserverToTempusIntegrationObserverAdapter(const Teuchos::RCP<ObserverBase<Scalar> > &wrappedObserver);
+
+
+  // Constructor
+  ObserverToTempusIntegrationObserverAdapter(
+    const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory,
+    const Teuchos::RCP<Tempus::TimeStepControl<Scalar> >& timeStepControl,
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver); 
 
   // Overridden from Tempus::IntegratorObserver
   
   //@{
+  /// Destructor
+
+  virtual ~ObserverToTempusIntegrationObserverAdapter(); 
+
   /// Observe the beginning of the time integrator.
   virtual void observeStartIntegrator();
 
@@ -91,6 +103,9 @@ private:
       const Rythmos::StepStatus<Scalar> &status,
       bool hasSensitivities);
   */
+
+  Teuchos::RCP<Tempus::SolutionHistory<Scalar> > solutionHistory_;
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl_;
 
   Teuchos::RCP<ObserverBase<Scalar> > wrappedObserver_;
 };

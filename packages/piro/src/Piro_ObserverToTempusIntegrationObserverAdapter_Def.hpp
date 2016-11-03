@@ -42,18 +42,24 @@
 
 #include "Piro_ObserverToTempusIntegrationObserverAdapter.hpp"
 
-//IKT, 10/31/16, FIXME:
-//figure out if analogs of these exists in Tempus and are needed here.
-//#include "Rythmos_ForwardSensitivityStepper.hpp"
-//#include "Rythmos_extractStateAndSens.hpp"
-
 #include "Teuchos_Ptr.hpp"
 
+
+// Constructor
 template <typename Scalar>
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegrationObserverAdapter(
-  const Teuchos::RCP<ObserverBase<Scalar> > &wrappedObserver) :
-  wrappedObserver_(wrappedObserver)
+    const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory,
+    const Teuchos::RCP<Tempus::TimeStepControl<Scalar> >& timeStepControl,
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver)
+    : Tempus::IntegratorObserver<Scalar>(solutionHistory, timeStepControl) 
 {
+  //IKT, 11/2/16, FIXME: fill in 
+};
+
+template <typename Scalar>
+Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::~ObserverToTempusIntegrationObserverAdapter() 
+{
+  //IKT, 10/31/16, FIXME: fill in 
 }
 
 template <typename Scalar>
