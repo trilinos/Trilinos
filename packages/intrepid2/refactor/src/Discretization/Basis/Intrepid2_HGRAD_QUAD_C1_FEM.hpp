@@ -49,6 +49,8 @@
 #ifndef __INTREPID2_HGRAD_QUAD_C1_FEM_HPP__
 #define __INTREPID2_HGRAD_QUAD_C1_FEM_HPP__
 
+#include "Intrepid2_Basis.hpp"
+
 namespace Intrepid2 {
 
   /** \class  Intrepid2::Basis_HGRAD_QUAD_C1_FEM

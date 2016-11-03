@@ -49,6 +49,7 @@
 #ifndef __INTREPID2_HCURL_TET_I1_FEM_HPP__
 #define __INTREPID2_HCURL_TET_I1_FEM_HPP__
 
+#include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
 
