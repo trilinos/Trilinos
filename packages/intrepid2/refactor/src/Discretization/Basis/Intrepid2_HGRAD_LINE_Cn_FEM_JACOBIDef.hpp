@@ -232,8 +232,8 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       ordinal_type tags[Parameters::MaxOrder+1][4];
-      const auto card = this->basisCardinality_;
-      for (auto i=0;i<card;++i) {
+      const ordinal_type card = this->basisCardinality_;
+      for (ordinal_type i=0;i<card;++i) {
         tags[i][0] = 1;     // these are all "internal" i.e. "volume" DoFs
         tags[i][1] = 0;     // there is only one line
         tags[i][2] = i;     // local DoF id 
