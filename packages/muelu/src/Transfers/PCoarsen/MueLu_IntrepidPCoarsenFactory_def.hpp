@@ -316,6 +316,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
   SC effective_zero = Teuchos::ScalarTraits<SClo>::eps();
 
+#if 0
   //DEBUG
   printf("*** LoValues_at_HiDofs ***\n");
   for(size_t i=0; i<numFieldsLo; i++) {
@@ -325,19 +326,17 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   }
   printf("**************************\n");
 
-  //DEBUG
   printf("lo_node_in_hi = ");
   for(size_t j=0; j<numFieldsLo; j++)
     printf("%d ",(int)lo_node_in_hi[j]);
   printf("\n");
-
-
 
   printf("[%d] lo_colMap = ",lo_colMap->getComm()->getRank());
   for(size_t i=0;i<lo_colMap->getNodeNumElements();i++)
     printf("%d ",(int)lo_colMap->getGlobalElement(i));
   printf("\n");
   //end DEBUG
+#endif
 
   // Allocate P
   P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,0)); //FIX THIS LATER FOR FAST FILL
@@ -360,7 +359,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 	  // FIXME: SOmething is still going not right in here...	 
 	  // FIXME: This GID needs to be in the P1 map space...
 	  col_gid[0] = {lo_colMap->getGlobalElement(col_lid)};
-	  printf("[%d] Inserting value in row,column (%d[%d],%d[%d]) \n",lo_colMap->getComm()->getRank(),row_lid,(int)row_gid,col_lid,(int)col_gid[0]);
+	  //	  printf("[%d] Inserting value in row,column (%d[%d],%d[%d]) \n",lo_colMap->getComm()->getRank(),row_lid,(int)row_gid,col_lid,(int)col_gid[0]);
 	  val[0]     = LoValues_at_HiDofs(k,j);
 	  
 	  // Skip near-zeros
@@ -495,7 +494,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     else MueLuIntrepid::GenerateColMapFromImport<LO,GO,NO>(*Acrs.getCrsGraph()->getImporter(),hi_to_lo_map,*P1_domainMap,P1_nodeIsOwned.size(),P1_colMap);
 
 
-#if 1
+#if 0
 	{
 	  printf("[%d] IPC P1 DomainMap = ",P1_domainMap->getComm()->getRank());
 	  for(size_t i=0; i<P1_domainMap->getNodeNumElements(); i++)
@@ -509,8 +508,6 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 	  printf("\n");	
 	  fflush(stdout);
 	}
-
-
 
 	printf("[%d] hi_elem_to_node = ",P1_domainMap->getComm()->getRank());
 	for(size_t i=0; i<(size_t)Pn_elemToNode->dimension(0); i++) {
