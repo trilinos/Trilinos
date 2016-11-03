@@ -53,21 +53,78 @@
 namespace { // (anonymous)
 
 using Tpetra::global_size_t;
+using Teuchos::FancyOStream;
+using Teuchos::getFancyOStream;
 using Teuchos::outArg;
 using Teuchos::RCP;
+using Teuchos::rcpFromRef;
 using Teuchos::REDUCE_MIN;
 using Teuchos::reduceAll;
 using std::cerr;
 using std::endl;
 
-typedef tif_utest::Node Node;
+template<class Scalar, class LO, class GO, class Node>
+void
+test762 (FancyOStream& out,
+         bool& success,
+         const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& A,
+         const Scalar& alpha,
+         const Scalar& beta,
+         const size_t numVecs)
+{
+  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  int lclSuccess = 1; // to be updated below
+  int gblSuccess = 0; // output argument
+  std::ostringstream errStrm;
+
+  Teuchos::OSTab tab0 (out);
+  RCP<const Teuchos::Comm<int> > comm = A.getMap ()->getComm ();
+
+  out << "Creating test problem" << endl;
+  MV x (A.getRowMap (), numVecs);
+  MV y (A.getRowMap (), numVecs);
+  x.putScalar (STS::one ());
+
+  out << "Creating copies of x and y" << endl;
+  MV x_copy = Tpetra::createCopy (x);
+  MV y_copy = Tpetra::createCopy (y);
+
+  out << "Testing apply() for alpha = " << alpha
+      << " and beta = " << beta << endl;
+  try {
+    A.apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
+    out << "apply (alpha = " << alpha << ", beta = " << beta << ") returned!"
+        << endl;
+  }
+  catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << comm->getRank () << ": CrsMatrix::apply threw "
+      "an exception: " << e.what () << endl;
+  }
+  catch (...) {
+    lclSuccess = 0;
+    errStrm << "Process " << comm->getRank () << ": CrsMatrix::apply threw "
+      "an exception not a subclass of std::exception." << endl;
+  }
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+  if (gblSuccess != 1) {
+    Tpetra::Details::gathervPrint (out, errStrm.str (), *comm);
+  }
+}
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2, Issue762, Scalar, LO, GO)
 {
+  typedef tif_utest::Node Node;
   typedef Tpetra::Map<LO, GO, Node> map_type;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
-  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
   typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // Whether to test the known bad case (that triggered #762).
+  const bool testKnownBad = true;
+
   // Whether to print to cerr, for more immediate output ('out'
   // doesn't actually print until the test returns, so it's not so
   // helpful if the test segfaults).
@@ -75,16 +132,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2, Issue762, Scalar, LO, GO)
 
   int lclSuccess = 1; // to be updated below
   int gblSuccess = 0; // output argument
-  std::ostringstream errStrm;
+  std::ostringstream errStrm; // for collecting error output on each MPI process
 
+  RCP<FancyOStream> foutPtr;
   if (printToCerr) {
-    cerr << "Ifpack2: Test #762" << endl;
+    foutPtr = getFancyOStream (rcpFromRef (cerr));
   }
   else {
-    out << "Ifpack2: Test #762" << endl;
+    foutPtr = rcpFromRef (out);
   }
-  // This is a scope guard, so it's better to do this unconditionally.
-  Teuchos::OSTab tab1 (out);
+  FancyOStream& fout = *foutPtr;
+
+  fout << "Ifpack2: Test #762" << endl;
+  Teuchos::OSTab tab1 (fout);
 
   const global_size_t num_rows_per_proc = 5;
   RCP<const map_type> rowmap =
@@ -99,19 +159,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2, Issue762, Scalar, LO, GO)
     return; // that's the best we can do
   }
   if (comm->getSize () > 1) {
-    if (printToCerr) {
-      cerr << "This test may only be run in serial "
-        "or with a single MPI process." << endl;
-    }
-    else {
-      out << "This test may only be run in serial "
-        "or with a single MPI process." << endl;
-    }
+    fout << "This test may only be run in serial "
+      "or with a single MPI process." << endl;
     return;
   }
 
-  //out << "Creating matrix" << endl;
-  cerr << "Creating matrix" << endl;
+  fout << "Creating matrix" << endl;
   RCP<const crs_matrix_type> crsmatrix;
   try {
     crsmatrix = tif_utest::create_test_matrix2<Scalar,LO,GO,Node>(rowmap);
@@ -140,121 +193,39 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2, Issue762, Scalar, LO, GO)
     return;
   }
 
-  if (printToCerr) {
-    cerr << "Creating test problem" << endl;
-  }
-  else {
-    out << "Creating test problem" << endl;
-  }
-  MV x (rowmap, 2);
-  MV y (rowmap, 2);
-  x.putScalar (STS::one ());
+  const Scalar ZERO = STS::zero ();
+  const Scalar ONE = STS::one ();
+  const Scalar TWO = ONE + ONE;
 
-  {
-    // First test alpha == 1 and beta == 0.
-    const Scalar alpha = Teuchos::as<Scalar> (1.0);
-    const Scalar beta = Teuchos::as<Scalar> (0.0);
+  // Test the following values of alpha in Y := alpha*(A*X) + beta*Y.
+  const int numAlphaValues = 2;
+  const Scalar alphaValues[] = { ONE, TWO };
 
-    if (printToCerr) {
-      cerr << "Creating copies of x and y" << endl;
-    }
-    else {
-      out << "Creating copies of x and y" << endl;
-    }
-    MV x_copy = Tpetra::createCopy (x);
-    MV y_copy = Tpetra::createCopy (y);
+  const Scalar beta = ZERO; // we only test one value of beta
 
-    if (printToCerr) {
-      cerr << "Testing apply() for alpha = " << alpha
-           << " and beta = " << beta << endl;
-    }
-    else {
-      out << "Testing apply() for alpha = " << alpha
-          << " and beta = " << beta << endl;
-    }
-    try {
-      crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
-      if (printToCerr) {
-        cerr << "apply (alpha = " << alpha << ", beta = " << beta << ") returned!"
-             << endl;
+  // Test the following numbers of vectors (columns) in X and Y.
+  const int numNumVecsValues = 7;
+  const size_t numVecsValues[] = {1, 2, 3, 4, 5, 6, 7};
+
+  for (int whichNumVecs = 0; whichNumVecs < numNumVecsValues; ++whichNumVecs) {
+    const size_t numVecs = numVecsValues[whichNumVecs];
+
+    for (int whichAlpha = 0; whichAlpha < numAlphaValues; ++whichAlpha) {
+      const Scalar alpha = alphaValues[whichAlpha];
+
+      const bool theBadCase =
+        (numVecs == 2 && alpha == TWO && beta == ZERO); // the known bad case
+      const bool runTheTest =
+        ! theBadCase || (theBadCase && testKnownBad);
+      if (runTheTest) {
+        fout << "Running case alpha = " << alpha << ", beta = " << beta
+             << ", numVecs = " << numVecs << endl;
+        test762<Scalar, LO, GO, Node> (fout, success, *crsmatrix,
+                                       alpha, beta, numVecs);
       }
-      // Don't print to 'out' here, since we only care about per-process
-      // printing in this case.
-    }
-    catch (std::exception& e) {
-      lclSuccess = 0;
-      errStrm << "Process " << comm->getRank () << ": CrsMatrix::apply threw "
-        "an exception: " << e.what () << endl;
-    }
-    catch (...) {
-      lclSuccess = 0;
-      errStrm << "Process " << comm->getRank () << ": CrsMatrix::apply threw "
-        "an exception not a subclass of std::exception." << endl;
-    }
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST( gblSuccess, 1 );
-    if (gblSuccess != 1) {
-      Tpetra::Details::gathervPrint (out, errStrm.str (), *comm);
-      return;
-    }
-  }
-
-  x.putScalar (STS::one ());
-  y.putScalar (STS::zero ());
-  {
-    // Now test alpha != 1 and beta == 0.
-    const Scalar alpha = Teuchos::as<Scalar> (2.0);
-    const Scalar beta = Teuchos::as<Scalar> (0.0);
-
-    if (printToCerr) {
-      cerr << "Creating copies of x and y" << endl;
-    }
-    else {
-      out << "Creating copies of x and y" << endl;
-    }
-    MV x_copy = Tpetra::createCopy (x);
-    MV y_copy = Tpetra::createCopy (y);
-
-    if (printToCerr) {
-      cerr << "Testing apply() for alpha = " << alpha
-           << " and beta = " << beta << endl;
-    }
-    else {
-      out << "Testing apply() for alpha = " << alpha
-          << " and beta = " << beta << endl;
-    }
-    try {
-      // This (alpha = 2, beta = 0, 2 columns) was the #762 case.
-      crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
-      cerr << "apply (alpha = " << alpha << ", beta = " << beta << ") returned!"
-           << endl;
-      // Don't print to 'out' here, since we only care about per-process
-      // printing in this case.
-    }
-    catch (std::exception& e) {
-      lclSuccess = 0;
-      errStrm << "Process " << comm->getRank () << ": CrsMatrix::apply threw "
-        "an exception: " << e.what () << endl;
-    }
-    catch (...) {
-      lclSuccess = 0;
-      errStrm << "Process " << comm->getRank () << ": CrsMatrix::apply threw "
-        "an exception not a subclass of std::exception." << endl;
-    }
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST( gblSuccess, 1 );
-    if (gblSuccess != 1) {
-      Tpetra::Details::gathervPrint (out, errStrm.str (), *comm);
-      return;
-    }
-    else {
-      if (comm->getRank () == 0) {
-        if (printToCerr) {
-          cerr << "Yay, got through the test!" << endl;
-        }
-        else {
-          out << "Yay, got through the test!" << endl;
-        }
+      else {
+        fout << "Skipping case alpha = " << alpha << ", beta = " << beta
+             << ", numVecs = " << numVecs << endl;
       }
     }
   }
