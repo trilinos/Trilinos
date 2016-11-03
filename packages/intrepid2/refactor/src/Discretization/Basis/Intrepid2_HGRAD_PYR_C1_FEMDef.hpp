@@ -51,144 +51,204 @@
 
 namespace Intrepid2 {
 
-
   // -------------------------------------------------------------------------------------
 
-  template<typename SpT, typename OT, typename PT>
-  template<EOperator opType>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
-  KOKKOS_INLINE_FUNCTION
-  void
-  Basis_HGRAD_PYR_C1_FEM<SpT,OT,PT>::Serial<opType>::
-  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
-             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
-    const auto eps = epsilon();
+  namespace Impl {
 
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputViewType;
-    typedef Kokkos::DynRankView<inputPointValueType,inputPointProperties...> inputViewType;
-    static_assert(std::is_same<
-                  typename outputViewType::value_type,
-                  typename inputViewType::value_type>::value,"Input/output view has different value types");
+    template<EOperator opType>
+    template<typename outputViewType,
+             typename inputViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    Basis_HGRAD_PYR_C1_FEM::Serial<opType>::
+    getValues( /**/  outputViewType output,
+               const inputViewType input ) {
+      const auto eps = epsilon();
 
-    typedef typename outputViewType::value_type value_type;
+      static_assert(std::is_same<
+                    typename outputViewType::value_type,
+                    typename inputViewType::value_type>::value,"Input/output view has different value types");
 
-    const value_type x = input(0);
-    const value_type y = input(1);
-    const value_type ztmp = input(2);
-    
-    //be sure that the basis functions are defined when z is very close to 1.
-    const value_type z = ( (value_type(1.0) - ztmp) < value_type(eps) ? value_type(1.0 - eps) : ztmp );
-    
-    switch (opType) {
-    
-    case OPERATOR_VALUE: {
-      const value_type factor = 0.25/(1.0 - z);
+      typedef typename outputViewType::value_type value_type;
 
-      // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-      output(0) = (1.0 - x - z) * (1.0 - y - z) * factor;
-      output(1) = (1.0 + x - z) * (1.0 - y - z) * factor;
-      output(2) = (1.0 + x - z) * (1.0 + y - z) * factor;
-      output(3) = (1.0 - x - z) * (1.0 + y - z) * factor;
-      output(4) = z;
-      break;
-    }      
-    case OPERATOR_GRAD: {
-      const value_type factor  = 0.25/(1.0 - z);
-      const value_type factor2 = 4.0 * factor * factor;
-      
-      // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-      output(0, 0) = (y + z - 1.0) * factor;
-      output(0, 1) = (x + z - 1.0) * factor;
-      output(0, 2) = x * y * factor2 - 0.25;
-      
-      output(1, 0) =  (1.0 - y - z) * factor;
-      output(1, 1) =  (z - x - 1.0) * factor;
-      output(1, 2) =  - x*y * factor2 - 0.25;
-      
-      output(2, 0) =  (1.0 + y - z) * factor;
-      output(2, 1) =  (1.0 + x - z) * factor;
-      output(2, 2) =  x * y * factor2 - 0.25;
-      
-      output(3, 0) =  (z - y - 1.0) * factor;
-      output(3, 1) =  (1.0 - x - z) * factor;
-      output(3, 2) =  - x*y * factor2 - 0.25;
-      
-      output(4, 0) =  0.0;
-      output(4, 1) =  0.0;
-      output(4, 2) =  1;
-      break;
+      const value_type x = input(0);
+      const value_type y = input(1);
+      const value_type ztmp = input(2);
+
+      //be sure that the basis functions are defined when z is very close to 1.
+      const value_type z = ( (value_type(1.0) - ztmp) < value_type(eps) ? value_type(1.0 - eps) : ztmp );
+
+      switch (opType) {
+
+      case OPERATOR_VALUE: {
+        const value_type factor = 0.25/(1.0 - z);
+
+        // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
+        output(0) = (1.0 - x - z) * (1.0 - y - z) * factor;
+        output(1) = (1.0 + x - z) * (1.0 - y - z) * factor;
+        output(2) = (1.0 + x - z) * (1.0 + y - z) * factor;
+        output(3) = (1.0 - x - z) * (1.0 + y - z) * factor;
+        output(4) = z;
+        break;
+      }
+      case OPERATOR_GRAD: {
+        const value_type factor  = 0.25/(1.0 - z);
+        const value_type factor2 = 4.0 * factor * factor;
+
+        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+        output(0, 0) = (y + z - 1.0) * factor;
+        output(0, 1) = (x + z - 1.0) * factor;
+        output(0, 2) = x * y * factor2 - 0.25;
+
+        output(1, 0) =  (1.0 - y - z) * factor;
+        output(1, 1) =  (z - x - 1.0) * factor;
+        output(1, 2) =  - x*y * factor2 - 0.25;
+
+        output(2, 0) =  (1.0 + y - z) * factor;
+        output(2, 1) =  (1.0 + x - z) * factor;
+        output(2, 2) =  x * y * factor2 - 0.25;
+
+        output(3, 0) =  (z - y - 1.0) * factor;
+        output(3, 1) =  (1.0 - x - z) * factor;
+        output(3, 2) =  - x*y * factor2 - 0.25;
+
+        output(4, 0) =  0.0;
+        output(4, 1) =  0.0;
+        output(4, 2) =  1;
+        break;
+      }
+      case OPERATOR_D2: {
+        const value_type factor  = 0.25/(1.0 - z);
+        const value_type factor2 = 4.0 * factor * factor;
+        const value_type factor3 = 8.0 * factor * factor2;
+
+        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6)
+        output(0, 0) =  0.0;                    // {2, 0, 0}
+        output(0, 1) =  factor;          	      // {1, 1, 0}
+        output(0, 2) =  y*factor2;              // {1, 0, 1}
+        output(0, 3) =  0.0;                    // {0, 2, 0}
+        output(0, 4) =  x*factor2;              // {0, 1, 1}
+        output(0, 5) =  x*y*factor3;            // {0, 0, 2}
+
+        output(1, 0) =  0.0;                    // {2, 0, 0}
+        output(1, 1) =  -factor;	              // {1, 1, 0}
+        output(1, 2) =  -y*factor2; 	      // {1, 0, 1}
+        output(1, 3) =  0.0;                    // {0, 2, 0}
+        output(1, 4) =  -x*factor2;             // {0, 1, 1}
+        output(1, 5) =  -x*y*factor3;           // {0, 0, 2}
+
+        output(2, 0) =  0.0;                    // {2, 0, 0}
+        output(2, 1) =  factor;          	      // {1, 1, 0}
+        output(2, 2) =  y*factor2;              // {1, 0, 1}
+        output(2, 3) =  0.0;                    // {0, 2, 0}
+        output(2, 4) =  x*factor2;       	      // {0, 1, 1}
+        output(2, 5) =  x*y*factor3;            // {0, 0, 2}
+
+        output(3, 0) =  0.0;                    // {2, 0, 0}
+        output(3, 1) =  -factor;	              // {1, 1, 0}
+        output(3, 2) =  -y*factor2;             // {1, 0, 1}
+        output(3, 3) =  0.0;                    // {0, 2, 0}
+        output(3, 4) =  -x*factor2;	      // {0, 1, 1}
+        output(3, 5) =  -x*y*factor3;           // {0, 0, 2}
+
+        output(4, 0) =  0.0;                    // {2, 0, 0}
+        output(4, 1) =  0.0;          	      // {1, 1, 0}
+        output(4, 2) =  0.0;          	      // {1, 0, 1}
+        output(4, 3) =  0.0;                    // {0, 2, 0}
+        output(4, 4) =  0.0;                    // {0, 1, 1}
+        output(4, 5) =  0.0;                    // {0, 0, 2}
+        break;
+      }
+      case OPERATOR_MAX: {
+        const auto jend = output.dimension(1);
+        const auto iend = output.dimension(0);
+
+        for (auto j=0;j<jend;++j)
+          for (auto i=0;i<iend;++i)
+            output(i, j) = 0.0;
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                  opType != OPERATOR_GRAD &&
+                                  opType != OPERATOR_D2 &&
+                                  opType != OPERATOR_MAX,
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::Serial::getValues) operator is not supported");
+      }
+      }
     }
-    case OPERATOR_D2: {
-      const value_type factor  = 0.25/(1.0 - z);
-      const value_type factor2 = 4.0 * factor * factor;
-      const value_type factor3 = 8.0 * factor * factor2;
 
-      // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6)
-      output(0, 0) =  0.0;                    // {2, 0, 0}
-      output(0, 1) =  factor;          	      // {1, 1, 0}
-      output(0, 2) =  y*factor2;              // {1, 0, 1}
-      output(0, 3) =  0.0;                    // {0, 2, 0}
-      output(0, 4) =  x*factor2;              // {0, 1, 1}
-      output(0, 5) =  x*y*factor3;            // {0, 0, 2}
-      
-      output(1, 0) =  0.0;                    // {2, 0, 0}
-      output(1, 1) =  -factor;	              // {1, 1, 0}
-      output(1, 2) =  -y*factor2; 	      // {1, 0, 1}
-      output(1, 3) =  0.0;                    // {0, 2, 0}
-      output(1, 4) =  -x*factor2;             // {0, 1, 1}
-      output(1, 5) =  -x*y*factor3;           // {0, 0, 2}
-      
-      output(2, 0) =  0.0;                    // {2, 0, 0}
-      output(2, 1) =  factor;          	      // {1, 1, 0}
-      output(2, 2) =  y*factor2;              // {1, 0, 1}
-      output(2, 3) =  0.0;                    // {0, 2, 0}
-      output(2, 4) =  x*factor2;       	      // {0, 1, 1}
-      output(2, 5) =  x*y*factor3;            // {0, 0, 2}
+    template<typename SpT,
+             typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties>
+    void
+    Basis_HGRAD_PYR_C1_FEM::
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+               const EOperator operatorType )  {
+      typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+      typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
-      output(3, 0) =  0.0;                    // {2, 0, 0}
-      output(3, 1) =  -factor;	              // {1, 1, 0}
-      output(3, 2) =  -y*factor2;             // {1, 0, 1}
-      output(3, 3) =  0.0;                    // {0, 2, 0}
-      output(3, 4) =  -x*factor2;	      // {0, 1, 1}
-      output(3, 5) =  -x*y*factor3;           // {0, 0, 2}
-      
-      output(4, 0) =  0.0;                    // {2, 0, 0}
-      output(4, 1) =  0.0;          	      // {1, 1, 0}
-      output(4, 2) =  0.0;          	      // {1, 0, 1}
-      output(4, 3) =  0.0;                    // {0, 2, 0}
-      output(4, 4) =  0.0;                    // {0, 1, 1}
-      output(4, 5) =  0.0;                    // {0, 0, 2}
-      break;
-    }
-    case OPERATOR_MAX: {
-      const auto jend = output.dimension(1);
-      const auto iend = output.dimension(0);
+      // Number of evaluation points = dim 0 of inputPoints
+      const auto loopSize = inputPoints.dimension(0);
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
-      for (auto j=0;j<jend;++j)
-        for (auto i=0;i<iend;++i)
-          output(i, j) = 0.0;
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                opType != OPERATOR_GRAD &&
-                                opType != OPERATOR_D2 &&
-                                opType != OPERATOR_MAX,
-                                ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::Serial::getValues) operator is not supported");
-    }
+      switch (operatorType) {
+
+      case OPERATOR_VALUE: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        break;
+      }
+      case OPERATOR_GRAD:
+      case OPERATOR_D1: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        break;
+      }
+      case OPERATOR_CURL: {
+        INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_CURL, std::invalid_argument,
+                                      ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
+        break;
+      }
+      case OPERATOR_DIV: {
+        INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
+                                      ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
+        break;
+      }
+      case OPERATOR_D2: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D2> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        break;
+      }
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
+                                      ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): Invalid operator type");
+      }
+      }
     }
   }
-
 
   // -------------------------------------------------------------------------------------
 
   template<typename SpT, typename OT, typename PT>
   Basis_HGRAD_PYR_C1_FEM<SpT,OT,PT>::
-  Basis_HGRAD_PYR_C1_FEM()
-    : impl_(this) {
+  Basis_HGRAD_PYR_C1_FEM() {
     this->basisCardinality_  = 5;
-    this->basisDegree_       = 1;    
+    this->basisDegree_       = 1;
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<5> >() );
     this->basisType_         = BASIS_FEM_DEFAULT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
@@ -197,11 +257,11 @@ namespace Intrepid2 {
     {
       // Basis-dependent intializations
       const ordinal_type tagSize  = 4;        // size of DoF tag
-      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-      
-      // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
+
+      // An array with local DoF tags assigned to basis functions, in the order of their local enumeration
       ordinal_type tags[20]  = { 0, 0, 0, 1,
                                  0, 1, 0, 1,
                                  0, 2, 0, 1,
@@ -244,111 +304,7 @@ namespace Intrepid2 {
     this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
   }
-    
-  template<typename SpT, typename OT, typename PT>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
-  void
-  Basis_HGRAD_PYR_C1_FEM<SpT,OT,PT>::Internal::
-  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const EOperator operatorType ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-    Intrepid2::getValues_HGRAD_Args(outputValues,
-                                    inputPoints,
-                                    operatorType,
-                                    obj_->getBaseCellTopology(),
-                                    obj_->getCardinality() );
-#endif
-
-    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
-    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
-    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
-
-    // Number of evaluation points = dim 0 of inputPoints
-    const auto loopSize = inputPoints.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-
-    switch (operatorType) {
-    
-    case OPERATOR_VALUE: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-      break;
-    }
-    case OPERATOR_GRAD:
-    case OPERATOR_D1: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-      break;
-    }
-    case OPERATOR_CURL: {
-      INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_CURL, std::invalid_argument,
-                                    ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
-      break;
-    }
-    case OPERATOR_DIV: {
-      INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
-                                    ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
-      break;
-    }
-    case OPERATOR_D2: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D2> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-      break;
-    }
-    case OPERATOR_D3:
-    case OPERATOR_D4:
-    case OPERATOR_D5:
-    case OPERATOR_D6:
-    case OPERATOR_D7:
-    case OPERATOR_D8:
-    case OPERATOR_D9:
-    case OPERATOR_D10: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
-                                    ">>> ERROR (Basis_HGRAD_PYR_C1_FEM): Invalid operator type");
-    }
-    }
-  }
-
-  template<typename SpT, typename OT, typename PT>
-  template<typename dofCoordValueType, class ...dofCoordProperties>
-  void
-  Basis_HGRAD_PYR_C1_FEM<SpT,OT,PT>::Internal::
-  getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-    // Verify rank of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::getDofCoords) rank = 2 required for dofCoords array");
-    // Verify 0th dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != obj_->basisCardinality_, std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
-    // Verify 1st dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
-#endif
-    Kokkos::deep_copy(dofCoords, obj_->dofCoords_);
-  }
 
 }
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
