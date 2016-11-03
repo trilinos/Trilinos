@@ -41,11 +41,11 @@
 //@HEADER
 */
 #include <iostream>
-#include "KokkosKernels_GraphHelpers.hpp"
 #include "KokkosKernels_SPGEMM.hpp"
 #include <Kokkos_Sparse_CrsMatrix.hpp>
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_GraphColor.hpp"
+#include "KokkosKernels_IOUtils.hpp"
 
 typedef int size_type;
 //typedef size_t size_type;
@@ -111,6 +111,7 @@ int main (int argc, char ** argv){
   cmdline[ CMD_SHMEMSIZE ] = 16128;
   cmdline[ CMD_TEAMSIZE ] = -1;
   cmdline[ CMD_VERBOSE ] = 0;
+  cmdline[ CMD_SPGEMM_ALGO ] = 7;
   for ( int i = 1 ; i < argc ; ++i ) {
     if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
       cmdline[ CMD_USE_THREADS ] = atoi( argv[++i] );
@@ -167,10 +168,7 @@ int main (int argc, char ** argv){
     }
     else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
       ++i;
-      if ( 0 == strcasecmp( argv[i] , "KK" ) ) {
-        cmdline[ CMD_SPGEMM_ALGO ] = 0;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
+      if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 1;
       }
       else if ( 0 == strcasecmp( argv[i] , "CUSPARSE" ) ) {
@@ -178,15 +176,6 @@ int main (int argc, char ** argv){
       }
       else if ( 0 == strcasecmp( argv[i] , "CUSP" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 3;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "DKK" ) ) {
-        cmdline[ CMD_SPGEMM_ALGO ] = 4;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "CKK" ) ) {
-        cmdline[ CMD_SPGEMM_ALGO ] = 5;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "SKK" ) ) {
-        cmdline[ CMD_SPGEMM_ALGO ] = 6;
       }
       else if ( 0 == strcasecmp( argv[i] , "KKSPEED" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 8;
@@ -209,6 +198,10 @@ int main (int argc, char ** argv){
       else if ( 0 == strcasecmp( argv[i] , "KKMEMSPEED" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 13;
       }
+      else if ( 0 == strcasecmp( argv[i] , "KKDEBUG" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 4;
+      }
+
       else {
         cmdline[ CMD_ERROR ] = 1 ;
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
@@ -264,7 +257,7 @@ int main (int argc, char ** argv){
       return 0;
     }
 
-    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
+    KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
     idx nv = m;
     idx ne = nnzA;
     Kokkos::Threads::print_configuration(std::cout);
@@ -302,7 +295,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
 
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
@@ -329,7 +322,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -358,7 +351,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -385,7 +378,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -435,7 +428,7 @@ int main (int argc, char ** argv){
 
     Kokkos::OpenMP::print_configuration(std::cout);
 
-    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
+    KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
     idx nv = m;
     idx ne = nnzA;
 
@@ -477,7 +470,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -501,7 +494,7 @@ int main (int argc, char ** argv){
 
         /*
         char *file = "AP.mtx";
-        KokkosKernels::Experimental::Graph::Utils::write_graph_bin(
+        KokkosKernels::Experimental::Util::write_graph_bin(
             m, (idx) crsmat.graph.entries.dimension_0(),
             ( const idx *)crsmat.graph.row_map.ptr_on_device(),
             ( const idx *)crsmat.graph.entries.ptr_on_device(),
@@ -514,7 +507,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -548,7 +541,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -575,7 +568,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -604,7 +597,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -623,7 +616,7 @@ int main (int argc, char ** argv){
         crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
         crsmat = crsmat2;
 
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
         rowmap_view = row_map_view_t ("rowmap_view", m+1);
         columns_view = cols_view_t ("colsmap_view", nnzA);
         values_view = values_view_t ("values_view", nnzA);
@@ -654,7 +647,7 @@ int main (int argc, char ** argv){
           double *c_ew = (double *) crsmat.values.ptr_on_device();
           int m = crsmat.graph.row_map.dimension_0() - 1;
           int nnzA = crsmat.values.dimension_0();
-          KokkosKernels::Experimental::Graph::Utils::write_graph_bin<int, double>
+          KokkosKernels::Experimental::Util::write_graph_bin<int, double>
           (m, nnzA, c_xadj, c_adj, c_ew, "result.bin");
         }
 
@@ -687,7 +680,7 @@ int main (int argc, char ** argv){
 
 
 
-    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
+    KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
     idx nv = m;
     idx ne = nnzA;
 
@@ -741,7 +734,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -783,7 +776,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -827,7 +820,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
@@ -876,7 +869,7 @@ int main (int argc, char ** argv){
         idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
-        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
         std::cout << 1 << std::endl;
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
@@ -979,9 +972,6 @@ crsMat_t run_experiment(
   }
 
   switch (algorithm){
-  case 0:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK1);
-    break;
   case 1:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_MKL);
     break;
@@ -992,13 +982,7 @@ crsMat_t run_experiment(
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSP);
     break;
   case 4:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK2);
-    break;
-  case 5:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK3);
-    break;
-  case 6:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK4);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_DEBUG);
     break;
   case 7:
       kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
@@ -1124,7 +1108,7 @@ crsMat_t run_experiment(
   if(0)
   {
     size_type numnnz = valuesC.dimension_0();
-    std::vector <KokkosKernels::Experimental::Graph::Utils::Edge<idx, wt> > edges(numnnz);
+    std::vector <KokkosKernels::Experimental::Util::Edge<idx, wt> > edges(numnnz);
 
     typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (row_mapC);
     Kokkos::deep_copy ( hr, row_mapC);
@@ -1160,7 +1144,7 @@ crsMat_t run_experiment(
     }
     std::cout << "out" << std::endl;
 
-    KokkosKernels::Experimental::Graph::Utils::write_edgelist_bin(
+    KokkosKernels::Experimental::Util::write_edgelist_bin(
         numnnz,
         &(edge_begins[0]),
         &(edge_ends[0]),
@@ -1207,7 +1191,7 @@ crsMat_t run_experiment(
     typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (valuesC);
     Kokkos::deep_copy ( hv, valuesC);
 
-    std::vector <KokkosKernels::Experimental::Graph::Utils::Edge<idx, wt>> edge_list (he.dimension_0());
+    std::vector <KokkosKernels::Experimental::Util::Edge<idx, wt>> edge_list (he.dimension_0());
 
     idx numr = hr.dimension_0() - 1;
     for (idx i = 0; i < numr; ++i){

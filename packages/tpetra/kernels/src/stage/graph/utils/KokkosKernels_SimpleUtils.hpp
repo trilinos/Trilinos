@@ -47,6 +47,7 @@
 #include "impl/Kokkos_Timer.hpp"
 
 #define KOKKOSKERNELS_MACRO_MIN(x,y) ((x) < (y) ? (x) : (y))
+#define KOKKOSKERNELS_MACRO_ABS(x) ((x) > (0) ? (x): (-x))
 
 namespace KokkosKernels{
 
@@ -113,6 +114,50 @@ void kk_inclusive_parallel_prefix_sum(typename forward_array_type::value_type nu
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_scan( my_exec_space(0, num_elements), InclusiveParallelPrefixSum<forward_array_type>(arr));
 }
+
+
+template<typename view_type1, typename view_type2, typename eps_type>
+struct IsIdenticalFunctor{
+  view_type1 view1;
+  view_type2 view2;
+  eps_type eps;
+
+
+  IsIdenticalFunctor(view_type1 view1_, view_type2 view2_, eps_type eps_):
+    view1(view1_), view2(view2_), eps(eps_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i, size_t &is_equal) const {
+    auto val_diff = view1(i) - view2(i);
+
+    if (KOKKOSKERNELS_MACRO_ABS (val_diff) > eps) {
+      is_equal+=1;
+    }
+  }
+};
+
+template <typename view_type1, typename view_type2, typename eps_type, typename MyExecSpace>
+bool kk_is_identical_view(view_type1 view1, view_type2 view2, eps_type eps){
+
+  if (view1.dimension_0() != view2.dimension_0()){
+    return false;
+  }
+
+  size_t num_elements = view1.dimension_0();
+
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  size_t issame = 0;
+  Kokkos::parallel_reduce( my_exec_space(0,num_elements),
+      IsIdenticalFunctor<view_type1, view_type2, eps_type>(view1, view2, eps), issame);
+  MyExecSpace::fence();
+  if (issame > 0){
+    return false;
+  }
+  else {
+    return true;
+  }
+}
+
 }
 }
 }

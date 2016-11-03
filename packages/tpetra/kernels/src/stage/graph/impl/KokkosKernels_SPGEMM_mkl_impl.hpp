@@ -52,6 +52,9 @@
 #endif
 
 #include "KokkosKernels_Utils.hpp"
+#include <Kokkos_Concepts.hpp>
+
+
 namespace KokkosKernels{
 
 namespace Experimental{
@@ -111,14 +114,14 @@ namespace Impl{
 
     typedef typename KernelHandle::HandleExecSpace MyExecSpace;
 
-#if defined( KOKKOS_HAVE_CUDA )
-    if (!Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value ||
-        !Kokkos::Impl::is_same<Kokkos::Cuda, device2 >::value ||
-        !Kokkos::Impl::is_same<Kokkos::Cuda, device3 >::value){
+    if (!(
+        (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device1::memory_space>::accessible) &&
+        (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device2::memory_space>::accessible) &&
+        (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device3::memory_space>::accessible) )
+        ){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL\n");
       return;
     }
-#endif
 
     if (Kokkos::Impl::is_same<idx, int>::value){
 
@@ -362,8 +365,6 @@ namespace Impl{
       }
     }
     else {
-
-
       throw std::runtime_error ("MKL requires local ordinals to be integer.\n");
       return;
     }

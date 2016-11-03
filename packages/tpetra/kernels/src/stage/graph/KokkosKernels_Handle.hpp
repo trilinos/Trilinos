@@ -137,7 +137,7 @@ public:
       team_work_size (-1), shared_memory_size(16128),
       suggested_team_size(-1),
       my_exec_space(KokkosKernels::Experimental::Util::kk_get_exec_space_type<HandleExecSpace>()),
-      use_dynamic_scheduling(false), KKVERBOSE(false){}
+      use_dynamic_scheduling(true), KKVERBOSE(false){}
 
   ~KokkosKernelsHandle(){
     this->destroy_gs_handle();

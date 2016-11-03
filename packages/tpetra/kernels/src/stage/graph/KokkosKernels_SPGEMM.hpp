@@ -94,11 +94,9 @@ namespace Graph{
 
     case SPGEMM_CUSP:
       break;
+
+    case SPGEMM_DEFAULT:
     case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK4:
-    case SPGEMM_KK3:
-    case SPGEMM_KK2:
-    case SPGEMM_KK1:
     case SPGEMM_KK_SPEED:
     case SPGEMM_KK_MEMORY:
     case SPGEMM_KK_COLOR:
@@ -114,8 +112,8 @@ namespace Graph{
     }
       break;
 
-    case SPGEMM_DEFAULT:
     case SPGEMM_SERIAL:
+    case SPGEMM_DEBUG:
     case SPGEMM_MKL:
     default:
       break;
@@ -214,11 +212,9 @@ namespace Graph{
                 row_mapB, entriesB, valuesB, transposeB,
                 row_mapC, entriesC, valuesC, handle->get_verbose());
       break;
+
+    case SPGEMM_DEFAULT:
     case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK4:
-    case SPGEMM_KK3:
-    case SPGEMM_KK2:
-    case SPGEMM_KK1:
     case SPGEMM_KK_SPEED:
     case SPGEMM_KK_MEMORY:
     case SPGEMM_KK_COLOR:
@@ -234,8 +230,26 @@ namespace Graph{
     }
     break;
 
-    case SPGEMM_DEFAULT:
     case SPGEMM_SERIAL:
+    case SPGEMM_DEBUG:
+      KokkosKernels::Experimental::Graph::Impl::spgemm_debug(
+          handle,
+          m,
+          n,
+          k,
+          row_mapA,
+          entriesA,
+          valuesA,
+
+          transposeA,
+          row_mapB,
+          entriesB,
+          valuesB,
+          transposeB,
+          row_mapC,
+          entriesC,
+          valuesC
+          );
     default:
       break;
     }

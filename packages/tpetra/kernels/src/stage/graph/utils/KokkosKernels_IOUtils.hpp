@@ -46,33 +46,25 @@
 #include <sstream>
 #include <algorithm>
 #include <vector>
+#include <stdexcept>
+#ifndef _KOKKOSKERNELSIOUTILS_HPP
+#define _KOKKOSKERNELSIOUTILS_HPP
 
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <impl/Kokkos_Timer.hpp>
-
-#ifndef _KOKKOSKERNELSGRAPHUTILS_HPP
-#define _KOKKOSKERNELSGRAPHUTILS_HPP
-
-
 
 namespace KokkosKernels{
 namespace Experimental{
 
+namespace Util{
 
-
-namespace Graph{
-
-namespace Utils{
-
+//TODO: need to fix the size_type. All over the reading inputs are lno_t.
 
 template <typename stype>
 void md_malloc(stype **arr, size_t n, std::string alloc_str = ""){
   *arr = new stype[n];
   if (*arr == NULL){
-    std::cerr << "Memory Allocation Problem " << alloc_str << std::endl;
-    exit(1);
+    throw std::runtime_error ("Memory Allocation Problem\n");
   }
 }
 
@@ -163,7 +155,6 @@ void read_edgelist_bin(
     wt **ew,
     const  char *filename){
 
-  std::cout << "filename:" << filename << std::endl;
   std::ifstream myFile (filename, std::ios::in | std::ios::binary);
 
 
@@ -175,7 +166,6 @@ void read_edgelist_bin(
   myFile.read((char *) *edge_ends, sizeof(idx) * (*ne));
   myFile.read((char *) *ew, sizeof(wt) * (*ne));
   myFile.close();
-  std::cout << " nnz:" << *ne << std::endl;
 }
 
 
@@ -192,9 +182,8 @@ void write_graph_bin(idx nv, idx ne,const idx *xadj,const  idx *adj,const  wt *e
 }
 
 template <typename idx, typename wt>
-void read_graph_bin(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, char *filename){
+void read_graph_bin(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, const char *filename){
 
-  std::cout << "filename:" << filename << std::endl;
   std::ifstream myFile (filename, std::ios::in | std::ios::binary);
 
   myFile.read((char *) nv, sizeof(idx));
@@ -206,28 +195,37 @@ void read_graph_bin(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, char *filen
   myFile.read((char *) *adj, sizeof(idx) * (*ne));
   myFile.read((char *) *ew, sizeof(wt) * (*ne));
   myFile.close();
-  std::cout << "nr:" << *nv << " nnz:" << *ne << std::endl;
+}
+
+
+
+bool endswith (std::string const &fullString, std::string const &ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
 }
 
 
 template <typename idx, typename wt>
 int read_mtx (
-    char *fileName,
+    const char *fileName,
     idx *nv, idx *ne,
     idx **xadj, idx **adj, wt **ew,
     bool symmetrize = false, bool remove_diagonal = true,
     bool transpose = false){
 
   std::ifstream mmf (fileName, std::ifstream::in);
-  if (!mmf.is_open()) {std::cerr << "File cannot be opened" << std::endl; return 1;}
-  std::cout << "Reading MTX file with name:" << fileName << std::endl;
+  if (!mmf.is_open()) {
+    throw std::runtime_error ("File cannot be opened\n");
+  }
+
   std::string fline = "";
   getline(mmf, fline);
 
   if (fline.size() < 2 || fline[0] != '%' || fline[1] != '%'){
-    std::cerr << "Invalid MM file. Line-1" << std::endl;
-    std::cerr << fline << std::endl;
-    return 1;
+    throw std::runtime_error ("Invalid MM file. Line-1\n");
   }
 
 
@@ -278,9 +276,15 @@ int read_mtx (
     mtx_sym = 0;
   }
 
-  if (mtx_object == 1) {std::cerr << "VECTOR TYPE NOT HANDLED YET"<< std::endl; return (1); }
-  if (mtx_format == 1) {std::cerr << "ARRAY TYPE NOT HANDLED YET"<< std::endl; return (1); }
-  if (!symmetrize && (mtx_sym == 2 || mtx_sym == 3)) {std::cerr << "SKEW-SYMMETRIC and HERMITIAN TYPE NOT HANDLED YET"<< std::endl; return (1);}
+  if (mtx_object == 1) {
+    throw std::runtime_error ("VECTOR TYPE NOT HANDLED YET\n");
+  }
+  if (mtx_format == 1) {
+    throw std::runtime_error ("ARRAY TYPE NOT HANDLED YET\n");
+  }
+  if (!symmetrize && (mtx_sym == 2 || mtx_sym == 3)) {
+    throw std::runtime_error ("SKEW-SYMMETRIC and HERMITIAN TYPE NOT HANDLED YET\n");
+  }
 
 
   while(1){
@@ -296,7 +300,6 @@ int read_mtx (
   //if (nr != nc) {std::cerr << "NON-SQUARE MATRIX TYPE NOT HANDLED YET"<< std::endl; return (1); }
   idx noEdges = nnz;
   if (mtx_sym == 1 || symmetrize) noEdges = 2 * nnz;
-  std::cout << "nr:" << nr << " nc:" << nc << " nnz:" << nnz << " noEdges:" << noEdges << std::endl;
 
   std::vector <struct Edge<idx, wt> > edges (noEdges);
   idx nE = 0, noDiagonal = 0;
@@ -344,9 +347,6 @@ int read_mtx (
     nr = nc;
     nc = tmp;
   }
-  std::cout   << "MTX READ" << std::endl
-    << "NV:" << nr << " NNZ:" << nnz << std::endl
-    << "No Diagonals:" << noDiagonal << " no edges:" << nE << std::endl;
 
   //idx *nv, idx *ne, idx **xadj, idx **adj, wt **wt
 
@@ -381,196 +381,72 @@ int read_mtx (
   return 0;
 }
 
-template <typename idx, typename color_type>
-void count_colors(idx nv, color_type *colors, idx *histogram, color_type *numColors){
-  color_type nc = 0;
-
-  for (idx i = 0; i < nv + 1; ++i ){
-    histogram[i] = 0;
-  }
-  for (idx i = 0; i < nv; ++i ){
-    if (histogram[colors[i]]++ == 0) nc++;
-  }
-  *numColors = nc;
-}
-
-
-
-template <typename idx, typename color_type, typename MyExecSpace>
-void count_colors(
-    idx nv,
-    typename Kokkos::View<color_type * , MyExecSpace> colors,
-    typename Kokkos::View<idx *, MyExecSpace> histogram,
-    color_type *numColors){
-  typedef Kokkos::View<color_type * , MyExecSpace> color_array_type;
-  typedef Kokkos::View<idx *, MyExecSpace> idx_array_type;
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  color_type nc = 0;
-
-  struct count_colors{
-    color_array_type colors_;
-    idx_array_type histogram_;
-    idx nvertex_;
-    idx increment;
-    count_colors(color_array_type cs, idx_array_type hs_, idx nv_):
-      colors_(cs), histogram_(hs_), nvertex_(nv_), increment(1){}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const idx ii, color_type &numCols) const {
-
-      idx val = Kokkos::atomic_fetch_add<idx>(&(histogram_[colors_[ii]]), increment);
-      if (val == 0) numCols++;
-    }
-  };
-
-  Kokkos::parallel_reduce(
-      my_exec_space(0, nv),
-      count_colors(colors, histogram, nv),
-      nc);
-  Kokkos::fence();
-  *numColors = nc;
-}
-
-template <typename idx, typename color_type>
-int is_coloring_valid(idx nv, idx *xadj, idx *adj, color_type* colors){
-  for (idx i = 0; i < nv; ++i) {
-    idx nb = xadj[i];
-    idx ne = xadj[i+1];
-    color_type scol = colors[i];
-    for(idx j = nb; j < ne; ++j) {
-      idx d = adj[j];
-      color_type dcol = colors[d];
-      if (scol == dcol){
-      std::cout << "#############################ERROR##########################################"<< std::endl;
-      std::cout << "s:" << i << " d:" << d << " scol:" << scol << " dcol:" << dcol << std::endl;
-      std::cout << "############################################################################"<< std::endl;
-        return 0;
-      }
-    }
-  }
-  return 1;
-}
-
-
-template <typename idx>
-double get_std_degree(idx nv, idx ne,idx *xadj, idx *adj){
-  double avg_degree = ne / (double) (nv);
-
-  double std = 0;
-  for (idx i = 0; i < nv; ++i){
-    double degree = xadj[i+1] - xadj[i];
-    degree = degree - avg_degree;
-    std += degree * degree;
-  }
-  return std / nv;
-}
-
-template <typename idx>
-void get_warp_properties(
-    long & total_warp_work, long & total_wasted_cycles, long &actual_work,
-    idx nv, idx ne, idx *xadj, idx *adj, idx chunksize = 8, idx warp_size = 32){
-  total_warp_work = 0;
-  total_wasted_cycles = 0;
-  actual_work = 0;
-  for (idx i = 0; i < nv; i += warp_size * chunksize){
-
-    idx cutoff = i + warp_size * chunksize;
-    if (nv < cutoff) cutoff = nv;
-
-    for (idx k = 0; k < chunksize; ++k){
-      idx max_thread_work = 0;
-
-      for (idx j = i + k; j < cutoff ; j+= chunksize){
-        idx thread_work = xadj[j+1 ] - xadj[j];
-        actual_work += thread_work;
-        if (thread_work > max_thread_work) max_thread_work = thread_work;
-      }
-
-      idx wasted_cycles = 0;
-      for (idx j = i + k; j < cutoff ; j+= chunksize){
-        idx thread_work = xadj[j+1] - xadj[j];
-        wasted_cycles += max_thread_work - thread_work;
-      }
-
-      total_warp_work += max_thread_work * warp_size;
-      total_wasted_cycles += wasted_cycles;
-    }
-  }
-}
-
-template <typename idx>
-double get_thread_imbalance(
-    idx nv, idx ne, idx *xadj, idx *adj, idx num_threads = 228){
-
-  idx block_size = ceil (nv / double (num_threads));
-
-  idx max_work = 0;
-  for (idx i = 0; i < num_threads; ++i){
-    idx work_begin = i * block_size;
-    idx work_end = (i + 1) * block_size;
-    if (work_end > nv) work_end = nv;
-
-    idx thread_work = xadj [work_end] - xadj[work_begin];
-    if (max_work < thread_work){
-      max_work = thread_work;
-    }
-  }
-
-  double expected_work = ne / double(num_threads) + 0.5;
-  return max_work / expected_work;
-
-}
-
-
-
 template <typename idx, typename wt>
-int is_symmetric_graph(idx nv, idx *xadj, idx *adj, wt *ew = NULL){
-  for (idx i = 0; i < nv; ++i){
-    idx nb = xadj[i];
-    idx ne = xadj[i + 1];
-    for (idx j = nb; j < ne; ++j){
-      idx n = adj[j];
-      bool am_i_ns_neighbor = false;
+void read_matrix(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, const char *filename){
 
-      wt inew = 1;
-      if (ew){
-        inew = ew[j];
-      }
-
-      idx nnb = xadj[n];
-      idx nne = xadj[n + 1];
-
-
-      for (idx nj = nnb; nj < nne; ++nj){
-        idx nn = adj[nj];
-
-        if (nn == i){
-          if (ew){
-            wt inewr = ew[nj];
-            if (inew != inewr) {
-              am_i_ns_neighbor = false;
-            }
-
-          }
-          else {
-            am_i_ns_neighbor = true;
-          }
-
-          break;
-        }
-
-
-      }
-      if (!am_i_ns_neighbor){
-        std::cout << "not symetric i:" << i << " n:" << n << " bot not reverse." << std::endl;
-        return 0;
-      }
-    }
+  std::string strfilename(filename);
+  if (endswith(strfilename, ".mtx")){
+    read_mtx (
+        filename,
+        nv, ne,
+        xadj, adj, ew,false,false,false);
   }
-  return 1;
+
+  else if (endswith(strfilename, ".bin")){
+    read_graph_bin(nv, ne,xadj, adj, ew, filename);
+  }
+  else {
+    throw std::runtime_error ("Reader is not available\n");
+  }
+}
+
+template <typename crsMat_t>
+crsMat_t read_kokkos_crst_matrix(const char * filename_){
+
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+  size_t  nv, *xadj, *adj, nnzA;
+  double *values;
+  read_matrix<size_t, double>(
+      &nv, &nnzA, &xadj, &adj, &values, filename_);
+
+  row_map_view_t rowmap_view("rowmap_view", nv+1);
+  cols_view_t columns_view("colsmap_view", nnzA);
+  values_view_t values_view("values_view", nnzA);
+
+
+  {
+    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+    typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+    typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+    for (size_t i = 0; i <= nv; ++i){
+      hr(i) = xadj[i];
+    }
+
+    for (size_t i = 0; i < nnzA; ++i){
+      hc(i) = adj[i];
+      hv(i) = values[i];
+    }
+    Kokkos::deep_copy (rowmap_view , hr);
+    Kokkos::deep_copy (columns_view , hc);
+    Kokkos::deep_copy (values_view , hv);
+  }
+
+  graph_t static_graph (columns_view, rowmap_view);
+  crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
+  delete [] xadj; delete [] adj; delete [] values;
+  return crsmat;
+}
+
+
+
+
 }
 }
-}
-}
+
 }
 #endif

@@ -40,9 +40,10 @@
 // ************************************************************************
 //@HEADER
 */
-#include <KokkosKernels_GraphHelpers.hpp>
 #include <cstdlib>
 #include <iostream>
+#include "KokkosKernels_IOUtils.hpp"
+#include <string.h>
 
 
 typedef int idx;
@@ -84,10 +85,10 @@ int main (int argc, char ** argv){
   idx nv = 0, ne = 0;
   idx *xadj, *adj;
   wt *ew;
-  KokkosKernels::Experimental::Graph::Utils::read_mtx<idx,wt>
+  KokkosKernels::Experimental::Util::read_mtx<idx,wt>
       (in_mtx, &nv, &ne, &xadj, &adj, &ew, symmetrize, remove_diagonal, transpose);
 
-  KokkosKernels::Experimental::Graph::Utils::write_graph_bin<idx, wt> (nv, ne, xadj, adj, ew, out_bin);
+  KokkosKernels::Experimental::Util::write_graph_bin<idx, wt> (nv, ne, xadj, adj, ew, out_bin);
 
   delete [] xadj;
   delete [] adj;

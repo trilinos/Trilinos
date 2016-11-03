@@ -87,6 +87,7 @@ namespace Impl{
     typedef typename ain_row_index_view_type::non_const_type idx_array_type;
 
 
+    //TODO this is not correct, check memory space.
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
       return;

@@ -55,10 +55,9 @@
 #include <iostream>
 #include "KokkosKernels_GaussSeidel.hpp"
 #include "KokkosKernels_Handle.hpp"
-#include <Kokkos_Sparse_CrsMatrix.hpp>
+///#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <Kokkos_Sparse.hpp>
 #include <Kokkos_Blas1_MV.hpp>
-#include <Kokkos_Blas1.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -154,7 +153,7 @@ void pcgsolve(
     timer.reset();
 
     KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply
-        (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, z, r, true, apply_count);
+        (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, z, r, true, true, apply_count);
 
     Space::fence();
     precond_time += timer.seconds();
