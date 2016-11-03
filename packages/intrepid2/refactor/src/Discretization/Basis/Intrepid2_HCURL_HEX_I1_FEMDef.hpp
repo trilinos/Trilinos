@@ -192,14 +192,6 @@ namespace Intrepid2 {
     getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const EOperator operatorType ) {
-#ifdef HAVE_INTREPID2_DEBUG
-      Intrepid2::getValues_HCURL_Args(outputValues,
-                                      inputPoints,
-                                      operatorType,
-                                      obj_->getBaseCellTopology(),
-                                      obj_->getCardinality() );
-#endif
-
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
