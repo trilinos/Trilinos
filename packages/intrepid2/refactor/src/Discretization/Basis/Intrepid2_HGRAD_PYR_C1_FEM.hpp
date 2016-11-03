@@ -116,8 +116,8 @@ namespace Intrepid2 {
       void operator()(const ordinal_type pt) const {
         switch (opType) {
         case OPERATOR_VALUE : {
-          auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt );
-          const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
+          auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt );
+          const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
           Serial<opType>::getValues( output, input );
           break;
         }
@@ -125,8 +125,8 @@ namespace Intrepid2 {
         case OPERATOR_CURL :
         case OPERATOR_D2 :
         case OPERATOR_MAX : {
-          auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
-          const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
+          auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+          const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
           Serial<opType>::getValues( output, input );
           break;
         }

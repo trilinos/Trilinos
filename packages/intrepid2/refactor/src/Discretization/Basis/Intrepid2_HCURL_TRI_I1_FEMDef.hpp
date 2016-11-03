@@ -67,7 +67,7 @@ namespace Intrepid2 {
         const auto x = input(0);
         const auto y = input(1);
       
-        // output is a subdynrankview of a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim), dim0 iteration of range
+        // output is a subview of a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim), dim0 iteration of range
         output(0, 0) = 1.0 - y;
         output(0, 1) = x;
       
@@ -79,7 +79,7 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_CURL: {
-        // outputValues is a subdynrankview of a rank-2 array with dimensions (basisCardinality_, dim0), dim0 iteration of range
+        // outputValues is a subview of a rank-2 array with dimensions (basisCardinality_, dim0), dim0 iteration of range
         output(0) = 2.0;
         output(1) = 2.0;
         output(2) = 2.0;

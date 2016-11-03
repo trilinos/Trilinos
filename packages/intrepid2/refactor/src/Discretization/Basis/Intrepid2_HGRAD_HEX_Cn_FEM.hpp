@@ -106,7 +106,7 @@ namespace Intrepid2 {
           const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
 
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
-          const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
+          const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
           constexpr ordinal_type bufSize = 3*(Parameters::MaxOrder+1)*numPtsEval;
@@ -117,13 +117,13 @@ namespace Intrepid2 {
 
           switch (opType) {
           case OPERATOR_VALUE : {
-            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
+            auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
             Serial<opType>::getValues( output, input, work, _vinv );
             break;
           }
           case OPERATOR_CURL :
           case OPERATOR_Dn : {
-            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+            auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<opType>::getValues( output, input, work, _vinv, _opDn );
             break;
           }

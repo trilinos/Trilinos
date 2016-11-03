@@ -152,8 +152,8 @@ namespace Intrepid2 {
           switch (opType) {
           case OPERATOR_VALUE:
           case OPERATOR_CURL:  {
-            auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
-            const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
+            auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
             break;
           }

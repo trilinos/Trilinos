@@ -222,7 +222,7 @@ namespace Intrepid2 {
         
       //   // internal points
       //   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-      //   auto pts = Kokkos::subdynrankview(dofCoords, range_type(2, card), Kokkos::ALL());
+      //   auto pts = Kokkos::subview(dofCoords, range_type(2, card), Kokkos::ALL());
         
       //   const auto offset = 1;
       //   PointTools::getLattice( pts,
