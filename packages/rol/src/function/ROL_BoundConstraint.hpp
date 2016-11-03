@@ -129,6 +129,13 @@ public:
     : x_lo_(Teuchos::null), x_up_(Teuchos::null), scale_(1),
       mask_(Teuchos::null), activated_(false), min_diff_(0) {}
 
+  BoundConstraint( const Vector<Real> &x ) : x_lo_(x.clone()), 
+      x_up_(x.clone()), scale_(1),
+      mask_(Teuchos::null), activated_(false), min_diff_(0) {
+    x_lo_->applyUnary(Elementwise::Fill<Real>(ROL_NINF<Real>()));
+    x_up_->applyUnary(Elementwise::Fill<Real>(ROL_INF<Real>()));
+
+  }
   /** \brief Default constructor.
 
       The default constructor automatically turns the constraints on.
@@ -292,7 +299,16 @@ public:
     return x_up_;
   }
 
- 
+   /** \brief Return the ref count pointer to the lower bound vector */
+  virtual  const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) {
+    return x_lo_;
+  }
+
+  /** \brief Return the ref count pointer to the upper bound vector */
+  virtual const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) {
+    return x_up_;
+  }
+
     
 
   /** \brief Set the input vector to the upper bound.
@@ -301,7 +317,12 @@ public:
       @param[out]    u   is the vector to be set to the upper bound.
   */ 
   virtual void setVectorToUpperBound( Vector<Real> &u ) {
-    u.set(*x_up_);
+    if( x_up_ == Teuchos::null ) {
+      u.applyUnary(Elementwise::Fill<Real>(ROL_INF<Real>()));
+    }
+    else {
+      u.set(*x_up_);
+    }
   }
 
   /** \brief Set the input vector to the lower bound.
@@ -310,7 +331,12 @@ public:
       @param[out]    l   is the vector to be set to the lower bound.
   */ 
   virtual void setVectorToLowerBound( Vector<Real> &l ) {
-    l.set(*x_lo_);
+    if( x_lo_ == Teuchos::null ) {
+      l.applyUnary(Elementwise::Fill<Real>(ROL_NINF<Real>()));
+    }
+    else {
+      l.set(*x_lo_);
+    }
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-active set.

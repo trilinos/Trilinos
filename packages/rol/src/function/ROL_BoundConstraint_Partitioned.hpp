@@ -45,7 +45,7 @@
 #define ROL_BOUND_CONSTRAINT_PARTITIONED_H
 
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_Vector_Partitioned.hpp"
+#include "ROL_PartitionedVector.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
 
@@ -67,8 +67,11 @@ class BoundConstraint_Partitioned : public BoundConstraint<Real> {
 private:
   std::vector<Teuchos::RCP<BoundConstraint<Real> > > bnd_;
 
-  uint dim_;
+  Teuchos::RCP<V> l_;
+  Teuchos::RCP<V> u_;
 
+  uint dim_;
+ 
 public:
   ~BoundConstraint_Partitioned() {}
 
@@ -76,22 +79,28 @@ public:
 
       The default constructor automatically turns the constraints on.
   */
-  BoundConstraint_Partitioned(std::vector<const Teuchos::RCP<BoundConstraint<Real> > > &bnd )
-    : bnd_(bnd) {
-    bool active = false;
-
-    dim_ = bnd.size();
+  BoundConstraint_Partitioned(const std::vector<Teuchos::RCP<BoundConstraint<Real> > > &bnd )
+    : bnd_(bnd), dim_(bnd.size()) {
+    BoundConstraint<Real>::deactivate();
+    for( uint k=0; k<dim_; ++k ) {
+      std::cout << bnd_[k]->isActivated() << std::endl;
+      if( bnd_[k]->isActivated() ) {
+        BoundConstraint<Real>::activate();
+        break;
+      }
+    }
+    std::cout << BoundConstraint<Real>::isActivated() << std::endl;
+    std::vector<Teuchos::RCP<Vector<Real> > > lp;
+    std::vector<Teuchos::RCP<Vector<Real> > > up;
 
     for( uint k=0; k<dim_; ++k ) {
-      active = active || bnd_[k]->isActivated();
-    }    
-  
-    if( active ) {
-      BoundConstraint<Real>::activate();
-    } 
-    else {
-      BoundConstraint<Real>::deactivate();
+      lp.push_back(bnd_[k]->getLowerVectorRCP());
+      up.push_back(bnd_[k]->getUpperVectorRCP());
     }
+
+    l_ = Teuchos::rcp(new PV(lp) );
+    u_ = Teuchos::rcp(new PV(up) );
+
   }
 
   /** \brief Update bounds. 
@@ -106,7 +115,7 @@ public:
     const PV &xpv = Teuchos::dyn_cast<const PV>(x);
 
     for( uint k=0; k<dim_; ++k ) {
-      if( bnd_[k]->isActivate() {
+      if( bnd_[k]->isActivated() ) {
         bnd_[k]->update(*(xpv.get(k)),flag,iter);   
       }
     }
@@ -124,31 +133,10 @@ public:
 
     PV &xpv = Teuchos::dyn_cast<PV>(x);
     for( uint k=0; k<dim_; ++k ) {
-      Teuchos::RCP<V> xk = xpv.get(k)->clone(); 
-      xk->set(*(xpv.get(k)));
-      bnd_[k]->project(*xk);
-      xpv.set(k,*xs);
-    }
-
-  /** \brief Determine if a vector of Lagrange multipliers is nonnegative components.
-  
-      This function returns true if components of \f$l\f$ corresponding to the components of \f$x\f$ 
-      that are active at the upper bound are nonpositive or the components of \f$l\f$ corresponding
-      to the components of \f$x\f$ that are active at the lower bound are nonnegative.
-  */
-  bool checkMultipliers( const Vector<Real> &l, const Vector<Real> &x ) {
-
-    const PV &lpv = Teuchos::dyn_cast<const PV>(l);
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
-
-    bool nonneg = true;
-
-    for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
-        nonneg = nonneg && bnd_[k]->checkMultipliers(*(lpv.get(k)),*(xpv.get(k)));
+        bnd_[k]->project(*xpv.get(k));
       }
-    } 
-    return nonneg;
+    }
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.
@@ -169,9 +157,10 @@ public:
 
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
-        Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
-        bnd_[k]->pruneUpperActive(*vk,*(xpv.get(k)),eps); 
-        vpv.set(k,*vk);
+        bnd_[k]->pruneUpperActive(*(vpv.get(k)),*(xpv.get(k)),eps);
+//        Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
+//        bnd_[k]->pruneUpperActive(*vk,*(xpv.get(k)),eps); 
+//        vpv.set(k,*vk);
       }
     }
  }
@@ -196,9 +185,12 @@ public:
     const PV &xpv = Teuchos::dyn_cast<const PV>(x);
 
     for( uint k=0; k<dim_; ++k ) {
-      Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
-      bnd_[k]->pruneUpperActive(*vk,*(xpv.get(k)),eps);
-      vpv.set(k,*vk);
+      if( bnd_[k]->isActivated() ) {
+        bnd_[k]->pruneUpperActive(*(vpv.get(k)),*(gpv.get(k)),*(xpv.get(k)),eps);
+//        Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
+//        bnd_[k]->pruneUpperActive(*vk,*(gpv.get(k)),*(xpv.get(k)),eps);
+//        vpv.set(k,*vk);
+      }
     }
   }
  
@@ -220,9 +212,10 @@ public:
  
    for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
-        Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
-        bnd_[k]->pruneLowerActive(*vk,*(xpv.get(k)),eps); 
-        vpv.set(k,*vk);
+        bnd_[k]->pruneLowerActive(*(vpv.get(k)),*(xpv.get(k)),eps);
+//        Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
+//        bnd_[k]->pruneLowerActive(*vk,*(xpv.get(k)),eps); 
+//        vpv.set(k,*vk);
       }
     }
   }
@@ -246,37 +239,31 @@ public:
     const PV &xpv = Teuchos::dyn_cast<const PV>(x);
 
     for( uint k=0; k<dim_; ++k ) {
-      Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
-      bnd_[k]->pruneLowerActive(*vk,*(xpv.get(k)),eps);
-      vpv.set(k,*vk);
+      if( bnd_[k]->isActivated() ) {
+        bnd_[k]->pruneLowerActive(*(vpv.get(k)),*(gpv.get(k)),*(xpv.get(k)),eps);
+//        Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
+//        bnd_[k]->pruneLowerActive(*vk,*(gpv.get(k)),*(xpv.get(k)),eps);
+//        vpv.set(k,*vk);
+      }
     }
   }
  
   const Teuchos::RCP<const Vector<Real> > getLowerVectorRCP( void ) const {
-
-    std::vector<Teuchos::RCP<V> > vec;
-
-    for( uint k=0; k<dim_; ++k ) {
-      vec.push_back( bnd_[k]->getLowerVectorRCP() );
-    }
-    
-    Teuchos::RCP<V> lp = Teuchos::rcp( new PV( vec ) );
-    return lp;
+    return l_;
   }
        
   
 
   const Teuchos::RCP<const Vector<Real> > getUpperVectorRCP( void ) const {
+    return u_;
+  }
 
-    std::vector<Teuchos::RCP<V> > vec;
+  const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) {
+    return l_;
+  }
 
-    for( uint k=0; k<dim_; ++k ) {
-      vec.push_back( bnd_[k]->getUpperVectorRCP() );
-    }
-    
-    Teuchos::RCP<V> up = Teuchos::rcp( new PV( vec ) );
-    return up;
-
+  const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) {
+    return u_;
   }
 
 
@@ -287,13 +274,14 @@ public:
       @param[out]    u   is the vector to be set to the upper bound.
   */ 
   void setVectorToUpperBound( Vector<Real> &u ) {
-    PV &upv = Teuchos::dyn_cast<PV>(u);
+/*    PV &upv = Teuchos::dyn_cast<PV>(u);
 
     for( uint k=0; k<dim_; ++k ) {
       Teuchos::RCP<V> uk = upv.get(k)->clone();
       bnd_[k]->setVectorToUpperBound(*uk);
       upv.set(k,*uk);
-    }  
+    }  */
+    u.set(*u_);
   }
 
   /** \brief Set the input vector to the lower bound.
@@ -302,13 +290,14 @@ public:
       @param[out]    l   is the vector to be set to the lower bound.
   */ 
   void setVectorToLowerBound( Vector<Real> &l ) {
-    PV &lpv = Teuchos::dyn_cast<PV>(l);
+/*    PV &lpv = Teuchos::dyn_cast<PV>(l);
 
     for( uint k=0; k<dim_; ++k ) {
       Teuchos::RCP<V> lk = lpv.get(k)->clone();
-      bnd_[k]->setVectorToLowerBound(*uk);
+      bnd_[k]->setVectorToLowerBound(*lk);
       lpv.set(k,*lk);
-    }  
+    }  */
+    l.set(*l_);
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-active set.
@@ -328,9 +317,12 @@ public:
     const PV &xpv = Teuchos::dyn_cast<const PV>(x); 
  
     for( uint k=0; k<dim_; ++k ) {
-      Teuchos::RCP<V> vk = vpv.get(k)->clone();
-      bnd_[k]->pruneActive(*vk,*(xpv.get(k)),eps);
-      vpv.set(k,*vk);
+      if( bnd_[k]->isActivated() ) {
+//        Teuchos::RCP<V> vk = vpv.get(k)->clone();
+//        bnd_[k]->pruneActive(*vk,*(xpv.get(k)),eps);
+//        vpv.set(k,*vk);
+        bnd_[k]->pruneActive(*(vpv.get(k)),*(xpv.get(k)),eps);
+      }
     }
   }
 
@@ -353,10 +345,14 @@ public:
     const PV &xpv = Teuchos::dyn_cast<const PV>(x);
 
     for( uint k=0; k<dim_; ++k ) {
-      if(bnd_[k]->isActive()) {
+      if(bnd_[k]->isActivated()) {
+/*
         Teuchos::RCP<V> vk = vpv.get(k)->clone();
-        bnd_[k]->pruneActive(*vk,*(gpv.get(k),*(xpv.get(k))),eps;
+        bnd_[k]->pruneActive(*vk,*(gpv.get(k)),*(xpv.get(k)),eps);
         vpv.set(k,*vk);
+*/      
+        bnd_[k]->pruneActive(*(vpv.get(k)),*(gpv.get(k)),*(xpv.get(k)),eps);
+
       }
     }
   }
@@ -369,13 +365,51 @@ public:
   bool isFeasible( const Vector<Real> &v ) { 
     bool feasible = true;
     const PV &vs = Teuchos::dyn_cast<const PV>(v);
+    
     for( uint k=0; k<dim_; ++k ) {
-      feasible = feasible && bnd_[k]_->isFeasible(*(vs.get(k)));
+      if(bnd_[k]->isActivated()) {
+        feasible = feasible && bnd_[k]->isFeasible(*(vs.get(k)));
+      }
     }
     return feasible;
   }
 
+/*
+  bool isActivated(void) {
+    return activated_;
+  } 
+  // This looks suspicious
+  void activate(void) {
+    for( uint k=0; k<dim_; ++k ) {
+      bnd_->activate();
+    }   
+    activated_ = true;
+  }
+
+  void deactivate(void) {
+    std::cout << "deactivate()" << std::endl;
+    for( uint k=0; k<dim_; ++k ) {
+      bnd_->deactivate();
+    }   
+    activated_ = false;
+  }
+*/
 }; // class BoundConstraint_Partitioned
+
+
+
+template<class Real>
+Teuchos::RCP<BoundConstraint<Real> > 
+CreateBoundConstraint_Partitioned( const Teuchos::RCP<BoundConstraint<Real> > &bnd1,
+                                   const Teuchos::RCP<BoundConstraint<Real> > &bnd2 ) {
+
+  using Teuchos::RCP;   using Teuchos::rcp;
+  typedef BoundConstraint<Real>             BND;
+  typedef BoundConstraint_Partitioned<Real> BNDP;
+  RCP<BND> temp[] = {bnd1, bnd2};
+  return rcp( new BNDP( std::vector<RCP<BND> >(temp,temp+2) ) );
+}
+
 
 } // namespace ROL
 
