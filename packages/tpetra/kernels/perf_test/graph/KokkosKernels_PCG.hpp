@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 2.0
-//              Copyright (2014) Sandia Corporation
+//          KokkosKernels: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -55,10 +55,9 @@
 #include <iostream>
 #include "KokkosKernels_GaussSeidel.hpp"
 #include "KokkosKernels_Handle.hpp"
-#include <Kokkos_Sparse_CrsMatrix.hpp>
+///#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <Kokkos_Sparse.hpp>
 #include <Kokkos_Blas1_MV.hpp>
-#include <Kokkos_Blas1.hpp>
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -154,7 +153,7 @@ void pcgsolve(
     timer.reset();
 
     KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply
-        (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, z, r, true, apply_count);
+        (&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, z, r, true, true, apply_count);
 
     Space::fence();
     precond_time += timer.seconds();

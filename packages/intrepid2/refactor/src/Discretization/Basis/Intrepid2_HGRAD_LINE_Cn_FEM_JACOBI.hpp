@@ -185,22 +185,22 @@ namespace Intrepid2 {
           const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
 
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
-          const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
+          const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           if (input.dimension(0)) {
             switch (opType) {
             case OPERATOR_VALUE : {
-              auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
+              auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
               Serial<opType>::getValues( output, input, _order, _alpha, _beta );
               break;
             }
             case OPERATOR_GRAD : {
-              auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+              auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
               Serial<opType>::getValues( output, input, _order, _alpha, _beta );
               break;
             }
             case OPERATOR_Dn: {
-              auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+              auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
               Serial<opType>::getValues( output, input, _order, _alpha, _beta, _opDn );
               break;
             }

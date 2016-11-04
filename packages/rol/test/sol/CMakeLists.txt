@@ -72,7 +72,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  checkSingletonKusuoka
+  checkSpectralRisk
   SOURCES test_09.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1

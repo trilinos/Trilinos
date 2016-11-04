@@ -55,6 +55,7 @@
 #include "Intrepid2_Utils.hpp"
 #include "Intrepid2_Utils_ExtData.hpp"
 
+#include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"

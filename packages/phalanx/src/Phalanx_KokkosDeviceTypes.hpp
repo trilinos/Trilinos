@@ -10,33 +10,40 @@
 // * DEVICE TYPE
 // ***************************************
 
+namespace PHX {
+
 #if defined(PHX_KOKKOS_DEVICE_TYPE_CUDA)
 
-//#include <Kokkos_Cuda.hpp>
-namespace PHX { typedef Kokkos::Cuda Device; 
-                typedef Kokkos::LayoutRight Layout;}
+  //#include <Kokkos_Cuda.hpp>
+  typedef Kokkos::Cuda Device; 
+  typedef Kokkos::LayoutRight Layout;
   
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
   
-//#include <Kokkos_hwloc.hpp>
-//#include <Kokkos_OpenMP.hpp>
-namespace PHX { typedef Kokkos::OpenMP Device; 
-                typedef Kokkos::LayoutRight Layout;}
+  //#include <Kokkos_hwloc.hpp>
+  //#include <Kokkos_OpenMP.hpp>
+  typedef Kokkos::OpenMP Device; 
+  typedef Kokkos::LayoutRight Layout;
 
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_THREAD)
   
 #include <Kokkos_hwloc.hpp>
-//#include <Kokkos_Threads.hpp>
-namespace PHX { typedef Kokkos::Threads Device; 
-                typedef Kokkos::LayoutRight Layout;}
-
+  //#include <Kokkos_Threads.hpp>
+  typedef Kokkos::Threads Device; 
+  typedef Kokkos::LayoutRight Layout;
+  
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_SERIAL)
   
-//#include <Kokkos_Serial.hpp>
-namespace PHX { typedef Kokkos::Serial Device; 
-                typedef Kokkos::LayoutRight Layout;}
-
+  //#include <Kokkos_Serial.hpp>
+  typedef Kokkos::Serial Device; 
+  typedef Kokkos::LayoutRight Layout;
+  
 #endif
+
+  using exec_space = PHX::Device::execution_space;
+  using mem_space = PHX::Device::memory_space;
+
+}
 
 // ***************************************
 // * INDEX SIZE TYPE
@@ -56,6 +63,8 @@ namespace PHX {
   typedef unsigned long int index_size_type;
 #endif
 
+  using index_t = index_size_type;
+  
 }
 
 #endif

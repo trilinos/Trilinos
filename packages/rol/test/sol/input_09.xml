@@ -56,8 +56,8 @@
 
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="CVaR" />
-      <!-- ===========  SINGLETON KUSUOKA  =========== -->
-      <ParameterList name="Singleton Kusuoka">
+      <!-- ===========  SPECTRAL RISK  =========== -->
+      <ParameterList name="Spectral Risk">
         <Parameter name="Number of Quadrature Points" type="int" value="10" />
 
         <ParameterList name="Distribution">

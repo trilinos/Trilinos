@@ -93,6 +93,14 @@ namespace PHX {
     this->addDependentField(tag);
   }
 
+  template<typename EvalT,typename Traits>
+  void EvaluatorWithMacros1<EvalT,Traits>::
+  bindField(const PHX::FieldTag& , const PHX::any& )
+  {
+    // DO NOTHING! This overrides the requirement for a pointer to
+    // fields for unit testing.
+  }
+  
   // Implementation #2
   PHX_EVALUATOR_CTOR(EvaluatorWithMacros2,plist)
   {
@@ -143,6 +151,14 @@ namespace PHX {
       rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
     PHX::Tag<typename EvalT::ScalarT> tag(n,dl);
     this->addDependentField(tag);
+  }
+
+  template<typename EvalT,typename Traits>
+  void EvaluatorWithMacros2<EvalT,Traits>::
+  bindField(const PHX::FieldTag& , const PHX::any& )
+  {
+    // DO NOTHING! This overrides the requirement for a pointer to
+    // fields for unit testing.
   }
 
 } 

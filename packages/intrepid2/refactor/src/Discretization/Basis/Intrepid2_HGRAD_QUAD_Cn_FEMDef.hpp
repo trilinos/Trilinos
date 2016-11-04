@@ -73,8 +73,8 @@ namespace Intrepid2 {
       const auto npts = input.dimension(0);
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-      const auto input_x = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(0,1));
-      const auto input_y = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(1,2));
+      const auto input_x = Kokkos::subview(input, Kokkos::ALL(), range_type(0,1));
+      const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
       
       switch (opType) {
       case OPERATOR_VALUE: {

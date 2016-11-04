@@ -61,9 +61,6 @@ void Constant<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& vm)
 {
-  using namespace PHX;
-  this->utils.setFieldData(constant,vm);
-
   constant.deep_copy(value);
 }
 

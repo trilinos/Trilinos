@@ -46,6 +46,7 @@
 */
 
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -127,7 +128,6 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
     Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
-    pdecon->printMeshData(*outStream);
 
     // Create state vector.
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
@@ -343,17 +343,22 @@ int main(int argc, char *argv[]) {
     }
 
     ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
+    Teuchos::Time algoTimer("Algorithm Time", true);
     algo.run(*zp,*c2p,augLag,*vcon,*bnd,true,*outStream);
+    algoTimer.stop();
+    *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
 
-    Teuchos::Array<RealT> res(1,0);
+    // Output.
+    pdecon->printMeshData(*outStream);
     con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_rcp,"state.txt");
     pdecon->outputTpetraVector(z_rcp,"density.txt");
-    con->value(*rp,*up,*zp,tol);
-    r_rcp->norm2(res.view(0,1));
-    *outStream << "Residual Norm: " << res[0] << std::endl;
-    errorFlag += (res[0] > 1.e-6 ? 1 : 0);
-    pdecon->outputTpetraData();
+    //Teuchos::Array<RealT> res(1,0);
+    //con->value(*rp,*up,*zp,tol);
+    //r_rcp->norm2(res.view(0,1));
+    //*outStream << "Residual Norm: " << res[0] << std::endl;
+    //errorFlag += (res[0] > 1.e-6 ? 1 : 0);
+    //pdecon->outputTpetraData();
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

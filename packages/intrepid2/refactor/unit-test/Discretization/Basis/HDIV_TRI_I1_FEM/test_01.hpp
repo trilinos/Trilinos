@@ -51,6 +51,7 @@
 #define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #endif
 
+#include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HDIV_TRI_I1_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"

@@ -195,7 +195,7 @@ namespace Intrepid2 {
     this->basisType_         = BASIS_FEM_FIAT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
 
-    const auto card = this->basisCardinality_;
+    const ordinal_type card = this->basisCardinality_;
     
     // points are computed in the host and will be copied 
     Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
@@ -222,7 +222,7 @@ namespace Intrepid2 {
         
       //   // internal points
       //   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-      //   auto pts = Kokkos::subdynrankview(dofCoords, range_type(2, card), Kokkos::ALL());
+      //   auto pts = Kokkos::subview(dofCoords, range_type(2, card), Kokkos::ALL());
         
       //   const auto offset = 1;
       //   PointTools::getLattice( pts,
@@ -252,19 +252,21 @@ namespace Intrepid2 {
     // this matrix is used in LAPACK so it should be column major and left layout
     const ordinal_type lwork = card*card;
     Kokkos::DynRankView<PT,Kokkos::LayoutLeft,Kokkos::HostSpace>
-      vmat("Hgrad::Line::Cn::vmat", card, card), work("Hgrad::Line::Cn::work", lwork);
+      vmat("Hgrad::Line::Cn::vmat", card, card), 
+      work("Hgrad::Line::Cn::work", lwork),
+      ipiv("Hgrad::Line::Cn::ipiv", card);
 
     const double alpha = 0.0, beta = 0.0;
     Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
       getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>
       (vmat, dofCoords, order, alpha, beta, OPERATOR_VALUE);
 
-    ordinal_type ipiv[Parameters::MaxOrder+1] = {}, info = 0;
+    ordinal_type info = 0;
     Teuchos::LAPACK<ordinal_type,PT> lapack;
 
     lapack.GETRF(card, card, 
                  vmat.data(), vmat.stride_1(),
-                 ipiv,
+                 (ordinal_type*)ipiv.data(),
                  &info);
 
     INTREPID2_TEST_FOR_EXCEPTION( info != 0,
@@ -273,7 +275,7 @@ namespace Intrepid2 {
 
     lapack.GETRI(card, 
                  vmat.data(), vmat.stride_1(),
-                 ipiv,
+                 (ordinal_type*)ipiv.data(),
                  work.data(), lwork,
                  &info);
 

@@ -43,6 +43,7 @@
 /** \file   Intrepid_HDIV_WEDGE_I1_FEMDef.hpp
     \brief  Definition file for FEM basis functions of degree 1 for H(div) functions on WEDGE cells.
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
+            Kokkorized by Kyungjoo Kim
 */
 
 #ifndef __INTREPID2_HDIV_WEDGE_I1_FEM_DEF_HPP__
@@ -51,68 +52,105 @@
 namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
-  template<typename SpT, typename OT, typename PT>
-  template<EOperator opType>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
-  KOKKOS_INLINE_FUNCTION
-  void
-  Basis_HDIV_WEDGE_I1_FEM<SpT,OT,PT>::Serial<opType>::
-  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
-             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
-    switch (opType) {
-    case OPERATOR_VALUE: {
-      const auto x = input(0);
-      const auto y = input(1);
-      const auto z = input(2);
+  namespace Impl {
 
-      // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-      output(0, 0) = x/2.0;
-      output(0, 1) = (y - 1.0)/2.0;
-      output(0, 2) = 0.0;
+    template<EOperator opType>
+    template<typename outputViewType,
+             typename inputViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    Basis_HDIV_WEDGE_I1_FEM::Serial<opType>::
+    getValues( /**/  outputViewType output,
+               const inputViewType input ) {
+      switch (opType) {
+      case OPERATOR_VALUE: {
+        const auto x = input(0);
+        const auto y = input(1);
+        const auto z = input(2);
 
-      output(1, 0) = x/2.0;
-      output(1, 1) = y/2.0;
-      output(1, 2) = 0.0;
+        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+        output(0, 0) = x/2.0;
+        output(0, 1) = (y - 1.0)/2.0;
+        output(0, 2) = 0.0;
 
-      output(2, 0) = (x - 1.0)/2.0;
-      output(2, 1) = y/2.0;
-      output(2, 2) = 0.0;
+        output(1, 0) = x/2.0;
+        output(1, 1) = y/2.0;
+        output(1, 2) = 0.0;
 
-      output(3, 0) = 0.0;
-      output(3, 1) = 0.0;
-      output(3, 2) = z - 1.0;
+        output(2, 0) = (x - 1.0)/2.0;
+        output(2, 1) = y/2.0;
+        output(2, 2) = 0.0;
 
-      output(4, 0) = 0.0;
-      output(4, 1) = 0.0;
-      output(4, 2) = 1.0 + z;
-      break;
+        output(3, 0) = 0.0;
+        output(3, 1) = 0.0;
+        output(3, 2) = z - 1.0;
+
+        output(4, 0) = 0.0;
+        output(4, 1) = 0.0;
+        output(4, 2) = 1.0 + z;
+        break;
+      }
+      case OPERATOR_DIV: {
+
+        // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
+        output(0) = 1.0;
+        output(1) = 1.0;
+        output(2) = 1.0;
+        output(3) = 1.0;
+        output(4) = 1.0;
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                  opType != OPERATOR_DIV,
+                                  ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::Serial::getValues) operator is not supported");
+
+      }
+      }
     }
-    case OPERATOR_DIV: {
 
-      // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-      output(0) = 1.0;
-      output(1) = 1.0;
-      output(2) = 1.0;
-      output(3) = 1.0;
-      output(4) = 1.0;
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                opType != OPERATOR_DIV,
-                                ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::Serial::getValues) operator is not supported");
+    template<typename SpT,
+             typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties>
+    void
+    Basis_HDIV_WEDGE_I1_FEM::
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+               const EOperator operatorType )  {
+      typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+      typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
+      // Number of evaluation points = dim 0 of inputPoints
+      const auto loopSize = inputPoints.dimension(0);
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+
+      switch (operatorType) {
+
+      case OPERATOR_VALUE: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        break;
+      }
+      case OPERATOR_DIV: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_DIV> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
+                                      ">>> ERROR (Basis_HDIV_WEDGE_I1_FEM): Invalid operator type");
+      }
+      }
     }
-    }
+
+
   }
-
   // -------------------------------------------------------------------------------------
 
   template<typename SpT, typename OT, typename PT>
   Basis_HDIV_WEDGE_I1_FEM<SpT,OT,PT>::
-  Basis_HDIV_WEDGE_I1_FEM()
-    : impl_(this) {
+  Basis_HDIV_WEDGE_I1_FEM() {
     this->basisCardinality_  = 5;
     this->basisDegree_       = 1;
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
@@ -162,69 +200,6 @@ namespace Intrepid2 {
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
-  }
-
-  template<typename SpT, typename OT, typename PT>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
-  void
-  Basis_HDIV_WEDGE_I1_FEM<SpT,OT,PT>::Internal::
-  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const EOperator operatorType ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-    Intrepid2::getValues_HDIV_Args(outputValues,
-                                    inputPoints,
-                                    operatorType,
-                                    obj_->getBaseCellTopology(),
-                                    obj_->getCardinality() );
-#endif
-
-    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
-    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
-    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
-
-    // Number of evaluation points = dim 0 of inputPoints
-    const auto loopSize = inputPoints.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-
-    switch (operatorType) {
-
-    case OPERATOR_VALUE: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-      break;
-    }
-    case OPERATOR_DIV: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_DIV> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
-                                    ">>> ERROR (Basis_HDIV_WEDGE_I1_FEM): Invalid operator type");
-    }
-    }
-  }
-
-
-  template<typename SpT, typename OT, typename PT>
-  template<typename dofCoordValueType, class ...dofCoordProperties>
-  void
-  Basis_HDIV_WEDGE_I1_FEM<SpT,OT,PT>::Internal::
-  getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-    // Verify rank of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoords) rank = 2 required for dofCoords array");
-    // Verify 0th dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != obj_->basisCardinality_, std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
-    // Verify 1st dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
-#endif
-    Kokkos::deep_copy(dofCoords, obj_->dofCoords_);
   }
 
 }// namespace Intrepid2

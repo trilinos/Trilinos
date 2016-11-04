@@ -53,15 +53,16 @@ namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
 
-  template<typename SpT, typename OT, typename PT>
-  template<EOperator opType>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
-  KOKKOS_INLINE_FUNCTION
-  void
-  Basis_HGRAD_QUAD_C2_FEM<SpT,OT,PT>::Serial<opType>::
-  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
-             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
+  namespace Impl {                                                                                                                                                       
+                                                                                                                                                                         
+    template<EOperator opType>                                                                                                                                           
+    template<typename outputViewType,                                                                                                                                    
+             typename inputViewType>                                                                                                                                     
+    KOKKOS_INLINE_FUNCTION                                                                                                                                               
+    void                                                                                                                                                                 
+    Basis_HGRAD_QUAD_C2_FEM::Serial<opType>::                                                                                                                             
+    getValues( /**/  outputViewType output,                                                                                                                              
+               const inputViewType input ) {   
     switch (opType) {
     case OPERATOR_VALUE : {
       const auto x = input(0);
@@ -319,94 +320,14 @@ namespace Intrepid2 {
     }
   }
 
-  // -------------------------------------------------------------------------------------
-
-
-  template<typename SpT, typename OT, typename PT>
-  Basis_HGRAD_QUAD_C2_FEM<SpT,OT,PT>::
-  Basis_HGRAD_QUAD_C2_FEM()
-    : impl_(this)
-  {
-    this -> basisCardinality_  = 9;
-    this -> basisDegree_       = 2;    
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-    this -> basisType_         = BASIS_FEM_DEFAULT;
-    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-
-    {
-      // Basis-dependent intializations
-      const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-      const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-      const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-  
-      // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-      ordinal_type tags[36]  = { 0, 0, 0, 1,
-                                 0, 1, 0, 1,
-                                 0, 2, 0, 1,
-                                 0, 3, 0, 1,
-                                 // edge midpoints
-                                 1, 0, 0, 1,
-                                 1, 1, 0, 1,
-                                 1, 2, 0, 1,
-                                 1, 3, 0, 1,
-                                 // quad center
-                                 2, 0, 0, 1};
-  
-      //host view
-      ordinal_type_array_1d_host tagView(&tags[0],36);
-    
-      // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-      this->setOrdinalTagData(this -> tagToOrdinal_,
-                              this -> ordinalToTag_,
-                              tagView,
-                              this -> basisCardinality_,
-                              tagSize,
-                              posScDim,
-                              posScOrd,
-                              posDfOrd);
-    }
-
-    // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
-    
-    dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0;
-    dofCoords(1,0) =  1.0;   dofCoords(1,1) = -1.0;
-    dofCoords(2,0) =  1.0;   dofCoords(2,1) =  1.0;
-    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  1.0;
-  
-    dofCoords(4,0) =  0.0;   dofCoords(4,1) = -1.0;
-    dofCoords(5,0) =  1.0;   dofCoords(5,1) =  0.0;
-    dofCoords(6,0) =  0.0;   dofCoords(6,1) =  1.0;
-    dofCoords(7,0) = -1.0;   dofCoords(7,1) =  0.0;
-  
-    dofCoords(8,0) =  0.0;   dofCoords(8,1) =  0.0;
-
-    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
-    Kokkos::deep_copy(this->dofCoords_, dofCoords);   
-  }
-
-
-
-  template<typename SpT, typename OT, typename PT>
-  template<typename outputValueValueType, class ...outputValueProperties,
+  template<typename SpT, 
+  typename outputValueValueType, class ...outputValueProperties,
            typename inputPointValueType,  class ...inputPointProperties>
   void 
-  Basis_HGRAD_QUAD_C2_FEM<SpT,OT,PT>::Internal::
+  Basis_HGRAD_QUAD_C2_FEM::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const EOperator operatorType ) const {
-  
-    // Verify arguments
-#ifdef HAVE_INTREPID2_DEBUG
-    Intrepid2::getValues_HGRAD_Args(outputValues,
-                                    inputPoints,
-                                    operatorType,
-                                    obj_->getBaseCellTopology(),
-                                    obj_->getCardinality() );
-#endif
-  
+             const EOperator operatorType ) {
     typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
     typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
     typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
@@ -472,34 +393,74 @@ namespace Intrepid2 {
     }
   }
 
-  /* 
-     template<class Scalar, class ArrayScalar>
-     void Basis_HGRAD_QUAD_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-     const ArrayScalar &    inputPoints,
-     const ArrayScalar &    cellVertices,
-     const EOperator        operatorType) const {
-     TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-     ">>> ERROR (Basis_HGRAD_QUAD_C2_FEM): FEM Basis calling an FVD member function");
-     }
-  */
+
+
+
+  }
+  // -------------------------------------------------------------------------------------
+
 
   template<typename SpT, typename OT, typename PT>
-  template<typename dofCoordValueType, class ...dofCoordProperties>
-  void
-  Basis_HGRAD_QUAD_C2_FEM<SpT,OT,PT>::Internal::
-  getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-    // Verify rank of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) rank = 2 required for dofCoords array");
-    // Verify 0th dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != obj_->basisCardinality_, std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
-    // Verify 1st dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
-#endif
-    Kokkos::deep_copy(dofCoords, obj_->dofCoords_);
+  Basis_HGRAD_QUAD_C2_FEM<SpT,OT,PT>::
+  Basis_HGRAD_QUAD_C2_FEM() {
+    this->basisCardinality_  = 9;
+    this->basisDegree_       = 2;    
+    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+    this->basisType_         = BASIS_FEM_DEFAULT;
+    this->basisCoordinates_  = COORDINATES_CARTESIAN;
+
+    {
+      // Basis-dependent intializations
+      const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+      const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+      const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+  
+      // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
+      ordinal_type tags[36]  = { 0, 0, 0, 1,
+                                 0, 1, 0, 1,
+                                 0, 2, 0, 1,
+                                 0, 3, 0, 1,
+                                 // edge midpoints
+                                 1, 0, 0, 1,
+                                 1, 1, 0, 1,
+                                 1, 2, 0, 1,
+                                 1, 3, 0, 1,
+                                 // quad center
+                                 2, 0, 0, 1};
+  
+      //host view
+      ordinal_type_array_1d_host tagView(&tags[0],36);
+    
+      // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
+      this->setOrdinalTagData(this->tagToOrdinal_,
+                              this->ordinalToTag_,
+                              tagView,
+                              this->basisCardinality_,
+                              tagSize,
+                              posScDim,
+                              posScOrd,
+                              posDfOrd);
+    }
+
+    // dofCoords on host and create its mirror view to device
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+    
+    dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0;
+    dofCoords(1,0) =  1.0;   dofCoords(1,1) = -1.0;
+    dofCoords(2,0) =  1.0;   dofCoords(2,1) =  1.0;
+    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  1.0;
+  
+    dofCoords(4,0) =  0.0;   dofCoords(4,1) = -1.0;
+    dofCoords(5,0) =  1.0;   dofCoords(5,1) =  0.0;
+    dofCoords(6,0) =  0.0;   dofCoords(6,1) =  1.0;
+    dofCoords(7,0) = -1.0;   dofCoords(7,1) =  0.0;
+  
+    dofCoords(8,0) =  0.0;   dofCoords(8,1) =  0.0;
+
+    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    Kokkos::deep_copy(this->dofCoords_, dofCoords);   
   }
 
 }// namespace Intrepid2

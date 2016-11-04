@@ -73,7 +73,7 @@ namespace Intrepid2 {
       const auto card = order + 1;
       ordinal_type opDn = operatorDn;
 
-      const auto pts = Kokkos::subdynrankview( input, Kokkos::ALL(), 0 );
+      const auto pts = Kokkos::subview( input, Kokkos::ALL(), 0 );
       const auto np = input.dimension(0);
 
       switch (opType) {
@@ -81,7 +81,7 @@ namespace Intrepid2 {
         const Kokkos::View<typename outputViewType::value_type*,
             Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
         for (auto p=0;p<card;++p) {
-          auto poly = Kokkos::subdynrankview( output, p, Kokkos::ALL() );
+          auto poly = Kokkos::subview( output, p, Kokkos::ALL() );
           Polylib::Serial::JacobiPolynomial(np, pts, poly, null, p, alpha, beta);
         }
         break;
@@ -89,7 +89,7 @@ namespace Intrepid2 {
       case OPERATOR_GRAD: 
       case OPERATOR_D1: {
         for (auto p=0;p<card;++p) {
-          auto polyd = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );
+          auto polyd = Kokkos::subview( output, p, Kokkos::ALL(), 0 );
           Polylib::Serial::JacobiPolynomialDerivative(np, pts, polyd, p, alpha, beta);      
         }
         break;
@@ -124,7 +124,7 @@ namespace Intrepid2 {
             for (auto i=1;i<=opDn;++i) 
               scaleFactor *= 0.5*(p + alpha + beta + i);
             
-            const auto poly = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );        
+            const auto poly = Kokkos::subview( output, p, Kokkos::ALL(), 0 );        
             Polylib::Serial::JacobiPolynomial(np, pts, poly, null, p-opDn, alpha+opDn, beta+opDn);
             for (auto i=0;i<np;++i) 
               poly(i) = scaleFactor*poly(i);
@@ -232,8 +232,8 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       ordinal_type tags[Parameters::MaxOrder+1][4];
-      const auto card = this->basisCardinality_;
-      for (auto i=0;i<card;++i) {
+      const ordinal_type card = this->basisCardinality_;
+      for (ordinal_type i=0;i<card;++i) {
         tags[i][0] = 1;     // these are all "internal" i.e. "volume" DoFs
         tags[i][1] = 0;     // there is only one line
         tags[i][2] = i;     // local DoF id 

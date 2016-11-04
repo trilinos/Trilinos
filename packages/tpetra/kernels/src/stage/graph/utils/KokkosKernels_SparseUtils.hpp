@@ -1,10 +1,54 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//          KokkosKernels: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
 #ifndef _KOKKOSKERNELS_SPARSEUTILS_HPP
 #define _KOKKOSKERNELS_SPARSEUTILS_HPP
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Timer.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
+#include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
+//#include "KokkosKernels_Handle.hpp"
 namespace KokkosKernels{
 
 namespace Experimental{
@@ -425,6 +469,164 @@ void kk_create_reverse_map(
     MyExecSpace::fence();
   }
 }
+
+template <typename in_row_view_t, typename in_nnz_view_t,  typename in_color_view_t,
+          typename team_member>
+struct ColorChecker{
+
+
+
+  typedef typename in_row_view_t::value_type size_type;
+  typedef typename in_nnz_view_t::value_type lno_t;
+  typedef typename in_color_view_t::value_type color_t;
+  in_row_view_t xadj;
+  in_nnz_view_t adj;
+  in_color_view_t color_view;
+  lno_t team_row_chunk_size;
+  lno_t num_rows;
+
+
+  ColorChecker(
+      lno_t num_rows_,
+      in_row_view_t xadj_,
+      in_nnz_view_t adj_,
+      in_color_view_t color_view_,
+      lno_t chunk_size):
+        num_rows(num_rows_),
+        xadj(xadj_), adj(adj_), color_view(color_view_),
+        team_row_chunk_size(chunk_size){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const team_member & teamMember, size_t &num_conflicts) const {
+    //get the range of rows for team.
+    const lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, num_rows);
+
+    size_t nf = 0;
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const lno_t& row_index, size_t &team_num_conf)
+    {
+
+      color_t my_color = color_view(row_index);
+      const size_type col_begin = xadj[row_index];
+      const size_type col_end = xadj[row_index + 1];
+      const lno_t left_work = col_end - col_begin;
+
+      size_t conf1= 0;
+      Kokkos::parallel_reduce(
+          Kokkos::ThreadVectorRange(teamMember, left_work),
+          [&] (lno_t i, size_t & valueToUpdate) {
+        const size_type adjind = i + col_begin;
+        const lno_t colIndex = adj[adjind];
+        if (colIndex != row_index){
+          color_t second_color = color_view(colIndex);
+          if (second_color == my_color)
+            valueToUpdate += 1;
+        }
+      },
+      conf1);
+      team_num_conf += conf1;
+    }, nf);
+    num_conflicts += nf;
+  }
+};
+
+/**
+ * \brief given a graph and a coloring function returns true or false if distance-1 coloring is valid or not.
+ * \param num_rows: num rows in input graph
+ * \param num_cols: num cols in input graph
+ * \param xadj: row pointers of the input graph
+ * \param adj: column indices of the input graph
+ * \param t_xadj: output, the row indices of the output graph. MUST BE INITIALIZED WITH ZEROES.
+
+ * \param vector_size: suggested vector size, optional. if -1, kernel will decide.
+ * \param suggested_team_size: suggested team size, optional. if -1, kernel will decide.
+ * \param team_work_chunk_size: suggested work size of a team, optional. if -1, kernel will decide.
+ * \param use_dynamic_scheduling: whether to use dynamic scheduling. Default is true.
+ */
+template <typename in_row_view_t,
+          typename in_nnz_view_t,
+          typename in_color_view_t,
+          typename MyExecSpace>
+inline size_t kk_is_d1_coloring_valid(
+    typename in_nnz_view_t::non_const_value_type num_rows,
+    typename in_nnz_view_t::non_const_value_type num_cols,
+    in_row_view_t xadj,
+    in_nnz_view_t adj,
+    in_color_view_t v_colors
+    ){
+  KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = KokkosKernels::Experimental::Util::kk_get_exec_space_type<MyExecSpace>();
+  int vector_size = KokkosKernels::Experimental::Util::kk_get_suggested_vector_size(num_rows, adj.dimension_0(), my_exec_space);
+  int suggested_team_size = KokkosKernels::Experimental::Util::kk_get_suggested_team_size(vector_size, my_exec_space);;
+  typename in_nnz_view_t::non_const_value_type team_work_chunk_size = suggested_team_size;
+  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_policy ;
+  typedef typename dynamic_team_policy::member_type team_member_t ;
+
+  struct ColorChecker <in_row_view_t, in_nnz_view_t, in_color_view_t, team_member_t>  cc(num_rows, xadj, adj, v_colors, team_work_chunk_size);
+  size_t num_conf = 0;
+  Kokkos::parallel_reduce( dynamic_team_policy(num_rows / team_work_chunk_size + 1 ,
+      suggested_team_size, vector_size), cc, num_conf);
+
+  MyExecSpace::fence();
+  return num_conf;
+}
+
+
+template <typename lno_view_t,
+          typename lno_nnz_view_t,
+          typename scalar_view_t,
+
+          typename out_nnz_view_t,
+          typename out_scalar_view_t,
+          typename MyExecSpace>
+void kk_sort_graph(
+    lno_view_t in_xadj,
+    lno_nnz_view_t in_adj,
+    scalar_view_t in_vals,
+
+    out_nnz_view_t out_adj,
+    out_scalar_view_t out_vals){
+
+
+  typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
+  Kokkos::deep_copy (hr, in_xadj);
+  typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (in_adj);
+  Kokkos::deep_copy (he, in_adj);
+  typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
+  Kokkos::deep_copy (hv, in_vals);
+
+  typename lno_nnz_view_t::HostMirror heo = Kokkos::create_mirror_view (out_adj);
+  typename scalar_view_t::HostMirror hvo = Kokkos::create_mirror_view (out_vals);
+
+
+  typedef typename lno_view_t::non_const_value_type size_type;
+  typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+  typedef typename scalar_view_t::non_const_value_type scalar_t;
+
+  lno_t nrows = in_xadj.dimension_0() - 1;
+  std::vector <KokkosKernels::Experimental::Util::Edge<lno_t, scalar_t> > edges(in_adj.dimension_0());
+
+  for (lno_t i = 0; i < nrows; ++i){
+    size_type row_size = 0;
+    for (size_type j = hr(i); j < hr(i + 1); ++j){
+      edges[row_size].src = i;
+      edges[row_size].dst = he(j);
+      edges[row_size++].ew = hv(j);
+    }
+    std::sort (edges.begin(), edges.begin() + row_size);
+
+    size_type row_ind = 0;
+    for (size_type j = hr(i); j < hr(i + 1); ++j){
+      heo(j) = edges[row_ind].dst;
+      hvo(j) = edges[row_ind++].ew;
+    }
+  }
+
+  Kokkos::deep_copy (out_adj, heo);
+  Kokkos::deep_copy (out_vals, hvo);
+}
+
+
+
 
 }
 }

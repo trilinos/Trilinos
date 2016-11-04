@@ -1,9 +1,50 @@
-#include "KokkosKernels_PCG.hpp"
-#include "KokkosKernels_GraphHelpers.hpp"
-#include "Kokkos_Sparse_MV.hpp"
-#include "Kokkos_Sparse_CrsMatrix.hpp"
+/*
+//@HEADER
+// ************************************************************************
+//
+//          KokkosKernels: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
+
 #include "KokkosKernels_Utils.hpp"
 #include <iostream>
+#include "KokkosKernels_IOUtils.hpp"
+#include "KokkosKernels_PCG.hpp"
 
 #define MAXVAL 1
 
@@ -45,6 +86,8 @@ void run_experiment(
 
   idx nv = crsmat.numRows();
   scalar_view_t kok_x_original = create_x_vector<scalar_view_t>(nv, MAXVAL);
+
+  KokkosKernels::Experimental::Util::print_1Dview(kok_x_original);
   scalar_view_t kok_b_vector = create_y_vector(crsmat, kok_x_original);
 
   //create X vector
@@ -265,7 +308,7 @@ int main (int argc, char ** argv){
         Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] );
       }
 
-      KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
       Kokkos::Threads::print_configuration(std::cout);
 
       typedef Kokkos::Threads myExecSpace;
@@ -311,7 +354,7 @@ int main (int argc, char ** argv){
       }
       Kokkos::OpenMP::print_configuration(std::cout);
 
-      KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
 
       typedef Kokkos::OpenMP myExecSpace;
@@ -353,7 +396,7 @@ int main (int argc, char ** argv){
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
       Kokkos::Cuda::print_configuration(std::cout);
 
-      KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
+      KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
 
       typedef Kokkos::Cuda myExecSpace;

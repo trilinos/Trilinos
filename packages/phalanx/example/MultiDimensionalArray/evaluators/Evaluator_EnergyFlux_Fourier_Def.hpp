@@ -68,12 +68,7 @@ template<typename EvalT, typename Traits>
 void Fourier<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
-{
-  this->utils.setFieldData(flux,fm);
-  this->utils.setFieldData(density,fm);
-  this->utils.setFieldData(dc,fm);
-  this->utils.setFieldData(grad_temp,fm);
-  
+{  
   num_qp = static_cast<PHX::index_size_type>(flux.dimension_1());
   num_dim = static_cast<PHX::index_size_type>(flux.dimension_2());
 }

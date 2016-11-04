@@ -1,12 +1,12 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Control penalty parameter"   type="double"  value="1e-5" />
-    <Parameter name="Control lower bound"         type="double"  value="0"    />
-    <Parameter name="Control upper bound"         type="double"  value="10"   />
-    <!--Parameter name="State lower bound"           type="double"  value="0"    -->
+    <Parameter name="Control penalty parameter"   type="double"  value="1e-5"     />
+    <Parameter name="Control lower bound"         type="double"  value="0.0"      />
+    <Parameter name="Control upper bound"         type="double"  value="1.0"      />
+    <!--Parameter name="State lower bound"           type="double"  value="0.0"  -->
     <!--Parameter name="State upper bound"           type="double"  value="0.9"  -->
-    <Parameter name="Order of FE discretization"  type="int"     value="1"    />
+    <Parameter name="Order of FE discretization"  type="int"     value="1"        />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
@@ -18,6 +18,31 @@
     <Parameter name="NX"                type="int"     value="20"   />
     <Parameter name="NY"                type="int"     value="20"   />
     <Parameter name="Partition type"    type="int"     value="1"    />
+  </ParameterList>
+
+  <!-- VOLUME CONSTRAINT INFORMATION -->
+  <ParameterList name="Volume Constraint Poisson TopOpt">
+    <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
+  </ParameterList>
+
+  <!-- SOLVER INFORMATION -->
+  <ParameterList name="Solver">
+    <Parameter name="Use Direct Solver"           type="bool"    value="true"          />
+    <ParameterList name="Direct">
+      <Parameter name="Solver Type"               type="string"  value="KLU2"          />
+    </ParameterList>
+  </ParameterList>
+
+  <!-- VECTOR INFORMATION -->
+  <ParameterList name="Vector">
+    <ParameterList name="Sim">
+      <Parameter name="Use Riesz Map"             type="bool"    value="false"         />
+      <Parameter name="Lump Riesz Map"            type="bool"    value="false"         />
+    </ParameterList>
+    <ParameterList name="Opt">
+      <Parameter name="Use Riesz Map"             type="bool"    value="true"         />
+      <Parameter name="Lump Riesz Map"            type="bool"    value="true"         />
+    </ParameterList>
   </ParameterList>
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
@@ -160,7 +185,7 @@
       <!-- ===========  SUBPROBLEM SOLVER  =========== -->
       <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
       <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
-      <Parameter name="Subproblem Iteration Limit"              type="int"    value="1000"         />
+      <Parameter name="Subproblem Iteration Limit"              type="int"    value="20"           />
     </ParameterList>
 
     <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
@@ -202,9 +227,9 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-10"  />
-    <Parameter name="Constraint Tolerance" type="double" value="1.e-8"   />
-    <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="2000"     />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-3"    />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-4"    />
+    <Parameter name="Step Tolerance"       type="double" value="-1.e-14"  />
+    <Parameter name="Iteration Limit"      type="int"    value="20"       />
   </ParameterList>
 </ParameterList>
