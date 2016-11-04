@@ -49,11 +49,11 @@ MACRO(TRIBITS_FIND_PYTHON)
   IF (PythonInterp_FIND_VERSION  VERSION_LESS  "${PythonInterp_FIND_VERSION_MIN}")
     MESSAGE_WRAPPER(FATAL_ERROR  "Error,"
       " PythonInterp_FIND_VERSION=${PythonInterp_FIND_VERSION} < ${PythonInterp_FIND_VERSION_MIN}"
-      " is now allowed!" )
+      " is not allowed!" )
   ENDIF()
   ADVANCED_SET(PythonInterp_MUST_BE_FOUND FALSE CACHE BOOL "Require Python to be found or not.")
   IF (TRIBITS_FIND_PYTHON_UNITTEST)
-    SET(PYTHON_EXECUTABLE  ${PYTHON_EXECUTABLE_UNITTEST_VAL}) 
+    SET(PYTHON_EXECUTABLE  ${PYTHON_EXECUTABLE_UNITTEST_VAL})
   ELSE()
     FIND_PACKAGE(PythonInterp)
   ENDIF()

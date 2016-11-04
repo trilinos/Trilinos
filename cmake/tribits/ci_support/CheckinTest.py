@@ -1344,13 +1344,15 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   cmakePkgOptions = []
   enablePackagesList = []
   gitRepoList = tribitsGitRepos.gitRepoList()
-    
+  enableAllPackages = False
+
   if inOptions.enableAllPackages == "on":
     if verbose:
       print("\nEnabling all packages on request since " +
             "--enable-all-packages=on! ...")
       print("\nSkipping detection of changed packages since " +
             "--enable-all-packages=on ...")
+    enableAllPackages = True
   elif inOptions.enablePackages:
     if verbose:
       print("\nEnabling only the explicitly specified packages '" +
@@ -1370,6 +1372,12 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
       else:
         if verbose:
           print("\nThe file " + diffOutFileName + " does not exist!\n")
+
+  if not enableAllPackages and inOptions.enableExtraPackages:
+    if verbose:
+      print("\nEnabling extra explicitly specified packages '" +
+            inOptions.enableExtraPackages + "' ...")
+    enablePackagesList += inOptions.enableExtraPackages.split(',')
 
   if verbose:
     print("\nFull package enable list: [" + ','.join(enablePackagesList) + "]")
@@ -2089,6 +2097,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
 
   # Assert the names of packages passed in
   assertPackageNames("--enable-packages", inOptions.enablePackages)
+  assertPackageNames("--enable-extra-packages", inOptions.enableExtraPackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)
 
   success = True

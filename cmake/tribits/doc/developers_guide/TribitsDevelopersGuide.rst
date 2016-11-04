@@ -3241,7 +3241,11 @@ In more detail, these rules/behaviors are:
    given the initial value ``Trilinos_ENABLE_Teuchos=""``.  For an example,
    see `Default configure with no packages enabled on input`_.  This allows
    ``PT``, and ``ST`` packages to be enabled or disabled using other logic
-   defined by TriBITS which is described below.
+   defined by TriBITS which is described below.  TriBITS defines persistent
+   cache variables for these with the default value of empty "".  Therefore,
+   if the user or other CMake code does not hard enable or disable one of
+   these variables, then on future configures it will be defined but have the
+   value of empty "".
 
 .. _EX SE packages disabled by default:
 
@@ -3253,7 +3257,8 @@ In more detail, these rules/behaviors are:
    However, the user can explicitly set
    ``${PROJECT_NAME}_ENABLE_<TRIBITS_PACKAGE>=ON`` for an ``EX`` package and
    it will be enabled (unless one of its required dependencies are not enabled
-   for some reason).
+   for some reason).  In this case, the cache variable is given the cache
+   value of ``OFF``.
 
 .. _SE package enable triggers auto-enables of upstream dependencies:
 
@@ -5739,6 +5744,100 @@ one would perform the following steps:
    set the variable ``-D<Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE``
    and TriBITS will print warnings about missing external packages.
 
+How to check for and tweak TriBITS "ENABLE" cache variables
+-----------------------------------------------------------
+
+TriBITS defines a number of special ``<XXX>_ENABLE_<YYY>`` variables for
+enabling/disabling various entities that allow for a default "undefined" empty
+``""`` enable status.  Examples of these special variables include:
+
+* ``${PROJECT_NAME}_ENABLE_<TRIBITS_PACKAGE>`` ((SE) packages)
+* ``TPL_ENABLE_<tplName>`` (TPLs)
+* ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>`` (Optional support
+  for a (SE) package or TPL in a downstream package)
+* ``<TRIBITS_PACKAGE>_ENABLE_TESTS`` (Package tests)
+* ``<TRIBITS_PACKAGE>_ENABLE_EXAMPLES`` (Package examples)
+* ``${PROJECT_NAME}_ENABLE_TESTS`` (Tests for explicitly enabled packages)
+* ``${PROJECT_NAME}_ENABLE_EXAMPLES`` (Examples for explicitly enabled
+  packages)
+
+(see `TriBITS Dependency Handling Behaviors`_).
+
+To check for and tweak these special "ENABLE" variables, perform the
+following:
+
+1) To check to see if an ``ENABLE`` variable has been enabled or disabled
+   (either explicitly or through auto enable/disable logic), use::
+
+     IF ("${<XXX>_ENABLE_<YYY>}" STREQUAL "")
+       # Variable has not be set to 'ON' or 'OFF' yet
+       ...
+     ENDIF()
+
+   This will work correctly independent of if the cache variable has been
+   default defined or not.
+
+2) To tweak the enable/disable of one or more of these variables after user
+   input but before auto-enable/disable logic:
+
+  a) To tweak the enables/disables for a TriBITS Repository (i.e. affecting
+     all TriBITS projects) add enable/disable code to the file
+     `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_.
+
+  b) To tweak the enables/disables for a specific TriBITS Project
+     (i.e. affecting only that TriBITS project) add enable/disable code to the
+     file `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.
+
+  For example, one might default disable a package if it has not been
+  explicitly enabled (or disabled) in one of these files using logic like::
+
+    IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
+      IF ("${${PROJECT_NAME}_ENABLE_<SomeFortranPackage>}" STREQUAL "")
+        MESSAGE("-- " "NOTE: Setting ${PROJECT_NAME}_ENABLE_<SomeFortranPackage>=OFF because"
+          "${PROJECT_NAME}_ENABLE_Fortran = '${${PROJECT_NAME}_ENABLE_Fortran}'")
+        SET(${PROJECT_NAME}_ENABLE_<SomeFortranPackage> OFF)
+      ENDIF()
+    ENDIF()
+
+In order to understand the above steps for properly querying and tweaking
+these ``ENABLE`` variables, one must understand how TriBITS CMake code defines
+and interprets variables of this type.
+
+First, note that most of these particular ``ENABLE`` variables are not
+``BOOL`` cache variables but are actually ``STRING`` variables with the
+possible values of ``ON``, ``OFF`` and empty ``""`` (see the macro
+`SET_CACHE_ON_OFF_EMPTY()`_).  Therefore, just because the value of a
+``<XXX>_ENABLE_<YYY>`` variable is defined (e.g. ``IF (DEFINED
+<XXX>_ENABLE_<YYY>) ... ENDIF()``) does not mean that it has been set to
+``ON`` or ``OFF`` yet (or any non-empty values that evaluates to true or false
+in CMake).  To see if an ``ENABLE`` variable is one of these variables, look
+in the CMakeCache.txt file for the type.  If the type is ``STRING``, then it
+is most likely this type of variable with a default value of empty ``""``.
+However, if the cache type is ``BOOL`` then it is likely a standard bool
+variable that is not allowed to have a value of empty ``""``.
+
+Second, note that the value of empty ``""`` evaluates to ``FALSE`` in CMake
+``IF()`` statements.  Therefore, if one just wants to know if one of these
+variables evaluates to true, then just use ``IF (<XXX>_ENABLE_<YYY>)
+... ENDIF()``.
+
+Third, note that TriBITS will not define these cache variables until TriBITS
+processes the ``Dependencies.cmake`` files on the first configure (see `Full
+TriBITS Project Configuration`_).  On future reconfigures, these variables are
+all defined (but most will have a default value of empty ``""`` stored in the
+cache).
+
+The reason the files ``RepositoryDependenciesSetup.cmake`` and
+``ProjectDependenciesSetup.cmake`` are the best places to put in these tweaks
+is because, as shown in `Full Processing of TriBITS Project Files`_, they get
+processed after all of the user input has been read (in CMake cache variables
+set with ``-D<variable>=<value>`` and read in from
+`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_ files) but before TriBITS adjusts
+the SE package and TPLs enables and disables (see `Package Dependencies and
+Enable/Disable Logic`_).  Also, these files get processed in `Reduced Package
+Dependency Processing`_ as well so they get processed in all contexts where
+enable/disable logic is applied.
+
 
 Additional Topics
 =================
@@ -5946,6 +6045,22 @@ Processing of TriBITS Project Files`_.  This is executed by the TriBITS macro
 At the completion of this part of the processing, the TriBITS CMake project is
 ready to compile code.  All of the major variables set as part of this process
 are printed to the ``cmake`` stdout.
+
+
+RPATH Handling
+--------------
+
+As explained in `Setting install RPATH`_, TriBITS changes the CMake defaults
+to write in the RPATH for shared libraries and executables so that they run
+right out of the install directory without needing to set paths in the
+environment (e.g. ``LD_LIBRARY_PATH``).  However, these defaults can be
+changed by changing setting different project defaults for the variables
+`${PROJECT_NAME}_SET_INSTALL_RPATH`_ and `CMAKE_INSTALL_RPATH_USE_LINK_PATH`_.
+But most projects should likely keep these defaults in place since they make
+it so that doing builds and installations on a single machine work correctly
+by default out of the box.  For other installation/distribution use cases, the
+user is told how to manipulate CMake variables for those cases in `Setting
+install RPATH`_.
 
 
 Configure-time System Tests
@@ -6556,7 +6671,7 @@ like::
   $CHECKIN_TEST_WRAPPER \
     --extra-pull-from=ExtraRepo1:public:master \
     --abort-gracefully-if-no-changes-to-push \
-    --enable-all-packages=on \
+    --enable-extra-packages=Package1A \
     --send-build-case-email=only-on-failure \
     --send-email-to=base-proj-integrators@url4.gov \
     --send-email-to-on-push=base-proj-integrators@url4.gov \
@@ -6607,40 +6722,35 @@ more details):
     priori if changes need to be synced so the script supports this option to
     deal with that case gracefully.
 
-  ``--enable-all-packages=on``
+  ``--enable-extra-packages=Package1A``
 
     This option should be set if one wants to ensure that all commits get
     synced, even when these changes don't impact the build or the tests of the
-    project.  If not setting ``--enable-all-packages=on`` or
-    ``--enable-packages=<pkg0>,<pkg1>,...``, then the ``checkin-test.py``
-    script will decide on its own what packages to test just based on what
-    packages have changed files in the ``ExtraRepo1`` repo.  For example, if a
-    top-level README file in the base ``ExtraRepo1`` repo gets modified that
-    does not sit under a package directory, then the automatic logic in the
-    checkin-test.py script will not trigger a package enable. In that case, no
-    configure, build, testing, or push will take place and therefore the sync
-    will not occur.  Therefore, if one wants to ensure that every commit gets
-    safely synced over on every invocation, then the safest way to that is to
-    specify ``--enable-all-packages=on``.  But if one wants to save on the
-    build and test times and one does not mind not syncing all the time, then
-    ``--enable-all-packages=on`` can be left off.  **WARNING:** it is not
-    advisable to manually set ``--enable-packages=<package-list>``.  This is
-    because if there are changes to other packages, then these packages will
-    not get enabled and not get tested, which could break the global build and
-    tests.  Also, this is fragile if new packages are added to ``ExtraRepo``
-    later that are not listed in ``--enable-packages=<pkg0>,<pkg1>,...`` as
-    they will not be included in the testing.  Also, if someone makes local
-    commits in other local git repos before running the sync script again,
-    then these packages will not get enabled and tested.  Therefore, in
-    general, don't set ``--enable-packages=<pkg0>,<pkg1>,...`` in a sync
-    script, only set ``--enable-all-packages=on`` to be robust and safe.
-    **ToDo:** Add the checkin-test.py option
-    ``--enable-extra-packages=<pkg0>,<pkg1>,...`` to ensure some minimal
-    testing is always done but also allow changes to other packages to trigger
-    their testing (and testing of downstream packages) as well.  This would
-    ensure that minimal but complete testing was done (based on changed
-    packages and package dependencies) and would also result in every commit
-    being pushed on every invocation (where tests are passing).
+    project.  If not setting ``--enable-extra-packages=<some-package>`` , then
+    the ``checkin-test.py`` script will only decide on its own what packages
+    to test just based on what packages have changed files in the
+    ``ExtraRepo1`` repo and if no modified files map to a package, then no
+    packages will be auto-enabled and therefore no packages will be enabled at
+    all.  For example, if a top-level README file in the base ``ExtraRepo1``
+    repo gets modified that does not sit under a package directory, then the
+    automatic logic in the checkin-test.py script will not trigger a package
+    enable. In that case, no configure, build, testing, or push will take
+    place (must run at least some tests in order to assume it is safe to push)
+    and therefore the sync will not occur.  Therefore, if one wants to ensure
+    that every commit gets safely synced over on every invocation, then the
+    safest way to that is to always enable at least one or more packages by
+    specify ``--enable-extra-packages=<pkg0>,<pkg1>``.  **WARNING:** it is not
+    advisable to manually set ``--enable-packages=<package-list>`` since it
+    turns off the auto-enable logic for changed files.  This is because if
+    there are changes to other packages, then these packages will not get
+    enabled and not get tested, which could break the global build and tests.
+    Also, this is fragile if new packages are added to ``ExtraRepo1`` later
+    that are not listed in ``--enable-packages=<pkg0>,<pkg1>,...`` as they
+    will not be included in the testing.  Also, if someone makes local commits
+    in other local git repos before running the sync script again, then these
+    packages will not get enabled and tested.  Therefore, in general, don't
+    set ``--enable-packages=<pkg0>,<pkg1>,...`` in a sync script, only set
+    ``--enable-extra-packages=<pkg0>,<pkg1>,...`` to be robust and safe.
 
   ``--send-build-case-email=only-on-failure``
 
@@ -7498,12 +7608,14 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
+* `${PROJECT_NAME}_SET_INSTALL_RPATH`_
 * `${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME`_
 * `${PROJECT_NAME}_TEST_CATEGORIES`_
 * `${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`_
 * `${PROJECT_NAME}_TRACE_ADD_TEST`_
 * `${PROJECT_NAME}_USE_GNUINSTALLDIRS`_
 * `${PROJECT_NAME}_USES_PYTHON`_
+* `CMAKE_INSTALL_RPATH_USE_LINK_PATH`_
 * `MPI_EXEC_MAX_NUMPROCS`_
 * `PythonInterp_FIND_VERSION`_
 
@@ -7778,6 +7890,22 @@ These options are described below.
   in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
   default is implicitly ``FALSE``.
 
+
+.. _${PROJECT_NAME}_SET_INSTALL_RPATH:
+
+**${PROJECT_NAME}_SET_INSTALL_RPATH**
+
+  The cache variable ``${PROJECT_NAME}_SET_INSTALL_RPATH`` is used to define
+  the default RPATH mode for the TriBITS project (see `Setting install RPATH`_
+  for details).  The TriBITS default is to set this to ``TRUE`` but the
+  TriBITS project can be set the default to ``FALSE`` by setting::
+
+    SET(${PROJECT_NAME}_SET_INSTALL_RPATH_DEFAULT FALSE)
+
+  in the project's `<projectDir>/ProjectName.cmake`_ file (see `RPATH
+  Handling`_).
+
+
 .. _${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME:
 
 **${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME**
@@ -7797,6 +7925,20 @@ These options are described below.
   NOTE: In a future version of CTest, this option may turn on start and end
   date/time for regular tests added with `TRIBITS_ADD_TEST()`_ (which uses a
   raw command with ``ADD_TEST()``).
+
+.. _${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE:
+
+**${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE**
+
+  The cache variable ``${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE`` is set in the
+  `<projectDir>/ProjectName.cmake`_ file as::
+
+    SET(${PROJECT_NAME}_SKIP_EXTRAREPOS_FILE TRUE)
+
+  for projects that don't have a
+  `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  This variable needs
+  to be set when using the CTest driver script and does not need to be set for
+  the basic configure and build process.
 
 .. _${PROJECT_NAME}_TEST_CATEGORIES:
 .. _${PROJECT_NAME}_TEST_CATEGORIES_DEFAULT:
@@ -7913,6 +8055,19 @@ These options are described below.
   that Python is never needed, set::
 
     SET(${PROJECT_NAME}_USES_PYTHON  FALSE)
+
+.. _CMAKE_INSTALL_RPATH_USE_LINK_PATH:
+
+**CMAKE_INSTALL_RPATH_USE_LINK_PATH**
+
+  The cache variable ``CMAKE_INSTALL_RPATH_USE_LINK_PATH`` is a built-in CMake
+  variable that determines if the paths for external libraries (i.e. from
+  TPLs) is put into the installed library RPATHS (see `RPATH Handling`_).
+  TriBITS sets the default for this to ``TRUE`` but a project can change the
+  default back to ``FALSE`` by setting the following in the project's
+  `<projectDir>/ProjectName.cmake`_ file::
+
+    SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH_DEFAULT FALSE)
 
 .. _MPI_EXEC_MAX_NUMPROCS:
 
@@ -8255,6 +8410,8 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 .. _Enabling extra repositories with add-on packages: TribitsBuildReference.html#enabling-extra-repositories-with-add-on-packages
 
 .. _Getting set up to use CMake: TribitsBuildReference.html#getting-set-up-to-use-cmake
+
+.. _Setting install RPATH: TribitsBuildReference.html#setting-install-rpath
 
 .. _Dashboard Submissions: TribitsBuildReference.html#dashboard-submissions
 
