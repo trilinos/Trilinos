@@ -113,7 +113,7 @@ namespace Impl{
     typedef typename in_nonzero_value_view_type::device_type device3;
 
     typedef typename KernelHandle::HandleExecSpace MyExecSpace;
-
+/*
     if (!(
         (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device1::memory_space>::accessible) &&
         (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device2::memory_space>::accessible) &&
@@ -122,7 +122,7 @@ namespace Impl{
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL\n");
       return;
     }
-
+*/
     if (Kokkos::Impl::is_same<idx, int>::value){
 
       int *a_xadj = NULL;
