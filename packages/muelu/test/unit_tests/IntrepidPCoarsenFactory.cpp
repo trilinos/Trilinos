@@ -255,6 +255,7 @@ namespace MueLuTests {
     typedef LocalOrdinal LO; 
     typedef Node  NO; 
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -262,6 +263,8 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     GO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    int MyPID = comm->getRank();
+    int degree=2;
 
     // Setup Levels
     Level fineLevel, coarseLevel;
@@ -271,7 +274,7 @@ namespace MueLuTests {
 
     // Build a pseudo-poisson test matrix
     Intrepid::FieldContainer<LocalOrdinal> elem_to_node;
-    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(10,2,elem_to_node,lib);
+    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(10,degree,elem_to_node,lib);
     fineLevel.Set("A",A);
     fineLevel.Set("ipc: element to node map",rcp(&elem_to_node,false));
 
@@ -295,11 +298,84 @@ namespace MueLuTests {
     coarseLevel.Request(*IPCFact);
     IPCFact->Build(fineLevel,coarseLevel);
 
-
-    // Test P
+    // Get P
     RCP<Matrix> P;
     coarseLevel.Get("P",P,IPCFact.get());
     RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+
+    // Build serial comparison maps
+    GO pn_num_global_dofs = A->getRowMap()->getGlobalNumElements();
+    GO pn_num_serial_elements = !MyPID ? pn_num_global_dofs : 0;
+    RCP<Map> pn_SerialMap = MapFactory::Build(lib,pn_num_global_dofs,pn_num_serial_elements,0,comm);
+
+    GO p1_num_global_dofs = P->getDomainMap()->getGlobalNumElements();
+    GO p1_num_serial_elements = !MyPID ? p1_num_global_dofs : 0;
+    RCP<Map> p1_SerialMap = MapFactory::Build(lib, p1_num_global_dofs,p1_num_serial_elements,0,comm);
+
+    RCP<Export> p1_importer = ExportFactory::Build(p1_SerialMap,P->getDomainMap());
+    RCP<Export> pn_importer = ExportFactory::Build(A->getRowMap(),pn_SerialMap);
+
+
+    // GOLD vector collection
+    std::vector<SC> p2_gold_in = {0,1,2,3,4,5,6,7,8,9};
+    std::vector<SC> p2_gold_out= {0,1,2,3,4,5,6,7,8,9,
+				  0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5};
+
+    // Allocate some vectors
+    RCP<Vector> s_InVec = VectorFactory::Build(p1_SerialMap);
+    RCP<Vector> p_InVec = VectorFactory::Build(P->getDomainMap());
+    RCP<Vector> s_OutVec = VectorFactory::Build(pn_SerialMap);
+    RCP<Vector> s_codeOutput = VectorFactory::Build(pn_SerialMap);
+    RCP<Vector> p_codeOutput = VectorFactory::Build(A->getRowMap());
+
+
+    // Fill serial GOLD vecs on Proc 0
+    if(!MyPID) {
+      for(size_t i=0; i<(size_t)p2_gold_in.size(); i++)
+	s_InVec->replaceLocalValue(i,p2_gold_in[i]);
+
+      for(size_t i=0; i<(size_t)p2_gold_out.size(); i++)
+	s_OutVec->replaceLocalValue(i,p2_gold_out[i]);
+    }
+
+    // Migrate input data
+    p_InVec->doExport(*s_InVec,*p1_importer,Xpetra::ADD);
+
+    // Apply P
+    P->apply(*p_InVec,*p_codeOutput);
+
+    // Migrate Output data
+    s_codeOutput->doExport(*p_codeOutput,*pn_importer,Xpetra::ADD);
+
+#if 0
+    for(size_t i=0; i<(size_t)P->getDomainMap()->getNodeNumElements(); i++)
+      printf("input: p-gold[%d] = %6.4e\n",(int)A->getRowMap()->getGlobalElement(i),p_InVec->getData(0)[i]);
+    for(size_t i=0; i<(size_t)A->getRowMap()->getNodeNumElements(); i++)
+      printf("output:p-code[%d] = %6.4e\n",(int)A->getRowMap()->getGlobalElement(i),p_codeOutput->getData(0)[i]);
+
+    // DEBUG
+    // FIXME: This equivalence test is failing in parallel
+    if(!MyPID) {
+      for(size_t i=0; i<(size_t)p2_gold_in.size(); i++)
+	printf("input: gold[%d] = %6.4e\n",(int)i,s_InVec->getData(0)[i]);
+      for(size_t i=0; i<(size_t)p2_gold_out.size(); i++)
+	printf("output: gold[%d] = %6.4e\n",(int)i,s_OutVec->getData(0)[i]);
+      for(size_t i=0; i<(size_t)p2_gold_out.size(); i++)
+	printf("output: code[%d] = %6.4e\n",(int)i,s_codeOutput->getData(0)[i]);
+
+    }
+#endif
+
+    // Compare vs. GOLD
+    s_codeOutput->update(-1.0,*s_OutVec,1.0);
+    Teuchos::Array<MT> norm2(1);
+    s_codeOutput->norm2(norm2());
+    
+
+    if(!MyPID) printf("Diff norm = %10.4e\n",norm2[0]);
+
+
+#if 0
     printf("CMS: Matrix P is %dx%d\n",(int)P->getRangeMap()->getGlobalNumElements(),(int)P->getDomainMap()->getGlobalNumElements());
 
     for(size_t i=0; i<P->getRowMap()->getNodeNumElements(); i++) {
@@ -314,6 +390,7 @@ namespace MueLuTests {
       printf("\n");
     }
     fflush(stdout);
+#endif
 
   }
 
