@@ -32,6 +32,13 @@ namespace Tempus {
  *   - Integrators should compute the next time, and after accepting
  *     the time step advance the solution.  This allows a simple undo
  *     capability, if a solution is not acceptable.
+ *
+ * <b> CS Design Considerations</b>
+ *   - Integrators will be fully constructed with input or default parameters.
+ *   - All input parameters (i.e., ParameterList) can be set by public methods.
+ *   - The Integrator ParameterList must be consistent.
+ *     - The "set" methods which update parameters in the ParameterList
+ *       must update the Integrator ParameterList.
  */
 template<class Scalar>
 class Integrator

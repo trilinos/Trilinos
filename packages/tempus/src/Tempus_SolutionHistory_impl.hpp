@@ -51,14 +51,7 @@ SolutionHistory<Scalar>::SolutionHistory(
   // Create history, an array of solution states.
   history_ = rcp(new std::vector<RCP<SolutionState<Scalar> > >);
 
-  if (pList == Teuchos::null) {
-    pList_       = Teuchos::null;
-    //interpolator  = Teuchos::null;
-    storageLimit = StorageLimit_default;
-    storageType  = STORAGE_TYPE_KEEP_NEWEST;
-  } else {
-    this->setParameterList(pList);
-  }
+  this->setParameterList(pList);
 
   if (Teuchos::as<int>(this->getVerbLevel()) >=
       Teuchos::as<int>(Teuchos::VERB_HIGH)) {
@@ -305,12 +298,16 @@ template <class Scalar>
 void SolutionHistory<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
-  pList->validateParameters(*this->getValidParameters());
-  pList_ = pList;
+  if (pList == Teuchos::null) {
+    pList_->validateParametersAndSetDefaults(*this->getValidParameters());
+  } else {
+    pList_ = pList;
+    pList_->validateParameters(*this->getValidParameters());
+  }
 
   Teuchos::readVerboseObjectSublist(&*pList_,this);
 
+  //interpolator  = Teuchos::null;
   //setInterpolator(interpolator);
 
   storageType = StorageTypeValidator->getIntegralValue(
@@ -358,7 +355,8 @@ void SolutionHistory<Scalar>::setParameterList(
 
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList> SolutionHistory<Scalar>::getValidParameters() const
+Teuchos::RCP<const Teuchos::ParameterList>
+SolutionHistory<Scalar>::getValidParameters() const
 {
   static Teuchos::RCP<Teuchos::ParameterList> validPL;
 

@@ -66,6 +66,8 @@ public:
       ) = 0;
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel) = 0;
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+      getModel() = 0;
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;

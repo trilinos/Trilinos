@@ -28,6 +28,9 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+      getModel(){return eODEModel_;}
+
     void setTableau(std::string stepperType = "");
 
     /// Initialize during construction and after changing input parameters.

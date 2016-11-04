@@ -26,6 +26,8 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& transientModel);
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+      getModel(){return residualModel_->getTransientModel();}
 
     /// Set the solver
     void setSolver(std::string solverName);
