@@ -96,11 +96,15 @@ struct SPMV
   typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
   typedef Kokkos::View<XT,XL,XD,XM> XVector;
   typedef Kokkos::View<YT,YL,YD,YM> YVector;
-  typedef typename YVector::non_const_value_type Scalar;
+  typedef typename YVector::non_const_value_type coefficient_type;
 
   static void
-  spmv (const char mode[], const Scalar& alpha, const AMatrix& A,
-        const XVector& x, const Scalar& beta, const YVector& y);
+  spmv (const char mode[],
+        const coefficient_type& alpha,
+        const AMatrix& A,
+        const XVector& x,
+        const coefficient_type& beta,
+        const YVector& y);
 };
 
 //
@@ -145,11 +149,15 @@ struct SPMV<const SCALAR_TYPE, \
                        LAYOUT_TYPE, \
                        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector; \
-  typedef typename YVector::non_const_value_type Scalar; \
- \
+  typedef typename YVector::non_const_value_type coefficient_type; \
+  \
   static void \
-  spmv (const char mode[], const Scalar& alpha, const AMatrix& A, \
-        const XVector& x, const Scalar& beta, const YVector& y); \
+  spmv (const char mode[], \
+        const coefficient_type& alpha, \
+        const AMatrix& A, \
+        const XVector& x, \
+        const coefficient_type& beta, \
+        const YVector& y); \
 };
 
 //
@@ -200,11 +208,15 @@ struct SPMV<const SCALAR_TYPE, \
                        Kokkos::LayoutLeft, \
                        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector; \
-  typedef typename YVector::non_const_value_type Scalar; \
- \
+  typedef typename YVector::non_const_value_type coefficient_type; \
+  \
   static void \
-  spmv (const char mode[], const Scalar& alpha, const AMatrix& A, \
-        const XVector& x, const Scalar& beta, const YVector& y); \
+  spmv (const char mode[], \
+        const coefficient_type& alpha, \
+        const AMatrix& A, \
+        const XVector& x, \
+        const coefficient_type& beta, \
+        const YVector& y); \
 };
 
 //
@@ -288,10 +300,8 @@ TPETRAKERNELS_INSTANTIATE_SL( KOKKOSSPARSE_IMPL_SPMV_DEFAULTS_DECL_CUDA )
 /// matrix's entries have integer type.  Per Github Issue #700, we
 /// don't optimize as heavily for that case, in order to reduce build
 /// times and library sizes.
-template<class aT, class aL, class aD, class aM,
-         class AT, class AO, class AD, class AM, class AS,
+template<class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM,
-         class bT, class bL, class bD, class bM,
          class YT, class YL, class YD, class YM,
          const bool integerScalarType =
            std::is_integral<typename std::decay<AT>::type>::value>
@@ -300,39 +310,14 @@ struct SPMV_MV
   typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
   typedef Kokkos::View<XT,XL,XD,XM> XVector;
   typedef Kokkos::View<YT,YL,YD,YM> YVector;
-  typedef Kokkos::View<aT,aL,aD,aM> aCoeffs;
-  typedef Kokkos::View<bT,bL,bD,bM> bCoeffs;
+  typedef typename YVector::non_const_value_type coefficient_type;
 
   static void
   spmv_mv (const char mode[],
-           const aCoeffs& alpha,
+           const coefficient_type& alpha,
            const AMatrix& A,
            const XVector& x,
-           const bCoeffs& beta,
-           const YVector& y);
-
-  static void
-  spmv_mv (const char mode[],
-           const typename aCoeffs::non_const_value_type& alpha,
-           const AMatrix& A,
-           const XVector& x,
-           const bCoeffs& beta,
-           const YVector& y);
-
-  static void
-  spmv_mv (const char mode[],
-           const aCoeffs& alpha,
-           const AMatrix& A,
-           const XVector& x,
-           const typename bCoeffs::non_const_value_type& beta,
-           const YVector& y);
-
-  static void
-  spmv_mv (const char mode[],
-           const typename aCoeffs::non_const_value_type& alpha,
-           const AMatrix& A,
-           const XVector& x,
-           const typename bCoeffs::non_const_value_type& beta,
+           const coefficient_type& beta,
            const YVector& y);
 };
 
@@ -350,11 +335,7 @@ struct SPMV_MV
 //
 #define KOKKOSSPARSE_IMPL_SPMV_MV_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
 template<> \
-struct SPMV_MV<const SCALAR_TYPE*, \
-        Kokkos::LayoutLeft, \
-        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        const SCALAR_TYPE, \
+struct SPMV_MV<const SCALAR_TYPE, \
         ORDINAL_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
@@ -363,20 +344,12 @@ struct SPMV_MV<const SCALAR_TYPE*, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-        const SCALAR_TYPE*, \
-        Kokkos::LayoutLeft, \
-        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
         std::is_integral<SCALAR_TYPE>::value> \
 { \
-  typedef Kokkos::View<const SCALAR_TYPE*, \
-                       Kokkos::LayoutLeft, \
-                       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > aCoeffs; \
   typedef CrsMatrix<const SCALAR_TYPE, \
                     ORDINAL_TYPE, \
                     Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -390,39 +363,14 @@ struct SPMV_MV<const SCALAR_TYPE*, \
                        LAYOUT_TYPE, \
                        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector; \
- typedef Kokkos::View<const SCALAR_TYPE*, \
-        Kokkos::LayoutLeft, \
-        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> > bCoeffs; \
- \
+  typedef YVector::non_const_value_type coefficient_type; \
+  \
   static void \
   spmv_mv (const char mode[], \
-           const aCoeffs& alpha, \
+           const coefficient_type& alpha, \
            const AMatrix& A, \
            const XVector& x, \
-           const bCoeffs& beta, \
-           const YVector& y); \
- \
-  static void \
-  spmv_mv (const char mode[], \
-           const aCoeffs::non_const_value_type& alpha, \
-           const AMatrix& A, \
-           const XVector& x, \
-           const bCoeffs& beta, \
-           const YVector& y); \
-  static void \
-  spmv_mv (const char mode[], \
-           const aCoeffs& alpha, \
-           const AMatrix& A, \
-           const XVector& x, \
-           const bCoeffs::non_const_value_type& beta, \
-           const YVector& y); \
-  static void \
-  spmv_mv (const char mode[], \
-           const aCoeffs::non_const_value_type& alpha, \
-           const AMatrix& A, \
-           const XVector& x, \
-           const bCoeffs::non_const_value_type& beta, \
+           const coefficient_type& beta, \
            const YVector& y); \
 };
 
@@ -442,11 +390,7 @@ struct SPMV_MV<const SCALAR_TYPE*, \
 //
 #define KOKKOSSPARSE_IMPL_SPMV_MV_DEFAULTS_DECL( SCALAR_TYPE, ORDINAL_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
 template<> \
-struct SPMV_MV<const SCALAR_TYPE*, \
-        Kokkos::LayoutLeft, \
-        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        const SCALAR_TYPE, \
+struct SPMV_MV<const SCALAR_TYPE, \
         ORDINAL_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
@@ -455,20 +399,12 @@ struct SPMV_MV<const SCALAR_TYPE*, \
         Kokkos::LayoutLeft, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-        const SCALAR_TYPE*, \
-        Kokkos::LayoutLeft, \
-        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
         SCALAR_TYPE**, \
         Kokkos::LayoutLeft, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
         std::is_integral<SCALAR_TYPE>::value> \
 { \
-  typedef Kokkos::View<const SCALAR_TYPE*, \
-                       Kokkos::LayoutLeft, \
-                       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > aCoeffs; \
   typedef CrsMatrix<const SCALAR_TYPE, \
                     ORDINAL_TYPE, \
                     Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -482,39 +418,14 @@ struct SPMV_MV<const SCALAR_TYPE*, \
                        Kokkos::LayoutLeft, \
                        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector; \
- typedef Kokkos::View<const SCALAR_TYPE*, \
-        Kokkos::LayoutLeft, \
-        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> > bCoeffs; \
- \
+  typedef YVector::non_const_value_type coefficient_type; \
+  \
   static void \
   spmv_mv (const char mode[], \
-           const aCoeffs& alpha, \
+           const coefficient_type& alpha, \
            const AMatrix& A, \
            const XVector& x, \
-           const bCoeffs& beta, \
-           const YVector& y); \
- \
-  static void \
-  spmv_mv (const char mode[], \
-           const aCoeffs::non_const_value_type& alpha, \
-           const AMatrix& A, \
-           const XVector& x, \
-           const bCoeffs& beta, \
-           const YVector& y); \
-  static void \
-  spmv_mv (const char mode[], \
-           const aCoeffs& alpha, \
-           const AMatrix& A, \
-           const XVector& x, \
-           const bCoeffs::non_const_value_type& beta, \
-           const YVector& y); \
-  static void \
-  spmv_mv (const char mode[], \
-           const aCoeffs::non_const_value_type& alpha, \
-           const AMatrix& A, \
-           const XVector& x, \
-           const bCoeffs::non_const_value_type& beta, \
+           const coefficient_type& beta, \
            const YVector& y); \
 };
 

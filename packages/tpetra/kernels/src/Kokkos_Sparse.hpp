@@ -73,32 +73,33 @@ namespace {
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void
-spmv(const char mode[],
-     const AlphaType& alpha,
-     const AMatrix& A,
-     const XVector& x,
-     const BetaType& beta,
-     const YVector& y,
-     const RANK_ONE)
+spmv (const char mode[],
+      const AlphaType& alpha,
+      const AMatrix& A,
+      const XVector& x,
+      const BetaType& beta,
+      const YVector& y,
+      const RANK_ONE)
 {
   // Make sure that both x and y have the same rank.
   static_assert ((int) XVector::rank == (int) YVector::rank,
-                 "KokkosBlas::spmv: Vector ranks do not match.");
+                 "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 1.
-  static_assert ((int) XVector::rank == 1, "KokkosBlas::spmv: "
-                 "Both Vector inputs must have rank 1 or 2.");
+  static_assert ((int) XVector::rank == 1,
+                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 in "
+                 "order to call this specialization of spmv.");
   // Make sure that y is non-const.
-  static_assert (Kokkos::Impl::is_same<typename YVector::value_type,
-                                       typename YVector::non_const_value_type>::value,
-                 "KokkosBlas::spmv: Output Vector must be non-const.");
+  static_assert (std::is_same<typename YVector::value_type,
+                   typename YVector::non_const_value_type>::value,
+                 "KokkosSparse::spmv: Output Vector must be non-const.");
 
   // Check compatibility of dimensions at run time.
-  if((mode[0]==NoTranspose[0])||(mode[0]==Conjugate[0])) {
+  if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
     if ((x.dimension_1 () != y.dimension_1 ()) ||
         (static_cast<size_t> (A.numCols ()) > static_cast<size_t> (x.dimension_0 ())) ||
         (static_cast<size_t> (A.numRows ()) > static_cast<size_t> (y.dimension_0 ()))) {
       std::ostringstream os;
-      os << "KokkosBlas::spmv: Dimensions do not match: "
+      os << "KokkosSparse::spmv: Dimensions do not match: "
          << ", A: " << A.numRows () << " x " << A.numCols()
          << ", x: " << x.dimension_0 () << " x " << x.dimension_1()
          << ", y: " << y.dimension_0 () << " x " << y.dimension_1()
@@ -106,12 +107,13 @@ spmv(const char mode[],
 
       Kokkos::Impl::throw_runtime_exception (os.str ());
     }
-  } else {
+  }
+  else {
     if ((x.dimension_1 () != y.dimension_1 ()) ||
         (static_cast<size_t> (A.numCols ()) > static_cast<size_t> (y.dimension_0 ())) ||
         (static_cast<size_t> (A.numRows ()) > static_cast<size_t> (x.dimension_0()))) {
       std::ostringstream os;
-      os << "KokkosBlas::spmv: Dimensions do not match (transpose): "
+      os << "KokkosSparse::spmv: Dimensions do not match (transpose): "
          << ", A: " << A.numRows () << " x " << A.numCols()
          << ", x: " << x.dimension_0 () << " x " << x.dimension_1()
          << ", y: " << y.dimension_0 () << " x " << y.dimension_1()
@@ -139,18 +141,18 @@ spmv(const char mode[],
   YVector_Internal y_i = y;
 
   return Impl::SPMV<typename AMatrix_Internal::value_type,
-             typename AMatrix_Internal::ordinal_type,
-             typename AMatrix_Internal::device_type,
-             typename AMatrix_Internal::memory_traits,
-             typename AMatrix_Internal::size_type,
-             typename XVector_Internal::value_type*,
-             typename XVector_Internal::array_layout,
-             typename XVector_Internal::device_type,
-             typename XVector_Internal::memory_traits,
-             typename YVector_Internal::value_type*,
-             typename YVector_Internal::array_layout,
-             typename YVector_Internal::device_type,
-             typename YVector_Internal::memory_traits>::spmv(mode,alpha,A,x,beta,y);
+    typename AMatrix_Internal::ordinal_type,
+    typename AMatrix_Internal::device_type,
+    typename AMatrix_Internal::memory_traits,
+    typename AMatrix_Internal::size_type,
+    typename XVector_Internal::value_type*,
+    typename XVector_Internal::array_layout,
+    typename XVector_Internal::device_type,
+    typename XVector_Internal::memory_traits,
+    typename YVector_Internal::value_type*,
+    typename YVector_Internal::array_layout,
+    typename YVector_Internal::device_type,
+    typename YVector_Internal::memory_traits>::spmv (mode, alpha, A, x, beta, y);
 }
 
 }
