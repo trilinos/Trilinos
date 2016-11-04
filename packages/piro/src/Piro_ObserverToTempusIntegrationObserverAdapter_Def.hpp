@@ -51,43 +51,49 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegr
     const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver)
-    : Tempus::IntegratorObserver<Scalar>(solutionHistory, timeStepControl) 
+    : Tempus::IntegratorObserver<Scalar>(solutionHistory, timeStepControl), 
+    solutionHistory_(solutionHistory),
+    timeStepControl_(timeStepControl), 
+    out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
-  //IKT, 11/2/16, FIXME: fill in 
+  //Currently, sensitivities are not supported in Tempus.  
+  hasSensitivities_ = false; 
 };
 
 template <typename Scalar>
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::~ObserverToTempusIntegrationObserverAdapter() 
 {
-  //IKT, 10/31/16, FIXME: fill in 
+  //Nothing to do? 
 }
 
 template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeStartIntegrator() 
 {
-  //IKT, 10/31/16, FIXME: fill in 
+  //Nothing to do? 
 }
 
 template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeStartTimeStep()
 {
-  //IKT, 10/31/16, FIXME: fill in 
+  //Nothing to do? 
 }
 
 template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeNextTimeStep(Tempus::Status & integratorStatus)
 {
-  //IKT, 10/31/16, FIXME: fill in 
+  //IKT, 11/3/16: currently integratorStatus is not used here, but we could add a condition 
+  //for it to be set to FAILED, if relevant/desired.
+  this->observeTimeStep();
 }
 
 template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeBeforeTakeStep()
 {
-  //IKT, 10/31/16, FIXME: fill in 
+  //Nothing to do? 
 }
 
 
@@ -95,7 +101,7 @@ template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeAfterTakeStep()
 {
-  //IKT, 10/31/16, FIXME: fill in 
+  //Nothing to do? 
 }
 
 
@@ -103,7 +109,7 @@ template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeAcceptedTimeStep(Tempus::Status & integratorStatus)
 {
-  //IKT, 10/31/16, FIXME: fill in 
+  //Nothing to do? 
 }
 
 
@@ -111,49 +117,42 @@ template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeEndIntegrator(const Tempus::Status integratorStatus)
 {
-  //IKT, 10/31/16, FIXME: fill in 
-}
-
-
-//IKT, 10/31/16, FIXME: the following are helper functions from 
-//Rythmos version of this file.  Check if they are needed; if so, 
-//uncomment and convert to Tempus.
-
-/*
-template <typename Scalar>
-void
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep(
-    const Rythmos::StepperBase<Scalar> &stepper)
-{
-  typedef Rythmos::ForwardSensitivityStepper<Scalar> FSS;
-  const bool hasSensitivities = Teuchos::nonnull(
-      Teuchos::ptr_dynamic_cast<const FSS>(Teuchos::ptr(&stepper)));
-
-  this->observeTimeStepStatus(stepper.getStepStatus(), hasSensitivities);
-}
-
-template <typename Scalar>
-void
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStepStatus(
-    const Rythmos::StepStatus<Scalar> &status,
-    bool hasSensitivities)
-{
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = status.solution;
-  solution.assert_not_null();
-
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dot = status.solutionDot;
-
-  if (hasSensitivities) {
-    Rythmos::extractState(solution, solution_dot, &solution, &solution_dot);
+  if (integratorStatus == Tempus::Status::FAILED) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter, std::endl <<
+        "Error in Piro::ObserverToTempusIntegrationObserverAdapter::observeEndIntegrator: " << 
+        "integrator returned FAILED status.  Aborting before observing solution." );
   }
+  this->observeTimeStep(); 
+}
 
+template <typename Scalar>
+void
+Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep() 
+{
+  //IKT, 11/3/16, FIXME: check with Curt that 0 component of solutionHistory is the right 
+  //thing to use here.  I.e., should we be working with currentState or workingState? 
+  Teuchos::RCP<Tempus::SolutionState<Scalar> > solutionState = (*solutionHistory_)[0];
+  //Get solution
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionState->getX();
+  solution.assert_not_null();
+  //Get solution_dot 
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dot = solutionState->getXDot();
+  //IKT, 11/3/16: I think we will also need solution_dotdot for 2nd order time integrators. 
+  //In this case, we will need to get x_dotdot from solutionState and Piro::ObserverBase
+  //will need to be extended to have a constructor that takes x_dotdot.  
+
+  const Scalar scalar_time = solutionHistory_->getWorkingState()->getTime();
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType StampScalar;
-  const StampScalar time = Teuchos::ScalarTraits<Scalar>::real(status.time);
-
-  if (Teuchos::nonnull(solution_dot)) {
+  const StampScalar time = Teuchos::ScalarTraits<Scalar>::real(scalar_time);
+  
+  if (Teuchos::nonnull(solution_dot)) 
+  {
     wrappedObserver_->observeSolution(*solution, *solution_dot, time);
-  } else {
+  } 
+  else {
     wrappedObserver_->observeSolution(*solution, time);
   }
 }
-*/
+

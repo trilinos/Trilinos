@@ -95,18 +95,11 @@ public:
 
 private:
 
-  //IKT, 10/31/16, FIXME: figure out if the following helper functions
-  //are needed.  If so, convert to Tempus; if not, remove. 
-  /*void observeTimeStep(const Rythmos::StepperBase<Scalar> &stepper);
-
-  void observeTimeStepStatus(
-      const Rythmos::StepStatus<Scalar> &status,
-      bool hasSensitivities);
-  */
-
+  void observeTimeStep();
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > solutionHistory_;
   Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl_;
-
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
+  bool hasSensitivities_; 
   Teuchos::RCP<ObserverBase<Scalar> > wrappedObserver_;
 };
 
