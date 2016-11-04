@@ -20,6 +20,11 @@
     <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
 
+  <!-- VOLUME CONSTRAINT INFORMATION -->
+  <ParameterList name="Volume Constraint Poisson TopOpt">
+    <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
+  </ParameterList>
+
   <!-- SOLVER INFORMATION -->
   <ParameterList name="Solver">
     <Parameter name="Use Direct Solver"           type="bool"    value="true"          />
@@ -223,7 +228,7 @@
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
     <Parameter name="Gradient Tolerance"   type="double" value="1.e-3"    />
-    <Parameter name="Constraint Tolerance" type="double" value="1.e-5"    />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-4"    />
     <Parameter name="Step Tolerance"       type="double" value="-1.e-14"  />
     <Parameter name="Iteration Limit"      type="int"    value="20"       />
   </ParameterList>
