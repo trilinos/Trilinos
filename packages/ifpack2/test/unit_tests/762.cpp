@@ -198,8 +198,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2, Issue762, Scalar, LO, GO)
   const Scalar TWO = ONE + ONE;
 
   // Test the following values of alpha in Y := alpha*(A*X) + beta*Y.
-  const int numAlphaValues = 2;
-  const Scalar alphaValues[] = { ONE, TWO };
+  const int numAlphaValues = 4;
+  const Scalar alphaValues[] = { ZERO, ONE, -ONE, TWO };
 
   const Scalar beta = ZERO; // we only test one value of beta
 
