@@ -297,9 +297,9 @@ other enables/disables will make the builds non-standard and can break these
 PT builds.  The goal of these configuration files is to allow you to specify
 the minimum environment to find MPI, your compilers, and the required TPLs
 (e.g. BLAS, LAPACK, etc.).  If you need to fudge what packages are enabled,
-please use the script arguments --enable-packages, --disable-packages,
---no-enable-fwd-packages, and/or --enable-all-packages to control this, not
-the *.config files!
+please use the script arguments --enable-packages, --enable-extra-pacakges,
+--disable-packages, --no-enable-fwd-packages, and/or --enable-all-packages to
+control this, not the *.config files!
 
 WARNING: Please do not add any CMake cache variables in the *.config files
 that will alter what packages or TPLs are enabled or what tests are run.
@@ -807,6 +807,13 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     +" files." )
 
   clp.add_option(
+    "--enable-extra-packages", dest="enableExtraPackages", type="string", default="",
+    help="List of comma separated packages to test in addition to the packages" \
+    +" that are enabled determined automatically by examining" \
+    +" the set of modified files from the version control update log.  This option"\
+    +" is mostly just used in ACI sync servers." )
+
+  clp.add_option(
     "--disable-packages", dest="disablePackages", type="string", default="",
     help="List of comma separated packages to explicitly disable" \
     +" (example, 'Tpetra,NOX').  This list of disables will be appended after" \
@@ -1131,6 +1138,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   if options.skipDepsUpdate:
     print "  --skip-deps-update \\"
   print "  --enable-packages='"+options.enablePackages+"' \\"
+  print "  --enable-extra-packages='"+options.enableExtraPackages+"' \\"
   print "  --disable-packages='"+options.disablePackages+"' \\"
   print "  --enable-all-packages='"+options.enableAllPackages+"'\\"
   if options.enableFwdPackages:

@@ -108,9 +108,10 @@ INCLUDE(PrintVar)
 #      [PASS_ANY
 #        | PASS_REGULAR_EXPRESSION "<regex>"
 #        | PASS_REGULAR_EXPRESSION_ALL "<regex1>" "<regex2>" ... "<regexn>"
-#        | FAIL_REGULAR_EXPRESSION "<regex>"
-#        | STANDARD_PASS_OUTPUT
-#        ]
+#        | STANDARD_PASS_OUTPUT ]
+#      [FAIL_REGULAR_EXPRESSION "<regex>"]
+#      [ALWAYS_FAIL_ON_NONZERO_RETURN]
+#      [WILL_FAIL]
 #
 # By default, each and every atomic test or command needs to pass (as defined below) in
 # order for the overall test to pass.
@@ -119,6 +120,7 @@ INCLUDE(PrintVar)
 #
 # * `Overall Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Test case Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_
@@ -253,7 +255,7 @@ INCLUDE(PrintVar)
 #     If specified, then on output the variable ``<testName>`` will be set
 #     with the name of the test passed to ``ADD_TEST()``.  Having this name
 #     allows the calling ``CMakeLists.txt`` file access and set additional
-#     test propeties (see `Setting additional test properties
+#     test properties (see `Setting additional test properties
 #     (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
 # .. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
@@ -385,9 +387,10 @@ INCLUDE(PrintVar)
 #     If specified, then the output for the test command will not be echoed to
 #     the output for the entire test command.
 #
-# By default, an atomic test line is assumed to pass if the executable or
-# commands returns a non-zero value to the shell.  However, a test case can
-# also be defined to pass based on:
+# By default, an individual test case ``TEST_<IDX>`` is assumed to pass if the
+# executable or commands returns a non-zero value to the shell.  However, a
+# test case can also be defined to pass or fail based on the arguments/options
+# (see `Test case Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())`_):
 #
 #   ``PASS_ANY``
 #
@@ -411,16 +414,40 @@ INCLUDE(PrintVar)
 #     TriBITS.  NOTE: It is critical that you replace ';' with '[;]' or CMake
 #     will interpretet this as a array eleemnt boundary.
 #
-#   ``FAIL_REGULAR_EXPRESSION "<regex>"``
-#
-#     If specified, the test command will be assumed to fail if it matches the
-#     given regular expression.  Otherwise, it is assumed to pass.
-#
 #   ``STANDARD_PASS_OUTPUT``
 #
 #     If specified, the test command will be assumed to pass if the string
 #     expression "Final Result: PASSED" is found in the output for the test.
+#     This as the result of directly passing in ``PASS_REGULAR_EXPRESSION
+#     "Final Result: PASSED"``.
 #
+#   ``FAIL_REGULAR_EXPRESSION "<regex>"``
+#
+#     If specified, the test command will be assumed to fail if it matches the
+#     given regular expression.  Otherwise, it is assumed to pass.  This will
+#     be applied and take precedence over other above pass criteria.  For
+#     example, if even if ``PASS_REGULAR_EXPRESSION`` or
+#     ``PASS_REGULAR_EXPRESSION_ALL`` match, then the test will be marked as
+#     failed if this fail regex matches the output.
+#
+#   ``ALWAYS_FAIL_ON_NONZERO_RETURN``
+#
+#     If specified, then the test case will be marked as failed if the test
+#     command returns nonzero, independent of the other pass/fail criteria.
+#     This option is used in cases where one wants to grep for strings in the
+#     output but still wants to require a nonzero return code.  This make for
+#     a stronger test by requiring that both the strings are found and that
+#     the command returns 0.
+#
+#   ``WILL_FAIL``
+#
+#      If specified, invert the result from the other pass/fail criteria.  For
+#      example, if the regexes in ``PASS_REGULAR_EXPRESSION`` or
+#      ``PASS_REGULAR_EXPRESSION_ALL`` indicate that a test should pass, then
+#      setting ``WILL_FAIL`` will invert that and report the test as failing.
+#      But typically this is used to report a test that returns a nonzero code
+#      as passing.
+# 
 # All of the arguments for a test block ``TEST_<idx>`` must appear directly
 # below their ``TEST_<idx>`` argument and before the next test block (see
 # `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
@@ -430,6 +457,48 @@ INCLUDE(PrintVar)
 # (e.g. ``TEST_20``), the current implementation can't detect that case and
 # the resulting behavior is undefined.  This restriction will be removed in a
 # future version of TriBITS.
+#
+# .. _Test case Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
+#
+# **Test case Pass/Fail (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# The logic for how pass/fail for a test case ``TEST_<IDX>`` is applied is::
+#
+#   # A) Apply first set of pass/fail logic
+#   TEST_CASE_PASSED = FALSE
+#   If PASS_ANY specified:
+#     TEST_CASE_PASSED = TRUE
+#   Else If PASS_REGULAR_EXPRESSION specified and "<regex>" matches:
+#     TEST_CASE_PASSED = TRUE
+#   Else if PASS_REGULAR_EXPRESSION_ALL specified:
+#     TEST_CASE_PASSED = TRUE
+#     For each "<regexi>":
+#       If "<regixi>" does not match:
+#         TEST_CASE_PASSED = FALSE
+#   Else
+#     If command return code == 0:
+#       TEST_CASE_PASSED = TRUE
+#     Endif
+#   Endif
+#
+#   # B) Check for failing regex matching?
+#   If FAIL_REGULAR_EXPRESSION specified and "<regex>" matches:
+#     TEST_CASE_PASSED = FALSE
+#   Endif
+#
+#   # C) Check for return code always 0?
+#   If ALWAYS_FAIL_ON_NONZERO_RETURN specified and return code != 0:
+#     TEST_CASE_PASSED = FALSE
+#   Endif
+#
+#   # D) Invert pass/fail result?
+#   If WILL_FAIL specified:
+#     If TEST_CASE_PASSED:
+#       TEST_CASE_PASSED = FALSE
+#     Else
+#       TEST_CASE_PASSED = TRUE
+#     Endif
+#   Endif
 #
 # .. _Overall Pass/Fail (TRIBITS_ADD_ADVANCED_TEST()):
 #
@@ -534,13 +603,13 @@ INCLUDE(PrintVar)
 #
 # .. _Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST()):
 #
-# **Runnning multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())**
+# **Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # Just as with `TRIBITS_ADD_TEST()`_, setting ``NUM_MPI_PROCS <numProcs>`` or
 # ``OVERALL_NUM_MPI_PROCS <numOverallProcs>`` or ``NUM_TOTAL_CORES_USED
 # <numTotalCoresUsed>`` or ``OVERALL_NUM_TOTAL_CORES_USED
 # <overallNumTotalCoresUsed>`` will set the ``PROCESSORS`` CTest property to
-# allow CTest to schedule and run mutiple tests at the same time when ``'ctest
+# allow CTest to schedule and run multiple tests at the same time when ``'ctest
 # -j<N>'`` is used (see `Running multiple tests at the same time
 # (TRIBITS_ADD_TEST())`_).
 #
@@ -723,7 +792,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
        #lists
        "EXEC;CMND;ARGS;DIRECTORY;MESSAGE;WORKING_DIRECTORY;OUTPUT_FILE;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;PASS_REGULAR_EXPRESSION_ALL;FAIL_REGULAR_EXPRESSION;PASS_REGULAR_EXPRESSION"
        #options
-       "NOEXEPREFIX;NOEXESUFFIX;NO_ECHO_OUTPUT;PASS_ANY;STANDARD_PASS_OUTPUT;ADD_DIR_TO_NAME;SKIP_CLEAN_WORKING_DIRECTORY"
+       "NOEXEPREFIX;NOEXESUFFIX;NO_ECHO_OUTPUT;PASS_ANY;STANDARD_PASS_OUTPUT;ALWAYS_FAIL_ON_NONZERO_RETURN;WILL_FAIL;ADD_DIR_TO_NAME;SKIP_CLEAN_WORKING_DIRECTORY"
        ${PARSE_TEST_${TEST_CMND_IDX}}
        )
 
@@ -917,6 +986,27 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       ENDFOREACH()
       APPEND_STRING_VAR( TEST_SCRIPT_STR
         ")\n"
+        )
+    ENDIF()
+
+    IF (PARSE_FAIL_REGULAR_EXPRESSION)
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_FAIL_REGULAR_EXPRESSION \"${PARSE_FAIL_REGULAR_EXPRESSION}\" )\n"
+        )
+    ENDIF()
+
+    IF (PARSE_ALWAYS_FAIL_ON_NONZERO_RETURN)
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_ALWAYS_FAIL_ON_NONZERO_RETURN TRUE )\n"
+        )
+    ENDIF()
+
+    IF (PARSE_WILL_FAIL)
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_WILL_FAIL TRUE )\n"
         )
     ENDIF()
 
