@@ -129,7 +129,6 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Scotch          "cmake/TPLs/"    SS
   OVIS            "cmake/TPLs/"    SS
   gpcd            "cmake/TPLs/"    SS
-  CGNS            "cmake/TPLs/"    SS
   METIS           "cmake/TPLs/"    TS
   ParMETIS        "cmake/TPLs/"    SS
   PuLP            "cmake/TPLs/"    EX
@@ -141,12 +140,14 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   ADIC            "cmake/TPLs/"    EX
   TVMET           "cmake/TPLs/"    SS
   MF              "cmake/TPLs/"    SS
+  Zlib            "cmake/TPLs/"    SS
+  HDF5            "cmake/TPLs/"    SS
+  CGNS            "cmake/TPLs/"    SS
+  Pnetcdf         "cmake/TPLs/"    SS
+  Netcdf          "cmake/TPLs/"    SS
   ExodusII        "cmake/TPLs/"    SS
   Nemesis         "cmake/TPLs/"    SS
   XDMF            "cmake/TPLs/"    TS
-  Zlib            "cmake/TPLs/"    SS
-  HDF5            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    EX
-  Netcdf          "cmake/TPLs/"    SS
   y12m            "cmake/TPLs/"    SS
   SuperLUDist     "cmake/TPLs/"    SS
   SuperLUMT	  "cmake/TPLs/"	   SS
@@ -184,7 +185,6 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   BGQPAMI         "cmake/TPLs/"    SS
   Pablo           "cmake/TPLs/"    SS
   HPCToolkit      "cmake/TPLs/"    SS
-  Pnetcdf         "cmake/TPLs/"    SS
   Clp             "cmake/TPLs/"    EX
   GLPK            "cmake/TPLs/"    EX
   qpOASES         "cmake/TPLs/"    EX
