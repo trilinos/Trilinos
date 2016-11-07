@@ -312,7 +312,7 @@ void BlockedDOFManager<LocalOrdinalT, GlobalOrdinalT>::getOwnedIndices(
   {
     std::vector<GlobalOrdinalT> fieldBlockOwned;
     fieldBlockManagers_[fbm]->getOwnedIndices(fieldBlockOwned);
-    for (std::size_t i = 0; i < fieldBlockOwned.size(); ++i) 
+    for (std::size_t i = 0; i < fieldBlockOwned.size(); ++i)
       indices.push_back(std::make_pair(fbm, fieldBlockOwned[i]));
   }
 } // end of getOwnedIndices()
@@ -349,7 +349,7 @@ getOwnedAndGhostedIndices(std::vector<GlobalOrdinal>& indices) const
     std::vector<GlobalOrdinalT> fieldBlockOwnedAndGhosted;
     fieldBlockManagers_[fbm]->getOwnedAndGhostedIndices(
       fieldBlockOwnedAndGhosted);
-    for (std::size_t i = 0; i < fieldBlockOwnedAndGhosted.size(); ++i) 
+    for (std::size_t i = 0; i < fieldBlockOwnedAndGhosted.size(); ++i)
       indices.push_back(std::make_pair(fbm, fieldBlockOwnedAndGhosted[i]));
   }
 } // end of getOwnedAndGhostedIndices()
