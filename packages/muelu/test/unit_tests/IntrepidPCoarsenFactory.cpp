@@ -202,9 +202,8 @@ namespace MueLuTests {
     GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     GO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
     int NumProcs = comm->getSize(); 
-    //    int MyPID    = comm->getRank(); 
-    // This function basically takes an existing domain->column importer (the "hi order" guy) and using the hi_to_lo_map, generates "lo order" version.  The domain map is already given to
-    // us here, so we just need to make tha column one.
+    // This function basically takes an existing domain->column importer (the "hi order" guy) and using the hi_to_lo_map, 
+    // generates "lo order" version.  The domain map is already given to us here, so we just need to make tha column one.
 
     // We'll test this by starting with some linearly distributed map for the "hi" domain map and a duplicated map as the "hi" column map.
     // We then do a "lo" domain map, which just grabs the first GID on each proc.
@@ -213,11 +212,9 @@ namespace MueLuTests {
     for(size_t i=0; i<(size_t)numGlobalElements; i++)
       hi_Cols[i] = i;
 
-
     RCP<Map> hi_domainMap   = MapFactory::Build(lib,numGlobalElements,0,comm);
     RCP<Map> hi_colMap      = MapFactory::Build(lib,gst_invalid,hi_Cols(),0,comm);
     RCP<Import> hi_importer = ImportFactory::Build(hi_domainMap,hi_colMap);
-    //Xpetra::Import<LocalOrdinal,GlobalOrdinal, Node> hi_importer(hi_domainMap,hi_colMap);
 
     Teuchos::Array<GO> lo_Doms(1); lo_Doms[0]=hi_domainMap->getGlobalElement(0);
     RCP<Map> lo_domainMap= MapFactory::Build(lib,gst_invalid,lo_Doms(),0,comm);
@@ -243,9 +240,9 @@ namespace MueLuTests {
  
   }
 
-
  /*********************************************************************************************************************/
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, std::vector<Scalar> &pn_gold_in, std::vector<Scalar> &pn_gold_out,const std::string & hi_basis)
   {
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -264,7 +261,6 @@ namespace MueLuTests {
     GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     GO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
     int MyPID = comm->getRank();
-    int degree=2;
 
     // Setup Levels
     Level fineLevel, coarseLevel;
@@ -274,7 +270,7 @@ namespace MueLuTests {
 
     // Build a pseudo-poisson test matrix
     Intrepid::FieldContainer<LocalOrdinal> elem_to_node;
-    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(10,degree,elem_to_node,lib);
+    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
     fineLevel.Set("A",A);
     fineLevel.Set("ipc: element to node map",rcp(&elem_to_node,false));
 
@@ -286,7 +282,7 @@ namespace MueLuTests {
 
     // ParameterList
     ParameterList Params;
-    Params.set("ipc: hi basis","hgrad_line_c2");
+    Params.set("ipc: hi basis",hi_basis);
     Params.set("ipc: lo basis","hgrad_line_c1");
 
     // Build P
@@ -302,6 +298,7 @@ namespace MueLuTests {
     RCP<Matrix> P;
     coarseLevel.Get("P",P,IPCFact.get());
     RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    if(!MyPID) printf("P size = %d x %d\n",(int)P->getRangeMap()->getGlobalNumElements(),(int)P->getDomainMap()->getGlobalNumElements());
 
     // Build serial comparison maps
     GO pn_num_global_dofs = A->getRowMap()->getGlobalNumElements();
@@ -315,12 +312,6 @@ namespace MueLuTests {
     RCP<Export> p1_importer = ExportFactory::Build(p1_SerialMap,P->getDomainMap());
     RCP<Export> pn_importer = ExportFactory::Build(A->getRowMap(),pn_SerialMap);
 
-
-    // GOLD vector collection
-    std::vector<SC> p2_gold_in = {0,1,2,3,4,5,6,7,8,9};
-    std::vector<SC> p2_gold_out= {0,1,2,3,4,5,6,7,8,9,
-				  0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5};
-
     // Allocate some vectors
     RCP<Vector> s_InVec = VectorFactory::Build(p1_SerialMap);
     RCP<Vector> p_InVec = VectorFactory::Build(P->getDomainMap());
@@ -331,11 +322,11 @@ namespace MueLuTests {
 
     // Fill serial GOLD vecs on Proc 0
     if(!MyPID) {
-      for(size_t i=0; i<(size_t)p2_gold_in.size(); i++)
-	s_InVec->replaceLocalValue(i,p2_gold_in[i]);
+      for(size_t i=0; i<(size_t)pn_gold_in.size(); i++)
+	s_InVec->replaceLocalValue(i,pn_gold_in[i]);
 
-      for(size_t i=0; i<(size_t)p2_gold_out.size(); i++)
-	s_OutVec->replaceLocalValue(i,p2_gold_out[i]);
+      for(size_t i=0; i<(size_t)pn_gold_out.size(); i++)
+	s_OutVec->replaceLocalValue(i,pn_gold_out[i]);
     }
 
     // Migrate input data
@@ -347,25 +338,6 @@ namespace MueLuTests {
     // Migrate Output data
     s_codeOutput->doExport(*p_codeOutput,*pn_importer,Xpetra::ADD);
 
-#if 0
-    for(size_t i=0; i<(size_t)P->getDomainMap()->getNodeNumElements(); i++)
-      printf("input: p-gold[%d] = %6.4e\n",(int)A->getRowMap()->getGlobalElement(i),p_InVec->getData(0)[i]);
-    for(size_t i=0; i<(size_t)A->getRowMap()->getNodeNumElements(); i++)
-      printf("output:p-code[%d] = %6.4e\n",(int)A->getRowMap()->getGlobalElement(i),p_codeOutput->getData(0)[i]);
-
-    // DEBUG
-    // FIXME: This equivalence test is failing in parallel
-    if(!MyPID) {
-      for(size_t i=0; i<(size_t)p2_gold_in.size(); i++)
-	printf("input: gold[%d] = %6.4e\n",(int)i,s_InVec->getData(0)[i]);
-      for(size_t i=0; i<(size_t)p2_gold_out.size(); i++)
-	printf("output: gold[%d] = %6.4e\n",(int)i,s_OutVec->getData(0)[i]);
-      for(size_t i=0; i<(size_t)p2_gold_out.size(); i++)
-	printf("output: code[%d] = %6.4e\n",(int)i,s_codeOutput->getData(0)[i]);
-
-    }
-#endif
-
     // Compare vs. GOLD
     s_codeOutput->update(-1.0,*s_OutVec,1.0);
     Teuchos::Array<MT> norm2(1);
@@ -374,24 +346,46 @@ namespace MueLuTests {
 
     if(!MyPID) printf("Diff norm = %10.4e\n",norm2[0]);
 
+  }
 
-#if 0
-    printf("CMS: Matrix P is %dx%d\n",(int)P->getRangeMap()->getGlobalNumElements(),(int)P->getDomainMap()->getGlobalNumElements());
 
-    for(size_t i=0; i<P->getRowMap()->getNodeNumElements(); i++) {
-      Teuchos::ArrayView<const LO> indices;
-      Teuchos::ArrayView<const SC> values;
-      Pcrs->getLocalRowView((LO)i,indices,values);
+ /*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p2, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+    // GOLD vector collection
+    std::vector<Scalar> p2_gold_in = {0,1,2,3,4,5,6,7,8,9};
+    std::vector<Scalar> p2_gold_out= {0,1,2,3,4,5,6,7,8,9,
+				  0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5};
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p2_gold_in.size(),2,p2_gold_in,p2_gold_out,std::string("hgrad_line_c2"));
+  }
 
-      //      printf("[%d] Prow[%d] = ",P->getRowMap()->getComm()->getRank(),(int)i);
-      printf("[*] Prow[%d] = ",(int)P->getRowMap()->getGlobalElement(i));
-      for(size_t j=0; j<(size_t)indices.size(); j++)
-	printf("%d(%6.4e) ",(int)P->getColMap()->getGlobalElement(indices[j]),values[j]);
-      printf("\n");
-    }
-    fflush(stdout);
-#endif
 
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+    // GOLD vector collection
+    std::vector<Scalar> p3_gold_in = {0,1,2,3,4,5};
+    std::vector<Scalar> p3_gold_out= {0,1,2,3,4,5,
+				      1.0/3.0,2.0/3.0,
+				      4.0/3.0,5.0/3.0,
+				      7.0/3.0,8.0/3.0,
+				      10.0/3.0,11.0/3.0,
+				      13.0/3.0,14.0/3.0};
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p3_gold_in.size(),3,p3_gold_in,p3_gold_out,std::string("hgrad_line_c3"));
+  }
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p4, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+    // GOLD vector collection
+    std::vector<Scalar> p4_gold_in = {0,1,2,3,4,5};
+    std::vector<Scalar> p4_gold_out= {0,1,2,3,4,5,
+				      0.25,0.5,0.75,
+				      1.25,1.5,1.75,
+				      2.25,2.5,2.75,
+				      3.25,3.5,3.75,
+				      4.25,4.5,4.75};
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p4_gold_in.size(),4,p4_gold_in,p4_gold_out,std::string("hgrad_line_c4"));
   }
 
 
@@ -401,7 +395,9 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BasisFactory,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildLoElemToNode,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,GenerateColMapFromImport,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p2,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p3,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p4,Scalar,LO,GO,Node) 
 
 
 #include <MueLu_ETI_4arg.hpp>
