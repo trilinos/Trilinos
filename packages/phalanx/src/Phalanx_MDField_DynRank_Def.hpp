@@ -424,50 +424,48 @@ template<typename MDFieldTypeA, typename MDFieldTypeB, unsigned int RANK>
 KOKKOS_INLINE_FUNCTION
 void
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
-V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const PHX::index_t & ind1) const
+V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const int & ind1) const
 {
-  using idx_t = PHX::index_t;
-
   if (RANK == 1){
     base_.m_field_data(ind1) = base_.m_field_data(ind1)*source_(ind1);
   }
   else if (RANK == 2){
-    for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
+    for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
       base_.m_field_data(ind1,ind2) = base_.m_field_data(ind1,ind2)*source_(ind1,ind2);
   }
    else if (RANK == 3){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
+     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
          base_.m_field_data(ind1,ind2,ind3) = base_.m_field_data(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
    }
    else if (RANK == 4){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
+     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data.dimension(3); ind4++)
            base_.m_field_data(ind1,ind2,ind3,ind4) = base_.m_field_data(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
    }
    else if (RANK == 5){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
+     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data.dimension(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data.dimension(4); ind5++)
              base_.m_field_data(ind1,ind2,ind3,ind4,ind5) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
    }
    else if (RANK == 6){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
-             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.dimension(5)); ind6++)
+     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data.dimension(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data.dimension(4); ind5++)
+             for (int ind6=0; ind6<base_.m_field_data.dimension(5); ind6++)
                base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
    }
    else if (RANK == 7){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
-             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.dimension(5)); ind6++)
-               for (idx_t ind7=0; ind7 < static_cast<idx_t>(base_.m_field_data.dimension(6)); ind7++)
+     for (int ind2=0; ind2<base_.m_field_data.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data.dimension(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data.dimension(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data.dimension(4); ind5++)
+             for (int ind6=0; ind6<base_.m_field_data.dimension(5); ind6++)
+               for (int ind7=0; ind7<base_.m_field_data.dimension(6); ind7++)
                  base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
    }
  }
