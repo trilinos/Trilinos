@@ -200,7 +200,7 @@ namespace PHX {
     struct V_MultiplyFunctor{
       V_MultiplyFunctor(const MDFieldTypeA &base, const MDFieldTypeB &source) :base_(base), source_(source){}
       KOKKOS_INLINE_FUNCTION
-      void operator()(const int & i) const;
+      void operator()(const PHX::index_t& i) const;
       MDFieldTypeA base_;
       MDFieldTypeB source_;
     };
