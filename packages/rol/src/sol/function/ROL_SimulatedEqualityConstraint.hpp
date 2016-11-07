@@ -46,7 +46,7 @@
 
 #include "ROL_SimulatedVector.hpp"
 #include "ROL_RiskVector.hpp"
-#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
+#include "ROL_EqualityConstraint_SimOpt.hpp"
 
 namespace ROL {
 
@@ -54,7 +54,7 @@ template <class Real>
 class SimulatedEqualityConstraint : public EqualityConstraint<Real> {
 private:
   const Teuchos::RCP<SampleGenerator<Real> > sampler_;
-  const Teuchos::RCP<ParametrizedEqualityConstraint_SimOpt<Real> > pcon_;
+  const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > pcon_;
   const bool useWeights_;
 
 public:
@@ -62,7 +62,7 @@ public:
   virtual ~SimulatedEqualityConstraint() {}
 
   SimulatedEqualityConstraint(const Teuchos::RCP<SampleGenerator<Real> > & sampler,
-                              const Teuchos::RCP<ParametrizedEqualityConstraint_SimOpt<Real> > & pcon,
+                              const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > & pcon,
                               const bool useWeights = true)
     : sampler_(sampler), pcon_(pcon), useWeights_(useWeights) {}
 

@@ -177,6 +177,12 @@ public:
     augLagSimOpt_->reset(multiplier,penaltyParameter);
   }
 
+// For parametrized (stochastic) objective functions and constraints
+public:
+  void setParameter(const std::vector<Real> &param) {
+    AugmentedLagrangian<Real>::setParameter(param);
+    rAugLagSimOpt_->setParameter(param);
+  }
 }; // class AugmentedLagrangian
 
 } // namespace ROL

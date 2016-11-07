@@ -291,7 +291,6 @@ public:
     nfval_ = 0; ngval_ = 0;
     pen_->reset(multiplier,penaltyParameter);
   }
-
 }; // class AugmentedLagrangian
 
 } // namespace ROL

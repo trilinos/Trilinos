@@ -6,7 +6,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
 #include "ROL_Vector_SimOpt.hpp"
 // Teuchos includes
@@ -92,12 +92,12 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     double alpha = parlist->get("Penalty Parameter", 1.e-4);
     Teuchos::RCP<FEM<double> > fem = Teuchos::rcp(new FEM<double>(nx));
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<double> > pObj
+    Teuchos::RCP<ROL::Objective_SimOpt<double> > pObj
       = Teuchos::rcp(new DiffusionObjective<double>(fem, alpha));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<double> > pCon
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<double> > pCon
       = Teuchos::rcp(new DiffusionEqualityConstraint<double>(fem));
-    Teuchos::RCP<ROL::ParametrizedObjective<double> > robj
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<double>(pObj,pCon,u,p));
+    Teuchos::RCP<ROL::Objective<double> > robj
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<double>(pObj,pCon,u,p));
     ROL::RiskNeutralObjective<double> obj(robj,sampler);
   
     /***************************************************************************/

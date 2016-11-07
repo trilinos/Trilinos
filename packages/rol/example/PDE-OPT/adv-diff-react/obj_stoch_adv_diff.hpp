@@ -317,7 +317,7 @@ public:
 }; // QoI_Control_Cost
 
 template <class Real>
-class StdObjective_stoch_adv_diff : public ROL::ParametrizedStdObjective<Real> {
+class StdObjective_stoch_adv_diff : public ROL::StdObjective<Real> {
 private:
   Real alpha1_, alpha2_;
 

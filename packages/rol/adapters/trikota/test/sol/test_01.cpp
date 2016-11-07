@@ -154,12 +154,12 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build risk-averse objective function
     RealT alpha = 1.e-3;
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > pobjSimOpt
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobjSimOpt
       = Teuchos::rcp(new Objective_BurgersControl<RealT>(alpha,nx));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > pconSimOpt
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pconSimOpt
       = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(nx));
-    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > pObj
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,pp));
+    Teuchos::RCP<ROL::Objective<RealT> > pObj
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,pp));
     Teuchos::RCP<ROL::Objective<RealT> > obj;
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";

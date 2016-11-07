@@ -120,6 +120,12 @@ public:
     }
   }
 
+// Definitions for parametrized (stochastic) equality constraints
+public:
+  void setParameter(const std::vector<Real> &param) {
+    Objective<Real>::setParameter(param);
+    con_->setParameter(param);
+  }
 };
 
 } // namespace ROL

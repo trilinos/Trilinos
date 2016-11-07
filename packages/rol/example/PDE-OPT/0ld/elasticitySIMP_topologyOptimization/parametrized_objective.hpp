@@ -48,13 +48,13 @@
 #ifndef ROL_PDEOPT_ELASTICITYSIMP_OBJECTIVE_H
 #define ROL_PDEOPT_ELASTICITYSIMP_OBJECTIVE_H
 
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
 #include "ROL_ScaledTpetraMultiVector.hpp"
 #include "filter.hpp"
 #include "data.hpp"
 
 template<class Real>
-class ParametrizedObjective_PDEOPT_ElasticitySIMP : public ROL::ParametrizedObjective_SimOpt<Real> {
+class ParametrizedObjective_PDEOPT_ElasticitySIMP : public ROL::Objective_SimOpt<Real> {
 private:
 
   const Teuchos::RCP<ElasticitySIMPOperators<Real> > data_;
@@ -116,7 +116,7 @@ public:
     
    Teuchos::Array<Real> dotvalU(1, 0);
     if ( useFU_ ) {
-      data_->updateF(ROL::ParametrizedObjective_SimOpt<Real>::getParameter());
+      data_->updateF(ROL::Objective_SimOpt<Real>::getParameter());
       up->dot(*(data_->getVecF()), dotvalU.view(0,1));
     }
     else {
@@ -136,7 +136,7 @@ public:
     Teuchos::RCP<Tpetra::MultiVector<> > gp
       = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
     if ( useFU_ ) {
-      data_->updateF(ROL::ParametrizedObjective_SimOpt<Real>::getParameter());
+      data_->updateF(ROL::Objective_SimOpt<Real>::getParameter());
       Tpetra::deep_copy(*gp, *(data_->getVecF()));
     }
     else {

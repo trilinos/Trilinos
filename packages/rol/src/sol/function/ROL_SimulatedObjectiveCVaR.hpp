@@ -47,7 +47,7 @@
 #include "ROL_SimulatedVector.hpp"
 #include "ROL_PlusFunction.hpp"
 #include "ROL_RiskVector.hpp"
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
 
 namespace ROL {
 
@@ -55,7 +55,7 @@ template <class Real>
 class SimulatedObjectiveCVaR : public Objective<Real> {
 private:
   const Teuchos::RCP<SampleGenerator<Real> > sampler_;
-  const Teuchos::RCP<ParametrizedObjective_SimOpt<Real> > pobj_;
+  const Teuchos::RCP<Objective_SimOpt<Real> > pobj_;
   const Teuchos::RCP<PlusFunction<Real> > pfunc_;
   const Real alpha_;
 
@@ -64,7 +64,7 @@ public:
   virtual ~SimulatedObjectiveCVaR() {}
 
   SimulatedObjectiveCVaR(const Teuchos::RCP<SampleGenerator<Real> > & sampler,
-                         const Teuchos::RCP<ParametrizedObjective_SimOpt<Real> > & pobj,
+                         const Teuchos::RCP<Objective_SimOpt<Real> > & pobj,
                          const Teuchos::RCP<PlusFunction<Real> > & pfunc,
                          const Real & alpha)
     : sampler_(sampler), pobj_(pobj), pfunc_(pfunc), alpha_(alpha) {}

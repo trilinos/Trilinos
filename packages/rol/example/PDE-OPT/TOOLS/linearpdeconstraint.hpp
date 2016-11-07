@@ -48,7 +48,7 @@
 #ifndef ROL_PDEOPT_LINEARPDECONSTRAINT_H
 #define ROL_PDEOPT_LINEARPDECONSTRAINT_H
 
-#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
+#include "ROL_EqualityConstraint_SimOpt.hpp"
 #include "pde.hpp"
 #include "assembler.hpp"
 #include "solver.hpp"
@@ -75,7 +75,7 @@ namespace ROL {
 
 
 template<class Real>
-class Linear_PDE_Constraint : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
+class Linear_PDE_Constraint : public ROL::EqualityConstraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<PDE<Real> > pde_;
   Teuchos::RCP<Assembler<Real> > assembler_;
@@ -221,7 +221,7 @@ public:
                         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                         Teuchos::ParameterList &parlist,
                         std::ostream &outStream = std::cout)
-    : ROL::ParametrizedEqualityConstraint_SimOpt<Real>(), pde_(pde),
+    : ROL::EqualityConstraint_SimOpt<Real>(), pde_(pde),
       initZvec_(true), initZpar_(true),
       assembleRHS_(true), assembleJ1_(true), assembleJ2_(true), assembleJ3_(true), setSolver_(true) {
     // Construct assembler.
@@ -236,7 +236,7 @@ public:
   }
 
   void setParameter(const std::vector<Real> &param) {
-    ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
+    ROL::EqualityConstraint_SimOpt<Real>::setParameter(param);
     pde_->setParameter(param);
     assembleRHS_  = true;
     assembleJ1_   = true;

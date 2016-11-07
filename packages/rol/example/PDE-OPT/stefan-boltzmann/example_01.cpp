@@ -59,7 +59,7 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     // Initialize Stefan-Boltzmann PDE.
     Teuchos::RCP<StochasticStefanBoltzmannPDE<RealT> > pde
       = Teuchos::rcp(new StochasticStefanBoltzmannPDE<RealT>(*parlist));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     con->setSolveParameters(*parlist);
     // Cast the constraint and get the assembler.
@@ -189,10 +189,10 @@ int main(int argc, char *argv[]) {
       pde->getVolFE(),pde->getBdryFE(0),pde->getBdryCellLocIds(0),*parlist));
     Teuchos::RCP<StochasticStefanBoltzmannStdObjective<RealT> > std_obj
       = Teuchos::rcp(new StochasticStefanBoltzmannStdObjective<RealT>(*parlist));
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
-    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > objReduced
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, pp, true, false));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp, true, false));
 
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
@@ -295,14 +295,14 @@ int main(int argc, char *argv[]) {
     // Build objective function distribution
     RealT val1(0), val2(0);
     int nsamp_dist = parlist->sublist("Problem").get("Number of Output Samples",100);
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > stateCost
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > stateCost
       = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[0],assembler));
-    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > redStateCost
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(stateCost, con, up, pp, true, false));
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > ctrlCost
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > redStateCost
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(stateCost, con, up, pp, true, false));
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > ctrlCost
       = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[1],assembler));
-    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > redCtrlCost
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(ctrlCost, con, up, pp, true, false));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > redCtrlCost
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(ctrlCost, con, up, pp, true, false));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler_dist
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp_dist,bounds,bman));
     std::stringstream name;

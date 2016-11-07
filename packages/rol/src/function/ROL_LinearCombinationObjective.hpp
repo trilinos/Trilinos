@@ -97,6 +97,15 @@ public:
       hv.axpy(weights_[i],*xdual_);
     }
   }
+
+// Definitions for parametrized (stochastic) objective functions
+public:
+  void setParameter(const std::vector<Real> &param) {
+    Objective<Real>::setParameter(param);
+    for (size_t i = 0; i < size_; ++i) {
+      obj_[i]->setParameter(param);
+    }
+  }
 }; // class LinearCombinationObjective
 
 } // namespace ROL

@@ -151,7 +151,6 @@ public:
     const StdVector<Real> xs = Teuchos::dyn_cast<const StdVector<Real> >(x);
     precond(*(Pvs.getVector()),*(vs.getVector()),*(xs.getVector()),tol);
   }
-
 };
 
 } // namespace ROL

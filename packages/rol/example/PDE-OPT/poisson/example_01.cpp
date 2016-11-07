@@ -58,7 +58,7 @@
 
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/linearpdeconstraint.hpp"
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describe Poisson's equation
     Teuchos::RCP<PDE_Poisson<RealT> > pde
       = Teuchos::rcp(new PDE_Poisson<RealT>(*parlist));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<Linear_PDE_Constraint<RealT> > pdecon
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     qoi_vec[1] = Teuchos::rcp(new QoI_L2Penalty_Poisson<RealT>(pde->getFE()));
     Teuchos::RCP<StdObjective_Poisson<RealT> > std_obj
       = Teuchos::rcp(new StdObjective_Poisson<RealT>(*parlist));
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
 
     // Create state vector and set to zeroes
@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     // Initialize reduced objective function
-    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, pp));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp));
 
     // Run derivative checks
     obj->checkGradient(x,d,true,*outStream);

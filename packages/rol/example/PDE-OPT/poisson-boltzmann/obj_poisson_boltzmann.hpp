@@ -278,7 +278,7 @@ public:
 }; // QoI_L2Penalty
 
 template <class Real>
-class StdObjective_Poisson_Boltzmann : public ROL::ParametrizedStdObjective<Real> {
+class StdObjective_Poisson_Boltzmann : public ROL::StdObjective<Real> {
 private:
   Real alpha_;
 

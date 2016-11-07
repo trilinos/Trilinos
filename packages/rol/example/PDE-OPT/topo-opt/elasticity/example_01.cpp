@@ -61,7 +61,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_AugmentedLagrangian_SimOpt.hpp"
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_CompositeEqualityConstraint_SimOpt.hpp"
 
@@ -116,12 +116,12 @@ int main(int argc, char *argv[]) {
     // Initialize PDE describing elasticity equations.
     Teuchos::RCP<PDE_TopoOpt<RealT> > pde
       = Teuchos::rcp(new PDE_TopoOpt<RealT>(*parlist));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
     // Initialize the filter PDE.
     Teuchos::RCP<PDE_Filter<RealT> > pdeFilter
       = Teuchos::rcp(new PDE_Filter<RealT>(*parlist));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > conFilter
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > conFilter
       = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pdeFilter,meshMgr,comm,*parlist,*outStream));
     // Cast the constraint and get the assembler.
     Teuchos::RCP<PDE_Constraint<RealT> > pdecon
@@ -213,10 +213,10 @@ int main(int argc, char *argv[]) {
                                                      objScaling));
     Teuchos::RCP<StdObjective_TopoOpt<RealT> > std_obj
       = Teuchos::rcp(new StdObjective_TopoOpt<RealT>());
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
-    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, pp, true, false));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp, true, false));
 
     // Initialize volume constraint,
     Teuchos::RCP<QoI<RealT> > qoi_vol

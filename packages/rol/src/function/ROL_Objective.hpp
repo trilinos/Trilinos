@@ -445,14 +445,22 @@ public:
                                           const Vector<Real> &w,
                                           const bool printToStream = true,
                                           std::ostream & outStream = std::cout );
-  
-  // struct StepState (scalars, vectors) map?
 
-  // getState
+// Definitions for parametrized (stochastic) objective functions
+private:
+  std::vector<Real> param_;
 
-  // setState
+protected:
+  const std::vector<Real> getParameter(void) const {
+    return param_;
+  }
 
-}; // class Step
+public:
+  virtual void setParameter(const std::vector<Real> &param) {
+    param_.assign(param.begin(),param.end());
+  }
+
+}; // class Objective
 
 } // namespace ROL
 

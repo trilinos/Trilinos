@@ -67,7 +67,7 @@ class StochasticProblem : public OptimizationProblem<Real> {
 private:
   Teuchos::RCP<Teuchos::ParameterList> parlist_;
 
-  Teuchos::RCP<ParametrizedObjective<Real> > ORIGINAL_obj_;
+  Teuchos::RCP<Objective<Real> > ORIGINAL_obj_;
   Teuchos::RCP<Vector<Real> >                ORIGINAL_vec_;
   Teuchos::RCP<BoundConstraint<Real> >       ORIGINAL_bnd_;
 
@@ -100,7 +100,7 @@ public:
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
-                    const Teuchos::RCP<ParametrizedObjective<Real> > &obj,
+                    const Teuchos::RCP<Objective<Real> > &obj,
                     const Teuchos::RCP<SampleGenerator<Real> > &sampler,
                     const Teuchos::RCP<Vector<Real> > &vec)
     : OptimizationProblem<Real>(),
@@ -115,7 +115,7 @@ public:
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
-                    const Teuchos::RCP<ParametrizedObjective<Real> > &obj,
+                    const Teuchos::RCP<Objective<Real> > &obj,
                     const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
                     const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
                     const Teuchos::RCP<Vector<Real> > &vec)
@@ -131,7 +131,7 @@ public:
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
-                    const Teuchos::RCP<ParametrizedObjective<Real> > &obj,
+                    const Teuchos::RCP<Objective<Real> > &obj,
                     const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
                     const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
                     const Teuchos::RCP<SampleGenerator<Real> > &hsampler,
@@ -148,7 +148,7 @@ public:
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
-                    const Teuchos::RCP<ParametrizedObjective<Real> > &obj,
+                    const Teuchos::RCP<Objective<Real> > &obj,
                     const Teuchos::RCP<SampleGenerator<Real> > &sampler,
                     const Teuchos::RCP<Vector<Real> > &vec,
                     const Teuchos::RCP<BoundConstraint<Real> > &bnd)
@@ -164,7 +164,7 @@ public:
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
-                    const Teuchos::RCP<ParametrizedObjective<Real> > &obj,
+                    const Teuchos::RCP<Objective<Real> > &obj,
                     const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
                     const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
                     const Teuchos::RCP<Vector<Real> > &vec,
@@ -181,7 +181,7 @@ public:
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
-                    const Teuchos::RCP<ParametrizedObjective<Real> > &obj,
+                    const Teuchos::RCP<Objective<Real> > &obj,
                     const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
                     const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
                     const Teuchos::RCP<SampleGenerator<Real> > &hsampler,
@@ -232,7 +232,7 @@ public:
     hsampler_ = hsampler;
   }
 
-  void setObjective(const Teuchos::RCP<ParametrizedObjective<Real> > &obj) {
+  void setObjective(const Teuchos::RCP<Objective<Real> > &obj) {
     if ( parlist_ == Teuchos::null ) {
      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
        ">>> ERROR (ROL::StochasticProblem): parameter list not set!");

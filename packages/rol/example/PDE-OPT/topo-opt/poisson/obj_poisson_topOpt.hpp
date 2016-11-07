@@ -56,11 +56,13 @@ class QoI_Energy_Poisson_TopOpt : public QoI<Real> {
 private:
   const Teuchos::RCP<FE<Real> > fe_;
   const Teuchos::RCP<Intrepid::FieldContainer<Real> > force_eval_;
+  const Real scale_;
 
 public:
   QoI_Energy_Poisson_TopOpt(const Teuchos::RCP<FE<Real> > &fe,
-                            const Teuchos::RCP<Intrepid::FieldContainer<Real> > &force_eval)
-    : fe_(fe), force_eval_(force_eval) {}
+                            const Teuchos::RCP<Intrepid::FieldContainer<Real> > &force_eval,
+                            const Real scale = static_cast<Real>(1))
+    : fe_(fe), force_eval_(force_eval), scale_(scale) {}
 
   Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
              const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -77,6 +79,7 @@ public:
     fe_->evaluateValue(valU_eval, u_coeff);
     // Compute energy
     fe_->computeIntegral(val,valU_eval,force_eval_);
+    Intrepid::RealSpaceTools<Real>::scale(*val, scale_);
     return static_cast<Real>(0);
   }
 
@@ -94,6 +97,7 @@ public:
                                                   *force_eval_,
                                                   *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, false);
+    Intrepid::RealSpaceTools<Real>::scale(*grad, scale_);
   }
 
   void gradient_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & grad,
@@ -148,7 +152,7 @@ public:
   QoI_Volume_Poisson_TopOpt(const Teuchos::RCP<FE<Real> > &fe,
                             Teuchos::ParameterList &parlist)
     : fe_(fe) {
-    Real v0 = parlist.sublist("Volume Constraint Poisson TopOpt").get("Volume Fraction",0.4);
+    Real v0 = parlist.sublist("Problem").get("Volume Fraction",0.4);
     // Get relevant dimensions
     int c = fe_->cubPts()->dimension(0);
     int p = fe_->cubPts()->dimension(1);
@@ -239,7 +243,7 @@ public:
 }; // QoI_Volume
 
 template <class Real>
-class StdObjective_Poisson_TopOpt : public ROL::ParametrizedStdObjective<Real> {
+class StdObjective_Poisson_TopOpt : public ROL::StdObjective<Real> {
 public:
   StdObjective_Poisson_TopOpt() {}
 

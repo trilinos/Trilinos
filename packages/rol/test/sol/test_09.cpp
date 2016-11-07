@@ -52,14 +52,14 @@
 #include "ROL_Algorithm.hpp"
 
 #include "ROL_StochasticProblem.hpp"
-#include "ROL_ParametrizedObjective.hpp"
+#include "ROL_Objective.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 
 typedef double RealT;
 
 template<class Real> 
-class ParametrizedObjectiveEx8 : public ROL::ParametrizedObjective<Real> {
+class ParametrizedObjectiveEx8 : public ROL::Objective<Real> {
 public:
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > ex = 
@@ -102,7 +102,7 @@ public:
 };
 
 RealT setUpAndSolve(Teuchos::ParameterList &list,
-                    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > &pObj,
+                    Teuchos::RCP<ROL::Objective<RealT> > &pObj,
                     Teuchos::RCP<ROL::SampleGenerator<RealT> > &sampler,
                     Teuchos::RCP<ROL::Vector<RealT> > &x,
                     Teuchos::RCP<ROL::Vector<RealT> > &d,
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
       Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,bounds,bman,false,false,100));
     // Build risk-averse objective function
-    Teuchos::RCP<ROL::ParametrizedObjective<RealT> > pObj =
+    Teuchos::RCP<ROL::Objective<RealT> > pObj =
       Teuchos::rcp(new ParametrizedObjectiveEx8<RealT>);
     // Build bound constraints
     std::vector<RealT> l(dim,0.0);

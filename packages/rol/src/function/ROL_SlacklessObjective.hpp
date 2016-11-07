@@ -116,6 +116,12 @@ public:
     obj_->precond( *getOpt(Pv), *getOpt(v), *getOpt(x), tol );
   }
 
+// Definitions for parametrized (stochastic) objective functions
+public:
+  void setParameter(const std::vector<Real> &param) {
+    Objective<Real>::setParameter(param);
+    obj_->setParameter(param);
+  }
 }; // class SlacklessObjective 
 
 } // namespace ROL
