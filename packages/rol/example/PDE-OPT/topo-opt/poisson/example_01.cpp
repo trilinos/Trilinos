@@ -57,17 +57,20 @@
 #include <algorithm>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_AugmentedLagrangian_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_BoundConstraint.hpp"
+#include "ROL_CompositeEqualityConstraint_SimOpt.hpp"
 
-#include "../../TOOLS/meshmanager.hpp"
 #include "../../TOOLS/pdeconstraint.hpp"
 #include "../../TOOLS/pdeobjective.hpp"
 #include "../../TOOLS/pdevector.hpp"
 #include "../../TOOLS/integralconstraint.hpp"
+#include "../../TOOLS/linearpdeconstraint.hpp"
 #include "pde_poisson_topOpt.hpp"
 #include "obj_poisson_topOpt.hpp"
+#include "mesh_poisson_topOpt.hpp"
 
 typedef double RealT;
 
@@ -92,114 +95,258 @@ int main(int argc, char *argv[]) {
 
   // *** Example body.
   try {
+    RealT tol(1.e-8), one(1);
 
     /*** Read in XML input ***/
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
+    // Retrieve parameters.
+    const RealT domainWidth  = parlist->sublist("Geometry").get("Width", 1.0);
+    const RealT domainHeight = parlist->sublist("Geometry").get("Height", 1.0);
+    const RealT volFraction  = parlist->sublist("Problem").get("Volume Fraction", 0.4);
+    const RealT objFactor    = parlist->sublist("Problem").get("Objective Scaling", 1e-2);
+
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr
-      = Teuchos::rcp(new MeshManager_Rectangle<RealT>(*parlist));
+      = Teuchos::rcp(new MeshManager_Poisson_TopOpt<RealT>(*parlist));
     // Initialize PDE describe Poisson's equation
     Teuchos::RCP<PDE_Poisson_TopOpt<RealT> > pde
       = Teuchos::rcp(new PDE_Poisson_TopOpt<RealT>(*parlist));
-    Teuchos::RCP<PDE_Constraint<RealT> > con
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,comm,*parlist,*outStream));
-    // Initialize quadratic objective function
-    std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(1,Teuchos::null);
-    qoi_vec[0] = Teuchos::rcp(new QoI_Energy_Poisson_TopOpt<RealT>(pde->getFE(),pde->getForce()));
-    Teuchos::RCP<StdObjective_Poisson_TopOpt<RealT> > std_obj
-      = Teuchos::rcp(new StdObjective_Poisson_TopOpt<RealT>());
-    Teuchos::RCP<PDE_Objective<RealT> > obj
-      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,con->getAssembler()));
-    // Initialize volume constraint
-    Teuchos::RCP<QoI<RealT> > qoi_vol
-      = Teuchos::rcp(new QoI_Volume_Poisson_TopOpt<RealT>(pde->getFE(),*parlist));
-    Teuchos::RCP<IntegralConstraint<RealT> > vcon
-      = Teuchos::rcp(new IntegralConstraint<RealT>(qoi_vol,con->getAssembler()));
+    con->setSolveParameters(*parlist);
+    // Initialize the filter PDE.
+    Teuchos::RCP<PDE_Filter<RealT> > pdeFilter
+      = Teuchos::rcp(new PDE_Filter<RealT>(*parlist));
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > conFilter
+      = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pdeFilter,meshMgr,comm,*parlist,*outStream));
+    // Cast the constraint and get the assembler.
+    Teuchos::RCP<PDE_Constraint<RealT> > pdecon
+      = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
+    Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
 
     // Create state vector and set to zeroes
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = con->getAssembler()->createStateVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = assembler->createStateVector();
     u_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,con->getAssembler(),*parlist));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler,*parlist));
     // Create control vector and set to ones
-    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = con->getAssembler()->createControlVector();
-    z_rcp->putScalar(0.5);
+    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = assembler->createControlVector();
+    z_rcp->putScalar(volFraction);
     Teuchos::RCP<ROL::Vector<RealT> > zp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,con->getAssembler(),*parlist));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler,*parlist));
     // Create Lagrange multiplier vector and set to zeroes
-    Teuchos::RCP<Tpetra::MultiVector<> > l_rcp = con->getAssembler()->createStateVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > l_rcp = assembler->createStateVector();
     l_rcp->randomize();
     Teuchos::RCP<ROL::Vector<RealT> > lp
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(l_rcp,pde,con->getAssembler(),*parlist));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(l_rcp,pde,assembler,*parlist));
     // Create residual vector and set to zeros
-    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = con->getAssembler()->createResidualVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > r_rcp = assembler->createResidualVector();
     r_rcp->putScalar(0.0);
     Teuchos::RCP<ROL::Vector<RealT> > rp
-      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,con->getAssembler(),*parlist));
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler,*parlist));
     // Create state direction vector and set to random
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = con->getAssembler()->createStateVector();
-    //du_rcp->putScalar(0.0);
-    du_rcp->randomize();
+    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = assembler->createStateVector();
+    du_rcp->randomize(); //du_rcp->putScalar(0.0);
     Teuchos::RCP<ROL::Vector<RealT> > dup
-      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,con->getAssembler(),*parlist));
+      = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(du_rcp,pde,assembler,*parlist));
     // Create control direction vector and set to random
-    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = con->getAssembler()->createControlVector();
-    //dz_rcp->putScalar(0.0);
-    dz_rcp->randomize();
+    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = assembler->createControlVector();
+    dz_rcp->randomize(); //dz_rcp->putScalar(0.0);
     Teuchos::RCP<ROL::Vector<RealT> > dzp
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,con->getAssembler(),*parlist));
-    // Create volume constraint vector and set to zero
-    Teuchos::RCP<std::vector<RealT> > c1_rcp = Teuchos::rcp(new std::vector<RealT>(1,0));
-    Teuchos::RCP<ROL::Vector<RealT> > c1p = Teuchos::rcp(new ROL::StdVector<RealT>(c1_rcp));
-    Teuchos::RCP<std::vector<RealT> > c2_rcp = Teuchos::rcp(new std::vector<RealT>(1,1));
-    Teuchos::RCP<ROL::Vector<RealT> > c2p = Teuchos::rcp(new ROL::StdVector<RealT>(c2_rcp));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(dz_rcp,pde,assembler,*parlist));
+    // Create control test vector.
+    Teuchos::RCP<Tpetra::MultiVector<> > rz_rcp = assembler->createControlVector();
+    rz_rcp->randomize();
+    Teuchos::RCP<ROL::Vector<RealT> > rzp
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(rz_rcp,pde,assembler,*parlist));
+
+    Teuchos::RCP<Tpetra::MultiVector<> > dualu_rcp = assembler->createStateVector();
+    Teuchos::RCP<ROL::Vector<RealT> > dualup
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(dualu_rcp,pde,assembler,*parlist));
+    Teuchos::RCP<Tpetra::MultiVector<> > dualz_rcp = assembler->createControlVector();
+    Teuchos::RCP<ROL::Vector<RealT> > dualzp
+      = Teuchos::rcp(new PDE_DualOptVector<RealT>(dualz_rcp,pde,assembler,*parlist));
+
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
-    // Build reduced objective function
+    // Initialize "filtered" of "unfiltered" constraint.
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pdeWithFilter;
+    bool useFilter = parlist->sublist("Problem").get("Use Filter", true);
+    if (useFilter) {
+      pdeWithFilter = Teuchos::rcp(new ROL::CompositeEqualityConstraint_SimOpt<RealT>(con, conFilter, *rp, *rp, *up, *zp, *zp));
+    }
+    else {
+      pdeWithFilter = con;
+    }
+    pdeWithFilter->setSolveParameters(*parlist);
+
+    // Initialize compliance objective function.
+    Teuchos::ParameterList list(*parlist);
+    list.sublist("Vector").sublist("Sim").set("Use Riesz Map",true);
+    list.sublist("Vector").sublist("Sim").set("Lump Riesz Map",false);
+    // Has state Riesz map enabled for mesh-independent compliance scaling.
+    Teuchos::RCP<Tpetra::MultiVector<> > f_rcp = assembler->createResidualVector();
+    f_rcp->putScalar(0.0);
+    Teuchos::RCP<ROL::Vector<RealT> > fp
+      = Teuchos::rcp(new PDE_DualSimVector<RealT>(f_rcp,pde,assembler,list));
+    up->zero();
+    con->value(*fp, *up, *zp, tol);
+    RealT objScaling = objFactor, fnorm2 = fp->dot(*fp);
+    if (fnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
+      objScaling /= fnorm2;
+    }
+    u_rcp->randomize();
+    std::vector<Teuchos::RCP<QoI<RealT> > > qoi_vec(1,Teuchos::null);
+    qoi_vec[0] = Teuchos::rcp(new QoI_Energy_Poisson_TopOpt<RealT>(pde->getFE(),
+                                                                   pde->getForce(),
+                                                                   objScaling));
+    Teuchos::RCP<StdObjective_Poisson_TopOpt<RealT> > std_obj
+      = Teuchos::rcp(new StdObjective_Poisson_TopOpt<RealT>());
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
+      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
     Teuchos::RCP<ROL::Objective<RealT> > robj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj,con,up,lp,true,false));
+
+    // Initialize volume constraint
+    Teuchos::RCP<QoI<RealT> > qoi_vol
+      = Teuchos::rcp(new QoI_Volume_Poisson_TopOpt<RealT>(pde->getFE(),*parlist));
+    Teuchos::RCP<IntegralConstraint<RealT> > vcon
+      = Teuchos::rcp(new IntegralConstraint<RealT>(qoi_vol,assembler));
+    // Create volume constraint vector and set to zero
+    RealT vecScaling = one / std::pow(domainWidth*domainHeight*(one-volFraction), 2);
+    Teuchos::RCP<std::vector<RealT> > scalevec_rcp = Teuchos::rcp(new std::vector<RealT>(1,vecScaling));
+    Teuchos::RCP<std::vector<RealT> > c1_rcp = Teuchos::rcp(new std::vector<RealT>(1,0));
+    Teuchos::RCP<ROL::Vector<RealT> > c1p = Teuchos::rcp(new ROL::PrimalScaledStdVector<RealT>(c1_rcp, scalevec_rcp));
+    Teuchos::RCP<std::vector<RealT> > c2_rcp = Teuchos::rcp(new std::vector<RealT>(1,1));
+    Teuchos::RCP<ROL::Vector<RealT> > c2p = Teuchos::rcp(new ROL::DualScaledStdVector<RealT>(c2_rcp, scalevec_rcp));
+
     // Build bound constraint
-    Teuchos::RCP<Tpetra::MultiVector<> > lo_rcp = con->getAssembler()->createControlVector();
-    Teuchos::RCP<Tpetra::MultiVector<> > hi_rcp = con->getAssembler()->createControlVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > lo_rcp = assembler->createControlVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > hi_rcp = assembler->createControlVector();
     lo_rcp->putScalar(0.0); hi_rcp->putScalar(1.0);
     Teuchos::RCP<ROL::Vector<RealT> > lop
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(lo_rcp,pde,con->getAssembler(),*parlist));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(lo_rcp,pde,assembler,*parlist));
     Teuchos::RCP<ROL::Vector<RealT> > hip
-      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,con->getAssembler(),*parlist));
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+      = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,assembler,*parlist));
+    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
+      = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
+
+    // Initialize Augmented Lagrangian functional.
+    ROL::Reduced_AugmentedLagrangian_SimOpt<RealT> augLag(obj,pdeWithFilter,vcon,up,zp,lp,c1p,c2p,1,*parlist);
 
     // Run derivative checks
-    obj->checkGradient(x,d,true,*outStream);
-    obj->checkHessVec(x,d,true,*outStream);
-    robj->checkGradient(*zp,*dzp,true,*outStream);
-    robj->checkHessVec(*zp,*dzp,true,*outStream);
-    con->checkApplyJacobian(x,d,*up,true,*outStream);
-    con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
-    con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
-    con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
-    con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
-    vcon->checkApplyJacobian(x,d,*c1p,true,*outStream);
-    vcon->checkApplyAdjointHessian(x,*c2p,d,x,true,*outStream);
-    vcon->checkAdjointConsistencyJacobian(*c1p,d,x,true,*outStream);
+    bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
+    if ( checkDeriv ) {
+      *outStream << "\n\nCheck Opt Vector\n";
+      zp->checkVector(*dzp,*rzp,true,*outStream);
 
-    ROL::Reduced_AugmentedLagrangian_SimOpt<RealT> augLag(obj,con,vcon,up,zp,lp,c1p,c2p,1,*parlist);
-    augLag.checkGradient(*zp,*dzp,true,*outStream);
-    augLag.checkHessVec(*zp,*dzp,true,*outStream);
+      *outStream << "\n\nCheck Gradient of Full Objective Function\n";
+      obj->checkGradient(x,d,true,*outStream);
+      *outStream << "\n\nCheck Hessian of Full Objective Function\n";
+      obj->checkHessVec(x,d,true,*outStream);
+
+      *outStream << "\n\nCheck Full Jacobian of PDE Constraint\n";
+      con->checkApplyJacobian(x,d,*rp,true,*outStream);
+      *outStream << "\n\nCheck Jacobian_1 of PDE Constraint\n";
+      con->checkApplyJacobian_1(*up,*zp,*dup,*rp,true,*outStream);
+      *outStream << "\n\nCheck Jacobian_2 of PDE Constraint\n";
+      con->checkApplyJacobian_2(*up,*zp,*dzp,*rp,true,*outStream);
+      *outStream << "\n\nCheck Full Hessian of PDE Constraint\n";
+      con->checkApplyAdjointHessian(x,*lp,d,x,true,*outStream);
+      *outStream << "\n\nCheck Hessian_11 of PDE Constraint\n";
+      con->checkApplyAdjointHessian_11(*up,*zp,*lp,*dup,*dualup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_21 of PDE Constraint\n";
+      con->checkApplyAdjointHessian_21(*up,*zp,*lp,*dzp,*dualup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_12 of PDE Constraint\n";
+      con->checkApplyAdjointHessian_12(*up,*zp,*lp,*dup,*dualzp,true,*outStream);
+      *outStream << "\n\nCheck Hessian_22 of PDE Constraint\n";
+      con->checkApplyAdjointHessian_22(*up,*zp,*lp,*dzp,*dualzp,true,*outStream);
+      *outStream << "\n";
+      con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
+      *outStream << "\n";
+      con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
+      *outStream << "\n";
+      con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
+
+      *outStream << "\n\nCheck Full Jacobian of Filter\n";
+      conFilter->checkApplyJacobian(x,d,*rp,true,*outStream);
+      *outStream << "\n\nCheck Jacobian_1 of Filter\n";
+      conFilter->checkApplyJacobian_1(*up,*zp,*dup,*rp,true,*outStream);
+      *outStream << "\n\nCheck Jacobian_2 of Filter\n";
+      conFilter->checkApplyJacobian_2(*up,*zp,*dzp,*rp,true,*outStream);
+      *outStream << "\n\nCheck Full Hessian of Filter\n";
+      conFilter->checkApplyAdjointHessian(x,*lp,d,x,true,*outStream);
+      *outStream << "\n\nCheck Hessian_11 of Filter\n";
+      conFilter->checkApplyAdjointHessian_11(*up,*zp,*lp,*dup,*dualup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_21 of Filter\n";
+      conFilter->checkApplyAdjointHessian_21(*up,*zp,*lp,*dzp,*dualup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_12 of Filter\n";
+      conFilter->checkApplyAdjointHessian_12(*up,*zp,*lp,*dup,*dualzp,true,*outStream);
+      *outStream << "\n\nCheck Hessian_22 of Filter\n";
+      conFilter->checkApplyAdjointHessian_22(*up,*zp,*lp,*dzp,*dualzp,true,*outStream);
+      *outStream << "\n";
+      conFilter->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
+      *outStream << "\n";
+      conFilter->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
+      *outStream << "\n";
+      conFilter->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
+
+      *outStream << "\n\nCheck Full Jacobian of Filtered PDE Constraint\n";
+      pdeWithFilter->checkApplyJacobian(x,d,*rp,true,*outStream);
+      *outStream << "\n\nCheck Jacobian_1 of Filtered PDE Constraint\n";
+      pdeWithFilter->checkApplyJacobian_1(*up,*zp,*dup,*rp,true,*outStream);
+      *outStream << "\n\nCheck Jacobian_2 of Filtered PDE Constraint\n";
+      pdeWithFilter->checkApplyJacobian_2(*up,*zp,*dzp,*rp,true,*outStream);
+      *outStream << "\n\nCheck Full Hessian of Filtered PDE Constraint\n";
+      pdeWithFilter->checkApplyAdjointHessian(x,*lp,d,x,true,*outStream);
+      *outStream << "\n\nCheck Hessian_11 of Filtered PDE Constraint\n";
+      pdeWithFilter->checkApplyAdjointHessian_11(*up,*zp,*lp,*dup,*dualup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_21 of Filtered PDE Constraint\n";
+      pdeWithFilter->checkApplyAdjointHessian_21(*up,*zp,*lp,*dzp,*dualup,true,*outStream);
+      *outStream << "\n\nCheck Hessian_12 of Filtered PDE Constraint\n";
+      pdeWithFilter->checkApplyAdjointHessian_12(*up,*zp,*lp,*dup,*dualzp,true,*outStream);
+      *outStream << "\n\nCheck Hessian_22 of Filtered PDE Constraint\n";
+      pdeWithFilter->checkApplyAdjointHessian_22(*up,*zp,*lp,*dzp,*dualzp,true,*outStream);
+      *outStream << "\n";
+      pdeWithFilter->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
+      *outStream << "\n";
+      pdeWithFilter->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
+      *outStream << "\n";
+      pdeWithFilter->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
+
+      *outStream << "\n\nCheck Gradient of Reduced Objective Function\n";
+      robj->checkGradient(*zp,*dzp,true,*outStream);
+      *outStream << "\n\nCheck Hessian of Reduced Objective Function\n";
+      robj->checkHessVec(*zp,*dzp,true,*outStream);
+      *outStream << "\n\nCheck Full Jacobian of Volume Constraint\n";
+      vcon->checkApplyJacobian(x,d,*c1p,true,*outStream);
+      *outStream << "\n";
+      vcon->checkAdjointConsistencyJacobian(*c1p,d,x,true,*outStream);
+      *outStream << "\n\nCheck Full Hessian of Volume Constraint\n";
+      vcon->checkApplyAdjointHessian(x,*c2p,d,x,true,*outStream);
+      *outStream << "\n\nCheck Gradient of Augmented Lagrangian Function\n";
+      augLag.checkGradient(*zp,*dzp,true,*outStream);
+      *outStream << "\n\nCheck Hessian of Augmented Lagrangian Function\n";
+      augLag.checkHessVec(*zp,*dzp,true,*outStream);
+      *outStream << "\n";
+    }
 
     ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
+    Teuchos::Time algoTimer("Algorithm Time", true);
     algo.run(*zp,*c2p,augLag,*vcon,*bnd,true,*outStream);
+    algoTimer.stop();
+    *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
 
     // Output.
-    con->getAssembler()->printMeshData(*outStream);
-    RealT tol(1.e-8);
+    pdecon->printMeshData(*outStream);
     con->solve(*rp,*up,*zp,tol);
-    con->outputTpetraVector(u_rcp,"state.txt");
-    con->outputTpetraVector(z_rcp,"control.txt");
+    pdecon->outputTpetraVector(u_rcp,"state.txt");
+    pdecon->outputTpetraVector(z_rcp,"density.txt");
 
     Teuchos::Array<RealT> res(1,0);
     con->value(*rp,*up,*zp,tol);

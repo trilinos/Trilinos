@@ -41,62 +41,62 @@
 // ************************************************************************
 // @HEADER
 
+
 #ifndef ROL_REDUCED_OBJECTIVE_SIMOPT_H
 #define ROL_REDUCED_OBJECTIVE_SIMOPT_H
 
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_EqualityConstraint_SimOpt.hpp"
 
-/** @ingroup func_group
-    \class ROL::Reduced_Objective_SimOpt
-    \brief Provides the interface to evaluate simulation-based reduced objective functions.
-
-           The reduced simulation-based objective function is 
-           \f$\widehat{J}(z) = J(u(z),z)\f$ where \f$u(z)=u\f$ solves \f$c(u,z) = 0\f$.
-*/
-
-
 namespace ROL {
 
 template <class Real>
 class Reduced_Objective_SimOpt : public Objective<Real> {
 private:
-  Teuchos::RCP<Objective_SimOpt<Real> > obj_;           ///< SimOpt objective function. 
-  Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_;  ///< SimOpt equality constraint.
+  Teuchos::RCP<Objective_SimOpt<Real> > obj_;          
+  Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_; 
 
-  Teuchos::RCP<Vector<Real> > state_;                   ///< Storage for the state variable.
-  Teuchos::RCP<Vector<Real> > state_sens_;              ///< Storage for the state sensitivity variable.
-  Teuchos::RCP<Vector<Real> > dualstate_;               ///< Dual state vector.
-  Teuchos::RCP<Vector<Real> > dualstate1_;              ///< Dual state vector.
-  Teuchos::RCP<Vector<Real> > adjoint_;                 ///< Storage for the adjoint variable.
-  Teuchos::RCP<Vector<Real> > adjoint_sens_;            ///< Storage for the adjoint sensitivity variable.
-  Teuchos::RCP<Vector<Real> > dualadjoint_;             ///< Dual adjoint vector.
-  Teuchos::RCP<Vector<Real> > dualcontrol_;             ///< Dual control vector.
+  // Primal vectors
+  Teuchos::RCP<Vector<Real> > state_;                              
+  Teuchos::RCP<Vector<Real> > state_sens_;                              
+  Teuchos::RCP<Vector<Real> > adjoint_;                            
+  Teuchos::RCP<Vector<Real> > adjoint_sens_;                            
 
-  bool storage_;                                        ///< Flag whether or not to store computed quantities.
-  bool is_state_computed_;                              ///< Flag whether or not to store the state variable.
-  bool is_adjoint_computed_;                            ///< Flag whether or not to store the adjoint variable.
+  // Dual vectors
+  Teuchos::RCP<Vector<Real> > dualstate_;
+  Teuchos::RCP<Vector<Real> > dualstate1_;
+  Teuchos::RCP<Vector<Real> > dualadjoint_;
+  Teuchos::RCP<Vector<Real> > dualcontrol_;
 
-  bool is_initialized_;                                 ///< Flag if dual control vector is initialized.
+  // Vector storage
+  std::map<std::vector<Real>,Teuchos::RCP<Vector<Real> > > state_storage_; 
+  std::map<std::vector<Real>,Teuchos::RCP<Vector<Real> > > adjoint_storage_;
 
-  bool useFDhessVec_;                                   ///< Flag whether or not to use finite difference hessVec.
+  bool storage_;             
+  bool useFDhessVec_;
+  bool is_initialized_;
 
-  /** \brief Given \f$z\in\mathcal{Z}\f$, solve the state equation \f$c(u,z) = 0\f$ for 
-      \f$u=u(z)\in\mathcal{U}\f$.
-  */
-  void solve_state_equation(const ROL::Vector<Real> &x, Real &tol, bool flag = true, int iter = -1) { 
+  void solve_state_equation(const Vector<Real> &x, Real &tol, bool flag = true, int iter = -1) { 
     // Solve state equation if not done already
-    if (!is_state_computed_ || !storage_) {
-      // Update SimOpt equality constraint with respect to optimization variable
+    if ( state_storage_.count(this->getParameter()) && storage_ ) {
+      state_->set(*state_storage_[this->getParameter()]);
+    }
+    else {
+      // Update equality constraint
       con_->update_2(x,flag,iter);
       // Solve state
       con_->solve(*dualadjoint_,*state_,x,tol);
-      // Update SimOpt equality constraint with respect to state
+      // Update equality constraint
       con_->update_1(*state_,flag,iter);
-      // Update SimOpt objective function
+      // Update full objective function
       obj_->update(*state_,x,flag,iter);
-      // Reset storage flags
-      is_state_computed_ = true;
+      // Store state
+      if ( storage_ ) {
+        state_storage_.insert(
+          std::pair<std::vector<Real>,Teuchos::RCP<Vector<Real> > >(
+            this->getParameter(),state_->clone()));
+        state_storage_[this->getParameter()]->set(*state_);
+      }
     }
   }
 
@@ -104,16 +104,24 @@ private:
              the adjoint equation 
              \f$c_u(u,z)^*\lambda + J_u(u,z) = 0\f$ for \f$\lambda=\lambda(u,z)\in\mathcal{C}^*\f$.
   */
-  void solve_adjoint_equation(const ROL::Vector<Real> &x, Real &tol) { 
+  void solve_adjoint_equation(const Vector<Real> &x, Real &tol) { 
     // Solve adjoint equation if not done already
-    if(!is_adjoint_computed_ || !storage_) {
+    if ( adjoint_storage_.count(this->getParameter()) && storage_ ) {
+      adjoint_->set(*adjoint_storage_[this->getParameter()]);
+    }
+    else {
       // Evaluate the full gradient wrt u
       obj_->gradient_1(*dualstate_,*state_,x,tol);
       // Solve adjoint equation
       con_->applyInverseAdjointJacobian_1(*adjoint_,*dualstate_,*state_,x,tol);
       adjoint_->scale(-1.0);
-      // Reset storage flags
-      is_adjoint_computed_ = true;
+      // Store adjoint
+      if ( storage_ ) {
+        adjoint_storage_.insert(
+          std::pair<std::vector<Real>,Teuchos::RCP<Vector<Real> > >(
+            this->getParameter(),adjoint_->clone()));
+        adjoint_storage_[this->getParameter()]->set(*adjoint_);
+      }
     }
   }
 
@@ -121,7 +129,7 @@ private:
              a direction \f$v\in\mathcal{Z}\f$, solve the state senstivity equation 
              \f$c_u(u,z)s + c_z(u,z)v = 0\f$ for \f$s=u_z(z)v\in\mathcal{U}\f$.
   */
-  void solve_state_sensitivity(const ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real &tol) {
+  void solve_state_sensitivity(const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
     // Solve state sensitivity equation
     con_->applyJacobian_2(*dualadjoint_,v,*state_,x,tol);
     dualadjoint_->scale(-1.0);
@@ -135,11 +143,11 @@ private:
                             + c_{zu}(u,z)(\cdot,v)^*\lambda = 0\f$
              for \f$p = \lambda_z(u(z),z)v\in\mathcal{C}^*\f$.
   */
-  void solve_adjoint_sensitivity(const ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real &tol) {
+  void solve_adjoint_sensitivity(const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
     // Evaluate full hessVec in the direction (s,v)
     obj_->hessVec_11(*dualstate_,*state_sens_,*state_,x,tol);
     obj_->hessVec_12(*dualstate1_,v,*state_,x,tol);
-    dualstate_->plus(*dualstate1_); 
+    dualstate_->plus(*dualstate1_);
     // Apply adjoint Hessian of constraint
     con_->applyAdjointHessian_11(*dualstate1_,*adjoint_,*state_sens_,*state_,x,tol);
     dualstate_->plus(*dualstate1_);
@@ -151,28 +159,29 @@ private:
   }
 
 public:
+  /** \brief Constructor.
 
-  /** \brief Primary constructor.
-
-      @param[in] obj          is a pointer to a SimOpt objective function.
-      @param[in] con          is a pointer to a SimOpt equality constraint.
-      @param[in] state        is a pointer to a state space vector, \f$\mathcal{U}\f$.
-      @param[in] adjoint      is a pointer to a dual constraint space vector, \f$\mathcal{C}^*\f$.
-      @param[in] storage      is a flag whether or not to store computed states and adjoints.
-      @param[in] useFDhessVec is a flag whether or not to use a finite-difference Hessian approximation.
+      @param[in] obj     is a pointer to a SimOpt objective function.
+      @param[in] con     is a pointer to a SimOpt equality constraint.
+      @param[in] state   is a pointer to a state space vector, \f$\mathcal{U}\f$.
+      @param[in] adjoint is a pointer to a dual constraint space vector, \f$\mathcal{C}^*\f$.
+      @param[in] storage is a flag whether or not to store computed states and adjoints.
   */
   Reduced_Objective_SimOpt(const Teuchos::RCP<Objective_SimOpt<Real> > &obj, 
                            const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &con, 
                            const Teuchos::RCP<Vector<Real> > &state, 
                            const Teuchos::RCP<Vector<Real> > &adjoint,
-                           bool storage = true, bool useFDhessVec = false) 
+                           const bool storage = true,
+                           const bool useFDhessVec = false) 
     : obj_(obj), con_(con),
       state_(state), state_sens_(state->clone()),
-      dualstate_(state->dual().clone()), dualstate1_(state->dual().clone()),
       adjoint_(adjoint), adjoint_sens_(adjoint->clone()),
+      dualstate_(state->dual().clone()), dualstate1_(state->dual().clone()),
       dualadjoint_(adjoint->dual().clone()), dualcontrol_(Teuchos::null),
-      storage_(storage), is_state_computed_(false), is_adjoint_computed_(false),
-      is_initialized_(false), useFDhessVec_(useFDhessVec) {}
+      storage_(storage), useFDhessVec_(useFDhessVec), is_initialized_(false) {
+    state_storage_.clear();
+    adjoint_storage_.clear();
+  }
 
   /** \brief Secondary, general constructor for use with dual optimization vector spaces
              where the user does not define the dual() method.
@@ -186,31 +195,31 @@ public:
       @param[in] storage      is a flag whether or not to store computed states and adjoints.
       @param[in] useFDhessVec is a flag whether or not to use a finite-difference Hessian approximation.
   */
-  Reduced_Objective_SimOpt(Teuchos::RCP<Objective_SimOpt<Real> > &obj, 
-                           Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &con, 
-                           Teuchos::RCP<Vector<Real> > &state, 
-                           Teuchos::RCP<Vector<Real> > &adjoint,
-                           Teuchos::RCP<Vector<Real> > &dualstate, 
-                           Teuchos::RCP<Vector<Real> > &dualadjoint,
-                           bool storage = true, bool useFDhessVec = false) 
+  Reduced_Objective_SimOpt(const Teuchos::RCP<Objective_SimOpt<Real> > &obj,
+                           const Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &con,
+                           const Teuchos::RCP<Vector<Real> > &state,
+                           const Teuchos::RCP<Vector<Real> > &adjoint,
+                           const Teuchos::RCP<Vector<Real> > &dualstate,
+                           const Teuchos::RCP<Vector<Real> > &dualadjoint,
+                           const bool storage = true,
+                           const bool useFDhessVec = false)
     : obj_(obj), con_(con),
       state_(state), state_sens_(state->clone()),
-      dualstate_(dualstate), dualstate1_(dualstate->clone()),
       adjoint_(adjoint), adjoint_sens_(adjoint->clone()),
-      dualadjoint_(dualadjoint), dualcontrol_(Teuchos::null),
-      storage_(storage), is_state_computed_(false), is_adjoint_computed_(false),
-      is_initialized_(false), useFDhessVec_(useFDhessVec) {}
+      dualstate_(dualstate), dualstate1_(dualstate->clone()),
+      dualadjoint_(dualadjoint->clone()), dualcontrol_(Teuchos::null),
+      storage_(storage), useFDhessVec_(useFDhessVec), is_initialized_(false) {
+    state_storage_.clear();
+    adjoint_storage_.clear();
+  }
 
   /** \brief Update the SimOpt objective function and equality constraint.
   */
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     // Reset storage flags
-    is_state_computed_ = false;
-    is_adjoint_computed_ = false;
-    // Solve state equation
-    if ( storage_ ) {
-      Real tol = std::sqrt(ROL_EPSILON<Real>());
-      solve_state_equation(x,tol,flag,iter);
+    state_storage_.clear();
+    if ( flag ) {
+      adjoint_storage_.clear();
     }
   }
 
@@ -285,7 +294,14 @@ public:
     Pv.set(v.dual());
   }
 
-}; // class ROL::Reduced_Objective_SimOpt
+// For parametrized (stochastic) objective functions and constraints
+public:
+  void setParameter(const std::vector<Real> &param) {
+    Objective<Real>::setParameter(param);
+    con_->setParameter(param);
+    obj_->setParameter(param);
+  }
+}; // class Reduced_Objective_SimOpt
 
 } // namespace ROL
 

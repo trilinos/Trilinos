@@ -53,7 +53,7 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Version.hpp"
 
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_StochasticProblem.hpp"
 
 #include "ROL_ScaledTpetraMultiVector.hpp"
@@ -205,12 +205,12 @@ int main(int argc, char *argv[]) {
     RealT scale = (useExpValScale ? gsum : gmin);
 
     /*** Build objective function, constraint and reduced objective function. ***/
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
        = Teuchos::rcp(new ParametrizedObjective_PDEOPT_ElasticitySIMP<RealT>(data, filter, parlist,scale));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
        = Teuchos::rcp(new ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP<RealT>(data, filter, parlist));
-    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > objReduced
-       = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, dwp));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
+       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, dwp));
     Teuchos::RCP<ROL::EqualityConstraint<RealT> > volcon
        = Teuchos::rcp(new EqualityConstraint_PDEOPT_ElasticitySIMP_Volume<RealT>(data, parlist));
 

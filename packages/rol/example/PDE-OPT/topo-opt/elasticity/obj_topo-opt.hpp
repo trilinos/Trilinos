@@ -291,7 +291,7 @@ public:
 
 
 template <class Real>
-class StdObjective_TopoOpt : public ROL::ParametrizedStdObjective<Real> {
+class StdObjective_TopoOpt : public ROL::StdObjective<Real> {
 public:
   StdObjective_TopoOpt() {}
 

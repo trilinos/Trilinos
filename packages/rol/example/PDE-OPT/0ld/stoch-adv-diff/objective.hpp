@@ -48,13 +48,13 @@
 #ifndef ROL_PDEOPT_STOCH_ADV_DIFF_OBJECTIVE_H
 #define ROL_PDEOPT_STOCH_ADV_DIFF_OBJECTIVE_H
 
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "data.hpp"
 
 template<class Real>
-class Objective_PDEOPT_Poisson : public ROL::ParametrizedObjective_SimOpt<Real> {
+class Objective_PDEOPT_Poisson : public ROL::Objective_SimOpt<Real> {
 private:
 
   const Teuchos::RCP<PoissonData<Real> > data_;

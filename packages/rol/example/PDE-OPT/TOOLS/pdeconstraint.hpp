@@ -48,7 +48,7 @@
 #ifndef ROL_PDEOPT_PDECONSTRAINT_H
 #define ROL_PDEOPT_PDECONSTRAINT_H
 
-#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
+#include "ROL_EqualityConstraint_SimOpt.hpp"
 #include "pde.hpp"
 #include "assembler.hpp"
 #include "solver.hpp"
@@ -84,7 +84,7 @@ namespace ROL {
 
 
 template<class Real>
-class PDE_Constraint : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
+class PDE_Constraint : public ROL::EqualityConstraint_SimOpt<Real> {
 private:
   const Teuchos::RCP<PDE<Real> > pde_;
   Teuchos::RCP<Assembler<Real> > assembler_;
@@ -373,7 +373,7 @@ public:
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                  Teuchos::ParameterList &parlist,
                  std::ostream &outStream = std::cout)
-    : ROL::ParametrizedEqualityConstraint_SimOpt<Real>(),
+    : ROL::EqualityConstraint_SimOpt<Real>(),
       pde_(pde),
       computeJ1_(true),  computeJ2_(true),  computeJ3_(true),
       computeH11_(true), computeH12_(true), computeH13_(true),
@@ -391,7 +391,7 @@ public:
   PDE_Constraint(const Teuchos::RCP<PDE<Real> >       &pde,
                  const Teuchos::RCP<Assembler<Real> > &assembler,
                  const Teuchos::RCP<Solver<Real> >    &solver)
-    : ROL::ParametrizedEqualityConstraint_SimOpt<Real>(),
+    : ROL::EqualityConstraint_SimOpt<Real>(),
       pde_(pde), assembler_(assembler), solver_(solver),
       computeJ1_(true),  computeJ2_(true),  computeJ3_(true),
       computeH11_(true), computeH12_(true), computeH13_(true),
@@ -410,7 +410,7 @@ public:
     computeH21_ = true; computeH22_ = true; computeH23_ = true;
     computeH31_ = true; computeH32_ = true; computeH33_ = true;
     setSolver_  = true;
-    ROL::ParametrizedEqualityConstraint_SimOpt<Real>::setParameter(param);
+    ROL::EqualityConstraint_SimOpt<Real>::setParameter(param);
     pde_->setParameter(param);
   }
 

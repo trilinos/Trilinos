@@ -963,7 +963,7 @@ public:
 }; // QoI_L2Penalty_NavierStokes
 
 template <class Real>
-class StdObjective_NavierStokes : public ROL::ParametrizedStdObjective<Real> {
+class StdObjective_NavierStokes : public ROL::StdObjective<Real> {
 private:
   Real alpha_;
   std::string stateObj_;

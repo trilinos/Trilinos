@@ -160,6 +160,18 @@ public:
     }
   }
 
+// Definitions for parametrized (stochastic) objective functions
+public:
+  void setParameter(const std::vector<Real> &param) {
+    Objective<Real>::setParameter(param);
+    const int size = obj_vec_.size();
+    for (int i = 0; i < size; ++i) {
+      obj_vec_[i]->setParameter(param);
+    }
+    std_obj_->setParameter(param);
+    isValueComputed_ = false;    // Recompute value every time
+    isGradientComputed_ = false; // Recompute gradient every time
+  }
 };
 
 } // namespace ROL

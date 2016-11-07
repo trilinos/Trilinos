@@ -47,7 +47,6 @@
 #include "Teuchos_RCP.hpp"
 #include "ROL_RiskVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_ParametrizedObjective.hpp"
 #include "ROL_SampleGenerator.hpp"
 
 namespace ROL {
@@ -55,7 +54,7 @@ namespace ROL {
 template<class Real>
 class BPOEObjective : public Objective<Real> {
 private:
-  Teuchos::RCP<ParametrizedObjective<Real> > ParametrizedObjective_;
+  Teuchos::RCP<Objective<Real> > ParametrizedObjective_;
 
   Real order_;
   Real threshold_;
@@ -144,7 +143,7 @@ private:
 public:
   virtual ~BPOEObjective() {}
 
-  BPOEObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+  BPOEObjective( const Teuchos::RCP<Objective<Real> > &pObj,
                  const Real order, const Real threshold,
                  const Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
                  const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
@@ -157,7 +156,7 @@ public:
     gradient_storage_.clear();
   }
 
-  BPOEObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+  BPOEObjective( const Teuchos::RCP<Objective<Real> > &pObj,
                  const Real order, const Real threshold,
                  const Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
                  const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
@@ -169,7 +168,7 @@ public:
     gradient_storage_.clear();
   }
 
-  BPOEObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+  BPOEObjective( const Teuchos::RCP<Objective<Real> > &pObj,
                  const Real order, const Real threshold,
                  const Teuchos::RCP<SampleGenerator<Real> >       &sampler,
                  const bool storage = true )

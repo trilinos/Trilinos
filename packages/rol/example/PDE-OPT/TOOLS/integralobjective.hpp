@@ -44,13 +44,13 @@
 #ifndef PDE_INTEGRALOBJECTIVE_HPP
 #define PDE_INTEGRALOBJECTIVE_HPP
 
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
 #include "qoi.hpp"
 #include "assembler.hpp"
 #include "pdevector.hpp"
 
 template<class Real>
-class IntegralObjective : public ROL::ParametrizedObjective_SimOpt<Real> {
+class IntegralObjective : public ROL::Objective_SimOpt<Real> {
 private:
   const Teuchos::RCP<QoI<Real> > qoi_;
   const Teuchos::RCP<Assembler<Real> > assembler_;
@@ -74,7 +74,7 @@ public:
     : qoi_(qoi), assembler_(assembler) {}
 
   void setParameter(const std::vector<Real> &param) {
-    ROL::ParametrizedObjective_SimOpt<Real>::setParameter(param);
+    ROL::Objective_SimOpt<Real>::setParameter(param);
     qoi_->setParameter(param);
   }
 
@@ -100,7 +100,7 @@ public:
       g.zero();
     }
     catch ( Exception::NotImplemented & eni ) {
-      ROL::ParametrizedObjective_SimOpt<Real>::gradient_1(g,u,z,tol);
+      ROL::Objective_SimOpt<Real>::gradient_1(g,u,z,tol);
     }
   }
 
@@ -146,7 +146,7 @@ public:
     }
     // Not Implemented
     if ( NotImplemented == 2 ) {
-      ROL::ParametrizedObjective_SimOpt<Real>::gradient_2(g,u,z,tol);
+      ROL::Objective_SimOpt<Real>::gradient_2(g,u,z,tol);
     }
   }
 
@@ -166,7 +166,7 @@ public:
       hv.zero();
     }
     catch (Exception::NotImplemented &eni) {
-      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_11(hv,v,u,z,tol);
+      ROL::Objective_SimOpt<Real>::hessVec_11(hv,v,u,z,tol);
     }
   }
 
@@ -215,7 +215,7 @@ public:
     }
     // Not Implemented
     if ( NotImplemented == 2 ) {
-      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_12(hv,v,u,z,tol);
+      ROL::Objective_SimOpt<Real>::hessVec_12(hv,v,u,z,tol);
     }
   }
 
@@ -265,7 +265,7 @@ public:
     }
     // Not Implemented
     if ( NotImplemented == 2 ) {
-      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_21(hv,v,u,z,tol);
+      ROL::Objective_SimOpt<Real>::hessVec_21(hv,v,u,z,tol);
     }
   }
 
@@ -360,7 +360,7 @@ public:
     }
     // Not Implemented
     if ( NotImplemented == 4 ) {
-      ROL::ParametrizedObjective_SimOpt<Real>::hessVec_22(hv,v,u,z,tol);
+      ROL::Objective_SimOpt<Real>::hessVec_22(hv,v,u,z,tol);
     }
   }
 

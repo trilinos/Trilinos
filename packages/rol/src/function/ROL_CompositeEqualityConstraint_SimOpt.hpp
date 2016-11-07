@@ -224,6 +224,14 @@ public:
     ahwv.plus(*dualZ_);
   }
 
+// Definitions for parametrized (stochastic) equality constraints
+public:
+  void setParameter(const std::vector<Real> &param) {
+    EqualityConstraint_SimOpt<Real>::setParameter(param);
+    conVal_->setParameter(param);
+    conRed_->setParameter(param);
+    isSolved_ = false; // Resolve constraint every time
+  }
 }; // class CompositeEqualityConstraint_SimOpt
 
 } // namespace ROL

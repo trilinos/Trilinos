@@ -339,7 +339,6 @@ public:
     multiplier_->set(multiplier);
     penaltyParameter_ = penaltyParameter;
   }
-
 }; // class AugmentedLagrangian
 
 } // namespace ROL

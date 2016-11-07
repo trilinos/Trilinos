@@ -110,6 +110,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
     Teuchos::RCP<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > p_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > u_lo_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > u_up_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
@@ -120,6 +121,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
     // Set all values to 1 in u, z and c.
     u_rcp->putScalar(1.0);
+    p_rcp->putScalar(1.0);
     u_lo_rcp->putScalar(u_lo_bound);
     u_up_rcp->putScalar(u_up_bound);
     z_rcp->putScalar(1.0);
@@ -131,6 +133,7 @@ int main(int argc, char *argv[]) {
     dz_rcp->randomize();
     // Create ROL::TpetraMultiVectors.
     Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > pp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(p_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > u_lo_p = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_lo_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > u_up_p = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_up_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
@@ -144,12 +147,12 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*** Build objective function, equality constraint, reduced objective function and bound constraint. ***/
-    Teuchos::RCP<Objective_PDEOPT_Poisson<RealT> > obj =
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj =
       Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, parlist));
-    Teuchos::RCP<EqualityConstraint_PDEOPT_Poisson<RealT> > con =
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
-    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
-      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, up));
+    Teuchos::RCP<ROL::Objective<RealT> > objReduced =
+      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bcon_control =
       Teuchos::rcp(new ROL::BoundConstraint<RealT>(z_lo_p, z_up_p));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bcon_state =
@@ -196,7 +199,8 @@ int main(int argc, char *argv[]) {
     data->outputTpetraVector(u_rcp, "stateFS.txt");
     data->outputTpetraVector(z_rcp, "controlFS.txt");
 
-    *outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_rcp) << std::endl;
+    *outStream << std::endl << "|| u_approx - u_analytic ||_L2 = "
+               << data->computeStateError(u_rcp) << std::endl;
 
   }
   catch (std::logic_error err) {

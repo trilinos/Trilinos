@@ -48,12 +48,12 @@
 #ifndef ROL_PDEOPT_STEFANBOLTZMANN_OBJECTIVE_H
 #define ROL_PDEOPT_STEFANBOLTZMANN_OBJECTIVE_H
 
-#include "ROL_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Objective_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "data.hpp"
 
 template<class Real>
-class Objective_PDEOPT_StefanBoltzmann : public ROL::ParametrizedObjective_SimOpt<Real> {
+class Objective_PDEOPT_StefanBoltzmann : public ROL::Objective_SimOpt<Real> {
 private:
 
   Teuchos::RCP<StefanBoltzmannData<Real> > data_;
@@ -67,7 +67,7 @@ public:
     alpha_ = parlist->sublist("Problem").get("Penalty parameter", 1e-2);
   }
 
-  using ROL::ParametrizedObjective_SimOpt<Real>::value;
+  using ROL::Objective_SimOpt<Real>::value;
   Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<const Tpetra::MultiVector<> > up =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();

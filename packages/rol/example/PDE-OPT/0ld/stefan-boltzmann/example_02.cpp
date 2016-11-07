@@ -58,7 +58,7 @@
 #include "ROL_SROMGenerator.hpp"
 #include "ROL_DistributionFactory.hpp"
 #include "ROL_BatchManager.hpp"
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_UnaryFunctions.hpp"
 
@@ -136,12 +136,12 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*** Build objective function, constraint and reduced objective function. ***/
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj =
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj =
       Teuchos::rcp(new Objective_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con =
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
-    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > objReduced =
-      Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, up));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
+      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, up));
 
     /*** Build stochastic functionality. ***/
     int sdim = parlist->sublist("Problem").get("Stochastic Dimension",4);

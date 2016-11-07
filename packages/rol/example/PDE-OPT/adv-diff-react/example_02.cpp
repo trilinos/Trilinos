@@ -59,7 +59,7 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<PDE_stoch_adv_diff<RealT> > pde
       = Teuchos::rcp(new PDE_stoch_adv_diff<RealT>(*parlist));
     PDE_Constraint<RealT> pdeCon(pde,meshMgr,serial_comm,*parlist,*outStream);
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
       = Teuchos::rcp(&pdeCon,false);
     pdeCon.getAssembler()->printMeshData(*outStream);
 
@@ -184,10 +184,10 @@ int main(int argc, char *argv[]) {
     qoi_vec[1] = Teuchos::rcp(new QoI_Control_Cost_stoch_adv_diff<RealT>());
     Teuchos::RCP<StdObjective_stoch_adv_diff<RealT> > std_obj
       = Teuchos::rcp(new StdObjective_stoch_adv_diff<RealT>(*parlist));
-    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,pdeCon.getAssembler()));
-    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > objReduced
-      = Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, pp, true, false));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp, true, false));
 
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/

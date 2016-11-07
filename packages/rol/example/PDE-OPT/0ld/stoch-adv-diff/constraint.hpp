@@ -48,14 +48,14 @@
 #ifndef ROL_PDEOPT_STOCH_ADV_DIFF_CONSTRAINT_H
 #define ROL_PDEOPT_STOCH_ADV_DIFF_CONSTRAINT_H
 
-#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
+#include "ROL_EqualityConstraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "Amesos2.hpp"
 #include "data.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_Poisson : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_PDEOPT_Poisson : public ROL::EqualityConstraint_SimOpt<Real> {
 private:
 
   const Teuchos::RCP<PoissonData<Real> > data_;
@@ -80,8 +80,8 @@ public:
 
     Real one(1);
 
-    data_->updateA(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
-    data_->updateF(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateF(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
  
     // A*u
     data_->getMatA()->apply(*up, *cp);
@@ -103,7 +103,7 @@ public:
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
 
     // A*v
-    data_->updateA(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
     data_->getMatA()->apply(*vp, *jvp);
   }
 
@@ -132,7 +132,7 @@ public:
 
     // A'*v
     bool transpose = true;
-    data_->updateA(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
     data_->getMatA(transpose)->apply(*vp, *ajvp);
   }
 
@@ -184,7 +184,7 @@ public:
     Teuchos::RCP<const Tpetra::MultiVector<> > vp =
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
 
-    data_->updateA(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
     data_->getSolver()->setX(ijvp);
     data_->getSolver()->setB(vp);
     data_->getSolver()->solve();
@@ -212,7 +212,7 @@ public:
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
     
     bool transpose = true;    
-    data_->updateA(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
     data_->getSolver(transpose)->setX(iajvp);
     data_->getSolver(transpose)->setB(vp);
     data_->getSolver(transpose)->solve();

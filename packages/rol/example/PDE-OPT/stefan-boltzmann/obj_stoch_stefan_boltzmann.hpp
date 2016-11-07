@@ -680,7 +680,7 @@ public:
 }; // QoI_Advection_Cost
 
 template <class Real>
-class StochasticStefanBoltzmannStdObjective : public ROL::ParametrizedStdObjective<Real> {
+class StochasticStefanBoltzmannStdObjective : public ROL::StdObjective<Real> {
 private:
   Real alpha0_;
   Real alpha1_;
@@ -709,7 +709,7 @@ public:
 }; // OBJ_SCALAR
 
 template <class Real>
-class StochasticStefanBoltzmannStdObjective3 : public ROL::ParametrizedStdObjective<Real> {
+class StochasticStefanBoltzmannStdObjective3 : public ROL::StdObjective<Real> {
 private:
   Real alpha0_;
   Real alpha1_;
