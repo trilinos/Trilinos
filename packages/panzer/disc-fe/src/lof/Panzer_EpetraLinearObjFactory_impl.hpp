@@ -652,7 +652,7 @@ template <typename Traits, typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
 buildGhostedColMap() const
 {
-  if (!hasColProvider_)  
+  if (!hasColProvider_)
     return buildGhostedMap();
   std::vector<int> indices;
 //  if (newWay)
