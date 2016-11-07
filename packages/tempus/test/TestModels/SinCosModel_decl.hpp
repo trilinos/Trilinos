@@ -89,7 +89,7 @@ class SinCosModel
   public:
 
   // Constructor
-  SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList);
+  SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   // Exact solution
   ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;

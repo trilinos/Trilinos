@@ -60,9 +60,11 @@ namespace {
   static std::string outputIndexList_name        = "Output Index List";
   static std::string outputIndexList_default     = "";
   static std::string outputTimeInterval_name     = "Output Time Interval";
-  static double      outputTimeInterval_default  = 100.0;
+  static double      outputTimeInterval_default  =
+    std::numeric_limits<double>::max();
   static std::string outputIndexInterval_name    = "Output Index Interval";
-  static int         outputIndexInterval_default = 100;
+  static int         outputIndexInterval_default =
+    std::numeric_limits<int>::max();
 
   static std::string nFailuresMax_name    =
     "Maximum Number of Stepper Failures";
@@ -89,10 +91,11 @@ TimeStepControl<Scalar>::TimeStepControl(
   Teuchos::RCP<Teuchos::ParameterList> pList, const Scalar dtConstant)
   : dtConstant_(dtConstant)
 {
-  if (pList == Teuchos::null)
+  if (pList == Teuchos::null) {
     pList_->validateParametersAndSetDefaults(*this->getValidParameters());
-  else
+  } else {
     pList_ = pList;
+  }
 
   this->setParameterList(pList_);
 
@@ -525,9 +528,9 @@ TimeStepControl<Scalar>::getValidParameters() const
     pl->set(outputIndexList_name, outputIndexList_default,
       "Comma deliminated list of output indices");
     pl->set(outputTimeInterval_name, outputTimeInterval_default,
-      "Output time interval (e.g., every 100.0 integrated time");
+      "Output time interval");
     pl->set(outputIndexInterval_name, outputIndexInterval_default,
-      "Output index interval (e.g., every 100 time steps");
+      "Output index interval");
 
     pl->set(nFailuresMax_name, nFailuresMax_default,
       "Maximum number of Stepper failures");

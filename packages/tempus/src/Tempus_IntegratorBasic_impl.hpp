@@ -87,7 +87,6 @@ void IntegratorBasic<Scalar>::setStepper(
     stepper_ = sf->createStepper(stepperPL, model);
   } else {
     stepper_->setModel(model);
-    stepper_->initialize();
   }
 }
 

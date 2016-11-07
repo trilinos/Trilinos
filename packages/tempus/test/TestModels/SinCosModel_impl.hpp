@@ -505,9 +505,10 @@ SinCosModel<Scalar>::
 setParameterList(RCP<ParameterList> const& paramList)
 {
   using Teuchos::get;
-  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
-  paramList->validateParametersAndSetDefaults(*this->getValidParameters());
-  this->setMyParamList(paramList);
+  RCP<ParameterList> tmpPL = rcp(new ParameterList("SinCosModel"));
+  if (paramList != Teuchos::null) tmpPL = paramList;
+  tmpPL->validateParametersAndSetDefaults(*this->getValidParameters());
+  this->setMyParamList(tmpPL);
   RCP<ParameterList> pl = this->getMyNonconstParamList();
   bool acceptModelParams = get<bool>(*pl,AcceptModelParams_name);
   bool haveIC = get<bool>(*pl,HaveIC_name);
