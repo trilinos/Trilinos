@@ -614,7 +614,9 @@ namespace Anasazi {
           if ( SCT::magnitude(normsB2[i]-normsC1[i/2]) > tol ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
-              << "Copied vectors do not agree." << endl;
+              << "Copied vectors do not agree." << endl
+              << "Difference " << SCT::magnitude (normsB2[i] - normsC1[i/2])
+              << " exceeds the tolerance 100*eps = " << tol << endl;
             return false;
           }
         }
@@ -1339,7 +1341,6 @@ namespace Anasazi {
 
     std::vector<MagType> normsB1(numvecs), normsB2(numvecs),
                          normsC1(numvecs), normsC2(numvecs);
-    bool NonDeterministicWarning;
 
     /*********** Apply() *************************************************
         Verify:
