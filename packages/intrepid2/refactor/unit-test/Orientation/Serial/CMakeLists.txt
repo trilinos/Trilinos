@@ -8,14 +8,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_OrientationToolsCoeffMatrix
-  SOURCES test_orientationtools_coeff_matrix.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   Test_OrientationToolsCoeffMatrix
+#   SOURCES test_orientationtools_coeff_matrix.cpp
+#   ARGS PrintItAll
+#   NUM_MPI_PROCS 1
+#   PASS_REGULAR_EXPRESSION "TEST PASSED"
+#   ADD_DIR_TO_NAME
+#   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Test_OrientationToolsMesh
