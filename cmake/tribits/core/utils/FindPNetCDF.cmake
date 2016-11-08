@@ -129,9 +129,6 @@ else(PNetCDF_LIBRARIES AND PNetCDF_INCLUDE_DIRS)
         file(STRINGS "${pnetcdf_h}" pnetcdf_max_vars_string REGEX "^#define NC_MAX_VARS")
         string(REGEX REPLACE "[^0-9]" "" pnetcdf_max_vars "${pnetcdf_max_vars_string}")
 
-        file(STRINGS "${pnetcdf_h}" pnetcdf_max_var_dims_string REGEX "^#define NC_MAX_VAR_DIMS")
-        string(REGEX REPLACE "[^0-9]" "" pnetcdf_max_var_dims "${pnetcdf_max_var_dims_string}")
-
         if ( 
              ( (pnetcdf_max_dims EQUAL 65536)  OR (pnetcdf_max_dims GREATER 65536) ) AND
              ( (pnetcdf_max_vars EQUAL 524288) OR (pnetcdf_max_vars GREATER 524288) )
