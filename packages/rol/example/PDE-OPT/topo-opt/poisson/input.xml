@@ -7,9 +7,9 @@
     <Parameter name="SIMP Power"                  type="double"  value="3.0"           />
     <Parameter name="Minimum Conductivity"        type="double"  value="1.e-3"         />
     <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
-    <Parameter name="Objective Scaling"           type="double"  value="2.2e-2"        />
+    <Parameter name="Objective Scaling"           type="double"  value="2e-1"          />
     <Parameter name="Use Filter"                  type="bool"    value="true"          />
-    <Parameter name="Filter Radius"               type="double"  value="0.1"           />
+    <Parameter name="Filter Radius"               type="double"  value="2e-2"          />
     <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
     <!-- FINITE ELEMENT INFORMATION -->
     <Parameter name="Cubature Degree"             type="int"     value="2"             />
@@ -22,8 +22,8 @@
     <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="20"   />
-    <Parameter name="NY"                type="int"     value="20"   />
+    <Parameter name="NX"                type="int"     value="16"   />
+    <Parameter name="NY"                type="int"     value="16"   />
     <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
 
@@ -47,9 +47,23 @@
     </ParameterList>
   </ParameterList>
 
+  <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
+  <ParameterList name="SimOpt">
+    <ParameterList name="Solve">
+      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-12" />
+      <Parameter name="Relative Residual Tolerance"   type="double"  value="1.e0"   />
+      <Parameter name="Iteration Limit"               type="int"     value="1"      />
+      <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
+      <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
+      <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
+      <Parameter name="Output Iteration History"      type="bool"    value="false"  />
+    </ParameterList>
+  </ParameterList>
+
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
+    <Parameter name="Print Verbosity"                        type="int"    value="0"     />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
@@ -70,10 +84,12 @@
       <Parameter name="Type"               type="string" value="Conjugate Gradients" />
       <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
       <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
-      <Parameter name="Iteration Limit"    type="int"    value="100"                 />
+      <Parameter name="Iteration Limit"    type="int"    value="20"                  />
     </ParameterList>
   </ParameterList>
 
+  <!-- ===========  BEGIN STEP INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Step">
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
@@ -137,6 +153,7 @@
       <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
       <Parameter name="Subproblem Iteration Limit"              type="int"    value="20"           />
     </ParameterList>
+  </ParameterList>
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
