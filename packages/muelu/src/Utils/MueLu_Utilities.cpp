@@ -82,16 +82,18 @@ namespace MueLu {
 #ifdef HAVE_MUELU_INTREPID // For the IntrepidPCoarsenFactory
 	      || name == "ipc: element to node map"
 #endif
-)
+	      ) {
             nonSerialList.sublist(levelName).setEntry(name, it2->second);
-          #ifdef HAVE_MUELU_MATLAB
+	  }
+#ifdef HAVE_MUELU_MATLAB
           else if(IsParamMuemexVariable(name))
           {
             nonSerialList.sublist(levelName).setEntry(name, it2->second);
           }
           #endif
-          else
+          else {
             serialList.sublist(levelName).setEntry(name, it2->second);
+	  }
         }
 
       } else {

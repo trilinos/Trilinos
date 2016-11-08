@@ -56,6 +56,9 @@
 #include "MueLu_FactoryManager.hpp"
 
 //TODO/FIXME: DeclareInput(, **this**) cannot be used here
+#ifdef HAVE_MUELU_INTREPID
+#include "Intrepid_FieldContainer.hpp"
+#endif
 
 namespace MueLu {
 
@@ -86,7 +89,7 @@ namespace MueLu {
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" &&
-                                     name != "Nullspace" && name != "Coordinates" &&
+                                     name != "Nullspace" && name != "Coordinates" && name != "ipc: element to node map" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
                                      "MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type");
 
@@ -113,6 +116,15 @@ namespace MueLu {
             level->Set(name, Teuchos::getValue<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           }
+#ifdef HAVE_MUELU_INTREPID
+	  else if (name == "ipc: element to node map")
+          {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+            level->Set(name, Teuchos::getValue<RCP< Intrepid::FieldContainer<LocalOrdinal> > >(it2->second), NoFactory::get());
+            //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
+                                                        // One should do this only in very special cases
+          }
+#endif
           #ifdef HAVE_MUELU_MATLAB
           else
           {
