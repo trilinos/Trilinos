@@ -17,6 +17,17 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
+ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
+ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
+ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
+ASSERT_DEFINED(Tpetra_INST_DOUBLE)
+ASSERT_DEFINED(Tpetra_INST_INT_INT)
+ASSERT_DEFINED(Tpetra_INST_INT_LONG)
+ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
+ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+ASSERT_DEFINED(Tpetra_INST_FLOAT)
+ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
+
 # JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
 # This is redundant, since MueLu also requires Kokkos, and Kokkos requires C++11.
 # "I left a special case for CUDA because I'm not sure whether TriBITS
