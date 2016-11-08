@@ -544,8 +544,8 @@ void
 BlockRelaxation<MatrixType,ContainerType>::
 computeBlockCrs ()
 {
-  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type>     map_type;
-  typedef Tpetra::Import<local_ordinal_type,global_ordinal_type, node_type> import_type;
+  // typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type>     map_type; // unused
+  // typedef Tpetra::Import<local_ordinal_type,global_ordinal_type, node_type> import_type; // unused
   using Teuchos::Ptr;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -582,8 +582,8 @@ compute ()
   using Teuchos::rcp;
   typedef Tpetra::Vector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type> vector_type;
-  typedef Tpetra::Import<local_ordinal_type,
-    global_ordinal_type, node_type> import_type;
+  // typedef Tpetra::Import<local_ordinal_type,
+  //   global_ordinal_type, node_type> import_type; // unused
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::compute: "
@@ -773,7 +773,7 @@ ApplyInverseSGS (const MV& X, MV& Y) const
   //Get view of X (is never modified in this function)
   typename ContainerType::HostView XView = X.template getLocalView<Kokkos::HostSpace>();
   typename ContainerType::HostView YView = Y.template getLocalView<Kokkos::HostSpace>();
-  //Pre-import Y, if parallel 
+  //Pre-import Y, if parallel
   Ptr<MV> Y2;
   bool deleteY2 = false;
   if(IsParallel_)
