@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("Intrepid2::DynRankView_PerfTest01.\n");
 
-  int nthreads = 1;
-  clp.setOption("nthreads", &nthreads, "# of threads");
+  // int nthreads = 1;
+  // clp.setOption("nthreads", &nthreads, "# of threads");
 
   int nworkset = 8;
   clp.setOption("nworkset", &nworkset, "# of worksets");
@@ -81,7 +81,8 @@ int main(int argc, char *argv[]) {
   if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
   if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
 
-  Kokkos::OpenMP::initialize(nthreads);
+  //Kokkos::OpenMP::initialize(nthreads);
+  Kokkos::initialize();
 
   if (verbose) 
     std::cout << "Testing datatype double\n";
