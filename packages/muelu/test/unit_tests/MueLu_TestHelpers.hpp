@@ -408,8 +408,6 @@ namespace MueLuTests {
 	  idx++;
 	}
 
-	printf("[%d] idx = %d\n",MyPID,(int)idx);
-
 	RCP<const Map> pn_colmap = MapFactory::Build(lib,go_invalid,pn_col_dofs(),p1_rowmap->getIndexBase(),comm);
 
 #if 0
