@@ -366,28 +366,49 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
     // GOLD vector collection
-    std::vector<Scalar> p3_gold_in = {0,1,2,3,4,5};
-    std::vector<Scalar> p3_gold_out= {0,1,2,3,4,5,
-				      1.0/3.0,2.0/3.0,
-				      4.0/3.0,5.0/3.0,
-				      7.0/3.0,8.0/3.0,
-				      10.0/3.0,11.0/3.0,
-				      13.0/3.0,14.0/3.0};
+    size_t total_num_points=10;
+    int degree=3;
+    std::vector<Scalar> p3_gold_in(total_num_points);
+    std::vector<Scalar> p3_gold_out(total_num_points + (total_num_points-1) *(degree-1));
+    for(size_t i=0; i<total_num_points; i++) {
+      p3_gold_in[i] = i;
+      p3_gold_out[i] = i;
+    }
+
+    size_t idx=total_num_points;
+    for(size_t i=0; i<total_num_points-1; i++) {
+      for(size_t j=0; j<(size_t)degree-1; j++) {
+	p3_gold_out[idx] = i + ((Scalar)j+1)/degree;
+	idx++;
+      }
+    }
+
     TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p3_gold_in.size(),3,p3_gold_in,p3_gold_out,std::string("hgrad_line_c3"));
   }
 
 /*********************************************************************************************************************/
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p4, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
   {
+
     // GOLD vector collection
-    std::vector<Scalar> p4_gold_in = {0,1,2,3,4,5};
-    std::vector<Scalar> p4_gold_out= {0,1,2,3,4,5,
-				      0.25,0.5,0.75,
-				      1.25,1.5,1.75,
-				      2.25,2.5,2.75,
-				      3.25,3.5,3.75,
-				      4.25,4.5,4.75};
-    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,p4_gold_in.size(),4,p4_gold_in,p4_gold_out,std::string("hgrad_line_c4"));
+    size_t total_num_points=10;
+    int degree=4;
+    std::vector<Scalar> gold_in(total_num_points);
+    std::vector<Scalar> gold_out(total_num_points + (total_num_points-1) *(degree-1));
+    for(size_t i=0; i<total_num_points; i++) {
+      gold_in[i] = i;
+      gold_out[i] = i;
+    }
+
+    size_t idx=total_num_points;
+    for(size_t i=0; i<total_num_points-1; i++) {
+      for(size_t j=0; j<(size_t)degree-1; j++) {
+	gold_out[idx] = i + ((Scalar)j+1)/degree;
+	idx++;
+      }
+    }
+
+    TestPseudoPoisson<Scalar,LocalOrdinal,GlobalOrdinal,Node>(out,gold_in.size(),4,gold_in,gold_out,std::string("hgrad_line_c4"));
   }
 
 

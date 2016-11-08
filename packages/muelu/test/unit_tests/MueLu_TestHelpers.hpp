@@ -382,10 +382,13 @@ namespace MueLuTests {
 	
 	// Build owned column map in [E|T]petra ordering - offproc nodes last
 	size_t pn_num_col_dofs = pn_owned_dofs.size() + p1_num_ghost_col_dofs;
-	if(MyPID != 0) pn_num_col_dofs++;
+	if(MyPID != 0) pn_num_col_dofs+=(degree-1); // pn ghosts; left side only
 	Teuchos::Array<GO> pn_col_dofs(pn_num_col_dofs);
 	for(size_t i=0; i<(size_t)pn_owned_dofs.size(); i++)
 	  pn_col_dofs[i] = pn_owned_dofs[i]; //onproc
+
+	//	printf("[%d/%d] DEBUG: degree = %d local_num_elements = %d local_num_nodes = %d num_edge_dofs = %d p1_num_ghost_col_dofs =%d  pn_owned_dofs.size() = %d,pn_num_col_dofs = %d mycount = %d\n",MyPID,Nproc,degree,(int)local_num_elements,(int)local_num_nodes,(int)num_edge_dofs,(int)p1_num_ghost_col_dofs, (int)pn_owned_dofs.size(),(int)pn_num_col_dofs,(int)pn_owned_dofs.size()+(MyPID!=0)*(degree) + (MyPID!=Nproc-1) );
+
        	// We have to copy the ghosts from the p1_rowmap as well as the new edge dofs.
 	// This needs to follow [E|T]petra ordering
 	size_t idx=pn_owned_dofs.size();
@@ -404,6 +407,8 @@ namespace MueLuTests {
 	  pn_col_dofs[idx]=p1_colmap->getGlobalElement(p1_colmap->getNodeNumElements()-1);
 	  idx++;
 	}
+
+	printf("[%d] idx = %d\n",MyPID,(int)idx);
 
 	RCP<const Map> pn_colmap = MapFactory::Build(lib,go_invalid,pn_col_dofs(),p1_rowmap->getIndexBase(),comm);
 
@@ -463,7 +468,6 @@ namespace MueLuTests {
 	  elem_to_node(i,degree) = pn_colmap->getLocalElement(col_gid);
 	  
 	  // Middle nodes (in local ids)
-
 	  for(size_t j=0; j<(size_t)(degree-1); j++)
 	    elem_to_node(i,1+j) = pn_colmap->getLocalElement(go_edge_start + i*(degree-1)+j);
 	}
