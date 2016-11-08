@@ -132,7 +132,7 @@ Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > >  BasisF
     int degree=std::stoi(name.substr(pos2,1));
     if(degree<=0) throw std::runtime_error(myerror);
 
-    // FIX: Allow for alternative point types for Kirby elements
+    // FIXME LATER: Allow for alternative point types for Kirby elements
     if(deriv=="hgrad" && el=="quad" && poly=="c"){
       if(degree==1) return rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Scalar,Intrepid::FieldContainer<Scalar> >());
       else          return rcp(new Intrepid::Basis_HGRAD_QUAD_Cn_FEM<Scalar,Intrepid::FieldContainer<Scalar> >(degree,Intrepid::POINTTYPE_EQUISPACED));
@@ -260,10 +260,6 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
   // HOW: We can build a GOVector(domainMap) and fill the values with either invalid() or the P1 domainMap.GID() for that guy.
   // Then we can use A's importer to get a GOVector(colMap) with that information.
 
-  // FIXME: Something is busted here --- stuff in the domainmap isn't showing up in the colmap.
-  // is the hi_to_lo_map busted on input or am I doing something wrong in here?
-  // ORNOT: Is this still true?
-
   // NOTE: This assumes rowMap==colMap and [E|T]petra ordering of all the locals first in the colMap
   RCP<GOVector> dvec = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(hi_domainMap);
   ArrayRCP<GO> dvec_data = dvec->getDataNonConst(0);
@@ -287,7 +283,6 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
   
   lo_columnMap = Xpetra::MapFactory<LO,GO,NO>::Build(lo_domainMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),lo_col_data(),lo_domainMap.getIndexBase(),lo_domainMap.getComm());
 }
-
 		  
 }//end MueLu::MueLuIntrepid namespace
 
@@ -316,30 +311,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
   SC effective_zero = Teuchos::ScalarTraits<SClo>::eps();
 
-#if 0
-  //DEBUG
-  printf("*** LoValues_at_HiDofs ***\n");
-  for(size_t i=0; i<numFieldsLo; i++) {
-    for(size_t j=0; j<numFieldsHi; j++)
-      printf("%6.4e ",LoValues_at_HiDofs(i,j));
-    printf("\n");
-  }
-  printf("**************************\n");
-
-  printf("lo_node_in_hi = ");
-  for(size_t j=0; j<numFieldsLo; j++)
-    printf("%d ",(int)lo_node_in_hi[j]);
-  printf("\n");
-
-  printf("[%d] lo_colMap = ",lo_colMap->getComm()->getRank());
-  for(size_t i=0;i<lo_colMap->getNodeNumElements();i++)
-    printf("%d ",(int)lo_colMap->getGlobalElement(i));
-  printf("\n");
-  //end DEBUG
-#endif
-
   // Allocate P
-  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,0)); //FIX THIS LATER FOR FAST FILL
+  P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,0)); //FIXLATER: Need faster fill
   RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
   // Slow-ish fill
@@ -355,18 +328,14 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 	for(size_t k=0; k<numFieldsLo; k++) {
 	  // Get the local id in P1's column map
 	  LO col_lid = hi_to_lo_map[hi_elemToNode(i,lo_node_in_hi[k])];
-
-	  // FIXME: SOmething is still going not right in here...	 
-	  // FIXME: This GID needs to be in the P1 map space...
 	  col_gid[0] = {lo_colMap->getGlobalElement(col_lid)};
-	  //	  printf("[%d] Inserting value in row,column (%d[%d],%d[%d]) \n",lo_colMap->getComm()->getRank(),row_lid,(int)row_gid,col_lid,(int)col_gid[0]);
 	  val[0]     = LoValues_at_HiDofs(k,j);
 	  
 	  // Skip near-zeros
 	  if(std::abs(val[0]) >= effective_zero)
 	    P->insertGlobalValues(row_gid,col_gid(),val());
 	}
-	touched[row_lid]=true;// Is the touched detection working?
+	touched[row_lid]=true;
       }
     }
   }
@@ -423,7 +392,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
     if (restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utilities::Transpose(*A, true); // build transpose of A explicitely
+      A = Utilities::Transpose(*A, true); // build transpose of A explicitly
     }
 
     // Build final prolongator
@@ -442,7 +411,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     const ParameterList& pL = GetParameterList();
 
     /*******************/
-    // FIXME: Allow these to be manually specified instead of Intrepid
+    // FIXME LATER: Allow these to be manually specified instead of Intrepid
     // Get the Intrepid bases
     RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("ipc: hi basis"));
     RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("ipc: lo basis"));
@@ -493,34 +462,6 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     if(NumProc==1) P1_colMap = P1_domainMap;
     else MueLuIntrepid::GenerateColMapFromImport<LO,GO,NO>(*Acrs.getCrsGraph()->getImporter(),hi_to_lo_map,*P1_domainMap,P1_nodeIsOwned.size(),P1_colMap);
 
-
-#if 0
-	{
-	  printf("[%d] IPC P1 DomainMap = ",P1_domainMap->getComm()->getRank());
-	  for(size_t i=0; i<P1_domainMap->getNodeNumElements(); i++)
-	    printf("%d ",(int) P1_domainMap->getGlobalElement(i));
-	  printf("\n");	
-	  fflush(stdout);
-
-	  printf("[%d] IPC P1 ColMap = ",P1_colMap->getComm()->getRank());
-	  for(size_t i=0; i<P1_colMap->getNodeNumElements(); i++)
-	    printf("%d ",(int) P1_colMap->getGlobalElement(i));
-	  printf("\n");	
-	  fflush(stdout);
-	}
-
-	printf("[%d] hi_elem_to_node = ",P1_domainMap->getComm()->getRank());
-	for(size_t i=0; i<(size_t)Pn_elemToNode->dimension(0); i++) {
-	  for(size_t j=0; j<(size_t)Pn_elemToNode->dimension(1); j++)
-	    printf("%d[%d] ",(*Pn_elemToNode)(i,j),(int)colMap->getGlobalElement((*Pn_elemToNode)(i,j)));
-	  printf("\n");
-	}
-
-	printf("[%d] hi_to_lo_map = ",P1_domainMap->getComm()->getRank());
-	for(size_t i=0; i<(size_t)hi_to_lo_map.size(); i++) 
-	  printf("%d(%d) ",(int)i,(int)hi_to_lo_map[i]);
-	printf("\n");
-#endif
     // Generate the coarsening
     GenerateLinearCoarsening_pn_kirby_to_p1(*Pn_elemToNode,Pn_nodeIsOwned,hi_DofCoords,lo_node_in_hi,*lo_basis,hi_to_lo_map,P1_colMap,P1_domainMap,A->getRowMap(),finalP);
 

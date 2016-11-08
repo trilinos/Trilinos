@@ -142,9 +142,7 @@ namespace MueLuTests {
       for(int degree=2; degree < max_degree; degree++) {
 	hi = rcp(new Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC>(degree,Intrepid::POINTTYPE_EQUISPACED));
 	int Nn = (degree+1)*(degree+1);
-#ifdef DEBUG_BUILDLOE2N
-	printf("** p=%d (nn=%d)**\n",degree,Nn);
-#endif
+
 	FCi hi_e2n(1,Nn), lo_e2n;
 	std::vector<bool> hi_owned(Nn,false),lo_owned;
 	std::vector<size_t> lo_node_in_hi;
@@ -159,19 +157,6 @@ namespace MueLuTests {
 	}
 
 	MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
-
-#ifdef DEBUG_BUILDLOE2N
-	printf("hi_to_lo_map = ");
-	for(int i=0;i<(int)hi_to_lo_map.size(); i++) {
-	  if(hi_to_lo_map[i] == Teuchos::OrdinalTraits<LO>::invalid()) printf("- ");
-	  else printf("%d ",hi_to_lo_map[i]);
-	}
-
-	printf("\nlo_e2n = ");
-	for(int i=0;i<(int)lo_e2n.size(); i++)
-	  printf("%d[%d] ",(int)lo_e2n[i],(int)lo_owned[i]);
-	printf("\n");
-#endif
 	
 	// Checks
 	TEST_EQUALITY(lo_numOwnedNodes,2);
