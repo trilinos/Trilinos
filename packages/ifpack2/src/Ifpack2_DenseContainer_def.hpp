@@ -292,7 +292,7 @@ applyImplBlockCrs (HostViewLocal& X,
   const size_t numVecs = X.dimension_1();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_0() != diagBlocks_[blockIndex].numRows(),
+    static_cast<size_t> (X.dimension_0 ()) != static_cast<size_t> (diagBlocks_[blockIndex].numRows ()),
     std::logic_error, "Ifpack2::DenseContainer::applyImpl: X and Y have "
     "different number of rows than block matrix (" << X.dimension_0() << " resp. "
     << diagBlocks_[blockIndex].numRows() << ").  Please report this bug to "
@@ -329,7 +329,7 @@ applyImplBlockCrs (HostViewLocal& X,
       Kokkos::deep_copy(*Y_tmp, X);
       deleteYT = true;
     }
-    local_scalar_type* const Y_ptr = (local_scalar_type*) Y_tmp->ptr_on_device();  
+    local_scalar_type* const Y_ptr = (local_scalar_type*) Y_tmp->ptr_on_device();
     int INFO = 0;
     const char trans =
       (mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
@@ -684,7 +684,7 @@ apply (HostView& X,
 
   // Apply the local operator:
   // Y_local := beta*Y_local + alpha*M^{-1}*X_local
-  this->applyImpl (X_local[blockIndex], Y_local[blockIndex], blockIndex, stride, mode, 
+  this->applyImpl (X_local[blockIndex], Y_local[blockIndex], blockIndex, stride, mode,
                    as<local_scalar_type>(alpha), as<local_scalar_type>(beta));
 
   // Scatter the permuted subset output vector Y_local back into the
