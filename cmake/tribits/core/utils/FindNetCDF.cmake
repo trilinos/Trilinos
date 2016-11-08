@@ -22,11 +22,10 @@
 #    NetCDF_C_LIBRARY        (FILE)       NetCDF C library
 #    NetCDF_CXX_LIBRARY      (FILE)       NetCDF C++ library
 #    NetCDF_LARGE_DIMS       (BOOL)       Checks the header files for size of 
-#                                          NC_MAX_DIMS, NC_MAX_VARS and NC_MAX_VARS_DIMS
+#                                          NC_MAX_DIMS and NC_MAX_VARS
 #                                          Returns TRUE if
 #                                          NC_MAX_DIMS >= 655363
 #                                          NC_MAX_VARS >= 524288
-#                                          NC_MAX_VAR_DIMS >= 8
 #
 # #############################################################################
 
@@ -139,9 +138,6 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
 
         file(STRINGS "${netcdf_h}" netcdf_max_vars_string REGEX "^#define NC_MAX_VARS")
         string(REGEX REPLACE "[^0-9]" "" netcdf_max_vars "${netcdf_max_vars_string}")
-
-        file(STRINGS "${netcdf_h}" netcdf_max_var_dims_string REGEX "^#define NC_MAX_VAR_DIMS")
-        string(REGEX REPLACE "[^0-9]" "" netcdf_max_var_dims "${netcdf_max_var_dims_string}")
 
         if ( 
              ( (netcdf_max_dims EQUAL 65536)  OR (netcdf_max_dims GREATER 65536) ) AND
