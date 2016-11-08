@@ -1,4 +1,5 @@
 ADD_SUBDIRECTORY(DynRankView)
+ADD_SUBDIRECTORY(ComputeBasis)
 
 
 
