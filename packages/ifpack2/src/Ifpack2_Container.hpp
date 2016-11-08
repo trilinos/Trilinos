@@ -161,7 +161,7 @@ public:
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::Comm;
-    typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+    // typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type; // unused
     NumLocalRows_ = inputMatrix_->getNodeNumRows();
     NumGlobalRows_ = inputMatrix_->getGlobalNumRows();
     NumGlobalNonzeros_ = inputMatrix_->getGlobalNumEntries();
@@ -286,7 +286,7 @@ public:
     }
   }
 
-  /// \brief Extract the local diagonal block and prepare the solver. 
+  /// \brief Extract the local diagonal block and prepare the solver.
   ///
   /// If any entries' values in the input matrix have changed, you
   /// must call this method before you may call apply() or
@@ -306,7 +306,7 @@ public:
 
   //! Return \c true if the container has been successfully computed.
   virtual bool isComputed () const = 0;
-  
+
   /// \brief Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   ///
   /// X is in the domain Map of the original matrix (the argument to
@@ -376,7 +376,7 @@ public:
     HostView WView = W.template getLocalView<Kokkos::HostSpace>();
     weightedApply (XView, YView, WView, 0, X.getStride());
   }
-  
+
   virtual void clearBlocks();
 
   //! Print basic information about the container to \c os.
@@ -412,7 +412,7 @@ protected:
   //! Importer for importing off-process elements of MultiVectors.
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>> Importer_;
   //! Number of local rows in input matrix.
-  local_ordinal_type NumLocalRows_; 
+  local_ordinal_type NumLocalRows_;
   //! Number of global rows in input matrix.
   global_ordinal_type NumGlobalRows_;
   //! Number of nonzeros in input matrix.
@@ -569,7 +569,7 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2
         Y2(LRID, m) = newy;
      }
     } // end else
-  } // end for numBlocks_ 
+  } // end for numBlocks_
   if(IsParallel_)
   {
     auto numMyRows = inputMatrix_->getNodeNumRows();
@@ -659,7 +659,7 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, HostView& Y2, int st
       // operations for all getrow's
     }
     else // singleton, can't access Containers_[i] as it was never filled and may be null.
-    { 
+    {
       local_ordinal_type LRID  = partitions_[partitionIndices_[i]];
       getMatDiag();
       HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();

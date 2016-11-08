@@ -400,7 +400,7 @@ applyImpl (HostViewLocal& X,
         diagBlocks_[blockIndex].numCols(),
         diagBlocks_[blockIndex].lowerBandwidth(),
         /* enter the real number of superdiagonals (see Teuchos_SerialBandDenseSolver)*/
-        diagBlocks_[blockIndex].upperBandwidth() - diagBlocks_[blockIndex].lowerBandwidth(), 
+        diagBlocks_[blockIndex].upperBandwidth() - diagBlocks_[blockIndex].lowerBandwidth(),
         numVecs,
         diagBlocks_[blockIndex].values(),
         diagBlocks_[blockIndex].stride(),
@@ -549,7 +549,7 @@ weightedApply (HostView& X,
 
   auto zero = Teuchos::ScalarTraits<scalar_type>::zero ();
   auto one = Teuchos::ScalarTraits<scalar_type>::one ();
-  typedef Tpetra::Vector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> LV;
+  // typedef Tpetra::Vector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> LV; // unused
 
   Details::MultiVectorLocalGatherScatter<mv_type, local_mv_type> mvgs;
   const size_t numVecs = X.dimension_1();
@@ -661,7 +661,7 @@ weightedApply (HostView& X,
   // Note that we still use the permuted subset scaling D_local here,
   // because Y_temp has the same permuted subset Map.  That's good, in
   // fact, because it's a subset: less data to read and multiply.
-  
+
   for(size_t j = 0; j < numVecs; j++)
     for(size_t i = 0; i < numRows; i++)
       Y_local[blockIndex](i, j) = Y_local[blockIndex](i, j) * (local_impl_scalar_type) beta + (local_impl_scalar_type) alpha * (*Y_temp)(i, j) * D_local(i, 0);
