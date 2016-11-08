@@ -126,6 +126,9 @@ public:
                                                                       *augConVec,
                                                                       parlist));
     rAugLagSimOpt_ = Teuchos::rcp(new Reduced_Objective_SimOpt<Real>(augLagSimOpt_,redCon,state,adjoint));
+    rAugLagSimOpt_->update(*control);
+    Real tol = 1e-8;
+    rAugLagSimOpt_->value(*control,tol);
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
