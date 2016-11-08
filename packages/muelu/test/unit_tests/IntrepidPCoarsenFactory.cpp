@@ -466,6 +466,114 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
   }
 
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p3, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef Node  NO;  
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=3;
+    std::string hi_basis("hgrad_line_c3");
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    Intrepid::FieldContainer<LocalOrdinal> elem_to_node;
+    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+    
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+
+    // ParameterList
+    ParameterList Params, level0;
+    Params.set("multigrid algorithm","pcoarsen");
+    Params.set("ipc: hi basis",hi_basis);
+    Params.set("ipc: lo basis","hgrad_line_c1");
+    Params.set("verbosity","high");
+    Params.set("max levels",2);
+    Params.set("coarse: max size",100);
+    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    Params.set("level 0",level0);
+      
+
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_p4, Scalar, LocalOrdinal, GlobalOrdinal, Node) 
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO; 
+    typedef Node  NO;  
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+    int degree=4;
+    std::string hi_basis("hgrad_line_c4");
+
+    Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO num_nodes = 972;
+    // Build a pseudo-poisson test matrix
+    Intrepid::FieldContainer<LocalOrdinal> elem_to_node;
+    RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
+
+    // Normalized RHS
+    RCP<MultiVector> RHS1 = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS1->setSeed(846930886);
+    RHS1->randomize();
+    Teuchos::Array<MT> norms(1);
+    RHS1->norm2(norms);
+    RHS1->scale(1/norms[0]);
+    
+    // Zero initial guess
+    RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
+
+
+    // ParameterList
+    ParameterList Params, level0;
+    Params.set("multigrid algorithm","pcoarsen");
+    Params.set("ipc: hi basis",hi_basis);
+    Params.set("ipc: lo basis","hgrad_line_c1");
+    Params.set("verbosity","high");
+    Params.set("max levels",2);
+    Params.set("coarse: max size",100);
+    level0.set("ipc: element to node map",rcp(&elem_to_node,false));
+    Params.set("level 0",level0);
+      
+
+    // Build hierarchy
+    RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);
+  }
+
 
   /*********************************************************************************************************************/
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
@@ -476,7 +584,9 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p2,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p3,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p4,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2, Scalar, LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p2, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p3, Scalar, LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IntrepidPCoarsenFactory, CreatePreconditioner_p4, Scalar, LO,GO,Node)
 
 
 #include <MueLu_ETI_4arg.hpp>
