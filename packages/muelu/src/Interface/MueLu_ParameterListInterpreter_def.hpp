@@ -113,6 +113,10 @@
 #include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
+#ifdef HAVE_MUELU_INTREPID
+#include "MueLu_IntrepidPCoarsenFactory.hpp"
+#endif
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -427,12 +431,17 @@ namespace MueLu {
        Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab",
-        Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab" && multigridAlgo != "pcoarsen",
+			       Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use matlab for multigrid algorithm - MueLu was not configured with MATLAB support.");
 #endif
+#ifndef HAVE_MUELU_INTREPID
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
+        "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
+#endif
+
     MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
     bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
 
@@ -772,11 +781,15 @@ namespace MueLu {
     }
 
     // === Prolongation ===
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab",
-                               Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab"
+			       && multigridAlgo != "pcoarsen", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use MATLAB prolongator factory - MueLu was not configured with MATLAB support.");
+#endif
+#ifndef HAVE_MUELU_INTREPID
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
+        "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
 #endif
     if (have_userP) {
       // User prolongator
@@ -861,6 +874,17 @@ namespace MueLu {
       RCP<TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node> > P = rcp(new TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
       P->SetParameterList(Pparams);
       P->SetFactory("P",manager.GetFactory("Ptent"));
+      manager.SetFactory("P", P);
+    }
+#endif
+#ifdef HAVE_MUELU_INTREPID
+    else if(multigridAlgo == "pcoarsen") {
+      // Intrepid P-Coarsening
+      RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());
+      ParameterList Pparams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "ipc: hi basis", std::string, Pparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "ipc: lo basis", std::string, Pparams);
+      P->SetParameterList(Pparams);
       manager.SetFactory("P", P);
     }
 #endif

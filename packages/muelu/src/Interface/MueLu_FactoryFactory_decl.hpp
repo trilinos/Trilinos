@@ -152,6 +152,10 @@
 #include "../matlab/src/MueLu_MatlabSmoother_def.hpp"
 #endif
 
+#ifdef HAVE_MUELU_INTREPID
+#include "MueLu_IntrepidPCoarsenFactory.hpp"
+#endif
+
 namespace MueLu {
 
   /*! class FactoryFactory
@@ -299,6 +303,10 @@ namespace MueLu {
       if (factoryName == "TwoLevelMatlabFactory")           return Build2<TwoLevelMatlabFactory>        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SingleLevelMatlabFactory")        return Build2<SingleLevelMatlabFactory>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatlabSmoother")                  return BuildMatlabSmoother                  (paramList, factoryMapIn, factoryManagersIn);
+#endif
+
+#ifndef HAVE_MUELU_INTREPID
+      if (factoryName == "IntrepidPCoarsenFactory")           return Build2<IntrepidPCoarsenFactory>        (paramList, factoryMapIn, factoryManagersIn);
 #endif
 
       // Use a user defined factories (in <Factories> node)
