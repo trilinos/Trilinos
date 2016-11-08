@@ -818,7 +818,7 @@ public:
 
 
     //get the execution space type.
-    KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
+    //KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
     int suggested_vector_size = this->handle->get_suggested_vector_size(m, entriesA.dimension_0());
     int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
     nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , m);
@@ -1908,7 +1908,6 @@ public:
       KokkosKernels::Experimental::UnorderedHashmap::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
       hm2(pow2_hash_size, pow2_hash_size,
           NULL, NULL, NULL, NULL);
-
       Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
         const size_type c_row_begin = rowmapC[row_index];
         const size_type c_row_end = rowmapC[row_index + 1];
@@ -1948,6 +1947,7 @@ public:
             nnz_lno_t b_col_ind = -1;
             scalar_t b_val = -1;
             nnz_lno_t hash = -1;
+
             Kokkos::parallel_for( Kokkos::ThreadVectorRange(teamMember, work_to_handle),
                 [&] (nnz_lno_t i) {
               const size_type adjind = i + rowBegin;
@@ -1956,7 +1956,6 @@ public:
               //hash = b_col_ind % shmem_key_size;
               hash = b_col_ind & shared_memory_hash_func;
             });
-
             int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeAdd(
                 teamMember, vector_size,
                 hash, b_col_ind, b_val,
@@ -1971,14 +1970,21 @@ public:
             }, overall_num_unsuccess);
 
             if (overall_num_unsuccess){
+
               if (!is_global_alloced){
                 volatile nnz_lno_t * tmp = NULL;
-                size_t tid = get_thread_id(row_index);
+                //size_t tid = get_thread_id(row_index);
+                //the code gets internal compiler error on gcc 4.7.2
+                //assuming that this part only runs on GPUs for now, below fix
+                //has the exact same behaviour and runs okay.
+                size_t tid = row_index;
+
                 while (tmp == NULL){
                   Kokkos::single(Kokkos::PerThread(teamMember),[&] (volatile nnz_lno_t * &memptr) {
                     memptr = (volatile nnz_lno_t * )( memory_space.allocate_chunk(tid));
                   }, tmp);
                 }
+
                 is_global_alloced = true;
                 globally_used_hash_indices = (nnz_lno_t *) tmp;
                 tmp += pow2_hash_size ;
@@ -2001,7 +2007,9 @@ public:
                   used_hash_sizes + 1, hm2.max_value_size
                   ,globally_used_hash_count, globally_used_hash_indices
               );
+
             }
+
             left_work -= work_to_handle;
             rowBegin += work_to_handle;
           }
@@ -3308,8 +3316,8 @@ public:
       <nnz_lno_temp_work_view_t, c_lno_nnz_view_t, MyExecSpace>
         (entryIndicesC_.dimension_0(), entryIndicesC_, entriesC_);
 
-    KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space =
-        KokkosKernels::Experimental::Util::get_exec_space_type<MyExecSpace>();
+    //KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space =
+    //    KokkosKernels::Experimental::Util::get_exec_space_type<MyExecSpace>();
 
 
     nnz_lno_t brows = row_mapB.dimension_0() - 1;
@@ -3913,7 +3921,7 @@ public:
     nnz_lno_temp_work_view_t transpose_col_adj (Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), c_nnz_size);
 
 
-    KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
+    //KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
     int suggested_vector_size = this->handle->get_suggested_vector_size(rowmapC.dimension_0() - 1, c_nnz_size);
     int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
     nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, concurrency,a_row_cnt);
