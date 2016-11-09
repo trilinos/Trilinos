@@ -863,7 +863,7 @@ testArrowMatrixWithDense (bool& success, Teuchos::FancyOStream& out, const LO lc
   // Test the resulting vector c
   for (LO i = 0; i + 1 < lclNumRows; ++i) {
     const val_type K = static_cast<val_type> (static_cast<mag_type> (i+1));
-    const val_type c_i_unscaled_expected = K;
+    // const val_type c_i_unscaled_expected = K; // unused
     const val_type c_i_expected = scalingFactor * K;
     TEST_EQUALITY( c(i), c_i_expected );
   }

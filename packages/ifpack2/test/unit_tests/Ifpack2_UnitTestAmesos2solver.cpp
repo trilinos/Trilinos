@@ -82,7 +82,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test0, Scalar, LO, GO)
   typedef typename mv_type::impl_scalar_type val_type;
   typedef typename Kokkos::Details::ArithTraits<val_type>::mag_type mag_type;
   typedef typename map_type::device_type device_type;
-  const mag_type oneMag = ArithTraits<mag_type>::one ();
+  // const mag_type oneMag = ArithTraits<mag_type>::one (); // unused
 
   out << "Ifpack2 Amesos2 wrapper: Test0" << endl;
   Teuchos::OSTab tab1 (out);
