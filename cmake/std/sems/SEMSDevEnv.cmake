@@ -6,25 +6,18 @@
 # A) Set up some basic Trilinos options defaults
 #
 
-SET(BUILD_SHARED_LIBS ON CACHE BOOL
-  "Set in SEMSDevEnv.cmake")
+# All of this was moved to Trilinos/cmake/CallbackSetupExtraOptions.cmake
 
-SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION ON CACHE BOOL
-  "Set in SEMSDevEnv.cmake")
-
-# Turn off float and complex by default
-SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Sacado_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Thyra_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Tpetra_INST_COMPLEX_DOUBLE OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Tpetra_INST_COMPLEX_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Anasazi_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-# ToDo: Remove the above when Trlinos_ENABLE_FLOAT and Trilinos_ENABLE_COMPLEX
-# are supported and are off by default (see Trilinos #362)
-
-SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL
-  "Set in SEMSDevEnv.cmake")
+## Turn off float and complex by default
+#SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(Sacado_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(Thyra_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(Tpetra_INST_COMPLEX_DOUBLE OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(Tpetra_INST_COMPLEX_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(Anasazi_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+## ToDo: Remove the above when Trlinos_ENABLE_FLOAT and Trilinos_ENABLE_COMPLEX
+## are supported and are off by default (see Trilinos #362)
 
 #
 # B) Define the compilers and basic env
@@ -78,15 +71,10 @@ SET(MPI_BASE_DIR "$ENV{SEMS_OPENMPI_ROOT}" CACHE PATH
 # Don't have SWIG so can't enable PyTrilinos
 SET(${PROJECT_NAME}_ENABLE_PyTrilinos OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 
-# STK does not build in a serial build (see #466)
-IF (NOT TPL_ENABLE_MPI)
-  SET(${PROJECT_NAME}_ENABLE_STK OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-ENDIF()
-
 # Disable a bunch of TPLs that are not on this system
-SET(TPL_ENABLE_GLM OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(TPL_ENABLE_Matio OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(TPL_ENABLE_X11 OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_GLM OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_Matio OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_X11 OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 
 #
 # D) Set up the paths to the TPL includes and libs
@@ -130,15 +118,15 @@ FUNCTION(SEMS_SELECT_TPL_ROOT_DIR  SEMS_TPL_NAME  TPL_ROOT_DIR_OUT)
 ENDFUNCTION()
 
 # BLAS
-SET(TPL_ENABLE_BLAS ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_BLAS ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 # Above, assume BLAS is found in default path!
 
 # LAPACK
-SET(TPL_ENABLE_LAPACK ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_LAPACK ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 # Above, assume LAPACK is found in default path!
 
 # Boost
-SET(TPL_ENABLE_Boost ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_Boost ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 SEMS_SELECT_TPL_ROOT_DIR(BOOST Boost_ROOT)
 #PRINT_VAR(Boost_ROOT)
 SET(Boost_INCLUDE_DIRS "${Boost_ROOT}/include"
@@ -147,7 +135,7 @@ SET(Boost_LIBRARY_DIRS "${Boost_ROOT}/lib"
   CACHE PATH "Set in SEMSDevEnv.cmake")
 
 # BoostLib
-SET(TPL_ENABLE_BoostLib ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_BoostLib ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(BoostLib_INCLUDE_DIRS "${Boost_ROOT}/include"
   CACHE PATH "Set in SEMSDevEnv.cmake")
 SET(BoostLib_LIBRARY_DIRS "${Boost_ROOT}/lib"
@@ -168,7 +156,7 @@ ENDIF()
 
 # ParMETIS (SEMS only provides an MPI version)
 IF (TPL_ENABLE_MPI)
-  SET(TPL_ENABLE_ParMETIS ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+  #SET(TPL_ENABLE_ParMETIS ON CACHE BOOL "Set in SEMSDevEnv.cmake")
   SEMS_SELECT_TPL_ROOT_DIR(PARMETIS ParMETIS_ROOT)
   #PRINT_VAR(ParMETIS_ROOT)
   SET(TPL_ParMETIS_INCLUDE_DIRS "${ParMETIS_ROOT}/include"
@@ -178,7 +166,7 @@ IF (TPL_ENABLE_MPI)
 ENDIF()
 
 # Zlib
-SET(TPL_ENABLE_Zlib ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_Zlib ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 SEMS_SELECT_TPL_ROOT_DIR(ZLIB Zlib_ROOT)
 #PRINT_VAR(Zlib_ROOT)
 SET(TPL_Zlib_INCLUDE_DIRS "${Zlib_ROOT}/include"
@@ -189,7 +177,7 @@ SET(Zlib_LIBRARY_NAMES "z"
   CACHE STRING "Set in SEMSDevEnv.cmake")
 
 # HDF5
-SET(TPL_ENABLE_HDF5 ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_HDF5 ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 SEMS_SELECT_TPL_ROOT_DIR(HDF5 HDF5_ROOT)
 #PRINT_VAR(HDF5_ROOT)
 SET(HDF5_INCLUDE_DIRS "${HDF5_ROOT}/include;${TPL_Zlib_INCLUDE_DIRS}"
@@ -200,7 +188,7 @@ SET(HDF5_LIBRARY_NAMES "hdf5_hl;hdf5;${Zlib_LIBRARY_NAMES}"
   CACHE STRING "Set in SEMSDevEnv.cmake")
 
 # Netcdf
-SET(TPL_ENABLE_Netcdf ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_Netcdf ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 SEMS_SELECT_TPL_ROOT_DIR(NETCDF Netcdf_ROOT)
 #PRINT_VAR(Netcdf_ROOT)
 SET(TPL_Netcdf_INCLUDE_DIRS "${Netcdf_ROOT}/include;${TPL_HDF5_INCLUDE_DIRS}"
@@ -216,7 +204,7 @@ SET(Netcdf_LIBRARY_NAMES "netcdf;${SEMS_PNETCDF_LIB_STR};${HDF5_LIBRARY_NAMES}"
   CACHE STRING "Set in SEMSDevEnv.cmake")
 
 # SuperLU
-SET(TPL_ENABLE_SuperLU ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+#SET(TPL_ENABLE_SuperLU ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 SEMS_SELECT_TPL_ROOT_DIR(SUPERLU SuperLU_ROOT)
 #PRINT_VAR(SuperLU_ROOT)
 SET(TPL_SuperLU_INCLUDE_DIRS "${SuperLU_ROOT}/include"
