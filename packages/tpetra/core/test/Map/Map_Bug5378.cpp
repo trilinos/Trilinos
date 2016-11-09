@@ -70,10 +70,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, Bug5378_GoodGIDs, LO, GO)
   //
   RCP<const Tpetra::Map<LO,GO> > map = Tpetra::createContigMap<LO,GO>(10,10,comm);
   Array<GO> lookup_gids(  tuple<GO>(1,3,5) );
-  Array<LO> expected_ids(  tuple<LO>( 0,0,0) );
+  Array<int> expected_ids(  tuple<int>( 0,0,0) ); // MPI process ranks are int
   Array<LO> expected_lids( tuple<LO>( 1,3,5) );
-  Array<LO> nodeIDs( lookup_gids.size() ),
-            nodeLIDs( lookup_gids.size() );
+  Array<int> nodeIDs( lookup_gids.size() ); // MPI process ranks are int
+  Array<LO> nodeLIDs( lookup_gids.size() );
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( lookup_gids(), nodeIDs(), nodeLIDs() );
   TEST_EQUALITY_CONST( lookup, Tpetra::AllIDsPresent )
   TEST_COMPARE_ARRAYS( nodeIDs(), expected_ids() );
@@ -98,10 +98,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, Bug5378_BadGIDs, LO, GO)
   //
   RCP<const Tpetra::Map<LO,GO> > map = Tpetra::createContigMap<LO,GO>(10,10,comm);
   Array<GO> lookup_gids(  tuple<GO>(1,10,5) );
-  Array<LO> expected_ids(  tuple<LO>( 0,-1,0) );
+  Array<int> expected_ids(  tuple<int>( 0,-1,0) ); // MPI process ranks are int
   Array<LO> expected_lids( tuple<LO>( 1,-1,5) );
-  Array<LO> nodeIDs( lookup_gids.size() ),
-            nodeLIDs( lookup_gids.size() );
+  Array<int> nodeIDs( lookup_gids.size() ); // MPI process ranks are int
+  Array<LO> nodeLIDs( lookup_gids.size() );
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( lookup_gids(), nodeIDs(), nodeLIDs() );
   TEST_EQUALITY_CONST( lookup, Tpetra::IDNotPresent )
   TEST_COMPARE_ARRAYS( nodeIDs(), expected_ids() );
@@ -126,8 +126,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, Bug5378_GoodGIDsNoLIDs, LO, GO)
   //
   RCP<const Tpetra::Map<LO,GO> > map = Tpetra::createContigMap<LO,GO>(10,10,comm);
   Array<GO> lookup_gids(  tuple<GO>(1,3,5) );
-  Array<LO> expected_ids(  tuple<LO>( 0,0,0) );
-  Array<LO> nodeIDs( lookup_gids.size() );
+  Array<int> expected_ids(  tuple<int>( 0,0,0) ); // MPI process ranks are int
+  Array<int> nodeIDs( lookup_gids.size() ); // MPI process ranks are int
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( lookup_gids(), nodeIDs() );
   TEST_EQUALITY_CONST( lookup, Tpetra::AllIDsPresent )
   TEST_COMPARE_ARRAYS( nodeIDs(), expected_ids() );
@@ -151,8 +151,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Map, Bug5378_BadGIDsNoLIDs, LO, GO)
   //
   RCP<const Tpetra::Map<LO,GO> > map = Tpetra::createContigMap<LO,GO>(10,10,comm);
   Array<GO> lookup_gids(  tuple<GO>(1,10,5) );
-  Array<LO> expected_ids(  tuple<LO>( 0,-1,0) );
-  Array<LO> nodeIDs( lookup_gids.size() );
+  Array<int> expected_ids(  tuple<int>( 0,-1,0) ); // MPI process ranks are int
+  Array<int> nodeIDs( lookup_gids.size() ); // MPI process ranks are int
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( lookup_gids(), nodeIDs() );
   TEST_EQUALITY_CONST( lookup, Tpetra::IDNotPresent )
   TEST_COMPARE_ARRAYS( nodeIDs(), expected_ids() );
