@@ -211,7 +211,7 @@ namespace panzer {
 
       // it should be that exp_f = -f b/c x_dot=0 in the evaluation
       Thyra::Vp_StV(mass_exp_f.ptr(),1.0,*f);
-   
+
       out << "Error = " << Thyra::norm_2(*mass_exp_f) << std::endl;
       TEST_ASSERT(Thyra::norm_2(*mass_exp_f)<=1e-16);
     }
@@ -377,23 +377,32 @@ namespace panzer {
     cm_factory.buildObjects(cm_builder);
 
     Teuchos::ParameterList closure_models("Closure Models");
-    if(parameter_on)
-       closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","Parameter");
+    if (parameter_on)
+      closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").
+        set<std::string>("Type", "Parameter");
     else
-      closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+      closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").
+        set<double>("Value", 1.0);
 
-    closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
-    closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").set<double>("Value",1.0);
+    closure_models.sublist("solid").sublist("DENSITY").
+      set<double>("Value", 1.0);
+    closure_models.sublist("solid").sublist("HEAT_CAPACITY").
+      set<double>("Value", 1.0);
+    closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").
+      set<double>("Value", 1.0);
+    closure_models.sublist("ion solid").sublist("ION_DENSITY").
+      set<double>("Value", 1.0);
+    closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").
+      set<double>("Value", 1.0);
 
     Teuchos::ParameterList user_data("User Data");
 
     fmb->setWorksetContainer(wkstContainer);
     fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+
+    if (parameter_on)
+      gd->pl->setRealValueForAllTypes(std::string("SOURCE_TEMPERATURE"), 1.0);
   }
 
 
