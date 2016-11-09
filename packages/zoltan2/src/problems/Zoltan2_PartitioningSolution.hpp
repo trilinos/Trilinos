@@ -1343,7 +1343,7 @@ template <typename Adapter>
   // TODO:  remapping.  This problem will go away after we separate process
   // TODO:  mapping from setParts.  But for MueLu's use case, the part
   // TODO:  remapping is all that matters; they do not use the process mapping.
-  int doRemap = 0;
+  bool doRemap = false;
   const Teuchos::ParameterEntry *pe =
                  env_->getParameters().getEntryPtr("remap_parts");
   if (pe) doRemap = pe->getValue(&doRemap);
