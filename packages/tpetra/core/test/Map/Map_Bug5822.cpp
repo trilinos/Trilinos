@@ -48,6 +48,7 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
+namespace { // (anonymous)
 using Tpetra::global_size_t;
 using Teuchos::Array;
 using Teuchos::ArrayView;
@@ -58,9 +59,7 @@ using Teuchos::RCP;
 using Teuchos::tuple;
 using std::endl;
 
-// This test works (and exercises the interesting case) in serial mode
-// or for 1 MPI process, but it was originally written for 2 MPI
-// processes.
+// Test requires exactly 2 MPI processes
 TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
 {
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
@@ -158,5 +157,4 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
     TEST_COMPARE_ARRAYS( remoteLids (), expectedRemoteLids () );
   }
 }
-
-
+} // (anonymous)
