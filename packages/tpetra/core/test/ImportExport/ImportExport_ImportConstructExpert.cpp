@@ -48,8 +48,8 @@
 #include "Tpetra_Vector.hpp"
 
 #include "Tpetra_Distributor.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
-#include "Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp"
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_CrsGraph.hpp"
 
 namespace {
@@ -89,7 +89,7 @@ namespace {
     using Teuchos::rcp;
     using std::endl;
     typedef Teuchos::Array<int>::size_type size_type;
-    typedef Tpetra::Experimental::BlockCrsMatrix<double,LO,GO,NT> matrix_type;
+    typedef Tpetra::BlockCrsMatrix<double,LO,GO,NT> matrix_type;
     typedef typename matrix_type::impl_scalar_type Scalar;
     typedef Tpetra::Map<LO,GO,NT> map_type;
     typedef Tpetra::CrsGraph<LO,GO,NT>  graph_type;

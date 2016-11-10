@@ -43,7 +43,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
+#include <Tpetra_BlockMultiVector.hpp>
 
 namespace {
 
@@ -107,13 +107,13 @@ namespace {
   //
 
   // Test BlockMultiVector's constructors.
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockMultiVector, ctor, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, ctor, Scalar, LO, GO, Node )
   {
     using Tpetra::TestingUtilities::getNode;
     using Tpetra::TestingUtilities::getDefaultComm;
     using Teuchos::Comm;
     using Teuchos::RCP;
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
 
@@ -174,13 +174,13 @@ namespace {
   // Test BlockMultiVector::getMultiVectorView.  It must return a
   // MultiVector with view semantics, and it must view the same data
   // that the BlockMultiVector view.
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockMultiVector, MVView, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, MVView, Scalar, LO, GO, Node )
   {
     using Tpetra::TestingUtilities::getNode;
     using Tpetra::TestingUtilities::getDefaultComm;
     using Teuchos::Comm;
     using Teuchos::RCP;
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
     typedef Teuchos::ScalarTraits<Scalar> STS;
@@ -307,7 +307,7 @@ namespace {
   }
 
   // Make sure that Import works with BlockMultiVector.
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockMultiVector, Import, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, Import, Scalar, LO, GO, Node )
   {
     using Tpetra::TestingUtilities::getNode;
     using Tpetra::TestingUtilities::getDefaultComm;
@@ -316,7 +316,7 @@ namespace {
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
     using Teuchos::RCP;
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef typename BMV::little_vec_type little_vec_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::Import<LO, GO, Node> import_type;
@@ -426,12 +426,12 @@ namespace {
   //
   // Make sure that BlockMultiVector's "offset view" constructors work.
   //
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockMultiVector, OffsetView, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, OffsetView, Scalar, LO, GO, Node )
   {
     using Tpetra::TestingUtilities::getDefaultComm;
     using Teuchos::Comm;
     using Teuchos::RCP;
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef typename map_type::device_type device_type;
     typedef Tpetra::global_size_t GST;
@@ -564,10 +564,10 @@ namespace {
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, ctor, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, MVView, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, Import, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, OffsetView, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMultiVector, ctor, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMultiVector, MVView, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMultiVector, Import, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMultiVector, OffsetView, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

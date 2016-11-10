@@ -43,7 +43,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
+#include <Tpetra_BlockMultiVector.hpp>
 
 namespace {
 
@@ -55,7 +55,7 @@ namespace {
   // input mesh Map on a process, and if the block size is b, then the
   // GID g_point := g_mesh * b must be in the output point Map on that
   // process.
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockMap, HilbertsHotel, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMap, HilbertsHotel, Scalar, LO, GO, Node )
   {
     using Tpetra::TestingUtilities::getNode;
     using Tpetra::TestingUtilities::getDefaultComm;
@@ -66,7 +66,7 @@ namespace {
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
     using Teuchos::RCP;
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
     typedef typename Array<GO>::size_type size_type;
@@ -193,7 +193,7 @@ namespace {
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMap, HilbertsHotel, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMap, HilbertsHotel, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

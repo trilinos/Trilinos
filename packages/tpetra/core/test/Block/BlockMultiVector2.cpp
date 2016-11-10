@@ -42,7 +42,7 @@
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_BlockMultiVector.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -67,7 +67,7 @@ namespace {
   // MultiVector::elementWiseMultiply).
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, BlockWiseMultiply, Scalar, LO, GO, Node )
   {
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef typename BMV::device_type device_type;
     typedef typename device_type::execution_space execution_space;
     typedef typename BMV::impl_scalar_type IST;
@@ -377,7 +377,7 @@ namespace {
   //
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, BlockJacobiUpdate, Scalar, LO, GO, Node )
   {
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef typename BMV::device_type device_type;
     typedef typename device_type::execution_space execution_space;
     typedef typename BMV::impl_scalar_type IST;
