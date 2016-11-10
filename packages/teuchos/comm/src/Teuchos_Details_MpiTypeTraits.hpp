@@ -72,7 +72,18 @@ public:
   ///
   /// For more generality, this method requires passing in a T
   /// instance.  The method may or may not ignore this instance,
-  /// depending on the type T.
+  /// depending on the type T.  The reason for passing in an instance
+  /// is that some MPI_Datatype constructors, e.g., MPI_Type_struct,
+  /// need actual offsets of the fields in an actual instance of T, in
+  /// order to construct the MPI_Datatype safely and portably.  If T
+  /// has no default constructor, we have no way of doing so without
+  /// accepting a T instance.
+  ///
+  /// Specializations for T that do not need an instance of T in order
+  /// to construct the MPI_Datatype safely, may overload this method
+  /// not to require an instance of T.  However, all specializations
+  /// must retain the overload that takes a T instance.  This lets
+  /// users invoke this method in the same way for all types T.
   static MPI_Datatype getType (const T&);
 };
 
@@ -80,30 +91,48 @@ public:
 // Specializations of MpiTypeTraits.
 //
 
-// mfh 10 Nov 2016: Requires MPI 1.2.
+/// \brief Specialization for T = char.
+///
+/// This requires MPI 1.2.
 template<>
 class MpiTypeTraits<char> {
 public:
   static MPI_Datatype getType (const char&) {
     return MPI_CHAR;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_CHAR;
+  }
 };
 
-// mfh 10 Nov 2016: Requires MPI 1.2.
+/// \brief Specialization for T = unsigned char.
+///
+/// This requires MPI 1.2.
 template<>
 class MpiTypeTraits<unsigned char> {
 public:
   static MPI_Datatype getType (const unsigned char&) {
     return MPI_UNSIGNED_CHAR;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_UNSIGNED_CHAR;
+  }
 };
 
-// mfh 10 Nov 2016: Requires MPI 2.0.
 #if MPI_VERSION >= 2
+/// \brief Specialization for T = signed char.
+///
+/// This requires MPI 2.0;
 template<>
 class MpiTypeTraits<signed char> {
 public:
   static MPI_Datatype getType (const signed char&) {
+    return MPI_SIGNED_CHAR;
+  }
+
+  static MPI_Datatype getType () {
     return MPI_SIGNED_CHAR;
   }
 };
@@ -135,87 +164,140 @@ public:
 #endif // HAVE_TEUCHOS_COMPLEX
 #endif // if 0
 
+
+//! Specialization for T = double.
 template<>
 class MpiTypeTraits<double> {
 public:
   static MPI_Datatype getType (const double&) {
     return MPI_DOUBLE;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_DOUBLE;
+  }
 };
 
+//! Specialization for T = float.
 template<>
 class MpiTypeTraits<float> {
 public:
   static MPI_Datatype getType (const float&) {
     return MPI_FLOAT;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_FLOAT;
+  }
 };
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
+//! Specialization for T = long long.
 template<>
 class MpiTypeTraits<long long> {
 public:
   static MPI_Datatype getType (const long long&) {
     return MPI_LONG_LONG; // synonym for MPI_LONG_LONG_INT in MPI 2.2
   }
+
+  static MPI_Datatype getType () {
+    return MPI_LONG_LONG;
+  }
 };
 
-// mfh 10 Nov 2016: This is new in MPI 2.0.
+
 #if MPI_VERSION >= 2
+/// \brief Specialization for T = long long.
+///
+/// This requires MPI 2.0.
 template<>
 class MpiTypeTraits<unsigned long long> {
 public:
   static MPI_Datatype getType (const unsigned long long&) {
     return MPI_UNSIGNED_LONG_LONG;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_UNSIGNED_LONG_LONG;
+  }
 };
 #endif // MPI_VERSION >= 2
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+//! Specialization for T = long.
 template<>
 class MpiTypeTraits<long> {
 public:
   static MPI_Datatype getType (const long&) {
     return MPI_LONG;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_LONG;
+  }
 };
 
+//! Specialization for T = unsigned long.
 template<>
 class MpiTypeTraits<unsigned long> {
 public:
   static MPI_Datatype getType (const unsigned long&) {
     return MPI_UNSIGNED_LONG;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_UNSIGNED_LONG;
+  }
 };
 
+//! Specialization for T = int.
 template<>
 class MpiTypeTraits<int> {
 public:
   static MPI_Datatype getType (const int&) {
     return MPI_INT;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_INT;
+  }
 };
 
+//! Specialization for T = unsigned int.
 template<>
 class MpiTypeTraits<unsigned int> {
 public:
   static MPI_Datatype getType (const unsigned int&) {
     return MPI_UNSIGNED;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_UNSIGNED;
+  }
 };
 
+//! Specialization for T = short.
 template<>
 class MpiTypeTraits<short> {
 public:
   static MPI_Datatype getType (const short&) {
     return MPI_SHORT;
   }
+
+  static MPI_Datatype getType () {
+    return MPI_SHORT;
+  }
 };
 
+//! Specialization for T = unsigned short.
 template<>
 class MpiTypeTraits<unsigned short> {
 public:
   static MPI_Datatype getType (const unsigned short&) {
+    return MPI_UNSIGNED_SHORT;
+  }
+
+  static MPI_Datatype getType () {
     return MPI_UNSIGNED_SHORT;
   }
 };

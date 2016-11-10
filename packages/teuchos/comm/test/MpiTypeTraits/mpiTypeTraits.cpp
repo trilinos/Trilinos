@@ -313,6 +313,7 @@ TEUCHOS_UNIT_TEST( MpiTypeTraits, CompareWithRawMpi )
 
   out << "Compare MpiTypeTraits<T>::getType result with known result" << endl;
   Teuchos::OSTab tab1 (out);
+  out << "Test one-argument version of MpiTypeTraits<T>::getType" << endl;
 
   MPI_Datatype dt_char = MpiTypeTraits<char>::getType (static_cast<char> ('a'));
 
@@ -327,7 +328,7 @@ TEUCHOS_UNIT_TEST( MpiTypeTraits, CompareWithRawMpi )
     MpiTypeTraits<unsigned int>::getType (static_cast<unsigned int> (42));
 
   MPI_Datatype dt_long =
-    MpiTypeTraits<long>::getType (static_cast<int> (42));
+    MpiTypeTraits<long>::getType (static_cast<long> (42));
   MPI_Datatype dt_unsigned_long =
     MpiTypeTraits<unsigned long>::getType (static_cast<unsigned long> (42));
 
@@ -335,6 +336,33 @@ TEUCHOS_UNIT_TEST( MpiTypeTraits, CompareWithRawMpi )
     MpiTypeTraits<float>::getType (static_cast<float> (4.2));
   MPI_Datatype dt_double =
     MpiTypeTraits<double>::getType (static_cast<double> (4.2));
+
+  // Sanity check.
+  TEST_ASSERT( ! mpiDatatypeIsSame (dt_double, dt_int) );
+
+  TEST_ASSERT( mpiDatatypeIsSame (dt_char, MPI_CHAR) );
+  TEST_ASSERT( mpiDatatypeIsSame (dt_short, MPI_SHORT) );
+  TEST_ASSERT( mpiDatatypeIsSame (dt_unsigned_short, MPI_UNSIGNED_SHORT) );
+  TEST_ASSERT( mpiDatatypeIsSame (dt_int, MPI_INT) );
+  TEST_ASSERT( mpiDatatypeIsSame (dt_unsigned_int, MPI_UNSIGNED) );
+  TEST_ASSERT( mpiDatatypeIsSame (dt_long, MPI_LONG) );
+  TEST_ASSERT( mpiDatatypeIsSame (dt_unsigned_long, MPI_UNSIGNED_LONG) );
+
+  TEST_ASSERT( mpiDatatypeIsSame (dt_float, MPI_FLOAT) );
+  TEST_ASSERT( mpiDatatypeIsSame (dt_double, MPI_DOUBLE) );
+
+  out << "Test zero-argument version of MpiTypeTraits<T>::getType, "
+    "for types T where that version is known to exist" << endl;
+
+  dt_char = MpiTypeTraits<char>::getType ();
+  dt_short = MpiTypeTraits<short>::getType ();
+  dt_unsigned_short = MpiTypeTraits<unsigned short>::getType ();
+  dt_int = MpiTypeTraits<int>::getType ();
+  dt_unsigned_int = MpiTypeTraits<unsigned int>::getType ();
+  dt_long = MpiTypeTraits<long>::getType ();
+  dt_unsigned_long = MpiTypeTraits<unsigned long>::getType ();
+  dt_float = MpiTypeTraits<float>::getType ();
+  dt_double = MpiTypeTraits<double>::getType ();
 
   // Sanity check.
   TEST_ASSERT( ! mpiDatatypeIsSame (dt_double, dt_int) );
