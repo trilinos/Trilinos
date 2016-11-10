@@ -53,156 +53,102 @@
 # ************************************************************************
 # @HEADER
 
-#
-# Define the list of TPLs, their find module names, and their classification
-#
-# TPL_NAME:
-#
-#   The name of the TPL used in the CMake cache variables TPL_ENABLE_${TPL_NAME}
-#
-# TPL_FINDMOD:
-#
-#   The name of the find module under that is used to get the names of the
-#   TPLs.  If ends in '/' then this gives the directory and the standard module
-#   name will be used which is FindTPL${TPL_NAME}.cmake.
-#
-# TPL_CLASSIFICATION:
-#
-#   PS: Primary Stable TPL
-#
-#     Primary Stable TPLs are those TPLs that a Trilinos developer must have
-#     installed on their machine in order to be able to do Trilinos
-#     development.  For example, we require that you have BLAS, LAPACK, and
-#     MPI installed in order to do Trilinos development.  These are
-#     fundamental dependencies that are needed in order to do precheckin
-#     testing.
-#
-#   SS: Secondary Stable TPL
-#
-#     Secondary Stable TPLs are those TPLs that are not required in order to
-#     be able to develop and test Trilinos before checkins but are none the
-#     less offically supported.  Support for SS TPLs is tested as part of the
-#     nightly testing process.
-#
-#   TS: Tertiary Stable TPL
-#
-#     Tertiary Stable TPLs are those TPLs that are supported TPLs but can not
-#     be included in the set of SS TPLs because they may conflicit with other
-#     SS Code.  For example, METIS is listed as a TS TPL because it conflicts
-#     with ParMETIS which is declared as a SS TPL.
-#
-#   EX: Experimental TPL
-#
-#     Experimental TPLs are not offically supported.  They represent
-#     experimental capabilities of Trilinos packages.  Support for EX TPLs is
-#     never tested as part of the main nightly testing process.  However,
-#     package developers are encouraged to set up their own nightly testing
-#     for their EX TPLs for their packages.
-#
-# The default enable for all TPLs is empty "" reguardless of the category.
-# The idea is that the enabling of the TPL will be done by the package and
-# other enables that the user has to set.
-#
-# NOTE: The TPLs must be listed in the order of increasing dependencies (if
-# such dependencies exist).
-#
-
-SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
+TRIBITS_REPOSITORY_DEFINE_TPLS(
   MKL             "cmake/TPLs/"    EX
   yaml-cpp        "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
-  CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"    SS
-  CUSPARSE        "cmake/TPLs/"    SS
-  Thrust          "cmake/TPLs/"    SS
-  Cusp            "cmake/TPLs/"    SS
+  CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"    ST
+  CUSPARSE        "cmake/TPLs/"    ST
+  Thrust          "cmake/TPLs/"    ST
+  Cusp            "cmake/TPLs/"    ST
   TBB             "cmake/TPLs/"    EX
-  Pthread         "cmake/TPLs/"    SS
-  HWLOC           "cmake/TPLs/"    SS
-  QTHREAD         "cmake/TPLs/"    SS
-  BinUtils        "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    SS
-  ARPREC          "packages/teuchos/cmake/tpls/"    SS
-  QD              "packages/teuchos/cmake/tpls/"    SS
-  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/" PS
-  BLAS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PS
-  LAPACK          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PS
-  Boost           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   SS
-  Scotch          "cmake/TPLs/"    SS
-  OVIS            "cmake/TPLs/"    SS
-  gpcd            "cmake/TPLs/"    SS
-  CGNS            "cmake/TPLs/"    SS
+  Pthread         "cmake/TPLs/"    ST
+  HWLOC           "cmake/TPLs/"    ST
+  QTHREAD         "cmake/TPLs/"    ST
+  BinUtils        "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    ST
+  ARPREC          "packages/teuchos/cmake/tpls/"    ST
+  QD              "packages/teuchos/cmake/tpls/"    ST
+  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/" PT
+  BLAS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
+  LAPACK          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
+  Boost           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   ST
+  Scotch          "cmake/TPLs/"    ST
+  OVIS            "cmake/TPLs/"    ST
+  gpcd            "cmake/TPLs/"    ST
+  CGNS            "cmake/TPLs/"    ST
   METIS           "cmake/TPLs/"    TS
-  ParMETIS        "cmake/TPLs/"    SS
+  ParMETIS        "cmake/TPLs/"    ST
   PuLP            "cmake/TPLs/"    EX
   TopoManager     "cmake/TPLs/"    EX
-  LibTopoMap      "cmake/TPLs/"    SS
-  PaToH           "cmake/TPLs/"    SS
-  CppUnit         "cmake/TPLs/"    SS
-  ADOLC           "cmake/TPLs/"    SS
+  LibTopoMap      "cmake/TPLs/"    ST
+  PaToH           "cmake/TPLs/"    ST
+  CppUnit         "cmake/TPLs/"    ST
+  ADOLC           "cmake/TPLs/"    ST
   ADIC            "cmake/TPLs/"    EX
-  TVMET           "cmake/TPLs/"    SS
-  MF              "cmake/TPLs/"    SS
-  ExodusII        "cmake/TPLs/"    SS
-  Nemesis         "cmake/TPLs/"    SS
+  TVMET           "cmake/TPLs/"    ST
+  MF              "cmake/TPLs/"    ST
+  ExodusII        "cmake/TPLs/"    ST
+  Nemesis         "cmake/TPLs/"    ST
   XDMF            "cmake/TPLs/"    TS
-  Zlib            "cmake/TPLs/"    SS
+  Zlib            "cmake/TPLs/"    ST
   HDF5            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    EX
-  Netcdf          "cmake/TPLs/"    SS
-  y12m            "cmake/TPLs/"    SS
-  SuperLUDist     "cmake/TPLs/"    SS
-  SuperLUMT	  "cmake/TPLs/"	   SS
-  SuperLU         "cmake/TPLs/"    SS
+  Netcdf          "cmake/TPLs/"    ST
+  y12m            "cmake/TPLs/"    ST
+  SuperLUDist     "cmake/TPLs/"    ST
+  SuperLUMT	  "cmake/TPLs/"	   ST
+  SuperLU         "cmake/TPLs/"    ST
   Cholmod	  "cmake/TPLs/"	   EX
-  UMFPACK         "cmake/TPLs/"    SS
+  UMFPACK         "cmake/TPLs/"    ST
   MA28            "cmake/TPLs/"    TS
   AMD             "cmake/TPLs/"    TS
   CSparse         "cmake/TPLs/"    EX
   HYPRE           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   EX
-  PETSC           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   SS
-  BLACS           "cmake/TPLs/"    SS
-  SCALAPACK       "cmake/TPLs/"    SS
-  MUMPS           "cmake/TPLs/"    SS
+  PETSC           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   ST
+  BLACS           "cmake/TPLs/"    ST
+  SCALAPACK       "cmake/TPLs/"    ST
+  MUMPS           "cmake/TPLs/"    ST
   PARDISO_MKL     "cmake/TPLs/"    EX
   PARDISO         "cmake/TPLs/"    EX
-  Oski            "cmake/TPLs/"    SS
-  TAUCS           "cmake/TPLs/"    SS
+  Oski            "cmake/TPLs/"    ST
+  TAUCS           "cmake/TPLs/"    ST
   ForUQTK         "cmake/TPLs/"    EX
   Dakota          "cmake/TPLs/"    EX
   HIPS            "cmake/TPLs/"    EX
   MATLAB          "cmake/TPLs/"    EX
   CASK            "cmake/TPLs/"    EX
-  SPARSKIT        "cmake/TPLs/"    SS
-  QT              "packages/teuchos/cmake/tpls/"    SS
+  SPARSKIT        "cmake/TPLs/"    ST
+  QT              "packages/teuchos/cmake/tpls/"    ST
   gtest           "cmake/TPLs/"    EX
-  BoostLib        "cmake/TPLs/"    SS
-  BoostAlbLib     "cmake/TPLs/"    SS
+  BoostLib        "cmake/TPLs/"    ST
+  BoostAlbLib     "cmake/TPLs/"    ST
   OpenNURBS       "cmake/TPLs/"    EX
-  Portals         "cmake/TPLs/"    SS
-  CrayPortals     "cmake/TPLs/"    SS
-  Gemini          "cmake/TPLs/"    SS
-  InfiniBand      "cmake/TPLs/"    SS
-  BGPDCMF         "cmake/TPLs/"    SS
-  BGQPAMI         "cmake/TPLs/"    SS
-  Pablo           "cmake/TPLs/"    SS
-  HPCToolkit      "cmake/TPLs/"    SS
-  Pnetcdf         "cmake/TPLs/"    SS
+  Portals         "cmake/TPLs/"    ST
+  CrayPortals     "cmake/TPLs/"    ST
+  Gemini          "cmake/TPLs/"    ST
+  InfiniBand      "cmake/TPLs/"    ST
+  BGPDCMF         "cmake/TPLs/"    ST
+  BGQPAMI         "cmake/TPLs/"    ST
+  Pablo           "cmake/TPLs/"    ST
+  HPCToolkit      "cmake/TPLs/"    ST
+  Pnetcdf         "cmake/TPLs/"    ST
   Clp             "cmake/TPLs/"    EX
   GLPK            "cmake/TPLs/"    EX
   qpOASES         "cmake/TPLs/"    EX
-  Matio           "cmake/TPLs/"    SS
-  PAPI            "cmake/TPLs/"    SS
+  Matio           "cmake/TPLs/"    ST
+  PAPI            "cmake/TPLs/"    ST
   MATLABLib       "cmake/TPLs/"    EX
   Eigen           "packages/teuchos/cmake/tpls/"    EX
-  X11             "cmake/TPLs/"    SS
+  X11             "cmake/TPLs/"    ST
   Lemon           "cmake/TPLs/"    EX
   GLM             "cmake/TPLs/"    EX
   quadmath        "cmake/TPLs/"    EX
-  CAMAL           "cmake/TPLs/"    SS
-  RTlib           "cmake/TPLs/"    SS
-  DLlib           "cmake/TPLs/"    SS
+  CAMAL           "cmake/TPLs/"    ST
+  RTlib           "cmake/TPLs/"    ST
+  DLlib           "cmake/TPLs/"    ST
   AmgX            "cmake/TPLs/"    EX
   CGAL            "cmake/TPLs/"    EX
   CGALCore        "cmake/TPLs/"    EX
-  VTune           "cmake/TPLs/"    SS
+  VTune           "cmake/TPLs/"    ST
   TASMANIAN       "cmake/TPLs/"    EX
   ArrayFireCPU    "cmake/TPLs/"    EX
   SimMesh         "SCOREC/cmake/TPLs/"    EX
