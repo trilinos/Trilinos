@@ -171,8 +171,9 @@ preEvaluate(typename TRAITS::PreEvalData d)
     ged = d.gedc.getDataObject(globalDataKey_ + post);
     RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged =
       rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged, true);
-    xOwned_   = ro_ged->getOwnedVector();
+    xOwned_   = ro_ged->getOwnedVector_Epetra();
     xGhosted_ = ro_ged->getGhostedVector_Epetra();
+    x_ = ro_ged->getGhostedVector_Epetra();
     return;
   }
 
@@ -205,8 +206,9 @@ preEvaluate(typename TRAITS::PreEvalData d)
   {
     RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged =
       rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged, true);
-    xOwned_   = ro_ged->getOwnedVector();
+    xOwned_   = ro_ged->getOwnedVector_Epetra();
     xGhosted_ = ro_ged->getGhostedVector_Epetra();
+    x_ = ro_ged->getGhostedVector_Epetra();
   }
 }
 
@@ -250,21 +252,17 @@ evaluateFields(typename TRAITS::EvalData workset)
         int lid    = LIDs[offset];
         if (x_.is_null())
         {
+          const Epetra_Vector& xOwned   = *xOwned_;
+          Epetra_Vector&       xGhosted = *xGhosted_;
           if (lid < numOwnedIndices)
-          {
-            Thyra::ConstDetachedVectorView<double> xOwned(xOwned_);
             (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
               xOwned[lid];
-          }
           else
-          {
-            Epetra_Vector& xGhosted = *xGhosted_;
             (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
 //              xGhosted[lid - numOwnedIndices];                                 // JMG:  This is what it should be but it's
               xGhosted[lid];                                                     //       commented out because I'm trying to get
-          }                                                                      //       things working where xGhosted_ is
-        }                                                                        //       actually the owned and ghosted indices.
-        else
+        }                                                                        //       things working where xGhosted_ is
+        else                                                                     //       actually the owned and ghosted indices.
         {
           Epetra_Vector& x = *x_;
           (gatherFields_[fieldIndex])(worksetCellIndex, basis) = x[lid];

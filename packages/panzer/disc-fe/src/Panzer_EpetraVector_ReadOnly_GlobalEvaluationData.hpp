@@ -122,6 +122,9 @@ public:
    void setOwnedVector_Epetra(const Teuchos::RCP<const Epetra_Vector>&
       ownedVector);
 
+   //! Get the owned vector (Epetra version)
+   Teuchos::RCP<const Epetra_Vector> getOwnedVector_Epetra() const;
+
    //! Get the ghosted vector (Epetra version)
    Teuchos::RCP<Epetra_Vector> getGhostedVector_Epetra() const;
 

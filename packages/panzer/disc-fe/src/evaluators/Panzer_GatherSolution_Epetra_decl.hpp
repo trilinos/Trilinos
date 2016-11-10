@@ -126,9 +126,9 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<Epetra_Vector>                    x_;
-  Teuchos::RCP<const Thyra::VectorBase<double> > xOwned_;
-  Teuchos::RCP<Epetra_Vector>                    xGhosted_;
+  Teuchos::RCP<Epetra_Vector>       x_;
+  Teuchos::RCP<const Epetra_Vector> xOwned_;
+  Teuchos::RCP<Epetra_Vector>       xGhosted_;
 
   // Fields for storing tangent components dx/dp of solution vector x
   // These are not actually used by the residual specialization of this evaluator,
