@@ -45,7 +45,7 @@
 
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -72,7 +72,7 @@ PHX_EVALUATOR_CTOR(SubcellSum,p)
   this->addEvaluatedField(outField);
 
   // build a field pattern object so that looking up closure indices is easy
-  fieldPattern_ = Teuchos::rcp(new Intrepid2FieldPattern(basis->getIntrepid2Basis()));
+  fieldPattern_ = Teuchos::rcp(new Intrepid2FieldPattern(basis->getIntrepid2Basis<PHX::exec_space,double,double>()));
     
   std::string n = "SubcellSum: " + outField.fieldTag().name();
   this->setName(n);

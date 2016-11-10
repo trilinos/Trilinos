@@ -458,11 +458,17 @@ namespace Intrepid2 {
 #endif
 
     // face normals (reshape scratch)
-    Kokkos::DynRankView<scratchValueType,scratchProperties...> faceNormals(scratch.data(), 
-                                                                           inputJac.dimension(0), 
-                                                                           inputJac.dimension(1), 
-                                                                           inputJac.dimension(2));
-    
+    // Kokkos::DynRankView<scratchValueType,scratchProperties...> faceNormals(scratch.data(), 
+    //                                                                        inputJac.dimension(0), 
+    //                                                                        inputJac.dimension(1), 
+    //                                                                        inputJac.dimension(2));
+    Kokkos::DynRankView<scratchValueType,scratchProperties...> faceNormals = 
+      Kokkos::createDynRankView(scratch,
+                                scratch.data(), 
+                                inputJac.dimension(0), 
+                                inputJac.dimension(1), 
+                                inputJac.dimension(2));
+
     // compute normals
     CellTools<SpT>::getPhysicalFaceNormals(faceNormals, inputJac, whichFace, parentCell);
 
@@ -498,10 +504,16 @@ namespace Intrepid2 {
 #endif
 
     // edge tangents (reshape scratch)
-    Kokkos::DynRankView<scratchValueType,scratchProperties...> edgeTangents(scratch.data(), 
-                                                                            inputJac.dimension(0), 
-                                                                            inputJac.dimension(1), 
-                                                                            inputJac.dimension(2));
+    // Kokkos::DynRankView<scratchValueType,scratchProperties...> edgeTangents(scratch.data(), 
+    //                                                                         inputJac.dimension(0), 
+    //                                                                         inputJac.dimension(1), 
+    //                                                                         inputJac.dimension(2));
+    Kokkos::DynRankView<scratchValueType,scratchProperties...> edgeTangents = 
+      Kokkos::createDynRankView(scratch,
+                                scratch.data(), 
+                                inputJac.dimension(0), 
+                                inputJac.dimension(1), 
+                                inputJac.dimension(2));
     
     // compute normals
     CellTools<SpT>::getPhysicalEdgeTangents(edgeTangents, inputJac, whichEdge, parentCell);

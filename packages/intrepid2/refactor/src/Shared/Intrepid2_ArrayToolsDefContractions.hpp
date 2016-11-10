@@ -91,8 +91,10 @@ namespace Intrepid2 {
           for (ordinal_type i = 0; i < iend; ++i) 
             for (ordinal_type j = 0; j < jend; ++j) 
               tmp += left(qp, i, j)*right(qp, i, j);
-
-        result() = value_type(_sumInto)*result() + tmp;
+        if (_sumInto)
+          result() = result() + tmp;
+        else
+          result() = tmp;
       }
     };
     } //end namespace
@@ -170,8 +172,10 @@ namespace Intrepid2 {
               for (ordinal_type j = 0; j < jend; ++j)
                 tmp += field(qp, i, j) * data(0, i, j);
 
-
-        result() = value_type(_sumInto)*result() + tmp;
+        if (_sumInto)
+          result() = result() + tmp;
+        else
+          result() = tmp;
       }
     };
     } //namespace
@@ -235,7 +239,11 @@ namespace Intrepid2 {
           for (ordinal_type i = 0; i < iend; ++i) 
             for (ordinal_type j = 0; j < jend; ++j) 
               tmp += left(qp, i, j)*right(qp, i, j);
-        result() = value_type(_sumInto)*result() + tmp;
+
+        if (_sumInto)
+          result() = result() + tmp;
+        else
+          result() = tmp;
       }
     };
     } //namespace

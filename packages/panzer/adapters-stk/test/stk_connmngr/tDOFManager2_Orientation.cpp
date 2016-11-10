@@ -48,7 +48,7 @@
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
-#include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
@@ -93,7 +93,7 @@ template <typename Intrepid2Type>
 RCP<const panzer::Intrepid2FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::Intrepid2FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -116,11 +116,11 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::FieldPattern> patternI1 
-         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::FieldPattern> patternDIV
-         = buildFieldPattern<Intrepid2::Basis_HDIV_QUAD_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HDIV_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
@@ -263,7 +263,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations2)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternI1 
-         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
@@ -336,7 +336,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations_fail
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternI1 
-         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());

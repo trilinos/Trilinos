@@ -321,7 +321,7 @@ int main(int argc,char * argv[])
    // all done!
    /////////////////////////////////////////////////////////////
 
-   PHX::FinalizeKokkosDevice();
+   //PHX::FinalizeKokkosDevice();
 
    return 0;
 }

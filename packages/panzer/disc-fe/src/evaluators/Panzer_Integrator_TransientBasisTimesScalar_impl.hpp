@@ -134,10 +134,10 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
     }
 
     if(workset.num_cells>0)
-      Intrepid2::FunctionSpaceTools::
-        integrate<ScalarT>(residual, tmp, 
-			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			   Intrepid2::COMP_CPP);
+      Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+        integrate<ScalarT>(residual.get_view(),
+                           tmp, 
+			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
   }
 }
 

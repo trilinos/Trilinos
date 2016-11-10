@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
   #endif
 
   int np = comm.getSize(); // number of processors
-  int rank = comm.getRank(); // processor rank
+  //int rank = comm.getRank(); // processor rank
 
   // mesh description
   Ordinal64 nx = 8, ny = 4;//, nz = 4;
@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
   #endif
 
   int np = comm.getSize(); // number of processors
-  int rank = comm.getRank(); // processor rank
+  //int rank = comm.getRank(); // processor rank
 
   // mesh description
   Ordinal64 nx = 8, ny = 4;//, nz = 4;

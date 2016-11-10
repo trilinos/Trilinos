@@ -44,7 +44,7 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KokkosDynRankView
   HAVE_INTREPID2_KOKKOS_DYNRANKVIEW
   "Enable Kokkos DynRankView."
-  OFF)
+  ON)
 
 #
 # C) Add the libraries, tests, and examples

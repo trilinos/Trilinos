@@ -125,10 +125,10 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
   if(workset.num_cells<=0)
     return;
   else {
-    Intrepid2::CellTools<ScalarT>::getPhysicalFaceNormals(faceNormal,
-                                            pointValues.jac,
-                                            this->wda(workset).subcell_index, 
-                                           *basis->getCellTopology());
+    Intrepid2::CellTools<PHX::exec_space>::getPhysicalFaceNormals(faceNormal,
+                                                                  pointValues.jac.get_view(),
+                                                                  this->wda(workset).subcell_index, 
+                                                                  *basis->getCellTopology());
   
     for(index_t c=0;c<workset.num_cells;c++) {
       for(int b=0;b<dof.extent_int(1);b++) {

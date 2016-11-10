@@ -1256,7 +1256,7 @@ namespace panzer {
           = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
       Teuchos::RCP<Intrepid2FieldPattern> fp 
-          = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<double,Kokkos::DynRankView<double,PHX::Device> >("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
+        = Teuchos::rcp(new Intrepid2FieldPattern(panzer::createIntrepid2Basis<PHX::exec_space,double,double>("HGrad",1,mesh->getCellTopology("eblock-0_0"))));
       dofManager->addField("eblock-0_0","DENSITY_P",fp);
       dofManager->addField("eblock-1_0","DENSITY_P",fp);
 

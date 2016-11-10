@@ -5,8 +5,8 @@
 
 namespace panzer {
   
-template<class Scalar, class ArrayScalar> 
-class Basis_Constant: public Intrepid2::Basis<Scalar, ArrayScalar> {
+  template<class ExecutionSpace, class OutputValueType, class PointValueType> 
+  class Basis_Constant: public Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> {
 private:
   
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
@@ -14,6 +14,9 @@ private:
   void initializeTags();
   
 public:
+
+    using outputViewType = typename Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType>::outputViewType;
+    using pointViewType = typename Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType>::pointViewType;
   
   /** \brief  Constructor.
    */
@@ -30,17 +33,17 @@ public:
       \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
       \param  operatorType      [in]  - the operator acting on the basis functions    
    */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const Intrepid2::EOperator        operatorType) const;
+  void getValues(      outputViewType outputValues,
+                 const pointViewType  inputPoints,
+                 const Intrepid2::EOperator operatorType) const;
   
   
   /**  \brief  FVD basis evaluation: invocation of this method throws an exception.
    */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const ArrayScalar &    cellVertices,
-                 const Intrepid2::EOperator        operatorType = Intrepid2::OPERATOR_VALUE) const;
+  void getValues(      outputViewType outputValues,
+                 const pointViewType  inputPoints,
+                 const pointViewType  cellVertices,
+                 const Intrepid2::EOperator operatorType = Intrepid2::OPERATOR_VALUE) const;
 
 };
 

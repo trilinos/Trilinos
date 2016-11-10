@@ -82,9 +82,9 @@ ProjectToEdges(
 
   if(quad_degree > 0){
     const shards::CellTopology & parentCell = *basis->getCellTopology();                                                                                    
-    Intrepid2::DefaultCubatureFactory<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> quadFactory;                         
-    Teuchos::RCP< Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> > quadRule                    
-        = quadFactory.create(parentCell.getCellTopologyData(1,0), quad_degree);
+    Intrepid2::DefaultCubatureFactory quadFactory;                         
+    Teuchos::RCP< Intrepid2::Cubature<PHX::exec_space,double,double> > quadRule                    
+      = quadFactory.create<PHX::exec_space,double,double>(parentCell.getCellTopologyData(1,0), quad_degree);
     int numQPoints = quadRule->getNumPoints(); 
  
     vector_values.resize(numQPoints);
@@ -142,8 +142,8 @@ evaluateFields(typename Traits::EvalData workset)
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   const int intDegree = basis->order();
   TEUCHOS_ASSERT(intDegree == 1);
-  Intrepid2::DefaultCubatureFactory<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> quadFactory;
-  Teuchos::RCP< Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> > edgeQuad;
+  Intrepid2::DefaultCubatureFactory quadFactory;
+  Teuchos::RCP<Intrepid2::Cubature<PHX::exec_space,double,double>> edgeQuad;
 
   // One point quadrature if higher order quadrature not requested
   if (quad_degree == 0){
@@ -152,7 +152,7 @@ evaluateFields(typename Traits::EvalData workset)
     const unsigned num_edges = parentCell.getEdgeCount();
     std::vector<double> refEdgeWt(num_edges, 0.0);
     for (unsigned e=0; e<num_edges; e++) {
-      edgeQuad = quadFactory.create(parentCell.getCellTopologyData(1,e), intDegree);
+      edgeQuad = quadFactory.create<PHX::exec_space,double,double>(parentCell.getCellTopologyData(1,e), intDegree);
       const int numQPoints = edgeQuad->getNumPoints();
       Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
       Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
@@ -180,7 +180,7 @@ evaluateFields(typename Traits::EvalData workset)
     Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"refEdgeTan",numEdges,num_dim);
     for(int i=0;i<numEdges;i++) {
       Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",num_dim);
-      Intrepid2::CellTools<double>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
+      Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<num_dim;d++)
         refEdgeTan(i,d) = refEdgeTan_local(d);
@@ -203,7 +203,7 @@ evaluateFields(typename Traits::EvalData workset)
 
         // get quad weights/pts on reference 2d cell
         const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);     
-        edgeQuad = quadFactory.create(subcell, quad_degree);
+        edgeQuad = quadFactory.create<PHX::exec_space,double,double>(subcell, quad_degree);
         TEUCHOS_ASSERT(edgeQuad->getNumPoints() == vector_values.size());
         Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",edgeQuad->getNumPoints());
         Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",edgeQuad->getNumPoints(),subcell_dim);
@@ -211,16 +211,17 @@ evaluateFields(typename Traits::EvalData workset)
 
         // map 1d quad pts to reference cell (3d)
         Kokkos::DynRankView<double,PHX::Device> refQuadPts("refQuadPts",edgeQuad->getNumPoints(),num_dim);
-        Intrepid2::CellTools<double>::mapToReferenceSubcell(refQuadPts, quadPts, subcell_dim, p, parentCell);
+        Intrepid2::CellTools<PHX::exec_space>::mapToReferenceSubcell(refQuadPts, quadPts, subcell_dim, p, parentCell);
 
 
         // Calculate side jacobian
         Kokkos::DynRankView<double,PHX::Device> jacobianSide("jacobianSide", 1, edgeQuad->getNumPoints(), num_dim, num_dim);
-        Intrepid2::CellTools<double>::setJacobian(jacobianSide, refQuadPts, physicalNodes, parentCell);
+        Intrepid2::CellTools<PHX::exec_space>::setJacobian(jacobianSide, refQuadPts, physicalNodes, parentCell);
 
         // Calculate weighted measure at quadrature points
         Kokkos::DynRankView<double,PHX::Device> weighted_measure("weighted_measure",1,edgeQuad->getNumPoints());
-        Intrepid2::FunctionSpaceTools::computeEdgeMeasure<double> (weighted_measure, jacobianSide, quadWts, p, parentCell);
+        Kokkos::DynRankView<double,PHX::Device> scratch_space("scratch_space",jacobianSide.span());
+        Intrepid2::FunctionSpaceTools<PHX::exec_space>::computeEdgeMeasure(weighted_measure, jacobianSide, quadWts, p, parentCell,scratch_space);
 
         // loop over quadrature points
         for (int qp = 0; qp < edgeQuad->getNumPoints(); ++qp) {

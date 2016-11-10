@@ -128,10 +128,10 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   residual.deep_copy(ScalarT(0.0));
 
   if(workset.subcell_dim==1) {
-    Intrepid2::CellTools<ScalarT>::getPhysicalEdgeTangents(edgeTan,
-                                            pointValues.jac,
-                                            this->wda(workset).subcell_index, 
-                                           *basis->getCellTopology());
+    Intrepid2::CellTools<PHX::exec_space>::getPhysicalEdgeTangents(edgeTan,
+                                                                   pointValues.jac.get_view(),
+                                                                   this->wda(workset).subcell_index, 
+                                                                   *basis->getCellTopology());
 
     for(index_t c=0;c<workset.num_cells;c++) {
       for(int b=0;b<dof.extent_int(1);b++) {
@@ -151,7 +151,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
 
     for(int i=0;i<numEdges;i++) {
       Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
-      Intrepid2::CellTools<double>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
+      Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<cellDim;d++) 
         refEdgeTan(i,d) = refEdgeTan_local(d);

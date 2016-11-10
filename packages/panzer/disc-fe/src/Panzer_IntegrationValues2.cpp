@@ -139,24 +139,23 @@ namespace panzer {
        return;
     }
 
-    Intrepid2::DefaultCubatureFactory<double,DblArrayDynamic>
-      cubature_factory;
+    Intrepid2::DefaultCubatureFactory cubature_factory;
     
     if (ir->cv_type == "side")
-       intrepid_cubature = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<double,DblArrayDynamic,DblArrayDynamic>(ir->topology));
+      intrepid_cubature = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<PHX::Device::execution_space,double,double>(*ir->topology));
 
     else if (ir->cv_type == "volume")
-       intrepid_cubature = Teuchos::rcp(new Intrepid2::CubatureControlVolume<double,DblArrayDynamic,DblArrayDynamic>(ir->topology));
-
+      intrepid_cubature = Teuchos::rcp(new Intrepid2::CubatureControlVolume<PHX::Device::execution_space,double,double>(*ir->topology));
+    
     else if (ir->cv_type == "boundary" && ir->isSide())
-       intrepid_cubature = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<double,DblArrayDynamic,DblArrayDynamic>(ir->topology,ir->side));
-
+      intrepid_cubature = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<PHX::Device::execution_space,double,double>(*ir->topology,ir->side));
+    
     else if (ir->cv_type == "none" && ir->isSide())
-       intrepid_cubature = cubature_factory.create(*(ir->side_topology),
-                                                  ir->cubature_degree);
+      intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*(ir->side_topology),
+                                                                                              ir->cubature_degree);
     else
-       intrepid_cubature = cubature_factory.create(*(ir->topology),
-                                                   ir->cubature_degree);
+      intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*(ir->topology),
+                                                                                              ir->cubature_degree);
     
 
     int num_ip = intrepid_cubature->getNumPoints();
@@ -165,6 +164,7 @@ namespace panzer {
     dyn_cub_weights = af.template buildArray<double,IP>("cub_weights",num_ip);
 
     cub_points = af.template buildStaticArray<Scalar,IP,Dim>("cub_points",num_ip, num_space_dim);
+
 
     if (ir->isSide() && ir->cv_type == "none") {
       dyn_side_cub_points = af.template buildArray<double,IP,Dim>("side_cub_points",num_ip, ir->side_topology->getDimension());
@@ -205,6 +205,9 @@ namespace panzer {
 
     weighted_normals = af.template buildStaticArray<Scalar,Cell,IP,Dim>("weighted_normal",num_cells,num_ip,num_space_dim);
 
+    scratch_for_compute_side_measure = 
+      af.template buildStaticArray<Scalar,Point>("scratch_for_compute_side_measure", jac.get_view().span());
+
   }
 
 // ***********************************************************
@@ -235,22 +238,25 @@ namespace panzer {
        return; 
     }
     
-    Intrepid2::CellTools<Scalar> cell_tools;
+    Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
     
     if (!int_rule->isSide())
-      intrepid_cubature->getCubature(dyn_cub_points, dyn_cub_weights);
+      intrepid_cubature->getCubature(dyn_cub_points.get_view(), dyn_cub_weights.get_view());
     else {
-      intrepid_cubature->getCubature(dyn_side_cub_points, dyn_cub_weights);
-
-      cell_tools.mapToReferenceSubcell(dyn_cub_points, 
-				       dyn_side_cub_points,
-				       int_rule->spatial_dimension-1,
-				       int_rule->side, 
-				       *(int_rule->topology));
+      intrepid_cubature->getCubature(dyn_side_cub_points.get_view(), dyn_cub_weights.get_view());
+      
+      cell_tools.mapToReferenceSubcell(dyn_cub_points.get_view(), 
+                                       dyn_side_cub_points.get_view(),
+                                       int_rule->spatial_dimension-1,
+                                       int_rule->side, 
+                                       *(int_rule->topology));
     }
 
     // IP coordinates
-    cell_tools.mapToPhysicalFrame(ip_coordinates, dyn_cub_points, in_node_coordinates, *(int_rule->topology));
+    cell_tools.mapToPhysicalFrame(ip_coordinates.get_view(),
+                                  dyn_cub_points.get_view(),
+                                  in_node_coordinates.get_view(),
+                                  *(int_rule->topology));
   }
 
 
@@ -258,7 +264,7 @@ namespace panzer {
   void IntegrationValues2<Scalar>::
   evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
   {
-    Intrepid2::CellTools<Scalar> cell_tools;
+    Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
 
     // copy the dynamic data structures into the static data structures
     {
@@ -294,24 +300,30 @@ namespace panzer {
       }
     }
 
-    cell_tools.setJacobian(jac, cub_points, node_coordinates, 
+    cell_tools.setJacobian(jac.get_view(),
+                           cub_points.get_view(),
+                           node_coordinates.get_view(), 
 			   *(int_rule->topology));
     
-    cell_tools.setJacobianInv(jac_inv, jac);
+    cell_tools.setJacobianInv(jac_inv.get_view(), jac.get_view());
     
-    cell_tools.setJacobianDet(jac_det, jac);
+    cell_tools.setJacobianDet(jac_det.get_view(), jac.get_view());
     
     if (!int_rule->isSide()) {
-       Intrepid2::FunctionSpaceTools::
-         computeCellMeasure<Scalar>(weighted_measure, jac_det, cub_weights);
+       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
+         computeCellMeasure(weighted_measure.get_view(), jac_det.get_view(), cub_weights.get_view());
     }
     else if(int_rule->spatial_dimension==3) {
-       Intrepid2::FunctionSpaceTools::
-         computeFaceMeasure<Scalar>(weighted_measure, jac, cub_weights,int_rule->side,*int_rule->topology);
+       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
+         computeFaceMeasure(weighted_measure.get_view(), jac.get_view(), cub_weights.get_view(),
+                            int_rule->side, *int_rule->topology,
+                            scratch_for_compute_side_measure.get_view());
     }
     else if(int_rule->spatial_dimension==2) {
-       Intrepid2::FunctionSpaceTools::
-         computeEdgeMeasure<Scalar>(weighted_measure, jac, cub_weights,int_rule->side,*int_rule->topology);
+       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
+         computeEdgeMeasure(weighted_measure.get_view(), jac.get_view(), cub_weights.get_view(),
+                            int_rule->side,*int_rule->topology,
+                            scratch_for_compute_side_measure.get_view());
     }
     else TEUCHOS_ASSERT(false);
     
@@ -336,7 +348,7 @@ namespace panzer {
       }
     }
 
-    Intrepid2::RealSpaceTools<Scalar>::inverse(contravarient, covarient);
+    Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(contravarient.get_view(), covarient.get_view());
 
     // norm of g_ij
     for (size_type cell = 0; cell < contravarient.dimension(0); ++cell) {
@@ -532,9 +544,9 @@ namespace panzer {
      }
 
     if (int_rule->cv_type == "side")
-      intrepid_cubature->getCubature(dyn_phys_cub_points,dyn_phys_cub_norms,dyn_node_coordinates);
+      intrepid_cubature->getCubature(dyn_phys_cub_points.get_view(),dyn_phys_cub_norms.get_view(),dyn_node_coordinates.get_view());
     else 
-      intrepid_cubature->getCubature(dyn_phys_cub_points,dyn_phys_cub_weights,dyn_node_coordinates);
+      intrepid_cubature->getCubature(dyn_phys_cub_points.get_view(),dyn_phys_cub_weights.get_view(),dyn_node_coordinates.get_view());
 
     size_type num_cells = dyn_phys_cub_points.dimension(0);
     size_type num_ip =dyn_phys_cub_points.dimension(1); 
@@ -559,17 +571,21 @@ namespace panzer {
   evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates)
   {
   
-     Intrepid2::CellTools<Scalar> cell_tools;
+    Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
 
-     cell_tools.mapToReferenceFrame(ref_ip_coordinates, ip_coordinates, node_coordinates,
-                                    *(int_rule->topology),-1);
+    cell_tools.mapToReferenceFrame(ref_ip_coordinates.get_view(),
+                                   ip_coordinates.get_view(),
+                                   node_coordinates.get_view(),
+                                   *(int_rule->topology));
 
-     cell_tools.setJacobian(jac, ref_ip_coordinates, node_coordinates,
+    cell_tools.setJacobian(jac.get_view(),
+                           ref_ip_coordinates.get_view(),
+                           node_coordinates.get_view(),
                            *(int_rule->topology));
 
-     cell_tools.setJacobianInv(jac_inv, jac);
+    cell_tools.setJacobianInv(jac_inv.get_view(), jac.get_view());
  
-     cell_tools.setJacobianDet(jac_det, jac);
+    cell_tools.setJacobianDet(jac_det.get_view(), jac.get_view());
 
   }
 

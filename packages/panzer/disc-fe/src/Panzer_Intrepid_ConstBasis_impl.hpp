@@ -4,24 +4,24 @@
 namespace panzer {
   
   
-template<class Scalar, class ArrayScalar>
-Basis_Constant<Scalar,ArrayScalar>::Basis_Constant(const shards::CellTopology & ct)
+template<class ExecutionSpace, class OutputValueType, class PointValueType> 
+Basis_Constant<ExecutionSpace,OutputValueType,PointValueType>::Basis_Constant(const shards::CellTopology & ct)
   {
     this -> basisCardinality_  = 1;
     this -> basisDegree_       = 0;    
     this -> basisCellTopology_ = ct;
     this -> basisType_         = Intrepid2::BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = Intrepid2::COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
+    //this -> basisTagsAreSet_   = false;
 
     initializeTags();
-    this->basisTagsAreSet_ = true;
+    //this->basisTagsAreSet_ = true;
   }
   
   
   
-template<class Scalar, class ArrayScalar>
-void Basis_Constant<Scalar, ArrayScalar>::initializeTags() {
+template<class ExecutionSpace, class OutputValueType, class PointValueType> 
+void Basis_Constant<ExecutionSpace,OutputValueType,PointValueType>::initializeTags() {
   
   // Basis-dependent initializations
   int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
@@ -33,28 +33,30 @@ void Basis_Constant<Scalar, ArrayScalar>::initializeTags() {
   
   // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
   int tags[]  = { dim, 0, 0, 1 };
-  
+  typename Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType>::ordinal_type_array_1d_host tagView(&tags[0], 4);
+
   // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-  Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
-                              this -> ordinalToTag_,
-                              tags,
-                              this -> basisCardinality_,
-                              tagSize,
-                              posScDim,
-                              posScOrd,
-                              posDfOrd);
+  this->setOrdinalTagData(this -> tagToOrdinal_,
+                          this -> ordinalToTag_,
+                          tagView,
+                          this -> basisCardinality_,
+                          tagSize,
+                          posScDim,
+                          posScOrd,
+                          posDfOrd);
 }  
 
 
 
-template<class Scalar, class ArrayScalar> 
-void Basis_Constant<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-                                                            const ArrayScalar &  inputPoints,
-                                                            const Intrepid2::EOperator      operatorType) const {
+template<class ExecutionSpace, class OutputValueType, class PointValueType> 
+void Basis_Constant<ExecutionSpace,OutputValueType,PointValueType>::
+getValues(outputViewType outputValues,
+          const pointViewType inputPoints,
+          const Intrepid2::EOperator operatorType) const {
   
   // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
-  Intrepid2::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
+  Intrepid2::getValues_HGRAD_Args<ExecutionSpace,OutputValueType,PointValueType>(outputValues,
                                                       inputPoints,
                                                       operatorType,
                                                       this -> getBaseCellTopology(),
@@ -94,11 +96,11 @@ void Basis_Constant<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputV
   
 
   
-template<class Scalar, class ArrayScalar>
-void Basis_Constant<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-                                                            const ArrayScalar &    inputPoints,
-                                                            const ArrayScalar &    cellVertices,
-                                                            const Intrepid2::EOperator        operatorType) const {
+template<class ExecutionSpace, class OutputValueType, class PointValueType> 
+void Basis_Constant<ExecutionSpace,OutputValueType,PointValueType>::getValues(outputViewType outputValues,
+                                                            const pointViewType inputPoints,
+                                                            const pointViewType cellVertices,
+                                                            const Intrepid2::EOperator operatorType) const {
   TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                       ">>> ERROR (Basis_Constant): FEM Basis calling an FVD member function");
 }

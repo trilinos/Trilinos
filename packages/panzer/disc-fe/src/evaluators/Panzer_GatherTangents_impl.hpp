@@ -123,7 +123,7 @@ evaluateFields(typename Traits::EvalData workset)
 
     for(int i=0;i<numEdges;i++) {
       Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
-      Intrepid2::CellTools<double>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
+      Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<cellDim;d++)
         refEdgeTan(i,d) = refEdgeTan_local(d);

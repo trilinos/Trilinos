@@ -49,6 +49,8 @@
 #ifndef __INTREPID2_CELLTOOLS_DEF_NODE_INFO_HPP__
 #define __INTREPID2_CELLTOOLS_DEF_NODE_INFO_HPP__
 
+#include "Kokkos_ViewFactory.hpp"
+
 // disable clang warnings
 #if defined (__clang__) && !defined (__INTEL_COMPILER)
 #pragma clang system_header
@@ -489,9 +491,10 @@ namespace Intrepid2 {
     
     // Reference face normal = vector product of reference face tangents. Allocate temp FC storage:
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<refFaceNormalValueType,SpT> 
-      refFaceTanU("CellTools::getReferenceFaceNormal::refFaceTanU", dim), 
-      refFaceTanV("CellTools::getReferenceFaceNormal::refFaceTanV", dim);
+    Kokkos::DynRankView<refFaceNormalValueType,SpT> refFaceTanU = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<refFaceNormalValueType,SpT>>(refFaceNormal,"CellTools::getReferenceFaceNormal::refFaceTanU", dim);
+    Kokkos::DynRankView<refFaceNormalValueType,SpT> refFaceTanV = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<refFaceNormalValueType,SpT>>(refFaceNormal,"CellTools::getReferenceFaceNormal::refFaceTanV", dim);
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, faceOrd, parentCell);
   
     RealSpaceTools<SpT>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
@@ -536,7 +539,8 @@ namespace Intrepid2 {
   
     // Storage for constant reference edge tangent: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<edgeTangentValueType,SpT> refEdgeTan("CellTools::getPhysicalEdgeTangents::refEdgeTan", dim);
+    Kokkos::DynRankView<edgeTangentValueType,SpT> refEdgeTan = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<edgeTangentValueType,SpT>>(edgeTangents,"CellTools::getPhysicalEdgeTangents::refEdgeTan", dim);
     getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
     
     RealSpaceTools<SpT>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
@@ -591,8 +595,10 @@ namespace Intrepid2 {
     
     // Temp storage for the pair of constant ref. face tangents: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<faceTanUValueType,SpT> refFaceTanU("CellTools::getPhysicalFaceTangents::refFaceTanU", dim);
-    Kokkos::DynRankView<faceTanVValueType,SpT> refFaceTanV("CellTools::getPhysicalFaceTangents::refFaceTanV", dim);
+    Kokkos::DynRankView<faceTanUValueType,SpT> refFaceTanU = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<faceTanUValueType,SpT>>(faceTanU,"CellTools::getPhysicalFaceTangents::refFaceTanU", dim);
+    Kokkos::DynRankView<faceTanVValueType,SpT> refFaceTanV = 
+      Kokkos::createDynRankViewWithType<Kokkos::DynRankView<faceTanVValueType,SpT>>(faceTanV,"CellTools::getPhysicalFaceTangents::refFaceTanV", dim);
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
 
     RealSpaceTools<SpT>::matvec(faceTanU, worksetJacobians, refFaceTanU);    
@@ -623,13 +629,16 @@ namespace Intrepid2 {
   
     if (dim == 2) {
       // compute edge tangents and rotate it
-      Kokkos::DynRankView<sideNormalValueType,SpT> edgeTangents("CellTools::getPhysicalSideNormals::edgeTan", 
-                                                                sideNormals.dimension(0),
-                                                                sideNormals.dimension(1),
-                                                                sideNormals.dimension(2));
+      Kokkos::DynRankView<sideNormalValueType,SpT> edgeTangents = 
+        Kokkos::createDynRankViewWithType<Kokkos::DynRankView<sideNormalValueType,SpT>>(sideNormals,
+                                                                                        "CellTools::getPhysicalSideNormals::edgeTan", 
+                                                                                        sideNormals.dimension(0),
+                                                                                        sideNormals.dimension(1),
+                                                                                        sideNormals.dimension(2));
       getPhysicalEdgeTangents(edgeTangents, worksetJacobians, worksetSideOrd, parentCell);
 
-      Kokkos::DynRankView<sideNormalValueType,SpT> rotation("CellTools::getPhysicalSideNormals::rotation", dim, dim);
+      Kokkos::DynRankView<sideNormalValueType,SpT> rotation = 
+        Kokkos::createDynRankViewWithType<Kokkos::DynRankView<sideNormalValueType,SpT>>(sideNormals,"CellTools::getPhysicalSideNormals::rotation", dim, dim);
       rotation(0,0) =  0; rotation(0,1) =  1;
       rotation(1,0) = -1; rotation(1,1) =  0;
 
@@ -679,9 +688,10 @@ namespace Intrepid2 {
     const auto worksetSize = worksetJacobians.dimension(0);
     const auto facePtCount = worksetJacobians.dimension(1);
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<faceNormalValueType,SpT> 
-      faceTanU("CellTools::getPhysicalFaceNormals::faceTanU", worksetSize, facePtCount, dim), 
-      faceTanV("CellTools::getPhysicalFaceNormals::faceTanV", worksetSize, facePtCount, dim);
+    Kokkos::DynRankView<faceNormalValueType,SpT> faceTanU = 
+    Kokkos::createDynRankViewWithType<Kokkos::DynRankView<faceNormalValueType,SpT>>(faceNormals,"CellTools::getPhysicalFaceNormals::faceTanU", worksetSize, facePtCount, dim);
+    Kokkos::DynRankView<faceNormalValueType,SpT> faceTanV = 
+    Kokkos::createDynRankViewWithType<Kokkos::DynRankView<faceNormalValueType,SpT>>(faceNormals,"CellTools::getPhysicalFaceNormals::faceTanV", worksetSize, facePtCount, dim);
 
     getPhysicalFaceTangents(faceTanU, faceTanV, 
                             worksetJacobians, 

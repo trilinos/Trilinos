@@ -137,8 +137,8 @@ template<typename EvalT, typename Traits, typename LO, typename GO>
 bool ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
 computeBasisValues(typename Traits::EvalData d)
 {
-  typedef Intrepid2::CellTools<double> CTD;
-  typedef Intrepid2::FunctionSpaceTools FST;
+  typedef Intrepid2::CellTools<PHX::exec_space> CTD;
+  typedef Intrepid2::FunctionSpaceTools<PHX::exec_space> FST;
 
   Kokkos::DynRankView<int,PHX::Device> inCell("inCell", 1);
   Kokkos::DynRankView<double,PHX::Device> physical_points_cell(
@@ -150,11 +150,18 @@ computeBasisValues(typename Traits::EvalData d)
   cellIndex_ = -1;
   bool haveProbe = false;
   for (index_t cell=0; cell<static_cast<int>(d.num_cells); ++cell) {
-    CTD::checkPointwiseInclusion(inCell,
-                                 physical_points_cell,
-                                 this->wda(d).cell_vertex_coordinates,
-                                 *topology_,
-                                 cell);
+    // CTD::checkPointwiseInclusion(inCell,
+    //                              physical_points_cell,
+    //                              this->wda(d).cell_vertex_coordinates,
+    //                              *topology_,
+    //                              cell);
+    // const double tol = 1.0e-12;
+    // CTD::checkPointwiseInclusion(inCell,
+    //                              physical_points_cell,
+    //                              this->wda(d).cell_vertex_coordinates.get_view(),
+    //                              *topology_,
+    //                              tol);
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER: checkPointwiseInclusion() broken!!!");
     if (inCell(0) == 1) {
       cellIndex_ = cell;
       haveProbe = true;
@@ -275,7 +282,7 @@ evaluateFields(typename Traits::EvalData d)
   // Evaluate FE interpolant at point
   Kokkos::DynRankView<ScalarT,PHX::Device> field_val =
     Kokkos::createDynRankView(field_coeffs, "field_val", 1, 1); // Cell, Point
-  Intrepid2::FunctionSpaceTools::evaluate<ScalarT>(
+  Intrepid2::FunctionSpaceTools<PHX::exec_space>::evaluate(
     field_val, field_coeffs, basis_values_);
   responseObj_->value = field_val(0,0);
   responseObj_->have_probe = true;

@@ -7,9 +7,6 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-// #include "Kokkos_DynRankView.hpp"
-#include "Intrepid2_FieldContainer.hpp"
-
 #include "PanzerCore_config.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"

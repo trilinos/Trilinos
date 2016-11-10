@@ -48,7 +48,7 @@
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
-#include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
@@ -92,7 +92,7 @@ template <typename Intrepid2Type>
 RCP<const panzer::Intrepid2FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::Intrepid2FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -115,7 +115,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManagerFEI<int,int> > dofManager = rcp(new panzer::DOFManagerFEI<int,int>());
@@ -242,7 +242,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, field_order)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
@@ -333,7 +333,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, ghosted_owned_indices)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
@@ -409,9 +409,9 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, multiple_dof_managers)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::FieldPattern> patternC2 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildTriMesh(Comm,2,2,1,1);
@@ -486,9 +486,9 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager,getDofCoords)
    std::vector<std::size_t> localIds_00, localIds_01;
    FieldContainer coords00, coords01;
    RCP<const panzer::Intrepid2FieldPattern> patternC1_00
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::Intrepid2FieldPattern> patternC1_01
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    // get coordinates
    stkManager->getDofCoords("eblock-0_0",*patternC1_00,localIds_00,coords00); 

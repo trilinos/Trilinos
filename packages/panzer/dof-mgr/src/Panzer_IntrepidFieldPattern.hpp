@@ -59,7 +59,7 @@ namespace panzer {
   */
 class Intrepid2FieldPattern : public FieldPattern {
 public:
-   Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > & intrepidBasis)
+  Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::exec_space,double,double> > & intrepidBasis)
       : intrepidBasis_(intrepidBasis) {}
 
    virtual int getSubcellCount(int dim) const;
@@ -135,7 +135,7 @@ public:
                                     Kokkos::DynRankView<double,PHX::Device> & coords) const;
 
 protected:
-   Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > >
+  Teuchos::RCP< Intrepid2::Basis<PHX::exec_space,double,double> >
       intrepidBasis_;
    std::vector<int> empty_;
 };

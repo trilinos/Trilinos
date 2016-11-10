@@ -48,7 +48,7 @@
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
-#include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
@@ -94,7 +94,7 @@ template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double> >();
 
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildHexMesh(Comm,2,2,2,1,1,1);
    RCP<panzer::ConnManager<int,int> > connManager 
@@ -239,7 +239,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex_face_orientations)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternI1 
-         = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = 
        Teuchos::rcp(new panzer_stk::STKConnManager<int>(buildHexMesh(Comm,2,2,2,1,1,1)));

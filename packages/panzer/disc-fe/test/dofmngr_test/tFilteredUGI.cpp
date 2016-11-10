@@ -57,7 +57,7 @@
 
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
-#include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 
@@ -85,7 +85,7 @@ template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   Teuchos::RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+  Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
    Teuchos::RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -115,7 +115,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);
@@ -209,7 +209,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);
@@ -425,7 +425,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
    dofManager->addField("block_0","Ux",patternC1);
