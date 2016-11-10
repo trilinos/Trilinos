@@ -60,8 +60,8 @@
 #include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
-#include "Intrepid_Basis.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_Basis.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include <Xpetra_Import.hpp>
 
@@ -143,11 +143,11 @@ namespace MueLu {
   private:
     //! @name Internal Utilities
     //@{
-    void GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToNode, 
+    void GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode, 
 						 const std::vector<bool> & hi_nodeIsOwned,
-						 const Intrepid:: FieldContainer<Scalar> hi_DofCoords,
+						 const Intrepid2:: FieldContainer<Scalar> hi_DofCoords,
 						 const std::vector<size_t> &lo_node_in_hi,
-						 const Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > &lo_Basis,
+						 const Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > &lo_Basis,
 						 const std::vector<LocalOrdinal> & hi_to_lo_map,
 						 const Teuchos::RCP<const Map> & lo_colMap, 
 						 const Teuchos::RCP<const Map> & lo_domainMap, 
@@ -162,20 +162,20 @@ namespace MueLu {
   /* Utility functions for use with Intrepid */
   namespace MueLuIntrepid {
     template<class Scalar>
-    Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > >  BasisFactory(const std::string & name);
+    Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name);
 
     template <class Scalar, class ArrayScalar>
-    void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid::Basis<Scalar,ArrayScalar> > &hi_basis,
-			       const Teuchos::RCP<Intrepid::Basis<Scalar,ArrayScalar> > &lo_basis,
+    void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
+			       const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
 			       std::vector<size_t> & lo_node_in_hi,
 			       ArrayScalar & hi_DofCoords);
 
 
     template <class LocalOrdinal>
-    void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToNode,
+    void BuildLoElemToNode(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode,
 			   const std::vector<bool> & hi_nodeIsOwned,
 			   const std::vector<size_t> & lo_node_in_hi,
-			   Intrepid::FieldContainer<LocalOrdinal> & lo_elemToNode,
+			   Intrepid2::FieldContainer<LocalOrdinal> & lo_elemToNode,
 			   std::vector<bool> & lo_nodeIsOwned,
 			   std::vector<LocalOrdinal> & hi_to_lo_map,
 			   int & lo_numOwnedNodes);

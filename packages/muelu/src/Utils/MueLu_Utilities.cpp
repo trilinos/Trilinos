@@ -79,7 +79,7 @@ namespace MueLu {
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
           if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates"
-#ifdef HAVE_MUELU_INTREPID // For the IntrepidPCoarsenFactory
+#ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
 	      || name == "ipc: element to node map"
 #endif
 	      ) {

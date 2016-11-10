@@ -67,15 +67,15 @@
 //Intrepid_HGRAD_HEX_C2_FEM.hpp
 //Intrepid_HGRAD_HEX_Cn_FEM.hpp
 //Intrepid_HGRAD_HEX_I2_FEM.hpp
-#include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
-#include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 //Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp
 //Intrepid_HGRAD_POLY_C1_FEM.hpp
 //Intrepid_HGRAD_PYR_C1_FEM.hpp
 //Intrepid_HGRAD_PYR_I2_FEM.hpp
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 //#include Intrepid_HGRAD_QUAD_C2_FEM.hpp
-#include "Intrepid_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 //Intrepid_HGRAD_TET_C1_FEM.hpp
 //Intrepid_HGRAD_TET_C2_FEM.hpp
 //Intrepid_HGRAD_TET_Cn_FEM.hpp
@@ -101,7 +101,7 @@ inline std::string tolower(const std::string & str) {
 }
 
 template<class Scalar>
-Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > >  BasisFactory(const std::string & name) {
+Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name) {
     using std::string;
     using Teuchos::rcp;
     string myerror("IntrepidBasisFactory: cannot parse string name '"+name+"'");
@@ -134,12 +134,12 @@ Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > >  BasisF
 
     // FIXME LATER: Allow for alternative point types for Kirby elements
     if(deriv=="hgrad" && el=="quad" && poly=="c"){
-      if(degree==1) return rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Scalar,Intrepid::FieldContainer<Scalar> >());
-      else          return rcp(new Intrepid::Basis_HGRAD_QUAD_Cn_FEM<Scalar,Intrepid::FieldContainer<Scalar> >(degree,Intrepid::POINTTYPE_EQUISPACED));
+      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Scalar,Intrepid2::FieldContainer<Scalar> >());
+      else          return rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<Scalar,Intrepid2::FieldContainer<Scalar> >(degree,Intrepid2::POINTTYPE_EQUISPACED));
     }
     else if(deriv=="hgrad" && el=="line" && poly=="c"){
-      if(degree==1) return rcp(new Intrepid::Basis_HGRAD_LINE_C1_FEM<Scalar,Intrepid::FieldContainer<Scalar> >());
-      else          return rcp(new Intrepid::Basis_HGRAD_LINE_Cn_FEM<Scalar,Intrepid::FieldContainer<Scalar> >(degree,Intrepid::POINTTYPE_EQUISPACED));
+      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_LINE_C1_FEM<Scalar,Intrepid2::FieldContainer<Scalar> >());
+      else          return rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Scalar,Intrepid2::FieldContainer<Scalar> >(degree,Intrepid2::POINTTYPE_EQUISPACED));
     }
 
     // Error out
@@ -149,24 +149,24 @@ Teuchos::RCP<Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > >  BasisF
 
 /*********************************************************************************************************/
 template <class Scalar, class ArrayScalar>
-void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid::Basis<Scalar,ArrayScalar> > &hi_basis,
-			   const Teuchos::RCP<Intrepid::Basis<Scalar,ArrayScalar> > &lo_basis,
+void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
+			   const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
 			   std::vector<size_t> & lo_node_in_hi,
 			   ArrayScalar & hi_DofCoords) {
   
   // Figure out which unknowns in hi_basis correspond to nodes on lo_basis. This varies by element type.
   size_t degree         = hi_basis->getDegree();
   lo_node_in_hi.resize(0);
-  RCP<Intrepid::DofCoordsInterface<ArrayScalar> > hi_dci;
-  if(!rcp_dynamic_cast<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar> >(hi_basis).is_null()) {
+  RCP<Intrepid2::DofCoordsInterface<ArrayScalar> > hi_dci;
+  if(!rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar> >(hi_basis).is_null()) {
     // HGRAD QUAD Cn: Numbering as per the Kirby convention (straight across, bottom to top) 
     lo_node_in_hi.insert(lo_node_in_hi.end(),{0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)});
-    hi_dci = rcp_dynamic_cast<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar> >(hi_basis);
+    hi_dci = rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar> >(hi_basis);
   }
-  else if(!rcp_dynamic_cast<Intrepid::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> >(hi_basis).is_null()) {
+  else if(!rcp_dynamic_cast<Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> >(hi_basis).is_null()) {
     // HGRAD LINE Cn: Numbering as per the Kirby convention (straight across) 
     lo_node_in_hi.insert(lo_node_in_hi.end(),{0,degree});
-    hi_dci = rcp_dynamic_cast<Intrepid::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> >(hi_basis);
+    hi_dci = rcp_dynamic_cast<Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> >(hi_basis);
   } 
   else
     throw std::runtime_error("IntrepidPCoarsenFactory: Unknown element type");
@@ -179,10 +179,10 @@ void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid::Basis<Scalar,ArrayScalar
 
 /*********************************************************************************************************/
 template <class LocalOrdinal>
-void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToNode,
+void BuildLoElemToNode(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode,
 		       const std::vector<bool> & hi_nodeIsOwned,
 		       const std::vector<size_t> & lo_node_in_hi,
-		       Intrepid::FieldContainer<LocalOrdinal> & lo_elemToNode,
+		       Intrepid2::FieldContainer<LocalOrdinal> & lo_elemToNode,
 		       std::vector<bool> & lo_nodeIsOwned,
 		       std::vector<LocalOrdinal> & hi_to_lo_map,
 		       int & lo_numOwnedNodes) {
@@ -291,22 +291,22 @@ void BuildLoElemToNode(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToN
 /*********************************************************************************************************/
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid::FieldContainer<LocalOrdinal> & hi_elemToNode, 
+void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode, 
 														 const std::vector<bool> & hi_nodeIsOwned,
-														 const Intrepid:: FieldContainer<Scalar> hi_DofCoords,
+														 const Intrepid2:: FieldContainer<Scalar> hi_DofCoords,
 														 const std::vector<size_t> &lo_node_in_hi,
-														 const Intrepid::Basis<Scalar,Intrepid::FieldContainer<Scalar> > &lo_basis,
+														 const Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > &lo_basis,
 														 const std::vector<LocalOrdinal> & hi_to_lo_map,
 														 const Teuchos::RCP<const Map> & lo_colMap, 
 														 const Teuchos::RCP<const Map> & lo_domainMap, 
 														 const Teuchos::RCP<const Map> & hi_map,
 														 Teuchos::RCP<Matrix>& P) const{
-  typedef Intrepid::FieldContainer<SC> FC;
+  typedef Intrepid2::FieldContainer<SC> FC;
   // Evaluate the linear basis functions at the Pn nodes
   size_t numFieldsHi = hi_elemToNode.dimension(1);
   size_t numFieldsLo = lo_basis.getCardinality();
   FC LoValues_at_HiDofs(numFieldsLo,numFieldsHi);
-  lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid::OPERATOR_VALUE);
+  lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
   SC effective_zero = Teuchos::ScalarTraits<SClo>::eps();
@@ -379,9 +379,9 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     std::string levelIDs = toString(coarseLevel.GetLevelID());
 
     const std::string prefix = "MueLu::IntrepidPCoarsenFactory(" + levelIDs + "): ";
-    typedef Intrepid::FieldContainer<SC> FC;
-    typedef Intrepid::FieldContainer<LO> FCi;
-    typedef Intrepid::Basis<SC,FC> Basis;
+    typedef Intrepid2::FieldContainer<SC> FC;
+    typedef Intrepid2::FieldContainer<LO> FCi;
+    typedef Intrepid2::Basis<SC,FC> Basis;
 
     GO go_invalid = Teuchos::OrdinalTraits<GO>::invalid();
     LO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();

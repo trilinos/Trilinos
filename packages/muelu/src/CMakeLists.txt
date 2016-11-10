@@ -57,7 +57,7 @@ if (${PACKAGE_NAME}_ENABLE_AmgX)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
 ENDIF()
 
-if (${PACKAGE_NAME}_ENABLE_Intrepid)
+if (${PACKAGE_NAME}_ENABLE_Intrepid2)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
 ENDIF()
 
@@ -398,7 +398,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Utils NOSIERRABJAM)
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
 ENDIF()
-if (${PACKAGE_NAME}_ENABLE_Intrepid)
+if (${PACKAGE_NAME}_ENABLE_Intrepid2)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/PCoarsen NOSIERRABJAM)
 ENDIF()
 
@@ -449,6 +449,8 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

@@ -113,8 +113,10 @@
 #include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
-#ifdef HAVE_MUELU_INTREPID
+#ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
+#else
+#error "OUCHIE!!"
 #endif
 
 namespace MueLu {
@@ -437,7 +439,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use matlab for multigrid algorithm - MueLu was not configured with MATLAB support.");
 #endif
-#ifndef HAVE_MUELU_INTREPID
+#ifndef HAVE_MUELU_INTREPID2
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
         "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
 #endif
@@ -787,7 +789,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
         "Cannot use MATLAB prolongator factory - MueLu was not configured with MATLAB support.");
 #endif
-#ifndef HAVE_MUELU_INTREPID
+#ifndef HAVE_MUELU_INTREPID2
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pcoarsen", Exceptions::RuntimeError,
         "Cannot use IntrepidPCoarsen prolongator factory - MueLu was not configured with Intrepid support.");
 #endif
@@ -877,7 +879,7 @@ namespace MueLu {
       manager.SetFactory("P", P);
     }
 #endif
-#ifdef HAVE_MUELU_INTREPID
+#ifdef HAVE_MUELU_INTREPID2
     else if(multigridAlgo == "pcoarsen") {
       // Intrepid P-Coarsening
       RCP<IntrepidPCoarsenFactory> P = rcp(new IntrepidPCoarsenFactory());

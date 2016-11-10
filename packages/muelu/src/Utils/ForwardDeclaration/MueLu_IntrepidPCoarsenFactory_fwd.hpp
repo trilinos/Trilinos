@@ -47,7 +47,7 @@
 #define MUELU_INTREPIDPCOARSENFACTORY_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_INTREPID
+#ifdef HAVE_MUELU_INTREPID2
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

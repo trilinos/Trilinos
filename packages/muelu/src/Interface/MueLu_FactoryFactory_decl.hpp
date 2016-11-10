@@ -152,7 +152,7 @@
 #include "../matlab/src/MueLu_MatlabSmoother_def.hpp"
 #endif
 
-#ifdef HAVE_MUELU_INTREPID
+#ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
 #endif
 
@@ -305,7 +305,7 @@ namespace MueLu {
       if (factoryName == "MatlabSmoother")                  return BuildMatlabSmoother                  (paramList, factoryMapIn, factoryManagersIn);
 #endif
 
-#ifndef HAVE_MUELU_INTREPID
+#ifndef HAVE_MUELU_INTREPID2
       if (factoryName == "IntrepidPCoarsenFactory")           return Build2<IntrepidPCoarsenFactory>        (paramList, factoryMapIn, factoryManagersIn);
 #endif
 

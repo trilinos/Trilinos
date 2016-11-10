@@ -98,7 +98,7 @@
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 #endif
 
-#ifdef HAVE_MUELU_INTREPID
+#ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"
 #endif
 

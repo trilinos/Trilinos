@@ -56,8 +56,8 @@
 #include "MueLu_FactoryManager.hpp"
 
 //TODO/FIXME: DeclareInput(, **this**) cannot be used here
-#ifdef HAVE_MUELU_INTREPID
-#include "Intrepid_FieldContainer.hpp"
+#ifdef HAVE_MUELU_INTREPID2
+#include "Intrepid2_FieldContainer.hpp"
 #endif
 
 namespace MueLu {
@@ -116,11 +116,11 @@ namespace MueLu {
             level->Set(name, Teuchos::getValue<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           }
-#ifdef HAVE_MUELU_INTREPID
+#ifdef HAVE_MUELU_INTREPID2
 	  else if (name == "ipc: element to node map")
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, Teuchos::getValue<RCP< Intrepid::FieldContainer<LocalOrdinal> > >(it2->second), NoFactory::get());
+            level->Set(name, Teuchos::getValue<RCP< Intrepid2::FieldContainer<LocalOrdinal> > >(it2->second), NoFactory::get());
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
                                                         // One should do this only in very special cases
           }

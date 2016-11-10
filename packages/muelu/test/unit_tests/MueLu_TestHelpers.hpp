@@ -84,8 +84,8 @@
 #include "Galeri_XpetraMatrixTypes.hpp"
 
 //Intrepid
-#ifdef HAVE_MUELU_INTREPID
-#include "Intrepid_FieldContainer.hpp"
+#ifdef HAVE_MUELU_INTREPID2
+#include "Intrepid2_FieldContainer.hpp"
 #endif
 
 #include "MueLu_NoFactory.hpp"
@@ -335,9 +335,8 @@ namespace MueLuTests {
         return A;
       } // Build2DPoisson()
 
-#ifdef HAVE_MUELU_INTREPID
-      
-      static RCP<Matrix> Build1DPseudoPoissonHigherOrder(GO nx, int degree,Intrepid::FieldContainer<LocalOrdinal> & elem_to_node,
+#ifdef HAVE_MUELU_INTREPID2      
+      static RCP<Matrix> Build1DPseudoPoissonHigherOrder(GO nx, int degree,Intrepid2::FieldContainer<LocalOrdinal> & elem_to_node,
 							 Xpetra::UnderlyingLib lib=Xpetra::NotSpecified){
 	GO go_invalid=Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 	LO lo_invalid=Teuchos::OrdinalTraits<LO>::invalid();

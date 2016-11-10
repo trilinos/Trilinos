@@ -67,9 +67,9 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_CreateXpetraPreconditioner.hpp"
 
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_Cn_FEM.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 
 namespace MueLuTests {
@@ -80,7 +80,7 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef Intrepid::FieldContainer<SC> FC;
+    typedef Intrepid2::FieldContainer<SC> FC;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -88,10 +88,10 @@ namespace MueLuTests {
 
     {
       // QUAD
-      RCP<Intrepid::Basis_HGRAD_QUAD_C1_FEM<SC,FC> > lo = rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<SC,FC>());
-      RCP<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> > hi;
+      RCP<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC> > lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC>());
+      RCP<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> > hi;
       for(int i=0;i<max_degree; i++) {
-	hi = rcp(new Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC>(i,Intrepid::POINTTYPE_EQUISPACED));
+	hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC>(i,Intrepid2::POINTTYPE_EQUISPACED));
 
 	std::vector<size_t> lo_node_in_hi;
 	FC hi_dofCoords;
@@ -110,14 +110,14 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef Intrepid::FieldContainer<Scalar> FC;
+    typedef Intrepid2::FieldContainer<Scalar> FC;
 
     out << "version: " << MueLu::Version() << std::endl;
     
     // QUAD
-    {bool test= rcp_dynamic_cast<Intrepid::Basis_HGRAD_QUAD_C1_FEM<SC,FC> >(MueLu::MueLuIntrepid::BasisFactory<SC>("hgrad_quad_c1")) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> >(MueLu::MueLuIntrepid::BasisFactory<SC>("hgrad_quad_c2")) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> >(MueLu::MueLuIntrepid::BasisFactory<SC>("hgrad_quad_c3")) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC> >(MueLu::MueLuIntrepid::BasisFactory<SC>("hgrad_quad_c1")) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> >(MueLu::MueLuIntrepid::BasisFactory<SC>("hgrad_quad_c2")) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> >(MueLu::MueLuIntrepid::BasisFactory<SC>("hgrad_quad_c3")) !=Teuchos::null;TEST_EQUALITY(test,true);}
 
   }
 
@@ -128,8 +128,8 @@ namespace MueLuTests {
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef Intrepid::FieldContainer<SC> FC;
-    typedef Intrepid::FieldContainer<LO> FCi;
+    typedef Intrepid2::FieldContainer<SC> FC;
+    typedef Intrepid2::FieldContainer<LO> FCi;
 
     out << "version: " << MueLu::Version() << std::endl;
     int max_degree=5;
@@ -137,10 +137,10 @@ namespace MueLuTests {
     {
       //QUAD
       // A one element test with Kirby-numbered nodes where the top edge is not owned      
-      RCP<Intrepid::Basis_HGRAD_QUAD_C1_FEM<SC,FC> > lo = rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<SC,FC>());
-      RCP<Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> > hi;
+      RCP<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC> > lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC>());
+      RCP<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> > hi;
       for(int degree=2; degree < max_degree; degree++) {
-	hi = rcp(new Intrepid::Basis_HGRAD_QUAD_Cn_FEM<SC,FC>(degree,Intrepid::POINTTYPE_EQUISPACED));
+	hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
 	int Nn = (degree+1)*(degree+1);
 
 	FCi hi_e2n(1,Nn), lo_e2n;
@@ -255,7 +255,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     coarseLevel.SetFactoryManager(Teuchos::null);
 
     // Build a pseudo-poisson test matrix
-    Intrepid::FieldContainer<LocalOrdinal> elem_to_node;
+    Intrepid2::FieldContainer<LocalOrdinal> elem_to_node;
     RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
     fineLevel.Set("A",A);
     fineLevel.Set("ipc: element to node map",rcp(&elem_to_node,false));
@@ -419,7 +419,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
 
     GO num_nodes = 972;
     // Build a pseudo-poisson test matrix
-    Intrepid::FieldContainer<LocalOrdinal> elem_to_node;
+    Intrepid2::FieldContainer<LocalOrdinal> elem_to_node;
     RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
 
     // Normalized RHS
@@ -433,7 +433,6 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-
 
     // ParameterList
     ParameterList Params, level0;
@@ -473,7 +472,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
 
     GO num_nodes = 972;
     // Build a pseudo-poisson test matrix
-    Intrepid::FieldContainer<LocalOrdinal> elem_to_node;
+    Intrepid2::FieldContainer<LocalOrdinal> elem_to_node;
     RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
 
     // Normalized RHS
@@ -487,7 +486,6 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-
 
     // ParameterList
     ParameterList Params, level0;
@@ -527,7 +525,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
 
     GO num_nodes = 972;
     // Build a pseudo-poisson test matrix
-    Intrepid::FieldContainer<LocalOrdinal> elem_to_node;
+    Intrepid2::FieldContainer<LocalOrdinal> elem_to_node;
     RCP<Matrix> A = test_factory::Build1DPseudoPoissonHigherOrder(num_nodes,degree,elem_to_node,lib);
 
     // Normalized RHS
@@ -541,7 +539,6 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     // Zero initial guess
     RCP<MultiVector> X1   = MultiVectorFactory::Build(A->getRowMap(), 1);
     X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
-
 
     // ParameterList
     ParameterList Params, level0;
