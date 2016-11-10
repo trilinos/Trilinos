@@ -47,6 +47,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
   APPEND_SET(SOURCES
     epetra/MueLu_EpetraOperator.cpp
+    epetra/MueLu_CreateEpetraPreconditioner.cpp
     )
 
 ENDIF()
