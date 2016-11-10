@@ -56,8 +56,6 @@
 #include "Panzer_GatherSolution_Input.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
-#include "Thyra_VectorBase.hpp"
-
 class Epetra_Vector;
 class Epetra_CrsMatrix;
 
