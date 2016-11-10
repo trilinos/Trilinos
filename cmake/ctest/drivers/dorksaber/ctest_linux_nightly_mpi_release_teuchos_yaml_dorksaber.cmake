@@ -78,8 +78,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DMATLAB_ROOT:STRING=/nfsshare/matlab/"
   "-DMATLAB_ARCH:STRING=glnxa64"
   "-DTPL_ENABLE_yaml-cpp:BOOL=ON "
-  "-Dyaml-cpp_INCLUDE_DIRS:PATH=/home/csiefer/yaml-cpp-release-0.5.3/build/install/include" \
-  "-Dyaml-cpp_LIBRARY_DIRS:PATH=/home/csiefer/yaml-cpp-release-0.5.3/build/instal/lib" \
+  "-Dyaml-cpp_INCLUDE_DIRS:PATH=/home/csiefer/yaml-cpp-release-0.5.3/build/install/include"
+  "-Dyaml-cpp_LIBRARY_DIRS:PATH=/home/csiefer/yaml-cpp-release-0.5.3/build/instal/lib"
   "-DCMAKE_CXX_FLAGS:STRING='-g'"
   "-DCMAKE_C_FLAGS:STRING='-g'"
   "-DCMAKE_Fortran_FLAGS:STRING='-g'"
