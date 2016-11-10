@@ -62,9 +62,41 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+#define vectorLength 4
+
 namespace Intrepid2 {
   
   namespace Test {
+
+    // template<typename ValueType>
+    // struct Simd {
+    //   ValueType data[vectorLength];
+
+    //   load(const ValueType *ptr) {
+    //     for (ordinal_type i=0;i<vectorLength;++i)
+    //       *data++ = *ptr++;
+    //   }
+      
+    //   store(const ValueType *ptr) {
+    //     for (ordinal_type i=0;i<vectorLength;++i)
+    //       *ptr++ = *data++;
+    //   }
+
+    //   set(const ValueType val) {
+    //     for (ordinal_type i=0;i<vectorLength;++i)
+    //       *data++ = val;
+    //   }
+      
+    //   KOKKOS_FORCE_INLINE_FUNCTION
+    //   Simd(const ValueType *ptr) {
+    //     load(ptr);
+    //   }
+      
+    //   KOKKOS_FORCE_INLINE_FUNCTION
+    //   ValueType& operator[](ordinal_type i) const {
+    //     return data[i];
+    //   }
+    // };
 
     template<typename ValueType,
              typename DeviceSpaceType>
@@ -175,6 +207,125 @@ namespace Intrepid2 {
           apply(cl, pt);
       }
     };
+
+    // template<typename ValueType,
+    //          typename DeviceSpaceType>
+    // struct F_hgrad_eval_vector {
+    //   typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> ViewType;
+    //   typedef typename ViewType::const_type constViewType;
+    //   typedef ValueType value_type;
+
+    //   /**/  ViewType _weighted_basis_values;
+    //   /**/  ViewType _weighted_basis_grads;
+    //   const ViewType _grads;
+    //   const ViewType _workset;
+    //   const ViewType _weights;
+    //   const ViewType _basis_values;
+    //   const ViewType _basis_grads;
+
+    //   KOKKOS_INLINE_FUNCTION
+    //   F_hgrad_eval(ViewType weighted_basis_values_,
+    //                ViewType weighted_basis_grads_,
+    //                const ViewType grads_, // gradient for jacobian
+    //                const ViewType workset_, // workset input
+    //                const ViewType weights_, // weights
+    //                const ViewType basis_values_, // reference values
+    //                const ViewType basis_grads_) // reference grads
+    //     : _weighted_basis_values(weighted_basis_values_),
+    //       _weighted_basis_grads(weighted_basis_grads_),
+    //       _grads(grads_),
+    //       _workset(workset_),
+    //       _weights(weights_),
+    //       _basis_values(basis_values_),
+    //       _basis_grads(basis_grads_) {}
+
+    //   KOKKOS_INLINE_FUNCTION
+    //   void apply(const ordinal_type cl,
+    //              const ordinal_type pt) const {
+    //     value_type buf[9 + 9][vectorLength];
+
+    //     const auto grad = Kokkos::subview(_grads,       Kokkos::ALL(), pt, Kokkos::ALL());
+    //     const auto dofs = Kokkos::subview(_workset, cl, Kokkos::ALL(),     Kokkos::ALL());
+
+    //     const ordinal_type card = dofs.dimension(0);
+    //     const ordinal_type dim = dofs.dimension(1);
+        
+    //     // temporary values
+    //     Kokkos::View<SIMD**, Kokkos::Impl::ActiveExecutionMemorySpace> 
+    //       jac    (&buf[0], dim, dim),
+    //       jac_inv(&buf[9], dim, dim);
+        
+    //     // setJacobian  F_setJacobian::apply(jac, dofs, grads);
+    //     {
+    //       for (ordinal_type i=0;i<dim;++i)
+    //         for (ordinal_type j=0;j<dim;++j) {
+    //           jac(i,j).set(0);
+    //           for (ordinal_type bf=0;bf<card;++bf) {
+    //             SIMD d(&dofs(bf,i)), g(&grad(bf,j));
+    //             j += d*g;
+    //           }
+    //         }
+    //     }
+        
+    //     // setJacobianDet   F_setJacobianDet::apply(det, jac);
+    //     // setJacobianInv  F_setJacobianInv::apply(jac_inv, jac);
+    //     const SIMD det = ( jac(0,0) * jac(1,1) -
+    //                        jac(0,1) * jac(1,0) );
+        
+    //     {
+    //       jac_inv(0,0) =   jac(1,1)/det;
+    //       jac_inv(1,1) =   jac(0,0)/det;
+          
+    //       jac_inv(1,0) = - jac(1,0)/det;
+    //       jac_inv(0,1) = - jac(0,1)/det;
+    //     }
+        
+    //     // computeCellMeasure
+    //     {
+    //       SIMD w;
+    //       w.set(_weights(pt));
+    //       const SIMD cell_measure = det*w;
+    //     }
+
+    //     // multiplyMeasure
+    //     {
+    //       SIMD v;
+    //       for (ordinal_type bf=0;bf<card;++bf) {
+    //         v.set(_basis_values(bf, pt));
+    //         _weighted_basis_values(cl, bf, pt) = cell_measure*v;
+    //       }
+    //     }
+
+    //     // HGRADtransformGRAD
+    //     auto weighted_grad = Kokkos::subview(_weighted_basis_grads, cl, Kokkos::ALL(), pt, Kokkos::ALL());
+    //     const auto basis_grad = Kokkos::subview(_basis_grads, Kokkos::ALL(), pt, Kokkos::ALL());
+        
+    //     {
+    //       const ordinal_type card = basis_grad.dimension(0);
+    //       const ordinal_type dim = basis_grad.dimension(1);
+    //       for (ordinal_type bf=0;bf<card;++bf)
+    //         for (ordinal_type i=0;i<dim;++i) {
+    //           weighted_grad(bf, i).set(0);
+    //           for (ordinal_type j=0;j<dim;++j) 
+    //             weighted_grad(bf, i) += jac_inv(i,j)*basis_grad(bf, j);
+    //           weighted_grad(bf, i) *= cell_measure;
+    //         }
+    //     }
+    //   }
+
+    //   KOKKOS_INLINE_FUNCTION
+    //   void operator()(const ordinal_type cl, 
+    //                   const ordinal_type pt) const {
+    //     apply(cl, pt);
+    //   }
+
+    //   KOKKOS_INLINE_FUNCTION
+    //   void operator()(const ordinal_type cl) const {
+    //     const ordinal_type npts = _basis_values.dimension(1);
+    //     for (ordinal_type pt=0;pt<npts;++pt) 
+    //       apply(cl, pt);
+    //   }
+    // };
     
     template<typename ValueType, typename DeviceSpaceType>
     int ComputeBasis_HGRAD(const ordinal_type nworkset,
@@ -212,8 +363,10 @@ namespace Intrepid2 {
       const auto cellTopo = hostBasis.getBaseCellTopology();
 
       auto cubature = DefaultCubatureFactory::create<DeviceSpaceType,ValueType,ValueType>(cellTopo, order);
+
       const ordinal_type 
         numCells = C, 
+        //numCellsVector = C/vectorLength + (C%vectorLength > 0),
         numVerts = cellTopo.getVertexCount(),
         numDofs = hostBasis.getCardinality(),
         numPoints = cubature->getNumPoints(), 
@@ -235,6 +388,16 @@ namespace Intrepid2 {
 
       auto worksetCells = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), worksetCellsHost);
       Kokkos::deep_copy(worksetCells, worksetCellsHost);
+
+      // // repack for worksetCellsHostVector
+      // Kokkos::DynRankView<SimdType,HostSpaceType> worksetCellsVectorHost("worksetCellsVectorHost", numCellsVector, numVerts, spaceDim, vectorLength);
+      // for (ordinal_type cell=0;cell<numCells;++cell) 
+      //   for (ordinal_type i=0;i<numVerts;++i)
+      //     for (ordinal_type j=0;j<spaceDim;++j) 
+      //       worksetCellsVectorHost(cell/vectorLength, i, j)[cell%vectorLength] = worksetCellsHost(cell, i, j);
+
+      // auto worksetCellsVector = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), worksetCellsVectorHost);
+      // Kokkos::deep_copy(worksetCellsVector, worksetCellsVectorHost);
 
       Kokkos::DynRankView<ValueType,DeviceSpaceType> refPoints("refPoints", numPoints, spaceDim), refWeights("refWeights", numPoints);
       cubature->getCubature(refPoints, refWeights);
@@ -311,7 +474,6 @@ namespace Intrepid2 {
 
           typedef F_hgrad_eval<ValueType,DeviceSpaceType> FunctorType;
 
-          //Kokkos::RangePolicy<DeviceSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, numCells);
           using range_policy_type = Kokkos::Experimental::MDRangePolicy
             < DeviceSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
           range_policy_type policy( {        0,         0 },
@@ -336,6 +498,44 @@ namespace Intrepid2 {
           }
 
         }
+
+        // // testing vectorization approach
+        // {          
+        //   // assume avx2
+        //   const ordinal_type numCellsVector = numCells/vectorLength + (numCells%vectorLength > 0);
+        //   Kokkos::DynRankView<ValueType,Kokkos::LayoutRight,DeviceSpaceType> 
+        //     weightedBasisValuesVector("weightedBasisValues", numCellsVector, numDofs, numPoints, vectorLength ),
+        //     weightedBasisGradsVector ("weightedBasisGrads",  numCellsVector, numDofs, numPoints, spaceDim, vectorLength);
+
+        //   typedef CellTools<DeviceSpaceType> cts;
+        //   typedef FunctionSpaceTools<DeviceSpaceType> fts;
+
+        //   typedef F_hgrad_eval_vector<ValueType,DeviceSpaceType> FunctorType;
+
+        //   using range_policy_type = Kokkos::Experimental::MDRangePolicy
+        //     < DeviceSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+        //   range_policy_type policy( {              0,         0 },
+        //                             { numCellsVector, numPoints } );
+
+        //   FunctorType functor(weightedBasisValuesVector,
+        //                       weightedBasisGradsVector,
+        //                       refBasisGrads,
+        //                       worksetCellsVector,
+        //                       refWeights,
+        //                       refBasisValues,
+        //                       refBasisGrads);
+          
+        //   for (ordinal_type iwork=ibegin;iwork<nworkset;++iwork) {
+        //     DeviceSpaceType::fence();
+        //     timer.reset();
+            
+        //     Kokkos::Experimental::md_parallel_for(policy, functor);
+
+        //     DeviceSpaceType::fence();
+        //     t_vertical += (iwork >= 0)*timer.seconds();
+        //   }
+
+        // }
 
       } catch (std::exception err) {
         *verboseStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
