@@ -145,21 +145,21 @@ namespace Intrepid2 {
         for (ordinal_type bf=0;bf<card;++bf)        
           _weighted_basis_values(cl, bf, pt) = cell_measure*_basis_values(bf, pt);
         
-        // // HGRADtransformGRAD
-        // auto weighted_grad = Kokkos::subview(_weighted_basis_grads, cl, Kokkos::ALL(), pt, Kokkos::ALL());
-        // const auto basis_grad = Kokkos::subview(_basis_grads, Kokkos::ALL(), pt, Kokkos::ALL());
+        // HGRADtransformGRAD
+        auto weighted_grad = Kokkos::subview(_weighted_basis_grads, cl, Kokkos::ALL(), pt, Kokkos::ALL());
+        const auto basis_grad = Kokkos::subview(_basis_grads, Kokkos::ALL(), pt, Kokkos::ALL());
         
-        // {
-        //   const ordinal_type card = basis_grad.dimension(0);
-        //   const ordinal_type dim = basis_grad.dimension(1);
-        //   for (ordinal_type bf=0;bf<card;++bf)
-        //     for (ordinal_type i=0;i<dim;++i) {
-        //       weighted_grad(bf, i) = 0;
-        //       for (ordinal_type j=0;j<dim;++j) 
-        //         weighted_grad(bf, i) += jac_inv(i,j)*basis_grad(bf, j);
-        //       weighted_grad(bf, i) *= cell_measure;
-        //     }
-        // }
+        {
+          const ordinal_type card = basis_grad.dimension(0);
+          const ordinal_type dim = basis_grad.dimension(1);
+          for (ordinal_type bf=0;bf<card;++bf)
+            for (ordinal_type i=0;i<dim;++i) {
+              weighted_grad(bf, i) = 0;
+              for (ordinal_type j=0;j<dim;++j) 
+                weighted_grad(bf, i) += jac_inv(i,j)*basis_grad(bf, j);
+              weighted_grad(bf, i) *= cell_measure;
+            }
+        }
       }
 
       KOKKOS_INLINE_FUNCTION
