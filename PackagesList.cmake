@@ -58,7 +58,7 @@
 # Define the Trilinos packages
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
-  Gtest                 commonTools/gtest                 ST
+  Gtest                 commonTools/gtest                 PT
   ThreadPool            packages/ThreadPool               PT # Depends on Pthreads
   Kokkos                packages/kokkos                   PT
   Teuchos               packages/teuchos                  PT
@@ -79,51 +79,51 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Triutils              packages/triutils                 PT
   Tpetra                packages/tpetra                   PT
   EpetraExt             packages/epetraext                PT
-  Domi                  packages/domi                     EX
+  Domi                  packages/domi                     PT
   Thyra                 packages/thyra                    PT
   Xpetra                packages/xpetra                   PT
   OptiPack              packages/optipack                 PT
   Isorropia             packages/isorropia                PT
-  Pliris                packages/pliris                   PT
+  Pliris                packages/pliris                   ST
   Claps                 packages/claps                    EX
   AztecOO               packages/aztecoo                  PT
   Galeri                packages/galeri                   PT
   Amesos                packages/amesos                   PT
   Pamgen                packages/pamgen                   PT
-  Zoltan2               packages/zoltan2                  ST
+  Zoltan2               packages/zoltan2                  PT
   Ifpack                packages/ifpack                   PT
   ML                    packages/ml                       PT
   Belos                 packages/belos                    PT
-  ShyLU                 packages/shylu                    ST
-  Amesos2               packages/amesos2                  ST
-  SEACAS                packages/seacas                   ST # Depends on netcdf, optionally hdf5, xdmf, pamgen
+  ShyLU                 packages/shylu                    PT
+  Amesos2               packages/amesos2                  PT
+  SEACAS                packages/seacas                   PT # Depends on netcdf, optionally hdf5, xdmf, pamgen
   Trios                 packages/trios                    EX #temporary
-  Komplex               packages/komplex                  PT
+  Komplex               packages/komplex                  ST
   Anasazi               packages/anasazi                  PT
   Ifpack2               packages/ifpack2                  PT
   Stratimikos           packages/stratimikos              PT
   FEI                   packages/fei                      PT
-  Teko                  packages/teko                     ST
+  Teko                  packages/teko                     PT
   TriKota               packages/TriKota                  ST
   Intrepid              packages/intrepid                 PT
-  Intrepid2             packages/intrepid2                ST
-  STK                   packages/stk                      ST # Depends on boost
+  Intrepid2             packages/intrepid2                PT
+  STK                   packages/stk                      PT # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     ST
   SCORECapf_stk         SCOREC/stk                        ST
   SCORECma              SCOREC/ma                         ST
   SCORECpumi            SCOREC/pumi                       ST
   SCOREC                SCOREC                            ST
-  Phalanx               packages/phalanx                  ST
+  Phalanx               packages/phalanx                  PT
   NOX                   packages/nox                      PT
-  Moertel               packages/moertel                  PT
-  MueLu                 packages/muelu                    ST
+  Moertel               packages/moertel                  ST
+  MueLu                 packages/muelu                    PT
   Rythmos               packages/rythmos                  PT
   Tempus                tempus                            ST
   MOOCHO                packages/moocho                   ST
-  Stokhos               packages/stokhos                  ST
-  ROL                   packages/rol                      ST
-  Piro                  packages/piro                     ST
-  Panzer                packages/panzer                   ST
+  Stokhos               packages/stokhos                  PT
+  ROL                   packages/rol                      PT
+  Piro                  packages/piro                     PT
+  Panzer                packages/panzer                   PT
   Sundance              packages/Sundance                 ST # Could be PT based on deps (BUG: 4669)
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
   ForTrilinos           packages/ForTrilinos              EX
@@ -131,10 +131,10 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
-  Mesquite              packages/mesquite                 PT
+  Mesquite              packages/mesquite                 ST
   MeshingGenie          packages/meshinggenie             EX
-  TrilinosCouplings     packages/trilinoscouplings        ST
-  Pike                  packages/pike                     ST
+  TrilinosCouplings     packages/trilinoscouplings        PT
+  Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST
   )
 

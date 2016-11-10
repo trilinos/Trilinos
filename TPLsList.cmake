@@ -62,7 +62,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   Thrust          "cmake/TPLs/"    ST
   Cusp            "cmake/TPLs/"    ST
   TBB             "cmake/TPLs/"    EX
-  Pthread         "cmake/TPLs/"    ST
+  Pthread         "cmake/TPLs/"    PT
   HWLOC           "cmake/TPLs/"    ST
   QTHREAD         "cmake/TPLs/"    ST
   BinUtils        "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    ST
@@ -71,13 +71,13 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/" PT
   BLAS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
   LAPACK          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
-  Boost           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   ST
+  Boost           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PT
   Scotch          "cmake/TPLs/"    ST
   OVIS            "cmake/TPLs/"    ST
   gpcd            "cmake/TPLs/"    ST
   CGNS            "cmake/TPLs/"    ST
   METIS           "cmake/TPLs/"    TS
-  ParMETIS        "cmake/TPLs/"    ST
+  ParMETIS        "cmake/TPLs/"    PT
   PuLP            "cmake/TPLs/"    EX
   TopoManager     "cmake/TPLs/"    EX
   LibTopoMap      "cmake/TPLs/"    ST
@@ -90,13 +90,13 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   ExodusII        "cmake/TPLs/"    ST
   Nemesis         "cmake/TPLs/"    ST
   XDMF            "cmake/TPLs/"    TS
-  Zlib            "cmake/TPLs/"    ST
-  HDF5            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    EX
-  Netcdf          "cmake/TPLs/"    ST
+  Zlib            "cmake/TPLs/"    PT
+  HDF5            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
+  Netcdf          "cmake/TPLs/"    PT
   y12m            "cmake/TPLs/"    ST
   SuperLUDist     "cmake/TPLs/"    ST
   SuperLUMT	  "cmake/TPLs/"	   ST
-  SuperLU         "cmake/TPLs/"    ST
+  SuperLU         "cmake/TPLs/"    PT
   Cholmod	  "cmake/TPLs/"	   EX
   UMFPACK         "cmake/TPLs/"    ST
   MA28            "cmake/TPLs/"    TS
@@ -119,7 +119,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   SPARSKIT        "cmake/TPLs/"    ST
   QT              "packages/teuchos/cmake/tpls/"    ST
   gtest           "cmake/TPLs/"    EX
-  BoostLib        "cmake/TPLs/"    ST
+  BoostLib        "cmake/TPLs/"    PT
   BoostAlbLib     "cmake/TPLs/"    ST
   OpenNURBS       "cmake/TPLs/"    EX
   Portals         "cmake/TPLs/"    ST
