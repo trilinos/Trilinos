@@ -37,8 +37,9 @@ public:
     else if (stepper == "Backward Euler")
       return rcp(new StepperBackwardEuler<Scalar>(stepperPL, model));
     else if (stepper == "RK Butcher Tableau") {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - User input RK not implemented yet!.\n");
+      return rcp(new StepperExplicitRK<Scalar>(stepperPL, model));
+      //TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        //"Error - User input RK not implemented yet!.\n");
     }
     else if (
       stepper == "RK Forward Euler" ||

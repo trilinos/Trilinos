@@ -4,6 +4,8 @@
 #include "Tempus_RKButcherTableauBuilder.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Tempus_RKButcherTableau.hpp"
+#include "Tempus_ParseRKTableau.hpp"
 
 
 namespace Tempus {
@@ -44,7 +46,19 @@ void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
   if (stepperType == "")
     stepperType = pList_->get<std::string>("Stepper Type");
 
-  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType);
+  Teuchos::ParameterList rkTableuPL = pList_->sublist("Tableau");
+
+  std::ofstream ftmp("TableauPL.txt");
+  rkTableuPL.print(ftmp);
+  ftmp.close();
+
+  if (stepperType == "RK Butcher Tableau")
+  {
+      ERK_ButcherTableau_ = parseRKTableau(rkTableuPL);
+  } else {
+      ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType);
+  }
+
   TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
     std::logic_error,
        "Error - StepperExplicitRK received an implicit Butcher Tableau!\n"
