@@ -5,7 +5,7 @@ Trilinos defines a number of high-level array-like objects that store
 contiguous, homogenous data.  Nevertheless, there are instances when
 Trilinos objects pass low-level C-arrays as input or return arguments.
 
-SWIG does not handle this case automatically in th emanner we would
+SWIG does not handle this case automatically in the manner we would
 like.  However, PyTrilinos has adopted a set of interface conventions
 for dealing with them and simple methods for achieving those
 interfaces.
