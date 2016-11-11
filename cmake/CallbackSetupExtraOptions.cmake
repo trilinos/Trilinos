@@ -127,6 +127,9 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     TRIL_SET_BOOL_CACHE_VAR_FOR_CI(TPL_ENABLE_Netcdf ON)
     TRIL_SET_BOOL_CACHE_VAR_FOR_CI(TPL_ENABLE_SuperLU ON)
 
+    # Disable long-failing Pir test until it can be fixed (#826)
+    SET(Piro_EpetraSolver_MPI_4_DISABLE ON)
+
   ENDIF()
 
   # NOTE: Above, the cache var Trilinos_ENABLE_CI_TEST_MODE and the above code
