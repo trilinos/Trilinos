@@ -377,6 +377,26 @@ TEUCHOS_UNIT_TEST( MpiTypeTraits, CompareWithRawMpi )
 
   TEST_ASSERT( mpiDatatypeIsSame (dt_float, MPI_FLOAT) );
   TEST_ASSERT( mpiDatatypeIsSame (dt_double, MPI_DOUBLE) );
+
+  TEST_ASSERT( MpiTypeTraits<char>::isSpecialized );
+  TEST_ASSERT( MpiTypeTraits<short>::isSpecialized );
+  TEST_ASSERT( MpiTypeTraits<unsigned short>::isSpecialized );
+  TEST_ASSERT( MpiTypeTraits<int>::isSpecialized );
+  TEST_ASSERT( MpiTypeTraits<unsigned int>::isSpecialized );
+  TEST_ASSERT( MpiTypeTraits<long>::isSpecialized );
+  TEST_ASSERT( MpiTypeTraits<unsigned long>::isSpecialized );
+  TEST_ASSERT( MpiTypeTraits<float>::isSpecialized );
+  TEST_ASSERT( MpiTypeTraits<double>::isSpecialized );
+
+  TEST_ASSERT( ! MpiTypeTraits<char>::needsFree );
+  TEST_ASSERT( ! MpiTypeTraits<short>::needsFree );
+  TEST_ASSERT( ! MpiTypeTraits<unsigned short>::needsFree );
+  TEST_ASSERT( ! MpiTypeTraits<int>::needsFree );
+  TEST_ASSERT( ! MpiTypeTraits<unsigned int>::needsFree );
+  TEST_ASSERT( ! MpiTypeTraits<long>::needsFree );
+  TEST_ASSERT( ! MpiTypeTraits<unsigned long>::needsFree );
+  TEST_ASSERT( ! MpiTypeTraits<float>::needsFree );
+  TEST_ASSERT( ! MpiTypeTraits<double>::needsFree );
 }
 
 #endif // MPI_VERSION >= 2
