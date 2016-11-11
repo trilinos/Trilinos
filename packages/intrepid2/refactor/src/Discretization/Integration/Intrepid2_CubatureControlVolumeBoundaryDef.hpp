@@ -234,7 +234,7 @@ namespace Intrepid2{
     Kokkos::deep_copy(weights, spaceDim == 2 ? 2.0 : 4.0);
 
     tempPointViewType scratch("CubatureControlVolumeBoundary::scratch",
-                              numCells*numSubcvPoints*spaceDim);
+                              numCells*numSubcvPoints*spaceDim*spaceDim);
 
     const ordinal_type numPrimarySideNodes = primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
     for (ordinal_type node=0;node<numPrimarySideNodes;++node) {

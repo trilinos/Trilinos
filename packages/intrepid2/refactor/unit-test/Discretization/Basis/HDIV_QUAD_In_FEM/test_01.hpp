@@ -166,7 +166,7 @@ namespace Intrepid2 {
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(3,0,0) );
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,0,5) );
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,0) );
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(40) );
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(numFields) );
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1) );
         }
 

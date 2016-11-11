@@ -156,7 +156,7 @@ namespace Intrepid2 {
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0) );  // #1
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,1,1) );  // #2
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(0,4,0) );  // #3
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(5)         );  // #4
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(numFields) );  // #4
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(-1)        );  // #5
         }
 

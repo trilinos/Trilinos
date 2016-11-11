@@ -163,7 +163,7 @@ namespace Intrepid2 {
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0) );
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,1,1) );
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,0,7) );
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(6) );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(numFields) );
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(-1) );
 
           // no exception; if happens, it is unexpected;

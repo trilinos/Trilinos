@@ -170,7 +170,7 @@ namespace Intrepid2 {
           // exception #5
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(0,4,1) );
           // exception #6
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(28) );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(numFields) );
           // exception #7
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(-1) );
         }

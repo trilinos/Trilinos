@@ -144,8 +144,9 @@ namespace Intrepid2 {
 
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(input.dimension(1)) != basis->getCardinality(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
-      INTREPID2_TEST_FOR_EXCEPTION( input.dimension(3) != basis->getBaseCellTopology().getDimension(), std::invalid_argument,
-                                    ">>> ERROR (OrientationTools::modifyBasisByOrientation): Space dimension of input/output does not match to topology dimension.");
+      if (input.rank() == 4)
+        INTREPID2_TEST_FOR_EXCEPTION( input.dimension(3) != basis->getBaseCellTopology().getDimension(), std::invalid_argument,
+                                      ">>> ERROR (OrientationTools::modifyBasisByOrientation): Space dimension of input/output does not match to topology dimension.");
     }
 #endif
     if (basis->requireOrientation()) {
@@ -159,7 +160,7 @@ namespace Intrepid2 {
         numCells  = output.dimension(0),
         //numBasis  = output.dimension(1),
         numPoints = output.dimension(2),
-        dimBasis  = output.dimension(3);
+        dimBasis  = output.dimension(3); //returns 1 when output.rank() < 4;
       
       const CoeffMatrixDataViewType matData = createCoeffMatrix(basis);
       const shards::CellTopology cellTopo = basis->getBaseCellTopology();
@@ -188,7 +189,7 @@ namespace Intrepid2 {
         
         // interior copy
         {
-          const ordinal_type ordIntr = tagToOrdinal(intrDim, 0, 0);
+          const ordinal_type ordIntr = (static_cast<size_type>(intrDim) < tagToOrdinal.dimension(0) ? tagToOrdinal(intrDim, 0, 0) : -1);
           if (ordIntr != -1) {
             const ordinal_type ndofIntr = ordinalToTag(ordIntr, 3);
             for (ordinal_type i=0;i<ndofIntr;++i) {
@@ -207,7 +208,7 @@ namespace Intrepid2 {
           
           // apply coeff matrix
           for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
-            const ordinal_type ordEdge = tagToOrdinal(1, edgeId, 0);
+            const ordinal_type ordEdge = (1 < tagToOrdinal.dimension(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.dimension(1) ? tagToOrdinal(1, edgeId, 0) : -1) : -1);
             
             if (ordEdge != -1) {
               const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
@@ -239,7 +240,7 @@ namespace Intrepid2 {
           
           // apply coeff matrix
           for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
-            const ordinal_type ordFace = tagToOrdinal(2, faceId, 0);
+            const ordinal_type ordFace = (2 < tagToOrdinal.dimension(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.dimension(1) ? tagToOrdinal(2, faceId, 0) : -1) : -1);
             
             if (ordFace != -1) {
               const ordinal_type ndofFace = ordinalToTag(ordFace, 3);

@@ -217,8 +217,9 @@ namespace Intrepid2 {
           const ordinal_type spaceDim  = basis.getBaseCellTopology().getDimension();
 
           
-          DynRankView cellCenter("cellCenter", spaceDim), cellVert("cellVert", spaceDim);
-          CellTools<DeviceSpaceType>::getReferenceCellCenter(cellCenter, cellVert, cells[id]);
+          DynRankView cellCenter("cellCenter", 1, spaceDim), cellVert("cellVert", spaceDim);
+          CellTools<DeviceSpaceType>::getReferenceCellCenter(Kokkos::subview(cellCenter, 0, Kokkos::ALL()),
+                                                             cellVert, cells[id]);
 
           // Check VALUE of basis functions: resize vals to rank-2 container:
           {

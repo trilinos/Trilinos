@@ -158,7 +158,7 @@ namespace Intrepid2 {
           // exception #5
           INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofOrdinal(0,6,0) );
           // exception #6
-          INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofTag(7) );
+          INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofTag(numFields) );
           // exception #7
           INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofTag(-1) );
         }

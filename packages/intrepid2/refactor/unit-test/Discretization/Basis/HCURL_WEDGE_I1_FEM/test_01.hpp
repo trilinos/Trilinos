@@ -163,7 +163,7 @@ namespace Test {
     // exception #5
       INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofOrdinal(0,4,1) );
     // exception #6
-      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofTag(10) );
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofTag(numFields) );
     // exception #7
       INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofTag(-1) );
     }

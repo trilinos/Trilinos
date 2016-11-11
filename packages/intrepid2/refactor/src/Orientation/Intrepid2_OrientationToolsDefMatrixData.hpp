@@ -524,10 +524,10 @@ template<typename SpT>
   template<typename BasisPtrType>
   typename OrientationTools<SpT>::CoeffMatrixDataViewType
   OrientationTools<SpT>::createCoeffMatrix(BasisPtrType basis) {
-#ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_EXCEPTION( !basis->requireOrientation(), std::invalid_argument,
-                                  ">>> ERROR (OrientationTools::createCoeffMatrix): basis does not require orientations." );
-#endif
+  // #ifdef HAVE_INTREPID2_DEBUG
+  //     INTREPID2_TEST_FOR_EXCEPTION( !basis->requireOrientation(), std::invalid_argument,
+  //                                   ">>> ERROR (OrientationTools::createCoeffMatrix): basis does not require orientations." );
+  // #endif
     const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
     const auto found = ortCoeffData.find(key);
 

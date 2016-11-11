@@ -158,7 +158,7 @@ namespace Intrepid2 {
          // exception #5
          INTREPID2_TEST_ERROR_EXPECTED( pyrBasis.getDofOrdinal(0,6,0) );
          // exception #6
-         INTREPID2_TEST_ERROR_EXPECTED( pyrBasis.getDofTag(7) );
+         INTREPID2_TEST_ERROR_EXPECTED( pyrBasis.getDofTag(numFields) );
          // exception #7
          INTREPID2_TEST_ERROR_EXPECTED( pyrBasis.getDofTag(-1) );
        }

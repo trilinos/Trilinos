@@ -160,7 +160,7 @@ namespace Intrepid2 {
         // exception #5
         INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofOrdinal(0,2,1) );
         // exception #6
-        INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(3) );
+        INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(numFields) );
         // exception #7
         INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(-1) );
         // exception #8
