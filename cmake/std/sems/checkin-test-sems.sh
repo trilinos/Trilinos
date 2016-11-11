@@ -50,16 +50,13 @@ source $TRILINOS_DIR_ABS/cmake/load_ci_sems_dev_env.sh
 # B) Set up the bulid configurations
 #
 
-echo "
--DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
--DTrilinos_TRACE_ADD_TEST=ON
-" > COMMON.config
-# Above, we want to allow disabling enabled downstream packages if a
-# dependency turns them off.  Also, we want to see the tracing of the tests
-# being added to help debug why a given test is being added or not.
+# Leave the COMMON.config file for the user to fil in for any strange aspects
+# to their system not coverted by SEMS (I can't imagine what that might be).
 
-# NOTE: The PT --default-builds MPI_DEBUG and SERIAL_RELEASE are already set
-# up automatically!
+# All of the options needed for the --default-builds=MPI_RELEASE_DEBUG_SHARED
+# is set in project-checkin-test-config.py.
+echo "
+" > MPI_RELEASE_DEBUG_SHARED.config
 
 echo "
 -DTPL_ENABLE_MPI=ON
@@ -119,10 +116,11 @@ fi
 #
 # -j4: Uses very few processes by default
 #
-# --ctest-timeout=180: A default 3 minute timeout
+# --ctest-timeout=180: A default 3 minute timeout. You might want to increase
+#   if you have a very slow machine.
 #
-# --disable-packages: These a packages that most Trilinos developers wil not
-#    want to test by default.
+# --disable-packages: These are packages that most Trilinos developers wil not
+#    want to test by default ever.
 #
 # --skip-case-no-email: Don't send email for skipped test cases
 #
