@@ -98,6 +98,56 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
 }
 
 void 
+setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
+                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                                   const Teuchos::ParameterList& closure_models,
+                                   const Teuchos::ParameterList& ic_block_closure_models,
+                                   const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
+                                   const Teuchos::ParameterList& user_data,
+                                   const bool write_graphviz_file,
+                                   const std::string& graphviz_file_prefix,
+                                   std::map< std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers)
+{
+  std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
+  for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr) {
+    Teuchos::RCP<panzer::PhysicsBlock> pb = *blkItr;
+    std::string blockId = pb->elementBlockID();
+
+    // build a field manager object
+    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
+          = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
+    
+    // Choose model sublist for this element block
+    std::string closure_model_name = "";
+    if (ic_block_closure_models.isSublist(blockId))
+      closure_model_name = blockId;
+    else if (ic_block_closure_models.isSublist("Default"))
+      closure_model_name = "Default";
+    else 
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Failed to find initial condition for element block \"" << blockId 
+                                                      << "\".  You must provide an initial condition for each element block or set a default!" 
+                                                      << ic_block_closure_models);
+
+    // build and register all closure models
+    pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
+     
+    // use the physics block to register evaluators
+    pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);
+
+    // build the setup data using passed in information
+    Traits::SetupData setupData;
+    setupData.worksets_ = wkstContainer.getVolumeWorksets(blockId);
+
+    fm->postRegistrationSetup(setupData);
+    phx_ic_field_managers[blockId] = fm;
+    
+    if (write_graphviz_file)
+      fm->writeGraphvizFile(graphviz_file_prefix+"_IC_"+blockId);
+  }
+}
+
+void 
 evaluateInitialCondition(WorksetContainer & wkstContainer,
                          const std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
                          Teuchos::RCP<panzer::LinearObjContainer> loc,
