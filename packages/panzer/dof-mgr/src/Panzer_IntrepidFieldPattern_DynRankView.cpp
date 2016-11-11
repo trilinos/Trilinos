@@ -49,6 +49,34 @@
 
 namespace panzer {
 
+  Intrepid2FieldPattern::
+  Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > &intrepidBasis)
+    : intrepidBasis_(intrepidBasis) {
+    const auto dofOrd = intrepidBasis_->getAllDofOrdinal(); // rank 3 view
+    const auto dofTag = intrepidBasis_->getAllDofTags(); // rank 2 view
+    
+    const int 
+      iend = dofOrd.dimension(0),
+      jend = dofOrd.dimension(1);
+    
+    subcellIndicies_.resize(iend);
+    for (int i=0;i<iend;++i) {
+      subcellIndicies_[i].resize(jend);
+      for (int j=0;j<jend;++j) {
+        const int ord = dofOrd(i, j, 0);
+        if (ord >= 0) {
+          const int ndofs = dofTag(ord, 3);
+          subcellIndicies_[i][j].resize(ndofs); 
+          for (int k=0;k<ndofs;++k) 
+            subcellIndicies_[i][j][k] = dofOrd(i, j, k);
+        } else {
+          // if ordinal does not exist empty container.
+          subcellIndicies_[i][j].clear();
+        }
+      }
+    }
+  }
+  
   int 
   Intrepid2FieldPattern::
   getSubcellCount(int dim) const
@@ -60,17 +88,11 @@ namespace panzer {
   const std::vector<int> &
   Intrepid2FieldPattern::getSubcellIndices(int dim, int cellIndex) const
   {
-    subcellIndices_.clear();
+    if (dim < subcellIndicies_.size() && 
+        cellIndex < subcellIndicies_[dim].size())
+      return subcellIndicies_[dim][cellIndex];
 
-    const int ord  = intrepidBasis_->getDofOrdinal(dim, cellIndex, 0);
-    if (ord >= 0) {
-      const int ndof = intrepidBasis_->getDofTag(ord)(3);
-      const auto tag = intrepidBasis_->getAllDofOrdinal();
-
-      for (int i=0;i<ndof;++i)
-        subcellIndices_.push_back(tag(dim, cellIndex, i));
-    }
-    return subcellIndices_;
+    return empty_;
   }
 
   void 
