@@ -55,7 +55,7 @@ namespace Intrepid2 {
 
     template<typename outputViewType,
              typename inputViewType,
-             int valRank>
+             ordinal_type valRank>
     struct F_clone {
       /**/  outputViewType _output;
       const inputViewType _input;

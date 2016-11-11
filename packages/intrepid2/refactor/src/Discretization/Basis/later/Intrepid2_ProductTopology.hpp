@@ -71,12 +71,12 @@ namespace Intrepid2 {
 	\param resultdim    [out] - dimension of resulting entity
 	\param resultentity [out] - id of resulting entity
     */    
-    static void lineProduct2d( const int dim0 ,
-			       const int entity0 ,
-			       const int dim1 ,
-			       const int entity1 ,
-			       int &resultdim ,
-			       int &resultentity )
+    static void lineProduct2d( const ordinal_type dim0 ,
+			       const ordinal_type entity0 ,
+			       const ordinal_type dim1 ,
+			       const ordinal_type entity1 ,
+			       ordinal_type &resultdim ,
+			       ordinal_type &resultentity )
     {
       // two vertices
       if (dim0 == 0 && dim1 == 0) 
@@ -169,14 +169,14 @@ namespace Intrepid2 {
 	\param resultdim    [out] - dimension of resulting entity
 	\param resultentity [out] - id of resulting entity
     */    
-    static void lineProduct3d( const int dim0 ,
-			       const int entity0 ,
-			       const int dim1 ,
-			       const int entity1 ,
-			       const int dim2 ,
-			       const int entity2 ,
-			       int &resultdim ,
-			       int &resultentity )
+    static void lineProduct3d( const ordinal_type dim0 ,
+			       const ordinal_type entity0 ,
+			       const ordinal_type dim1 ,
+			       const ordinal_type entity1 ,
+			       const ordinal_type dim2 ,
+			       const ordinal_type entity2 ,
+			       ordinal_type &resultdim ,
+			       ordinal_type &resultentity )
     {
       // on vertex
       if (dim0 == 0 && dim1 == 0 && dim2 == 0) 

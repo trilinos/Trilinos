@@ -269,18 +269,18 @@ namespace Intrepid2 {
 
   // template<class Scalar, class ArrayType>
   // void PointTools::getEquispacedLatticeTriangle( ArrayType &points ,
-  //                                                const int order ,
-  //                                                const int offset )
+  //                                                const ordinal_type order ,
+  //                                                const ordinal_type offset )
   // {
   //   TEUCHOS_TEST_FOR_EXCEPTION( order <= 0 ,
   //                       std::invalid_argument ,
   //                       ">>> ERROR (Intrepid2::PointTools::getEquispacedLatticeLine): order must be positive" );
 
   //   const Scalar h = 1.0 / order;
-  //   int cur = 0;
+  //   ordinal_type cur = 0;
 
-  //   for (int i=offset;i<=order-offset;i++) {
-  //     for (int j=offset;j<=order-i-offset;j++) {
+  //   for (ordinal_type i=offset;i<=order-offset;i++) {
+  //     for (ordinal_type j=offset;j<=order-i-offset;j++) {
   //       points(cur,0) = (Scalar)0.0 + (Scalar) j * h ;
   //       points(cur,1) = (Scalar)0.0 + (Scalar) i * h;
   //       cur++;
@@ -292,19 +292,19 @@ namespace Intrepid2 {
 
   // template<class Scalar, class ArrayType>
   // void PointTools::getEquispacedLatticeTetrahedron( ArrayType &points ,
-  //                                                   const int order ,
-  //                                                   const int offset )
+  //                                                   const ordinal_type order ,
+  //                                                   const ordinal_type offset )
   // {
   //   TEUCHOS_TEST_FOR_EXCEPTION( (order <= 0) ,
   //                       std::invalid_argument ,
   //                       ">>> ERROR (Intrepid2::PointTools::getEquispacedLatticeTetrahedron): order must be positive" );
 
   //   const Scalar h = 1.0 / order;
-  //   int cur = 0;
+  //   ordinal_type cur = 0;
 
-  //   for (int i=offset;i<=order-offset;i++) {
-  //     for (int j=offset;j<=order-i-offset;j++) {
-  //       for (int k=offset;k<=order-i-j-offset;k++) {
+  //   for (ordinal_type i=offset;i<=order-offset;i++) {
+  //     for (ordinal_type j=offset;j<=order-i-offset;j++) {
+  //       for (ordinal_type k=offset;k<=order-i-j-offset;k++) {
   //         points(cur,0) = (Scalar) k * h;
   //         points(cur,1) = (Scalar) j * h;
   //         points(cur,2) = (Scalar) i * h;
@@ -318,7 +318,7 @@ namespace Intrepid2 {
 
 
   // template<class Scalar, class ArrayType>
-  // void PointTools::warpFactor( const int order , 
+  // void PointTools::warpFactor( const ordinal_type order , 
   //                             const ArrayType &xnodes ,
   //                             const ArrayType &xout ,
   //                             ArrayType &warp)
@@ -340,15 +340,15 @@ namespace Intrepid2 {
   //                       std::invalid_argument ,
   //                       ">>> ERROR (PointTools::warpFactor): xeq and xnodes must be same size." );
     
-  //   for (int i=0;i<=order;i++) {
+  //   for (ordinal_type i=0;i<=order;i++) {
 
-  //     for (int k=0;k<d.dimension(0);k++) {
+  //     for (ordinal_type k=0;k<d.dimension(0);k++) {
   //       d(k) = xnodes(i) - xeq(i);
   //     }
 
-  //     for (int j=1;j<order;j++) {
+  //     for (ordinal_type j=1;j<order;j++) {
   //       if (i != j) {
-  //         for (int k=0;k<d.dimension(0);k++) {
+  //         for (ordinal_type k=0;k<d.dimension(0);k++) {
   //           d(k) = d(k) * ( (xout(k)-xeq(j)) / (xeq(i)-xeq(j)) );
   //         }
   //       }
@@ -356,18 +356,18 @@ namespace Intrepid2 {
       
   //     // deflate end roots
   //     if ( i != 0 ) {
-  //       for (int k=0;k<d.dimension(0);k++) {
+  //       for (ordinal_type k=0;k<d.dimension(0);k++) {
   //         d(k) = -d(k) / (xeq(i) - xeq(0));
   //       }
   //     }
 
   //     if (i != order ) {
-  //       for (int k=0;k<d.dimension(0);k++) {
+  //       for (ordinal_type k=0;k<d.dimension(0);k++) {
   //         d(k) = d(k) / (xeq(i) - xeq(order));
   //       }
   //     }
 
-  //     for (int k=0;k<d.dimension(0);k++) {
+  //     for (ordinal_type k=0;k<d.dimension(0);k++) {
   //       warp(k) += d(k);
   //     }
 
@@ -379,8 +379,8 @@ namespace Intrepid2 {
 
   // template<class Scalar, class ArrayType>
   // void PointTools::getWarpBlendLatticeTriangle( ArrayType &points ,
-  //                                               const int order ,
-  //                                               const int offset  )
+  //                                               const ordinal_type order ,
+  //                                               const ordinal_type offset  )
   // {
   //   /* get Gauss-Lobatto points */
 
@@ -402,8 +402,8 @@ namespace Intrepid2 {
   //     alpha = 5.0 / 3.0;
   //   }
 
-  //   const int p = order; /* switch to Warburton's notation */
-  //   int N = (p+1)*(p+2)/2;
+  //   const ordinal_type p = order; /* switch to Warburton's notation */
+  //   ordinal_type N = (p+1)*(p+2)/2;
     
   //   /* equidistributed nodes on equilateral triangle */
   //   Intrepid2::FieldContainer<Scalar> L1( N );
@@ -412,9 +412,9 @@ namespace Intrepid2 {
   //   Intrepid2::FieldContainer<Scalar> X(N);
   //   Intrepid2::FieldContainer<Scalar> Y(N);
 
-  //   int sk = 0;
-  //   for (int n=1;n<=p+1;n++) {
-  //     for (int m=1;m<=p+2-n;m++) {
+  //   ordinal_type sk = 0;
+  //   for (ordinal_type n=1;n<=p+1;n++) {
+  //     for (ordinal_type m=1;m<=p+2-n;m++) {
   //       L1(sk) = (n-1) / (Scalar)p;
   //       L3(sk) = (m-1) / (Scalar)p;
   //       L2(sk) = 1.0 - L1(sk) - L3(sk);
@@ -422,7 +422,7 @@ namespace Intrepid2 {
   //     }
   //   }
     
-  //   for (int n=0;n<N;n++) {
+  //   for (ordinal_type n=0;n<N;n++) {
   //     X(n) = -L2(n) + L3(n);
   //     Y(n) = (-L2(n) - L3(n) + 2*L1(n))/1.7320508075688772;
   //   }
@@ -432,7 +432,7 @@ namespace Intrepid2 {
   //   Intrepid2::FieldContainer<Scalar> blend2(N);
   //   Intrepid2::FieldContainer<Scalar> blend3(N);
     
-  //   for (int n=0;n<N;n++) {
+  //   for (ordinal_type n=0;n<N;n++) {
   //     blend1(n) = 4.0 * L2(n) * L3(n);
   //     blend2(n) = 4.0 * L1(n) * L3(n);
   //     blend3(n) = 4.0 * L1(n) * L2(n);
@@ -443,7 +443,7 @@ namespace Intrepid2 {
   //   Intrepid2::FieldContainer<Scalar> L1mL3(N);
   //   Intrepid2::FieldContainer<Scalar> L2mL1(N);
 
-  //   for (int k=0;k<N;k++) {
+  //   for (ordinal_type k=0;k<N;k++) {
   //     L3mL2(k) = L3(k)-L2(k);
   //     L1mL3(k) = L1(k)-L3(k);
   //     L2mL1(k) = L2(k)-L1(k);
@@ -461,7 +461,7 @@ namespace Intrepid2 {
   //   FieldContainer<Scalar> warp2(N);
   //   FieldContainer<Scalar> warp3(N);
 
-  //   for (int k=0;k<N;k++) {
+  //   for (ordinal_type k=0;k<N;k++) {
   //     warp1(k) = blend1(k) * warpfactor1(k) *
   //       ( 1.0 + alpha * alpha * L1(k) * L1(k) );
   //     warp2(k) = blend2(k) * warpfactor2(k) *
@@ -470,14 +470,14 @@ namespace Intrepid2 {
   //       ( 1.0 + alpha * alpha * L3(k) * L3(k) );
   //   }
 
-  //   for (int k=0;k<N;k++) {
+  //   for (ordinal_type k=0;k<N;k++) {
   //     X(k) += 1.0 * warp1(k) + cos( 2.0 * M_PI / 3.0 ) * warp2(k) + cos(4*M_PI/3.0) * warp3(k);
   //     Y(k) += 0.0 * warp1(k) + sin( 2.0 * M_PI / 3.0 ) * warp2(k) + sin( 4*M_PI/3.0) * warp3(k);
   //   }
 
   //   FieldContainer<Scalar> warXY(N,2);
     
-  //   for (int k=0;k<N;k++) {
+  //   for (ordinal_type k=0;k<N;k++) {
   //     warXY(k,0) = X(k);
   //     warXY(k,1) = Y(k);
   //   }
@@ -501,10 +501,10 @@ namespace Intrepid2 {
   //                                                     0 );
 
   //   // now write from refPts into points, taking care of offset
-  //   int noffcur = 0;  // index into refPts
-  //   int offcur = 0;   // index int points
-  //   for (int i=0;i<=order;i++) {
-  //     for (int j=0;j<=order-i;j++) {
+  //   ordinal_type noffcur = 0;  // index into refPts
+  //   ordinal_type offcur = 0;   // index ordinal_type points
+  //   for (ordinal_type i=0;i<=order;i++) {
+  //     for (ordinal_type j=0;j<=order-i;j++) {
   //       if ( (i >= offset) && (i <= order-offset) &&
   //             (j >= offset) && (j <= order-i-offset) ) {
   //         points(offcur,0) = refPts(noffcur,0);
@@ -520,7 +520,7 @@ namespace Intrepid2 {
   
 
   // template<class Scalar, class ArrayType>
-  // void PointTools::warpShiftFace3D( const int order ,
+  // void PointTools::warpShiftFace3D( const ordinal_type order ,
   //                                   const Scalar pval ,
   //                                   const ArrayType &L1,
   //                                   const ArrayType &L2,
@@ -533,7 +533,7 @@ namespace Intrepid2 {
   // }
 
   // template<class Scalar, class ArrayType>
-  // void PointTools::evalshift( const int order ,
+  // void PointTools::evalshift( const ordinal_type order ,
   //                             const Scalar pval ,
   //                             const ArrayType &L1 ,
   //                             const ArrayType &L2 ,
@@ -544,10 +544,10 @@ namespace Intrepid2 {
   //   FieldContainer<Scalar> gaussX(order+1,1);
   //   PointTools::getWarpBlendLatticeLine<Scalar,FieldContainer<Scalar> >( gaussX , order , 0 );
   //   gaussX.resize(order+1);
-  //   const int N = L1.dimension(0);
+  //   const ordinal_type N = L1.dimension(0);
     
   //   // Warburton code reverses them
-  //   for (int k=0;k<=order;k++) {
+  //   for (ordinal_type k=0;k<=order;k++) {
   //     gaussX(k) *= -1.0;
   //   }
 
@@ -556,7 +556,7 @@ namespace Intrepid2 {
   //   FieldContainer<Scalar> blend2(N);
   //   FieldContainer<Scalar> blend3(N);
 
-  //   for (int i=0;i<N;i++) {
+  //   for (ordinal_type i=0;i<N;i++) {
   //     blend1(i) = L2(i) * L3(i);
   //     blend2(i) = L1(i) * L3(i);
   //     blend3(i) = L1(i) * L2(i);
@@ -572,7 +572,7 @@ namespace Intrepid2 {
   //   FieldContainer<Scalar> L1mL3(N);
   //   FieldContainer<Scalar> L2mL1(N);
     
-  //   for (int k=0;k<N;k++) {
+  //   for (ordinal_type k=0;k<N;k++) {
   //     L3mL2(k) = L3(k)-L2(k);
   //     L1mL3(k) = L1(k)-L3(k);
   //     L2mL1(k) = L2(k)-L1(k);
@@ -582,7 +582,7 @@ namespace Intrepid2 {
   //   evalwarp<Scalar,FieldContainer<Scalar> >( warpfactor2 , order , gaussX , L1mL3 );
   //   evalwarp<Scalar,FieldContainer<Scalar> >( warpfactor3 , order , gaussX , L2mL1 );
     
-  //   for (int k=0;k<N;k++) {
+  //   for (ordinal_type k=0;k<N;k++) {
   //     warpfactor1(k) *= 4.0;
   //     warpfactor2(k) *= 4.0;
   //     warpfactor3(k) *= 4.0;      
@@ -592,7 +592,7 @@ namespace Intrepid2 {
   //   FieldContainer<Scalar> warp2(N);
   //   FieldContainer<Scalar> warp3(N);
     
-  //   for (int k=0;k<N;k++) {
+  //   for (ordinal_type k=0;k<N;k++) {
   //     warp1(k) = blend1(k) * warpfactor1(k) *
   //       ( 1.0 + pval * pval * L1(k) * L1(k) );
   //     warp2(k) = blend2(k) * warpfactor2(k) *
@@ -601,7 +601,7 @@ namespace Intrepid2 {
   //       ( 1.0 + pval * pval * L3(k) * L3(k) );
   //   }
 
-  //   for (int k=0;k<N;k++) {
+  //   for (ordinal_type k=0;k<N;k++) {
   //     dxy(k,0) = 1.0 * warp1(k) + cos( 2.0 * M_PI / 3.0 ) * warp2(k) + cos( 4.0*M_PI/3.0 ) * warp3(k);
   //     dxy(k,1) = 0.0 * warp1(k) + sin( 2.0 * M_PI / 3.0 ) * warp2(k) + sin( 4.0*M_PI/3.0 ) * warp3(k);
   //   }
@@ -613,7 +613,7 @@ namespace Intrepid2 {
   // /* one-d edge warping function */
   // template<class Scalar, class ArrayType>
   // void PointTools::evalwarp( ArrayType &warp ,
-  //                           const int order ,
+  //                           const ordinal_type order ,
   //                           const ArrayType &xnodes ,
   //                           const ArrayType &xout )
   // {
@@ -622,33 +622,33 @@ namespace Intrepid2 {
 
   //   d.initialize();
 
-  //   for (int i=0;i<=order;i++) {
+  //   for (ordinal_type i=0;i<=order;i++) {
   //     xeq(i) = -1.0 + 2.0 * ( order - i ) / order;
   //   }
 
 
 
-  //   for (int i=0;i<=order;i++) {
+  //   for (ordinal_type i=0;i<=order;i++) {
   //     d.initialize( xnodes(i) - xeq(i) );
-  //     for (int j=1;j<order;j++) {
+  //     for (ordinal_type j=1;j<order;j++) {
   //       if (i!=j) {
-  //         for (int k=0;k<d.dimension(0);k++) {
+  //         for (ordinal_type k=0;k<d.dimension(0);k++) {
   //           d(k) = d(k) * (xout(k)-xeq(j))/(xeq(i)-xeq(j));
   //         }
   //       }
   //     }
   //     if (i!=0) {
-  //       for (int k=0;k<d.dimension(0);k++) {
+  //       for (ordinal_type k=0;k<d.dimension(0);k++) {
   //         d(k) = -d(k)/(xeq(i)-xeq(0));
   //       }
   //     }
   //     if (i!=order) {
-  //       for (int k=0;k<d.dimension(0);k++) {
+  //       for (ordinal_type k=0;k<d.dimension(0);k++) {
   //         d(k) = d(k)/(xeq(i)-xeq(order));
   //       }
   //     }
       
-  //     for (int k=0;k<d.dimension(0);k++) {
+  //     for (ordinal_type k=0;k<d.dimension(0);k++) {
   //       warp(k) += d(k);
   //     } 
   //   }    
@@ -659,8 +659,8 @@ namespace Intrepid2 {
 
   // template<class Scalar, class ArrayType>
   // void PointTools::getWarpBlendLatticeTetrahedron(ArrayType &points ,
-  //                                                 const int order ,
-  //                                                 const int offset  )
+  //                                                 const ordinal_type order ,
+  //                                                 const ordinal_type offset  )
   // {
   //   Scalar alphastore[] = { 0,0,0,0.1002, 1.1332,1.5608,1.3413,1.2577,1.1603,
   //                           1.10153,0.6080,0.4523,0.8856,0.8717,0.9655};
@@ -673,7 +673,7 @@ namespace Intrepid2 {
   //     alpha = 1.0;
   //   }
 
-  //   const int N = (order+1)*(order+2)*(order+3)/6;
+  //   const ordinal_type N = (order+1)*(order+2)*(order+3)/6;
   //   Scalar tol = 1.e-10;
 
   //   FieldContainer<Scalar> shift(N,3);
@@ -681,10 +681,10 @@ namespace Intrepid2 {
 
   //   /* create 3d equidistributed nodes on Warburton tet */
   //   FieldContainer<Scalar> equipoints(N,3);
-  //   int sk = 0;
-  //   for (int n=0;n<=order;n++) {
-  //     for (int m=0;m<=order-n;m++) {
-  //       for (int q=0;q<=order-n-m;q++) {
+  //   ordinal_type sk = 0;
+  //   for (ordinal_type n=0;n<=order;n++) {
+  //     for (ordinal_type m=0;m<=order-n;m++) {
+  //       for (ordinal_type q=0;q<=order-n-m;q++) {
   //         equipoints(sk,0) = -1.0 + (q * 2.0 ) / order;
   //         equipoints(sk,1) = -1.0 + (m * 2.0 ) / order;
   //         equipoints(sk,2) = -1.0 + (n * 2.0 ) / order;
@@ -699,7 +699,7 @@ namespace Intrepid2 {
   //   FieldContainer<Scalar> L2(N);
   //   FieldContainer<Scalar> L3(N);
   //   FieldContainer<Scalar> L4(N);
-  //   for (int i=0;i<N;i++) {
+  //   for (ordinal_type i=0;i<N;i++) {
   //     L1(i) = (1.0 + equipoints(i,2)) / 2.0;
   //     L2(i) = (1.0 + equipoints(i,1)) / 2.0;
   //     L3(i) = -(1.0 + equipoints(i,0) + equipoints(i,1) + equipoints(i,2)) / 2.0;
@@ -726,7 +726,7 @@ namespace Intrepid2 {
   //   /* tangents to faces */
   //   FieldContainer<Scalar> t1(4,3);
   //   FieldContainer<Scalar> t2(4,3);
-  //   for (int i=0;i<3;i++) {
+  //   for (ordinal_type i=0;i<3;i++) {
   //     t1(0,i) = warVerts(1,i) - warVerts(0,i);
   //     t1(1,i) = warVerts(1,i) - warVerts(0,i);
   //     t1(2,i) = warVerts(2,i) - warVerts(1,i);
@@ -738,18 +738,18 @@ namespace Intrepid2 {
   //   }
 
   //   /* normalize tangents */
-  //   for (int n=0;n<4;n++) {
+  //   for (ordinal_type n=0;n<4;n++) {
   //     /* Compute norm of t1(n) and t2(n) */
   //     Scalar normt1n = 0.0;
   //     Scalar normt2n = 0.0;
-  //     for (int i=0;i<3;i++) {
+  //     for (ordinal_type i=0;i<3;i++) {
   //       normt1n += (t1(n,i) * t1(n,i));
   //       normt2n += (t2(n,i) * t2(n,i));
   //     }
   //     normt1n = sqrt(normt1n);
   //     normt2n = sqrt(normt2n);
   //     /* normalize each tangent now */
-  //     for (int i=0;i<3;i++) {
+  //     for (ordinal_type i=0;i<3;i++) {
   //       t1(n,i) /= normt1n;
   //       t2(n,i) /= normt2n;
   //     }
@@ -757,13 +757,13 @@ namespace Intrepid2 {
 
   //   /* undeformed coordinates */
   //   FieldContainer<Scalar> XYZ(N,3);
-  //   for (int i=0;i<N;i++) {
-  //     for (int j=0;j<3;j++) {
+  //   for (ordinal_type i=0;i<N;i++) {
+  //     for (ordinal_type j=0;j<3;j++) {
   //       XYZ(i,j) = L3(i)*warVerts(0,j) + L4(i)*warVerts(1,j) + L2(i)*warVerts(2,j) + L1(i)*warVerts(3,j);
   //     }
   //   }
 
-  //   for (int face=1;face<=4;face++) {
+  //   for (ordinal_type face=1;face<=4;face++) {
   //     FieldContainer<Scalar> La, Lb, Lc, Ld;
   //     FieldContainer<Scalar> warp(N,2);
   //     FieldContainer<Scalar> blend(N);
@@ -782,15 +782,15 @@ namespace Intrepid2 {
   //     /* get warp tangential to face */
   //     warpShiftFace3D<Scalar,FieldContainer<Scalar> >(order,alpha,La,Lb,Lc,Ld,warp);
       
-  //     for (int k=0;k<N;k++) {
+  //     for (ordinal_type k=0;k<N;k++) {
   //       blend(k) = Lb(k) * Lc(k) * Ld(k);
   //     }
 
-  //     for (int k=0;k<N;k++) {
+  //     for (ordinal_type k=0;k<N;k++) {
   //       denom(k) = (Lb(k) + 0.5 * La(k)) * (Lc(k) + 0.5*La(k)) * (Ld(k) + 0.5 * La(k));
   //     }
 
-  //     for (int k=0;k<N;k++) {
+  //     for (ordinal_type k=0;k<N;k++) {
   //       if (denom(k) > tol) {
   //         blend(k) *= ( 1.0 + alpha * alpha * La(k) * La(k) ) / denom(k);
   //       }
@@ -798,16 +798,16 @@ namespace Intrepid2 {
 
 
   //     // compute warp and blend
-  //     for (int k=0;k<N;k++) {
-  //       for (int j=0;j<3;j++) {
+  //     for (ordinal_type k=0;k<N;k++) {
+  //       for (ordinal_type j=0;j<3;j++) {
   //         shift(k,j) = shift(k,j) + blend(k) * warp(k,0) * t1(face-1,j)
   //           + blend(k) * warp(k,1) * t2(face-1,j);
   //       }
   //     }
 
-  //     for (int k=0;k<N;k++) {
+  //     for (ordinal_type k=0;k<N;k++) {
   //       if (La(k) < tol && ( Lb(k) < tol || Lc(k) < tol || Ld(k) < tol )) {
-  //         for (int j=0;j<3;j++) {
+  //         for (ordinal_type j=0;j<3;j++) {
   //           shift(k,j) = warp(k,0) * t1(face-1,j) + warp(k,1) * t2(face-1,j);
   //         }
   //       }
@@ -816,8 +816,8 @@ namespace Intrepid2 {
   //   }
 
   //   FieldContainer<Scalar> updatedPoints(N,3);
-  //   for (int k=0;k<N;k++) {
-  //     for (int j=0;j<3;j++) {
+  //   for (ordinal_type k=0;k<N;k++) {
+  //     for (ordinal_type j=0;j<3;j++) {
   //       updatedPoints(k,j) = XYZ(k,j) + shift(k,j);
   //     }
   //   }
@@ -832,11 +832,11 @@ namespace Intrepid2 {
   //                                           0 );
 
   //   // now write from refPts into points, taking offset into account
-  //   int noffcur = 0;
-  //   int offcur = 0;
-  //   for (int i=0;i<=order;i++) {
-  //     for (int j=0;j<=order-i;j++) {
-  //       for (int k=0;k<=order-i-j;k++) {
+  //   ordinal_type noffcur = 0;
+  //   ordinal_type offcur = 0;
+  //   for (ordinal_type i=0;i<=order;i++) {
+  //     for (ordinal_type j=0;j<=order-i;j++) {
+  //       for (ordinal_type k=0;k<=order-i-j;k++) {
   //         if ( (i >= offset) && (i <= order-offset) &&
   //             (j >= offset) && (j <= order-i-offset) &&
   //             (k >= offset) && (k <= order-i-j-offset) ) {

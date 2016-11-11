@@ -92,7 +92,7 @@ namespace Intrepid2 {
                             /**/                           Kokkos::subview(_leftInput, cl, pt, Kokkos::ALL(), Kokkos::ALL());
 
         
-        const auto right = (rightRank == leftRank + int(_hasField)) ?
+        const auto right = (rightRank == leftRank + ordinal_type(_hasField)) ?
                              ( _hasField ? Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
                              /**/          Kokkos::subview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL())) :
                              ( _hasField ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :

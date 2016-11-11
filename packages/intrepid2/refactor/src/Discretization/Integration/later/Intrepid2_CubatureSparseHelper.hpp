@@ -57,7 +57,7 @@ namespace Intrepid2{
 **  Class Definition for class SGPoint
 **  Function: Helper Class with cosntruction of Sparse Grid
 *************************************************************************/
-template<class Scalar, int D>
+template<class Scalar, ordinal_type D>
 class SGPoint{
 public:
   Scalar coords[D];
@@ -74,7 +74,7 @@ public:
 **  Class Definition for class SGNodes
 **  function: Helper Class with constrution of Sparse Grid
 ************************************************************************/
-template<class Scalar, int D, class ArrayPoint=FieldContainer<Scalar>, class ArrayWeight=ArrayPoint>
+template<class Scalar, ordinal_type D, class ArrayPoint=FieldContainer<Scalar>, class ArrayWeight=ArrayPoint>
 class SGNodes{
 public:
   Teuchos::Array< SGPoint<Scalar, D> > nodes;
@@ -82,36 +82,36 @@ public:
   bool addNode(Scalar new_node[D], Scalar weight);
   void copyToArrays(ArrayPoint & cubPoints, ArrayWeight & cubWeights) const;
   //void copyToTeuchos(Teuchos::Array< Scalar* > & cubPoints, Teuchos::Array<Scalar> & cubWeights) const;
-  int size() const {return nodes.size();}
+  ordinal_type size() const {return nodes.size();}
 };
 
 /**************************************************************************
 **  Function Definitions for Class SGPoint
 ***************************************************************************/
-template<class Scalar, int D>
+template<class Scalar, ordinal_type D>
 SGPoint<Scalar,D>::SGPoint()
 {
-  for(int i = 0; i < D; i++)
+  for(ordinal_type i = 0; i < D; i++)
   {
     coords[i] = 0;
   }
 }
 
-template<class Scalar, int D>
+template<class Scalar, ordinal_type D>
 SGPoint<Scalar, D>::SGPoint(Scalar p[D])
 {
-  for(int i = 0; i < D; i++)
+  for(ordinal_type i = 0; i < D; i++)
   {
     coords[i] = p[i];
   }
 }
 
-template<class Scalar, int D>
+template<class Scalar, ordinal_type D>
 bool const SGPoint<Scalar, D>::operator==(const SGPoint<Scalar, D> & right)
 {
   bool equal = true;
 
-  for(int i = 0; i < D; i++)
+  for(ordinal_type i = 0; i < D; i++)
   {
     if(coords[i] != right.coords[i])
       return false;
@@ -120,10 +120,10 @@ bool const SGPoint<Scalar, D>::operator==(const SGPoint<Scalar, D> & right)
   return equal;
 }
 
-template<class Scalar, int D>
+template<class Scalar, ordinal_type D>
 bool const SGPoint<Scalar, D>::operator<(const SGPoint<Scalar, D> & right)
 {
-  for(int i = 0; i < D; i++)
+  for(ordinal_type i = 0; i < D; i++)
   {
     if(coords[i] < right.coords[i])
       return true;
@@ -134,7 +134,7 @@ bool const SGPoint<Scalar, D>::operator<(const SGPoint<Scalar, D> & right)
   return false;
 }
 
-template<class Scalar, int D>
+template<class Scalar, ordinal_type D>
 bool const SGPoint<Scalar, D>::operator>(const SGPoint<Scalar, D> & right)
 {
   if(this < right || this == right)
@@ -143,11 +143,11 @@ bool const SGPoint<Scalar, D>::operator>(const SGPoint<Scalar, D> & right)
   return true;
 }
 
-template<class Scalar, int D>
+template<class Scalar, ordinal_type D>
 std::ostream & operator<<(std::ostream & o, SGPoint<Scalar, D> & p)
 {
   o << "(";
-  for(int i = 0; i<D;i++)
+  for(ordinal_type i = 0; i<D;i++)
     o<< p.coords[i] << " ";
   o << ")";
   return o;
@@ -158,7 +158,7 @@ std::ostream & operator<<(std::ostream & o, SGPoint<Scalar, D> & p)
 **  Function Definitions for Class SGNodes
 ***************************************************************************/
 
-template<class Scalar, int D, class ArrayPoint, class ArrayWeight>
+template<class Scalar, ordinal_type D, class ArrayPoint, class ArrayWeight>
 bool SGNodes<Scalar,D,ArrayPoint,ArrayWeight>::addNode(Scalar new_node[D], Scalar weight)
 {
   SGPoint<Scalar, D> new_point(new_node);
@@ -171,9 +171,9 @@ bool SGNodes<Scalar,D,ArrayPoint,ArrayWeight>::addNode(Scalar new_node[D], Scala
   }
   else
   {   
-    int left = -1;
-    int right = (int)nodes.size();
-    int mid_node = (int)ceil(nodes.size()/2.0)-1;
+    ordinal_type left = -1;
+    ordinal_type right = (ordinal_type)nodes.size();
+    ordinal_type mid_node = (ordinal_type)ceil(nodes.size()/2.0)-1;
 
     bool iterate_continue = true;
 
@@ -195,12 +195,12 @@ bool SGNodes<Scalar,D,ArrayPoint,ArrayWeight>::addNode(Scalar new_node[D], Scala
         else 
         {
           right = mid_node;
-          mid_node += (int)ceil((left-mid_node)/2.0);
+          mid_node += (ordinal_type)ceil((left-mid_node)/2.0);
         }
       }
       else{ //new_point > nodes[mid_node];
 
-        if(mid_node == (int)nodes.size()-1)
+        if(mid_node == (ordinal_type)nodes.size()-1)
         {
           nodes.push_back(new_point);
           weights.push_back(weight);
@@ -216,7 +216,7 @@ bool SGNodes<Scalar,D,ArrayPoint,ArrayWeight>::addNode(Scalar new_node[D], Scala
         else 
         {
           left = mid_node;
-          mid_node += (int)ceil((right-mid_node)/2.0);
+          mid_node += (ordinal_type)ceil((right-mid_node)/2.0);
         }
       }
     }
@@ -225,14 +225,14 @@ bool SGNodes<Scalar,D,ArrayPoint,ArrayWeight>::addNode(Scalar new_node[D], Scala
   return new_and_added;
 }
 
-template<class Scalar, int D, class ArrayPoint, class ArrayWeight>
+template<class Scalar, ordinal_type D, class ArrayPoint, class ArrayWeight>
 void SGNodes<Scalar,D,ArrayPoint,ArrayWeight>::copyToArrays(ArrayPoint & cubPoints, ArrayWeight & cubWeights) const
 {
-  int numPoints = size();
+  ordinal_type numPoints = size();
 
-  for(int i = 0; i < numPoints; i++)
+  for(ordinal_type i = 0; i < numPoints; i++)
   {
-    for (int j=0; j<D; j++) {
+    for (ordinal_type j=0; j<D; j++) {
       cubPoints(i,j) = nodes[i].coords[j];
     }
     cubWeights(i) = weights[i];
@@ -240,16 +240,16 @@ void SGNodes<Scalar,D,ArrayPoint,ArrayWeight>::copyToArrays(ArrayPoint & cubPoin
 }
 
 /*
-template< class Scalar, int D>
+template< class Scalar, ordinal_type D>
 void SGNodes<Scalar,D>::copyToTeuchos(Teuchos::Array< Scalar* > & cubPoints, Teuchos::Array<Scalar> & cubWeights) const
 {
-  int numPoints = size();
+  ordinal_type numPoints = size();
 
   Scalar tempPoint[D];
   cubPoints.assign(numPoints,tempPoint);
   cubWeights.assign(numPoints, 0.0);
 
-  for(int i = 0; i < numPoints; i++)
+  for(ordinal_type i = 0; i < numPoints; i++)
   {
     cubPoints[i] = nodes[i].coords;
     cubWeights[i] = weights[i];

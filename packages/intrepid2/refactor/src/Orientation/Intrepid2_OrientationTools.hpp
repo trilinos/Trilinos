@@ -223,7 +223,7 @@ namespace Intrepid2 {
     typedef Kokkos::View<double****,ExecSpaceType> CoeffMatrixDataViewType;
 
     // key :: basis name, order, value :: matrix data view type 
-    static std::map<std::pair<std::string,int>,CoeffMatrixDataViewType> ortCoeffData;
+    static std::map<std::pair<std::string,ordinal_type>,CoeffMatrixDataViewType> ortCoeffData;
     
   private:
 
@@ -327,7 +327,7 @@ namespace Intrepid2 {
   };
   
   template<typename T> 
-  std::map<std::pair<std::string,int>, typename OrientationTools<T>::CoeffMatrixDataViewType>
+  std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<T>::CoeffMatrixDataViewType>
   OrientationTools<T>::ortCoeffData;
 }
 

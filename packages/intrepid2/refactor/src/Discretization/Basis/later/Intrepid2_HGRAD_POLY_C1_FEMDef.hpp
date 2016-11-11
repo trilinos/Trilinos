@@ -65,15 +65,15 @@ namespace Intrepid2{
   template<class Scalar, class ArrayScalar>
   void Basis_HGRAD_POLY_C1_FEM<Scalar, ArrayScalar>::initializeTags(){
     // Basis-dependent initializations
-    int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-    int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-    int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+    ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+    ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+    ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+    ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
   
     // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
     
-    int *tags = new int[tagSize * this->getCardinality()];
-    for (int i=0;i<this->getCardinality();i++){
+    ordinal_type *tags = new ordinal_type[tagSize * this->getCardinality()];
+    for (ordinal_type i=0;i<this->getCardinality();i++){
       tags[4*i] = 0;
       tags[4*i+1] = i;
       tags[4*i+2] = 0;
@@ -122,15 +122,15 @@ namespace Intrepid2{
     case OPERATOR_GRAD:
       {
 	FieldContainer<Sacado::Fad::SFad<Scalar, 2> > dInput(inputPoints.dimension(0),inputPoints.dimension(1));
-	for (int i=0;i<inputPoints.dimension(0);i++){
-	  for (int j=0;j<2;j++){
+	for (ordinal_type i=0;i<inputPoints.dimension(0);i++){
+	  for (ordinal_type j=0;j<2;j++){
 	    dInput(i,j) = Sacado::Fad::SFad<Scalar, 2>( inputPoints(i,j));
 	    dInput(i,j).diff(j,2);
 	  }
 	}
 	FieldContainer<Sacado::Fad::SFad<Scalar> > cellVerticesFad(cellVertices.dimension(0),cellVertices.dimension(1));
-	for (int i=0;i<cellVertices.dimension(0);i++){
-	  for (int j=0;j<cellVertices.dimension(1);j++){
+	for (ordinal_type i=0;i<cellVertices.dimension(0);i++){
+	  for (ordinal_type j=0;j<cellVertices.dimension(1);j++){
 	    cellVerticesFad(i,j) = Sacado::Fad::SFad<Scalar,2>( cellVertices(i,j) );
 	  }
 	}
@@ -139,9 +139,9 @@ namespace Intrepid2{
 	
 	shapeFunctions<Sacado::Fad::SFad<Scalar,2>, FieldContainer<Sacado::Fad::SFad<Scalar,2> > >(dOutput,dInput,cellVerticesFad);
 	
-	for (int i=0;i<outputValues.dimension(0);i++){
-	  for (int j=0;j<outputValues.dimension(1);j++){
-	    for (int k=0;k<outputValues.dimension(2);k++){
+	for (ordinal_type i=0;i<outputValues.dimension(0);i++){
+	  for (ordinal_type j=0;j<outputValues.dimension(1);j++){
+	    for (ordinal_type k=0;k<outputValues.dimension(2);k++){
 	      outputValues(i,j,k) = dOutput(i,j).dx(k);
 	    }
 	  }
@@ -177,16 +177,16 @@ namespace Intrepid2{
   void Basis_HGRAD_POLY_C1_FEM<Scalar, ArrayScalar>::shapeFunctions(ArrayScalar1& outputValues,
 								    const ArrayScalar1& inputPoints,
 								    const ArrayScalar1& cellVertices)const{
-    int numPoints = inputPoints.dimension(0);
+    ordinal_type numPoints = inputPoints.dimension(0);
     FieldContainer<Scalar1> weightFunctions( this->basisCardinality_,numPoints );
     evaluateWeightFunctions<Scalar1, ArrayScalar1>(weightFunctions,inputPoints,cellVertices);
-    for (int pointIndex = 0;pointIndex<outputValues.dimension(1);pointIndex++){
+    for (ordinal_type pointIndex = 0;pointIndex<outputValues.dimension(1);pointIndex++){
       Scalar1 denominator=0;
       
-      for (int k=0;k<weightFunctions.dimension(0);k++){
+      for (ordinal_type k=0;k<weightFunctions.dimension(0);k++){
 	denominator += weightFunctions(k,pointIndex);
       }
-      for (int k=0;k<outputValues.dimension(0);k++){
+      for (ordinal_type k=0;k<outputValues.dimension(0);k++){
 	outputValues(k,pointIndex) = weightFunctions(k,pointIndex)/denominator;
       }
     }
@@ -213,13 +213,13 @@ namespace Intrepid2{
 									     const ArrayScalar1& cellVertices)const{
     
     
-    int spaceDim = this->basisCellTopology_.getDimension();
-    for (int k=0;k<outputValues.dimension(0);k++){
+    ordinal_type spaceDim = this->basisCellTopology_.getDimension();
+    for (ordinal_type k=0;k<outputValues.dimension(0);k++){
       
       // compute a_k for each weight function
       // need a_k = A(p_i,p_j,p_k) where nodes i and j are adjacent to node k
-      int adjIndex1 = -1, adjIndex2 = -1;
-      for (int i = 0;i < this->basisCellTopology_.getEdgeCount();i++){
+      ordinal_type adjIndex1 = -1, adjIndex2 = -1;
+      for (ordinal_type i = 0;i < this->basisCellTopology_.getEdgeCount();i++){
 	if ( this->basisCellTopology_.getNodeMap(1,i,0) == k )
 	  adjIndex1 = this->basisCellTopology_.getNodeMap(1,i,1);
 	else if ( this->basisCellTopology_.getNodeMap(1,i,1) == k )
@@ -230,20 +230,20 @@ namespace Intrepid2{
       FieldContainer<Scalar1> p1(spaceDim);
       FieldContainer<Scalar1> p2(spaceDim);
       FieldContainer<Scalar1> p3(spaceDim);
-      for (int i=0;i<spaceDim;i++){
+      for (ordinal_type i=0;i<spaceDim;i++){
 	p1(i) = cellVertices(adjIndex1,i);
 	p2(i) = cellVertices(k,i);
 	p3(i) = cellVertices(adjIndex2,i);
       }
       Scalar1 a_k = computeArea<Scalar1, ArrayScalar1>(p1,p2,p3);
       // now compute prod_{ij!=k} r_ij
-      for (int pointIndex = 0;pointIndex < inputValues.dimension(0);pointIndex++){
+      for (ordinal_type pointIndex = 0;pointIndex < inputValues.dimension(0);pointIndex++){
 	Scalar1 product = a_k;
-	for (int edgeIndex = 0;edgeIndex < this->basisCellTopology_.getEdgeCount();edgeIndex++){
-	  int edgeNode1 = this->basisCellTopology_.getNodeMap(1,edgeIndex,0);
-	  int edgeNode2 = this->basisCellTopology_.getNodeMap(1,edgeIndex,1);
+	for (ordinal_type edgeIndex = 0;edgeIndex < this->basisCellTopology_.getEdgeCount();edgeIndex++){
+	  ordinal_type edgeNode1 = this->basisCellTopology_.getNodeMap(1,edgeIndex,0);
+	  ordinal_type edgeNode2 = this->basisCellTopology_.getNodeMap(1,edgeIndex,1);
 	  if ( edgeNode1 != k && edgeNode2 != k ){
-	    for (int i=0;i<spaceDim;i++){
+	    for (ordinal_type i=0;i<spaceDim;i++){
 	      p1(i) = inputValues(pointIndex,i);
 	      p2(i) = cellVertices(edgeNode1,i);
 	      p3(i) = cellVertices(edgeNode2,i);

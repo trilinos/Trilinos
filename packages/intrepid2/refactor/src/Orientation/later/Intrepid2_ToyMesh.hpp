@@ -55,34 +55,34 @@ namespace Intrepid2 {
 
   namespace Example {
 
-    constexpr int TOYMESH_MAX_NUM_NODES = 100;
-    constexpr int TOYMESH_NODE_STRIDE = 8;
+    constexpr ordinal_type TOYMESH_MAX_NUM_NODES = 100;
+    constexpr ordinal_type TOYMESH_NODE_STRIDE = 8;
 
     class ToyMesh {
     private:
-      int _nodes   [TOYMESH_MAX_NUM_NODES][TOYMESH_NODE_STRIDE];
-      int _nids    [TOYMESH_MAX_NUM_NODES];
-      int _offset  [TOYMESH_MAX_NUM_NODES];
-      int _boundary[TOYMESH_MAX_NUM_NODES];
-      int _i;
+      ordinal_type _nodes   [TOYMESH_MAX_NUM_NODES][TOYMESH_NODE_STRIDE];
+      ordinal_type _nids    [TOYMESH_MAX_NUM_NODES];
+      ordinal_type _offset  [TOYMESH_MAX_NUM_NODES];
+      ordinal_type _boundary[TOYMESH_MAX_NUM_NODES];
+      ordinal_type _i;
 
       void clearCurrentNode() {
-        for (int j=0;j<TOYMESH_NODE_STRIDE;++j)
+        for (ordinal_type j=0;j<TOYMESH_NODE_STRIDE;++j)
           _nodes[_i][j] = -1;
       }
-      void sortSubCellVertex(int *sorted_verts,
-                             const int *subcell_verts,
-                             const int nids) {
-        for (int j=0;j<nids;++j)
+      void sortSubCellVertex(ordinal_type *sorted_verts,
+                             const ordinal_type *subcell_verts,
+                             const ordinal_type nids) {
+        for (ordinal_type j=0;j<nids;++j)
           sorted_verts[j] = subcell_verts[j];
         std::sort(sorted_verts, sorted_verts+nids);
       }
-      void addNode(const int *subcell_verts, const int nids,
-                   const int offset) {
+      void addNode(const ordinal_type *subcell_verts, const ordinal_type nids,
+                   const ordinal_type offset) {
         clearCurrentNode();
-        int sorted_verts[TOYMESH_NODE_STRIDE] = {};
+        ordinal_type sorted_verts[TOYMESH_NODE_STRIDE] = {};
         sortSubCellVertex(sorted_verts, subcell_verts, nids);
-        for (int j=0;j<nids;++j)
+        for (ordinal_type j=0;j<nids;++j)
           _nodes[_i][j] = sorted_verts[j];
         _offset[_i] = offset;
         _nids[_i] = nids;
@@ -90,15 +90,15 @@ namespace Intrepid2 {
 
         ++_i;
       }
-      bool findNode(int &offset, 
-                    const int *subcell_verts, 
-                    const int nids, 
+      bool findNode(ordinal_type &offset, 
+                    const ordinal_type *subcell_verts, 
+                    const ordinal_type nids, 
                     const bool increase_boundary_flag) {
-        int sorted_verts[TOYMESH_NODE_STRIDE] = {};
+        ordinal_type sorted_verts[TOYMESH_NODE_STRIDE] = {};
         sortSubCellVertex(sorted_verts, subcell_verts, nids);
-        for (int i=0;i<_i;++i) {
-          int diff = std::abs(_nids[i] - nids);
-          for (int j=0;j<nids;++j)
+        for (ordinal_type i=0;i<_i;++i) {
+          ordinal_type diff = std::abs(_nids[i] - nids);
+          for (ordinal_type j=0;j<nids;++j)
             diff += std::abs(sorted_verts[j] - _nodes[i][j]);
           if (!diff) {
             offset = _offset[i];
@@ -108,12 +108,12 @@ namespace Intrepid2 {
         }
         return false;
       }
-      bool findBoundary(int &boundary, const int *subcell_verts, const int nids) {
-        int sorted_verts[TOYMESH_NODE_STRIDE] = {};
+      bool findBoundary(ordinal_type &boundary, const ordinal_type *subcell_verts, const ordinal_type nids) {
+        ordinal_type sorted_verts[TOYMESH_NODE_STRIDE] = {};
         sortSubCellVertex(sorted_verts, subcell_verts, nids);
-        for (int i=0;i<_i;++i) {
-          int diff = std::abs(_nids[i] - nids);
-          for (int j=0;j<nids;++j)
+        for (ordinal_type i=0;i<_i;++i) {
+          ordinal_type diff = std::abs(_nids[i] - nids);
+          for (ordinal_type j=0;j<nids;++j)
             diff += std::abs(sorted_verts[j] - _nodes[i][j]);
           if (!diff) {
             // 1 - boundary or interior (visited once) 2 - interface visited more than twice
@@ -125,38 +125,38 @@ namespace Intrepid2 {
       }
 
     public:
-      int getCurrentNumNodes() const {
+      ordinal_type getCurrentNumNodes() const {
         return _i;
       }
 
       void reset() {
-        for (int i=0;i<TOYMESH_MAX_NUM_NODES;++i) {
+        for (ordinal_type i=0;i<TOYMESH_MAX_NUM_NODES;++i) {
           _nids[i]     = 0;
           _offset[i]   = 0;
           _boundary[i] = 0;
-          for (int j=0;j<TOYMESH_NODE_STRIDE;++j)
+          for (ordinal_type j=0;j<TOYMESH_NODE_STRIDE;++j)
             _nodes[i][j] = -1;
         }
         _i = 0;
       }
 
       template<typename Scalar,typename ArrayType>
-      void getLocalToGlobalMap(int (*local2global)[2],
-                               int &off_global,
+      void getLocalToGlobalMap(ordinal_type (*local2global)[2],
+                               ordinal_type &off_global,
                                const Basis<Scalar,ArrayType> &basis,
-                               const int *element) {
-        const int local = 0, global = 1;
-        const int nbf = basis.getCardinality();
+                               const ordinal_type *element) {
+        const ordinal_type local = 0, global = 1;
+        const ordinal_type nbf = basis.getCardinality();
         const shards::CellTopology cell = basis.getBaseCellTopology();
-        const int dim = cell.getDimension();
+        const ordinal_type dim = cell.getDimension();
 
-        int cnt = 0, off_element = 0;
-        int subcell_verts[4], nids;
+        ordinal_type cnt = 0, off_element = 0;
+        ordinal_type subcell_verts[4], nids;
 
-        const int nvert = cell.getVertexCount();
-        for (int i=0;i<nvert;++i) {
-          const int ord_vert = (off_element < nbf ? basis.getDofOrdinal(0, i, 0) : 0);
-          const int dof_vert = (off_element < nbf ? basis.getDofTag(ord_vert)[3] : 0);
+        const ordinal_type nvert = cell.getVertexCount();
+        for (ordinal_type i=0;i<nvert;++i) {
+          const ordinal_type ord_vert = (off_element < nbf ? basis.getDofOrdinal(0, i, 0) : 0);
+          const ordinal_type dof_vert = (off_element < nbf ? basis.getDofTag(ord_vert)[3] : 0);
       
           local2global[cnt][local] = off_element;
           off_element += dof_vert;
@@ -171,10 +171,10 @@ namespace Intrepid2 {
           }
           ++cnt;
         }
-        const int nedge = cell.getEdgeCount();
-        for (int i=0;i<nedge;++i) {
-          const int ord_edge = (off_element < nbf ? basis.getDofOrdinal(1, i, 0) : 0);
-          const int dof_edge = (off_element < nbf ? basis.getDofTag(ord_edge)[3] : 0);
+        const ordinal_type nedge = cell.getEdgeCount();
+        for (ordinal_type i=0;i<nedge;++i) {
+          const ordinal_type ord_edge = (off_element < nbf ? basis.getDofOrdinal(1, i, 0) : 0);
+          const ordinal_type dof_edge = (off_element < nbf ? basis.getDofTag(ord_edge)[3] : 0);
       
           local2global[cnt][local] = off_element;
           off_element += dof_edge;
@@ -189,10 +189,10 @@ namespace Intrepid2 {
           }
           ++cnt;
         }
-        const int nface = cell.getFaceCount();
-        for (int i=0;i<nface;++i) {
-          const int ord_face = (off_element < nbf ? basis.getDofOrdinal(2, i, 0) : 0);
-          const int dof_face = (off_element < nbf ? basis.getDofTag(ord_face)[3] : 0);
+        const ordinal_type nface = cell.getFaceCount();
+        for (ordinal_type i=0;i<nface;++i) {
+          const ordinal_type ord_face = (off_element < nbf ? basis.getDofOrdinal(2, i, 0) : 0);
+          const ordinal_type dof_face = (off_element < nbf ? basis.getDofTag(ord_face)[3] : 0);
       
           local2global[cnt][local] = off_element;
           off_element += dof_face;
@@ -208,9 +208,9 @@ namespace Intrepid2 {
           ++cnt;
         }
         {
-          const int i = 0;
-          const int ord_intr = (off_element < nbf ? basis.getDofOrdinal(dim, i, 0) : 0);
-          const int dof_intr = (off_element < nbf ? basis.getDofTag(ord_intr)[3]   : 0);
+          const ordinal_type i = 0;
+          const ordinal_type ord_intr = (off_element < nbf ? basis.getDofOrdinal(dim, i, 0) : 0);
+          const ordinal_type dof_intr = (off_element < nbf ? basis.getDofTag(ord_intr)[3]   : 0);
       
           local2global[cnt][local] = off_element;
           off_element += dof_intr;
@@ -231,13 +231,13 @@ namespace Intrepid2 {
         local2global[cnt][global] = -1; // invalid values
       }
 
-      void getBoundaryFlags(int *boundary,
+      void getBoundaryFlags(ordinal_type *boundary,
                             const shards::CellTopology cell,
-                            const int *element) {
-        int subcell_verts[4], nids;
-        const int dim = cell.getDimension();
-        const int nside = cell.getSideCount();
-        for (int i=0;i<nside;++i) {
+                            const ordinal_type *element) {
+        ordinal_type subcell_verts[4], nids;
+        const ordinal_type dim = cell.getDimension();
+        const ordinal_type nside = cell.getSideCount();
+        for (ordinal_type i=0;i<nside;++i) {
           Orientation::getElementNodeMap(subcell_verts, nids,
                                          cell, element,
                                          dim-1, i);

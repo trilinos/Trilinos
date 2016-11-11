@@ -351,7 +351,7 @@ namespace Intrepid2 {
 // void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   inCell,
 //                                                                   const ArrayPoint &            physPoints,
 //                                                                   const ArrayCell &             worksetCell,
-//                                                                   const int &                   whichCell,
+//                                                                   const ordinal_type &                   whichCell,
 //                                                                   const shards::CellTopology &  cell)
 // {
 //   // Validate worksetCell array

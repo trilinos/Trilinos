@@ -528,7 +528,7 @@ template<typename SpT>
     INTREPID2_TEST_FOR_EXCEPTION( !basis->requireOrientation(), std::invalid_argument,
                                   ">>> ERROR (OrientationTools::createCoeffMatrix): basis does not require orientations." );
 #endif
-    const std::pair<std::string,int> key(basis->getName(), basis->getDegree());
+    const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
     const auto found = ortCoeffData.find(key);
 
     CoeffMatrixDataViewType matData;
@@ -562,16 +562,16 @@ template<typename SpT>
 // #endif
 //     // count size
 //     const SpT eps = 1.0e-8;
-//     const int nrows = (transpose ? b.NumCols() : b.NumRows());
-//     const int ncols = (transpose ? b.NumRows() : b.NumCols());
+//     const ordinal_type nrows = (transpose ? b.NumCols() : b.NumRows());
+//     const ordinal_type ncols = (transpose ? b.NumRows() : b.NumCols());
 //     size_type nnz = b.countNumNonZeros(eps);
 //     createInternalArrays(nrows, ncols, nnz);
 
 //     // construct sparse array
 //     nnz = 0;
-//     for (int i=0;i<nrows;++i) {
+//     for (ordinal_type i=0;i<nrows;++i) {
 //       _ap(i) = nnz;
-//       for (int j=0;j<ncols;++j) {
+//       for (ordinal_type j=0;j<ncols;++j) {
 //         const SpT val  = (transpose ? b.Value(j,i) : b.Value(i,j));
 //         const SpT val2 = val*val;
 
@@ -603,12 +603,12 @@ template<typename SpT>
 //        << "    ValueArray  length = " << _ax.dimension_0() << std::endl
 //        << std::endl;
 
-//     const int w = 10;
+//     const ordinal_type w = 10;
 //     if (_ap.size() && _aj.size() && _ax.size()) {
 //       os << std::setw(w) <<  "Row" << "  "
 //          << std::setw(w) <<  "Col" << "  "
 //          << std::setw(w) <<  "Val" << std::endl;
-//       for (int i=0;i<_m;++i) {
+//       for (ordinal_type i=0;i<_m;++i) {
 //         size_type jbegin = _ap[i], jend = _ap[i+1];
 //         for (size_type j=jbegin;j<jend;++j) {
 //           SpT val = _ax[j];
@@ -627,8 +627,8 @@ template<typename SpT>
 // size_t
 // OrientationTools<Scalar>::DenseMatrix::countNumNonZeros(const Scalar epsilon) const {
 //   size_t nnz = 0;
-//   for (int j=0;j<NumCols();++j) {
-//     for (int i=0;i<NumRows();++i) {
+//   for (ordinal_type j=0;j<NumCols();++j) {
+//     for (ordinal_type i=0;i<NumRows();++i) {
 //       const Scalar val = Value(i,j);
 //       nnz += ((val*val) > epsilon);
 //     }
@@ -653,10 +653,10 @@ template<typename SpT>
 //      << "    ValueArray dimensions  = " << _a.dimension_0() << std::endl
 //      << std::endl;
 
-//   const int w = 10;
+//   const ordinal_type w = 10;
 //   if (_a.size()) {
-//     for (int i=0;i<_m;++i) {
-//       for (int j=0;j<_n;++j) {
+//     for (ordinal_type i=0;i<_m;++i) {
+//       for (ordinal_type j=0;j<_n;++j) {
 //         const Scalar val = this->Value(i,j);
 //         os << std::setw(w) << val << "  ";
 //       }

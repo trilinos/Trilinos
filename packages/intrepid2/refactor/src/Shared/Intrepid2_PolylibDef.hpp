@@ -869,8 +869,8 @@ namespace Intrepid2 {
 
     if      (x == -0.5) gamma = -2.0*sqrt(M_PI);
     else if (x ==  0.0) gamma = 1.0;
-    else if ((x-(int)x) == 0.5) {
-      int n = (int) x;
+    else if ((x-(ordinal_type)x) == 0.5) {
+      ordinal_type n = (ordinal_type) x;
       auto tmp = x;
 
       gamma = sqrt(M_PI);
@@ -878,8 +878,8 @@ namespace Intrepid2 {
         tmp   -= 1.0;
         gamma *= tmp;
       }
-    } else if ((x-(int)x) == 0.0) {
-      int n = (int) x;
+    } else if ((x-(ordinal_type)x) == 0.0) {
+      ordinal_type n = (ordinal_type) x;
       auto tmp = x;
 
       gamma = 1.0;

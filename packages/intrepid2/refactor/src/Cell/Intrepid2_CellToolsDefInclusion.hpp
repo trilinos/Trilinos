@@ -161,11 +161,11 @@ namespace Intrepid2 {
 
 //   template<class Scalar>
 //   template<class ArrayPoint>
-//   int CellTools<Scalar>::checkPointsetInclusion(const ArrayPoint&             points,
+//   ordinal_type CellTools<Scalar>::checkPointsetInclusion(const ArrayPoint&             points,
 //                                                 const shards::CellTopology &  cellTopo, 
 //                                                 const double &                threshold) {
   
-//     int rank = points.rank();  
+//     ordinal_type rank = points.rank();  
   
 // #ifdef HAVE_INTREPID2_DEBUG
 //     INTREPID2_TEST_FOR_EXCEPTION( !( (1 <=getrank(points) ) && (getrank(points) <= 3) ), std::invalid_argument,
@@ -177,7 +177,7 @@ namespace Intrepid2 {
 // #endif
   
 //     // create temp output array depending on the rank of the input array 
-//     FieldContainer<int> inRefCell;
+//     FieldContainer<ordinal_type> inRefCell;
 //     index_type dim0(0), dim1(0);
 //     switch(rank) {
 //     case 1: 

@@ -62,7 +62,7 @@ namespace Intrepid2 {
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::chebyshev1_compute ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::chebyshev1_compute ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -102,7 +102,7 @@ void IntrepidBurkardtRules::chebyshev1_compute ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    1 <= N.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -117,10 +117,10 @@ void IntrepidBurkardtRules::chebyshev1_compute ( int n, Scalar x[], Scalar w[] )
     std::exit (1);
   }
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     w[i] = M_PI/(Scalar)(n);
   }
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     x[i] = std::cos(M_PI*(Scalar)(2*n-1-2*i)/(Scalar)(2*n));
   }
   if ((n%2)==1) {
@@ -132,7 +132,7 @@ void IntrepidBurkardtRules::chebyshev1_compute ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::chebyshev1_compute_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::chebyshev1_compute_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -162,7 +162,7 @@ void IntrepidBurkardtRules::chebyshev1_compute_points ( int n, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    1 <= N.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -175,7 +175,7 @@ void IntrepidBurkardtRules::chebyshev1_compute_points ( int n, Scalar x[] )
     std::exit(1);
   }
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     x[i] = std::cos(M_PI*(Scalar)(2*n-1-2*i)/(Scalar)(2*n));
   }
   if ((n%2)==1) {
@@ -187,7 +187,7 @@ void IntrepidBurkardtRules::chebyshev1_compute_points ( int n, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::chebyshev1_compute_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::chebyshev1_compute_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -217,7 +217,7 @@ void IntrepidBurkardtRules::chebyshev1_compute_weights ( int n, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    1 <= N.
 //
 //    Output, Scalar W[N], the weights.
@@ -230,7 +230,7 @@ void IntrepidBurkardtRules::chebyshev1_compute_weights ( int n, Scalar w[] )
     std::exit(1);
   }
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     w[i] = M_PI/(Scalar)n;
   }
 
@@ -239,7 +239,7 @@ void IntrepidBurkardtRules::chebyshev1_compute_weights ( int n, Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::chebyshev2_compute ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::chebyshev2_compute ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -279,7 +279,7 @@ void IntrepidBurkardtRules::chebyshev2_compute ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    1 <= N.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -296,7 +296,7 @@ void IntrepidBurkardtRules::chebyshev2_compute ( int n, Scalar x[], Scalar w[] )
     std::exit(1);
   }
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     angle = M_PI*(Scalar)(n-i)/(Scalar)(n+1);
     w[i]  = M_PI/(Scalar)(n+1)*std::pow(std::sin(angle),2);
     x[i]  = std::cos(angle);
@@ -311,7 +311,7 @@ void IntrepidBurkardtRules::chebyshev2_compute ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::chebyshev2_compute_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::chebyshev2_compute_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -341,7 +341,7 @@ void IntrepidBurkardtRules::chebyshev2_compute_points ( int n, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    1 <= N.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -356,7 +356,7 @@ void IntrepidBurkardtRules::chebyshev2_compute_points ( int n, Scalar x[] )
     std::exit(1);
   }
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     angle = M_PI*(Scalar)(n-i)/(Scalar)(n+1);
     x[i]  = std::cos(angle);
   }
@@ -370,7 +370,7 @@ void IntrepidBurkardtRules::chebyshev2_compute_points ( int n, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::chebyshev2_compute_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::chebyshev2_compute_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -400,7 +400,7 @@ void IntrepidBurkardtRules::chebyshev2_compute_weights ( int n, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    1 <= N.
 //
 //    Output, Scalar W[N], the weights.
@@ -415,7 +415,7 @@ void IntrepidBurkardtRules::chebyshev2_compute_weights ( int n, Scalar w[] )
     std::exit(1);
   }
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     angle = M_PI*(Scalar)(n-i)/(Scalar)(n+1);
     w[i]  = M_PI/(Scalar)(n+1)*std::pow(std::sin(angle),2);
   }
@@ -425,7 +425,7 @@ void IntrepidBurkardtRules::chebyshev2_compute_weights ( int n, Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::clenshaw_curtis_compute ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::clenshaw_curtis_compute ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -456,7 +456,7 @@ void IntrepidBurkardtRules::clenshaw_curtis_compute ( int n, Scalar x[], Scalar 
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    1 <= N.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -465,7 +465,7 @@ void IntrepidBurkardtRules::clenshaw_curtis_compute ( int n, Scalar x[], Scalar 
 //
 {
   Scalar b, theta;
-  int i, j;
+  ordinal_type i, j;
 
   if (n<1) {
     std::cerr << "\n";
@@ -516,7 +516,7 @@ void IntrepidBurkardtRules::clenshaw_curtis_compute ( int n, Scalar x[], Scalar 
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::clenshaw_curtis_compute_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::clenshaw_curtis_compute_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -543,12 +543,12 @@ void IntrepidBurkardtRules::clenshaw_curtis_compute_points ( int n, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //
 //    Output, Scalar X[N], the abscissas.
 //
 {
-  int index;
+  ordinal_type index;
 
   if (n<1) {
     std::cerr << "\n";
@@ -574,7 +574,7 @@ void IntrepidBurkardtRules::clenshaw_curtis_compute_points ( int n, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::clenshaw_curtis_compute_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::clenshaw_curtis_compute_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -606,13 +606,13 @@ void IntrepidBurkardtRules::clenshaw_curtis_compute_weights ( int n, Scalar w[] 
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //
 //    Output, Scalar W[N], the weights.
 //
 {
   Scalar b, theta;
-  int i, j;
+  ordinal_type i, j;
 
   if (n<1) {
     std::cerr << "\n";
@@ -653,7 +653,7 @@ void IntrepidBurkardtRules::clenshaw_curtis_compute_weights ( int n, Scalar w[] 
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::fejer2_compute ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::fejer2_compute ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -680,7 +680,7 @@ void IntrepidBurkardtRules::fejer2_compute ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    1 <= N.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -702,7 +702,7 @@ void IntrepidBurkardtRules::fejer2_compute ( int n, Scalar x[], Scalar w[] )
     return;
   }
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     x[i] =  std::cos((Scalar)(n-i)*M_PI/(Scalar)(n+1));
   }
   if ((n%2)==1) {
@@ -714,18 +714,18 @@ void IntrepidBurkardtRules::fejer2_compute ( int n, Scalar x[], Scalar w[] )
     w[1] = 1.0;
   }
   else {
-    for (int i=0;i<n;i++) {
+    for (ordinal_type i=0;i<n;i++) {
       theta = (Scalar)(n-i)*M_PI/(Scalar)(n+1);
 
       w[i] = 1.0;
 
-      for (int j=1;j<=((n-1)/2);j++) {
+      for (ordinal_type j=1;j<=((n-1)/2);j++) {
         w[i] = w[i]-2.0*std::cos(2.0*(Scalar)j*theta)/(Scalar)(4*j*j-1);
       }
       p = 2.0*(Scalar)(((n+1)/2))-1.0;
       w[i] = w[i]-std::cos((p+1.0)*theta)/p;
     }
-    for (int i=0;i<n;i++) {
+    for (ordinal_type i=0;i<n;i++) {
       w[i] = 2.0*w[i]/(Scalar)(n+1);
     }
   }
@@ -734,7 +734,7 @@ void IntrepidBurkardtRules::fejer2_compute ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::fejer2_compute_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::fejer2_compute_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -761,13 +761,13 @@ void IntrepidBurkardtRules::fejer2_compute_points ( int n, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    1 <= N.
 //
 //    Output, Scalar X[N], the abscissas.
 //
 {
-  int i;
+  ordinal_type i;
 
   if (n<1) {
     std::cerr << "\n";
@@ -791,7 +791,7 @@ void IntrepidBurkardtRules::fejer2_compute_points ( int n, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::fejer2_compute_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::fejer2_compute_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -835,12 +835,12 @@ void IntrepidBurkardtRules::fejer2_compute_weights ( int n, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //
 //    Output, Scalar W[N], the weights.
 //
 {
-  int i, j;
+  ordinal_type i, j;
   Scalar p, theta;
 
   if (n<1) {
@@ -877,7 +877,7 @@ void IntrepidBurkardtRules::fejer2_compute_weights ( int n, Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::hermite_compute ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::hermite_compute ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -921,7 +921,7 @@ void IntrepidBurkardtRules::hermite_compute ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the number of abscissas.
+//    Input, ordinal_type N, the number of abscissas.
 //
 //    Output, Scalar X[N], the abscissas.
 //
@@ -938,16 +938,16 @@ void IntrepidBurkardtRules::hermite_compute ( int n, Scalar x[], Scalar w[] )
 //
   bj = new Scalar[n];
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     bj[i] = std::sqrt((Scalar)(i+1)/2.0);
   }
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     x[i] = 0.0;
   }
 
   w[0] = std::sqrt (zemu);
-  for (int i=1;i<n;i++) {
+  for (ordinal_type i=1;i<n;i++) {
     w[i] = 0.0;
   }
 //
@@ -955,13 +955,13 @@ void IntrepidBurkardtRules::hermite_compute ( int n, Scalar x[], Scalar w[] )
 //
   IntrepidBurkardtRules::imtqlx ( n, x, bj, w );
 
-  for (int i=0;i<n;i++) {
+  for (ordinal_type i=0;i<n;i++) {
     w[i] = w[i]*w[i];
   }
   
   // Ensure that zero is actually zero.
   if (n%2) {
-    int ind = (int)((Scalar)n/2.0);
+    ordinal_type ind = (ordinal_type)((Scalar)n/2.0);
     x[ind]  = 0.0;
   }
 
@@ -972,7 +972,7 @@ void IntrepidBurkardtRules::hermite_compute ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::hermite_compute_points ( int order, Scalar x[] )
+void IntrepidBurkardtRules::hermite_compute_points ( ordinal_type order, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -993,7 +993,7 @@ void IntrepidBurkardtRules::hermite_compute_points ( int order, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int ORDER, the order.
+//    Input, ordinal_type ORDER, the order.
 //
 //    Output, Scalar X[ORDER], the abscissas.
 //
@@ -1007,7 +1007,7 @@ void IntrepidBurkardtRules::hermite_compute_points ( int order, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::hermite_compute_weights ( int order, Scalar w[] )
+void IntrepidBurkardtRules::hermite_compute_weights ( ordinal_type order, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -1028,7 +1028,7 @@ void IntrepidBurkardtRules::hermite_compute_weights ( int order, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int ORDER, the order.
+//    Input, ordinal_type ORDER, the order.
 //
 //    Output, Scalar W[ORDER], the weights.
 //
@@ -1042,7 +1042,7 @@ void IntrepidBurkardtRules::hermite_compute_weights ( int order, Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::hermite_genz_keister_lookup ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::hermite_genz_keister_lookup ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -1098,7 +1098,7 @@ void IntrepidBurkardtRules::hermite_genz_keister_lookup ( int n, Scalar x[], Sca
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be 1, 3, 9, 19, or 35.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -1114,7 +1114,7 @@ void IntrepidBurkardtRules::hermite_genz_keister_lookup ( int n, Scalar x[], Sca
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::hermite_genz_keister_lookup_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::hermite_genz_keister_lookup_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -1183,7 +1183,7 @@ void IntrepidBurkardtRules::hermite_genz_keister_lookup_points ( int n, Scalar x
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be 1, 3, 9, 19, 35, 27, 41, or 43.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -1405,7 +1405,7 @@ void IntrepidBurkardtRules::hermite_genz_keister_lookup_points ( int n, Scalar x
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::hermite_genz_keister_lookup_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::hermite_genz_keister_lookup_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -1474,7 +1474,7 @@ void IntrepidBurkardtRules::hermite_genz_keister_lookup_weights ( int n, Scalar 
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be 1, 3, 9, 19, 35, 37, 41, or 43.
 //
 //    Output, Scalar W[N], the weights.
@@ -1696,7 +1696,7 @@ void IntrepidBurkardtRules::hermite_genz_keister_lookup_weights ( int n, Scalar 
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::hermite_lookup ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::hermite_lookup ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -1750,7 +1750,7 @@ void IntrepidBurkardtRules::hermite_lookup ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be between 1 and 20.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -1766,7 +1766,7 @@ void IntrepidBurkardtRules::hermite_lookup ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::hermite_lookup_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::hermite_lookup_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -1835,7 +1835,7 @@ void IntrepidBurkardtRules::hermite_lookup_points ( int n, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be between 1 and 20.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -2104,7 +2104,7 @@ void IntrepidBurkardtRules::hermite_lookup_points ( int n, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::hermite_lookup_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::hermite_lookup_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -2173,7 +2173,7 @@ void IntrepidBurkardtRules::hermite_lookup_weights ( int n, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be between 1 and 20.
 //
 //    Output, Scalar W[N], the weights.
@@ -2442,7 +2442,7 @@ void IntrepidBurkardtRules::hermite_lookup_weights ( int n, Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::imtqlx ( int n, Scalar d[], Scalar e[], Scalar z[] )
+void IntrepidBurkardtRules::imtqlx ( ordinal_type n, Scalar d[], Scalar e[], Scalar z[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -2490,7 +2490,7 @@ void IntrepidBurkardtRules::imtqlx ( int n, Scalar d[], Scalar e[], Scalar z[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order of the matrix.
+//    Input, ordinal_type N, the order of the matrix.
 //
 //    Input/output, Scalar D(N), the diagonal entries of the matrix.
 //    On output, the information in D has been overwritten.
@@ -2505,7 +2505,7 @@ void IntrepidBurkardtRules::imtqlx ( int n, Scalar d[], Scalar e[], Scalar z[] )
 //
 {
   Scalar b = 0, c = 0, f = 0, g = 0, p = 0, r = 0, s = 0;
-  int i = 0, ii = 0, j = 0, k = 0, l = 0, mml = 0, m = 0, itn = 30;
+  ordinal_type i = 0, ii = 0, j = 0, k = 0, l = 0, mml = 0, m = 0, itn = 30;
   Scalar prec = IntrepidBurkardtRules::r8_epsilon(1.0); //2.22E-16;
 
   if (n==1) {
@@ -2605,7 +2605,7 @@ void IntrepidBurkardtRules::imtqlx ( int n, Scalar d[], Scalar e[], Scalar z[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::laguerre_compute ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::laguerre_compute ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -2635,7 +2635,7 @@ void IntrepidBurkardtRules::laguerre_compute ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //
 //    Output, Scalar X[N], the abscissas.
 //
@@ -2643,7 +2643,7 @@ void IntrepidBurkardtRules::laguerre_compute ( int n, Scalar x[], Scalar w[] )
 //
 {
   Scalar *bj;
-  int i;
+  ordinal_type i;
   Scalar zemu;
 //
 //  Define the zero-th moment.
@@ -2683,7 +2683,7 @@ void IntrepidBurkardtRules::laguerre_compute ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::laguerre_compute_points ( int order, Scalar x[] )
+void IntrepidBurkardtRules::laguerre_compute_points ( ordinal_type order, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -2704,7 +2704,7 @@ void IntrepidBurkardtRules::laguerre_compute_points ( int order, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int ORDER, the order.
+//    Input, ordinal_type ORDER, the order.
 //
 //    Output, Scalar X[ORDER], the abscissas.
 //
@@ -2718,7 +2718,7 @@ void IntrepidBurkardtRules::laguerre_compute_points ( int order, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::laguerre_compute_weights ( int order, Scalar w[] )
+void IntrepidBurkardtRules::laguerre_compute_weights ( ordinal_type order, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -2739,7 +2739,7 @@ void IntrepidBurkardtRules::laguerre_compute_weights ( int order, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int ORDER, the order.
+//    Input, ordinal_type ORDER, the order.
 //
 //    Output, Scalar W[ORDER], the weights.
 //
@@ -2753,7 +2753,7 @@ void IntrepidBurkardtRules::laguerre_compute_weights ( int order, Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::laguerre_lookup ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::laguerre_lookup ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -2831,7 +2831,7 @@ void IntrepidBurkardtRules::laguerre_lookup ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be between 1 and 20.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -2847,7 +2847,7 @@ void IntrepidBurkardtRules::laguerre_lookup ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::laguerre_lookup_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::laguerre_lookup_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -2900,7 +2900,7 @@ void IntrepidBurkardtRules::laguerre_lookup_points ( int n, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be between 1 and 20.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -3169,7 +3169,7 @@ void IntrepidBurkardtRules::laguerre_lookup_points ( int n, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::laguerre_lookup_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::laguerre_lookup_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -3222,7 +3222,7 @@ void IntrepidBurkardtRules::laguerre_lookup_weights ( int n, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be between 1 and 20.
 //
 //    Output, Scalar W[N], the weights.
@@ -3491,7 +3491,7 @@ void IntrepidBurkardtRules::laguerre_lookup_weights ( int n, Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::legendre_compute ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::legendre_compute ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -3521,7 +3521,7 @@ void IntrepidBurkardtRules::legendre_compute ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //
 //    Output, Scalar X[N], the abscissas.
 //
@@ -3529,7 +3529,7 @@ void IntrepidBurkardtRules::legendre_compute ( int n, Scalar x[], Scalar w[] )
 //
 {
   Scalar *bj;
-  int i;
+  ordinal_type i;
   Scalar zemu;
 //
 //  Define the zero-th moment.
@@ -3565,7 +3565,7 @@ void IntrepidBurkardtRules::legendre_compute ( int n, Scalar x[], Scalar w[] )
 
   // Ensure that zero is actually zero.
   if (n%2) {
-    int ind = (int)((Scalar)n/2.0);
+    ordinal_type ind = (ordinal_type)((Scalar)n/2.0);
     x[ind]  = 0.0;
   }
 
@@ -3576,7 +3576,7 @@ void IntrepidBurkardtRules::legendre_compute ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::legendre_compute_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::legendre_compute_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -3597,7 +3597,7 @@ void IntrepidBurkardtRules::legendre_compute_points ( int n, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //
 //    Output, Scalar X[N], the abscissas.
 //
@@ -3611,7 +3611,7 @@ void IntrepidBurkardtRules::legendre_compute_points ( int n, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::legendre_compute_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::legendre_compute_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -3632,7 +3632,7 @@ void IntrepidBurkardtRules::legendre_compute_weights ( int n, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //
 //    Output, Scalar W[N], the weights.
 //
@@ -3646,7 +3646,7 @@ void IntrepidBurkardtRules::legendre_compute_weights ( int n, Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::legendre_lookup ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::legendre_lookup ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -3700,7 +3700,7 @@ void IntrepidBurkardtRules::legendre_lookup ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be between 1 and 33.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -3716,7 +3716,7 @@ void IntrepidBurkardtRules::legendre_lookup ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::legendre_lookup_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::legendre_lookup_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -3770,7 +3770,7 @@ void IntrepidBurkardtRules::legendre_lookup_points ( int n, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be between 1 and 33.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -4415,7 +4415,7 @@ void IntrepidBurkardtRules::legendre_lookup_points ( int n, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::legendre_lookup_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::legendre_lookup_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -4469,7 +4469,7 @@ void IntrepidBurkardtRules::legendre_lookup_weights ( int n, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    N must be between 1 and 33.
 //
 //    Output, Scalar W[N], the weights.
@@ -5114,7 +5114,7 @@ void IntrepidBurkardtRules::legendre_lookup_weights ( int n, Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::patterson_lookup ( int n, Scalar x[], Scalar w[] )
+void IntrepidBurkardtRules::patterson_lookup ( ordinal_type n, Scalar x[], Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -5154,7 +5154,7 @@ void IntrepidBurkardtRules::patterson_lookup ( int n, Scalar x[], Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    Legal values are 1, 3, 7, 15, 31, 63, 127 and 255.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -5170,7 +5170,7 @@ void IntrepidBurkardtRules::patterson_lookup ( int n, Scalar x[], Scalar w[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::patterson_lookup_points ( int n, Scalar x[] )
+void IntrepidBurkardtRules::patterson_lookup_points ( ordinal_type n, Scalar x[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -5210,7 +5210,7 @@ void IntrepidBurkardtRules::patterson_lookup_points ( int n, Scalar x[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    Legal values are 1, 3, 7, 15, 31, 63, 127 and 255.
 //
 //    Output, Scalar X[N], the abscissas.
@@ -5745,7 +5745,7 @@ void IntrepidBurkardtRules::patterson_lookup_points ( int n, Scalar x[] )
 
 //****************************************************************************
 template<class Scalar> 
-void IntrepidBurkardtRules::patterson_lookup_weights ( int n, Scalar w[] )
+void IntrepidBurkardtRules::patterson_lookup_weights ( ordinal_type n, Scalar w[] )
 //****************************************************************************
 //
 //  Purpose:
@@ -5787,7 +5787,7 @@ void IntrepidBurkardtRules::patterson_lookup_weights ( int n, Scalar w[] )
 //
 //  Parameters:
 //
-//    Input, int N, the order.
+//    Input, ordinal_type N, the order.
 //    Legal values are 1, 3, 7, 15, 31, 63, 127 or 255.
 //
 //    Output, Scalar W[N], the weights.
@@ -6322,7 +6322,7 @@ void IntrepidBurkardtRules::patterson_lookup_weights ( int n, Scalar w[] )
 
 //***************************************************************************
 template<class Scalar>
-void IntrepidBurkardtRules::trapezoidal_compute ( int n, Scalar x[], Scalar w[] ) 
+void IntrepidBurkardtRules::trapezoidal_compute ( ordinal_type n, Scalar x[], Scalar w[] ) 
 //***************************************************************************
 {
   if (n==1) {
@@ -6331,7 +6331,7 @@ void IntrepidBurkardtRules::trapezoidal_compute ( int n, Scalar x[], Scalar w[] 
   }
   else {
     Scalar h = 1.0/((Scalar)n-1.0);
-    for (int i=0; i<n; i++) {
+    for (ordinal_type i=0; i<n; i++) {
       x[i] = -1.0 + (Scalar)i*h*2.0;
       if (i==0||i==n-1) {
 	w[i] = h;
@@ -6346,7 +6346,7 @@ void IntrepidBurkardtRules::trapezoidal_compute ( int n, Scalar x[], Scalar w[] 
 
 //***************************************************************************
 template<class Scalar>
-void IntrepidBurkardtRules::trapezoidal_compute_points ( int n, Scalar x[] ) 
+void IntrepidBurkardtRules::trapezoidal_compute_points ( ordinal_type n, Scalar x[] ) 
 //***************************************************************************
 {
   if (n==1) {
@@ -6354,7 +6354,7 @@ void IntrepidBurkardtRules::trapezoidal_compute_points ( int n, Scalar x[] )
   }
   else {
     Scalar h = 1.0/((Scalar)n-1.0);
-    for (int i=0; i<n; i++) {
+    for (ordinal_type i=0; i<n; i++) {
       x[i] = -1.0 + (Scalar)i*h*2.0;
     }
   }
@@ -6363,7 +6363,7 @@ void IntrepidBurkardtRules::trapezoidal_compute_points ( int n, Scalar x[] )
 
 //***************************************************************************
 template<class Scalar>
-void IntrepidBurkardtRules::trapezoidal_compute_weights ( int n, Scalar w[] ) 
+void IntrepidBurkardtRules::trapezoidal_compute_weights ( ordinal_type n, Scalar w[] ) 
 //***************************************************************************
 {
   if (n==1) {
@@ -6371,7 +6371,7 @@ void IntrepidBurkardtRules::trapezoidal_compute_weights ( int n, Scalar w[] )
   }
   else {
     Scalar h = 1.0/((Scalar)n-1.0);
-    for (int i=0; i<n; i++) {
+    for (ordinal_type i=0; i<n; i++) {
       if (i==0||i==n-1) {
 	w[i] = h;
       }

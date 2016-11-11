@@ -49,12 +49,12 @@
 namespace Intrepid2 {
 
   template<class Scalar, class ArrayScalar>
-  Basis_HCURL_TRI_In_FEM<Scalar,ArrayScalar>::Basis_HCURL_TRI_In_FEM( const int n ,
+  Basis_HCURL_TRI_In_FEM<Scalar,ArrayScalar>::Basis_HCURL_TRI_In_FEM( const ordinal_type n ,
                                                                       const EPointType pointType ):
     Phis_( n ),
     coeffs_( (n+1)*(n+2) , n*(n+2) )
   {
-    const int N = n*(n+2);
+    const ordinal_type N = n*(n+2);
     this -> basisCardinality_  = N;
     this -> basisDegree_       = n;
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
@@ -62,17 +62,17 @@ namespace Intrepid2 {
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
 
-    const int littleN = n*(n+1);   // dim of (P_{n-1})^2 -- smaller space
-    const int bigN = (n+1)*(n+2);  // dim of (P_{n})^2 -- larger space
-    const int scalarSmallestN = (n-1)*n / 2;
-    const int scalarLittleN = littleN/2;
-    const int scalarBigN = bigN/2;
+    const ordinal_type littleN = n*(n+1);   // dim of (P_{n-1})^2 -- smaller space
+    const ordinal_type bigN = (n+1)*(n+2);  // dim of (P_{n})^2 -- larger space
+    const ordinal_type scalarSmallestN = (n-1)*n / 2;
+    const ordinal_type scalarLittleN = littleN/2;
+    const ordinal_type scalarBigN = bigN/2;
 
     // first, need to project the basis for Nedelec space onto the
     // orthogonal basis of degree n
     // get coefficients of PkHx
 
-    Teuchos::SerialDenseMatrix<int,Scalar> V1(bigN, N);
+    Teuchos::SerialDenseMatrix<ordinal_type,Scalar> V1(bigN, N);
 
     // basis for the space is 
     // { (phi_i,0) }_{i=0}^{scalarLittleN-1} ,
@@ -83,7 +83,7 @@ namespace Intrepid2 {
     // for P_{n}^2
 
     // these two loops get the first two sets of basis functions
-    for (int i=0;i<scalarLittleN;i++) {
+    for (ordinal_type i=0;i<scalarLittleN;i++) {
       V1(i,i) = 1.0;
       V1(scalarBigN+i,scalarLittleN+i) = 1.0;
     }
@@ -100,19 +100,19 @@ namespace Intrepid2 {
     Phis_.getValues( phisAtCubPoints , cubPoints , OPERATOR_VALUE );
 
     // now do the integration
-    for (int i=0;i<n;i++) {
-      for (int j=0;j<scalarBigN;j++) { // int (x,y) phi_i \cdot (phi_j,0)
+    for (ordinal_type i=0;i<n;i++) {
+      for (ordinal_type j=0;j<scalarBigN;j++) { // ordinal_type (x,y) phi_i \cdot (phi_j,0)
         V1(j,littleN+i) = 0.0;
-        for (int k=0;k<myCub.getNumPoints();k++) {
+        for (ordinal_type k=0;k<myCub.getNumPoints();k++) {
           V1(j,littleN+i) -= 
             cubWeights(k) * cubPoints(k,1) 
             * phisAtCubPoints(scalarSmallestN+i,k) 
             * phisAtCubPoints(j,k);
         }
       }
-      for (int j=0;j<scalarBigN;j++) {  // int (x,y) phi_i \cdot (0,phi_j)
+      for (ordinal_type j=0;j<scalarBigN;j++) {  // ordinal_type (x,y) phi_i \cdot (0,phi_j)
         V1(j+scalarBigN,littleN+i) = 0.0;
-        for (int k=0;k<myCub.getNumPoints();k++) {
+        for (ordinal_type k=0;k<myCub.getNumPoints();k++) {
           V1(j+scalarBigN,littleN+i) += 
             cubWeights(k) * cubPoints(k,0) 
             * phisAtCubPoints(scalarSmallestN+i,k) 
@@ -125,7 +125,7 @@ namespace Intrepid2 {
 
     
     // next, apply the RT nodes (rows) to the basis for (P_n)^2 (columns)
-    Teuchos::SerialDenseMatrix<int,Scalar> V2(N , bigN);
+    Teuchos::SerialDenseMatrix<ordinal_type,Scalar> V2(N , bigN);
 
     // first 3 * degree nodes are normals at each edge
     // get the points on the line
@@ -149,12 +149,12 @@ namespace Intrepid2 {
     ArrayScalar phisAtEdgePoints( scalarBigN , n );
     ArrayScalar edgeTan(2);
     
-    for (int i=0;i<3;i++) {  // loop over edges
+    for (ordinal_type i=0;i<3;i++) {  // loop over edges
       CellTools<Scalar>::getReferenceEdgeTangent( edgeTan , 
                                                   i , 
                                                   this->basisCellTopology_ );
       /* multiply by 2.0 to account for a Jacobian in Pavel's definition */
-      for (int j=0;j<2;j++) {
+      for (ordinal_type j=0;j<2;j++) {
         edgeTan(j) *= 2.0;
       }
 
@@ -167,9 +167,9 @@ namespace Intrepid2 {
       Phis_.getValues( phisAtEdgePoints , edgePts , OPERATOR_VALUE );
 
       // loop over points (rows of V2)
-      for (int j=0;j<n;j++) {
+      for (ordinal_type j=0;j<n;j++) {
         // loop over orthonormal basis functions (columns of V2)
-        for (int k=0;k<scalarBigN;k++) {
+        for (ordinal_type k=0;k<scalarBigN;k++) {
           V2(n*i+j,k) = edgeTan(0) * phisAtEdgePoints(k,j);
           V2(n*i+j,k+scalarBigN) = edgeTan(1) * phisAtEdgePoints(k,j);
         }
@@ -179,7 +179,7 @@ namespace Intrepid2 {
     // remaining nodes are x- and y- components at internal points, if n > 1
     // this code is exactly the same as it is for HDIV
 
-    const int numInternalPoints = PointTools::getLatticeSize( this->getBaseCellTopology() ,
+    const ordinal_type numInternalPoints = PointTools::getLatticeSize( this->getBaseCellTopology() ,
                                                               n + 1 ,
                                                               1 );
 
@@ -195,8 +195,8 @@ namespace Intrepid2 {
       Phis_.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
 
       // copy values into right positions of V2
-      for (int i=0;i<numInternalPoints;i++) {
-        for (int j=0;j<scalarBigN;j++) {
+      for (ordinal_type i=0;i<numInternalPoints;i++) {
+        for (ordinal_type j=0;j<scalarBigN;j++) {
           // x component
           V2(3*n+i,j) = phisAtInternalPoints(j,i);
           // y component
@@ -208,7 +208,7 @@ namespace Intrepid2 {
 //     std::cout << V2 << "\n";
 //     std::cout << "End nodes\n";
 
-    Teuchos::SerialDenseMatrix<int,Scalar> Vsdm( N , N );
+    Teuchos::SerialDenseMatrix<ordinal_type,Scalar> Vsdm( N , N );
 
     // multiply V2 * V1 --> V
     Vsdm.multiply( Teuchos::NO_TRANS , Teuchos::NO_TRANS , 1.0 , V2 , V1 , 0.0 );
@@ -217,17 +217,17 @@ namespace Intrepid2 {
 //     std::cout << Vsdm << "\n";
 //     std::cout << "End Vandermonde\n";
     
-    Teuchos::SerialDenseSolver<int,Scalar> solver;
+    Teuchos::SerialDenseSolver<ordinal_type,Scalar> solver;
     solver.setMatrix( rcp( &Vsdm , false ) );
     solver.invert( );
 
-    Teuchos::SerialDenseMatrix<int,Scalar> Csdm( bigN , N );
+    Teuchos::SerialDenseMatrix<ordinal_type,Scalar> Csdm( bigN , N );
     Csdm.multiply( Teuchos::NO_TRANS , Teuchos::NO_TRANS , 1.0 , V1 , Vsdm , 0.0 );
 
     //    std::cout << Csdm << "\n";
 
-    for (int i=0;i<bigN;i++) {
-      for (int j=0;j<N;j++) {
+    for (ordinal_type i=0;i<bigN;i++) {
+      for (ordinal_type j=0;j<N;j++) {
         coeffs_(i,j) = Csdm(i,j);
       }
     }
@@ -240,20 +240,20 @@ namespace Intrepid2 {
   void Basis_HCURL_TRI_In_FEM<Scalar, ArrayScalar>::initializeTags() {
   
     // Basis-dependent initializations
-    int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-    int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-    int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+    ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+    ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+    ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+    ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
   
     // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
 
-    int *tags = new int[ tagSize * this->getCardinality() ];
-    int *tag_cur = tags;
-    const int degree = this->getDegree();
+    ordinal_type *tags = new ordinal_type[ tagSize * this->getCardinality() ];
+    ordinal_type *tag_cur = tags;
+    const ordinal_type degree = this->getDegree();
 
     // there are degree internal dofs on each edge -- normals.  Let's do them
-    for (int ed=0;ed<3;ed++) {
-      for (int i=0;i<degree;i++) {
+    for (ordinal_type ed=0;ed<3;ed++) {
+      for (ordinal_type i=0;i<degree;i++) {
         tag_cur[0] = 1;  tag_cur[1] = ed;  tag_cur[2] = i;  tag_cur[3] = degree;
         tag_cur += tagSize;
       }
@@ -262,9 +262,9 @@ namespace Intrepid2 {
     // end edge dofs
 
     // the rest of the dofs are internal
-    const int numFaceDof = (degree-1)*degree;
-    int faceDofCur = 0;
-    for (int i=3*degree;i<degree*(degree+2);i++) {
+    const ordinal_type numFaceDof = (degree-1)*degree;
+    ordinal_type faceDofCur = 0;
+    for (ordinal_type i=3*degree;i<degree*(degree+2);i++) {
       tag_cur[0] = 2;  tag_cur[1] = 0;  tag_cur[2] = faceDofCur;  tag_cur[3] = numFaceDof;
       tag_cur += tagSize;
       faceDofCur++;
@@ -299,9 +299,9 @@ namespace Intrepid2 {
                                                         this -> getBaseCellTopology(),
                                                         this -> getCardinality() );
 #endif
-    const int numPts = inputPoints.dimension(0);
-    const int deg = this -> getDegree();
-    const int scalarBigN = (deg+1)*(deg+2)/2;
+    const ordinal_type numPts = inputPoints.dimension(0);
+    const ordinal_type deg = this -> getDegree();
+    const ordinal_type scalarBigN = (deg+1)*(deg+2)/2;
 
     try {
       switch (operatorType) {
@@ -310,11 +310,11 @@ namespace Intrepid2 {
           ArrayScalar phisCur( scalarBigN , numPts );
           Phis_.getValues( phisCur , inputPoints , OPERATOR_VALUE );
 
-          for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
-            for (int j=0;j<outputValues.dimension(1);j++) {  // point
+          for (ordinal_type i=0;i<outputValues.dimension(0);i++) { // RT bf
+            for (ordinal_type j=0;j<outputValues.dimension(1);j++) {  // point
               outputValues(i,j,0) = 0.0;
               outputValues(i,j,1) = 0.0;
-              for (int k=0;k<scalarBigN;k++) { // Dubiner bf
+              for (ordinal_type k=0;k<scalarBigN;k++) { // Dubiner bf
                 outputValues(i,j,0) += coeffs_(k,i) * phisCur(k,j);
                 outputValues(i,j,1) += coeffs_(k+scalarBigN,i) * phisCur(k,j);
               }
@@ -326,15 +326,15 @@ namespace Intrepid2 {
         {
           ArrayScalar phisCur( scalarBigN , numPts , 2 );
           Phis_.getValues( phisCur , inputPoints , OPERATOR_GRAD );
-          for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
-            for (int j=0;j<outputValues.dimension(1);j++) { // point loop
+          for (ordinal_type i=0;i<outputValues.dimension(0);i++) { // bf loop
+            for (ordinal_type j=0;j<outputValues.dimension(1);j++) { // point loop
               // dy of x component
               outputValues(i,j) = 0.0;
-              for (int k=0;k<scalarBigN;k++) {
+              for (ordinal_type k=0;k<scalarBigN;k++) {
                 outputValues(i,j) -= coeffs_(k,i) * phisCur(k,j,1);
               }
               // -dx of y component
-              for (int k=0;k<scalarBigN;k++) {
+              for (ordinal_type k=0;k<scalarBigN;k++) {
                 outputValues(i,j) += coeffs_(k+scalarBigN,i) * phisCur(k,j,0);
               }
             }

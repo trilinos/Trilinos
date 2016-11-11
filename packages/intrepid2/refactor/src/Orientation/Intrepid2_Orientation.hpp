@@ -82,7 +82,7 @@ namespace Intrepid2 {
                                       const elemNodeViewType elemNodes);
     
   private:
-    unsigned int _edgeOrt, _faceOrt;
+    ordinal_type _edgeOrt, _faceOrt;
     
   public:
     KOKKOS_INLINE_FUNCTION

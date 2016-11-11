@@ -68,7 +68,7 @@ namespace Intrepid2 {
     template <typename outputViewType,
               typename jacInverseViewType,
               typename inputViewType,
-              int spaceDim>
+              ordinal_type spaceDim>
     struct F_HGRADtransformGRAD {
       /**/  outputViewType     _output;
       const jacInverseViewType  _jacInverse;
@@ -368,7 +368,7 @@ namespace Intrepid2 {
           _inputDet(inputDet_),
           _inputWeight(inputWeight_) {}
 
-      typedef int value_type;
+      typedef ordinal_type value_type;
       
       KOKKOS_INLINE_FUNCTION
       void init( value_type &dst ) const {
@@ -446,7 +446,7 @@ namespace Intrepid2 {
   computeFaceMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<inputJacValueType,  inputJacProperties...>     inputJac,
                       const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights,
-                      const int                   whichFace,
+                      const ordinal_type                   whichFace,
                       const shards::CellTopology  parentCell,
                       const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -486,7 +486,7 @@ namespace Intrepid2 {
   computeEdgeMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
                       const Kokkos::DynRankView<inputJacValueType,  inputJacProperties...>   inputJac,
                       const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights,
-                      const int                   whichEdge,
+                      const ordinal_type                   whichEdge,
                       const shards::CellTopology  parentCell,
                       const Kokkos::DynRankView<scratchValueType,    scratchProperties...>    scratch ) {
 #ifdef HAVE_INTREPID2_DEBUG

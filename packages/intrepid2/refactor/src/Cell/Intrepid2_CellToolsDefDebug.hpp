@@ -64,13 +64,13 @@ namespace Intrepid2 {
 
 
   template<class Scalar>
-  void CellTools<Scalar>::printSubcellVertices(const int subcellDim,
-                                               const int subcellOrd,
+  void CellTools<Scalar>::printSubcellVertices(const ordinal_type subcellDim,
+                                               const ordinal_type subcellOrd,
                                                const shards::CellTopology & parentCell){
   
     // Get number of vertices for the specified subcell and parent cell dimension
-    int subcVertexCount = parentCell.getVertexCount(subcellDim, subcellOrd);
-    int cellDim         = parentCell.getDimension();
+    ordinal_type subcVertexCount = parentCell.getVertexCount(subcellDim, subcellOrd);
+    ordinal_type cellDim         = parentCell.getDimension();
   
     // Allocate space for the subcell vertex coordinates
     FieldContainer<double> subcellVertices(subcVertexCount, cellDim);
@@ -87,13 +87,13 @@ namespace Intrepid2 {
       <<  " is " << parentCell.getName(subcellDim, subcellOrd) << " with vertices = {";
   
     // Loop over subcell vertices
-    for(int subcVertOrd = 0; subcVertOrd < subcVertexCount; subcVertOrd++){
+    for(ordinal_type subcVertOrd = 0; subcVertOrd < subcVertexCount; subcVertOrd++){
       std::cout<< "(";
     
       // Loop over vertex Cartesian coordinates
-      for(int dim = 0; dim < (int)parentCell.getDimension(); dim++){
+      for(ordinal_type dim = 0; dim < (ordinal_type)parentCell.getDimension(); dim++){
         std::cout << subcellVertices(subcVertOrd, dim);
-        if(dim < (int)parentCell.getDimension()-1 ) { std::cout << ","; }
+        if(dim < (ordinal_type)parentCell.getDimension()-1 ) { std::cout << ","; }
       }
       std::cout<< ")";
       if(subcVertOrd < subcVertexCount - 1) { std::cout << ", "; }
@@ -106,17 +106,17 @@ namespace Intrepid2 {
   template<class ArrayCell>
   void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWorkset,
                                               const shards::CellTopology &  parentCell,
-                                              const int&                    pCellOrd,
-                                              const int&                    subcellDim,
-                                              const int&                    subcellOrd,
-                                              const int&                    fieldWidth){
+                                              const ordinal_type&                    pCellOrd,
+                                              const ordinal_type&                    subcellDim,
+                                              const ordinal_type&                    subcellOrd,
+                                              const ordinal_type&                    fieldWidth){
   
     // Get the ordinals, relative to reference cell, of subcell cellWorkset
-    int subcNodeCount = parentCell.getNodeCount(subcellDim, subcellOrd);
-    int pCellDim      = parentCell.getDimension();
-    std::vector<int> subcNodeOrdinals(subcNodeCount);
+    ordinal_type subcNodeCount = parentCell.getNodeCount(subcellDim, subcellOrd);
+    ordinal_type pCellDim      = parentCell.getDimension();
+    std::vector<ordinal_type> subcNodeOrdinals(subcNodeCount);
   
-    for(int i = 0; i < subcNodeCount; i++){
+    for(ordinal_type i = 0; i < subcNodeCount; i++){
       subcNodeOrdinals[i] = parentCell.getNodeMap(subcellDim, subcellOrd, i);
     }
   
@@ -126,10 +126,10 @@ namespace Intrepid2 {
       << " Subcell " << subcellOrd << " on parent cell " << pCellOrd << " is " 
       << parentCell.getName(subcellDim, subcellOrd) << " with node(s) \n ({";
   
-    for(int i = 0; i < subcNodeCount; i++){
+    for(ordinal_type i = 0; i < subcNodeCount; i++){
     
       // print Cartesian coordinates of the node
-      for(int dim = 0; dim < pCellDim; dim++){
+      for(ordinal_type dim = 0; dim < pCellDim; dim++){
         std::cout
           << std::setw(fieldWidth) << std::right << cellWorkset(pCellOrd, subcNodeOrdinals[i], dim); 
         if(dim < pCellDim - 1){ std::cout << ","; }

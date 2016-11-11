@@ -74,7 +74,7 @@ public:
   /** \brief  Constructor.
       \param  degree            [in] - the degree of polynomials contained in the basis.
    */
-  Basis_HGRAD_TET_Cn_FEM_ORTH( int degree );  
+  Basis_HGRAD_TET_Cn_FEM_ORTH( ordinal_type degree );  
   
   
   /** \brief  Evaluation of a FEM basis on a <strong>reference Tetrahedron</strong> cell. 
@@ -128,7 +128,7 @@ public:
                                     points at which to evaluate the basis functions.
   */
   static void tabulate( ArrayScalar & outputValues ,
-                        const int deg ,
+                        const ordinal_type deg ,
                         const ArrayScalar &inputPoints );
 };
   
@@ -150,7 +150,7 @@ public:
                                       points at which to evaluate the basis functions.
   */
   static void tabulate( ArrayScalar & outputValues ,
-                        const int deg ,
+                        const ordinal_type deg ,
                         const ArrayScalar &inputPoints );
 
   /** \brief function for indexing from orthogonal expansion indices into linear space
@@ -158,7 +158,7 @@ public:
       \param p [in] - the first index
       \param q [in] - the second index
       \param r [in] - the third index */
-  static int idx(int p, int q,int r)
+  static ordinal_type idx(ordinal_type p, ordinal_type q,ordinal_type r)
   {
     return (p+q+r)*(p+q+r+1)*(p+q+r+2)/6+(q+r)*(q+r+1)/2+r;
   }
@@ -181,7 +181,7 @@ public:
       \f]
   */
   static void jrc( const Scalar &alpha , const Scalar &beta , 
-		   const int &n ,
+		   const ordinal_type &n ,
 		   Scalar &an , Scalar &bn, Scalar &cn )
   
   {
@@ -219,7 +219,7 @@ public:
                                       points at which to evaluate the basis functions.
   */
   static void tabulate( ArrayScalar & outputValues ,
-                        const int deg ,
+                        const ordinal_type deg ,
                         const ArrayScalar &inputPoints );
     
 };

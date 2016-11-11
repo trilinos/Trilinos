@@ -48,7 +48,7 @@
 namespace Intrepid2 {
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::CubatureCompositeTet(const int degree) {
+CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::CubatureCompositeTet(const ordinal_type degree) {
   this->degree_    = degree;
   this->dimension_ = 3;
   TEUCHOS_TEST_FOR_EXCEPTION(degree != 3,
@@ -66,7 +66,7 @@ const CubatureTemplate *  CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::e
 
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-int CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
+ordinal_type CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
   return INTREPID2_CUBATURE_COMPOSITE_TET_MAX_ENUM;
 }
 

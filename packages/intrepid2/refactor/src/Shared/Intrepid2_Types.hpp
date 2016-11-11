@@ -111,16 +111,16 @@ namespace Intrepid2 {
   /// define constants
   class Parameters {
   public:
-    static constexpr unsigned int MaxNumPtsPerBasisEval= 16;      /// The maximum number of points to eval in serial mode
-    static constexpr unsigned int MaxOrder             = 10;      /// The maximum reconstruction order.
-    static constexpr unsigned int MaxIntegrationPoints = 1001;    /// The maximum number of integration points for direct cubature rules.
-    static constexpr unsigned int MaxCubatureDegreeEdge= 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct edge rule.
-    static constexpr unsigned int MaxCubatureDegreeTri = 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct triangle rule.
-    static constexpr unsigned int MaxCubatureDegreeTet = 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct tetrahedron rule.
-    static constexpr unsigned int MaxCubatureDegreePyr = 11;      /// The maximum degree of the polynomial that can be integrated exactly by a direct pyramid rule.
-    static constexpr unsigned int MaxDimension         = 3;       /// The maximum ambient space dimension.
-    static constexpr unsigned int MaxNewton            = 15;      /// Maximum number of Newton iterations used internally in methods such as computing the action of the inverse reference to physical cell map.
-    static constexpr unsigned int MaxDerivative        = 10;      /// Maximum order of derivatives allowed in intrepid.
+    static constexpr ordinal_type MaxNumPtsPerBasisEval= 16;      /// The maximum number of points to eval in serial mode
+    static constexpr ordinal_type MaxOrder             = 10;      /// The maximum reconstruction order.
+    static constexpr ordinal_type MaxIntegrationPoints = 1001;    /// The maximum number of integration points for direct cubature rules.
+    static constexpr ordinal_type MaxCubatureDegreeEdge= 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct edge rule.
+    static constexpr ordinal_type MaxCubatureDegreeTri = 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct triangle rule.
+    static constexpr ordinal_type MaxCubatureDegreeTet = 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct tetrahedron rule.
+    static constexpr ordinal_type MaxCubatureDegreePyr = 11;      /// The maximum degree of the polynomial that can be integrated exactly by a direct pyramid rule.
+    static constexpr ordinal_type MaxDimension         = 3;       /// The maximum ambient space dimension.
+    static constexpr ordinal_type MaxNewton            = 15;      /// Maximum number of Newton iterations used internally in methods such as computing the action of the inverse reference to physical cell map.
+    static constexpr ordinal_type MaxDerivative        = 10;      /// Maximum order of derivatives allowed in intrepid.
 
     // we do not want to use hard-wired epsilon, threshold and tolerence. 
     // static constexpr double Epsilon   = 1.0e-16; 

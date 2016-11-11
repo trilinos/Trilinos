@@ -446,8 +446,8 @@ namespace Intrepid2 {
     // */
     // template<class Scalar, class ArrayType>
     // static void getEquispacedLatticeTriangle( ArrayType &points ,
-    //                                           const int order ,
-    //                                           const int offset = 0 );
+    //                                           const ordinal_type order ,
+    //                                           const ordinal_type offset = 0 );
 
     // /** \brief Computes an equispaced lattice of a given
     //     order on the reference tetrahedron.  The output array is
@@ -465,8 +465,8 @@ namespace Intrepid2 {
     // */
     // template<class Scalar, class ArrayType>
     // static void getEquispacedLatticeTetrahedron( ArrayType &points ,
-    //                                              const int order ,
-    //                                              const int offset = 0 );
+    //                                              const ordinal_type order ,
+    //                                              const ordinal_type offset = 0 );
 
 
     // /** \brief interpolates Warburton's warp function on the line
@@ -476,7 +476,7 @@ namespace Intrepid2 {
     //     \param  warp        [out] - the amount to warp each point
     // */
     // template<class Scalar, class ArrayType>
-    // static void warpFactor( const int order ,
+    // static void warpFactor( const ordinal_type order ,
     //                         const ArrayType &xnodes ,
     //                         const ArrayType &xout ,
     //                         ArrayType &warp );
@@ -497,8 +497,8 @@ namespace Intrepid2 {
     // */
     // template<class Scalar, class ArrayType>
     // static void getWarpBlendLatticeTriangle(ArrayType &points ,
-    //                                         const int order ,
-    //                                         const int offset = 0 );
+    //                                         const ordinal_type order ,
+    //                                         const ordinal_type offset = 0 );
 
     // /** \brief Returns Warburton's warp-blend points of a given
     //     order on the reference tetrahedron.  The output array is
@@ -515,8 +515,8 @@ namespace Intrepid2 {
     // */
     // template<class Scalar, class ArrayType>
     // static void getWarpBlendLatticeTetrahedron( ArrayType &points ,
-    //                                             const int order ,
-    //                                             const int offset = 0 );
+    //                                             const ordinal_type order ,
+    //                                             const ordinal_type offset = 0 );
 
 
     // /** \brief This is used internally to compute the tetrahedral warp-blend points one each face
@@ -530,7 +530,7 @@ namespace Intrepid2 {
     // */
 
     // template<class Scalar, class ArrayType>
-    // static void warpShiftFace3D( const int order ,
+    // static void warpShiftFace3D( const ordinal_type order ,
     //                              const Scalar pval ,
     //                              const ArrayType &L1,
     //                              const ArrayType &L2,
@@ -548,7 +548,7 @@ namespace Intrepid2 {
     // */
 
     // template<class Scalar, class ArrayType>
-    // static void evalshift( const int order ,
+    // static void evalshift( const ordinal_type order ,
     //                        const Scalar pval ,
     //                        const ArrayType &L1 ,
     //                        const ArrayType &L2 ,
@@ -563,7 +563,7 @@ namespace Intrepid2 {
     // */
     // template<class Scalar, class ArrayType>
     // static void evalwarp( ArrayType &warp ,
-    //                       const int order ,
+    //                       const ordinal_type order ,
     //                       const ArrayType &xnodes ,
     //                       const ArrayType &xout );
   }; 
