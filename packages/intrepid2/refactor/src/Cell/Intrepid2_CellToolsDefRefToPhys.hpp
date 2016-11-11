@@ -91,12 +91,12 @@ namespace Intrepid2 {
         const auto val = ( valRank == 2 ? Kokkos::subdynrankview( _basisVals,       Kokkos::ALL(), pt) :
                            /**/           Kokkos::subdynrankview( _basisVals, cell, Kokkos::ALL(), pt));
 
-        const auto dim = phys.dimension(0);
-        const auto cardinality = val.dimension(0);
+        const ordinal_type dim = phys.dimension(0);
+        const ordinal_type cardinality = val.dimension(0);
 
-        for (size_type i=0;i<dim;++i) {
+        for (ordinal_type i=0;i<dim;++i) {
           phys(i) = 0;
-          for (size_type bf=0;bf<cardinality;++bf)
+          for (ordinal_type bf=0;bf<cardinality;++bf)
             phys(i) += dofs(bf, i)*val(bf);
         }
       }
@@ -178,7 +178,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): method defined only for 1 and 2-dimensional subcells.");
 
     INTREPID2_TEST_FOR_EXCEPTION( subcellOrd <  0 ||
-                                  subcellOrd >= parentCell.getSubcellCount(subcellDim), std::invalid_argument,
+                                  subcellOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(subcellDim)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): subcell ordinal out of range.");
 
     // refSubcellPoints is rank-2 (P,D1), D1 = cell dimension
@@ -190,7 +190,7 @@ namespace Intrepid2 {
     // paramPoints is rank-2 (P,D2) with D2 = subcell dimension
     INTREPID2_TEST_FOR_EXCEPTION( paramPoints.rank() != 2, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): paramPoints must have rank 2.");
-    INTREPID2_TEST_FOR_EXCEPTION( paramPoints.dimension(1) != subcellDim, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(paramPoints.dimension(1)) != subcellDim, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): paramPoints dimension (1) does not match to subcell dimension.");
 
     // cross check: refSubcellPoints and paramPoints: dimension 0 must match
@@ -199,8 +199,8 @@ namespace Intrepid2 {
 #endif
 
 
-    const auto cellDim = parentCell.getDimension();
-    const auto numPts  = paramPoints.dimension(0);
+    const ordinal_type cellDim = parentCell.getDimension();
+    const ordinal_type numPts  = paramPoints.dimension(0);
 
     // Get the subcell map, i.e., the coefficients of the parametrization function for the subcell
 
@@ -216,21 +216,21 @@ namespace Intrepid2 {
     // Apply the parametrization map to every point in parameter domain
     switch (subcellDim) {
     case 2: {
-      for (size_type pt=0;pt<numPts;++pt) {
+      for (ordinal_type pt=0;pt<numPts;++pt) {
         const auto u = paramPoints(pt, 0);
         const auto v = paramPoints(pt, 1);
 
         // map_dim(u,v) = c_0(dim) + c_1(dim)*u + c_2(dim)*v because both Quad and Tri ref faces are affine!
-        for (size_type i=0;i<cellDim;++i)
+        for (ordinal_type i=0;i<cellDim;++i)
           refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u +
                                                                      subcellMap(subcellOrd, i, 2)*v );
       }
       break;
     }
     case 1: {
-      for (size_type pt=0;pt<numPts;++pt) {
+      for (ordinal_type pt=0;pt<numPts;++pt) {
         const auto u = paramPoints(pt, 0);
-        for (size_type i=0;i<cellDim;++i)
+        for (ordinal_type i=0;i<cellDim;++i)
           refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u );
       }
       break;

@@ -610,7 +610,7 @@ template<typename SpT>
 //          << std::setw(w) <<  "Val" << std::endl;
 //       for (ordinal_type i=0;i<_m;++i) {
 //         size_type jbegin = _ap[i], jend = _ap[i+1];
-//         for (size_type j=jbegin;j<jend;++j) {
+//         for (ordinal_type j=jbegin;j<jend;++j) {
 //           SpT val = _ax[j];
 //           os << std::setw(w) <<      i << "  "
 //              << std::setw(w) << _aj[j] << "  "
@@ -624,9 +624,9 @@ template<typename SpT>
 //   }
 
 // template<class Scalar>
-// size_t
+// size_type
 // OrientationTools<Scalar>::DenseMatrix::countNumNonZeros(const Scalar epsilon) const {
-//   size_t nnz = 0;
+//   size_type nnz = 0;
 //   for (ordinal_type j=0;j<NumCols();++j) {
 //     for (ordinal_type i=0;i<NumRows();++i) {
 //       const Scalar val = Value(i,j);

@@ -69,16 +69,16 @@ namespace Intrepid2 {
     void getBaryCenter( /**/  centerViewType center,
                         const vertViewType verts) {
       // the enumeration already assumes the ordering of vertices (circling around the polygon)
-      const auto nvert = verts.dimension(0);
-      const auto dim   = verts.dimension(1);
+      const ordinal_type nvert = verts.dimension(0);
+      const ordinal_type dim   = verts.dimension(1);
       
       switch (dim) {
       case 2: {
         center(0) = 0;
         center(1) = 0;
         typename centerViewType::value_type area = 0;
-        for (auto i=0;i<nvert;++i) {
-          const auto j = (i + 1)%nvert;
+        for (ordinal_type i=0;i<nvert;++i) {
+          const ordinal_type j = (i + 1)%nvert;
           const auto scale = verts(i,0)*verts(j,1) - verts(j,0)*verts(i,1);
           center(0) += (verts(i,0) + verts(j,0))*scale;
           center(1) += (verts(i,1) + verts(j,1))*scale;
@@ -92,9 +92,9 @@ namespace Intrepid2 {
         // This method works fine for simplices, but for other 3-d shapes
         // is not precisely accurate. Could replace with approximate integration
         // perhaps.
-        for (auto j=0;j<dim;++j) {
+        for (ordinal_type j=0;j<dim;++j) {
           center(j) = 0;
-          for (auto i=0;i<nvert;++i) 
+          for (ordinal_type i=0;i<nvert;++i) 
             center(j) += verts(i,j);
           center(j) /= nvert;
         }
@@ -108,15 +108,15 @@ namespace Intrepid2 {
     void getMidPoints( /**/  midPointViewType midpts,
                        const nodeMapViewType map,
                        const vertViewType verts) {
-      const auto npts = map.dimension(0);
-      const auto dim  = verts.dimension(1);
+      const ordinal_type npts = map.dimension(0);
+      const ordinal_type dim  = verts.dimension(1);
       
-      for (auto i=0;i<npts;++i) {
+      for (ordinal_type i=0;i<npts;++i) {
         // first entry is the number of subcell vertices
-        const auto nvert_per_subcell = map(i, 0);
-        for (auto j=0;j<dim;++j) {
+        const ordinal_type nvert_per_subcell = map(i, 0);
+        for (ordinal_type j=0;j<dim;++j) {
           midpts(i,j) = 0;
-          for (auto k=1;k<=nvert_per_subcell;++k)
+          for (ordinal_type k=1;k<=nvert_per_subcell;++k)
             midpts(i,j) += verts(map(i,k),j);
           midpts(i,j) /= nvert_per_subcell;
         }
@@ -142,8 +142,8 @@ namespace Intrepid2 {
         // ** vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        const auto nvert = verts.dimension(0);
-        const auto dim   = verts.dimension(1);
+        const ordinal_type nvert = verts.dimension(0);
+        const ordinal_type dim   = verts.dimension(1);
 
         // ** control volume coords (N,P,D), here N corresponds to cell vertices
         auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
@@ -158,8 +158,8 @@ namespace Intrepid2 {
         getBaryCenter(center, verts);
         getMidPoints(midpts, _edgeMap, verts);
 
-        for (auto i=0;i<nvert;++i) {
-          for (auto j=0;j<dim;++j) {
+        for (ordinal_type i=0;i<nvert;++i) {
+          for (ordinal_type j=0;j<dim;++j) {
             // control volume is always quad
             cvCoords(i, 0, j) = verts(i, j);
             cvCoords(i, 1, j) = midpts(i, j);
@@ -190,8 +190,8 @@ namespace Intrepid2 {
         // ** vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        //const auto nvert = verts.dimension(0);
-        const auto dim   = verts.dimension(1);
+        //const ordinal_type nvert = verts.dimension(0);
+        const ordinal_type dim   = verts.dimension(1);
 
         // ** control volume coords (N,P,D), here N corresponds to cell vertices
         auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
@@ -208,9 +208,9 @@ namespace Intrepid2 {
         getMidPoints(edge_midpts, _edgeMap, verts);
         getMidPoints(face_midpts, _faceMap, verts);
 
-        for (auto i=0;i<4;++i) {
-          const auto ii = (i+4-1)%4;
-          for (auto j=0;j<dim;++j) {
+        for (ordinal_type i=0;i<4;++i) {
+          const ordinal_type ii = (i+4-1)%4;
+          for (ordinal_type j=0;j<dim;++j) {
             
             // set first node of bottom hex to primary cell node
             // and fifth node of upper hex
@@ -277,8 +277,8 @@ namespace Intrepid2 {
         // ** vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        //const auto nvert = verts.dimension(0);
-        const auto dim   = verts.dimension(1);
+        //const ordinal_type nvert = verts.dimension(0);
+        const ordinal_type dim   = verts.dimension(1);
 
         // ** control volume coords (N,P,D), here N corresponds to cell vertices
         auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
@@ -295,9 +295,9 @@ namespace Intrepid2 {
         getMidPoints(edge_midpts, _edgeMap, verts);
         getMidPoints(face_midpts, _faceMap, verts);
 
-        for (auto i=0;i<3;++i) {
-          const auto ii = (i+3-1)%3;
-          for (auto j=0;j<dim;++j) {
+        for (ordinal_type i=0;i<3;++i) {
+          const ordinal_type ii = (i+3-1)%3;
+          for (ordinal_type j=0;j<dim;++j) {
             // set first node of bottom hex to primary cell node
             cvCoords(i,0,j) = verts(i,j);
 
@@ -324,7 +324,7 @@ namespace Intrepid2 {
           }
         }
 
-        for (auto j=0;j<dim;++j) {
+        for (ordinal_type j=0;j<dim;++j) {
           // Control volume attached to fourth node
           // set first node of bottom hex to primary cell node
           cvCoords(3,0,j) = verts(3,j);
@@ -375,24 +375,24 @@ namespace Intrepid2 {
 #endif
 
     // get array dimensions
-    const auto numCells = cellCoords.dimension(0);
-    //const auto numVerts = cellCoords.dimension(1);
-    const auto spaceDim = cellCoords.dimension(2);
+    const ordinal_type numCells = cellCoords.dimension(0);
+    //const ordinal_type numVerts = cellCoords.dimension(1);
+    const ordinal_type spaceDim = cellCoords.dimension(2);
 
     // construct edge and face map for the cell type
-    const auto numEdge = primaryCell.getSubcellCount(1);
+    const ordinal_type numEdge = primaryCell.getSubcellCount(1);
     Kokkos::View<ordinal_type**,Kokkos::HostSpace> edgeMapHost("CellTools::getSubcvCoords::edgeMapHost", numEdge, 3);
-    for (auto i=0;i<numEdge;++i) {
+    for (ordinal_type i=0;i<numEdge;++i) {
       edgeMapHost(i,0) = primaryCell.getNodeCount(1, i);
-      for (auto j=0;j<edgeMapHost(i,0);++j)
+      for (ordinal_type j=0;j<edgeMapHost(i,0);++j)
         edgeMapHost(i,j+1) = primaryCell.getNodeMap(1, i, j);
     }
 
-    const auto numFace = (spaceDim > 2 ? primaryCell.getSubcellCount(2) : 0);
+    const ordinal_type numFace = (spaceDim > 2 ? primaryCell.getSubcellCount(2) : 0);
     Kokkos::View<ordinal_type**,Kokkos::HostSpace> faceMapHost("CellTools::getSubcvCoords::faceMapHost", numFace, 5);
-    for (auto i=0;i<numFace;++i) {
+    for (ordinal_type i=0;i<numFace;++i) {
       faceMapHost(i,0) = primaryCell.getNodeCount(2, i);
-      for (auto j=0;j<faceMapHost(i,0);++j)
+      for (ordinal_type j=0;j<faceMapHost(i,0);++j)
         faceMapHost(i,j+1) = primaryCell.getNodeMap(2, i, j);
     }
 

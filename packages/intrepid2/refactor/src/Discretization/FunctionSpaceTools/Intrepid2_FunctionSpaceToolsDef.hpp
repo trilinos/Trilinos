@@ -131,7 +131,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( outputVals.dimension(2)      != inputVals.dimension(1) || 
                                     jacobianInverse.dimension(1) != inputVals.dimension(1), std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): Point dimension does not match.");
-      const ordinal_type spaceDim = outputVals.dimension(3);
+      const auto spaceDim = outputVals.dimension(3);
       INTREPID2_TEST_FOR_EXCEPTION( jacobianInverse.dimension(2) != spaceDim || 
                                     jacobianInverse.dimension(3) != spaceDim || 
                                     inputVals.dimension(2)       != spaceDim , std::invalid_argument,
@@ -370,16 +370,16 @@ namespace Intrepid2 {
 
       typedef ordinal_type value_type;
       
-      KOKKOS_INLINE_FUNCTION
-      void init( value_type &dst ) const {
-        dst = false;
-      }
+//      KOKKOS_INLINE_FUNCTION
+//      void init( value_type &dst ) const {
+//        dst = false;
+//      }
       
-      KOKKOS_INLINE_FUNCTION
-      void join( volatile value_type &dst,
-                 const volatile value_type &src ) const {
-        dst |= src;
-      }
+//      KOKKOS_INLINE_FUNCTION
+//      void join( volatile value_type &dst,
+//                 const volatile value_type &src ) const {
+//       dst |= src;
+//      }
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type cl, value_type &dst) const {
@@ -413,9 +413,8 @@ namespace Intrepid2 {
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Ranks are not compatible.");
       INTREPID2_TEST_FOR_EXCEPTION( outputVals.dimension(0) != inputDet.dimension(0), std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Cell dimension does not match.");
-      const ordinal_type P = outputVals.dimension(1);
-      INTREPID2_TEST_FOR_EXCEPTION( inputDet.dimension(1)      != P ||
-                                    inputWeights.dimension(0) != P, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inputDet.dimension(1)      !=  outputVals.dimension(1) ||
+                                    inputWeights.dimension(0) !=  outputVals.dimension(1), std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Point dimension does not match.");
     }
 #endif
@@ -959,7 +958,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (FunctionSpaceTools::evaluate): First dimensions (number of fields) of the coefficient and fields input containers must agree!");
     INTREPID2_TEST_FOR_EXCEPTION( outputPointVals.dimension(0) != inputFields.dimension(0), std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the input fields container and the output values container must agree!");
-    for (size_type i=1;i<outputPointVals.rank();++i) 
+    for (size_type i=1;i<outputPointVals.rank();++i)
       INTREPID2_TEST_FOR_EXCEPTION( outputPointVals.dimension(i) != inputFields.dimension(i+1), std::invalid_argument, 
                                     ">>> ERROR (FunctionSpaceTools::evaluate): outputPointVals dimension(i) does not match to inputFields dimension(i+1).");
 #endif

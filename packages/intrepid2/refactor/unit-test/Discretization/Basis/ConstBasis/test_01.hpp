@@ -99,7 +99,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
@@ -150,7 +149,7 @@ namespace Intrepid2 {
           const auto allTags = basis.getAllDofTags();
           
           // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-          const auto dofTagSize = allTags.dimension(0);
+          const ordinal_type dofTagSize = allTags.dimension(0);
           for (ordinal_type i=0;i<dofTagSize;++i) {
             const ordinal_type bfOrd = basis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
             

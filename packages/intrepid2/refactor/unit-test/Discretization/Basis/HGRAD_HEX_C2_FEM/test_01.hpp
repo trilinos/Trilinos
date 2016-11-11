@@ -139,12 +139,12 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel( hexNodes, 27, 3);
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
-        const auto numFields = hexBasis.getCardinality();
-        const auto numPoints = hexNodes.dimension(0);
-        const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
-        const auto D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
+        const ordinal_type numFields = hexBasis.getCardinality();
+        const ordinal_type numPoints = hexNodes.dimension(0);
+        const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
+        const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
 
-        const auto workSize  = numFields*numPoints*D2Cardin;
+        const ordinal_type workSize  = numFields*numPoints*D2Cardin;
         DynRankView ConstructWithLabel(work, workSize);
 
         DynRankView vals(work.data(), numFields, numPoints);
@@ -247,12 +247,12 @@ namespace Intrepid2 {
 
       try{
 
-        const auto numFields = hexBasis.getCardinality();
+        const ordinal_type numFields = hexBasis.getCardinality();
         const auto allTags = hexBasis.getAllDofTags();
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const auto dofTagSize = allTags.dimension(0);
-        for (auto i = 0; i < dofTagSize; ++i) {
+        const ordinal_type dofTagSize = allTags.dimension(0);
+        for (ordinal_type i = 0; i < dofTagSize; ++i) {
           const auto bfOrd  = hexBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
           const auto myTag = hexBasis.getDofTag(bfOrd);
@@ -276,7 +276,7 @@ namespace Intrepid2 {
         }
 
         // Now do the same but loop over basis functions
-        for( auto bfOrd = 0; bfOrd < numFields; ++bfOrd) {
+        for( ordinal_type bfOrd = 0; bfOrd < numFields; ++bfOrd) {
           const auto myTag  = hexBasis.getDofTag(bfOrd);
           const auto myBfOrd = hexBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
           if( bfOrd != myBfOrd) {
@@ -474,12 +474,12 @@ namespace Intrepid2 {
         Kokkos::deep_copy(hexNodes, hexNodesHost);
 
         // Dimensions for the output arrays:
-        const auto numFields = hexBasis.getCardinality();
-        const auto numPoints = hexNodes.dimension(0);
-        const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
-        const auto D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
-        const auto D3Cardin  = getDkCardinality(OPERATOR_D3, spaceDim);
-        const auto D4Cardin  = getDkCardinality(OPERATOR_D4, spaceDim);
+        const ordinal_type numFields = hexBasis.getCardinality();
+        const ordinal_type numPoints = hexNodes.dimension(0);
+        const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
+        const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
+        const ordinal_type D3Cardin  = getDkCardinality(OPERATOR_D3, spaceDim);
+        const ordinal_type D4Cardin  = getDkCardinality(OPERATOR_D4, spaceDim);
 
         {
           // Generic array for values, grads, curls, etc. that will be properly sized before each call
@@ -488,9 +488,9 @@ namespace Intrepid2 {
           hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i = 0; i < numFields; ++i) {
-            for (auto j = 0; j < numPoints; ++j) {
-              const auto l =  i + j * numFields;
+          for (ordinal_type i = 0; i < numFields; ++i) {
+            for (ordinal_type j = 0; j < numPoints; ++j) {
+              const ordinal_type l =  i + j * numFields;
               if (std::abs(vals_host(i,j) - basisValues[l]) > tol ) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -511,12 +511,12 @@ namespace Intrepid2 {
           hexBasis.getValues(vals, hexNodes, OPERATOR_GRAD);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i = 0; i < numFields; ++i) {
-            for (auto j = 0; j < numPoints; ++j) {
-              for (auto k = 0; k < spaceDim; ++k) {
+          for (ordinal_type i = 0; i < numFields; ++i) {
+            for (ordinal_type j = 0; j < numPoints; ++j) {
+              for (ordinal_type k = 0; k < spaceDim; ++k) {
 
                 // basisGrads is (F,P,D), compute offset:
-                const auto l = k + j * spaceDim + i * spaceDim * numPoints;
+                const ordinal_type l = k + j * spaceDim + i * spaceDim * numPoints;
                 if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -534,12 +534,12 @@ namespace Intrepid2 {
           // Check D1 of basis function (do not resize vals because it has the correct size: D1 = GRAD)
           hexBasis.getValues(vals, hexNodes, OPERATOR_D1);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i = 0; i < numFields; ++i) {
-            for (auto j = 0; j < numPoints; ++j) {
-              for (auto k = 0; k < spaceDim; ++k) {
+          for (ordinal_type i = 0; i < numFields; ++i) {
+            for (ordinal_type j = 0; j < numPoints; ++j) {
+              for (ordinal_type k = 0; k < spaceDim; ++k) {
 
                 // basisGrads is (F,P,D), compute offset:
-                const auto l = k + j * spaceDim + i * spaceDim * numPoints;
+                const ordinal_type l = k + j * spaceDim + i * spaceDim * numPoints;
                 if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -561,12 +561,12 @@ namespace Intrepid2 {
           hexBasis.getValues(vals, hexNodes, OPERATOR_D2);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i = 0; i < numFields; ++i) {
-            for (auto j = 0; j < numPoints; ++j) {
-              for (auto k = 0; k < D2Cardin; ++k) {
+          for (ordinal_type i = 0; i < numFields; ++i) {
+            for (ordinal_type j = 0; j < numPoints; ++j) {
+              for (ordinal_type k = 0; k < D2Cardin; ++k) {
 
                 // basisD2 is (F,P,Dk), compute offset:
-                const auto l = k + j * D2Cardin + i * D2Cardin * numPoints;
+                const ordinal_type l = k + j * D2Cardin + i * D2Cardin * numPoints;
                 if (std::abs(vals_host(i,j,k) - basisD2[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -588,12 +588,12 @@ namespace Intrepid2 {
           hexBasis.getValues(vals, hexNodes, OPERATOR_D3);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i = 0; i < numFields; ++i) {
-            for (auto j = 0; j < numPoints; ++j) {
-              for (auto k = 0; k < D3Cardin; ++k) {
+          for (ordinal_type i = 0; i < numFields; ++i) {
+            for (ordinal_type j = 0; j < numPoints; ++j) {
+              for (ordinal_type k = 0; k < D3Cardin; ++k) {
 
                 // basisD3 is (F,P,Dk), compute offset:
-                const auto l = k + j * D3Cardin + i * D3Cardin * numPoints;
+                const ordinal_type l = k + j * D3Cardin + i * D3Cardin * numPoints;
                 if (std::abs(vals_host(i,j,k) - basisD3[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -615,9 +615,9 @@ namespace Intrepid2 {
           hexBasis.getValues(vals, hexNodes, OPERATOR_D4);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i = 0; i < numFields; i++) {
-            for (auto j = 0; j < numPoints; j++) {
-              for (auto k = 0; k < D4Cardin; k++) {
+          for (ordinal_type i = 0; i < numFields; i++) {
+            for (ordinal_type j = 0; j < numPoints; j++) {
+              for (ordinal_type k = 0; k < D4Cardin; k++) {
 
                 // basisD4 is (F,P,Dk), compute offset:
                 int l = k + j * D4Cardin + i * D4Cardin * numPoints;
@@ -647,15 +647,15 @@ namespace Intrepid2 {
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];
             // The last dimension is the number of kth derivatives and needs to be resized for every Dk
-            const auto DkCardin  = getDkCardinality(op, spaceDim);
+            const ordinal_type DkCardin  = getDkCardinality(op, spaceDim);
             DynRankView ConstructWithLabel(vals, numFields, numPoints, DkCardin);
             hexBasis.getValues(vals, hexNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals);
 
-            for (auto i1 = 0; i1 < numFields; ++i1)
-              for (auto i2 = 0; i2 < numPoints; ++i2)
-                for (auto i3 = 0; i3 < DkCardin; ++i3) {
+            for (ordinal_type i1 = 0; i1 < numFields; ++i1)
+              for (ordinal_type i2 = 0; i2 < numPoints; ++i2)
+                for (ordinal_type i3 = 0; i3 < DkCardin; ++i3) {
                   if (std::abs(vals_host(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -681,8 +681,8 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-        const auto numFields = hexBasis.getCardinality();
-        const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numFields = hexBasis.getCardinality();
+        const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
         // Check exceptions.
         ordinal_type nthrow = 0, ncatch = 0;
@@ -718,8 +718,9 @@ namespace Intrepid2 {
         auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
         Kokkos::deep_copy(bvals_host, bvals);
         char buffer[120];
-        for (auto i=0; i<bvals.dimension(0); ++i) {
-          for (auto j=0; j<bvals.dimension(1); ++j) {
+        ordinal_type b_dim0(bvals.dimension(0)), b_dim1(bvals.dimension(1));
+        for (ordinal_type i=0; i<b_dim0; ++i) {
+          for (ordinal_type j=0; j<b_dim1; ++j) {
             if ((i != j) && (std::abs(bvals_host(i,j) - 0.0) > tol)) {
               errorFlag++;
               sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), cvals_host(i,2), bvals_host(i,j), 0.0);

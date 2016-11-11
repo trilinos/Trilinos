@@ -469,9 +469,6 @@ namespace Intrepid2 {
             weightedBasisValues("weightedBasisValues", numCells, numDofs, numPoints),
             weightedBasisGrads ("weightedBasisGrads",  numCells, numDofs, numPoints, spaceDim);
 
-          typedef CellTools<DeviceSpaceType> cts;
-          typedef FunctionSpaceTools<DeviceSpaceType> fts;
-
           typedef F_hgrad_eval<ValueType,DeviceSpaceType> FunctorType;
 
           using range_policy_type = Kokkos::Experimental::MDRangePolicy

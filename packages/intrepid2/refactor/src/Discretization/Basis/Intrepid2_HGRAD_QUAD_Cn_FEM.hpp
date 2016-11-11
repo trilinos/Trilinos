@@ -193,7 +193,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != this->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
       // Verify 1st dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,

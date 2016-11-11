@@ -197,25 +197,25 @@ namespace Intrepid2 {
       Kokkos::deep_copy( ordinalToTag, -1 );
 
       // Copy tags
-      for (auto i=0;i<basisCard;++i)
-        for (auto j=0;j<tagSize;++j)
+      for (ordinal_type i=0;i<basisCard;++i)
+        for (ordinal_type j=0;j<tagSize;++j)
           ordinalToTag(i, j) = tags(i*tagSize + j);
 
       // Find out dimension of tagToOrdinal
       auto maxScDim = 0;  // first dimension of tagToOrdinal
-      for (auto i=0;i<basisCard;++i)
+      for (ordinal_type i=0;i<basisCard;++i)
         if (maxScDim < tags(i*tagSize + posScDim))
           maxScDim = tags(i*tagSize + posScDim);
       ++maxScDim;
 
       auto maxScOrd = 0; // second dimension of tagToOrdinal
-      for (auto i=0;i<basisCard;++i)
+      for (ordinal_type i=0;i<basisCard;++i)
         if (maxScOrd < tags(i*tagSize + posScOrd))
           maxScOrd = tags(i*tagSize + posScOrd);
       ++maxScOrd;
 
       auto maxDfOrd = 0;  // third dimension of tagToOrdinal
-      for (auto i=0;i<basisCard;++i)
+      for (ordinal_type i=0;i<basisCard;++i)
         if (maxDfOrd < tags(i*tagSize + posDfOrd))
           maxDfOrd = tags[i*tagSize + posDfOrd];
       ++maxDfOrd;
@@ -227,7 +227,7 @@ namespace Intrepid2 {
       Kokkos::deep_copy( tagToOrdinal, -1 );
 
       // Overwrite elements of the array corresponding to tags with local DoF Id's, leave all other = -1
-      for (auto i=0;i<basisCard;++i)
+      for (ordinal_type i=0;i<basisCard;++i)
         tagToOrdinal(tags(i*tagSize), tags(i*tagSize+1), tags(i*tagSize+2)) = i;
     }
 
@@ -409,9 +409,9 @@ namespace Intrepid2 {
                                     ">>> ERROR (Basis::getDofOrdinal): subcDofOrd is out of range");
 #endif
       ordinal_type r_val = -1;
-      if ( subcDim    < tagToOrdinal_.dimension(0) &&
-           subcOrd    < tagToOrdinal_.dimension(1) &&
-           subcDofOrd < tagToOrdinal_.dimension(2) )
+      if ( subcDim    < static_cast<ordinal_type>(tagToOrdinal_.dimension(0)) &&
+           subcOrd    < static_cast<ordinal_type>(tagToOrdinal_.dimension(1)) &&
+           subcDofOrd < static_cast<ordinal_type>(tagToOrdinal_.dimension(2)) )
         r_val = tagToOrdinal_(subcDim, subcOrd, subcDofOrd);
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( r_val == -1, std::runtime_error,

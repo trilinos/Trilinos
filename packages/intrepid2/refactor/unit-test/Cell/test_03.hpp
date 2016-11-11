@@ -137,7 +137,7 @@ namespace Intrepid2 {
         // Allocate storage and extract all standard cells with base topologies
         std::vector<shards::CellTopology> standardBaseTopologies;
         shards::getTopologies(standardBaseTopologies, 4, shards::STANDARD_CELL, shards::BASE_TOPOLOGY);
-        const auto topoSize = standardBaseTopologies.size();
+        const ordinal_type topoSize = standardBaseTopologies.size();
 
         // Define topologies for the edge and face parametrization domains. (faces are Tri or Quad)
         const auto paramEdge     = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
@@ -153,14 +153,14 @@ namespace Intrepid2 {
         // This test loops over standard 3D cells with base topologies, creates a set of nodes and tests normals
         {
           // Define cubature on the edge parametrization domain:
-          const auto testAccuracy = 6;
+          const ordinal_type testAccuracy = 6;
           CubatureDirectLineGauss<DeviceSpaceType,ValueType,ValueType> edgeCubature(testAccuracy);
           CubatureDirectTriDefault<DeviceSpaceType,ValueType,ValueType> triFaceCubature(testAccuracy);
           CubatureTensor<DeviceSpaceType,ValueType,ValueType> quadFaceCubature( edgeCubature, edgeCubature );
 
-          const auto faceCubDim = 2;
-          const auto numTriFaceCubPoints  = triFaceCubature.getNumPoints();
-          const auto numQuadFaceCubPoints = quadFaceCubature.getNumPoints();
+          const ordinal_type faceCubDim = 2;
+          const ordinal_type numTriFaceCubPoints  = triFaceCubature.getNumPoints();
+          const ordinal_type numQuadFaceCubPoints = quadFaceCubature.getNumPoints();
 
           // Allocate storage for cubature points and weights on face parameter domain and fill with points:
           DynRankView ConstructWithLabel(paramTriFacePoints,   numTriFaceCubPoints,  faceCubDim);
@@ -172,7 +172,7 @@ namespace Intrepid2 {
           quadFaceCubature.getCubature(paramQuadFacePoints, paramQuadFaceWeights);
 
           // Loop over admissible topologies
-          for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) {
+          for (ordinal_type topoOrd=0;topoOrd<topoSize;++topoOrd) {
             const auto cell = standardBaseTopologies[topoOrd];
 
             // skip cells not supported
@@ -181,9 +181,9 @@ namespace Intrepid2 {
 
             // Exclude 2D and Pyramid<5> cells
             if ( cell.getDimension() == 3 ) { // && cell.getKey() != shards::Pyramid<5>::key ) {
-              const auto cellDim  = cell.getDimension();
-              const auto nCount   = cell.getNodeCount();
-              const auto vCount   = cell.getVertexCount();
+              const ordinal_type cellDim  = cell.getDimension();
+              const ordinal_type nCount   = cell.getNodeCount();
+              const ordinal_type vCount   = cell.getVertexCount();
 
               DynRankView ConstructWithLabel(refCellVertices, nCount, cellDim);
               ct::getReferenceSubcellVertices(refCellVertices, cellDim, 0, cell);
@@ -195,8 +195,8 @@ namespace Intrepid2 {
 
               // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
               // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology
-              for (size_type v=0;v<vCount;++v)
-                for (size_type d=0;d<cellDim;++d) {
+              for (ordinal_type v=0;v<vCount;++v)
+                for (ordinal_type d=0;d<cellDim;++d) {
                   const auto delta = Teuchos::ScalarTraits<double>::random()/8.0;
                   physCellVertices(0, v, d) = refCellVertices(v, d) + delta;
                 }
@@ -238,11 +238,11 @@ namespace Intrepid2 {
                   
                   // Loop over face points: redundant for affine faces, but CellTools gives one vector
                   // per point so need to check all points anyways.
-                  for (auto pt=0;pt<numTriFaceCubPoints;++pt) {
+                  for (ordinal_type pt=0;pt<numTriFaceCubPoints;++pt) {
                     DynRankView ConstructWithLabel(tanX, 3);
                     DynRankView ConstructWithLabel(tanY, 3);
                     DynRankView ConstructWithLabel(faceNormal, 3);
-                    for (auto d=0;d<cellDim;++d) {
+                    for (ordinal_type d=0;d<cellDim;++d) {
                       tanX(d) = physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d);
                       tanY(d) = physCellVertices(0, v2ord, d) - physCellVertices(0, v0ord, d);
                     }
@@ -250,7 +250,7 @@ namespace Intrepid2 {
                     rst::vecprod(faceNormal, tanX, tanY);
                     
                     // Compare direct normal with d-component of the face/side normal by CellTools
-                    for (auto d=0;d<cellDim;++d) {
+                    for (ordinal_type d=0;d<cellDim;++d) {
                       
                       // face normal method
                       if ( std::abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > tol ){
@@ -304,12 +304,12 @@ namespace Intrepid2 {
                   const auto v3ord = cell.getNodeMap(2, faceOrd, 3);
 
                   // Loop over face points (redundant for affine faces, but needed for later when we handle non-affine ones)
-                  for (auto pt=0;pt<numQuadFaceCubPoints;++pt) {
+                  for (ordinal_type pt=0;pt<numQuadFaceCubPoints;++pt) {
                     DynRankView ConstructWithLabel(tanX, 3);
                     DynRankView ConstructWithLabel(tanY, 3);
                     DynRankView ConstructWithLabel(faceNormal, 3);
 
-                    for (size_type d=0;d<cellDim;++d) {
+                    for (ordinal_type d=0;d<cellDim;++d) {
                       tanX(d) = ( physCellVertices(0, v0ord, d)*(-1.0 + paramQuadFacePoints(pt,1) )  +
                                   physCellVertices(0, v1ord, d)*( 1.0 - paramQuadFacePoints(pt,1) ) +
                                   physCellVertices(0, v2ord, d)*( 1.0 + paramQuadFacePoints(pt,1) ) +
@@ -324,7 +324,7 @@ namespace Intrepid2 {
                     rst::vecprod(faceNormal, tanX, tanY);
 
                     // Compare direct normal with d-component of the face/side normal by CellTools
-                    for (size_type d=0;d<cellDim;++d) {
+                    for (ordinal_type d=0;d<cellDim;++d) {
 
                       // face normal method
                       if( std::abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > tol ) {

@@ -135,9 +135,9 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(wedgeNodes, 12, 3);
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
-        const auto numFields = wedgeBasis.getCardinality();
-        const auto numPoints = wedgeNodes.dimension(0);
-        const auto spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numFields = wedgeBasis.getCardinality();
+        const ordinal_type numPoints = wedgeNodes.dimension(0);
+        const ordinal_type spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
 
         DynRankView vals("vals", numFields, numPoints);
         DynRankView vals_vec("vals", numFields, numPoints, spaceDim);
@@ -230,12 +230,12 @@ namespace Intrepid2 {
         << "===============================================================================\n";
   
       try {
-        const auto numFields = wedgeBasis.getCardinality();
+        const ordinal_type numFields = wedgeBasis.getCardinality();
         const auto allTags = wedgeBasis.getAllDofTags();
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const auto dofTagSize = allTags.dimension(0);
-        for (auto i=0;i<dofTagSize;++i) {
+        const ordinal_type dofTagSize = allTags.dimension(0);
+        for (ordinal_type i=0;i<dofTagSize;++i) {
           const auto bfOrd = wedgeBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
           const auto myTag = wedgeBasis.getDofTag(bfOrd);
@@ -259,7 +259,7 @@ namespace Intrepid2 {
         }
 
         // Now do the same but loop over basis functions
-        for (auto bfOrd=0;bfOrd<numFields;++bfOrd) {
+        for (ordinal_type bfOrd=0;bfOrd<numFields;++bfOrd) {
           const auto myTag = wedgeBasis.getDofTag(bfOrd);
 
           const auto myBfOrd = wedgeBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
@@ -374,10 +374,10 @@ namespace Intrepid2 {
         Kokkos::deep_copy(wedgeNodes, wedgeNodesHost);
 
         // Dimensions for the output arrays:
-        const auto numFields = wedgeBasis.getCardinality();
-        const auto numPoints = wedgeNodes.dimension(0);
-        const auto spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
-        const auto D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
+        const ordinal_type numFields = wedgeBasis.getCardinality();
+        const ordinal_type numPoints = wedgeNodes.dimension(0);
+        const ordinal_type spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
+        const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
         
         // Check VALUE of basis functions: resize vals to rank-2 container:
         {
@@ -385,9 +385,9 @@ namespace Intrepid2 {
           wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i=0;i<numFields;++i) {
-            for (auto j=0;j<numPoints;++j) {
-              const auto l =  i + j * numFields;
+          for (ordinal_type i=0;i<numFields;++i) {
+            for (ordinal_type j=0;j<numPoints;++j) {
+              const ordinal_type l =  i + j * numFields;
               if (std::abs(vals_host(i,j) - basisValues[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -408,10 +408,10 @@ namespace Intrepid2 {
           wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_GRAD);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i=0;i<numFields;++i) {
-            for (auto j=0;j<numPoints;++j) {
-              for (auto k=0;k<spaceDim;++k) {
-                const auto l = k + i * spaceDim + j * spaceDim * numFields;
+          for (ordinal_type i=0;i<numFields;++i) {
+            for (ordinal_type j=0;j<numPoints;++j) {
+              for (ordinal_type k=0;k<spaceDim;++k) {
+                const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
                 if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -433,10 +433,10 @@ namespace Intrepid2 {
           wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_D1);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i=0;i<numFields;++i) {
-            for (auto j=0;j<numPoints;++j) {
-              for (auto k=0;k<spaceDim;++k) {
-                const auto l = k + i * spaceDim + j * spaceDim * numFields;
+          for (ordinal_type i=0;i<numFields;++i) {
+            for (ordinal_type j=0;j<numPoints;++j) {
+              for (ordinal_type k=0;k<spaceDim;++k) {
+                const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
                 if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -458,10 +458,10 @@ namespace Intrepid2 {
           wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_D2);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
-          for (auto i=0;i<numFields;++i) {
-            for (auto j=0;j<numPoints;++j) {
-              for (auto k=0;k<D2Cardin;++k) {
-                const auto l = k + i * D2Cardin + j * D2Cardin * numFields;
+          for (ordinal_type i=0;i<numFields;++i) {
+            for (ordinal_type j=0;j<numPoints;++j) {
+              for (ordinal_type k=0;k<D2Cardin;++k) {
+                const ordinal_type l = k + i * D2Cardin + j * D2Cardin * numFields;
                 if (std::abs(vals_host(i,j,k) - basisD2[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -490,15 +490,15 @@ namespace Intrepid2 {
                                     OPERATOR_MAX };
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];
-            const auto DkCardin  = getDkCardinality(op, spaceDim);
+            const ordinal_type DkCardin  = getDkCardinality(op, spaceDim);
             DynRankView vals("vals", numFields, numPoints, DkCardin);
             
             wedgeBasis.getValues(vals, wedgeNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals);
-            for (auto i1=0;i1<numFields; i1++)
-              for (auto i2=0;i2<numPoints; i2++)
-                for (auto i3=0;i3<DkCardin; i3++) {
+            for (ordinal_type i1=0;i1<numFields; i1++)
+              for (ordinal_type i2=0;i2<numPoints; i2++)
+                for (ordinal_type i3=0;i3<DkCardin; i3++) {
                   if (std::abs(vals_host(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -524,8 +524,8 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try {
-        const auto numFields = wedgeBasis.getCardinality();
-        const auto spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numFields = wedgeBasis.getCardinality();
+        const ordinal_type spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
 
         // Check exceptions.
         ordinal_type nthrow = 0, ncatch = 0;
@@ -562,8 +562,8 @@ namespace Intrepid2 {
         auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
 
         Kokkos::deep_copy(bvals_host, bvals);
-        for (auto i=0;i<numFields;++i) {
-          for (auto j=0;j<numFields;++j) {
+        for (ordinal_type i=0;i<numFields;++i) {
+          for (ordinal_type j=0;j<numFields;++j) {
             const ValueType expected_value = (i == j);
             const ValueType value = bvals_host(i,j);
             if (std::abs(value - expected_value) > tol) {

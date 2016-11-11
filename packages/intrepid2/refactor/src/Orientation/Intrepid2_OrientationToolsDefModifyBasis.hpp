@@ -138,11 +138,11 @@ namespace Intrepid2 {
     {
       INTREPID2_TEST_FOR_EXCEPTION( input.rank() != output.rank(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output rank are not 3.");
-      for (ordinal_type i=0;i<input.rank();++i)
+      for (size_type i=0;i<input.rank();++i)
         INTREPID2_TEST_FOR_EXCEPTION( input.dimension(i) != output.dimension(i), std::invalid_argument,
                                       ">>> ERROR (OrientationTools::modifyBasisByOrientation): Input and output dimension does not match.");
 
-      INTREPID2_TEST_FOR_EXCEPTION( input.dimension(1) != basis->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(input.dimension(1)) != basis->getCardinality(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
       INTREPID2_TEST_FOR_EXCEPTION( input.dimension(3) != basis->getBaseCellTopology().getDimension(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Space dimension of input/output does not match to topology dimension.");

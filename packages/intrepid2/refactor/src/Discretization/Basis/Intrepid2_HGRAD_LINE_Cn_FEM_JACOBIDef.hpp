@@ -70,17 +70,17 @@ namespace Intrepid2 {
                const double         beta,
                const ordinal_type   operatorDn ) {
       // cardinality of the evaluation order
-      const auto card = order + 1;
+      const ordinal_type card = order + 1;
       ordinal_type opDn = operatorDn;
 
       const auto pts = Kokkos::subview( input, Kokkos::ALL(), 0 );
-      const auto np = input.dimension(0);
+      const ordinal_type np = input.dimension(0);
 
       switch (opType) {
       case OPERATOR_VALUE: {
         const Kokkos::View<typename outputViewType::value_type*,
             Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
-        for (auto p=0;p<card;++p) {
+        for (ordinal_type p=0;p<card;++p) {
           auto poly = Kokkos::subview( output, p, Kokkos::ALL() );
           Polylib::Serial::JacobiPolynomial(np, pts, poly, null, p, alpha, beta);
         }
@@ -88,7 +88,7 @@ namespace Intrepid2 {
       }
       case OPERATOR_GRAD: 
       case OPERATOR_D1: {
-        for (auto p=0;p<card;++p) {
+        for (ordinal_type p=0;p<card;++p) {
           auto polyd = Kokkos::subview( output, p, Kokkos::ALL(), 0 );
           Polylib::Serial::JacobiPolynomialDerivative(np, pts, polyd, p, alpha, beta);      
         }
@@ -106,27 +106,27 @@ namespace Intrepid2 {
         opDn = getOperatorOrder(opType);
       case OPERATOR_Dn: {
         {
-          const auto pend = output.dimension(0);
-          const auto jend = output.dimension(1);
-          const auto iend = output.dimension(2);
+          const ordinal_type pend = output.dimension(0);
+          const ordinal_type jend = output.dimension(1);
+          const ordinal_type iend = output.dimension(2);
           
-          for (auto p=0;p<pend;++p)
-            for (auto j=0;j<jend;++j)
-              for (auto i=0;i<iend;++i)
+          for (ordinal_type p=0;p<pend;++p)
+            for (ordinal_type j=0;j<jend;++j)
+              for (ordinal_type i=0;i<iend;++i)
                 output(p, i, j) = 0.0;
         }
         {
           const Kokkos::View<typename outputViewType::value_type*,
             Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
 
-          for (auto p=opDn;p<card;++p) {
+          for (ordinal_type p=opDn;p<card;++p) {
             double scaleFactor = 1.0;
-            for (auto i=1;i<=opDn;++i) 
+            for (ordinal_type i=1;i<=opDn;++i) 
               scaleFactor *= 0.5*(p + alpha + beta + i);
             
             const auto poly = Kokkos::subview( output, p, Kokkos::ALL(), 0 );        
             Polylib::Serial::JacobiPolynomial(np, pts, poly, null, p-opDn, alpha+opDn, beta+opDn);
-            for (auto i=0;i<np;++i) 
+            for (ordinal_type i=0;i<np;++i) 
               poly(i) = scaleFactor*poly(i);
           }
         }

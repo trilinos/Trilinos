@@ -184,11 +184,11 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_MAX : {
-        const auto jend = output.dimension(1);
-        const auto iend = output.dimension(0);
+        const ordinal_type jend = output.dimension(1);
+        const ordinal_type iend = output.dimension(0);
 
-        for (size_type j=0;j<jend;++j)
-          for (size_type i=0;i<iend;++i)
+        for (ordinal_type j=0;j<jend;++j)
+          for (ordinal_type i=0;i<iend;++i)
             output(i, j) = 0.0;
         break;
       }

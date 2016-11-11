@@ -137,9 +137,9 @@ namespace Test {
     DynRankView ConstructWithLabel(wedgeNodes, 12, 3);
 
     // Generic array for the output values; needs to be properly resized depending on the operator type
-    const auto numFields = wedgeBasis.getCardinality();
-    const auto numPoints = wedgeNodes.dimension(0);
-    const auto spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
+    const ordinal_type numFields = wedgeBasis.getCardinality();
+    const ordinal_type numPoints = wedgeNodes.dimension(0);
+    const ordinal_type spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
 
     DynRankView vals ("vals", numFields, numPoints);
     DynRankView vals_vec ("vals", numFields, numPoints, spaceDim);
@@ -225,12 +225,12 @@ namespace Test {
     << "===============================================================================\n";
   
   try{
-    const auto numFields = wedgeBasis.getCardinality();
+    const ordinal_type numFields = wedgeBasis.getCardinality();
     const auto allTags = wedgeBasis.getAllDofTags();
 
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const auto dofTagSize = allTags.dimension(0);
-    for (auto i = 0; i < dofTagSize; ++i) {
+    const ordinal_type dofTagSize = allTags.dimension(0);
+    for (ordinal_type i = 0; i < dofTagSize; ++i) {
       auto bfOrd  = wedgeBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
       const auto myTag = wedgeBasis.getDofTag(bfOrd);
@@ -254,7 +254,7 @@ namespace Test {
     }
     
     // Now do the same but loop over basis functions
-    for( auto bfOrd = 0; bfOrd < numFields; ++bfOrd) {
+    for( ordinal_type bfOrd = 0; bfOrd < numFields; ++bfOrd) {
       const auto  myTag  = wedgeBasis.getDofTag(bfOrd);
       const auto myBfOrd = wedgeBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
       if( bfOrd != myBfOrd) {
@@ -383,12 +383,12 @@ namespace Test {
     wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-        for (auto k = 0; k < spaceDim; ++k) {
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+        for (ordinal_type k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           const auto l = k + i * spaceDim + j * spaceDim * numFields;
+           const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
            if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -410,12 +410,12 @@ namespace Test {
     wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_CURL);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-        for (auto k = 0; k < spaceDim; ++k) {
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+        for (ordinal_type k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           const auto l = k + i * spaceDim + j * spaceDim * numFields;
+           const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
            if (std::abs(vals_host(i,j,k) - basisCurls[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";

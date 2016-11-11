@@ -137,7 +137,7 @@ namespace Intrepid2 {
                                       ">>> ERROR (ArrayTools::clone): Input fields container must have rank 2, 3, or 4.");
       INTREPID2_TEST_FOR_EXCEPTION( ( output.rank() != (input.rank()+1) ), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::clone): The rank of the input fields container must be one less than the rank of the output fields container.");
-      for (size_type i=0;i<input.rank();++i) {
+      for (size_type i=0;i< input.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( (input.dimension(i) != output.dimension(i+1)), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::clone): Dimensions of input and output fields containers do not match.");
       }
@@ -190,7 +190,7 @@ namespace Intrepid2 {
                                     ">>> ERROR (ArrayTools::clone): Input fields container must have rank 1, 2, or 3.");
       INTREPID2_TEST_FOR_EXCEPTION( ( output.rank() != (input.rank()+1) ), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::clone): The rank of the input fields container must be one less than the rank of the output fields container.");
-      for (size_type i=0;i<input.rank();++i) {
+      for (ordinal_type i=0;i<input.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( (input.dimension(i) != output.dimension(i+1)), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::clone): Dimensions of input and output fields containers do not match.");
       }

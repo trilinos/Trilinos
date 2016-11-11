@@ -148,7 +148,7 @@ namespace Intrepid2 {
                                 const jacobianViewType    jacobian ) {
     // Validate input jacobian array: admissible ranks & dimensions are: 
     // - rank-4 with dimensions (C,P,D,D), or rank-3 with dimensions (P,D,D).
-    const auto jacoRank = jacobian.rank();
+    const ordinal_type jacoRank = jacobian.rank();
     INTREPID2_TEST_FOR_EXCEPTION( jacoRank != 4 && 
                                   jacoRank != 3, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::setJacobianInv): rank = 4 or 3 required for jacobian array." );
@@ -162,11 +162,11 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::setJacobianInv): dim(rank-1) and dim(rank-2) (spatial dimensions) must be between 1 and 3." );
     
     // Validate output jacobianInv array: must have the same rank and dimensions as the input array.
-    const auto jacoInvRank = jacobianInv.rank();
+    const ordinal_type jacoInvRank = jacobianInv.rank();
     INTREPID2_TEST_FOR_EXCEPTION( jacoInvRank != jacoRank, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::setJacobianInv): jacobian rank does not match to jacobianInv." );
   
-    for (auto i=0;i<jacoRank;++i) {
+    for (ordinal_type i=0;i<jacoRank;++i) {
       INTREPID2_TEST_FOR_EXCEPTION( jacobianInv.dimension(i) != jacobian.dimension(i), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::setJacobianInv): jacobian dimension (i) does not match to jacobianInv dimension (i)." );
     }
@@ -180,7 +180,7 @@ namespace Intrepid2 {
                                 const jacobianViewType    jacobian ) {
     // Validate input jacobian array: admissible ranks & dimensions are: 
     // - rank-4 with dimensions (C,P,D,D), or rank-3 with dimensions (P,D,D).
-    const auto jacoRank = jacobian.rank();
+    const ordinal_type jacoRank = jacobian.rank();
     INTREPID2_TEST_FOR_EXCEPTION( jacoRank != 4 &&
                                   jacoRank != 3, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::setJacobianInv): rank = 4 or 3 required for jacobian array." );
@@ -194,13 +194,13 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::setJacobianInv): dim(rank-1) and dim(rank-2) (spatial dimensions) must be between 1 and 3." );
     
     // Validate output jacobianDet array
-    const auto jacoDetRank = jacobianDet.rank();
+    const ordinal_type jacoDetRank = jacobianDet.rank();
     //  must be rank-2 with dimensions (C,P) if jacobian was rank-4
     // must be rank-1 with dimension (P) if jacobian was rank-3
     INTREPID2_TEST_FOR_EXCEPTION( jacoDetRank != (jacoRank-2), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::setJacobianDetArgs): rank = 2 required for jacobianDet if jacobian is rank-4." );
     
-    for (auto i=0;i<jacoDetRank;++i) {
+    for (ordinal_type i=0;i<jacoDetRank;++i) {
       INTREPID2_TEST_FOR_EXCEPTION( jacobianDet.dimension(i) != jacobian.dimension(i), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::setJacobianDetArgs): jacobianDet dimension (i) does not match to jacobian dimension (i)." );
     }
@@ -229,8 +229,8 @@ namespace Intrepid2 {
 
 
     // Validate refPoints array: can be rank-2 (P,D) or rank-3 (C,P,D) array
-    const auto refPointRank = refPoints.rank();
-    const auto physPointRank = physPoints.rank();
+    const ordinal_type refPointRank = refPoints.rank();
+    const ordinal_type physPointRank = physPoints.rank();
 
     INTREPID2_TEST_FOR_EXCEPTION( refPointRank != 2 &&
                                   refPointRank != 3, std::invalid_argument,
@@ -268,7 +268,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( refPointRank != physPointRank, std::invalid_argument, 
                                     " >>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): refPoints rank does not match to physPoints rank." );
       
-      for (auto i=0;i<refPointRank;++i) {
+      for (ordinal_type i=0;i<refPointRank;++i) {
         INTREPID2_TEST_FOR_EXCEPTION( refPoints.dimension(i) != physPoints.dimension(i), std::invalid_argument, 
                                       " >>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): refPoints dimension(i) does not match to physPoints dimension(i)." );
       }
@@ -286,7 +286,7 @@ namespace Intrepid2 {
                                      const worksetCellViewType  worksetCell,
                                      const shards::CellTopology cellTopo ) {
     // Validate worksetCell array
-    const auto worksetCellRank = worksetCell.rank();
+    const ordinal_type worksetCellRank = worksetCell.rank();
     INTREPID2_TEST_FOR_EXCEPTION( worksetCellRank != 3, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): rank = 3 required for worksetCell array" );
     // TODO: check this. 
@@ -299,8 +299,8 @@ namespace Intrepid2 {
     // Admissible ranks and dimensions of refPoints and physPoints depend on whichCell value:
     // default is to map multiple sets of points to multiple sets of points. (C,P,D) arrays required
     
-    const auto physPointRank = physPoints.rank();
-    const auto refPointRank = refPoints.rank();
+    const ordinal_type physPointRank = physPoints.rank();
+    const ordinal_type refPointRank = refPoints.rank();
     
     INTREPID2_TEST_FOR_EXCEPTION( refPointRank != 2 &&
                                   refPointRank != 3, std::invalid_argument, 
@@ -308,7 +308,7 @@ namespace Intrepid2 {
     
     INTREPID2_TEST_FOR_EXCEPTION( physPointRank != refPointRank, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): physPoints rank does not match refPoints rank." );
-    for (auto i=0;i<refPointRank;++i) {
+    for (ordinal_type i=0;i<refPointRank;++i) {
       INTREPID2_TEST_FOR_EXCEPTION( refPoints.dimension(i) != physPoints.dimension(i), std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): physPoints dimension (i) does not match refPoints dimension (i)." );
     }
@@ -330,8 +330,8 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( initGuess.rank() != physPoints.rank(), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): InitGuess must have the same rank as physPoints");         
 
-    const auto r = initGuess.rank();
-    for (auto i=0;i<r;++i) {
+    const ordinal_type r = initGuess.rank();
+    for (ordinal_type i=0;i<r;++i) {
       INTREPID2_TEST_FOR_EXCEPTION( initGuess.dimension(i) != physPoints.dimension(i), std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): InitGuess dimension (i) does not match ot physPoints dimension(i).");
     }         

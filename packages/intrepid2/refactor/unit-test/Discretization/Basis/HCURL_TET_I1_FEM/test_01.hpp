@@ -136,9 +136,8 @@ namespace Intrepid2 {
     DynRankView ConstructWithLabel( tetNodes, 10, 3 );
 
     // Generic array for the output values; needs to be properly resized depending on the operator type
-    const auto numFields = tetBasis.getCardinality();
-    const auto numPoints = tetNodes.dimension(0);
-    const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
+    const ordinal_type numFields = tetBasis.getCardinality();
+    const ordinal_type numPoints = tetNodes.dimension(0);
 
     DynRankView vals;
     vals = DynRankView("vals", numFields, numPoints);
@@ -224,12 +223,11 @@ namespace Intrepid2 {
   
   // all tags are on host space
   try{
-    const auto numFields = tetBasis.getCardinality();
     const auto allTags = tetBasis.getAllDofTags();
     
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const auto dofTagSize = allTags.dimension(0);
-    for (auto i = 0; i < dofTagSize; ++i) {
+    const ordinal_type dofTagSize = allTags.dimension(0);
+    for (ordinal_type i = 0; i < dofTagSize; ++i) {
       auto bfOrd  = tetBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
       const auto myTag = tetBasis.getDofTag(bfOrd);
@@ -253,7 +251,7 @@ namespace Intrepid2 {
     }
     
     // Now do the same but loop over basis functions
-    for( auto bfOrd = 0; bfOrd < tetBasis.getCardinality(); bfOrd++) {
+    for( ordinal_type bfOrd = 0; bfOrd < tetBasis.getCardinality(); bfOrd++) {
       const auto myTag = tetBasis.getDofTag(bfOrd);
       const auto myBfOrd = tetBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
       if( bfOrd != myBfOrd) {
@@ -373,9 +371,9 @@ namespace Intrepid2 {
     Kokkos::deep_copy(tetNodes, tetNodesHost);
         
     // Dimensions for the output arrays:
-    const auto numFields = tetBasis.getCardinality();
-    const auto numPoints = tetNodes.dimension(0);
-    const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
+    const ordinal_type numFields = tetBasis.getCardinality();
+    const ordinal_type numPoints = tetNodes.dimension(0);
+    const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
     
     { 
     // Check VALUE of basis functions: resize vals to rank-3 container:
@@ -383,12 +381,12 @@ namespace Intrepid2 {
     tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-        for (auto k = 0; k < spaceDim; ++k) {
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+        for (ordinal_type k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           const auto l = k + i * spaceDim + j * spaceDim * numFields;
+           const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
            if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol ) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -409,12 +407,12 @@ namespace Intrepid2 {
     tetBasis.getValues(vals, tetNodes, OPERATOR_CURL);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-        for (auto k = 0; k < spaceDim; ++k) {
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+        for (ordinal_type k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           const auto l = k + i * spaceDim + j * spaceDim * numFields;
+           const ordinal_type l = k + i * spaceDim + j * spaceDim * numFields;
            if (std::abs(vals_host(i,j,k) - basisCurls[l]) > tol ) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -445,8 +443,8 @@ namespace Intrepid2 {
     << "===============================================================================\n";
 
   try{
-    const auto numFields = tetBasis.getCardinality();
-    const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
+    const ordinal_type numFields = tetBasis.getCardinality();
+    const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
 
     // Check exceptions.
     ordinal_type nthrow = 0, ncatch = 0;
@@ -492,11 +490,12 @@ namespace Intrepid2 {
     tangents(5,0)  =  0.0; tangents(5,1)  = -1.0; tangents(5,2)  =  1.0;
 
     char buffer[120];
-    for (auto i=0; i<bvals_host.dimension(0); ++i) {
-      for (auto j=0; j<bvals_host.dimension(1); ++j) {
+    ordinal_type b_dim0(bvals_host.dimension(0)), b_dim1(bvals_host.dimension(1));
+    for (ordinal_type i=0; i<b_dim0; ++i) {
+      for (ordinal_type j=0; j<b_dim1; ++j) {
 
         double tangent = 0.0;
-        for(auto d=0;d<spaceDim;++d)
+        for(ordinal_type d=0;d<spaceDim;++d)
            tangent += bvals_host(i,j,d)*tangents(j,d);
 
         if ((i != j) && (std::abs(tangent - 0.0) > tol )) {

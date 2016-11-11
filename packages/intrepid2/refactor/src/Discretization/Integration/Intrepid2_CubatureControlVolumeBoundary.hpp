@@ -90,16 +90,16 @@ namespace Intrepid2{
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell) const {        
-        const auto numNodesPerSide = _sideMap(0);
-        const auto spaceDim        = _cubPoints.dimension(1);
+        const ordinal_type numNodesPerSide = _sideMap(0);
+        const ordinal_type spaceDim        = _cubPoints.dimension(1);
 
         // compute side centers
         typename cubPointViewType::value_type val[3] = {};
-        for (auto j=0;j<numNodesPerSide;++j) {
-          for (auto i=0;i<spaceDim;++i) 
+        for (ordinal_type j=0;j<numNodesPerSide;++j) {
+          for (ordinal_type i=0;i<spaceDim;++i) 
             val[i] += _subcvCoords(cell, _sideMap(j+1), i);
         }
-        for (auto i=0;i<spaceDim;++i) 
+        for (ordinal_type i=0;i<spaceDim;++i) 
           _cubPoints(cell, i) = (val[i]/numNodesPerSide);
         
       }
@@ -151,7 +151,7 @@ namespace Intrepid2{
     ordinal_type
     getNumPoints() const {
       // one control volume boundary cubature point per subcell node (for now)
-      const auto sideDim = primaryCellTopo_.getDimension() - 1;
+      const ordinal_type sideDim = primaryCellTopo_.getDimension() - 1;
       return primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
     }
     

@@ -118,7 +118,7 @@ namespace Intrepid2 {
     ordinal_type
     getNumPoints() const {
       ordinal_type numCubPoints = 1;
-      for (auto i=0;i<numCubatures_;++i)
+      for (ordinal_type i=0;i<numCubatures_;++i)
         numCubPoints *= cubatures_[i].getNumPoints();
       return numCubPoints;
     }
@@ -143,7 +143,7 @@ namespace Intrepid2 {
     ordinal_type 
     getAccuracy() const {
       ordinal_type r_val = 0;
-      for (auto i=0;i<numCubatures_;++i)
+      for (ordinal_type i=0;i<numCubatures_;++i)
         r_val = Util<ordinal_type>::max(r_val, cubatures_[i].getAccuracy());
       return r_val;
     }
@@ -157,7 +157,7 @@ namespace Intrepid2 {
     /** \brief Returns max. degree of polynomials that are integrated exactly.
      */
     void getAccuracy( ordinal_type *accuracy ) const {
-      for (auto i=0;i<numCubatures_;++i)
+      for (ordinal_type i=0;i<numCubatures_;++i)
         accuracy[i] = cubatures_[i].getAccuracy();
     }
 
@@ -170,7 +170,7 @@ namespace Intrepid2 {
       : numCubatures_(b.numCubatures_),
         dimension_(b.dimension_),
         impl_(this) {
-      for (auto i=0;i<numCubatures_;++i) 
+      for (ordinal_type i=0;i<numCubatures_;++i) 
         cubatures_[i] = b.cubatures_[i];
     }
 
@@ -214,7 +214,7 @@ namespace Intrepid2 {
       if (this != &b) {
         Cubature<ExecSpaceType,pointValueType,weightValueType>::operator= (b);
         numCubatures_ = b.numCubatures_;
-        for (auto i=0;i<numCubatures_;++i)
+        for (ordinal_type i=0;i<numCubatures_;++i)
           cubatures_[i] = b.cubatures_[i];
         dimension_ = b.dimension_;
         // do not copy impl

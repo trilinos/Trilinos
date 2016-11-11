@@ -135,9 +135,9 @@ namespace Test {
 
     DynRankView ConstructWithLabel(tetNodes, 10, 3);
 
-    const auto numFields = tetBasis.getCardinality();
-    const auto numPoints = tetNodes.dimension(0);
-    const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
+    const ordinal_type numFields = tetBasis.getCardinality();
+    const ordinal_type numPoints = tetNodes.dimension(0);
+    const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
 
     DynRankView ConstructWithLabel(vals, numFields, numPoints);
     DynRankView ConstructWithLabel(vals_vec, numFields, numPoints, 4);
@@ -235,12 +235,12 @@ namespace Test {
     << "===============================================================================\n";
   
   try{
-    const auto numFields = tetBasis.getCardinality();
+    const ordinal_type numFields = tetBasis.getCardinality();
     const auto allTags = tetBasis.getAllDofTags();
     
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const auto dofTagSize = allTags.dimension(0);
-    for (auto i = 0; i < dofTagSize; ++i) {
+    const ordinal_type dofTagSize = allTags.dimension(0);
+    for (ordinal_type i = 0; i < dofTagSize; ++i) {
       const auto bfOrd  = tetBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
       const auto myTag = tetBasis.getDofTag(bfOrd);
@@ -264,7 +264,7 @@ namespace Test {
     }
     
     // Now do the same but loop over basis functions
-    for( auto bfOrd = 0; bfOrd < numFields; bfOrd++) {
+    for( ordinal_type bfOrd = 0; bfOrd < numFields; bfOrd++) {
       const auto myTag  = tetBasis.getDofTag(bfOrd);
       const auto myBfOrd = tetBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
       if( bfOrd != myBfOrd) {
@@ -387,8 +387,6 @@ namespace Test {
   };
   
   try{
-    ordinal_type nthrow = 0, ncatch = 0;
-
     DynRankViewHost ConstructWithLabel(tetNodesHost, 10, 3);
     tetNodesHost(0,0) =  0.0;  tetNodesHost(0,1) =  0.0;  tetNodesHost(0,2) =  0.0;  
     tetNodesHost(1,0) =  1.0;  tetNodesHost(1,1) =  0.0;  tetNodesHost(1,2) =  0.0;  
@@ -406,10 +404,10 @@ namespace Test {
     Kokkos::deep_copy(tetNodes, tetNodesHost);
         
     // Dimensions for the output arrays:
-    const auto numFields = tetBasis.getCardinality();
-    const auto numPoints = tetNodes.dimension(0);
-    const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
-    const auto D2cardinality = getDkCardinality(OPERATOR_D2, spaceDim);
+    const ordinal_type numFields = tetBasis.getCardinality();
+    const ordinal_type numPoints = tetNodes.dimension(0);
+    const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
+    const ordinal_type D2cardinality = getDkCardinality(OPERATOR_D2, spaceDim);
     
     {
     // Check VALUE of basis functions: resize vals to rank-2 container:
@@ -417,9 +415,9 @@ namespace Test {
     tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-          const auto l =  i + j * numFields;
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+          const ordinal_type l =  i + j * numFields;
            if (std::abs(vals_host(i,j) - basisValues[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -440,12 +438,12 @@ namespace Test {
     tetBasis.getValues(vals, tetNodes, OPERATOR_GRAD);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-        for (auto k = 0; k < spaceDim; ++k) {
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+        for (ordinal_type k = 0; k < spaceDim; ++k) {
  
           // basisGrads is (F,P,D), compute offset:
-          const auto l = k + j * spaceDim + i * spaceDim * numPoints;
+          const ordinal_type l = k + j * spaceDim + i * spaceDim * numPoints;
            if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -463,12 +461,12 @@ namespace Test {
     // Check D1 of basis function (do not resize vals because it has the correct size: D1 = GRAD)
     tetBasis.getValues(vals, tetNodes, OPERATOR_D1);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-        for (auto k = 0; k < spaceDim; ++k) {
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+        for (ordinal_type k = 0; k < spaceDim; ++k) {
           
           // basisGrads is (F,P,D), compute offset:
-          const auto l = k + j * spaceDim + i * spaceDim * numPoints;
+          const ordinal_type l = k + j * spaceDim + i * spaceDim * numPoints;
            if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -490,12 +488,12 @@ namespace Test {
     tetBasis.getValues(vals, tetNodes, OPERATOR_D2);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
-    for (auto i = 0; i < numFields; ++i) {
-      for (auto j = 0; j < numPoints; ++j) {
-        for (auto k = 0; k < D2cardinality; ++k) {
+    for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type j = 0; j < numPoints; ++j) {
+        for (ordinal_type k = 0; k < D2cardinality; ++k) {
           
           // basisD2 is (F,P,Dk), compute offset:
-          const auto l = k + j * D2cardinality + i * D2cardinality * numPoints;
+          const ordinal_type l = k + j * D2cardinality + i * D2cardinality * numPoints;
           if (std::abs(vals_host(i,j,k) - basisD2[l]) > tol) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -526,16 +524,16 @@ namespace Test {
       for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
         const auto op = ops[h];
       // The last dimension is the number of kth derivatives and needs to be resized for every Dk
-        const auto DkCardin  = getDkCardinality(op, spaceDim);
+        const ordinal_type DkCardin  = getDkCardinality(op, spaceDim);
         DynRankView vals("vals", numFields, numPoints, DkCardin);
 
         tetBasis.getValues(vals, tetNodes, op);
         auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
         Kokkos::deep_copy(vals_host, vals);
 
-        for (auto i1 = 0; i1 < numFields; ++i1) 
-          for (auto i2 = 0; i2 < numPoints; ++i2) 
-            for (auto i3 = 0; i3 < DkCardin; ++i3) {
+        for (ordinal_type i1 = 0; i1 < numFields; ++i1)
+          for (ordinal_type i2 = 0; i2 < numPoints; ++i2)
+            for (ordinal_type i3 = 0; i3 < DkCardin; ++i3) {
               if (std::abs(vals_host(i1,i2,i3)) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";

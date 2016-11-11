@@ -111,8 +111,8 @@ namespace Intrepid2 {
                                   std::invalid_argument ,
                                   ">>> ERROR (PointTools::getLattice): order and offset must be positive values." );
 
-    const auto latticeSize = getLatticeSize( cell, order, offset );
-    const auto spaceDim = cell.getDimension();
+    const size_type latticeSize = getLatticeSize( cell, order, offset );
+    const size_type spaceDim = cell.getDimension();
     
     INTREPID2_TEST_FOR_EXCEPTION( points.dimension(0) != latticeSize ||
                                   points.dimension(1) != spaceDim,
@@ -227,7 +227,7 @@ namespace Intrepid2 {
     else {
       const pointValueType h = 2.0 / order;
       const ordinal_type ibeg = offset, iend = order-offset+1;
-      for (auto i=ibeg;i<iend;++i) 
+      for (ordinal_type i=ibeg;i<iend;++i) 
 	pointsHost(i-ibeg, 0) = -1.0 + h * (pointValueType) i;
     }
 

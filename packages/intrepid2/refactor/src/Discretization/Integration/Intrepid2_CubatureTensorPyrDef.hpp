@@ -60,9 +60,9 @@ namespace Intrepid2 {
                Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // check size of cubPoints and cubWeights
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < obj_->getNumPoints() ||
-                                  cubPoints.dimension(1)  < obj_->getDimension() ||
-                                  cubWeights.dimension(0) < obj_->getNumPoints(), std::out_of_range,
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(cubPoints.dimension(0))  < obj_->getNumPoints() ||
+                                  static_cast<ordinal_type>(cubPoints.dimension(1))  < obj_->getDimension() ||
+                                  static_cast<ordinal_type>(cubWeights.dimension(0)) < obj_->getNumPoints(), std::out_of_range,
                                   ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 #endif
     obj_->CubatureTensor<SpT,PT,WT>::impl_.getCubature( cubPoints, cubWeights );

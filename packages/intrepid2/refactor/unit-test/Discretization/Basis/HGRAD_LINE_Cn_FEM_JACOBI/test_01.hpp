@@ -341,13 +341,13 @@ namespace Intrepid2 {
         const double alpha = 0.0, beta = 0.0;
 
         LineBasisType lineBasis(order, alpha, beta);
-        const auto numFields = lineBasis.getCardinality();
-        const auto spaceDim  = lineBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numFields = lineBasis.getCardinality();
+        const ordinal_type spaceDim  = lineBasis.getBaseCellTopology().getDimension();
 
         DynRankViewHost ConstructWithLabel(lineNodesHost, order+1, spaceDim);
-        const auto numPoints = lineNodesHost.dimension(0);
+        const ordinal_type numPoints = lineNodesHost.dimension(0);
 
-        for (auto i=0;i<numPoints;++i) 
+        for (ordinal_type i=0;i<numPoints;++i)
           lineNodesHost(i, 0) = -1.0+(2.0*i)/(numPoints-1);
 
         const auto lineNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), lineNodesHost);
@@ -363,10 +363,10 @@ namespace Intrepid2 {
           auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(valsHost, vals);
           
-          for (auto i=0;i<numFields;++i) 
-            for (auto j=0;j<numPoints;++j) {
+          for (ordinal_type i=0;i<numFields;++i)
+            for (ordinal_type j=0;j<numPoints;++j) {
               // Compute offset for (F,P) container
-              const auto l =  j + i * numPoints;
+              const ordinal_type l =  j + i * numPoints;
 
               const auto val = valsHost(i,j);
               const auto exactVal = basisValues[l];
@@ -393,10 +393,10 @@ namespace Intrepid2 {
           auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(valsHost, vals);
 
-          for (auto i=0;i<numFields;++i) 
-            for (auto j=0;j<numPoints;++j) {
+          for (ordinal_type i=0;i<numFields;++i)
+            for (ordinal_type j=0;j<numPoints;++j) {
               // Compute offset for (F,P) container
-              const auto l =  j + i * numPoints;
+              const ordinal_type l =  j + i * numPoints;
 
               const auto val = valsHost(i,j,0);
               const auto exactVal = basisD1Values[l];
@@ -423,10 +423,10 @@ namespace Intrepid2 {
           auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(valsHost, vals);
 
-          for (auto i=0;i<numFields;++i) 
-            for (auto j=0;j<numPoints;++j) {
+          for (ordinal_type i=0;i<numFields;++i)
+            for (ordinal_type j=0;j<numPoints;++j) {
               // Compute offset for (F,P) container
-              const auto l =  j + i * numPoints;
+              const ordinal_type l =  j + i * numPoints;
 
               const auto val = valsHost(i,j,0);
               const auto exactVal = basisD2Values[l];
@@ -453,10 +453,10 @@ namespace Intrepid2 {
           auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(valsHost, vals);
 
-          for (auto i=0;i<numFields;++i) 
-            for (auto j=0;j<numPoints;++j) {
+          for (ordinal_type i=0;i<numFields;++i)
+            for (ordinal_type j=0;j<numPoints;++j) {
               // Compute offset for (F,P) container
-              const auto l =  j + i * numPoints;
+              const ordinal_type l =  j + i * numPoints;
 
               const auto val = valsHost(i,j,0);
               const auto exactVal = basisD3Values[l];

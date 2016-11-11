@@ -69,10 +69,10 @@ namespace Intrepid2 {
                const ordinal_type   operatorDn ) {    
       ordinal_type opDn = operatorDn;
 
-      const auto card = vinv.dimension(0);
-      const auto npts = input.dimension(0);
+      const ordinal_type card = vinv.dimension(0);
+      const ordinal_type npts = input.dimension(0);
 
-      const auto order = card - 1;
+      const ordinal_type order = card - 1;
       const double alpha = 0.0, beta = 0.0;
 
       switch (opType) {
@@ -83,10 +83,10 @@ namespace Intrepid2 {
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta);
 
-        for (auto i=0;i<card;++i) 
-          for (auto j=0;j<npts;++j) {
+        for (ordinal_type i=0;i<card;++i) 
+          for (ordinal_type j=0;j<npts;++j) {
             output(i,j) = 0.0;
-            for (auto k=0;k<card;++k) 
+            for (ordinal_type k=0;k<card;++k)
               output(i,j) += vinv(k,i)*phis(k,j);
           }
         break;
@@ -105,18 +105,18 @@ namespace Intrepid2 {
         opDn = getOperatorOrder(opType);
       case OPERATOR_Dn: {
         // dkcard is always 1 for 1D element
-        const auto dkcard = 1;
+        const ordinal_type dkcard = 1;
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> phis(work.data(), card, npts, dkcard);
         
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta, opDn);
 
-        for (auto i=0;i<card;++i) 
-          for (auto j=0;j<npts;++j) 
-            for (auto k=0;k<dkcard;++k) {
+        for (ordinal_type i=0;i<card;++i) 
+          for (ordinal_type j=0;j<npts;++j) 
+            for (ordinal_type k=0;k<dkcard;++k) {
               output(i,j,k) = 0.0;
-              for (auto l=0;l<card;++l) 
+              for (ordinal_type l=0;l<card;++l)
                 output(i,j,k) += vinv(l,i)*phis(l,j,k);
             }
         break;
@@ -287,8 +287,8 @@ namespace Intrepid2 {
     Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       vinv("Hgrad::Line::Cn::vinv", card, card);
 
-    for (auto i=0;i<card;++i) 
-      for (auto j=0;j<card;++j) 
+    for (ordinal_type i=0;i<card;++i) 
+      for (ordinal_type j=0;j<card;++j) 
         vinv(i,j) = vmat(j,i);
 
     this->vinv_ = Kokkos::create_mirror_view(typename SpT::memory_space(), vinv);
@@ -317,8 +317,8 @@ namespace Intrepid2 {
           tags[v0][2] = 0; // local dof id
           tags[v0][3] = 1; // total number of dofs in this vertex
           
-          const auto iend = card - 2;
-          for (auto i=0;i<iend;++i) {
+          const ordinal_type iend = card - 2;
+          for (ordinal_type i=0;i<iend;++i) {
             const auto e = i + 1;
             tags[e][0] = 1;    // edge dof
             tags[e][1] = 0;    // edge id
@@ -345,8 +345,8 @@ namespace Intrepid2 {
         //   tags[1][2] = 0; // local dof id
         //   tags[1][3] = 1; // total number of dofs in this vertex
           
-        //   const auto iend = card - 2;
-        //   for (auto i=0;i<iend;++i) {
+        //   const ordinal_type iend = card - 2;
+        //   for (ordinal_type i=0;i<iend;++i) {
         //     const auto ii = i + 2;
         //     tags[ii][0] = 1;    // edge dof
         //     tags[ii][1] = 0;    // edge id
@@ -355,7 +355,7 @@ namespace Intrepid2 {
         //   }
         // }
       } else {
-        for (auto i=0;i<card;++i) {
+        for (ordinal_type i=0;i<card;++i) {
           tags[i][0] = 1;    // edge dof
           tags[i][1] = 0;    // edge id
           tags[i][2] = i;    // local dof id

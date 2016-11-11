@@ -188,25 +188,25 @@ namespace Intrepid2 {
 #endif
       
       // Apply the parametrization map to every point in parameter domain
-      const auto numPts = outPoints.dimension(0);
+      const ordinal_type numPts = outPoints.dimension(0);
       const auto key = cellTopo.getBaseCellTopologyData()->key;
       switch (key) {
       case shards::Line<>::key : {
-        for (auto pt=0;pt<numPts;++pt)
+        for (ordinal_type pt=0;pt<numPts;++pt)
           getModifiedLinePoint(outPoints(pt, 0),
                                refPoints(pt, 0),
                                cellOrt);
         break;
       }
       case shards::Triangle<>::key : {
-        for (auto pt=0;pt<numPts;++pt)
+        for (ordinal_type pt=0;pt<numPts;++pt)
           getModifiedTrianglePoint(outPoints(pt, 0), outPoints(pt, 1),
                                    refPoints(pt, 0), refPoints(pt, 1),
                                    cellOrt);
         break;
       }
       case shards::Quadrilateral<>::key : {
-        for (auto pt=0;pt<numPts;++pt)
+        for (ordinal_type pt=0;pt<numPts;++pt)
           getModifiedQuadrilateralPoint(outPoints(pt, 0), outPoints(pt, 1),
                                         refPoints(pt, 0), refPoints(pt, 1),
                                         cellOrt);

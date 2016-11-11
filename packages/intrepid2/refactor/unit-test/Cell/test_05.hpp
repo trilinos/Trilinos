@@ -126,7 +126,6 @@ namespace Intrepid2 {
       // Allocate storage and extract all standard cells with base topologies
       std::vector<shards::CellTopology> standardBaseTopologies;
       shards::getTopologies(standardBaseTopologies, 4, shards::STANDARD_CELL, shards::BASE_TOPOLOGY);
-      const auto topoSize = standardBaseTopologies.size();
 
       *outStream
         << "\n"
@@ -147,10 +146,10 @@ namespace Intrepid2 {
 
         std::vector<shards::CellTopology> standardBaseTopologies;
         shards::getTopologies(standardBaseTopologies, 4, shards::STANDARD_CELL, shards::BASE_TOPOLOGY);
-        const auto topoSize = standardBaseTopologies.size();
+        const ordinal_type topoSize = standardBaseTopologies.size();
         
         // Loop over admissible topologies
-        for (auto topoOrd=0;topoOrd<topoSize;++topoOrd) {
+        for (ordinal_type topoOrd=0;topoOrd<topoSize;++topoOrd) {
           const auto cell = standardBaseTopologies[topoOrd];
 
           // skip cells not supported
@@ -164,7 +163,7 @@ namespace Intrepid2 {
           ordinal_type nthrow = 0, ncatch = 0;
 
           // Some arbitrary dimensions
-          ordinal_type C = 10, P = 21, N = cell.getNodeCount(), D = cell.getDimension(), V = cell.getVertexCount();
+          ordinal_type C = 10, P = 21, N = cell.getNodeCount(), D = cell.getDimension();// V = cell.getVertexCount();
 
           // Array arguments
           DynRankView 

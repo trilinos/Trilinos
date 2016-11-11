@@ -156,12 +156,12 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.dimension(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have dimension bigger than Parameters::MaxDimension." );
 #endif
-    const auto vertexCount = cell.getVertexCount();
-    const auto dim = cell.getDimension();
+    const ordinal_type vertexCount = cell.getVertexCount();
+    const ordinal_type dim = cell.getDimension();
 
-    for (size_type i=0;i<dim;++i) {
+    for (ordinal_type i=0;i<dim;++i) {
       cellCenter(i) = 0;
-      for (size_type vertOrd=0;vertOrd<vertexCount;++vertOrd) {
+      for (ordinal_type vertOrd=0;vertOrd<vertexCount;++vertOrd) {
         getReferenceVertex(cellVertex, cell, vertOrd); 
         cellCenter(i) += cellVertex(i);
       }
@@ -181,7 +181,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(cell), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceVertex): the specified cell topology does not have a reference cell." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( (vertexOrd < 0) || vertexOrd > cell.getVertexCount(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( (vertexOrd < 0) || vertexOrd > static_cast<ordinal_type>(cell.getVertexCount()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceVertex): invalid node ordinal for the specified cell topology." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.rank() != 1, std::invalid_argument,
@@ -208,10 +208,10 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(parentCell), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): the specified cell topology does not have a reference cell." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( subcellDim > parentCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( subcellDim > static_cast<ordinal_type>(parentCell.getDimension()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): subcell dimension cannot exceed cell dimension." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( subcellOrd >= parentCell.getSubcellCount(subcellDim), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( subcellOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(subcellDim)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): subcell ordinal cannot exceed subcell count." );
     
     // Verify subcellVertices rank and dimensions
@@ -243,7 +243,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(cell), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): the specified cell topology does not have a reference cell." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( nodeOrd >= cell.getNodeCount(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( nodeOrd >= static_cast<ordinal_type>(cell.getNodeCount()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): invalid node ordinal for the specified cell topology." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellNode.rank() != 1, std::invalid_argument,
@@ -306,8 +306,8 @@ namespace Intrepid2 {
     // cellNode = Kokkos::subdynrankview( ref, nodeOrd, Kokkos::ALL() );
 
     // let's copy;
-    const auto dim = cell.getDimension();
-    for (size_type i=0;i<dim;++i) 
+    const ordinal_type dim = cell.getDimension();
+    for (ordinal_type i=0;i<dim;++i) 
       cellNode(i) = ref(nodeOrd, i);
   }
 
@@ -323,10 +323,10 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(parentCell), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellNodes): the specified cell topology does not have a reference cell.");
 
-    INTREPID2_TEST_FOR_EXCEPTION( subcellDim > parentCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( subcellDim > static_cast<ordinal_type>(parentCell.getDimension()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellNodes): subcell dimension out of range.");
     
-    INTREPID2_TEST_FOR_EXCEPTION( subcellOrd >= parentCell.getSubcellCount(subcellDim), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( subcellOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(subcellDim)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellNodes): subcell ordinal out of range.");
     
     // Verify subcellNodes rank and dimensions
@@ -372,7 +372,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
 
     INTREPID2_TEST_FOR_EXCEPTION( edgeOrd <  0 ||
-                                  edgeOrd >= parentCell.getSubcellCount(1), std::invalid_argument,
+                                  edgeOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
 
 #endif
@@ -383,8 +383,8 @@ namespace Intrepid2 {
   
     // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
     //                                     => edge Tangent: -> C_1(*)
-    const auto dim = parentCell.getDimension();
-    for (size_type i=0;i<dim;++i)
+    const ordinal_type dim = parentCell.getDimension();
+    for (ordinal_type i=0;i<dim;++i)
       refEdgeTangent(i) = edgeMap(edgeOrd, i, 1);
   }
 
@@ -402,7 +402,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( parentCell.getDimension() != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): three-dimensional parent cell required");  
   
-    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= parentCell.getSubcellCount(2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(2)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): face ordinal out of bounds");  
     
     INTREPID2_TEST_FOR_EXCEPTION( refFaceTanU.rank() != 1 || refFaceTanV.rank() != 1, std::invalid_argument,  
@@ -426,8 +426,8 @@ namespace Intrepid2 {
 
     // set refFaceTanU -> C_1(*)
     // set refFaceTanV -> C_2(*)
-    const auto dim = parentCell.getDimension();
-    for (size_type i=0;i<dim;++i) {
+    const ordinal_type dim = parentCell.getDimension();
+    for (ordinal_type i=0;i<dim;++i) {
       refFaceTanU(i) = faceMap(faceOrd, i, 1);
       refFaceTanV(i) = faceMap(faceOrd, i, 2);
     }
@@ -446,7 +446,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): two or three-dimensional parent cell required");
   
     // Check side ordinal: by definition side is subcell whose dimension = parentCell.getDimension()-1
-    INTREPID2_TEST_FOR_EXCEPTION( sideOrd < 0 || sideOrd >= parentCell.getSubcellCount(parentCell.getDimension() - 1), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( sideOrd < 0 || sideOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(parentCell.getDimension() - 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
 #endif 
 
@@ -477,7 +477,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( parentCell.getDimension() != 3, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): three-dimensional parent cell required");  
     
-    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= parentCell.getSubcellCount(2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(2)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): face ordinal out of bounds");  
     
     INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.rank() != 1, std::invalid_argument,  
@@ -616,7 +616,7 @@ namespace Intrepid2 {
   
     // Check side ordinal: by definition side is subcell whose dimension = parentCell.getDimension()-1
     INTREPID2_TEST_FOR_EXCEPTION( worksetSideOrd <  0 ||
-                                  worksetSideOrd >= parentCell.getSubcellCount(parentCell.getDimension() - 1), std::invalid_argument,
+                                  worksetSideOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(parentCell.getDimension() - 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalSideNormals): side ordinal out of bounds");  
 #endif  
     const auto dim = parentCell.getDimension();

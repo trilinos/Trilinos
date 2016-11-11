@@ -588,14 +588,14 @@ namespace Intrepid2 {
       const ordinal_type rank = refValues.rank();
       switch (rank) {
       case 2: {
-        for (auto i=0;i<numDofs;++i) {
+        for (ordinal_type i=0;i<numDofs;++i) {
           const auto nnz      = C.NumNonZerosInRow(i);
           const auto colsPtr  = C.ColsInRow(i);
           const auto valsPtr  = C.ValuesInRow(i);
           const auto ii = i + offset;
 
           // sparse mat-vec
-          for (auto j=0;j<numPts;++j) {
+          for (ordinal_type j=0;j<numPts;++j) {
             Scalar temp = 0.0;
             for (ordinal_type p=0;p<nnz;++p)
               temp += valsPtr[p]*refValues(colsPtr[p] + offset, j);
@@ -606,14 +606,14 @@ namespace Intrepid2 {
       }
       case 3: {
         const auto dimVal = refValues.dimension(2);
-        for (auto i=0;i<numDofs;++i) {
+        for (ordinal_type i=0;i<numDofs;++i) {
           const auto nnz     = C.NumNonZerosInRow(i);
           const auto colsPtr = C.ColsInRow(i);
           const auto valsPtr = C.ValuesInRow(i);
           const auto ii = i + offset;
 
           // sparse mat-vec
-          for (auto j=0;j<numPts;++j)
+          for (ordinal_type j=0;j<numPts;++j)
             for (auto k=0;k<dimVal;++k) {
               Scalar temp = 0.0;
               for (ordinal_type p=0;p<nnz;++p)
@@ -647,15 +647,15 @@ namespace Intrepid2 {
       const ordinal_type rank = refValues.rank();
       switch (rank) {
       case 2: {
-        for (auto i=0;i<numRows;++i)
-          for (auto j=0;j<numCols;++j)
+        for (ordinal_type i=0;i<numRows;++i)
+          for (ordinal_type j=0;j<numCols;++j)
             outValues(i + offRows, j + offCols) = refValues(i + offRows, j + offCols);
         break;
       }
       case 3: {
         const ordinal_type dimVal = refValues.dimension(2);
-        for (auto i=0;i<numRows;++i)
-          for (auto j=0;j<numCols;++j) {
+        for (ordinal_type i=0;i<numRows;++i)
+          for (ordinal_type j=0;j<numCols;++j) {
             const auto ii = i + offRows, jj = j + offCols;
             for (auto k=0;k<dimVal;++k)
               outValues(ii, jj, k) = refValues(ii, jj, k);
@@ -744,7 +744,7 @@ namespace Intrepid2 {
 #endif
 
     // Apply the parametrization map to every point in parameter domain
-    const size_type numPts  = static_cast<size_t>(outPoints.dimension(0));
+    const size_type numPts  = static_cast<size_type>(outPoints.dimension(0));
     const auto key = cellTopo.getBaseCellTopologyData()->key ;
     switch (key) {
     case shards::Line<>::key : {
@@ -1145,7 +1145,7 @@ namespace Intrepid2 {
 //          << std::setw(w) <<  "Val" << std::endl;
 //       for (ordinal_type i=0;i<_m;++i) {
 //         size_type jbegin = _ap[i], jend = _ap[i+1];
-//         for (size_type j=jbegin;j<jend;++j) {
+//         for (ordinal_type j=jbegin;j<jend;++j) {
 //           SpT val = _ax[j];
 //           os << std::setw(w) <<      i << "  "
 //              << std::setw(w) << _aj[j] << "  "
@@ -1159,9 +1159,9 @@ namespace Intrepid2 {
 //   }
 
   // template<class Scalar>
-  // size_t
+  // size_type
   // OrientationTools<Scalar>::DenseMatrix::countNumNonZeros(const Scalar epsilon) const {
-  //   size_t nnz = 0;
+  //   size_type nnz = 0;
   //   for (ordinal_type j=0;j<NumCols();++j) {
   //     for (ordinal_type i=0;i<NumRows();++i) {
   //       const Scalar val = Value(i,j);

@@ -142,11 +142,11 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( cubWeights.rank() != 1, std::invalid_argument,
                                     ">>> ERROR (CubatureDirect): cubPoints must be rank 1." );
 
-      INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < this->getNumPoints() ||
-                                    cubPoints.dimension(1)  < this->getDimension(), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(cubPoints.dimension(0))  < this->getNumPoints() ||
+                                    static_cast<ordinal_type>(cubPoints.dimension(1))  < this->getDimension(), std::out_of_range,
                                     ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points.");
 
-      INTREPID2_TEST_FOR_EXCEPTION( cubWeights.dimension(0) < this->getNumPoints(), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(cubWeights.dimension(0)) < this->getNumPoints(), std::out_of_range,
                                     ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature weights.");
 #endif
       // need subview here

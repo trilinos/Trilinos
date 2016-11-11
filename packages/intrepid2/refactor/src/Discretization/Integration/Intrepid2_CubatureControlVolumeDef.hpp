@@ -75,8 +75,8 @@ namespace Intrepid2 {
     const ordinal_type subcvDegree = 2;
     auto subcvCubature = DefaultCubatureFactory::create<SpT,PT,WT>(subcvCellTopo_, subcvDegree);
 
-    const auto numSubcvPoints = subcvCubature->getNumPoints();
-    const auto subcvDim       = subcvCubature->getDimension();
+    const ordinal_type numSubcvPoints = subcvCubature->getNumPoints();
+    const ordinal_type subcvDim       = subcvCubature->getDimension();
 
     subcvCubaturePoints_  = Kokkos::DynRankView<PT,SpT>("CubatureControlVolume::subcvCubaturePoints_",
                                                         numSubcvPoints, subcvDim);
@@ -110,24 +110,24 @@ namespace Intrepid2 {
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cubWeights and cellCoords dimension(1) are not consistent, numNodesPerCell");
 
     INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(2) != cellCoords.dimension(2) ||
-                                  cubPoints.dimension(2) != getDimension(), std::invalid_argument,
+                                  static_cast<ordinal_type>(cubPoints.dimension(2)) != getDimension(), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
     typedef Kokkos::DynRankView<PT,SpT> tempPointViewType;
 
     // get array dimensions
-    const auto numCells = cellCoords.dimension(0);
-    const auto numNodesPerCell = cellCoords.dimension(1);
-    const auto spaceDim = cellCoords.dimension(2);
+    const ordinal_type numCells = cellCoords.dimension(0);
+    const ordinal_type numNodesPerCell = cellCoords.dimension(1);
+    const ordinal_type spaceDim = cellCoords.dimension(2);
 
-    const auto numNodesPerSubcv = subcvCellTopo_.getNodeCount();
+    const ordinal_type numNodesPerSubcv = subcvCellTopo_.getNodeCount();
     tempPointViewType subcvCoords("CubatureControlVolume::subcvCoords_",
                                   numCells, numNodesPerCell, numNodesPerSubcv, spaceDim);
     CellTools<SpT>::getSubcvCoords(subcvCoords,
                                    cellCoords,
                                    primaryCellTopo_);
 
-    const auto numSubcvPoints = subcvCubaturePoints_.dimension(0);    
+    const ordinal_type numSubcvPoints = subcvCubaturePoints_.dimension(0);
     tempPointViewType subcvJacobian("CubatureControlVolume::subcvJacobian_",
                                     numCells, numNodesPerCell, numSubcvPoints, spaceDim, spaceDim);
     
@@ -135,7 +135,7 @@ namespace Intrepid2 {
                                        numCells, numNodesPerCell, numSubcvPoints);
     
     // numNodesPerCell is maximum 8; this repeated run is necessary because of cell tools input consideration
-    for (auto node=0;node<numNodesPerCell;++node) {
+    for (ordinal_type node=0;node<numNodesPerCell;++node) {
       auto subcvJacobianNode    = Kokkos::subdynrankview(subcvJacobian,    Kokkos::ALL(), node, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
       auto subcvCoordsNode      = Kokkos::subdynrankview(subcvCoords,      Kokkos::ALL(), node, Kokkos::ALL(), Kokkos::ALL());
       auto subcvJacobianDetNode = Kokkos::subdynrankview(subcvJacobianDet, Kokkos::ALL(), node, Kokkos::ALL());
