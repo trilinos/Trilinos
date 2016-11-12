@@ -683,11 +683,13 @@ TEUCHOS_UNIT_TEST( RCP, circularReference_a_then_c )
     ECHO(c->set_A(a.create_weak()));
 
 #ifdef TEUCHOS_DEBUG
+#ifndef __clang__  // clang will give an error if you delete in debug mode after throwing from destructor
     ECHO(c->call_A_on_delete(true));
     // Here, we set 'c' to call 'a' when it is deleted which will result in an
     // exception being thrown in a call to delete.  NOTE: It is *very* bad
     // practice to allow exceptions to be thrown from destructors but I am
     // allowing it so that I can detect such bad bahavior below!
+#endif // __clang__
 #endif
 
     TEST_EQUALITY( a->call_C_f(), C_f_return );
@@ -705,7 +707,7 @@ TEUCHOS_UNIT_TEST( RCP, circularReference_a_then_c )
     // exception.
 
 #ifdef TEUCHOS_DEBUG
-
+#ifndef __clang__  // clang will give an error if you delete in debug mode after throwing from destructor
     TEST_THROW(c = null, DanglingReferenceError);
     // NOTE: Above, operator==(...) exhibits the 'strong' guarantee!
 
@@ -715,7 +717,7 @@ TEUCHOS_UNIT_TEST( RCP, circularReference_a_then_c )
     ECHO(c->call_A_on_delete(false));
 
     ECHO(c = null); // All memory should be cleaned up here!
-
+#endif // __clang__
 #endif // TEUCHOS_DEBUG
 
   }

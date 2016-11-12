@@ -352,7 +352,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, create) {
 }
 
 #if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8)
-
 // There are many places that the parameter list is validated to ensure that we
 // catch invalid parameter lists before we use them.  This is particularly
 // important because we're storing a pointer to the parameter list and the user
@@ -369,6 +368,12 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
     TEST_NOTHROW( ob->setParameterList(pl) );
     pl = parameterList();
     TEST_NOTHROW( ob->setParameterList(pl) );
+// Clang will fault if you try to delete after exception is thrown in the destructor
+// Most of this test can't be run in debug
+// For example once we call: pl->set("Hello","World");
+// Then the destructor of ObjectBuilder will throw
+// Then when the test completes RCP will try to delete and clang will register the error
+#if !defined(__clang__) || !defined(TEUCHOS_DEBUG)
     pl->set("Hello","World");
     TEST_THROW( ob->setParameterList(pl), std::logic_error ); // 1.
 #ifdef TEUCHOS_DEBUG
@@ -383,7 +388,9 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
     TEST_EQUALITY_CONST( is_null(fooA), false );
     TEST_NOTHROW( ob = null );
 #endif // TEUCHOS_DEBUG
+#endif // !defined(__clang__) || !defined(TEUCHOS_DEBUG)
 }
+
 
 #endif // GCC 4.8
 // For Some reason, with GCC 4.8.3, the catch() satement refuses to catch the
@@ -427,7 +434,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getNonconstParameterList) {
 }
 
 #if !(__GNUC__ == 4 && __GNUC_MINOR__ == 8)
-
 // Here we're checking:
 // 1.  That we can set a parameter list on it and it uses it and then we can
 // unset it and it goes back to using the valid parameter list.
@@ -448,6 +454,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
   const RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
   TEST_EQUALITY_CONST( is_null(fooA), false ); // 1.
   ob->setParameterList(pl);
+#if !defined(__clang__) || !defined(TEUCHOS_DEBUG) // see setParameterList above for explanation
   pl->set("Hello","World");
   newPL = null;
 #ifdef TEUCHOS_DEBUG
@@ -459,6 +466,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
   TEST_EQUALITY_CONST( pl.get(), newPL.get() ); // 1a.
   TEST_NOTHROW( ob = null );
 #endif // TEUCHOS_DEBUG
+#endif // !defined(__clang__) || !defined(TEUCHOS_DEBUG)
 }
 
 #endif // GCC 4.8

@@ -43,6 +43,7 @@
 #define TEUCHOS_PARAMETER_LIST_ACCEPTOR_HPP
 
 #include "Teuchos_ConfigDefs.hpp"
+#include "TeuchosCore_ConfigDefs.hpp" // need TEUCHOS_NO_EXCEPT for clang
 
 namespace Teuchos {
 
@@ -152,7 +153,7 @@ template<class T> class RCP;
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ParameterListAcceptor {
 public:
   //! Destructor.
-  virtual ~ParameterListAcceptor ();
+  virtual ~ParameterListAcceptor () TEUCHOS_NOEXCEPT_FALSE; // needed for clang or process will terminate on throws
 
   //! @name Pure virtual functions that must be overridden in subclasses
   //@{

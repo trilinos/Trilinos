@@ -84,8 +84,11 @@ public:
   //! @name Constructors/Initializers
   //@{
 
+  // clang needs class ParameterListAcceptor to be TEUCHOS_NOEXCEPT_FALSE
+  // class AlgorithmA has multiple inheritance from ParameterListAcceptor and VerboseObject<-VerboseObjectBase
+  // so VerboseObjectBase should also be TEUCHOS_NOEXCEPT_FALSE so clang can resolve this
   /** \brief . */
-  virtual ~VerboseObjectBase();
+  virtual ~VerboseObjectBase() TEUCHOS_NOEXCEPT_FALSE; // see note above for clang
 
   /** \brief Calls <tt>initializeVerboseObject()</tt>.
    */

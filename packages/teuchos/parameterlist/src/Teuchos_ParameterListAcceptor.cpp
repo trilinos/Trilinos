@@ -48,7 +48,7 @@
 namespace Teuchos {
 
 
-ParameterListAcceptor::~ParameterListAcceptor()
+ParameterListAcceptor::~ParameterListAcceptor() TEUCHOS_NOEXCEPT_FALSE // needed for clang or process will terminate on throws
 {}
 
 
