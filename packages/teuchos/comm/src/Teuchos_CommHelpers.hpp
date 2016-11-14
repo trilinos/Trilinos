@@ -85,6 +85,27 @@ enum EReductionType {
  */
 const char* toString (const EReductionType reductType);
 
+#ifdef HAVE_TEUCHOS_MPI
+namespace Details {
+
+/// \brief Get the raw MPI_Op corresponding to the given reduction
+///   type enum value.
+///
+/// \warning This is an implementation detail and not for public use.
+///   It only exists when Trilinos was built with MPI.
+MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType);
+
+/// \brief MPI's error string corresponding to the given integer error code.
+///
+/// \warning This is an implementation detail and not for public use.
+///   It only exists when Trilinos was built with MPI.
+///
+/// \param errCode [in] Integer error code returned by MPI functions.
+std::string getMpiErrorString (const int errCode);
+
+} // namespace Details
+#endif // HAVE_TEUCHOS_MPI
+
 /** \brief Get the process rank.
  *
  * \relates Comm

@@ -46,10 +46,10 @@
 #endif // HAVE_TEUCHOS_MPI
 
 namespace Teuchos {
-namespace { // (anonymous)
 
 #ifdef HAVE_TEUCHOS_MPI
-//! Get the raw MPI_Op corresponding to the given reduction type enum value.
+namespace Details {
+
 MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType) {
   switch (reductionType) {
   case REDUCE_SUM: return MPI_SUM;
@@ -62,9 +62,6 @@ MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType) {
   }
 }
 
-/// \brief MPI's error string corresponding to the given integer error code.
-///
-/// \param errCode [in] Integer error code returned by MPI functions.
 std::string getMpiErrorString (const int errCode) {
   // Space for storing the error string returned by MPI.
   // Leave room for null termination, since I don't know if MPI does this.
@@ -80,7 +77,11 @@ std::string getMpiErrorString (const int errCode) {
   }
   return std::string (errString); // This copies the original string.
 }
+
+} // namespace Details
 #endif // HAVE_TEUCHOS_MPI
+
+namespace { // (anonymous)
 
 /// \brief Generic implementation of reduceAll().
 /// \tparam T The type of data on which to reduce.  The requirements
@@ -117,7 +118,7 @@ reduceAllImpl (const Comm<int>& comm,
       std::copy (sendBuffer, sendBuffer + count, globalReducts);
     }
   } else { // It's an MpiComm.  Invoke MPI directly.
-    MPI_Op rawMpiOp = getMpiOpForEReductionType (reductType);
+    MPI_Op rawMpiOp = ::Teuchos::Details::getMpiOpForEReductionType (reductType);
     MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
     T t;
     MPI_Datatype rawMpiType = MpiTypeTraits<T>::getType (t);
@@ -127,7 +128,7 @@ reduceAllImpl (const Comm<int>& comm,
       err != MPI_SUCCESS,
       std::runtime_error,
       "MPI_Allreduce failed with the following error: "
-      << getMpiErrorString (err));
+      << ::Teuchos::Details::getMpiErrorString (err));
   }
 #else
   // We've built without MPI, so just assume it's a SerialComm and copy the data.
@@ -181,7 +182,7 @@ gatherImpl (const T sendBuf[],
       err != MPI_SUCCESS,
       std::runtime_error,
       "MPI_Gather failed with the following error: "
-      << getMpiErrorString (err));
+      << ::Teuchos::Details::getMpiErrorString (err));
   }
 #else
   // We've built without MPI, so just assume it's a SerialComm and copy the data.
@@ -235,7 +236,7 @@ scatterImpl (const T sendBuf[],
     TEUCHOS_TEST_FOR_EXCEPTION
       (err != MPI_SUCCESS, std::runtime_error,
       "MPI_Scatter failed with the following error: "
-      << getMpiErrorString (err));
+      << ::Teuchos::Details::getMpiErrorString (err));
   }
 #else
   // We've built without MPI, so just assume it's a SerialComm and
@@ -280,7 +281,7 @@ reduceImpl (const T sendBuf[],
       std::copy (sendBuf, sendBuf + count, recvBuf);
     }
   } else { // It's an MpiComm.  Invoke MPI directly.
-    MPI_Op rawMpiOp = getMpiOpForEReductionType (reductType);
+    MPI_Op rawMpiOp = ::Teuchos::Details::getMpiOpForEReductionType (reductType);
     MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
     T t;
     MPI_Datatype rawMpiType = MpiTypeTraits<T>::getType (t);
@@ -288,7 +289,7 @@ reduceImpl (const T sendBuf[],
                                 rawMpiType, rawMpiOp, root, rawMpiComm);
     TEUCHOS_TEST_FOR_EXCEPTION
       (err != MPI_SUCCESS, std::runtime_error, "MPI_Reduce failed with the "
-       "following error: " << getMpiErrorString (err));
+       "following error: " << ::Teuchos::Details::getMpiErrorString (err));
   }
 #else
   // We've built without MPI, so just assume it's a SerialComm and copy the data.
@@ -358,7 +359,7 @@ gathervImpl (const T sendBuf[],
       err != MPI_SUCCESS,
       std::runtime_error,
       "MPI_Gatherv failed with the following error: "
-      << getMpiErrorString (err));
+      << ::Teuchos::Details::getMpiErrorString (err));
   }
 #else
   // We've built without MPI, so just assume it's a SerialComm and copy the data.
@@ -472,7 +473,7 @@ ireceiveImpl (const Comm<int>& comm,
     TEUCHOS_TEST_FOR_EXCEPTION(
       err != MPI_SUCCESS, std::runtime_error,
       "MPI_Irecv failed with the following error: "
-      << getMpiErrorString (err));
+      << ::Teuchos::Details::getMpiErrorString (err));
 
     ArrayRCP<const char> buf =
       arcp_const_cast<const char> (arcp_reinterpret_cast<char> (recvBuffer));
@@ -540,7 +541,7 @@ ireceiveImpl (const ArrayRCP<T>& recvBuffer,
     TEUCHOS_TEST_FOR_EXCEPTION(
       err != MPI_SUCCESS, std::runtime_error,
       "MPI_Irecv failed with the following error: "
-      << getMpiErrorString (err));
+      << ::Teuchos::Details::getMpiErrorString (err));
 
     ArrayRCP<const char> buf =
       arcp_const_cast<const char> (arcp_reinterpret_cast<char> (recvBuffer));
@@ -647,7 +648,7 @@ sendImpl (const Comm<int>& comm,
       err != MPI_SUCCESS,
       std::runtime_error,
       "MPI_Send failed with the following error: "
-      << getMpiErrorString (err));
+      << ::Teuchos::Details::getMpiErrorString (err));
   }
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -699,7 +700,7 @@ sendImpl (const T sendBuffer[],
       err != MPI_SUCCESS,
       std::runtime_error,
       "MPI_Send failed with the following error: "
-      << getMpiErrorString (err));
+      << ::Teuchos::Details::getMpiErrorString (err));
   }
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -799,7 +800,7 @@ isendImpl (const ArrayRCP<const T>& sendBuffer,
       err != MPI_SUCCESS,
       std::runtime_error,
       "MPI_Isend failed with the following error: "
-      << getMpiErrorString (err));
+      << ::Teuchos::Details::getMpiErrorString (err));
 
     ArrayRCP<const char> buf = arcp_reinterpret_cast<const char> (sendBuffer);
     RCP<Details::MpiCommRequest> req (new Details::MpiCommRequest (rawRequest, buf));
