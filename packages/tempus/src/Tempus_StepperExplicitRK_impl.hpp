@@ -5,7 +5,6 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Tempus_RKButcherTableau.hpp"
-#include "Tempus_ParseRKTableau.hpp"
 
 
 namespace Tempus {
@@ -46,15 +45,11 @@ void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
   if (stepperType == "")
     stepperType = pList_->get<std::string>("Stepper Type");
 
-  Teuchos::ParameterList rkTableuPL = pList_->sublist("Tableau");
 
-  std::ofstream ftmp("TableauPL.txt");
-  rkTableuPL.print(ftmp);
-  ftmp.close();
-
-  if (stepperType == "RK Butcher Tableau")
+  if (stepperType == "General ERK")
   {
-      ERK_ButcherTableau_ = parseRKTableau(rkTableuPL);
+      Teuchos::ParameterList rkTableuPL = pList_->sublist("Tableau");
+      ERK_ButcherTableau_ = parseRKTableau<Scalar>(rkTableuPL);
   } else {
       ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType);
   }

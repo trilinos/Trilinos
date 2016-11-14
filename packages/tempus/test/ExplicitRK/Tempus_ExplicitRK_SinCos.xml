@@ -50,6 +50,18 @@
 
     <ParameterList name="Demo Stepper">
       <Parameter name="Stepper Type" type="string" value="Demo"/>
+      <ParameterList name="Tableau">
+          <Parameter name="A" type="string"
+              value="0.000000000000000  0.000000000000000  0.000000000000000 0.000000000000000;
+                     0.500000000000000  0.000000000000000  0.000000000000000 0.000000000000000;
+                     0.000000000000000  0.500000000000000  0.000000000000000 0.000000000000000;
+                     0.000000000000000  0.000000000000000  1.000000000000000 0.000000000000000"/>
+          <Parameter name="b" type="string"
+              value="0.166666666666667  0.333333333333333  0.333333333333333 0.166666666666667"/>
+          <Parameter name="c" type="string"
+              value="0.000000000000000  0.500000000000000  0.500000000000000 1.000000000000000"/>
+          <Parameter name="order" type="int" value="4"/>
+      </ParameterList>
     </ParameterList>
 
   </ParameterList>
