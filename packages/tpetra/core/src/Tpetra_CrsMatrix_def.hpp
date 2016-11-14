@@ -3938,6 +3938,13 @@ namespace Tpetra {
     }
 
     if (isStaticGraph ()) {
+      // FIXME (mfh 14 Nov 2016) In order to fix #843, I enable the
+      // checks below only in debug mode.  It would be nicer to do a
+      // local check, then propagate the error state in a deferred
+      // way, whenever communication happens.  That would reduce the
+      // cost of checking, to the point where it may make sense to
+      // enable it even in release mode.
+#ifdef HAVE_TPETRA_DEBUG
       // FIXME (mfh 18 Jun 2014) This check for correctness of the
       // input Maps incurs a penalty of two all-reduces for the
       // otherwise optimal const graph case.
@@ -3971,6 +3978,7 @@ namespace Tpetra {
         "The graph cannot be changed because it was given to the CrsMatrix "
         "constructor as const.  You can fix this by passing in the graph's "
         "domain Map and range Map to the matrix's fillComplete call.");
+#endif // HAVE_TPETRA_DEBUG
     }
     else {
       // Set the graph's domain and range Maps.  This will clear the
