@@ -160,6 +160,8 @@ private:
 
   Teuchos::ParameterList parlist_;
 
+  std::string lineSearchName_;  
+
   Real GradDotStep(const Vector<Real> &g, const Vector<Real> &s,
                    const Vector<Real> &x,
                    BoundConstraint<Real> &bnd, Real eps = 0) {
@@ -219,9 +221,15 @@ public:
     computeObj_ = Glist.get("Recompute Objective Function",true);
     // Initialize Line Search
     if (lineSearch_ == Teuchos::null) {
-      els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
+      lineSearchName_ = Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation"); 
+      els_ = StringToELineSearch(lineSearchName_);
       lineSearch_ = LineSearchFactory<Real>(parlist);
+    } 
+    else { // User-defined linesearch provided
+      lineSearchName_ = Llist.sublist("Line-Search Method").get("User Defined Line-Search Name",
+                                                                "Unspecified User Defined Line-Search");
     }
+
   }
 
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
@@ -387,7 +395,7 @@ public:
     std::string name = desc_->printName();
     std::stringstream hist;
     hist << name;
-    hist << "Line Search: " << ELineSearchToString(els_);
+    hist << "Line Search: " << lineSearchName_;
     hist << " satisfying " << ECurvatureConditionToString(econd_) << "\n";
     return hist.str();
   }

@@ -66,6 +66,8 @@ private:
   int verbosity_;                      ///< Verbosity setting
   bool computeObj_;
 
+  std::string secantName_;
+
 public:
 
   using Step<Real>::initialize;
@@ -90,8 +92,13 @@ public:
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
     // Initialize secant object
     if ( secant == Teuchos::null ) {
-      esec_ = StringToESecant(parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
+      secantName_ = parlist.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS");
+      esec_ = StringToESecant(secantName_);
       secant_ = SecantFactory<Real>(parlist);
+    }
+    else {
+      secantName_ = parlist.sublist("General").sublist("Secant").get("User Defined Secant Name",
+                                                                     "Unspecified User Defined Secant Method"); 
     }
   }
 
@@ -171,7 +178,7 @@ public:
   std::string printName( void ) const {
     std::stringstream hist;
     hist << "\n" << EDescentToString(DESCENT_SECANT);
-    hist << " with " << ESecantToString(esec_) << "\n";
+    hist << " with " << secantName_ << "\n";
     return hist.str();
   }
   std::string print( AlgorithmState<Real> &algo_state, bool print_header = false ) const {
