@@ -6,6 +6,7 @@ ADD_SUBDIRECTORIES(
   BasicPerfTest
   Block
   BugTests
+  Comm
   CrsGraph
   CrsMatrix
   Directory

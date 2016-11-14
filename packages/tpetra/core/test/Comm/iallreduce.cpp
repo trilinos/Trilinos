@@ -1,0 +1,229 @@
+/*
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+*/
+
+#include "Tpetra_TestingUtilities.hpp"
+// #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_iallreduce.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Tpetra_Map.hpp" // creating a Map ensures Kokkos initialization
+#include "Kokkos_ArithTraits.hpp"
+
+namespace {
+  using Tpetra::TestingUtilities::getDefaultComm;
+  // using Tpetra::Details::gathervPrint;
+  using Teuchos::Comm;
+  using Teuchos::outArg;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::endl;
+  typedef Tpetra::global_size_t GST;
+
+  typedef Tpetra::Map<> map_type;
+  typedef map_type::local_ordinal_type LO;
+  typedef map_type::global_ordinal_type GO;
+
+  //
+  // UNIT TESTS
+  //
+
+  template<class Packet, class Device>
+  void
+  testIallreduce (bool& success,
+                  Teuchos::FancyOStream& out,
+                  const std::string& packetTypeName,
+                  const std::string& deviceTypeName,
+                  const LO lclNumPackets,
+                  const Teuchos::Comm<int>& comm)
+  {
+    using Tpetra::Details::iallreduce;
+    using Teuchos::reduceAll;
+    using Teuchos::CommRequest;
+    using Teuchos::CommStatus;
+    typedef Packet val_type;
+    typedef Kokkos::Details::ArithTraits<val_type> STS;
+    typedef typename STS::mag_type mag_type;
+    typedef typename Device::device_type device_type;
+
+    out << "Test iallreduce for Packet=" << packetTypeName
+        << " and Device=" << deviceTypeName << endl;
+    Teuchos::OSTab tab1 (out);
+
+    //const int myRank = comm.getRank ();
+    const int numProcs = comm.getSize ();
+
+    Kokkos::View<val_type*, device_type> sendbuf ("sendbuf", lclNumPackets);
+    Kokkos::View<val_type*, device_type> recvbuf ("recvbuf", lclNumPackets);
+
+    auto sendbuf_h = Kokkos::create_mirror_view (sendbuf); // save & reuse
+    auto recvbuf_h = Kokkos::create_mirror_view (recvbuf); // save & reuse
+
+    // Fill input buffer with values chosen so that we know what their
+    // sum across processes should be.
+    {
+      val_type curVal = STS::one ();
+      for (LO k = 0; k < lclNumPackets; ++k, curVal += STS::one ()) {
+        sendbuf_h(k) = curVal;
+      }
+      Kokkos::deep_copy (sendbuf, sendbuf_h);
+    }
+
+    // Make a "back-up" of the send buffer with input values, just in
+    // case iallreduce has a bug that corrupts it (hopefully not).
+    Kokkos::View<val_type*, device_type> sendbuf_bak ("sendbuf_bak", lclNumPackets);
+    Kokkos::deep_copy (sendbuf_bak, sendbuf);
+    auto sendbuf_bak_h = Kokkos::create_mirror_view (sendbuf_bak);
+    Kokkos::deep_copy (sendbuf_bak_h, sendbuf_bak);
+
+    out << "Test that the function compiles and runs without crashing" << endl;
+
+    Kokkos::View<const val_type*, device_type> sendbuf_const = sendbuf;
+
+    RCP<CommRequest<int> > request = iallreduce (sendbuf_const, recvbuf, Teuchos::REDUCE_SUM, comm);
+    TEST_ASSERT( ! request.is_null () );
+    RCP<CommStatus<int> > status = request->wait ();
+    TEST_ASSERT( ! status.is_null () );
+
+    out << "Make sure the input values were not changed" << endl;
+    {
+      Kokkos::deep_copy (sendbuf_h, sendbuf);
+      for (LO k = 0; k < lclNumPackets; ++k) {
+        TEST_EQUALITY( sendbuf_h(k), sendbuf_bak_h(k) );
+      }
+    }
+
+    out << "Make sure the output values are correct" << endl;
+    {
+      // There's no direct cast from int to some Scalar types (e.g.,
+      // std::complex<mag_type> or Kokkos::complex<mag_type>).  Thus,
+      // we make an intermediate cast through (real-valued) mag_type.
+      const val_type np = static_cast<val_type> (static_cast<mag_type> (numProcs));
+
+      Kokkos::deep_copy (recvbuf_h, recvbuf);
+      for (LO k = 0; k < lclNumPackets; ++k) {
+        TEST_EQUALITY( recvbuf_h(k), sendbuf_bak(k) * np );
+      }
+    }
+
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0; // output argument
+    reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "Leaving test early, due to failure" << endl;
+      return;
+    }
+
+    // TODO (mfh 14 Nov 2016) Add the following tests:
+    //
+    //   1. That we can launch two iallreduce calls without them
+    //      getting mixed up (e.g., make sure the implementation does
+    //      not use some kind of nonreentrant global state)
+    //
+    //   2. That we can launch an iallreduce, then launch a (blocking)
+    //      all-reduce, and finally wait on the iallreduce, without
+    //      the two calls getting mixed up, and without deadlock
+    //
+    //   1. That we can launch an iallreduce, then launch nonblocking
+    //      point-to-point operations (irecv and isend), and not
+    //      deadlock or get the calls' results mixed up, no matter in
+    //      what (sensible) order we wait on the operations.
+  }
+
+  template<class Device>
+  void
+  testIallreducePackets (bool& success,
+                         Teuchos::FancyOStream& out,
+                         const std::string& deviceTypeName,
+                         const LO lclNumPackets,
+                         const Teuchos::Comm<int>& comm)
+  {
+    typedef typename Device::device_type device_type;
+
+    testIallreduce<short, device_type> (success, out, "short", deviceTypeName, lclNumPackets, comm);
+    testIallreduce<int, device_type> (success, out, "int", deviceTypeName, lclNumPackets, comm);
+    testIallreduce<long, device_type> (success, out, "long", deviceTypeName, lclNumPackets, comm);
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+    testIallreduce<long long, device_type> (success, out, "long long", deviceTypeName, lclNumPackets, comm);
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+    testIallreduce<unsigned short, device_type> (success, out, "unsigned short", deviceTypeName, lclNumPackets, comm);
+    testIallreduce<unsigned int, device_type> (success, out, "unsigned int", deviceTypeName, lclNumPackets, comm);
+    testIallreduce<unsigned long, device_type> (success, out, "unsigned long", deviceTypeName, lclNumPackets, comm);
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+    testIallreduce<unsigned long long, device_type> (success, out, "unsigned long long", deviceTypeName, lclNumPackets, comm);
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+    testIallreduce<float, device_type> (success, out, "float", deviceTypeName, lclNumPackets, comm);
+    testIallreduce<double, device_type> (success, out, "double", deviceTypeName, lclNumPackets, comm);
+
+    // FIXME (mfh 14 Nov 2016) Test for all enabled Scalar types, not
+    // just for the subset above.
+  }
+
+
+  TEUCHOS_UNIT_TEST( iallreduce, basic )
+  {
+    typedef map_type::device_type device_type;
+
+    out << "Testing Tpetra::Details::iallreduce" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const LO lclNumPackets = 5;
+    const GO gblNumPackets = static_cast<GO> (lclNumPackets) *
+      static_cast<GO> (comm->getSize ());
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (static_cast<GST> (gblNumPackets),
+                         static_cast<size_t> (lclNumPackets),
+                         indexBase, comm));
+
+    const std::string deviceTypeName ("default");
+    testIallreducePackets<device_type> (success, out, deviceTypeName, lclNumPackets, *comm);
+  }
+
+} // namespace (anonymous)
+
+
