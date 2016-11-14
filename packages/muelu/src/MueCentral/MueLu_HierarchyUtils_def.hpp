@@ -67,9 +67,9 @@ namespace MueLu {
   // calling AddNewLevel as appropriate.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
+
     for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
       const std::string& levelName = it->first;
-
       // Check for mach of the form "level X" where X is a positive integer
       if (paramList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
         int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
@@ -101,7 +101,7 @@ namespace MueLu {
           }
           else if( name == "P" || name == "R") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), M->GetFactory(name).get());
+	    level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), NoFactory::get());
           }
           else if (name == "Nullspace")
           {
@@ -121,12 +121,10 @@ namespace MueLu {
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP< Intrepid2::FieldContainer<LocalOrdinal> > >(it2->second), NoFactory::get());
-            //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
-                                                        // One should do this only in very special cases
           }
 #endif
-          #ifdef HAVE_MUELU_MATLAB
           else
+#ifdef HAVE_MUELU_MATLAB
           {
             //Custom variable for Muemex
             size_t typeNameStart = name.find_first_not_of(' ');
@@ -153,10 +151,14 @@ namespace MueLu {
             else if(typeName == "string")
               level->Set(name, Teuchos::getValue<std::string>(it2->second), NoFactory::get());
           }
-          #endif
-        }
+#else
+	  {
+	    throw std::runtime_error("Invalid non-serializable data on list");
+	  }
+#endif
+	}
       }
-    }
+    }   
   }
 
 } // namespace MueLu

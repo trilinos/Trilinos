@@ -115,8 +115,6 @@
 
 #ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
-#else
-#error "OUCHIE!!"
 #endif
 
 namespace MueLu {
