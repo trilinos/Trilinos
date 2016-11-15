@@ -143,11 +143,12 @@ namespace MueLu {
   private:
     //! @name Internal Utilities
     //@{
+    // NOTE: This is hardwired to double on purpose.
     void GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode, 
 						 const std::vector<bool> & hi_nodeIsOwned,
-						 const Intrepid2:: FieldContainer<Scalar> hi_DofCoords,
+						 const Intrepid2:: FieldContainer<double> hi_DofCoords,
 						 const std::vector<size_t> &lo_node_in_hi,
-						 const Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > &lo_Basis,
+						 const Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > &lo_Basis,
 						 const std::vector<LocalOrdinal> & hi_to_lo_map,
 						 const Teuchos::RCP<const Map> & lo_colMap, 
 						 const Teuchos::RCP<const Map> & lo_domainMap, 
@@ -161,6 +162,7 @@ namespace MueLu {
 
   /* Utility functions for use with Intrepid */
   namespace MueLuIntrepid {
+    // NOTE: This function will not work with Stokhos scalar types, due to deficiencies upstream.
     template<class Scalar>
     Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name);
 

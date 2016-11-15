@@ -293,15 +293,15 @@ void BuildLoElemToNode(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemTo
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode, 
 														 const std::vector<bool> & hi_nodeIsOwned,
-														 const Intrepid2:: FieldContainer<Scalar> hi_DofCoords,
+														 const Intrepid2:: FieldContainer<double> hi_DofCoords,
 														 const std::vector<size_t> &lo_node_in_hi,
-														 const Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > &lo_basis,
+														 const Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > &lo_basis,
 														 const std::vector<LocalOrdinal> & hi_to_lo_map,
 														 const Teuchos::RCP<const Map> & lo_colMap, 
 														 const Teuchos::RCP<const Map> & lo_domainMap, 
 														 const Teuchos::RCP<const Map> & hi_map,
 														 Teuchos::RCP<Matrix>& P) const{
-  typedef Intrepid2::FieldContainer<SC> FC;
+  typedef Intrepid2::FieldContainer<double> FC;
   // Evaluate the linear basis functions at the Pn nodes
   size_t numFieldsHi = hi_elemToNode.dimension(1);
   size_t numFieldsLo = lo_basis.getCardinality();
@@ -379,9 +379,12 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     std::string levelIDs = toString(coarseLevel.GetLevelID());
 
     const std::string prefix = "MueLu::IntrepidPCoarsenFactory(" + levelIDs + "): ";
-    typedef Intrepid2::FieldContainer<SC> FC;
     typedef Intrepid2::FieldContainer<LO> FCi;
-    typedef Intrepid2::Basis<SC,FC> Basis;
+    //    typedef Intrepid2::FieldContainer<SC> FC;
+    //    typedef Intrepid2::Basis<SC,FC> Basis;
+    // NOTE: This is hardwired to double on purpose.  See the note below.
+    typedef Intrepid2::FieldContainer<double> FC;
+    typedef Intrepid2::Basis<double,FC> Basis;
 
     GO go_invalid = Teuchos::OrdinalTraits<GO>::invalid();
     LO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
@@ -413,8 +416,10 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     /*******************/
     // FIXME LATER: Allow these to be manually specified instead of Intrepid
     // Get the Intrepid bases
-    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("ipc: hi basis"));
-    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<Scalar>(pL.get<std::string>("ipc: lo basis"));
+    // NOTE: To make sure Stokhos works we only instantiate these guys with double.  There's a lot
+    // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.
+    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("ipc: hi basis"));
+    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("ipc: lo basis"));
 
     // Get reference coordinates and the lo-to-hi injection list for the reference element
     std::vector<size_t> lo_node_in_hi;
