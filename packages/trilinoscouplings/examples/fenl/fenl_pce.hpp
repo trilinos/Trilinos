@@ -55,11 +55,14 @@
 #include <fenl.hpp>
 #include <fenl_functors_pce.hpp>
 #include <fenl_impl.hpp>
+#if defined(HAVE_TRILINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 #include <MeanBasedPreconditioner.hpp>
+#endif
 
 namespace Kokkos {
 namespace Example {
 
+#if defined(HAVE_TRILINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
   //! Get mean values matrix for mean-based preconditioning
   /*! Specialization for Sacado::UQ::PCE
    */
@@ -180,5 +183,6 @@ namespace Example {
 
   }; // class MeanBasedPreconditioner
 
+#endif
 }
 }
