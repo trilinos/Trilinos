@@ -84,9 +84,8 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<NT> node = platform.getNode();
 
-    RCP<const Map> map = Tpetra::createUniformContigMapWithNode<LO, GO, NT> (NUM_GLOBAL_ELEMENTS, comm, node);
+    RCP<const Map> map = Tpetra::createUniformContigMapWithNode<LO, GO, NT> (NUM_GLOBAL_ELEMENTS, comm);
 
     RCP<const Map> new_map = Tpetra::createOneToOne<LO, GO, NT> (map);
 
@@ -108,7 +107,6 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
-    RCP<NT> node = platform.getNode ();
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
     const GO indexBase = 0;
@@ -135,7 +133,7 @@ namespace { // (anonymous)
     }
 
     RCP<const Map> inputMap =
-      Teuchos::rcp (new Map (globalNumElts, myElts (), indexBase, comm, node));
+      Teuchos::rcp (new Map (globalNumElts, myElts (), indexBase, comm));
     RCP<const Map> outputMap = Tpetra::createOneToOne<LO, GO, NT> (inputMap);
 
     TEST_ASSERT(inputMap->isSameAs(*outputMap));
@@ -157,7 +155,6 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
-    RCP<NT> node = platform.getNode ();
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
     const GO indexBase = 1;
@@ -190,7 +187,7 @@ namespace { // (anonymous)
     }
 
     RCP<const Map> inputMap =
-      Teuchos::rcp (new Map (globalNumElts, myElts (), indexBase, comm, node));
+      Teuchos::rcp (new Map (globalNumElts, myElts (), indexBase, comm));
     RCP<const Map> outputMap = Tpetra::createOneToOne<LO, GO, NT> (inputMap);
 
     TEST_ASSERT(inputMap->isSameAs(*outputMap));
@@ -203,7 +200,6 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<NT> node = platform.getNode();
     const int myRank = comm->getRank();
     const int numProc = comm->getSize();
 
@@ -236,7 +232,7 @@ namespace { // (anonymous)
       }
     }
 
-    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
+    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO,NT>(elementList,comm);
     //std::cout<<map->description();
     RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map);
     //std::cout<<new_map->description();
@@ -274,7 +270,6 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<NT> node = platform.getNode();
     const int myRank = comm->getRank();
 
     Array<GO> elementList;
@@ -290,7 +285,7 @@ namespace { // (anonymous)
     {
       elementList = Array<GO>(0);
     }
-    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
+    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO,NT>(elementList,comm);
     RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map);
     TEST_ASSERT(map->isSameAs(*new_map));
   }
@@ -301,11 +296,10 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<NT> node = platform.getNode();
 
     Array<GO> elementList (0);
 
-    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
+    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO,NT>(elementList,comm);
     RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map);
     TEST_ASSERT(map->isSameAs(*new_map));
 
@@ -320,7 +314,6 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<NT> node = platform.getNode();
     const int myRank = comm->getRank();
     const int numProc = comm->getSize();
 
@@ -330,7 +323,7 @@ namespace { // (anonymous)
     {
       elementList[i]=i;
     }
-    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
+    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO,NT>(elementList,comm);
     RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map);
 
     if(myRank<numProc-1)//I shouldn't have any elements.
@@ -349,7 +342,6 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, NT> Map;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<NT> node = platform.getNode();
     const int myRank = comm->getRank();
     const int numProc = comm->getSize();
 
@@ -383,7 +375,7 @@ namespace { // (anonymous)
     }
 
     GotoLowTieBreak<LO,GO> tie_break;
-    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
+    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO,NT>(elementList,comm);
     RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT>(map,tie_break);
     //Now we need to test if we lost anything.
 
