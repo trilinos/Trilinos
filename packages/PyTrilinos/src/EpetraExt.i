@@ -467,13 +467,15 @@ namespace EpetraExt
   %extend XMLReader
   {
     %epetraext_epetra_read_method(  Map        )
-    %epetraext_epetra_read64_method(Map        )
     %epetraext_epetra_read_method(  MultiVector)
-    %epetraext_epetra_read64_method(MultiVector)
     %epetraext_epetra_read_method(  CrsGraph   )
-    %epetraext_epetra_read64_method(CrsGraph   )
     %epetraext_epetra_read_method(  CrsMatrix  )
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    %epetraext_epetra_read64_method(Map        )
+    %epetraext_epetra_read64_method(MultiVector)
+    %epetraext_epetra_read64_method(CrsGraph   )
     %epetraext_epetra_read64_method(CrsMatrix  )
+#endif
   } // XMLReader
 }
 
@@ -569,8 +571,10 @@ EpetraExt::SameTypeTransform<Epetra_CrsMatrix >;
 %template (TCrsGraph_MapColoringIndex_int)
 EpetraExt::TCrsGraph_MapColoringIndex<int>;
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 %template (TCrsGraph_MapColoringIndex_long)
 EpetraExt::TCrsGraph_MapColoringIndex<long long>;
+#endif
 
 ////////////////////////////////////////
 // EpetraExt_MapColoringIndex support //
