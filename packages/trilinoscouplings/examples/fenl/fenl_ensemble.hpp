@@ -141,6 +141,7 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
 
 } /* namespace FENL */
 
+#if defined(HAVE_TRILINOSCOUPLINGS_BELOS) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
   //! Get mean values matrix for mean-based preconditioning
   /*! Specialization for Sacado::MP::Vector
    */
@@ -195,6 +196,7 @@ struct ExtractEnsembleIts<Sacado::MP::Vector<S>,V,O> {
     return std::vector<int>();
   }
 };
+#endif
 
 } /* namespace Example */
 } /* namespace Kokkos */
