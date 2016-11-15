@@ -98,6 +98,9 @@
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_Utils.hpp"
 
+// Intrepid2 Includes
+#include "Intrepid2_FieldContainer.hpp"
+
 // Tpetra includes
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
@@ -351,6 +354,17 @@ void evaluateExactSolution(ArrayOut &       exactSolutionValues,
 template<class ArrayOut, class ArrayIn>
 void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
                                const ArrayIn &  evaluationPoints);
+
+
+
+// Copy field containers
+template<class FC1, class FC2>
+void CopyFieldContainer2D(FC1 & c1, FC2 & c2) {
+  c2.resize(c1.dimension(0),c1.dimension(1));
+  for(size_t i=0; i<(size_t)c1.dimension(0); i++)
+    for(size_t j=0; j<(size_t)c1.dimension(1); j++)
+      c1(i,j) = c2(i,j);
+}
 
 
 
@@ -892,6 +906,9 @@ int main(int argc, char *argv[]) {
   RCP<driver_map_type> P1_globalMap = rcp(new driver_map_type(INVALID_GO,&P1_ownedGIDs[0],P1_ownedNodes,0,Comm));
 
   // Genetrate Pn-to-P1 coarsening.
+  Intrepid2::FieldContainer<local_ordinal_type> elemToNodeI2;
+  CopyFieldContainer2D(elemToNode,elemToNodeI2);
+  
   if (inputSolverList.isParameter("aux P1") && inputSolverList.isParameter("linear P1"))
     throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
   if (inputSolverList.isParameter("linear P1")) {
@@ -903,7 +920,7 @@ int main(int argc, char *argv[]) {
     level0.set("multigrid algorithm","pcoarsen");
     level0.set("ipc: hi basis",hi_basis);
     level0.set("ipc: lo basis","hgrad_quad_c1");
-    level0.set("ipc: element to node map",rcp(&elemToNode,false));
+    level0.set("ipc: element to node map",rcp(&elemToNodeI2,false));
     inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
 
