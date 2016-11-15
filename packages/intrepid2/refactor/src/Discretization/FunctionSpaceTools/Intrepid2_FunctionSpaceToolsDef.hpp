@@ -358,12 +358,12 @@ namespace Intrepid2 {
     struct F_computeCellMeasure {
       /**/  outputValViewType   _outputVals;
       const inputDetViewType    _inputDet;
-      const inputDetViewType    _inputWeight;
+      const inputWeightViewType    _inputWeight;
       
       KOKKOS_INLINE_FUNCTION
       F_computeCellMeasure( outputValViewType outputVals_,
                             inputDetViewType inputDet_,
-                            inputDetViewType inputWeight_)
+                            inputWeightViewType inputWeight_)
         : _outputVals(outputVals_), 
           _inputDet(inputDet_),
           _inputWeight(inputWeight_) {}
