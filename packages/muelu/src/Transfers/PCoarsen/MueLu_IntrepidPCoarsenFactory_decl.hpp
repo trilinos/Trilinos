@@ -190,5 +190,5 @@ namespace MueLu {
   }//namespace MueLuIntrepid
 } //namespace MueLu
 
-#define MUELU_IPCFACTORY_SHORT
+#define  MUELU_INTREPIDPCOARSENFACTORY_SHORT
 #endif // MUELU_IPCFACTORY_DECL_HPP
