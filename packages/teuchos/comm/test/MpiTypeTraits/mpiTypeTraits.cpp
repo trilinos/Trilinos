@@ -66,9 +66,17 @@ do { \
   } \
 } while (false)
 
+
+//! Is the given MPI_Datatype a custom (derived, not built-in) datatype?
 bool
 mpiDatatypeIsCustom (MPI_Datatype dt)
 {
+#if MPI_VERSION < 2
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "mpiDatatypeIsCustom: This function requires MPI "
+     "2.0 at least, since it relies on MPI_Type_get_envelope.  MPI 2.0 came "
+     "out in 1996, so I think it's time to upgrade your MPI implementation.");
+#else // MPI_VERSION >= 2
   int numInts = 0;
   int numAddrs = 0;
   int numTypes = 0;
@@ -103,6 +111,7 @@ mpiDatatypeIsCustom (MPI_Datatype dt)
   default:
     return true;
   }
+#endif // MPI_VERSION >= 2
 }
 
 // mfh 09 Nov 2016: MPI (at least as of 3.1) has no built-in function
@@ -119,6 +128,13 @@ mpiDatatypeIsCustom (MPI_Datatype dt)
 bool
 mpiDatatypeIsSame (MPI_Datatype t1, MPI_Datatype t2)
 {
+#if MPI_VERSION < 2
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "mpiDatatypeIsSame: This function requires MPI "
+     "2.0 at least, since it relies on MPI_Type_get_envelope and "
+     "MPI_Type_get_contents.  MPI 2.0 came out in 1996, so I think it's time "
+     "to upgrade your MPI implementation.");
+#else // MPI_VERSION >= 2
   int err = MPI_SUCCESS;
 
   int numInts1, numAddrs1, numTypes1, combiner1;
@@ -217,6 +233,7 @@ mpiDatatypeIsSame (MPI_Datatype t1, MPI_Datatype t2)
     }
     return true;
   }
+#endif // MPI_VERSION < 2
 }
 
 TEUCHOS_UNIT_TEST( MpiTypeTraits, TestMpiDatatypeIsCustom )
@@ -397,6 +414,30 @@ TEUCHOS_UNIT_TEST( MpiTypeTraits, CompareWithRawMpi )
   TEST_ASSERT( ! MpiTypeTraits<unsigned long>::needsFree );
   TEST_ASSERT( ! MpiTypeTraits<float>::needsFree );
   TEST_ASSERT( ! MpiTypeTraits<double>::needsFree );
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+  TEST_ASSERT( MpiTypeTraits<std::complex<float> >::isSpecialized );
+  TEST_ASSERT( MpiTypeTraits<std::complex<double> >::isSpecialized );
+
+  MPI_Datatype dt_complex_float =
+    MpiTypeTraits<std::complex<float> >::getType ();
+  MPI_Datatype dt_complex_double =
+    MpiTypeTraits<std::complex<float> >::getType ();
+
+// We make no promises about this for MPI_VERSION < 3.
+#if MPI_VERSION >= 3
+  TEST_ASSERT( ! MpiTypeTraits<std::complex<float> >::needsFree );
+  TEST_ASSERT( ! MpiTypeTraits<std::complex<double> >::needsFree );
+#endif // MPI_VERSION >= 3
+
+  if (MpiTypeTraits<std::complex<float> >::needsFree) {
+    (void) MPI_Type_free (&dt_complex_float);
+  }
+  if (MpiTypeTraits<std::complex<double> >::needsFree) {
+    (void) MPI_Type_free (&dt_complex_double);
+  }
+#endif // HAVE_TEUCHOS_COMPLEX
 }
 
 #endif // MPI_VERSION >= 2

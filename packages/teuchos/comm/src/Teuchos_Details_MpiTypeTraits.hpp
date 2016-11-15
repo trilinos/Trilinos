@@ -203,52 +203,104 @@ public:
 // (10 Nov 2014) when TEUCHOS_HAVE_COMPLEX was corrected to be
 // HAVE_TEUCHOS_COMPLEX, so evidently there are no users of these
 // specializations."
-#if 0
+//
+// mfh 14 Nov 2016: my work-around for the above issue, is
+// conservatively to assume that I need MPI_VERSION >= 3 for these
+// types to exist.  If I don't have MPI_VERSION >= 3, I create custom
+// MPI_Datatype for these types.
 #ifdef HAVE_TEUCHOS_COMPLEX
 template<>
 class MpiTypeTraits<std::complex<double> > {
+private:
+#if MPI_VERSION >= 3
+  static const bool hasMpi3 = true;
+#else
+  static const bool hasMpi3 = false;
+#endif // MPI_VERSION >= 3
+
 public:
   //! Whether this is a defined specialization of MpiTypeTraits (it is).
   static const bool isSpecialized = true;
 
   /// \brief Whether you must call MPI_Type_free on the return value
   ///   of getType (both versions) after use.
-  static const bool needsFree = false;
+  static const bool needsFree = ! hasMpi3;
 
   //! MPI_Datatype corresponding to the given T instance.
   static MPI_Datatype getType (const std::complex<double>&) {
+#if MPI_VERSION >= 3
     return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
+#else
+    // The code below asssumes that std::complex<double> is just two
+    // doubles in a row.  The static_assert below checks that.
+    static_assert (sizeof (std::complex<double>) == 2 * sizeof (double));
+    MPI_Datatype mpiDatatype;
+    (void) MPI_Type_contiguous (2, MPI_DOUBLE, &mpiDatatype);
+    return mpiDatatype;
+#endif // MPI_VERSION >= 3
   }
 
   //! MPI_Datatype corresponding to the type T.
   static MPI_Datatype getType () {
+#if MPI_VERSION >= 3
     return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
+#else
+    // The code below asssumes that std::complex<double> is just two
+    // doubles in a row.  The static_assert below checks that.
+    static_assert (sizeof (std::complex<double>) == 2 * sizeof (double));
+    MPI_Datatype mpiDatatype;
+    (void) MPI_Type_contiguous (2, MPI_DOUBLE, &mpiDatatype);
+    return mpiDatatype;
+#endif // MPI_VERSION >= 3
   }
 };
 
 template<>
 class MpiTypeTraits<std::complex<float> > {
+private:
+#if MPI_VERSION >= 3
+  static const bool hasMpi3 = true;
+#else
+  static const bool hasMpi3 = false;
+#endif // MPI_VERSION >= 3
+
 public:
   //! Whether this is a defined specialization of MpiTypeTraits (it is).
   static const bool isSpecialized = true;
 
   /// \brief Whether you must call MPI_Type_free on the return value
   ///   of getType (both versions) after use.
-  static const bool needsFree = false;
+  static const bool needsFree = ! hasMpi3;
 
   //! MPI_Datatype corresponding to the given T instance.
   static MPI_Datatype getType (const std::complex<float>&) {
+#if MPI_VERSION >= 3
     return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
+#else
+    // The code below asssumes that std::complex<float> is just two
+    // floats in a row.  The static_assert below checks that.
+    static_assert (sizeof (std::complex<float>) == 2 * sizeof (float));
+    MPI_Datatype mpiDatatype;
+    (void) MPI_Type_contiguous (2, MPI_FLOAT, &mpiDatatype);
+    return mpiDatatype;
+#endif // MPI_VERSION >= 3
   }
 
   //! MPI_Datatype corresponding to the type T.
   static MPI_Datatype getType () {
+#if MPI_VERSION >= 3
     return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
+#else
+    // The code below asssumes that std::complex<float> is just two
+    // floats in a row.  The static_assert below checks that.
+    static_assert (sizeof (std::complex<float>) == 2 * sizeof (float));
+    MPI_Datatype mpiDatatype;
+    (void) MPI_Type_contiguous (2, MPI_FLOAT, &mpiDatatype);
+    return mpiDatatype;
+#endif // MPI_VERSION >= 3
   }
 };
 #endif // HAVE_TEUCHOS_COMPLEX
-#endif // if 0
-
 
 //! Specialization for T = double.
 template<>
