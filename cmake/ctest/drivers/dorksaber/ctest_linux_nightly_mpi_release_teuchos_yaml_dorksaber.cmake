@@ -73,7 +73,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTPL_ENABLE_yaml-cpp:BOOL=ON "
   "-Dyaml-cpp_INCLUDE_DIRS:PATH=/home/nightlyTesting/yaml-cpp-release-0.5.3/build/install/include"
-  "-Dyaml-cpp_LIBRARY_DIRS:PATH=/home/nightlyTesting/yaml-cpp-release-0.5.3/build/instal/lib"
+  "-Dyaml-cpp_LIBRARY_DIRS:PATH=/home/nightlyTesting/yaml-cpp-release-0.5.3/build/install/lib"
   "-DCMAKE_CXX_FLAGS:STRING='-g'"
   "-DCMAKE_C_FLAGS:STRING='-g'"
   "-DCMAKE_Fortran_FLAGS:STRING='-g'"
