@@ -260,6 +260,18 @@ iallreduceRaw (const Packet sendbuf[],
 /// into \c recvbuf, using \c op as the reduction operator.  The
 /// function returns without blocking; the all-reduce only blocks for
 /// completion when one calls wait() on the returned request.
+///
+/// \param sendbuf [in] Input array of PacketType.
+/// \param recvbuf [out] Output array of PacketType.
+/// \param op [in] Teuchos enum representing the reduction operator.
+/// \param comm [in] Communicator over which to do the all-reduce.
+///
+/// \c sendbuf and \c recvbuf must either be disjoint, or identical
+/// (point to the same array).  They may not partially overlap.
+/// Furthermore, if they are identical, the input communicator must be
+/// an intracommunicator.  It may not be an intercommunicator.  If you
+/// don't know what an intercommunicator is, you probably just have an
+/// intracommunicator, so everything is fine.
 template<class PacketType, class DeviceType>
 ::Teuchos::RCP< ::Teuchos::CommRequest<int> >
 iallreduce (const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,

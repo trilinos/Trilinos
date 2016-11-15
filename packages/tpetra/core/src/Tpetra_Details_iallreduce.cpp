@@ -120,8 +120,18 @@ iallreduceRawVoid (const void* sendbuf,
 
 #if MPI_VERSION >= 3
     MPI_Request rawRequest = MPI_REQUEST_NULL;
-    const int err = MPI_Iallreduce (sendbuf, recvbuf, count, mpiDatatype,
-                                    rawOp, rawComm, &rawRequest);
+    int err = MPI_SUCCESS;
+    if (sendbuf == recvbuf) {
+      // Fix for #850.  This only works if rawComm is an
+      // intracommunicator.  Intercommunicators don't have an in-place
+      // option for collectives.
+      err = MPI_Iallreduce (MPI_IN_PLACE, recvbuf, count, mpiDatatype,
+                            rawOp, rawComm, &rawRequest);
+    }
+    else {
+      err = MPI_Iallreduce (sendbuf, recvbuf, count, mpiDatatype,
+                            rawOp, rawComm, &rawRequest);
+    }
     TEUCHOS_TEST_FOR_EXCEPTION
       (err != MPI_SUCCESS, std::runtime_error,
        "MPI_Iallreduce failed with the following error: "

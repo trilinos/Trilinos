@@ -90,6 +90,9 @@ namespace {
         << " and Device=" << deviceTypeName << endl;
     Teuchos::OSTab tab1 (out);
 
+    int lclSuccess = 1; // to be updated below
+    int gblSuccess = 0; // output argument
+
     //const int myRank = comm.getRank ();
     const int numProcs = comm.getSize ();
 
@@ -146,8 +149,47 @@ namespace {
       }
     }
 
-    const int lclSuccess = success ? 1 : 0;
-    int gblSuccess = 0; // output argument
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0; // output argument
+    reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "Leaving test early, due to failure" << endl;
+      return;
+    }
+
+    out << endl << "Test #850 fix (can alias sendbuf and recvbuf if comm is an "
+      "intracommunicator)" << endl;
+    // Use recvbuf as both the send buffer and the receive buffer.
+    {
+      val_type curVal = STS::one ();
+      for (LO k = 0; k < lclNumPackets; ++k, curVal += STS::one ()) {
+        recvbuf_h(k) = curVal;
+      }
+      Kokkos::deep_copy (recvbuf, recvbuf_h);
+    }
+
+    Kokkos::View<const val_type*, device_type> recvbuf_const = recvbuf;
+    request = iallreduce (recvbuf_const, recvbuf, Teuchos::REDUCE_SUM, comm);
+    TEST_ASSERT( ! request.is_null () );
+    status = request->wait ();
+    TEST_ASSERT( ! status.is_null () );
+
+    out << "Make sure the output values are correct" << endl;
+    {
+      // There's no direct cast from int to some Scalar types (e.g.,
+      // std::complex<mag_type> or Kokkos::complex<mag_type>).  Thus,
+      // we make an intermediate cast through (real-valued) mag_type.
+      const val_type np = static_cast<val_type> (static_cast<mag_type> (numProcs));
+
+      Kokkos::deep_copy (recvbuf_h, recvbuf);
+      for (LO k = 0; k < lclNumPackets; ++k) {
+        TEST_EQUALITY( recvbuf_h(k), sendbuf_bak(k) * np );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0; // output argument
     reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_EQUALITY_CONST( gblSuccess, 1 );
     if (gblSuccess != 1) {
