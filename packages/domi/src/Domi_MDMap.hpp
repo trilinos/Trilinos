@@ -1692,7 +1692,6 @@ MDMap(const MDMap< Node > & parent,
   _replicatedBoundary(),
   _layout(parent._layout)
 {
-  int rank = parent.getTeuchosComm()->getRank();
   if (parent.onSubcommunicator())
   {
     int numDims = parent.numDims();
