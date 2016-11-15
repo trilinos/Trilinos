@@ -130,6 +130,7 @@
 #  include "MueLu_Utilities.hpp"
 #  include "MueLu_HierarchyManager.hpp"
 #  include "MueLu_FactoryManagerBase.hpp"
+#  include "MueLu_CreateTpetraPreconditioner.hpp"
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
@@ -184,6 +185,10 @@ typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,NO>            driver
 Tpetra::global_size_t INVALID_GO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 Tpetra::global_size_t INVALID_LO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
+
+typedef Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO> xpetra_crs_matrix_type;
+typedef Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO> xpetra_multivector_type;
+
 typedef Belos::LinearProblem<scalar_type, multivector_type, operator_type> linear_problem_type;
 
 typedef MueLu::TpetraOperator<scalar_type,local_ordinal_type,global_ordinal_type,NO> muelu_tpetra_operator;
@@ -222,8 +227,6 @@ void CreateLinearSystem(int numWorkSets,
                         );
 
 
-void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, RCP<driver_map_type> & P1_map, RCP<driver_map_type> & Pn_map,RCP<crs_matrix_type>& P);
-
 void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & P2_elemToNode,
                       //const FieldContainer<int> & P1_elemToNode,
                       RCP<const driver_map_type> const & P1_map_aux, RCP<const driver_map_type> const &P2_map,
@@ -254,8 +257,6 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  ParameterList   & AMGList,
                                  RCP<crs_matrix_type>   const & A,
-                                 RCP<crs_matrix_type>   const & P,
-                                 RCP<crs_matrix_type>   const & R,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
                                  RCP<multivector_type> & uh,
@@ -893,10 +894,16 @@ int main(int argc, char *argv[]) {
   // Genetrate Pn-to-P1 coarsening.
   if (inputSolverList.isParameter("aux P1") && inputSolverList.isParameter("linear P1"))
     throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
-  RCP<crs_matrix_type> P_linear;
   if (inputSolverList.isParameter("linear P1")) {
-    printf("Generating Linear Pn-to-P1 coarsening...\n");
-    GenerateLinearCoarsening_pn_kirby_to_p1(degree,elemToNode, myHGradBasisWithDofCoords_rcp, myHGradBasis_aux_rcp,P1_globalMap,globalMapG,P_linear);
+    printf("Activating Linear Pn-to-P1 coarsening...\n");
+    char hi_basis[80];
+    sprintf(hi_basis,"hgrad_quad_c%d",degree);
+    Teuchos::ParameterList & mymuelu = inputSolverList.sublist("MueLu");
+    Teuchos::ParameterList & level0  = mymuelu.sublist("level 0");
+    level0.set("multigrid algorithm","pcoarsen");
+    level0.set("ipc: hi basis",hi_basis);
+    level0.set("ipc: lo basis","hgrad_quad_c1");
+    level0.set("ipc: element to node map",rcp(&elemToNode,false));
     inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
 
@@ -1191,18 +1198,24 @@ int main(int argc, char *argv[]) {
 
   RCP<crs_matrix_type> interpolationMatrix, restrictionMatrix;
   if (P_identity != Teuchos::null) {
-    amgList.set("user coarse matrix",(crs_matrix_type*)&StiffMatrix_aux);
-    interpolationMatrix = P_identity;
-    //restrictionMatrix = R_identity;
-    restrictionMatrix = P_identity;
-  }
-  if (P_linear != Teuchos::null) {
-    interpolationMatrix = P_linear;
+    Teuchos::ParameterList & level1 = amgList.sublist("level 1");
+    RCP<xpetra_crs_matrix_type> xA1 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(rcpFromRef(StiffMatrix_aux));
+    RCP<xpetra_crs_matrix_type> xP = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(P_identity);
+    level1.set("A",xA1);
+    level1.set("P",xP);
+    amgList.set("transpose: use implicit",true);
+    // create nullspace for Level 1 (first coarse AMG level)
+    RCP<multivector_type> nullspace = rcp(new multivector_type(exactNodalVals->getMap(),1));
+    ArrayRCP<scalar_type> data = nullspace->getDataNonConst(0);
+    for (int i=0; i<data.size(); ++i)
+      data[i] = 1.0;
+    RCP<xpetra_multivector_type> xnullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>(nullspace);
+    level1.set("Nullspace",xnullspace);
   }
 
   TestMultiLevelPreconditionerLaplace(probType, amgList,
                                       rcpFromRef(StiffMatrix),
-                                      interpolationMatrix, restrictionMatrix, exactNodalVals,
+				      exactNodalVals,
                                       rhsVector,            femCoefficients,
                                       TotalErrorResidual,   TotalErrorExactSol,
                                       amgType);
@@ -1623,14 +1636,10 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 /******************************* TEST ML ******************************************/
 /**********************************************************************************/
 
-#include "ml_LevelWrap.h"
-
 // Test ML
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  ParameterList   & amgList,
                                  RCP<crs_matrix_type> const &A0,
-                                 RCP<crs_matrix_type> const &P0,
-                                 RCP<crs_matrix_type> const &R0,
                                  RCP<multivector_type> const & xexact,
                                  RCP<multivector_type> & b,
                                  RCP<multivector_type> & uh,
@@ -1638,7 +1647,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  double & TotalErrorExactSol,
                                  std::string &amgType)
 {
-  int mypid = A0->getComm()->getRank();
+
+  //  int mypid = A0->getComm()->getRank();
   int maxIts = 100;
   double tol =1e-10;
   RCP<multivector_type> x = rcp(new multivector_type(xexact->getMap(),1));
@@ -1670,56 +1680,10 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   if (amgType == "ML") {
     throw std::runtime_error("Error: ML does not support Tpetra objects");
   } else if (amgType == "MueLu") {
-    // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-    RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> mueluA = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0);
-    // Multigrid Hierarchy
-    crs_matrix_type * A1;
-    RCP<Xpetra::Matrix <scalar_type> > xA1;
-    bool userCoarseA = false;
-    if (amgList.isParameter("user coarse matrix")) {
-      A1=amgList.get<crs_matrix_type*>("user coarse matrix");
-      xA1 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(rcpFromRef(*A1));
-      amgList.remove("user coarse matrix");
-      userCoarseA = true;
-    }
-    MueLu::ParameterListInterpreter<scalar_type> mueLuFactory(amgList);
-    RCP<MueLu::Hierarchy<scalar_type> > H = mueLuFactory.CreateHierarchy();
-    H->setVerbLevel(Teuchos::VERB_HIGH);
-    H->GetLevel(0)->Set("A", mueluA);
-    MueLu::FactoryManager<scalar_type,local_ordinal_type,global_ordinal_type,NO> M1, M2;
-    if (P0 != Teuchos::null) {
-      H->AddNewLevel();
-      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xP0 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(P0);
-      H->GetLevel(1)->AddKeepFlag("P",MueLu::NoFactory::get(),MueLu::UserData);
-      H->GetLevel(1)->Set("P", xP0);
-      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xR0 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(R0);
-      H->GetLevel(1)->AddKeepFlag("R",MueLu::NoFactory::get(),MueLu::UserData);
-      H->GetLevel(1)->Set("R", xR0);
-      if (mypid==0) std::cout << ">>>>>>>>>>>>>>>>>>>>> "
-         << "adding P0 to AMG hierarchy" << std::endl;
-    }
-    RCP<multivector_type> nullspace;
-    if (userCoarseA) {
-      H->GetLevel(1)->AddKeepFlag("A",MueLu::NoFactory::get(),MueLu::UserData);
-      H->GetLevel(1)->AddKeepFlag("Nullspace",MueLu::NoFactory::get(),MueLu::UserData);
-      H->GetLevel(1)->Set("A", xA1);
-      if (mypid==0) std::cout << ">>>>>>>>>>>>>>>>>>>>> "
-         << "adding coarse auxiliary matrix to AMG hierarchy" << std::endl;
-      // create nullspace for Level 1 (first coarse AMG level)
-      nullspace = rcp(new multivector_type(xexact->getMap(),1));
-      ArrayRCP<scalar_type> data = nullspace->getDataNonConst(0);
-      for (int i=0; i<data.size(); ++i)
-        data[i] = 1.0;
-      data = Teuchos::null;
-      RCP<Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xnullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>(nullspace);
-      H->GetLevel(1)->Set("Nullspace", xnullspace);
-    }
-    // Multigrid setup phase
-    mueLuFactory.SetupHierarchy(*H);
 
-    H->IsPreconditioner(true);
-    RCP<muelu_tpetra_operator> M = rcp(new muelu_tpetra_operator(H));
-
+    // Multigrid Hierarchy, the easy way  
+    RCP<operator_type> A0op = A0;
+    Teuchos::RCP<muelu_tpetra_operator> M = MueLu::CreateTpetraPreconditioner<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0op, amgList);
     Problem.setRightPrec(M);
 
     bool set = Problem.setProblem();
@@ -2433,55 +2397,6 @@ void CreateLinearSystem(int numWorksets,
   }// *** workset loop ***
 
 } //CreateLinearSystem
-
-/*********************************************************************************************************/
-void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, RCP<driver_map_type> & P1_map, RCP<driver_map_type> & Pn_map,RCP<crs_matrix_type>& P) {
-
-  // Sanity checks
-  assert(Pn_elemToNode.dimension(1) == PnBasis_rcp->getCardinality());
-  assert(P1Basis_rcp->getCardinality() == 4);
-
-  // Generate a P matrix that uses the linear coarsening from pn to p1 on the base mesh.
-  // This presumes that the Pn element is number according to the Kirby convention (aka straight across, bottom to top)
-  // Resulting matrix is #Pnnodes x #P1nodes
-  //  int edge_node0_id[4]={0,1,2,3};
-  //  int edge_node1_id[4]={1,2,3,0};
-  int p1_node_in_pn[4] = {0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)};
-
-  // Get the reference coordinates for the Pn element  
-  int numFieldsPn = PnBasis_rcp->getCardinality();
-  int spaceDim    = PnBasis_rcp->getBaseCellTopology().getDimension();
-  FieldContainer<double> PnDofCoords(numFieldsPn,spaceDim);
-  PnBasis_rcp->getDofCoords(PnDofCoords);
-
-  // Evaluate the linear basis functions at the Pn nodes
-  int numFieldsP1 = P1Basis_rcp->getCardinality();
-  FieldContainer<double> P1Values_at_PnDofs(numFieldsP1,numFieldsPn);
-  P1Basis_rcp->getValues(P1Values_at_PnDofs, PnDofCoords, OPERATOR_VALUE);
-
-  // Generate P
-  int Nelem=Pn_elemToNode.dimension(0);  
-  P = rcp(new crs_matrix_type(Pn_map,0));
-
-  Array<global_ordinal_type> cols1(1);
-  Array<scalar_type> vals1(1);
-  // Assemble
-  for(int i=0; i<Nelem; i++) {
-    for(int j=0; j<numFieldsPn; j++) {
-      int row = Pn_elemToNode(i,j);
-      for(int k=0; k<numFieldsP1; k++) {
-        //int col = Pn_elemToNode(i,p1_node_in_pn[k]);
-        //double val = P1Values_at_PnDofs(k,j);
-        //P->InsertGlobalValues(row,1,&val,&col);
-        cols1[0] = Pn_elemToNode(i,p1_node_in_pn[k]);
-        vals1[0] = P1Values_at_PnDofs(k,j);
-        P->insertGlobalValues(row,cols1(),vals1());
-      }
-    }
-  }
-  P->fillComplete(P1_map,Pn_map);
-
-}
 
 /*********************************************************************************************************/
 void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNode,
