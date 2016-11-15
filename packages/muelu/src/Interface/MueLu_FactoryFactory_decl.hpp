@@ -305,7 +305,7 @@ namespace MueLu {
       if (factoryName == "MatlabSmoother")                  return BuildMatlabSmoother                  (paramList, factoryMapIn, factoryManagersIn);
 #endif
 
-#ifndef HAVE_MUELU_INTREPID2
+#ifdef HAVE_MUELU_INTREPID2
       if (factoryName == "IntrepidPCoarsenFactory")           return Build2<IntrepidPCoarsenFactory>        (paramList, factoryMapIn, factoryManagersIn);
 #endif
 
