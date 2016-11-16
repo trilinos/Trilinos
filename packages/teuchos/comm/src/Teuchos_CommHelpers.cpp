@@ -50,18 +50,6 @@ namespace Teuchos {
 #ifdef HAVE_TEUCHOS_MPI
 namespace Details {
 
-MPI_Op getMpiOpForEReductionType (const enum EReductionType reductionType) {
-  switch (reductionType) {
-  case REDUCE_SUM: return MPI_SUM;
-  case REDUCE_MIN: return MPI_MIN;
-  case REDUCE_MAX: return MPI_MAX;
-  case REDUCE_AND: return MPI_LAND; // logical AND, not bitwise AND
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-      "The given EReductionType value is invalid.");
-  }
-}
-
 std::string getMpiErrorString (const int errCode) {
   // Space for storing the error string returned by MPI.
   // Leave room for null termination, since I don't know if MPI does this.
@@ -815,25 +803,6 @@ isendImpl (const ArrayRCP<const T>& sendBuffer,
 }
 
 } // namespace (anonymous)
-
-
-const char*
-toString (const EReductionType reductType)
-{
-  switch (reductType) {
-  case REDUCE_SUM: return "REDUCE_SUM";
-  case REDUCE_MIN: return "REDUCE_MIN";
-  case REDUCE_MAX: return "REDUCE_MAX";
-  case REDUCE_AND: return "REDUCE_AND";
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::invalid_argument, "Teuchos::toString(EReductionType): "
-      "Invalid EReductionType value " << reductType << ".  Valid values "
-      "include REDUCE_SUM = " << REDUCE_SUM << ", REDUCE_MIN = " << REDUCE_MIN
-      << ", REDUCE_MAX = " << REDUCE_MIN << ", and REDUCE_AND = " << REDUCE_AND
-      << ".");
-  }
-}
 
 
 // mfh 18 Oct 2012: Note on full template specializations
