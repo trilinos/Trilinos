@@ -45,14 +45,7 @@ void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
   if (stepperType == "")
     stepperType = pList_->get<std::string>("Stepper Type");
 
-
-  if (stepperType == "General ERK")
-  {
-      Teuchos::ParameterList rkTableuPL = pList_->sublist("Tableau");
-      ERK_ButcherTableau_ = parseRKTableau<Scalar>(rkTableuPL);
-  } else {
-      ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType);
-  }
+  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList_);
 
   TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
     std::logic_error,

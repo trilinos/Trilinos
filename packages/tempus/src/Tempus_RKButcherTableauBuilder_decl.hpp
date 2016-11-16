@@ -57,10 +57,9 @@ Teuchos::RCP<RKButcherTableauBuilder<Scalar> > rKButcherTableauBuilder();
 
 // Nonmember helper function
 template<class Scalar>
-Teuchos::RCP<RKButcherTableau<Scalar> > createRKBT(const std::string& rkbt_name);
-
-template<class Scalar>
-Teuchos::RCP<RKButcherTableau<Scalar> > parseRKTableau(const Teuchos::ParameterList & pl);
+Teuchos::RCP<RKButcherTableau<Scalar> >
+createRKBT(const std::string& rkbt_name,
+           Teuchos::RCP<Teuchos::ParameterList> pl);
 
 } // namespace Tempus
 

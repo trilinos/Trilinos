@@ -49,7 +49,11 @@
     </ParameterList>
 
     <ParameterList name="Demo Stepper">
-      <Parameter name="Stepper Type" type="string" value="Demo"/>
+      <Parameter name="Stepper Type" type="string" value="RK Forward Euler"/>
+    </ParameterList>
+
+    <ParameterList name="Demo Stepper 2">
+      <Parameter name="Stepper Type" type="string" value="General ERK"/>
       <ParameterList name="Tableau">
           <Parameter name="A" type="string"
               value="0.000000000000000  0.000000000000000  0.000000000000000 0.000000000000000;
