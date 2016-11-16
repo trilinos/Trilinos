@@ -74,23 +74,14 @@
 # SEMS Dev Env.
 #
 
-# Module defaults
-sems_compiler_and_version_default=sems-gcc/5.3.0
-sems_mpi_and_version_default=sems-openmpi/1.8.7
-sems_cmake_and_version_default=sems-cmake/3.5.2
-
-# Other defaults
-sems_python_and_version_default=sems-python/2.7.9
-sems_boost_and_version_default=sems-boost/1.58.0/base
-# NOTE: If you change these versions, you also have to update the same list in
-# the unload_sems_dev_env.sh module as well!
-
 # Get the base dir for the sourced script
 called=$_
 #[[ $called != $0 ]] && echo "Script is being sourced" || echo "Script is being run"
 #echo "\$BASH_SOURCE ${BASH_SOURCE[@]}"
 _SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 #echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
+
+source $_SCRIPT_DIR/std/sems/get_default_modules.sh
 
 #
 # A) Get the SEMS Dev Env to load and set defaults
@@ -149,12 +140,12 @@ module load $sems_cmake_and_version_load
 module load $sems_compiler_and_version_load
 module load $sems_mpi_and_version_load
 module load $sems_boost_and_version_default
-module load sems-zlib/1.2.8/base 
-module load sems-hdf5/1.8.12/parallel 
-module load sems-netcdf/4.3.2/parallel 
-module load sems-parmetis/4.0.3/parallel 
-#module load sems-scotch/6.0.3/parallel 
-module load sems-superlu/4.3/base
+module load $sems_zlib_and_version_default
+module load $sems_hdf5_and_version_default
+module load $sems_netcdf_and_version_default
+module load $sems_parmetis_and_version_default
+#module load $sems_scotch_and_version_default
+module load $sems_superlu_and_version_default
 
 if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
   module list

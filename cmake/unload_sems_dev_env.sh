@@ -18,9 +18,14 @@
 # result in none of the other sems-xxx modules being visible).
 #
 
-# Other defaults (must be the same as in load_sems_dev_env.sh)
-sems_python_and_version_default=sems-python/2.7.9
-sems_boost_and_version_default=sems-boost/1.55.0/base
+# Get the base dir for the sourced script
+called=$_
+#[[ $called != $0 ]] && echo "Script is being sourced" || echo "Script is being run"
+#echo "\$BASH_SOURCE ${BASH_SOURCE[@]}"
+_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
+#echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
+
+source $_SCRIPT_DIR/std/sems/get_default_modules.sh
 
 #
 # A) Exit if no Trilinos SEMS Dev Env is currently loaded
@@ -59,12 +64,12 @@ fi
 # C) Unload the modules (in the reverse order)
 #
 
-module unload sems-superlu/4.3/base
-module unload sems-scotch/6.0.3/parallel 
-module unload sems-parmetis/4.0.3/parallel 
-module unload sems-netcdf/4.3.2/parallel 
-module unload sems-hdf5/1.8.12/parallel 
-module unload sems-zlib/1.2.8/base 
+module unload $sems_superlu_and_version_default
+#module unload $sems_scotch_and_version_default
+module unload $sems_parmetis_and_version_default
+module unload $sems_netcdf_and_version_default
+module unload $sems_hdf5_and_version_default
+module unload $sems_zlib_and_version_default
 module unload $sems_boost_and_version_default
 module unload $sems_mpi_and_version_unload
 module unload $sems_compiler_and_version_unload
