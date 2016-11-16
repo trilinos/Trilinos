@@ -204,35 +204,6 @@ cancel ()
 
 #ifdef HAVE_TPETRACORE_MPI
 
-MPI_Comm
-extractMpiCommFromTeuchos (const Teuchos::Comm<int>& comm)
-{
-  using ::Teuchos::MpiComm;
-  using ::Teuchos::SerialComm;
-  using ::Teuchos::rcp;
-
-  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
-  if (mpiComm != NULL) { // It's an MpiComm; extract the MPI_Comm
-    MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
-    return rawComm;
-  }
-  else {
-    const SerialComm<int>* serialComm =
-      dynamic_cast<const SerialComm<int>* > (&comm);
-    if (serialComm != NULL) {
-      return MPI_COMM_SELF; // single-process comm including this process
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::logic_error,
-         "Tpetra::Details::Impl::extractMpiCommFromTeuchos: Input "
-         "Teuchos::Comm is neither a Teuchos::MpiComm, nor a "
-         "Teuchos::SerialComm.  As a result, I don't know how to get the "
-         "MPI_Comm out of it.");
-    }
-  }
-}
-
 std::shared_ptr<CommRequest>
 iallreduceRawVoid (const void* sendbuf,
                    void* recvbuf,

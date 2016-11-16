@@ -61,6 +61,7 @@
 #include "TpetraCore_config.h"
 #include "Teuchos_EReductionType.hpp"
 #ifdef HAVE_TPETRACORE_MPI
+#  include "Tpetra_Details_extractMpiCommFromTeuchos.hpp"
 #  include "Tpetra_Details_MpiTypeTraits.hpp"
 #endif // HAVE_TPETRACORE_MPI
 #include "Kokkos_Core.hpp"
@@ -299,16 +300,6 @@ wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
 
 #ifdef HAVE_TPETRACORE_MPI
 
-/// \brief Get the MPI_Comm out of the given Teuchos::Comm object.
-///
-/// \param comm [in] Communicator, wrapped in a Teuchos::Comm wrapper.
-///   Must be an instance of Teuchos::MpiComm or Teuchos::SerialComm.
-///
-/// \return The wrapped MPI_Comm (if comm is a Teuchos::MpiComm), or
-///   MPI_COMM_SELF (if comm is a Teuchos::SerialComm).
-MPI_Comm
-extractMpiCommFromTeuchos (const Teuchos::Comm<int>& comm);
-
 /// \brief Lowest-level implementation of ::Tpetra::Details::iallreduce.
 ///
 /// This doesn't need to know about Packet, because the MPI_Datatype
@@ -363,7 +354,7 @@ iallreduceRaw (const Packet sendbuf[],
   MPI_Datatype mpiDatatype = (count > 0) ?
     MpiTypeTraits<Packet>::getType (sendbuf[0]) :
     MPI_BYTE;
-  MPI_Comm rawComm = extractMpiCommFromTeuchos (comm);
+  MPI_Comm rawComm = ::Tpetra::Details::extractMpiCommFromTeuchos (comm);
   return iallreduceRawVoid (sendbuf, recvbuf, count, mpiDatatype,
                             MpiTypeTraits<Packet>::needsFree, op, rawComm);
 #else // NOT HAVE_TPETRACORE_MPI
