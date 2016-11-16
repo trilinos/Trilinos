@@ -233,7 +233,10 @@ public:
 #else
     // The code below asssumes that std::complex<double> is just two
     // doubles in a row.  The static_assert below checks that.
-    static_assert (sizeof (std::complex<double>) == 2 * sizeof (double));
+    static_assert (sizeof (std::complex<double>) == 2 * sizeof (double),
+                   "std::complex<double> does not have the expected size of "
+                   "2*sizeof(double).  This means we cannot construct an "
+                   "MPI_Datatype for it.");
     MPI_Datatype mpiDatatype;
     (void) MPI_Type_contiguous (2, MPI_DOUBLE, &mpiDatatype);
     return mpiDatatype;
@@ -247,7 +250,10 @@ public:
 #else
     // The code below asssumes that std::complex<double> is just two
     // doubles in a row.  The static_assert below checks that.
-    static_assert (sizeof (std::complex<double>) == 2 * sizeof (double));
+    static_assert (sizeof (std::complex<double>) == 2 * sizeof (double),
+                   "std::complex<double> does not have the expected size of "
+                   "2*sizeof(double).  This means we cannot construct an "
+                   "MPI_Datatype for it.");
     MPI_Datatype mpiDatatype;
     (void) MPI_Type_contiguous (2, MPI_DOUBLE, &mpiDatatype);
     return mpiDatatype;
@@ -279,7 +285,10 @@ public:
 #else
     // The code below asssumes that std::complex<float> is just two
     // floats in a row.  The static_assert below checks that.
-    static_assert (sizeof (std::complex<float>) == 2 * sizeof (float));
+    static_assert (sizeof (std::complex<float>) == 2 * sizeof (float),
+                   "std::complex<float> does not have the expected size of "
+                   "2*sizeof(float).  This means we cannot construct an "
+                   "MPI_Datatype for it.");
     MPI_Datatype mpiDatatype;
     (void) MPI_Type_contiguous (2, MPI_FLOAT, &mpiDatatype);
     return mpiDatatype;
@@ -293,7 +302,10 @@ public:
 #else
     // The code below asssumes that std::complex<float> is just two
     // floats in a row.  The static_assert below checks that.
-    static_assert (sizeof (std::complex<float>) == 2 * sizeof (float));
+    static_assert (sizeof (std::complex<float>) == 2 * sizeof (float),
+                   "std::complex<float> does not have the expected size of "
+                   "2*sizeof(float).  This means we cannot construct an "
+                   "MPI_Datatype for it.");
     MPI_Datatype mpiDatatype;
     (void) MPI_Type_contiguous (2, MPI_FLOAT, &mpiDatatype);
     return mpiDatatype;
