@@ -155,7 +155,7 @@ else
   echo "
 defaults = [
   \"-j4\",
-  \"--ctest-timeout=180\",
+  \"--ctest-timeout=300\",
   \"--disable-packages=PyTrilinos,Claps,TriKota\",
   \"--skip-case-no-email\",
   ]
@@ -163,19 +163,20 @@ defaults = [
 fi
 # Note the above defaults:
 #
-# -j4: Uses very few processes by default
+# -j4: Uses very few processes by default.  If you have more processes on your
+#   machine, you may want to increase this.
 #
-# --ctest-timeout=180: A default 3 minute timeout. You might want to increase
-#   if you have a very slow machine.
+# --ctest-timeout=300: A default 5 minute timeout for any individual test. You
+#   might want to increase if you have a slower machine.
 #
-# --disable-packages: These are packages that most Trilinos developers wil not
-#    want to test by default ever.
+# --disable-packages: These are packages that most Trilinos developers will
+#    never want to test by default.
 #
-# --skip-case-no-email: Don't send email for skipped test cases
+# --skip-case-no-email: Don't send email for skipped test cases.
 #
 # To exclude tests, include the option:
 #
-#  \"--ctest-options=-E '(test1|test2|...)\",
+#  "--ctest-options=-E '(test1|test2|...)'",
 #
 
 #
