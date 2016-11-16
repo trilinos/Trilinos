@@ -32,7 +32,7 @@ IF (NOT TeuchosCore_ENABLE_MPI)
 ENDIF()
 
 
-IF (NOT ${PACKAGE_NAME}_ENABLE_yaml-cpp)
+IF (NOT TeuchosCore_ENABLE_yaml-cpp)
 
   LIST(REMOVE_ITEM  HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_YamlParameterListHelpers.hpp
