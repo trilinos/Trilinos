@@ -156,8 +156,10 @@ namespace Sacado {
       m += warpScan(sz);
 #else
       T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+#if defined(HAVE_SACADO_KOKKOSCORE)
       if (m == 0)
         Kokkos::abort("Allocation failed.");
+#endif
 #endif
       return m;
     }
@@ -314,8 +316,10 @@ namespace Sacado {
             Kokkos::abort("Allocation failed.  Kokkos memory pool is out of memory");
 #else
           m = static_cast<T* >(operator new(sz*sizeof(T)));
+#if defined(HAVE_SACADO_KOKKOSCORE)
           if (m == 0)
             Kokkos::abort("Allocation failed.");
+#endif
 #endif
         }
         m = warpBcast(m,0,blockDim.x);
@@ -323,8 +327,10 @@ namespace Sacado {
       else {
         if (sz > 0) {
           m = static_cast<T* >(operator new(sz*sizeof(T)));
+#if defined(HAVE_SACADO_KOKKOSCORE)
           if (m == 0)
             Kokkos::abort("Allocation failed.");
+#endif
         }
       }
 
@@ -480,8 +486,10 @@ namespace Sacado {
             Kokkos::abort("Allocation failed.  Kokkos memory pool is out of memory");
 #else
           m = static_cast<T* >(operator new(total_sz*sizeof(T)));
+#if defined(HAVE_SACADO_KOKKOSCORE)
           if (m == 0)
             Kokkos::abort("Allocation failed.");
+#endif
 #endif
         }
         m = warpBcast(m,0,blockDim.x);
@@ -490,8 +498,10 @@ namespace Sacado {
       else {
         if (sz > 0) {
           m = static_cast<T* >(operator new(sz*sizeof(T)));
+#if defined(HAVE_SACADO_KOKKOSCORE)
           if (m == 0)
             Kokkos::abort("Allocation failed.");
+#endif
         }
       }
 
