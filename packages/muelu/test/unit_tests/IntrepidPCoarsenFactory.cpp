@@ -363,7 +363,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     size_t idx=total_num_points;
     for(size_t i=0; i<total_num_points-1; i++) {
       for(size_t j=0; j<(size_t)degree-1; j++) {
-	p3_gold_out[idx] = i + ((Scalar)j+1)/degree;
+	p3_gold_out[idx] = i + ((double)j+1)/degree;
 	idx++;
       }
     }
@@ -388,7 +388,7 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     size_t idx=total_num_points;
     for(size_t i=0; i<total_num_points-1; i++) {
       for(size_t j=0; j<(size_t)degree-1; j++) {
-	gold_out[idx] = i + ((Scalar)j+1)/degree;
+	gold_out[idx] = i + ((double)j+1)/degree;
 	idx++;
       }
     }
