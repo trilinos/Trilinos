@@ -82,7 +82,7 @@ IF (Sacado_ENABLE_Teuchos AND Sacado_ENABLE_KokkosCore)
 
   # This test does not compile with gcc 4.7.x because it doesn't properly
   # support lambdas.  See github issue #854
-  IF(NOT ((CMAKE_CXX_COMPIER_ID STREQUAL "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")))
+  IF(NOT ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")))
     TRIBITS_ADD_EXECUTABLE(
       fad_kokkos_hierarchical
       SOURCES fad_kokkos_hierarchical.cpp
