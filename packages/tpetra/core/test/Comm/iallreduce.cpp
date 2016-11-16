@@ -123,10 +123,11 @@ namespace {
 
     Kokkos::View<const val_type*, device_type> sendbuf_const = sendbuf;
 
-    RCP<CommRequest<int> > request = iallreduce (sendbuf_const, recvbuf, Teuchos::REDUCE_SUM, comm);
-    TEST_ASSERT( ! request.is_null () );
-    RCP<CommStatus<int> > status = request->wait ();
-    TEST_ASSERT( ! status.is_null () );
+    auto request = iallreduce (sendbuf_const, recvbuf, Teuchos::REDUCE_SUM, comm);
+    TEST_ASSERT( request.get () != NULL );
+    if (request.get () != NULL) {
+      TEST_NOTHROW( request->wait () );
+    }
 
     out << "Make sure the input values were not changed" << endl;
     {
@@ -171,9 +172,10 @@ namespace {
 
     Kokkos::View<const val_type*, device_type> recvbuf_const = recvbuf;
     request = iallreduce (recvbuf_const, recvbuf, Teuchos::REDUCE_SUM, comm);
-    TEST_ASSERT( ! request.is_null () );
-    status = request->wait ();
-    TEST_ASSERT( ! status.is_null () );
+    TEST_ASSERT( request.get () != NULL );
+    if (request.get () != NULL) {
+      TEST_NOTHROW( request->wait () );
+    }
 
     out << "Make sure the output values are correct" << endl;
     {

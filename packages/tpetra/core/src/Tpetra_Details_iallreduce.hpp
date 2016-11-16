@@ -52,59 +52,145 @@
 /// only thing in this file upon which Tpetra developers should rely.
 /// Tpetra developers should not rely on anything else in this file.
 /// <i>Users</i> may not rely on <i>anything</i> in this file!
+///
+/// If you want to find the only thing in this file that you are
+/// supposed to use, search for "SKIP DOWN TO HERE" (no quotes).
+/// "You" only refers to Tpetra developers.  Users, this file is not
+/// for you!
 
-#include "Teuchos_CommHelpers.hpp" // where EReductionType enum is defined
-#ifdef HAVE_TEUCHOS_MPI
+#include "TpetraCore_config.h"
+#include "Teuchos_EReductionType.hpp"
+#ifdef HAVE_TPETRACORE_MPI
 #  include "Tpetra_Details_MpiTypeTraits.hpp"
-#endif // HAVE_TEUCHOS_MPI
+#endif // HAVE_TPETRACORE_MPI
 #include "Kokkos_Core.hpp"
+#include <memory>
+#include <stdexcept>
 #include <type_traits>
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  // forward declaration of Comm
+  template<class OrdinalType> class Comm;
+} // namespace Teuchos
+#endif // NOT DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 namespace Details {
+
+/// \brief Base class for the request (more or less a future)
+///   representing a pending nonblocking MPI operation.
+class CommRequest {
+public:
+  //! Destructor (virtual for memory safety of derived classes).
+  virtual ~CommRequest () {}
+
+  /// \brief Wait on this communication request to complete.
+  ///
+  /// This is a blocking operation.  The user is responsible for
+  /// avoiding deadlock.  This operation must also be idempotent.
+  virtual void wait () = 0;
+
+  /// \brief Cancel the pending communication request.
+  ///
+  /// This operation must be idempotent.
+  virtual void cancel () = 0;
+};
 
 // Don't rely on anything in this namespace.  You shouldn't be relying
 // on anything in Tpetra::Details anyway.  You _especially_ shouldn't
 // be relying on anything in Tpetra::Details::Impl.  Consider
 // yourselves warned!
-
 namespace Impl {
 
 //! Return an "empty" comm request (waiting on it does nothing).
-::Teuchos::RCP< ::Teuchos::CommRequest<int> >
+std::shared_ptr<CommRequest>
 emptyCommRequest ();
 
-//! Return an "empty" comm status.
-::Teuchos::RCP< ::Teuchos::CommStatus<int> >
-emptyCommStatus ();
+#ifdef HAVE_TPETRACORE_MPI
+
+/// \class MpiCommRequest
+/// \brief MPI implementation of CommRequest.
+///
+/// This class wraps MPI_Request, which is MPI's reification of a
+/// nonblocking communication operation.
+///
+/// Users would not normally create an instance of this class.  Calls
+/// to nonblocking communication operations may return a pointer to a
+/// CommRequest, which may be an instance of this class.
+///
+/// Users might wish to create an MpiCommRequest directly if they want
+/// to encapsulate an MPI_Request returned by an external library or
+/// by their own code.
+class MpiCommRequest : public CommRequest {
+public:
+  //! Default constructor; creates an empty ("null") request.
+  MpiCommRequest ();
+
+  //! Constructor (from a raw MPI_Request).
+  MpiCommRequest (const MPI_Request req);
+
+  //! Destructor; cancels the request if it is still pending.
+  virtual ~MpiCommRequest ();
+
+  /// \brief Wait on this communication request to complete.
+  ///
+  /// This is a blocking operation.  The user is responsible for
+  /// avoiding deadlock.  (For example, a receive must have a matching
+  /// send, otherwise a wait on the receive will wait forever.)
+  virtual void wait ();
+
+  /// \brief Wait on this communication request to complete, and
+  ///   return the resulting MPI_Status as an output argument.
+  ///
+  /// This is a blocking operation.  The user is responsible for
+  /// avoiding deadlock.  (For example, a receive must have a matching
+  /// send, otherwise a wait on the receive will wait forever.)
+  virtual void waitWithStatus (MPI_Status& status);
+
+  //! Cancel the pending communication request.
+  virtual void cancel ();
+
+private:
+  MPI_Request req_;
+};
+#endif // HAVE_TPETRACORE_MPI
 
 /// \brief Part of the Work-around for not having MPI >= 3.
 ///
 /// Substitute for MPI_Iallreduce (which requires MPI 3): defer
 /// calling MPI_Allreduce until wait.  It's ugly, but it works.
-class DeferredActionRequest : public ::Teuchos::CommRequest<int> {
+class DeferredActionCommRequest : public CommRequest {
 public:
   /// \brief Default constructor (take no action on wait).
-  DeferredActionRequest ();
+  DeferredActionCommRequest ();
 
   /// \brief Constructor that takes an action to defer.
   ///
-  /// \brief action [in] An action to take on wait.
-  DeferredActionRequest (std::function<void () > action);
-
-  /// \brief Wait on this communication request to complete.
+  /// \brief action [in] An action to take on wait().
   ///
-  /// This is a blocking operation.  The user is responsible for
-  /// avoiding deadlock.
-  ::Teuchos::RCP< ::Teuchos::CommStatus<int> > wait ();
+  /// We only take that action the first time you call wait().
+  /// This means that wait() is idempotent.
+  DeferredActionCommRequest (std::function<void () > action);
+
+  //! Wait on this communication request to complete.
+  void wait ();
+
+  /// \brief Cancel the pending communication request, without taking
+  ///   the specified action.
+  ///
+  /// Subsequent calls to wait() do nothing.
+  void cancel ();
 
 private:
+  //! The deferred action to perform on wait().
   std::function<void(void) > action_;
+  //! Whether the action has been taken.
   bool actionTaken_;
 };
 
-/// \brief ::Teuchos::CommRequest<int> subclass specifically to be
-///   returned from ::Tpetra::Details::iallreduce.
+/// \brief Object representing a pending ::Tpetra::Details::iallreduce
+///   operation.
 ///
 /// This subclass keeps the send and receive buffers.  Since
 /// ::Kokkos::View reference-counts, this ensures that the buffers
@@ -115,73 +201,113 @@ private:
 /// instead create instances of this via the wrapIallreduceCommRequest
 /// function (see below).
 template<class PacketType, class DeviceType>
-class IallreduceCommRequest : public ::Teuchos::CommRequest<int> {
+class IallreduceCommRequest : public CommRequest {
 public:
   //! Default constructor.
-  IallreduceCommRequest () :
-    status_ (emptyCommStatus ())
+  IallreduceCommRequest ()
   {}
 
-  //! Constructor that takes a request, and saved data.
-  IallreduceCommRequest (const ::Teuchos::RCP< ::Teuchos::CommRequest<int> > req,
+  /// \brief Constructor that takes a wrapped request (representing
+  ///   the pending MPI_Iallreduce operation itself), and saved
+  ///   buffers.
+  IallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
                          const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
                          const ::Kokkos::View<PacketType*, DeviceType>& recvbuf) :
     req_ (req),
     sendbuf_ (sendbuf),
-    recvbuf_ (recvbuf),
-    status_ (emptyCommStatus ())
+    recvbuf_ (recvbuf)
   {}
+
+  virtual ~IallreduceCommRequest () {
+    if (req_.get () != NULL) {
+      // We're in a destructor, so don't throw.  We'll just try our best
+      // to handle whatever happens here without throwing.
+      try {
+        req_->cancel ();
+      }
+      catch (...) {}
+
+      try {
+        req_ = std::shared_ptr<CommRequest> ();
+      }
+      catch (...) {}
+    }
+  }
 
   /// \brief Wait on this communication request to complete.
   ///
   /// This is a blocking operation.  The user is responsible for
   /// avoiding deadlock.
-  ::Teuchos::RCP< ::Teuchos::CommStatus<int> >
+  void
   wait ()
   {
-    if (! req_.is_null ()) {
-      status_ = req_->wait ();
+    if (req_.get () != NULL) {
+      req_->wait ();
+      // Relinquish request handle.
+      req_ = std::shared_ptr<CommRequest> ();
     }
     // Relinquish references to saved buffers, if we have not already
     // done so.  This operation is idempotent.
     sendbuf_ = ::Kokkos::View<const PacketType*, DeviceType> ();
     recvbuf_ = ::Kokkos::View<PacketType*, DeviceType> ();
+  }
 
-    return status_;
+  /// \brief Cancel the pending communication request.
+  ///
+  /// This operation must be idempotent.
+  void
+  cancel ()
+  {
+    if (req_.get () != NULL) {
+      req_->cancel ();
+      // Relinquish request handle.
+      req_ = std::shared_ptr<CommRequest> ();
+    }
+    // Relinquish references to saved buffers, if we have not already
+    // done so.  This operation is idempotent.
+    sendbuf_ = ::Kokkos::View<const PacketType*, DeviceType> ();
+    recvbuf_ = ::Kokkos::View<PacketType*, DeviceType> ();
   }
 
 private:
   //! The wrapped request
-  ::Teuchos::RCP< ::Teuchos::CommRequest<int> > req_;
+  std::shared_ptr<CommRequest> req_;
 
   //! Saved send buffer from iallreduce call
   ::Kokkos::View<const PacketType*, DeviceType> sendbuf_;
 
   //! Saved recv buffer from iallreduce call
   ::Kokkos::View<PacketType*, DeviceType> recvbuf_;
-
-  //! Saved status (so that multiple wait() calls are idempotent)
-  ::Teuchos::RCP< ::Teuchos::CommStatus<int> > status_;
 };
 
-
-/// \brief Function for wrapping the ::Teuchos::CommRequest<int> to be
-///   returned from ::Tpetra::Details::iallreduce.
+/// \brief Function for wrapping the CommRequest to be returned from
+///   ::Tpetra::Details::iallreduce.
 ///
 /// The object returned from this function keeps the send and receive
 /// buffers.  Since ::Kokkos::View reference-counts, this ensures that
 /// the buffers will not be deallocated until the iallreduce
-/// completes.  The buffer references get cleared on wait().
+/// completes.  The buffer references get cleared on wait() or
+/// cancel().
 template<class PacketType, class DeviceType>
-::Teuchos::RCP< ::Teuchos::CommRequest<int> >
-wrapIallreduceCommRequest (const ::Teuchos::RCP< ::Teuchos::CommRequest<int> >& req,
+std::shared_ptr<CommRequest>
+wrapIallreduceCommRequest (const std::shared_ptr<CommRequest>& req,
                            const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
                            const ::Kokkos::View<PacketType*, DeviceType>& recvbuf)
 {
-  return ::Teuchos::rcp (new IallreduceCommRequest<PacketType, DeviceType> (req, sendbuf, recvbuf));
+  return std::shared_ptr<CommRequest> (new IallreduceCommRequest<PacketType, DeviceType> (req, sendbuf, recvbuf));
 }
 
-#ifdef HAVE_TEUCHOS_MPI
+#ifdef HAVE_TPETRACORE_MPI
+
+/// \brief Get the MPI_Comm out of the given Teuchos::Comm object.
+///
+/// \param comm [in] Communicator, wrapped in a Teuchos::Comm wrapper.
+///   Must be an instance of Teuchos::MpiComm or Teuchos::SerialComm.
+///
+/// \return The wrapped MPI_Comm (if comm is a Teuchos::MpiComm), or
+///   MPI_COMM_SELF (if comm is a Teuchos::SerialComm).
+MPI_Comm
+extractMpiCommFromTeuchos (const Teuchos::Comm<int>& comm);
 
 /// \brief Lowest-level implementation of ::Tpetra::Details::iallreduce.
 ///
@@ -193,16 +319,16 @@ wrapIallreduceCommRequest (const ::Teuchos::RCP< ::Teuchos::CommRequest<int> >& 
 /// implementations can read CUDA device memory, host memory, or
 /// indeed from any memory space.  If they can't, Tpetra::DistObject
 /// must then first copy to a space from which they can.
-Teuchos::RCP<Teuchos::CommRequest<int> >
+std::shared_ptr<CommRequest>
 iallreduceRawVoid (const void* sendbuf,
                    void* recvbuf,
                    const int count,
                    MPI_Datatype mpiDatatype,
                    const bool mpiDatatypeNeedsFree,
                    const Teuchos::EReductionType op,
-                   const Teuchos::Comm<int>& comm);
+                   MPI_Comm comm);
 
-#endif // HAVE_TEUCHOS_MPI
+#endif // HAVE_TPETRACORE_MPI
 
 /// \brief Medium-level implementation of ::Tpetra::Details::iallreduce.
 ///
@@ -211,17 +337,15 @@ iallreduceRawVoid (const void* sendbuf,
 /// indeed from any memory space.  If they can't, Tpetra::DistObject
 /// must then first copy to a space from which they can.
 template<class Packet>
-::Teuchos::RCP< ::Teuchos::CommRequest<int> >
+std::shared_ptr<CommRequest>
 iallreduceRaw (const Packet sendbuf[],
                Packet recvbuf[],
                const int count,
                const ::Teuchos::EReductionType op,
                const ::Teuchos::Comm<int>& comm)
 {
-#ifdef HAVE_TEUCHOS_MPI
+#ifdef HAVE_TPETRACORE_MPI
   using ::Tpetra::Details::MpiTypeTraits;
-  using ::Teuchos::CommRequest;
-  using ::Teuchos::RCP;
 
   // mfh 12 Nov 2016: It's reasonable to assume that if users call
   // this function with count > 1, then users should expect that all
@@ -239,18 +363,21 @@ iallreduceRaw (const Packet sendbuf[],
   MPI_Datatype mpiDatatype = (count > 0) ?
     MpiTypeTraits<Packet>::getType (sendbuf[0]) :
     MPI_BYTE;
+  MPI_Comm rawComm = extractMpiCommFromTeuchos (comm);
   return iallreduceRawVoid (sendbuf, recvbuf, count, mpiDatatype,
-                            MpiTypeTraits<Packet>::needsFree, op, comm);
-#else // NOT HAVE_TEUCHOS_MPI
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Tpetra::Details::Impl::iallreduceRaw: "
-     "This function should never be called if MPI is not enabled.  "
-     "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TEUCHOS_MPI
+                            MpiTypeTraits<Packet>::needsFree, op, rawComm);
+#else // NOT HAVE_TPETRACORE_MPI
+  throw std::logic_error ("Tpetra::Details::Impl::iallreduceRaw: This function "
+                          "should never be called if MPI is not enabled.  "
+                          "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRACORE_MPI
 }
 
 } // namespace Impl
 
+//
+// SKIP DOWN TO HERE
+//
 
 /// \brief Nonblocking all-reduce
 ///
@@ -275,7 +402,7 @@ iallreduceRaw (const Packet sendbuf[],
 /// don't know what an intercommunicator is, you probably just have an
 /// intracommunicator, so everything is fine.
 template<class PacketType, class DeviceType>
-::Teuchos::RCP< ::Teuchos::CommRequest<int> >
+std::shared_ptr<CommRequest>
 iallreduce (const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
             const ::Kokkos::View<PacketType*, DeviceType>& recvbuf,
             const ::Teuchos::EReductionType op,
@@ -284,43 +411,26 @@ iallreduce (const ::Kokkos::View<const PacketType*, DeviceType>& sendbuf,
   static_assert (! std::is_const<PacketType>::value,
                  "PacketType must be a nonconst type.");
 
+#ifdef HAVE_TPETRACORE_MPI
   // Avoid instantiating Impl::iallreduceRaw for both T and const T,
   // by canonicalizing to the non-const version of T.
   typedef typename std::remove_const<PacketType>::type packet_type;
 
-  if (comm.getSize () == 1) {
-    // Avoid needing to check the SerialComm case in Impl::iallreduce.
-    // That lets Impl::iallreduce not need to know about DeviceType.
-    ::Kokkos::deep_copy (recvbuf, sendbuf);
-    // This request has already finished.  There's nothing more to do.
-    return Impl::emptyCommRequest ();
-  }
-  else {
-    using ::Teuchos::CommRequest;
-    using ::Teuchos::inOutArg;
-    using ::Teuchos::RCP;
-    using ::Teuchos::set_extra_data;
+  std::shared_ptr<CommRequest> req =
+    Impl::iallreduceRaw<packet_type> (sendbuf.ptr_on_device (),
+                                      recvbuf.ptr_on_device (),
+                                      static_cast<int> (sendbuf.dimension_0 ()),
+                                      op, comm);
+  return Impl::wrapIallreduceCommRequest<packet_type, DeviceType> (req, sendbuf, recvbuf);
+#else // NOT HAVE_TPETRACORE_MPI
 
-    RCP<CommRequest<int> > req =
-      Impl::iallreduceRaw<packet_type> (sendbuf.ptr_on_device (),
-                                        recvbuf.ptr_on_device (),
-                                        static_cast<int> (sendbuf.dimension_0 ()),
-                                        op, comm);
-    // NOTE (mfh 14 Nov 2016) We can't use Teuchos::set_extra_data to
-    // attach sendbuf and recvbuf to the Teuchos::RCP, because that
-    // weirdly requires operator<< to be defined (via Teuchos::any)
-    // for Kokkos::View.  It's not.  Our work-around is to use a
-    // custom CommRequest subclass that "wraps" the Kokkos::View in a
-    // Teuchos::OpaqueWrapper.  This makes sense, because Kokkos::View
-    // has shallow copy semantics.  It also would easily permit us to
-    // replace RCP with std::shared_ptr, if we want.
-
-    // set_extra_data (sendbuf, "sendbuf", inOutArg (req));
-    // set_extra_data (recvbuf, "recvbuf", inOutArg (req));
-    // return req;
-
-    return Impl::wrapIallreduceCommRequest<packet_type, DeviceType> (req, sendbuf, recvbuf);
-  }
+  // MPI is disabled, so comm is a SerialComm.
+  // Avoid needing to check the SerialComm case in Impl::iallreduce.
+  // That lets Impl::iallreduce not need to know about DeviceType.
+  ::Kokkos::deep_copy (recvbuf, sendbuf);
+  // This request has already finished.  There's nothing more to do.
+  return Impl::emptyCommRequest ();
+#endif // HAVE_TPETRACORE_MPI
 }
 
 } // namespace Details
