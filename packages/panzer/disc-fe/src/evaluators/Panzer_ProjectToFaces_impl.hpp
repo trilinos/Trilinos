@@ -150,8 +150,6 @@ evaluateFields(typename Traits::EvalData workset)
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   Intrepid2::DefaultCubatureFactory<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> quadFactory;
   Teuchos::RCP< Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> > faceQuad;
-  PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
-  int subcell_dim = 2;
 
   // One point quadrature if higher order quadrature not requested
   if (quad_degree == 0){
@@ -181,6 +179,8 @@ evaluateFields(typename Traits::EvalData workset)
     }
 
   } else {
+    PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
+    int subcell_dim = 2;
 
     // to compute normals at qps (copied from GatherNormals)
     int numFaces = gatherFieldNormals.dimension(1);
