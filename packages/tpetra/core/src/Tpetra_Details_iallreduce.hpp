@@ -54,7 +54,9 @@
 /// <i>Users</i> may not rely on <i>anything</i> in this file!
 
 #include "Teuchos_CommHelpers.hpp" // where EReductionType enum is defined
-#include "Teuchos_Details_MpiTypeTraits.hpp"
+#ifdef HAVE_TEUCHOS_MPI
+#  include "Tpetra_Details_MpiTypeTraits.hpp"
+#endif // HAVE_TEUCHOS_MPI
 #include "Kokkos_Core.hpp"
 #include <type_traits>
 
@@ -217,7 +219,7 @@ iallreduceRaw (const Packet sendbuf[],
                const ::Teuchos::Comm<int>& comm)
 {
 #ifdef HAVE_TEUCHOS_MPI
-  using ::Teuchos::Details::MpiTypeTraits;
+  using ::Tpetra::Details::MpiTypeTraits;
   using ::Teuchos::CommRequest;
   using ::Teuchos::RCP;
 

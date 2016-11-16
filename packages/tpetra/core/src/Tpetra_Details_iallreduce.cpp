@@ -43,7 +43,6 @@
 
 //#include "Teuchos_config.h" // HAVE_TEUCHOS_MPI macro def (already included)
 #ifdef HAVE_TEUCHOS_MPI
-#  include "Teuchos_Details_MpiTypeTraits.hpp"
 #  include "Teuchos_DefaultMpiComm.hpp" // only needs to be in .cpp file
 #endif // HAVE_TEUCHOS_MPI
 

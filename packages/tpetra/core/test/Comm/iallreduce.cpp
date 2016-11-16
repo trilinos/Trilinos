@@ -81,7 +81,7 @@ namespace {
     using Teuchos::reduceAll;
     using Teuchos::CommRequest;
     using Teuchos::CommStatus;
-    typedef Packet val_type;
+    typedef typename Kokkos::Details::ArithTraits<Packet>::val_type val_type;
     typedef Kokkos::Details::ArithTraits<val_type> STS;
     typedef typename STS::mag_type mag_type;
     typedef typename Device::device_type device_type;
@@ -239,6 +239,8 @@ namespace {
 
     testIallreduce<float, device_type> (success, out, "float", deviceTypeName, lclNumPackets, comm);
     testIallreduce<double, device_type> (success, out, "double", deviceTypeName, lclNumPackets, comm);
+    testIallreduce<Kokkos::complex<float>, device_type> (success, out, "float", deviceTypeName, lclNumPackets, comm);
+    testIallreduce<Kokkos::complex<double>, device_type> (success, out, "double", deviceTypeName, lclNumPackets, comm);
 
     // FIXME (mfh 14 Nov 2016) Test for all enabled Scalar types, not
     // just for the subset above.
