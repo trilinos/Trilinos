@@ -309,7 +309,8 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
-  SC effective_zero = Teuchos::ScalarTraits<SClo>::eps();
+  typedef typename Teuchos::ScalarTraits<SClo>::magnitudeType MT;
+  MT effective_zero = Teuchos::ScalarTraits<MT>::eps();
 
   // Allocate P
   P = rcp(new CrsMatrixWrap(hi_map,lo_colMap,0)); //FIXLATER: Need faster fill
@@ -332,7 +333,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 	  val[0]     = LoValues_at_HiDofs(k,j);
 	  
 	  // Skip near-zeros
-	  if(std::abs(val[0]) >= effective_zero)
+	  if(Teuchos::ScalarTraits<SC>::magnitude(val[0]) >= effective_zero)
 	    P->insertGlobalValues(row_gid,col_gid(),val());
 	}
 	touched[row_lid]=true;
