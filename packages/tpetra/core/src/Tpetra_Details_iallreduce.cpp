@@ -245,77 +245,92 @@ iallreduceRawVoid (const void* sendbuf,
   MPI_Op rawOp = ::Teuchos::Details::getMpiOpForEReductionType (op);
 
 #if MPI_VERSION >= 3
-  MPI_Request rawRequest = MPI_REQUEST_NULL;
-  int err = MPI_SUCCESS;
-  if (sendbuf == recvbuf) {
-    // Fix for #850.  This only works if rawComm is an
-    // intracommunicator.  Intercommunicators don't have an in-place
-    // option for collectives.
-    err = MPI_Iallreduce (MPI_IN_PLACE, recvbuf, count, mpiDatatype,
-                          rawOp, comm, &rawRequest);
-  }
-  else {
-    err = MPI_Iallreduce (sendbuf, recvbuf, count, mpiDatatype,
-                          rawOp, comm, &rawRequest);
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (err != MPI_SUCCESS, std::runtime_error,
-     "MPI_Iallreduce failed with the following error: "
-     << getMpiErrorString (err));
-  if (mpiDatatypeNeedsFree) {
-    // As long as the MPI_Datatype goes into MPI_Iallreduce, it's OK
-    // to free it, even if the MPI_Iallreduce has not yet completed.
-    // There's no sense in checking the error code here.
-    (void) MPI_Type_free (&mpiDatatype);
-  }
-  return std::shared_ptr<CommRequest> (new MpiCommRequest (rawRequest));
+  const bool useMpi3 = true;
 #else
-  // We don't have MPI_Iallreduce.  The next best thing is to defer an
-  // MPI_Allreduce call until wait.  We do this by returning a
-  // "DeferredActionCommRequest," which is just a wrapped
-  // std::function.
-  //
-  // NOTE (mfh 12 Nov 2016, 14 Nov 2016) One issue with this approach
-  // is that we have to make sure that the MPI_Datatype won't go away
-  // before the MPI_Allreduce gets called.  We handle this for now by
-  // calling MPI_Type_dup and stashing the destructor in the request.
-  // (Don't use the MPI_COMM_SELF trick here, unless you first check
-  // whether you've seen that MPI_Datatype before -- otherwise you'll
-  // get memory growth linear in the number of iallreduce calls.)
-  return std::shared_ptr (new DeferredActionCommRequest ([=] () {
-        // It could be that this action got deferred beyond
-        // MPI_Finalize.  In that case, do nothing.
-        int mpiInitialized = 0;
-        (void) MPI_Initialized (&mpiInitialized);
-        int mpiFinalized = 0;
-        (void) MPI_Finalized (&mpiFinalized);
-        if (mpiFinalized == 0 && mpiInitialized != 0) {
-          // FIXME (mfh 14 Nov 2016) Unfortunately, there is no
-          // MPI_Op_dup, so I can't guarantee that the input MPI_Op
-          // will still exist to the point where it is actually
-          // used.
-          //
-          // FIXME (mfh 14 Nov 2016) Best practice would be to
-          // duplicate the input MPI_Comm, so that we can ensure its
-          // survival to this point.  However, we can't guarantee
-          // survival of the input MPI_Op, so we might as well just
-          // not bother.
-          if (mpiDatatypeNeedsFree) {
-            // Copy the original MPI_Datatype, so that we can safely
-            // defer this call past survival of the original.
-            MPI_Datatype dupDatatype;
-            (void) MPI_Type_dup (mpiDatatype, dupDatatype);
-            (void) MPI_Allreduce (sendbuf, recvbuf, count, dupDatatype,
-                                  rawOp, comm);
-            (void) MPI_Type_free (&dupDatatype);
-          }
-          else {
-            (void) MPI_Allreduce (sendbuf, recvbuf, count, mpiDatatype,
-                                  rawOp, comm);
-          }
-        }
-      }));
+  const bool useMpi3 = false;
 #endif // MPI_VERSION >= 3
+
+  // Fix for #852: always build the fall-back (MPI_VERSION < 3)
+  // implementation.
+  if (useMpi3) {
+#if MPI_VERSION >= 3
+    MPI_Request rawRequest = MPI_REQUEST_NULL;
+    int err = MPI_SUCCESS;
+    if (sendbuf == recvbuf) {
+      // Fix for #850.  This only works if rawComm is an
+      // intracommunicator.  Intercommunicators don't have an in-place
+      // option for collectives.
+      err = MPI_Iallreduce (MPI_IN_PLACE, recvbuf, count, mpiDatatype,
+                            rawOp, comm, &rawRequest);
+    }
+    else {
+      err = MPI_Iallreduce (sendbuf, recvbuf, count, mpiDatatype,
+                            rawOp, comm, &rawRequest);
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (err != MPI_SUCCESS, std::runtime_error,
+       "MPI_Iallreduce failed with the following error: "
+       << getMpiErrorString (err));
+    if (mpiDatatypeNeedsFree) {
+      // As long as the MPI_Datatype goes into MPI_Iallreduce, it's OK
+      // to free it, even if the MPI_Iallreduce has not yet completed.
+      // There's no sense in checking the error code here.
+      (void) MPI_Type_free (&mpiDatatype);
+    }
+    return std::shared_ptr<CommRequest> (new MpiCommRequest (rawRequest));
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::logic_error, "Should never get here.  "
+       "Please report this bug to the Tpetra developers.");
+#endif // MPI_VERSION >= 3
+  }
+  else { // ! useMpi3
+    // We don't have MPI_Iallreduce.  The next best thing is to defer an
+    // MPI_Allreduce call until wait.  We do this by returning a
+    // "DeferredActionCommRequest," which is just a wrapped
+    // std::function.
+    //
+    // NOTE (mfh 12 Nov 2016, 14 Nov 2016) One issue with this approach
+    // is that we have to make sure that the MPI_Datatype won't go away
+    // before the MPI_Allreduce gets called.  We handle this for now by
+    // calling MPI_Type_dup and stashing the destructor in the request.
+    // (Don't use the MPI_COMM_SELF trick here, unless you first check
+    // whether you've seen that MPI_Datatype before -- otherwise you'll
+    // get memory growth linear in the number of iallreduce calls.)
+    return std::shared_ptr<CommRequest> (new DeferredActionCommRequest ([=] () {
+          // It could be that this action got deferred beyond
+          // MPI_Finalize.  In that case, do nothing.
+          int mpiInitialized = 0;
+          (void) MPI_Initialized (&mpiInitialized);
+          int mpiFinalized = 0;
+          (void) MPI_Finalized (&mpiFinalized);
+          if (mpiFinalized == 0 && mpiInitialized != 0) {
+            // FIXME (mfh 14 Nov 2016) Unfortunately, there is no
+            // MPI_Op_dup, so I can't guarantee that the input MPI_Op
+            // will still exist to the point where it is actually
+            // used.
+            //
+            // FIXME (mfh 14 Nov 2016) Best practice would be to
+            // duplicate the input MPI_Comm, so that we can ensure its
+            // survival to this point.  However, we can't guarantee
+            // survival of the input MPI_Op, so we might as well just
+            // not bother.
+            if (mpiDatatypeNeedsFree) {
+              // Copy the original MPI_Datatype, so that we can safely
+              // defer this call past survival of the original.
+              MPI_Datatype dupDatatype;
+              (void) MPI_Type_dup (mpiDatatype, &dupDatatype);
+              (void) MPI_Allreduce (sendbuf, recvbuf, count, dupDatatype,
+                                    rawOp, comm);
+              (void) MPI_Type_free (&dupDatatype);
+            }
+            else {
+              (void) MPI_Allreduce (sendbuf, recvbuf, count, mpiDatatype,
+                                    rawOp, comm);
+            }
+          }
+        }));
+  } // useMpi3
 }
 
 #endif // HAVE_TPETRACORE_MPI
