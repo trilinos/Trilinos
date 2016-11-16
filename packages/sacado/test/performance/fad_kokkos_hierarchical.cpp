@@ -1,6 +1,6 @@
-#define SACADO_VIEW_CUDA_HIERARCHICAL 1
-#define SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED 1
-//#define SACADO_VIEW_CUDA_HIERARCHICAL_DFAD 1
+//#define SACADO_VIEW_CUDA_HIERARCHICAL 1
+//#define SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED 1
+#define SACADO_VIEW_CUDA_HIERARCHICAL_DFAD 1
 #define SACADO_KOKKOS_USE_MEMORY_POOL 1
 #define SACADO_ALIGN_SFAD 1
 
@@ -15,23 +15,385 @@
 #include <cstdio>
 
 // Advection kernel.
-// ScalarT is a FAD type.
-/*
-  template<unsigned int DIM>
+
+template<typename FluxView, typename WgbView, typename SrcView,
+         typename WbsView, typename ResidualView>
+struct AdvectionKernel;
+
+template<typename FluxView, typename WgbView, typename SrcView,
+         typename WbsView, typename ResidualView>
+KOKKOS_INLINE_FUNCTION
+AdvectionKernel<FluxView, WgbView, SrcView, WbsView, ResidualView>
+create_advection_kernel(const FluxView& flux, const WgbView& bg,
+                        const SrcView& src, const WbsView& bs,
+                        const ResidualView& residual,
+                        const typename FluxView::non_const_value_type& coeff);
+
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+
+// Version of advection kernel that supports flat and hierarchical parallelism
+// when using the hierarchical_dfad approach.  This requires no changes to the
+// kernel beyond supporting a team policy.
+template<typename FluxView, typename WgbView, typename SrcView,
+         typename WbsView, typename ResidualView>
+struct AdvectionKernel {
+  typedef typename FluxView::non_const_value_type scalar_type;
+  typedef typename FluxView::execution_space execution_space;
+  typedef typename Kokkos::TeamPolicy<execution_space>::member_type team_handle;
+
+  const FluxView flux_m_i;
+  const WgbView wgb;
+  const SrcView src_m_i;
+  const WbsView wbs;
+  const ResidualView residual_m_i;
+  const scalar_type coeff;
+  const size_t ncells;
+  const int num_basis, num_points, num_dim;
+
+  // VS isn't used in this kernel
+  template <unsigned VS> struct HierarchicalFlatTag {};
+  template <unsigned VS> struct HierarchicalTeamTag {};
+
   KOKKOS_INLINE_FUNCTION
-  void CompressibleCFD<EvalT, Traits>::
-  operator() (const MomFluxTag<DIM>, const std::size_t &cell) const {
+  AdvectionKernel(const FluxView& flux, const WgbView& gb,
+                  const SrcView& src, const WbsView& bs,
+                  const ResidualView& residual, const scalar_type& c) :
+    flux_m_i(flux),
+    wgb(gb),
+    src_m_i(src),
+    wbs(bs),
+    residual_m_i(residual),
+    coeff(c),
+    ncells(flux_m_i.dimension_0()),
+    num_basis(wgb.dimension_1()),
+    num_points(wgb.dimension_2()),
+    num_dim((wgb.dimension_3()))
+  {
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  size_t num_cells() const { return ncells; }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_t cell, const int basis) const {
+    scalar_type value(0),value2(0);
+    for (int qp=0; qp<num_points; ++qp) {
+      for (int dim=0; dim<num_dim; ++dim)
+        value += flux_m_i(cell,qp,dim)*wgb(cell,basis,qp,dim);
+      value2 += src_m_i(cell,qp)*wbs(cell,basis,qp);
+    }
+    residual_m_i(cell,basis) = coeff*(value+value2);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_t cell) const {
     for (int basis=0; basis<num_basis; ++basis) {
-      ScalarT value(0),value2(0);
-      for (int qp=0; qp<num_points; ++qp) {
-        for (int dim=0; dim<DIM; ++dim)
-          value += flux_m_i(cell,qp,dim)*wgb(cell,basis,qp,dim);
-        value2 += src_m_i(cell,qp)*wbs(cell,basis,qp);
-      }
-      residual_m_i(cell,basis) = value+value2;
+      (*this)(cell,basis);
     }
   }
-*/
+
+  template <unsigned VS>
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const HierarchicalFlatTag<VS>, const team_handle& team) const {
+    const size_t cell = team.league_rank()*team.team_size() + team.team_rank();
+    if (cell < ncells)
+      (*this)(cell);
+  }
+
+  template <unsigned VS>
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const HierarchicalTeamTag<VS>, const team_handle& team) const {
+    const size_t cell = team.league_rank();
+    const int team_size = team.team_size();
+    for (int basis=team.team_rank(); basis<num_basis; basis+=team_size)
+      (*this)(cell, basis);
+  }
+};
+
+#elif defined(SACADO_VIEW_CUDA_HIERARCHICAL)
+
+// Version of advection kernel that supports flat and hierarchical parallelism
+// when using the hierarchical approach.  This requires a separate scalar type
+// for temporaries, and partitioning of non-temporary scalars.
+template<typename FluxView, typename WgbView, typename SrcView,
+         typename WbsView, typename ResidualView>
+struct AdvectionKernel {
+  typedef typename FluxView::non_const_value_type scalar_type;
+  typedef typename Kokkos::ThreadLocalScalarType<FluxView>::type local_scalar_type;
+  typedef typename FluxView::execution_space execution_space;
+  typedef typename Kokkos::TeamPolicy<execution_space>::member_type team_handle;
+  enum { stride = Kokkos::ViewScalarStride<FluxView>::stride };
+
+  const FluxView flux_m_i;
+  const WgbView wgb;
+  const SrcView src_m_i;
+  const WbsView wbs;
+  const ResidualView residual_m_i;
+  const scalar_type coeff;
+  const size_t ncells;
+  const int num_basis, num_points, num_dim;
+
+  // VS isn't used in this kernel
+  template <unsigned VS> struct HierarchicalFlatTag {};
+  template <unsigned VS> struct HierarchicalTeamTag {};
+
+  KOKKOS_INLINE_FUNCTION
+  AdvectionKernel(const FluxView& flux, const WgbView& gb,
+                  const SrcView& src, const WbsView& bs,
+                  const ResidualView& residual, const scalar_type& c) :
+    flux_m_i(flux),
+    wgb(gb),
+    src_m_i(src),
+    wbs(bs),
+    residual_m_i(residual),
+    coeff(c),
+    ncells(flux_m_i.dimension_0()),
+    num_basis(wgb.dimension_1()),
+    num_points(wgb.dimension_2()),
+    num_dim((wgb.dimension_3()))
+  {
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  size_t num_cells() const { return ncells; }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_t cell, const int basis) const {
+    local_scalar_type value(0),value2(0);
+    local_scalar_type c = Sacado::partition_scalar<stride>(coeff);
+    for (int qp=0; qp<num_points; ++qp) {
+      for (int dim=0; dim<num_dim; ++dim)
+        value += flux_m_i(cell,qp,dim)*wgb(cell,basis,qp,dim);
+      value2 += src_m_i(cell,qp)*wbs(cell,basis,qp);
+    }
+    residual_m_i(cell,basis) = c*(value+value2);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_t cell) const {
+    for (int basis=0; basis<num_basis; ++basis) {
+      (*this)(cell,basis);
+    }
+  }
+
+  template <unsigned VS>
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const HierarchicalFlatTag<VS>, const team_handle& team) const {
+    const size_t cell = team.league_rank()*team.team_size() + team.team_rank();
+    if (cell < ncells)
+      (*this)(cell);
+  }
+
+  template <unsigned VS>
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const HierarchicalTeamTag<VS>, const team_handle& team) const {
+    const size_t cell = team.league_rank();
+    const int team_size = team.team_size();
+    for (int basis=team.team_rank(); basis<num_basis; basis+=team_size)
+      (*this)(cell, basis);
+  }
+};
+
+#else
+
+// Version of advection kernel that supports flat and hierarchical parallelism
+// when using the partitioning approach.  This requires additional code to
+// create thread-local views.
+template<typename FluxView, typename WgbView, typename SrcView,
+         typename WbsView, typename ResidualView>
+struct AdvectionKernel {
+  typedef typename FluxView::non_const_value_type scalar_type;
+  typedef typename FluxView::execution_space execution_space;
+  typedef typename Kokkos::TeamPolicy<execution_space>::member_type team_handle;
+
+  const FluxView flux_m_i;
+  const WgbView wgb;
+  const SrcView src_m_i;
+  const WbsView wbs;
+  const ResidualView residual_m_i;
+  const scalar_type coeff;
+  const size_t ncells;
+  const int num_basis, num_points, num_dim;
+
+  template <unsigned VS> struct HierarchicalFlatTag {};
+  template <unsigned VS> struct HierarchicalTeamTag {};
+  template <unsigned VS> struct PartitionedTag {};
+
+  KOKKOS_INLINE_FUNCTION
+  AdvectionKernel(const FluxView& flux, const WgbView& gb,
+                  const SrcView& src, const WbsView& bs,
+                  const ResidualView& residual, const scalar_type& c) :
+    flux_m_i(flux),
+    wgb(gb),
+    src_m_i(src),
+    wbs(bs),
+    residual_m_i(residual),
+    coeff(c),
+    ncells(flux_m_i.dimension_0()),
+    num_basis(wgb.dimension_1()),
+    num_points(wgb.dimension_2()),
+    num_dim((wgb.dimension_3()))
+  {
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  size_t num_cells() const { return ncells; }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_t cell, const int basis) const {
+    scalar_type value(0),value2(0);
+    for (int qp=0; qp<num_points; ++qp) {
+      for (int dim=0; dim<num_dim; ++dim)
+        value += flux_m_i(cell,qp,dim)*wgb(cell,basis,qp,dim);
+      value2 += src_m_i(cell,qp)*wbs(cell,basis,qp);
+    }
+    residual_m_i(cell,basis) = coeff*(value+value2);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_t cell) const {
+    for (int basis=0; basis<num_basis; ++basis) {
+      (*this)(cell,basis);
+    }
+  }
+
+  template <unsigned VS>
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const PartitionedTag<VS>, const size_t cell, const int basis) const {
+    // VS is the "vector" size == blockDim.x for CUDA.  This is also set in
+    // the team execution policy, but we don't seem to have a way to access it.
+    // We also don't have a way to access the vector lane index from the team
+    // handle.
+#ifdef __CUDA_ARCH__
+    const unsigned k = threadIdx.x;
+#else
+    const unsigned k = 0;
+#endif
+
+    // Partition each view based on Cuda thread (vector) index
+    auto flux_part =  Kokkos::partition<VS>(flux_m_i, k, VS);
+    auto wgb_part =   Kokkos::partition<VS>(wgb, k, VS);
+    auto src_part =   Kokkos::partition<VS>(src_m_i, k, VS);
+    auto wbs_part =   Kokkos::partition<VS>(wbs, k, VS);
+    auto resid_part = Kokkos::partition<VS>(residual_m_i, k, VS);
+    auto coeff_part = Sacado::partition_scalar<VS>(coeff);
+
+    // Now run the kernel with thread-local view's
+    auto kernel_part = create_advection_kernel(flux_part, wgb_part, src_part,
+                                               wbs_part, resid_part,
+                                               coeff_part);
+    kernel_part(cell, basis);
+  }
+
+  template <unsigned VS>
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const HierarchicalFlatTag<VS>, const team_handle& team) const {
+    const size_t cell = team.league_rank()*team.team_size() + team.team_rank();
+    if (cell < ncells)
+      for (int basis=0; basis<num_basis; ++basis)
+        (*this)(PartitionedTag<VS>(), cell, basis);
+  }
+
+  template <unsigned VS>
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const HierarchicalTeamTag<VS>, const team_handle& team) const {
+    const size_t cell = team.league_rank();
+    const int team_size = team.team_size();
+    for (int basis=team.team_rank(); basis<num_basis; basis+=team_size)
+      (*this)(PartitionedTag<VS>(), cell, basis);
+  }
+};
+
+#endif
+
+template<typename FluxView, typename WgbView, typename SrcView,
+         typename WbsView, typename ResidualView>
+KOKKOS_INLINE_FUNCTION
+AdvectionKernel<FluxView, WgbView, SrcView, WbsView, ResidualView>
+create_advection_kernel(const FluxView& flux, const WgbView& bg,
+                        const SrcView& src, const WbsView& bs,
+                        const ResidualView& residual,
+                        const typename FluxView::non_const_value_type& coeff)
+{
+  typedef AdvectionKernel<FluxView, WgbView, SrcView, WbsView, ResidualView> kernel_type;
+  return kernel_type(flux,bg,src,bs,residual,coeff);
+}
+
+template<typename KernelType>
+void run_flat(const KernelType& kernel) {
+  typedef typename KernelType::execution_space execution_space;
+  Kokkos::RangePolicy<execution_space> policy(0,kernel.num_cells());
+  Kokkos::parallel_for(policy, kernel);
+}
+
+template<typename KernelType>
+void run_hierarchical_flat(const KernelType& kernel) {
+  typedef typename KernelType::execution_space execution_space;
+#if defined (KOKKOS_HAVE_CUDA)
+  const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
+#else
+  const bool is_cuda = false;
+#endif
+  const unsigned vector_size = is_cuda ? 32 : 1;
+  if (is_cuda) {
+    const unsigned team_size = 256 / vector_size;
+    typedef typename KernelType::template HierarchicalFlatTag<vector_size> tag_type;
+    typedef Kokkos::TeamPolicy<execution_space,tag_type> policy_type;
+    const size_t range = (kernel.num_cells()+team_size-1)/team_size;
+    policy_type policy(range,team_size,vector_size);
+    Kokkos::parallel_for(policy, kernel);
+  }
+  else {
+    run_flat(kernel);
+  }
+}
+
+template<typename KernelType>
+void run_hierarchical_team(const KernelType& kernel) {
+  typedef typename KernelType::execution_space execution_space;
+#if defined (KOKKOS_HAVE_CUDA)
+  const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
+#else
+  const bool is_cuda = false;
+#endif
+  const unsigned vector_size = is_cuda ? 32 : 1;
+  if (is_cuda) {
+    const unsigned team_size = 256 / vector_size;
+    typedef typename KernelType::template HierarchicalTeamTag<vector_size> tag_type;
+    typedef Kokkos::TeamPolicy<execution_space,tag_type> policy_type;
+    policy_type policy(kernel.num_cells(),team_size,vector_size);
+    Kokkos::parallel_for(policy, kernel);
+  }
+  else {
+    run_flat(kernel);
+  }
+}
+
+template <typename T> struct FadTypeName;
+template <typename T> struct FadTypeName< Sacado::Fad::DFad<T> > {
+  static std::string eval() {
+    return std::string("dfad")
+#if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
+      + std::string(", mempool")
+#endif
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED)
+      + std::string(", strided")
+#endif
+      ;
+  }
+};
+template <typename T, int N> struct FadTypeName< Sacado::Fad::SFad<T,N> > {
+  static std::string eval() {
+#if defined(SACADO_ALIGN_SFAD)
+    return "sfad, aligned";
+#else
+    return "sfad";
+#endif
+  }
+};
+template <typename T, int N> struct FadTypeName< Sacado::Fad::SLFad<T,N> > {
+  static std::string eval() { return "slfad"; }
+};
 
 template<typename ExecSpace, int DIM, int N>
 struct DrekarTest {
@@ -41,8 +403,6 @@ struct DrekarTest {
   int num_points;
   int ndim;
 
-  struct MomFluxFadTag {};
-  template <int VS> struct MomFluxFadContTag {};
   struct MomFluxTag {};
   struct MomFluxTagConst {};
   struct MomFluxTagConstTeam {};
@@ -53,7 +413,11 @@ struct DrekarTest {
 
   typedef Kokkos::View<const double***[N+1],ExecSpace,Kokkos::MemoryTraits<Kokkos::RandomAccess> > t_3DView_const;
 
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+  typedef Sacado::Fad::DFad<double> FadType; // Must be DFad in this case
+#else
   typedef Sacado::Fad::SFad<double,N> FadType;
+#endif
   typedef Kokkos::View<FadType****,ExecSpace> t_4DViewFad;
   typedef Kokkos::View<FadType***,ExecSpace> t_3DViewFad;
   typedef Kokkos::View<FadType**,ExecSpace> t_2DViewFad;
@@ -105,11 +469,15 @@ struct DrekarTest {
   t_3DView_const_team tflux_m_i_const;
   t_2DView_team tsrc_m_i,tresidual_m_i;
 
+  AlignedFadType coeff;
+
   DrekarTest(int ncells_, int num_basis_, int num_points_):
     ncells(ncells_) ,
     num_basis(num_basis_) ,
     num_points(num_points_) ,
-    ndim(DIM) {
+    ndim(DIM),
+    coeff(N, 0.0)
+  {
     wgb_fad = t_4DViewFad("",ncells,num_basis,num_points,ndim,N+1);
     wbs_fad = t_3DViewFad("",ncells,num_basis,num_points,N+1);
     flux_m_i_fad = t_3DViewFad("",ncells,num_points,ndim,N+1);
@@ -140,6 +508,10 @@ struct DrekarTest {
     tsrc_m_i = t_2DView_team("",ncells,num_points);
     tresidual_m_i = t_2DView_team("",ncells,num_basis);
     init_array(twgb, twbs, tflux_m_i, tsrc_m_i, tresidual_m_i);
+
+    for (int i=0; i<N; ++i)
+      coeff.fastAccessDx(i) = generate_fad(1,1,1,1,N,0,0,0,0,i);
+    coeff.val() = generate_fad(1,1,1,1,N,0,0,0,0,N);
   }
 
   typename FadType::value_type
@@ -340,89 +712,6 @@ struct DrekarTest {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (const MomFluxFadTag, const std::size_t &cell) const {
-    for (int basis=0; basis<num_basis; ++basis) {
-      FadType value(0),value2(0);
-      for (int qp=0; qp<num_points; ++qp) {
-        for (int dim=0; dim<DIM; ++dim)
-          value += flux_m_i_fad(cell,qp,dim)*wgb_fad(cell,basis,qp,dim);
-        value2 += src_m_i_fad(cell,qp)*wbs_fad(cell,basis,qp);
-      }
-      residual_m_i_fad(cell,basis) = value+value2;
-    }
-  }
-
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
-  template <int VS>
-  KOKKOS_INLINE_FUNCTION
-  void operator() (const MomFluxFadContTag<VS>, const team_handle& team) const {
-    // VS is the "vector" size == blockDim.x for CUDA.  This is also set in
-    // the team execution policy, but we don't seem to have a way to access it
-
-    const int cell = team.league_rank();
-
-    // The team, vector parallel loops below cause a internal compiler error.
-    // So for the time being just use the Cuda thread index since we know we
-    // don't actually need a loop.
-    const int basis = team.team_rank();
-
-    // the local scalar type corresponding to the partitioned views
-    typedef typename Kokkos::ThreadLocalScalarType<t_2DViewFadCont>::type local_fad_type;
-
-    local_fad_type value(0.0),value2(0.0);
-    for (int qp=0; qp<num_points; ++qp) {
-      for (int dim=0; dim<DIM; ++dim)
-        value += flux_m_i_fad_cont(cell,qp,dim)*wgb_fad_cont(cell,basis,qp,dim);
-      value2 += src_m_i_fad_cont(cell,qp)*wbs_fad_cont(cell,basis,qp);
-    }
-
-    residual_m_i_fad_cont(cell,basis) = value+value2;
-  }
-#else
-  template <int VS>
-  KOKKOS_INLINE_FUNCTION
-  void operator() (const MomFluxFadContTag<VS>, const team_handle& team) const {
-    // VS is the "vector" size == blockDim.x for CUDA.  This is also set in
-    // the team execution policy, but we don't seem to have a way to access it
-
-    const int cell = team.league_rank();
-
-    // The team, vector parallel loops below cause a internal compiler error.
-    // So for the time being just use the Cuda thread index since we know we
-    // don't actually need a loop.
-    const int basis = team.team_rank();
-#ifdef __CUDA_ARCH__
-    const int k = threadIdx.x;
-#else
-    const int k = 0;
-#endif
-
-    //Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_basis), [&] (const int& basis) {
-    //Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,VS), [&] (const int& k) {
-
-    // Partition each view based on Cuda thread (vector) index
-    auto flux_part =  Kokkos::partition<VS>(flux_m_i_fad_cont, k, VS);
-    auto src_part =   Kokkos::partition<VS>(src_m_i_fad_cont, k, VS);
-    auto wgb_part =   Kokkos::partition<VS>(wgb_fad_cont, k, VS);
-    auto wbs_part =   Kokkos::partition<VS>(wbs_fad_cont, k, VS);
-    auto resid_part = Kokkos::partition<VS>(residual_m_i_fad_cont, k, VS);
-
-    // the local scalar type corresponding to the partitioned views
-    typedef typename decltype(flux_part)::value_type local_fad_type;
-
-    local_fad_type value(0),value2(0);
-    for (int qp=0; qp<num_points; ++qp) {
-      for (int dim=0; dim<DIM; ++dim)
-        value += flux_part(cell,qp,dim)*wgb_part(cell,basis,qp,dim);
-      value2 += src_part(cell,qp)*wbs_part(cell,basis,qp);
-    }
-    resid_part(cell,basis) = value+value2;
-    //});
-    //});
-  }
-#endif
-
-  KOKKOS_INLINE_FUNCTION
   void operator() (const MomFluxTag, const std::size_t &cell) const {
     for (int basis=0; basis<num_basis; ++basis) {
       double value[N+1],value2[N+1];
@@ -444,8 +733,11 @@ struct DrekarTest {
         for(int k = 0; k<N;k++)
           value2[k] += src_val*wbs(cell,basis,qp,k)+src_m_i(cell,qp,k)*wbs_val;
       }
-      for(int k = 0; k<N+1;k++)
-        residual_m_i(cell,basis,k) = value[k]+value2[k];
+      for(int k = 0; k<N; k++)
+        residual_m_i(cell,basis,k) =
+          coeff.val()*(value[k]+value2[k]) +
+          coeff.fastAccessDx(k)*(value[N]+value2[N]);
+      residual_m_i(cell,basis,N)= coeff.val()*(value[N]+value2[N]);
     }
   }
 
@@ -471,8 +763,11 @@ struct DrekarTest {
         for(int k = 0; k<N;k++)
           value2[k] += src_val*wbs(cell,basis,qp,k)+src_m_i(cell,qp,k)*wbs_val;
       }
-      for(int k = 0; k<N+1;k++)
-        residual_m_i_const(cell,basis,k) = value[k]+value2[k];
+      for(int k = 0; k<N; k++)
+        residual_m_i_const(cell,basis,k) =
+          coeff.val()*(value[k]+value2[k]) +
+          coeff.fastAccessDx(k)*(value[N]+value2[N]);
+      residual_m_i_const(cell,basis,N)= coeff.val()*(value[N]+value2[N]);
     }
   }
 
@@ -500,9 +795,14 @@ struct DrekarTest {
           value2[k] += src_val*twbs(cell,basis,qp,k)+tsrc_m_i(cell,qp,k)*wbs_val;
         });
     }
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,N+1), [&] (const int& k) {
-        tresidual_m_i(cell,basis,k) = value[k]+value2[k];
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,N), [&] (const int& k) {
+        tresidual_m_i(cell,basis,k) =
+          coeff.val()*(value[k]+value2[k]) +
+          coeff.fastAccessDx(k)*(value[N]+value2[N]);
       });
+    Kokkos::single(Kokkos::PerThread(team), [&] () {
+          tresidual_m_i(cell,basis,N) = coeff.val()*(value[N]+value2[N]);
+        });
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -523,15 +823,20 @@ struct DrekarTest {
   void compute(const int ntrial, const bool do_check) {
     Sacado::createGlobalMemoryPool(ExecSpace(), N*16*10*ncells*sizeof(double));
 
+    auto kernel_flat =
+      create_advection_kernel(flux_m_i_fad, wgb_fad, src_m_i_fad, wbs_fad, residual_m_i_fad, coeff);
     Kokkos::Impl::Timer timer;
-    for (int i=0; i<ntrial; ++i)
-      Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace,MomFluxFadTag>(0,ncells), *this);
+    for (int i=0; i<ntrial; ++i) {
+      run_flat(kernel_flat);
+    }
     Kokkos::fence();
     double time_fad = timer.seconds() / ntrial / ncells;
 
+    auto kernel_team =
+      create_advection_kernel(flux_m_i_fad_cont, wgb_fad_cont, src_m_i_fad_cont, wbs_fad_cont, residual_m_i_fad_cont, coeff);
     timer.reset();
     for (int i=0; i<ntrial; ++i) {
-      Kokkos::parallel_for(Kokkos::TeamPolicy<ExecSpace,MomFluxFadContTag<32> >(ncells,num_basis,32), *this);
+      run_hierarchical_team(kernel_team);
     }
     Kokkos::fence();
     double time_fad_cont = timer.seconds() / ntrial / ncells;
@@ -554,7 +859,7 @@ struct DrekarTest {
     Kokkos::fence();
     double time_team = timer.seconds() / ntrial / ncells;
 
-    printf("%d %e %e %e %e %e\n",ncells,time_fad,time_fad_cont,time,time_const,time_team);
+    printf("%5d   %9.3e   %9.3e   %9.3e   %9.3e   %9.3e\n",ncells,time_fad,time_fad_cont,time,time_const,time_team);
 
     if (do_check) {
       const double tol = 1e-14;
@@ -574,9 +879,21 @@ void run(const int cell_begin, const int cell_end, const int cell_step,
 {
   const int fad_dim = 50;
   const int dim = 3;
+  typedef DrekarTest<ExecSpace,dim,fad_dim> test_type;
 
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL)
+  std::cout << "hierarchical";
+#elif defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+  std::cout << "hierarchical_dfad";
+#else
+  std::cout << "partitioned";
+#endif
+  std::cout << ", " << FadTypeName<typename test_type::FadType>::eval()
+            << ":" << std::endl;
+
+  printf("ncell      flat        hier      analytic     const        team\n");
   for(int i=cell_begin; i<=cell_end; i+=cell_step) {
-    DrekarTest<ExecSpace,dim,fad_dim> test(i,nbasis,npoint);
+    test_type test(i,nbasis,npoint);
     test.compute(ntrial, check);
   }
 }

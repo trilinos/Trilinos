@@ -140,7 +140,7 @@ namespace Sacado {
 
 namespace Sacado {
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__)
   template <unsigned Stride, typename T>
   KOKKOS_INLINE_FUNCTION
   typename LocalScalarType< Fad::DFad<T>, Stride >::type
