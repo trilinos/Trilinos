@@ -210,7 +210,8 @@ namespace {
                    const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
                    #endif
                    bool writeCoordinates,
-                   bool writeTopo
+                   bool writeTopo,
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer
                    )
   {
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
@@ -346,8 +347,10 @@ namespace {
        if(determineCoordinateField(*globalIndexer,fieldName)) {
           Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
+          Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > auxBlkDofs =
+             Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(auxGlobalIndexer);
           Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<int,GO> > callback =
-                Teuchos::rcp(new panzer_stk::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs));
+                Teuchos::rcp(new panzer_stk::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs,auxBlkDofs));
           reqHandler_local->addRequestCallback(callback);
        }
 

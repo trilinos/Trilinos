@@ -50,8 +50,9 @@ namespace panzer_stk {
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallbackBlocked(
                       const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
-                      const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blocked_ugi)
-   : connManager_(connManager), blocked_ugi_(blocked_ugi)
+                      const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blocked_ugi,
+                      const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & aux_blocked_ugi)
+   : connManager_(connManager), blocked_ugi_(blocked_ugi), aux_blocked_ugi_(aux_blocked_ugi)
 {
 }
 
@@ -116,11 +117,26 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::preRequest
    TEUCHOS_ASSERT(handlesRequest(rm)); // design by contract
 
    const std::string & field = getHandledField(*rm.getParameterList());
-   int block = blocked_ugi_->getFieldBlock(blocked_ugi_->getFieldNum(field));
+
+   // check if the field is in the main ugi, if not assume it's in the auxiliary ugi
+   bool useAux = true;
+   std::vector<Teuchos::RCP<panzer::UniqueGlobalIndexer<int,GlobalOrdinalT> > > fieldDOFMngrs = blocked_ugi_->getFieldDOFManagers();
+   for(int b = 0; b < fieldDOFMngrs.size(); ++b){
+      for(int f = 0; f < fieldDOFMngrs[b]->getNumFields(); ++f){
+         if(fieldDOFMngrs[b]->getFieldString(f) == field)
+           useAux = false;
+      }
+   }
+
+   int block = -1;
+   if (useAux)
+     block = aux_blocked_ugi_->getFieldBlock(aux_blocked_ugi_->getFieldNum(field));
+   else
+     block = blocked_ugi_->getFieldBlock(blocked_ugi_->getFieldNum(field));
 
    // empty...nothing to do
-   buildArrayToVector(block,field);
-   buildCoordinates(field);
+   buildArrayToVector(block,field,useAux);
+   buildCoordinates(field,useAux);
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
@@ -147,23 +163,30 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldBy
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArrayToVector(int block,const std::string & field)
+void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArrayToVector(int block,const std::string & field, const bool useAux)
 {
    if(arrayToVector_[field]==Teuchos::null) {
-      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi = blocked_ugi_->getFieldDOFManagers()[block];
+      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi;
+      if(useAux)
+        ugi = aux_blocked_ugi_->getFieldDOFManagers()[block];
+      else
+        ugi = blocked_ugi_->getFieldDOFManagers()[block];
       arrayToVector_[field] = Teuchos::rcp(new panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>(ugi));
    }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(const std::string & field)
+void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(const std::string & field, const bool useAux)
 {
    std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
 
-   Teuchos::RCP<const panzer::Intrepid2FieldPattern> fieldPattern = getFieldPattern(field);
+   Teuchos::RCP<const panzer::Intrepid2FieldPattern> fieldPattern = getFieldPattern(field,useAux);
 
    std::vector<std::string> elementBlocks;
-   blocked_ugi_->getElementBlockIds(elementBlocks);
+   if(useAux)
+     aux_blocked_ugi_->getElementBlockIds(elementBlocks);
+   else
+     blocked_ugi_->getElementBlockIds(elementBlocks);
    for(std::size_t i=0;i<elementBlocks.size();++i) {
       std::string blockId = elementBlocks[i];
       std::vector<std::size_t> localCellIds;
@@ -247,16 +270,22 @@ getCoordinateByField(int dim,const std::string & field) const
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<const panzer::Intrepid2FieldPattern> ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>
-::getFieldPattern(const std::string & fieldName) const
+::getFieldPattern(const std::string & fieldName, const bool useAux) const
 {
   std::vector<std::string> elementBlocks;
-  blocked_ugi_->getElementBlockIds(elementBlocks);
+  if(useAux)
+    aux_blocked_ugi_->getElementBlockIds(elementBlocks);
+  else
+    blocked_ugi_->getElementBlockIds(elementBlocks);
 
   for(std::size_t e=0;e<elementBlocks.size();e++) {
     std::string blockId = elementBlocks[e];
 
     if(blocked_ugi_->fieldInBlock(fieldName,blockId))
       return Teuchos::rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(blocked_ugi_->getFieldPattern(blockId,fieldName),true);
+
+    if(aux_blocked_ugi_->fieldInBlock(fieldName,blockId))
+      return Teuchos::rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(aux_blocked_ugi_->getFieldPattern(blockId,fieldName),true);
   }
 
   return Teuchos::null;

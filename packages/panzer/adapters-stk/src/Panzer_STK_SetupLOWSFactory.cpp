@@ -59,7 +59,8 @@ namespace panzer_stk {
                    const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
                    #endif
                    bool writeCoordinates,
-                   bool writeTopo
+                   bool writeTopo,
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer
                    );
 
 #ifndef PANZER_ORDINAL64_IS_INT
@@ -75,7 +76,8 @@ namespace panzer_stk {
                    const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
                    #endif
                    bool writeCoordinates,
-                   bool writeTopo
+                   bool writeTopo,
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer
                    );
 #endif
 
@@ -90,7 +92,8 @@ namespace panzer_stk {
                    const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
                    #endif
                    bool writeCoordinates,
-                   bool writeTopo
+                   bool writeTopo,
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer
                    )
   {
     #ifdef PANZER_HAVE_TEKO
@@ -107,7 +110,8 @@ namespace panzer_stk {
                               reqHandler_local,
                               #endif
                               writeCoordinates,
-                              writeTopo
+                              writeTopo,
+                              auxGlobalIndexer
                               );
 #endif
 
@@ -118,7 +122,8 @@ namespace panzer_stk {
                               reqHandler_local,
                               #endif
                               writeCoordinates,
-                              writeTopo
+                              writeTopo,
+                              auxGlobalIndexer
                               );
 
     // should never reach this
