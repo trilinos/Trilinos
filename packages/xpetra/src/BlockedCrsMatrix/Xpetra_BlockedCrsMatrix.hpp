@@ -881,13 +881,12 @@ namespace Xpetra {
       RCP<MultiVector>               tmpY = rcpFromRef(Y);
       RCP<BlockedMultiVector>       tmpbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(tmpY);
 
+      // TODO get rid of me: adapt MapExtractor
       bool bBlockedX = (refbX != Teuchos::null) ? true : false;
-      bool bBlockedY = (tmpbY != Teuchos::null) ? true : false;
 
       // create (temporary) vectors for output
       // In the end we call Y.update(alpha, *tmpY, beta). Therefore we need a new vector storing the temporary results
       tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors(), true);
-      if (bBlockedY == true) tmpbY = Teuchos::rcp(new BlockedMultiVector(rangemaps_,tmpY));
 
       SC one = ScalarTraits<SC>::one();
 
@@ -925,8 +924,7 @@ namespace Xpetra {
             }
             Yblock->update(one, *tmpYblock, one);
           }
-          if(bBlockedY) rangemaps_->InsertVector(Yblock, row, tmpbY, bRangeThyraMode_);
-          else          rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
+          rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
         }
 
       } else if (mode == Teuchos::TRANS) {
@@ -960,12 +958,10 @@ namespace Xpetra {
 
             Yblock->update(one, *tmpYblock, one);
           }
-          if(bBlockedY) domainmaps_->InsertVector(Yblock, col, tmpbY, bDomainThyraMode_);
-          else          domainmaps_->InsertVector(Yblock, col, tmpY, bDomainThyraMode_);
+          domainmaps_->InsertVector(Yblock, col, tmpY, bDomainThyraMode_);
         }
       }
-      if(bBlockedY) Y.update(alpha, *tmpbY, beta);
-      else          Y.update(alpha, *tmpY, beta);
+      Y.update(alpha, *tmpY, beta);
     }
 
     //! \brief Returns the Map associated with the full domain of this operator.

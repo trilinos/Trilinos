@@ -425,7 +425,7 @@ namespace Xpetra {
     /// depending on the parameter bThyraMode the sub map that is returned uses Thyra or Xpetra numbering
     /// Note: Thyra-numbering is only allowed if the BlockedMap is also constructed using Thyra numbering
     const RCP<const Map> getMap(size_t i, bool bThyraMode = false) const {
-      XPETRA_TEST_FOR_EXCEPTION( i >= NumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMap::getMap: tried to access block " << i << ", but BlockedMap has only " << NumMaps() << " blocks! Block indices must be between 0 and " << NumMaps() - 1 << ".");
+      XPETRA_TEST_FOR_EXCEPTION( i >= getNumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMap::getMap: tried to access block " << i << ", but BlockedMap has only " << getNumMaps() << " blocks! Block indices must be between 0 and " << getNumMaps() - 1 << ".");
       if(bThyraMode_ == true && bThyraMode == true)
         return thyraMaps_[i];
       XPETRA_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
@@ -435,7 +435,7 @@ namespace Xpetra {
 
     /// get the importer between full map and partial map
     const RCP<Import> getImporter(size_t i) const {
-      XPETRA_TEST_FOR_EXCEPTION( i >= NumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMap::getImporter: tried to access block " << i << ", but BlockedMap has only " << NumMaps() << " blocks! Block indices must be between 0 and " << NumMaps() - 1 << ".");
+      XPETRA_TEST_FOR_EXCEPTION( i >= getNumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMap::getImporter: tried to access block " << i << ", but BlockedMap has only " << getNumMaps() << " blocks! Block indices must be between 0 and " << getNumMaps() - 1 << ".");
       return  importers_[i];
     }
 

@@ -219,9 +219,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 Teuchos::RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > CreateBlockedMapBlockedMultiVector(int noBlocks, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+  //typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
+  //typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
   typedef Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
 
   GlobalOrdinal nOverallDOFGidsPerProc = Teuchos::as<GlobalOrdinal>(Teuchos::ScalarTraits<GlobalOrdinal>::pow(2,noBlocks-2)) * 10;
@@ -817,7 +817,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Sca
   //TEST_EQUALITY( bnorms1[1], Teuchos::ScalarTraits<Magnitude>STS::zero());
   TEST_NOTHROW( vv->norm1(bnorms1) );
   TEST_NOTHROW( bvv2->norm1(bnorms2) );
-  TEST_COMPARE_FLOATING_ARRAYS(bnorms1,bnorms2,STS::zero());
+  TEST_EQUALITY( bnorms1[0] , bnorms2[0]);
+  TEST_EQUALITY( bnorms1[1] , bnorms2[1]);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Scalar, LO, GO, Node )
@@ -852,7 +853,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Sc
 
 #ifdef HAVE_XPETRA_DEBUG
   // create faulty multivector
-  Teuchos::RCP<MultiVector> vvx = MultiVectorFactory::Build(bvv1->getMapExtractor()->getMap(0),2,true);
+  Teuchos::RCP<MultiVector> vvx = MultiVectorFactory::Build(bvv1->getBlockedMap()->getMap(0),2,true);
   TEST_THROW(bvv1->update(STS::one(), *vvx, STS::one()), Xpetra::Exceptions::RuntimeError);
   vvx = MultiVectorFactory::Build(bvv1->getMap(),1,true);
   TEST_THROW(bvv1->update(STS::one(), *vvx, STS::one()), Xpetra::Exceptions::RuntimeError);
@@ -893,7 +894,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector2, M, MA, Sca
   TEST_EQUALITY( bnorms1[1], STS::zero());
   TEST_NOTHROW( vv->norm1(bnorms1) );
   TEST_NOTHROW( bvv2->norm1(bnorms2) );
-  TEST_COMPARE_FLOATING_ARRAYS(bnorms1,bnorms2,STS::zero());
+  TEST_EQUALITY( bnorms1[0] , bnorms2[0]);
+  TEST_EQUALITY( bnorms1[1] , bnorms2[1]);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, PutScalar, M, MA, Scalar, LO, GO, Node )
@@ -925,9 +927,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, PutScalar, M, MA, Scalar,
     Teuchos::RCP<const MultiVector> part = bvv->getMultiVector(r);
     Teuchos::ArrayRCP<const Scalar > partd1 = part->getData(0);
     Teuchos::ArrayRCP<const Scalar > partd2 = part->getData(1);
-    for(LO l = 0; l < Teuchos::as<LO>(part->getLocalLength()); l++)
+    for(LO l = 0; l < Teuchos::as<LO>(part->getLocalLength()); l++) {
       TEST_EQUALITY(partd1[l], 3.0 * STS::one());
-    TEST_COMPARE_FLOATING_ARRAYS(partd1,partd2,STS::zero());
+      TEST_EQUALITY(partd1[l], partd2[l]);
+    }
   }
 }
 
@@ -938,8 +941,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, MultiVectorFactory, M, MA
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
   typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
-  typedef typename STS::magnitudeType Magnitude;
+  //typedef Teuchos::ScalarTraits<Scalar> STS;
+  //typedef typename STS::magnitudeType Magnitude;
 
   // get a comm and node
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -993,7 +996,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Merge, M, MA, Scalar, LO,
 {
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::Map<LO, GO, Node> Map;
+  //typedef Xpetra::Map<LO, GO, Node> Map;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
 

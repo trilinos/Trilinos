@@ -556,12 +556,12 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(vv==Teuchos::null, Xpetra::Exceptions::RuntimeError, "Partial vector must not be Teuchos::null");
       if(bThyraMode_ == bThyraMode) {
         TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == true && v->getMap()->getMinAllGlobalIndex() > 0, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector is in Thyra mode but partial map starts with GIDs " << v->getMap()->getMinAllGlobalIndex() << " > 0!");
-        XPETRA_TEST_FOR_EXCEPTION(map_->getMap(r,bThyraMode_)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
+        XPETRA_TEST_FOR_EXCEPTION(map_->getMap(r,bThyraMode_)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << map_->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
         vv_[r] = vv;
       }
       else {
         // standard case: bThyraMode_ == true but bThyraMode == false
-        XPETRA_TEST_FOR_EXCEPTION(map_->getMap(r,bThyraMode)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
+        XPETRA_TEST_FOR_EXCEPTION(map_->getMap(r,bThyraMode)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << map_->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
         // deep copy of partial vector
         Teuchos::RCP<MultiVector> vv2 = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(v->getMap(),v->getNumVectors());
         *vv2 = *vv; // deep copy
@@ -655,10 +655,26 @@ namespace Xpetra {
         full.doExport(partial, *(map_->getImporter(block)), Xpetra::INSERT);
       }
     }
-
-    void InsertVector(RCP<const MultiVector> partial, size_t block, RCP<MultiVector> full, bool bThyraMode = false) const { InsertVector(*partial, block, *full, bThyraMode); }
-    void InsertVector(RCP<      MultiVector> partial, size_t block, RCP<MultiVector> full, bool bThyraMode = false) const { InsertVector(*partial, block, *full, bThyraMode); }
-
+    void InsertVector(RCP<const MultiVector> partial, size_t block, RCP<MultiVector> full, bool bThyraMode = false) const {
+      RCP<Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bfull = Teuchos::rcp_dynamic_cast<Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(full);
+      if(bfull.is_null() == true)
+        InsertVector(*partial, block, *full, bThyraMode);
+      else {
+        XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block) == null, Xpetra::Exceptions::RuntimeError,
+              "InsertVector: maps_[" << block << "] is null");
+        full->setMultiVector(block, partial, bThyraMode);
+      }
+    }
+    void InsertVector(RCP<      MultiVector> partial, size_t block, RCP<MultiVector> full, bool bThyraMode = false) const {
+      RCP<Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bfull = Teuchos::rcp_dynamic_cast<Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(full);
+      if(bfull.is_null() == true)
+        InsertVector(*partial, block, *full, bThyraMode);
+      else {
+        XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block) == null, Xpetra::Exceptions::RuntimeError,
+              "InsertVector: maps_[" << block << "] is null");
+        bfull->setMultiVector(block, partial, bThyraMode);
+      }
+    }
 
   private:
     Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node> > map_; ///< blocked map containing the sub block maps (either thyra or xpetra mode)
