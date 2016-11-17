@@ -44,6 +44,9 @@
 #include "Tpetra_TestingUtilities.hpp"
 // #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_iallreduce.hpp"
+#ifdef HAVE_TPETRACORE_MPI
+#  include "Tpetra_Details_MpiTypeTraits.hpp"
+#endif // HAVE_TPETRACORE_MPI
 #include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Map.hpp" // creating a Map ensures Kokkos initialization
 #include "Kokkos_ArithTraits.hpp"
@@ -157,6 +160,7 @@ namespace {
       return;
     }
 
+#if MPI_VERSION >= 3
     out << endl << "Test #850 fix (can alias sendbuf and recvbuf if comm is an "
       "intracommunicator)" << endl;
     // Use recvbuf as both the send buffer and the receive buffer.
@@ -196,6 +200,7 @@ namespace {
       out << "Leaving test early, due to failure" << endl;
       return;
     }
+#endif // MPI_VERSION >= 3
 
     // TODO (mfh 14 Nov 2016) Add the following tests:
     //
@@ -239,8 +244,32 @@ namespace {
 
     testIallreduce<float, device_type> (success, out, "float", deviceTypeName, lclNumPackets, comm);
     testIallreduce<double, device_type> (success, out, "double", deviceTypeName, lclNumPackets, comm);
-    testIallreduce<Kokkos::complex<float>, device_type> (success, out, "float", deviceTypeName, lclNumPackets, comm);
-    testIallreduce<Kokkos::complex<double>, device_type> (success, out, "double", deviceTypeName, lclNumPackets, comm);
+
+    // FIXME (mfh 17 Nov 2016) Currently, if we don't have built-in
+    // MPI_Datatype for these two Kokkos::complex specializations,
+    // then Teuchos::REDUCE_SUM does not work.  This is because the
+    // conversion from Teuchos::EReductionType to MPI_Op only uses
+    // built-in MPI_Op, but we would need a custom MPI_Op if we had to
+    // construct a custom MPI_Datatype for Kokkos::complex.
+
+#ifdef HAVE_TPETRACORE_MPI
+    using Tpetra::Details::MpiTypeTraits;
+    if (MpiTypeTraits<Kokkos::complex<float> >::isSpecialized &&
+        ! MpiTypeTraits<Kokkos::complex<float> >::needsFree) {
+#endif // HAVE_TPETRACORE_MPI
+      testIallreduce<Kokkos::complex<float>, device_type> (success, out, "float", deviceTypeName, lclNumPackets, comm);
+#ifdef HAVE_TPETRACORE_MPI
+    }
+#endif // HAVE_TPETRACORE_MPI
+
+#ifdef HAVE_TPETRACORE_MPI
+    if (MpiTypeTraits<Kokkos::complex<double> >::isSpecialized &&
+        ! MpiTypeTraits<Kokkos::complex<double> >::needsFree) {
+#endif // HAVE_TPETRACORE_MPI
+      testIallreduce<Kokkos::complex<double>, device_type> (success, out, "double", deviceTypeName, lclNumPackets, comm);
+#ifdef HAVE_TPETRACORE_MPI
+    }
+#endif // HAVE_TPETRACORE_MPI
 
     // FIXME (mfh 14 Nov 2016) Test for all enabled Scalar types, not
     // just for the subset above.

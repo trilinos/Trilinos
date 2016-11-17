@@ -73,9 +73,117 @@
 
 #include "Kokkos_Complex.hpp"
 #include "Teuchos_Details_MpiTypeTraits.hpp"
+// Include this file for uintptr_t.
+// Windows (Visual Studio 2015) claims to have that type too:
+//
+// https://msdn.microsoft.com/en-us/library/323b6b3k.aspx
+#include <cstdint>
 
 namespace Teuchos {
 namespace Details {
+
+namespace Impl {
+
+/// \brief Struct for use in computeKokkosComplexMpiDatatype (see below).
+///
+/// The actual re_ and im_ fields in Kokkos::complex<T> are private.
+/// While the instance methods real() and imag() return references to
+/// those fields, it's not legal to take the addresses of the return
+/// values of those methods ("invalid initialization" errors, etc.).
+/// Thus, we construct another struct here which should have exactly
+/// the same layout, and use it in the function below.
+template<class T>
+struct MyComplex {
+  T re;
+  T im;
+};
+
+/// \brief Compute MPI_Datatype for instance of Kokkos::complex<T>.
+///
+/// This function assumes the following:
+/// <ul>
+/// <li> <tt> MpiTypeTraits<T>::isSpecialized </tt> </li>
+/// <li> <tt> ! MpiTypeTraits<T>::needsFree </tt>
+/// <li> Kokkos::complex<T> has the same layout as
+///      <tt>struct { T re; T im; };</tt> </li>
+/// <li> Every instance of T has the same MPI_Datatype </li>
+/// </ul>
+template<class T>
+MPI_Datatype
+computeKokkosComplexMpiDatatype (const ::Kokkos::complex<T>& z)
+{
+  static_assert (MpiTypeTraits<T>::isSpecialized, "This function only "
+                 "works if MpiTypeTraits<T>::isSpecialized.");
+  static_assert (! MpiTypeTraits<T>::needsFree, "This function requires "
+                 "! MpiTypeTraits<T>::needsFree, since otherwise it would "
+                 "leak memory.");
+  // We assume here that every instance of T has the same
+  // MPI_Datatype, i.e., has the same binary representation.
+  MPI_Datatype innerDatatype = MpiTypeTraits<T>::getType (z.real ());
+  MPI_Datatype outerDatatype; // return value
+
+  // If Kokkos::complex<T> has the same layout as T[2], then we can
+  // use a contiguous derived MPI_Datatype.  This is likely the only
+  // code path that will execute.  Contiguous types are likely more
+  // efficient for MPI to execute, and almost certainly more efficient
+  // for MPI to set up.
+  if (sizeof ( ::Kokkos::complex<T>) == 2 * sizeof (T)) {
+    (void) MPI_Type_contiguous (2, innerDatatype, &outerDatatype);
+  }
+  else { // must use the general struct approach
+    // I borrowed and adapted the code below from the MPICH
+    // documentation:
+    //
+    // www.mpich.org/static/docs/v3.1/www3/MPI_Type_struct.html
+    int blockLengths[3];
+    MPI_Aint arrayOfDisplacements[3];
+    MPI_Datatype arrayOfTypes[3];
+    MPI_Datatype outerDatatype;
+
+    // See documentation of MyComplex (above) for explanation.
+    static_assert (sizeof (MyComplex<T>) == sizeof ( ::Kokkos::complex<T>),
+                   "Attempt to construct a struct of the same size and layout "
+                   "as Kokkos::complex<T> failed.");
+    MyComplex<T> z2;
+
+    // First entry in the struct.
+    blockLengths[0] = 1;
+    // Normally, &z2.re would equal &z2, but I'll be conservative and
+    // actually compute the offset, even though it's probably just 0.
+    //
+    // Need the cast to prevent the compiler complaining about
+    // subtracting addresses of different types.
+    arrayOfDisplacements[0] = reinterpret_cast<uintptr_t> (&z2.re) - reinterpret_cast<uintptr_t> (&z2);
+    arrayOfTypes[0] = innerDatatype;
+
+    // Second entry in the struct.
+    blockLengths[1] = 1;
+    arrayOfDisplacements[1] = reinterpret_cast<uintptr_t> (&z2.im) - reinterpret_cast<uintptr_t> (&z2);
+    arrayOfTypes[1] = innerDatatype;
+
+#if MPI_VERSION < 2
+    // Upper bound of the struct.
+    blockLengths[2] = 1;
+    arrayOfDisplacements[2] = sizeof (MyComplex<T>);
+    arrayOfTypes[2] = MPI_UB; // "upper bound type"; signals end of struct
+#endif // MPI_VERSION < 2
+
+    // Define the MPI_Datatype.
+#if MPI_VERSION < 2
+    (void) MPI_Type_struct (3, blockLengths, arrayOfDisplacements,
+                            arrayOfTypes, &outerDatatype);
+#else
+    // Don't include the upper bound with MPI_Type_create_struct.
+    (void) MPI_Type_create_struct (2, blockLengths, arrayOfDisplacements,
+                                   arrayOfTypes, &outerDatatype);
+#endif // MPI_VERSION < 2
+  }
+
+  MPI_Type_commit (&outerDatatype);
+  return outerDatatype;
+}
+
+} // namespace Impl
 
 //! Specialization of MpiTypeTraits for Kokkos::complex<double>.
 template<>
@@ -96,31 +204,26 @@ public:
   static const bool needsFree = ! hasMpi3;
 
   //! MPI_Datatype corresponding to the given Kokkos::complex<double> instance.
-  static MPI_Datatype getType (const ::Kokkos::complex<double>&) {
-#if MPI_VERSION >= 3
-    return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
-#else
-    // The code below asssumes that Kokkos::complex<double> is just two
-    // doubles in a row.  The static_assert below checks that.
-    static_assert (sizeof ( ::Kokkos::complex<double>) == 2 * sizeof (double));
-    MPI_Datatype mpiDatatype;
-    (void) MPI_Type_contiguous (2, MPI_DOUBLE, &mpiDatatype);
-    return mpiDatatype;
-#endif // MPI_VERSION >= 3
+  static MPI_Datatype getType (const ::Kokkos::complex<double>& z) {
+    if (hasMpi3) {
+      return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
+    }
+    else { // ! hasMpi3
+      return Impl::computeKokkosComplexMpiDatatype<double> (z);
+    }
   }
 
   //! MPI_Datatype corresponding to all Kokkos::complex<double> instances.
   static MPI_Datatype getType () {
-#if MPI_VERSION >= 3
-    return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
-#else
-    // The code below asssumes that Kokkos::complex<double> is just
-    // two doubles in a row.  The static_assert below checks that.
-    static_assert (sizeof ( ::Kokkos::complex<double>) == 2 * sizeof (double));
-    MPI_Datatype mpiDatatype;
-    (void) MPI_Type_contiguous (2, MPI_DOUBLE, &mpiDatatype);
-    return mpiDatatype;
-#endif // MPI_VERSION >= 3
+    if (hasMpi3) {
+      return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
+    }
+    else { // ! hasMpi3
+      // Values are arbitrary.  The function just looks at the address
+      // offsets of the class fields, not their contents.
+      ::Kokkos::complex<double> z (3.0, 4.0);
+      return Impl::computeKokkosComplexMpiDatatype<double> (z);
+    }
   }
 };
 
@@ -142,31 +245,26 @@ public:
   static const bool needsFree = ! hasMpi3;
 
   //! MPI_Datatype corresponding to the given Kokkos::complex<float> instance.
-  static MPI_Datatype getType (const ::Kokkos::complex<float>&) {
-#if MPI_VERSION >= 3
-    return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
-#else
-    // The code below asssumes that Kokkos::complex<float> is just two
-    // floats in a row.  The static_assert below checks that.
-    static_assert (sizeof ( ::Kokkos::complex<float>) == 2 * sizeof (float));
-    MPI_Datatype mpiDatatype;
-    (void) MPI_Type_contiguous (2, MPI_FLOAT, &mpiDatatype);
-    return mpiDatatype;
-#endif // MPI_VERSION >= 3
+  static MPI_Datatype getType (const ::Kokkos::complex<float>& z) {
+    if (hasMpi3) {
+      return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
+    }
+    else { // ! hasMpi3
+      return Impl::computeKokkosComplexMpiDatatype<float> (z);
+    }
   }
 
   //! MPI_Datatype corresponding to all Kokkos::complex<float> instances.
   static MPI_Datatype getType () {
-#if MPI_VERSION >= 3
-    return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
-#else
-    // The code below asssumes that Kokkos::complex<float> is just two
-    // floats in a row.  The static_assert below checks that.
-    static_assert (sizeof ( ::Kokkos::complex<float>) == 2 * sizeof (float));
-    MPI_Datatype mpiDatatype;
-    (void) MPI_Type_contiguous (2, MPI_FLOAT, &mpiDatatype);
-    return mpiDatatype;
-#endif // MPI_VERSION >= 3
+    if (hasMpi3) {
+      return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
+    }
+    else { // ! hasMpi3
+      // Values are arbitrary.  The function just looks at the address
+      // offsets of the class fields, not their contents.
+      ::Kokkos::complex<float> z (3.0, 4.0);
+      return Impl::computeKokkosComplexMpiDatatype<float> (z);
+    }
   }
 };
 
