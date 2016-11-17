@@ -50,6 +50,7 @@
 #include "Xpetra_ConfigDefs.hpp"
 
 #include "Xpetra_Map.hpp"
+#include "Xpetra_MapFactory.hpp"
 
 namespace Xpetra {
 

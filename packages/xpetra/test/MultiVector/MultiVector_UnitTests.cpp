@@ -72,6 +72,7 @@
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_VectorFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_MapExtractor.hpp"
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DefaultPlatform.hpp"

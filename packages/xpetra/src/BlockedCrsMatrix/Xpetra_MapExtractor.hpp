@@ -60,6 +60,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MapUtils.hpp>
 #include <Xpetra_MultiVector.hpp>
+//#include <Xpetra_BlockedMultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -376,7 +377,7 @@ namespace Xpetra {
       return thyraVec;
 #endif
     }
-    RCP<MultiVector> ExtractVector(RCP<const BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& full, size_t block, bool bThyraMode = false) const {
+    RCP<MultiVector> ExtractVector(RCP<const BlockedMultiVector>& full, size_t block, bool bThyraMode = false) const {
       XPETRA_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       XPETRA_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
