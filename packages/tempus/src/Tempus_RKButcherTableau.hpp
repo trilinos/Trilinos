@@ -311,6 +311,7 @@ class GeneralExplicit_RKBT :
     bool has_A = tableauPL.isType<std::string>("A");
     bool has_b = tableauPL.isType<std::string>("b");
     bool has_c = tableauPL.isType<std::string>("c");
+    bool isEmbedded = tableauPL.isType<std::string>("bstar");
     bool has_order = tableauPL.isType<int>("order");
 
     TEUCHOS_TEST_FOR_EXCEPTION(!has_A,std::runtime_error,this->description());
@@ -387,7 +388,32 @@ class GeneralExplicit_RKBT :
         c(i) = values[i];
     }
 
-    this->initialize(A,b,c,order,this->description());
+    if (!isEmbedded) {
+        this->initialize(A,b,c,order,this->description());
+    } else {
+        Teuchos::SerialDenseVector<int,Scalar> bstar;
+        bstar.size(as<int>(numStages));
+
+        // read in the b vector
+        {
+            std::vector<std::string> tokens;
+            Tempus::StringTokenizer(tokens,tableauPL.get<std::string>("bstar")," ",true);
+            std::vector<double> values;
+            Tempus::TokensToDoubles(values,tokens);
+
+            TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+              "Error parsing b vector, wrong number of stages.\n"
+              + this->description());
+
+            for(std::size_t i=0;i<numStages;i++)
+                bstar(i) = values[i];
+        }
+
+        this->initialize(A,b,c,order,this->description(), isEmbedded,
+                bstar);
+    }
+
+
     this->setMyParamList(pl);
     this->pList_ = pl;
   }
@@ -404,6 +430,7 @@ class GeneralExplicit_RKBT :
       Teuchos::RCP<Teuchos::ParameterList> tableau = Teuchos::parameterList();
       tableau->set("A", "0.0");
       tableau->set("b", "1.0");
+      //tableau->set("bstar", 1); /* need this to be optional */
       tableau->set("c", "0.0");
       tableau->set<int>("order", 1);
       std::cout << *(tableau) << std::endl;
