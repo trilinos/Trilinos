@@ -110,7 +110,6 @@ public:
   RCP<basic_id_t> adapter;
   RCP<Zoltan2::VectorAdapter<tMVector_t> > coordinateAdapterRCP;
   string problem_kind;
-  string adapter_kind;
   std::map<const std::string, RCP<Time> > timers;
 };
 

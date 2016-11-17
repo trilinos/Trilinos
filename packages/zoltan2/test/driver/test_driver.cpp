@@ -374,41 +374,43 @@ bool run(const UserInputForTests &uinput,
       cout << msgResults.str();
     }
 
-// #define BDD
+//#define BDD
 #ifdef BDD 
     if (problem_kind == "ordering") {
+      ordering_problem_t * orderingProblem =
+        reinterpret_cast<ordering_problem_t *>(problem);
+
       std::cout << "\nLet's examine the solution..." << std::endl;
-      LocalOrderingSolution<zlno_t> solution =
-       reinterpret_cast<ordering_problem_t *>
-         (problem)->getLocalOrderingSolution();
-      if (solution->haveSeparators() ) {
+      LocalOrderingSolution<zlno_t> * localOrderingSolution =
+         orderingProblem->getLocalOrderingSolution();
+      if (localOrderingSolution->haveSeparators() ) {
         std::cout << "Number of column blocks: "
-          << solution->getNumSeparatorBlocks() << std::endl;
+          << localOrderingSolution->getNumSeparatorBlocks() << std::endl;
         {
-          if (solution->havePerm()) {
+          if (localOrderingSolution->havePerm()) {
             std::cout << "permutation: {";
-            for (auto &x : solution->getPermutationRCPConst(false)) 
+            for (auto &x : localOrderingSolution->getPermutationRCPConst(false))
               std::cout << " " << x;
             std::cout << "}" << std::endl;
           }
        
-          if (solution->haveInverse()) {
+          if (localOrderingSolution->haveInverse()) {
             std::cout << "inverse permutation: {";
-            for (auto &x : solution->getPermutationRCPConst(true)) 
+            for (auto &x : localOrderingSolution->getPermutationRCPConst(true))
               std::cout << " " << x;
             std::cout << "}" << std::endl;
           }
         
-          if (solution->haveSeparatorRange()) {
+          if (localOrderingSolution->haveSeparatorRange()) {
             std::cout << "separator range: {";
-            for (auto &x : solution->getSeparatorRangeRCPConst()) 
+            for (auto &x : localOrderingSolution->getSeparatorRangeRCPConst())
               std::cout << " " << x;
             std::cout << "}" << std::endl;
           }
          
-          if (solution->haveSeparatorTree()) { 
+          if (localOrderingSolution->haveSeparatorTree()) {
             std::cout << "separator tree: {";
-            for (auto &x : solution->getSeparatorTreeRCPConst()) 
+            for (auto &x : localOrderingSolution->getSeparatorTreeRCPConst())
               std::cout << " " << x;
             std::cout << "}" << std::endl;
           }
