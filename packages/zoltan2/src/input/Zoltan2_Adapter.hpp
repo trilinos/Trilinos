@@ -78,8 +78,13 @@ enum BaseAdapterType {
 
  */
 
+class BaseAdapterRoot {
+  public:
+    virtual ~BaseAdapterRoot() {}; // required virtual declaration
+};
+
 template <typename User>
-  class BaseAdapter {
+  class BaseAdapter : public BaseAdapterRoot {
 
 public:
   typedef typename InputTraits<User>::lno_t lno_t;

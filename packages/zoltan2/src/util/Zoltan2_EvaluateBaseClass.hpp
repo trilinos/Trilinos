@@ -68,8 +68,13 @@ struct MetricAnalyzerInfo
   std::string parameterDescription;
 };
 
+class EvaluateBaseClassRoot{
+  public:
+    virtual ~EvaluateBaseClassRoot() {} // required virtual declaration
+};
+
 template <typename Adapter>
-class EvaluateBaseClass {
+class EvaluateBaseClass : public EvaluateBaseClassRoot {
 
 public:
   typedef typename Adapter::scalar_t scalar_t;

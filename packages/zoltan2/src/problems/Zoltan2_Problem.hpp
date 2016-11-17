@@ -66,8 +66,13 @@ namespace Zoltan2{
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
      
+class ProblemRoot {
+  public:
+    virtual ~ProblemRoot() {} // required virtual declaration
+};
+
 template<typename Adapter>
-class Problem {
+class Problem : public ProblemRoot {
 public:
   
   /*! \brief Constructor where communicator is Teuchos default.

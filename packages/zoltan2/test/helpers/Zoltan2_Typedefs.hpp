@@ -163,34 +163,77 @@ namespace Zoltan2_TestingFramework {
 
   typedef GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t>
   geometricgen_t;
- 
+
   // Adapter types 
   typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t>        userTypes_t;
   typedef Zoltan2::BaseAdapter<userTypes_t>                         base_adapter_t;
   typedef Zoltan2::BasicIdentifierAdapter<userTypes_t>              basic_id_t;
-  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t>             xpetra_mv_adapter;
-  typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t>   xcrsGraph_adapter;
-  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t, tMVector_t> xcrsMatrix_adapter;
-  typedef Zoltan2::BasicVectorAdapter<tMVector_t>                   basic_vector_adapter;
+
+  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t>              xMV_tMV_t;
+  typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t>    xCG_tCG_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t, tMVector_t>  xCM_tCM_t;
+
+  typedef Zoltan2::XpetraMultiVectorAdapter<xMVector_t>              xMV_xMV_t;
+  typedef Zoltan2::XpetraCrsGraphAdapter<xcrsGraph_t, tMVector_t>    xCG_xCG_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<xcrsMatrix_t, tMVector_t>  xCM_xCM_t;
+
+#ifdef HAVE_EPETRA_DATA_TYPES
+  typedef Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>     xMV_eMV_t;
+  typedef Zoltan2::XpetraCrsGraphAdapter<Epetra_CrsGraph, tMVector_t> xCG_eCG_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<Epetra_CrsMatrix, tMVector_t> xCM_eCM_t;
+#else // temp compiler issues - dummy place holders
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t> xMV_eMV_t;
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t> xCG_eCG_t;
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t> xCM_eCM_t;
+#endif
+
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t>         basic_vector_adapter;
 
   // Evaluate Class Types
-  typedef Zoltan2::EvaluateBaseClass<basic_id_t>                    base_evaluate_t;
+  typedef Zoltan2::EvaluateBaseClass<basic_id_t>          base_evaluate_t;
 
 #ifdef HAVE_ZOLTAN2_PAMGEN
-  typedef Zoltan2::PamgenMeshAdapter<tMVector_t>                    pamgen_adapter_t;
+  typedef Zoltan2::PamgenMeshAdapter<tMVector_t>          pamgen_adapter_t;
 #else
   // This typedef exists only to satisfy the compiler.
   // PamgenMeshAdapter cannot be used when Trilinos is not built with Pamgen
-  typedef Zoltan2::BasicVectorAdapter<tMVector_t>                   pamgen_adapter_t;
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t>         pamgen_adapter_t;
 #endif
 
+#define TEMPLATE_CONVERSION(TEMPLATE_ACTION)      \
+      TEMPLATE_ACTION(basic_id_t)                 \
+      TEMPLATE_ACTION(xMV_tMV_t)                  \
+      TEMPLATE_ACTION(xMV_xMV_t)                  \
+      TEMPLATE_ACTION(xMV_eMV_t)                  \
+      TEMPLATE_ACTION(xCG_tCG_t)                  \
+      TEMPLATE_ACTION(xCG_xCG_t)                  \
+      TEMPLATE_ACTION(xCG_eCG_t)                  \
+      TEMPLATE_ACTION(xCM_tCM_t)                  \
+      TEMPLATE_ACTION(xCM_xCM_t)                  \
+      TEMPLATE_ACTION(xCM_eCM_t)                  \
+      TEMPLATE_ACTION(basic_vector_adapter)       \
+      TEMPLATE_ACTION(basic_vector_adapter)       \
+      TEMPLATE_ACTION(basic_vector_adapter)       \
+      TEMPLATE_ACTION(basic_vector_adapter)       \
+      TEMPLATE_ACTION(pamgen_adapter_t)
+
+// this is only for GraphAdapter and MatrixAdapter
+#define TEMPLATE_CONVERSION_COORDINATESXX(TEMPLATE_ACTION)      \
+      TEMPLATE_ACTION(xCG_tCG_t)                  \
+      TEMPLATE_ACTION(xCG_xCG_t)                  \
+      TEMPLATE_ACTION(xCM_tCM_t)                  \
+      TEMPLATE_ACTION(xCM_xCM_t)
+
+// this is only for GraphAdapter and MatrixAdapter
+#define TEMPLATE_CONVERSION_COORDINATES(TEMPLATE_ACTION)      \
+      TEMPLATE_ACTION(xMV_tMV_t)
+
   // Problem types
-  typedef Zoltan2::Problem<basic_id_t>                              base_problem_t;
-  typedef Zoltan2::PartitioningProblem<basic_id_t>                  partitioning_problem_t; 
-  typedef Zoltan2::OrderingProblem<basic_id_t>                      ordering_problem_t; 
-  typedef Zoltan2::ColoringProblem<basic_id_t>                      coloring_problem_t; 
-  
-  typedef Zoltan2::BaseClassMetrics<zscalar_t>                      base_metric_t;
+  typedef Zoltan2::Problem<basic_id_t>                    base_problem_t;
+  typedef Zoltan2::PartitioningProblem<basic_id_t>        partitioning_problem_t;
+  typedef Zoltan2::OrderingProblem<basic_id_t>            ordering_problem_t;
+  typedef Zoltan2::ColoringProblem<basic_id_t>            coloring_problem_t;
+  typedef Zoltan2::BaseClassMetrics<zscalar_t>            base_metric_t;
 }
 
 #endif

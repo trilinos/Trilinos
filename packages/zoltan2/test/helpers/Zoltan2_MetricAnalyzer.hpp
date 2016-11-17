@@ -67,9 +67,10 @@ using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using namespace Zoltan2_TestingFramework;
 
+template<class Adapter>
 class MetricAnalyzer {
 public:
-  typedef Zoltan2::MetricAnalyzerInfo<zscalar_t> metric_analyzer_info_t;
+  typedef Zoltan2::MetricAnalyzerInfo<typename Adapter::scalar_t> metric_analyzer_info_t;
 
   /// \brief Analyze metrics for a problem based on a range of tolerances
   ///
@@ -79,7 +80,7 @@ public:
   ///
   /// @return returns a boolean value indicated pass/failure.
   static bool analyzeMetrics(
-    const RCP<const Zoltan2::EvaluateBaseClass<basic_id_t>> &metricObject,
+    RCP<Zoltan2::EvaluateBaseClass<Adapter>> pEvaluate,
     const ParameterList &metricsParameters, 
     std::ostringstream & msg_stream )
   {
@@ -91,7 +92,7 @@ public:
     bool bAllPassed = true;
 
     std::vector<metric_analyzer_info_t> metricInfoSet;
-    LoadMetricInfo(metricInfoSet, metricObject, metricsParameters);
+    LoadMetricInfo(metricInfoSet, pEvaluate, metricsParameters);
 
     int countFailedMetricChecks = 0;
     for (auto metricInfo = metricInfoSet.begin();
@@ -120,7 +121,7 @@ public:
 
   static void LoadMetricInfo(
     std::vector<metric_analyzer_info_t> & metricInfoSet,
-    const RCP<const Zoltan2::EvaluateBaseClass<basic_id_t>> &metricObject,
+    RCP<Zoltan2::EvaluateBaseClass<Adapter>> pEvaluate,
     const ParameterList &metricsParameters) {
 
     // at this point we should be looking at a metricsPlist with the following 
@@ -159,7 +160,7 @@ public:
       }
 
       // get the parameters specific to the check we want to run
-      metric_analyzer_info_t metricInfo = metricObject->getMetricAnalyzerInfo(
+      metric_analyzer_info_t metricInfo = pEvaluate->getMetricAnalyzerInfo(
         metricsParameters.sublist(headingName));
       metricInfoSet.push_back(metricInfo);
       ++headingIndex;

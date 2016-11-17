@@ -71,78 +71,109 @@ namespace Zoltan2_TestingFramework {
     /// @param params Zolta2 parameter list
     /// @param (MPI) MPI world communicator
     ///
-    /// @return returns a pointer to new Zoltan2::Problem or a nullptr if kind was not known.
-    static Problem<basic_id_t> * newProblem(const std::string &kind,
-                                            const std::string &adapter_name,
-                                            base_adapter_t *input,
-                                            ParameterList *params
-                                          #ifdef HAVE_ZOLTAN2_MPI
-                                            , MPI_Comm comm
-                                          #endif
-                                            ) {
+    /// @return returns a pointer to new Zoltan2::Problem or a nullptr if
+    /// problem_name was not known.
+    ProblemFactory(const std::string &problem_name,
+                   RCP<AdapterFactory> adapterFactory,
+                   ParameterList *params
+                   #ifdef HAVE_ZOLTAN2_MPI
+                    , MPI_Comm comm
+                   #endif
+                   ) {
+
+      this->problem_name = problem_name;
+      adapter_templated_name = adapterFactory->adaptersSet.main.template_name;
+
       #ifdef HAVE_ZOLTAN2_MPI
-        #define ZOLTAN2_CREATE_PROBLEM(checkProblem, problemClass,            \
-            checkAdapter, adapterClass)                                       \
-           if (kind == checkProblem && adapter_name == checkAdapter) {        \
-              return reinterpret_cast< Problem<basic_id_t> *>(                \
-                new Zoltan2::problemClass<adapterClass>(                      \
-                  reinterpret_cast<adapterClass *>(input), params, comm)); }
+        #define CREATE_PRBLM(problemClass, adapterClass)                       \
+            if (adapter_templated_name == #adapterClass) {                     \
+              adapterClass * pCast = dynamic_cast<adapterClass *>              \
+                (adapterFactory->adaptersSet.main.adapter);                    \
+              if(!pCast) { throw std::logic_error(                             \
+                "ProblemFactory adapter dynamic_cast failed for problem name " \
+                + problem_name + " and adapterClass " + #adapterClass ); }     \
+              problem = rcp(new problemClass<adapterClass>(pCast, params, comm)); }
       #else
-        #define ZOLTAN2_CREATE_PROBLEM(checkProblem, problemClass,            \
-           checkAdapter, adapterClass)                                        \
-           if (kind == checkProblem && adapter_name == checkAdapter) {        \
-             return reinterpret_cast< Problem<basic_id_t> *>(                 \
-               new Zoltan2::problemClass<adapterClass>(                       \
-                 reinterpret_cast<adapterClass *>(input), params)); }
+        #define CREATE_PRBLM(problemClass, adapterClass)                       \
+            if (adapter_templated_name == #adapterClass) {                     \
+              adapterClass * pCast = dynamic_cast<adapterClass *>              \
+                (adapterFactory->adaptersSet.main.adapter);                    \
+              if(!pCast) { throw std::logic_error(                             \
+                "ProblemFactory adapter dynamic_cast failed for problem name " \
+                + problem_name + " and adapterClass " + #adapterClass ); }     \
+              problem = rcp(new problemClass<adapterClass>(pCast, params)); }
       #endif
 
+      #define MAKE_PARTITION_PROBLEM(adapterClass)  \
+        CREATE_PRBLM(PartitioningProblem, adapterClass);
+
+      #define MAKE_ORDERING_PROBLEM(adapterClass)  \
+        CREATE_PRBLM(OrderingProblem, adapterClass);
+
       // PartitioningProblem
-      ZOLTAN2_CREATE_PROBLEM("partitioning", PartitioningProblem,
-        "BasicIdentifier", basic_vector_adapter);
-      ZOLTAN2_CREATE_PROBLEM("partitioning", PartitioningProblem,
-        "XpetraMultiVector", xpetra_mv_adapter);
-      ZOLTAN2_CREATE_PROBLEM("partitioning", PartitioningProblem,
-        "XpetraCrsGraph", xcrsGraph_adapter);
-      ZOLTAN2_CREATE_PROBLEM("partitioning", PartitioningProblem,
-        "XpetraCrsMatrix", xcrsMatrix_adapter);
-      ZOLTAN2_CREATE_PROBLEM("partitioning", PartitioningProblem,
-        "BasicVector", basic_vector_adapter);
-      ZOLTAN2_CREATE_PROBLEM("partitioning", PartitioningProblem,
-        "PamgenMesh", pamgen_adapter_t);
-
-      // OrderingProblem
-      ZOLTAN2_CREATE_PROBLEM("ordering", OrderingProblem,
-        "BasicIdentifier", basic_vector_adapter);
-      ZOLTAN2_CREATE_PROBLEM("ordering", OrderingProblem,
-        "XpetraMultiVector", xpetra_mv_adapter);
-      ZOLTAN2_CREATE_PROBLEM("ordering", OrderingProblem,
-        "XpetraCrsGraph", xcrsGraph_adapter);
-      ZOLTAN2_CREATE_PROBLEM("ordering", OrderingProblem,
-        "XpetraCrsMatrix", xcrsMatrix_adapter);
-      ZOLTAN2_CREATE_PROBLEM("ordering", OrderingProblem,
-        "BasicVector", basic_vector_adapter);
-      ZOLTAN2_CREATE_PROBLEM("ordering", OrderingProblem,
-        "PamgenMesh", pamgen_adapter_t);
-
-      // Future coloring problems...
-      /*
-      // ColoringProblem
-      ZOLTAN2_CREATE_PROBLEM("coloring", ColoringProblem,
-        "BasicIdentifier", basic_vector_adapter);
-      ZOLTAN2_CREATE_PROBLEM("coloring", ColoringProblem,
-        "XpetraMultiVector", xpetra_mv_adapter);
-      ZOLTAN2_CREATE_PROBLEM("coloring", ColoringProblem,
-        "XpetraCrsGraph", xcrsGraph_adapter);
-      ZOLTAN2_CREATE_PROBLEM("coloring", ColoringProblem,
-        "XpetraCrsMatrix", xcrsMatrix_adapter);
-      ZOLTAN2_CREATE_PROBLEM("coloring", ColoringProblem,
-        "BasicVector", basic_vector_adapter);
-      ZOLTAN2_CREATE_PROBLEM("coloring", ColoringProblem,
-        "PamgenMesh", pamgen_adapter_t);
-      */
-
-      return nullptr; // problem type not known
+      if(problem_name == "partitioning") {
+        TEMPLATE_CONVERSION(MAKE_PARTITION_PROBLEM)
+      }
+      else if(problem_name == "ordering") {
+        TEMPLATE_CONVERSION(MAKE_ORDERING_PROBLEM)
+      }
+      else { // future types here...
+        throw std::logic_error(
+          "ProblemFactory did not recognize problem name " + problem_name );
+      }
     }
+
+    RCP<const Comm<int> > getComm() const {
+      #define GET_PROBLEM_COMM(adapterClass)                                   \
+        if(adapter_templated_name == #adapterClass) {                          \
+          return (rcp_dynamic_cast<Problem<adapterClass>>(problem))->getComm();\
+        }
+      TEMPLATE_CONVERSION(GET_PROBLEM_COMM)
+      return Teuchos::null;
+    }
+
+    void solve() {
+      #define SOLVE_PROBLEM(adapterClass)                                      \
+        if(adapter_templated_name == #adapterClass) {                          \
+          (rcp_dynamic_cast<Problem<adapterClass>>(problem))->solve();         \
+          return;                                                              \
+        }
+      TEMPLATE_CONVERSION(SOLVE_PROBLEM)
+      throw std::logic_error("ProblemFactory solve() failed.");
+    }
+
+    // this is not good - forcing the part_t to basic_id_t
+    // to consider... it used to be we forced casted the entire structure
+    // to this adapter so this at least should be safe but won't compile if
+    // someone wants to use this for a different part_t
+    const basic_id_t::part_t * getPartListView() const {
+      if(problem_name != "partitioning") {
+        throw std::logic_error( "getPartListView() called on ProblemFactory "
+          "which is not a partitioning problem." );
+      }
+      #define GET_PROBLEM_PARTS(adapterClass)                                  \
+        if(adapter_templated_name == #adapterClass) {                          \
+          return (rcp_dynamic_cast<PartitioningProblem<adapterClass>>(problem))  \
+            ->getSolution().getPartListView();                                 \
+        }
+      TEMPLATE_CONVERSION(GET_PROBLEM_PARTS)
+      throw std::logic_error("ProblemFactory getPartListView() failed.");
+    }
+
+    bool isValid() const {
+      return ( problem != Teuchos::null );
+    }
+
+    RCP<ProblemRoot> getProblem() {
+      return problem;
+    }
+
+    const std::string & getProblemName() const { return problem_name; }
+
+    private:
+      std::string problem_name; // string converts to a problem type
+      std::string adapter_templated_name; // string converts to an adapter type
+      RCP<ProblemRoot> problem;
   };
 }
 #endif // ZOLTAN2_PROBLEM_FACTORY_HPP
