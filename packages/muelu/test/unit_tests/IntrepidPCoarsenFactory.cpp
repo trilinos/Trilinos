@@ -68,7 +68,7 @@
 #include "MueLu_CreateXpetraPreconditioner.hpp"
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+ #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_FieldContainer.hpp"
 
 
@@ -80,7 +80,9 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef Intrepid2::FieldContainer<SC> FC;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+
+    typedef Intrepid2::FieldContainer<MT> FC;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -88,14 +90,14 @@ namespace MueLuTests {
 
     {
       // QUAD
-      RCP<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC> > lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC>());
-      RCP<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> > hi;
+      RCP<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC> > lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC>());
+      RCP<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> > hi;
       for(int i=0;i<max_degree; i++) {
-	hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC>(i,Intrepid2::POINTTYPE_EQUISPACED));
+	hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(i,Intrepid2::POINTTYPE_EQUISPACED));
 
 	std::vector<size_t> lo_node_in_hi;
 	FC hi_dofCoords;
-	MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<SC,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
+	MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
 	
 	TEST_EQUALITY(hi_dofCoords.dimension(0),hi->getCardinality());	
 	TEST_EQUALITY((size_t)hi_dofCoords.dimension(1),(size_t)hi->getBaseCellTopology().getDimension());
@@ -110,14 +112,15 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef Intrepid2::FieldContainer<Scalar> FC;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+    typedef Intrepid2::FieldContainer<MT> FC;
 
     out << "version: " << MueLu::Version() << std::endl;
     
     // QUAD
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC> >(MueLu::MueLuIntrepid::BasisFactory<SC>("hgrad_quad_c1")) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> >(MueLu::MueLuIntrepid::BasisFactory<SC>("hgrad_quad_c2")) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> >(MueLu::MueLuIntrepid::BasisFactory<SC>("hgrad_quad_c3")) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c1")) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c2")) !=Teuchos::null;TEST_EQUALITY(test,true);}
+    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c3")) !=Teuchos::null;TEST_EQUALITY(test,true);}
 
   }
 
@@ -128,7 +131,8 @@ namespace MueLuTests {
   #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef Intrepid2::FieldContainer<SC> FC;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+    typedef Intrepid2::FieldContainer<MT> FC;
     typedef Intrepid2::FieldContainer<LO> FCi;
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -137,10 +141,10 @@ namespace MueLuTests {
     {
       //QUAD
       // A one element test with Kirby-numbered nodes where the top edge is not owned      
-      RCP<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC> > lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<SC,FC>());
-      RCP<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC> > hi;
+      RCP<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC> > lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC>());
+      RCP<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> > hi;
       for(int degree=2; degree < max_degree; degree++) {
-	hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<SC,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
+	hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
 	int Nn = (degree+1)*(degree+1);
 
 	FCi hi_e2n(1,Nn), lo_e2n;
@@ -149,7 +153,7 @@ namespace MueLuTests {
 	std::vector<LO> hi_to_lo_map;
 	int lo_numOwnedNodes=0;
 	FC hi_dofCoords;
-	MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<SC,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
+	MueLu::MueLuIntrepid::IntrepidGetLoNodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
 
 	for(int i=0; i<Nn; i++) {
 	  hi_e2n(0,i)=i;
