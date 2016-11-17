@@ -525,6 +525,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/pce/KokkosExp_View_UQ_PCE_Contiguous.hpp
       sacado/kokkos/pce/Kokkos_View_UQ_PCE_Utils.hpp
       sacado/kokkos/pce/Kokkos_Atomic_UQ_PCE.hpp
+      sacado/kokkos/pce/Teuchos_BLAS_UQ_PCE.hpp
       sacado/kokkos/pce/Teuchos_LAPACK_UQ_PCE.hpp
       sacado/kokkos/pce/Teuchos_SerialQRDenseSolver_UQ_PCE.hpp
       )
