@@ -321,15 +321,6 @@ public:
       dst.m_map.m_offset.m_dim.N5 = tempdst.m_dim.N5 ;
       dst.m_map.m_offset.m_dim.N6 = tempdst.m_dim.N6 ;
 
-      dst.m_map.m_array_offset.m_dim.N0 = temparraydst.m_dim.N0 ;
-      dst.m_map.m_array_offset.m_dim.N1 = temparraydst.m_dim.N1 ;
-      dst.m_map.m_array_offset.m_dim.N2 = temparraydst.m_dim.N2 ;
-      dst.m_map.m_array_offset.m_dim.N3 = temparraydst.m_dim.N3 ;
-      dst.m_map.m_array_offset.m_dim.N4 = temparraydst.m_dim.N4 ;
-      dst.m_map.m_array_offset.m_dim.N5 = temparraydst.m_dim.N5 ;
-      dst.m_map.m_array_offset.m_dim.N6 = temparraydst.m_dim.N6 ;
-      dst.m_map.m_array_offset.m_dim.N7 = temparraydst.m_dim.N7 ;
-
       dst.m_map.m_offset.m_stride.S0 = tempdst.m_stride.S0;
       dst.m_map.m_offset.m_stride.S1 = tempdst.m_stride.S1;
       dst.m_map.m_offset.m_stride.S2 = tempdst.m_stride.S2;
@@ -338,10 +329,14 @@ public:
       dst.m_map.m_offset.m_stride.S5 = tempdst.m_stride.S5;
       dst.m_map.m_offset.m_stride.S6 = tempdst.m_stride.S6;
 
-      // Move last non-unit stride to S7
-      // dst.m_map.m_offset.m_stride.S* = tempdst.m_stride.S*;
-      // dst.m_map.m_offset.m_stride.S7 = tempdst.m_stride.S{rank}
-      AssignFadStride<rank>::eval( dst.m_map.m_array_offset, temparraydst );
+      // Move last non-unit dim and stride to N7/S7 since subview collapses
+      // out all singleton dimensions between the last rank and the fad
+      // dimension.  Equivalent to:
+      //   dst.m_map.m_array_offset.m_dim.N* = temparraydst.m_dim.N*
+      //   dst.m_map.m_array_offset.m_dim.N7 = temparraydst.m_dim.N{rank}
+      //   dst.m_map.m_array_offset.m_stride.S* = temparraydst.m_stride.S*
+      //   dst.m_map.m_array_offset.m_stride.S7 = temparraydst.m_stride.S{rank}
+      AssignFadDimStride<rank,0>::eval( dst.m_map.m_array_offset, temparraydst );
 
       dst.m_track = src.m_track ;
 
@@ -508,18 +503,27 @@ public:
       dst_array_offset_type temparraydst(
         src.m_map.m_array_offset , array_extents ) ;
 
-      // dst is always LayoutStride, which uses the last (rank-8) index for
-      // the fad dimension
-
       dst.m_track = src.m_track ;
 
-      dst.m_map.m_offset.m_dim.N0 = tempdst.m_dim.N1 ;
-      dst.m_map.m_offset.m_dim.N1 = tempdst.m_dim.N2 ;
-      dst.m_map.m_offset.m_dim.N2 = tempdst.m_dim.N3 ;
-      dst.m_map.m_offset.m_dim.N3 = tempdst.m_dim.N4 ;
-      dst.m_map.m_offset.m_dim.N4 = tempdst.m_dim.N5 ;
-      dst.m_map.m_offset.m_dim.N5 = tempdst.m_dim.N6 ;
-      dst.m_map.m_offset.m_dim.N6 = tempdst.m_dim.N7 ;
+      dst.m_map.m_offset.m_dim.N0 = tempdst.m_dim.N0 ;
+      dst.m_map.m_offset.m_dim.N1 = tempdst.m_dim.N1 ;
+      dst.m_map.m_offset.m_dim.N2 = tempdst.m_dim.N2 ;
+      dst.m_map.m_offset.m_dim.N3 = tempdst.m_dim.N3 ;
+      dst.m_map.m_offset.m_dim.N4 = tempdst.m_dim.N4 ;
+      dst.m_map.m_offset.m_dim.N5 = tempdst.m_dim.N5 ;
+      dst.m_map.m_offset.m_dim.N6 = tempdst.m_dim.N6 ;
+
+      dst.m_map.m_offset.m_stride.S0 = tempdst.m_stride.S0;
+      dst.m_map.m_offset.m_stride.S1 = tempdst.m_stride.S1;
+      dst.m_map.m_offset.m_stride.S2 = tempdst.m_stride.S2;
+      dst.m_map.m_offset.m_stride.S3 = tempdst.m_stride.S3;
+      dst.m_map.m_offset.m_stride.S4 = tempdst.m_stride.S4;
+      dst.m_map.m_offset.m_stride.S5 = tempdst.m_stride.S5;
+      dst.m_map.m_offset.m_stride.S6 = tempdst.m_stride.S6;
+
+      // dst is always LayoutStride, which uses the last (rank-8) index for
+      // the fad dimension, thus we need to move its stride/dimension from the
+      // first to the last
 
       dst.m_map.m_array_offset.m_dim.N0 = temparraydst.m_dim.N1 ;
       dst.m_map.m_array_offset.m_dim.N1 = temparraydst.m_dim.N2 ;
@@ -529,14 +533,6 @@ public:
       dst.m_map.m_array_offset.m_dim.N5 = temparraydst.m_dim.N6 ;
       dst.m_map.m_array_offset.m_dim.N6 = temparraydst.m_dim.N7 ;
       dst.m_map.m_array_offset.m_dim.N7 = temparraydst.m_dim.N0 ;
-
-      dst.m_map.m_offset.m_stride.S0 = tempdst.m_stride.S1;
-      dst.m_map.m_offset.m_stride.S1 = tempdst.m_stride.S2;
-      dst.m_map.m_offset.m_stride.S2 = tempdst.m_stride.S3;
-      dst.m_map.m_offset.m_stride.S3 = tempdst.m_stride.S4;
-      dst.m_map.m_offset.m_stride.S4 = tempdst.m_stride.S5;
-      dst.m_map.m_offset.m_stride.S5 = tempdst.m_stride.S6;
-      dst.m_map.m_offset.m_stride.S6 = tempdst.m_stride.S7;
 
       dst.m_map.m_array_offset.m_stride.S0 = temparraydst.m_stride.S1;
       dst.m_map.m_array_offset.m_stride.S1 = temparraydst.m_stride.S2;

@@ -897,6 +897,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   success = true;
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(s), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.dimension_0(), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.dimension_1(), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.dimension_7(), 1, out, success);
+
   for (size_type i=0; i<num_rows; ++i) {
     FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, col);
     success = success && checkFads(f, h_s(i), out);
@@ -942,6 +946,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   success = true;
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(s), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.dimension_0(), num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.dimension_1(), num_planes, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.dimension_2(), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.dimension_7(), 1, out, success);
+
   for (size_type j=0; j<num_cols; ++j) {
     FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, row, j);
     for (size_type k=0; k<num_planes; ++k) {
