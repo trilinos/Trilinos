@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-  
+SET(PythonInterp_FIND_VERSION 2.7)
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
