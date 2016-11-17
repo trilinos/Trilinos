@@ -359,11 +359,11 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 
 // Copy field containers
 template<class FC1, class FC2>
-void CopyFieldContainer2D(FC1 & c1, FC2 & c2) {
+void CopyFieldContainer2D(const FC1 & c1, FC2 & c2) {
   c2.resize(c1.dimension(0),c1.dimension(1));
   for(size_t i=0; i<(size_t)c1.dimension(0); i++)
     for(size_t j=0; j<(size_t)c1.dimension(1); j++)
-      c1(i,j) = c2(i,j);
+      c2(i,j) = c1(i,j);
 }
 
 
@@ -706,11 +706,10 @@ int main(int argc, char *argv[]) {
   std::vector<int> Pn_edgeNodes;
   std::vector<int> Pn_cellNodes;
 
-  printf("Pn_numNodes = %d Pn_numNodesperElem = %d\n",Pn_numNodes,Pn_numNodesperElem);
 
-  printf("Running p=%d Kirby\n",degree);
   PromoteMesh_Pn_Kirby(degree,POINTTYPE_EQUISPACED,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,
                        P1_nodeOnBoundary, elemToNode, nodeCoord, nodeOnBoundary, Pn_edgeNodes, Pn_cellNodes);
+
 
   long long numElems_aux = numElems*degree*degree;  //degree^2 P1 elements per Pn element in auxiliary mesh
   FieldContainer<int> aux_P1_elemToNode(numElems_aux,P1_numNodesPerElem); //4 P1 elements per Pn element
@@ -918,8 +917,12 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList & mymuelu = inputSolverList.sublist("MueLu");
     Teuchos::ParameterList & level0  = mymuelu.sublist("level 0");
     level0.set("multigrid algorithm","pcoarsen");
-    level0.set("ipc: hi basis",hi_basis);
-    level0.set("ipc: lo basis","hgrad_quad_c1");
+    //    level0.set("ipc: hi basis",hi_basis);
+    //    level0.set("ipc: lo basis","hgrad_quad_c1");
+
+    mymuelu.set("ipc: hi basis",hi_basis);
+    mymuelu.set("ipc: lo basis","hgrad_quad_c1");
+
     level0.set("ipc: element to node map",rcp(&elemToNodeI2,false));
     inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
@@ -1039,6 +1042,11 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   StiffMatrix.fillComplete();
+  printf("Example: StiffMatrix (ra,ro,co,do) = (%d,%d,%d,%d)\n",
+	 (int)StiffMatrix.getRangeMap()->getGlobalNumElements(),
+	 (int)StiffMatrix.getRowMap()->getGlobalNumElements(),
+	 (int)StiffMatrix.getColMap()->getGlobalNumElements(),
+	 (int)StiffMatrix.getRangeMap()->getGlobalNumElements());
 
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting cubature for auxiliary P1 mesh")));
 
@@ -1722,13 +1730,6 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     // Create an iterative solver manager
     RCP< Belos::SolverManager<scalar_type, multivector_type, operator_type> > solver;
     solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
-    /*
-    if (solveType == "cg") {
-      solver = rcp(new Belos::PseudoBlockCGSolMgr   <scalar_type, MV, OP>(Problem, rcp(&belosList, false)));
-    } else if (solveType == "gmres") {
-      solver = rcp(new Belos::BlockGmresSolMgr<scalar_type, MV, OP>(Problem, rcp(&belosList, false)));
-    }
-    */
 
     // Perform solve
     solver->solve();
@@ -2406,7 +2407,7 @@ void CreateLinearSystem(int numWorksets,
           cols1[0] = globalCol;
           vals1[0] = operatorMatrixContribution;
           StiffMatrix.insertGlobalValues(globalRow, cols1(), vals1());
-
+	  //	  printf("Inserting A(%d,%d) = %6.4e\n",(int)globalCol,(int)cols1[0],vals1[0]);
         }// *** cell col loop ***
       }// *** cell row loop ***
     }// *** workset cell loop **
