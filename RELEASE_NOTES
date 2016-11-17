@@ -1,5 +1,99 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 12.10 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 12.10 general release contains 58 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL, RTOp, Rythmos, Sacado,
+SEACAS, Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos,
+ThreadPool, Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra,
+Zoltan, Zoltan2.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+Ifpack2
+
+  - Experimental multithreaded Gauss-Seidel
+
+    This uses a new thread-parallel graph coloring algorithm implemented
+    in KokkosKernels.  Ifpack2's support for this lives in
+    Ifpack2::Relaxation.  Currently, building it is disabled by default
+    (see #288).  Enabling it requires enabling the following CMake options
+    that are currently OFF by default:
+
+      - TpetraKernels_ENABLE_Experimental
+      - Ifpack2_ENABLE_Experimental
+      - Ifpack2_ENABLE_Experimental_KokkosKernels_Features
+
+  - Ifpack2::Krylov is really SUPER deprecated now
+
+    It's been deprecated for a LONG time, complete with deprecated
+    warnings.  This didn't suffice for warning some users, so I moved the
+    class to the new Ifpack2::DeprecatedAndMayDisappearAtAnyTime
+    namespace.
+
+  - Encapsulate local sparse triangular solves in a new class,
+    LocalSparseTriangularSolver
+
+  - Fix various issues
+
+    Issues fix include (but are not limited to) #672, #570, #567, #558,
+    #551, #544, #409, #234, and #64.
+
+Tpetra
+
+  - Build time and size improvements (fix #700)
+
+    KokkosKernels now only pre-builds the sparse matrix-vector multiply
+    kernels that Tpetra needs.  Also, for integer Scalar types,
+    KokkosKernels no longer optimizes sparse matrix-vector multiply for
+    multiple right-hand sides.  It does so only for non-integer (e.g.,
+    floating-point) Scalar types.  This reduces build time and size.  (See
+    Github Issue #700.)  Furthermore, KokkosKernels now only pre-builds
+    sparse matrix-vector multiply for the default offset type.
+
+  - Removed "using Teuchos::*" declarations from Tpetra_ConfigDefs.hpp
+
+    Tpetra no longer imports Teuchos classes like Comm and RCP (among
+    others) into the Tpetra namespace.  This will help us eventually
+    remove all the Teuchos_*.hpp header file includes from
+    Tpetra_ConfigDefs.hpp, thus improving build time.
+
+  - MultiVector: Add new two-argument randomize(min,max)
+
+  - MultiVector: Get rid of old-interface DistObject methods
+
+    Tpetra::MultiVector implements the new DistObject interface.  Thus, it
+    no longer needs to provide implementations for the following three
+    old-interface DistObject methods:
+
+      - createViews
+      - createViewsNonConst
+      - releaseViews
+
+  - Optimize Map::replaceCommWithSubset for MPI_COMM_SELF (#673)
+
+  - Fixed many other issues
+
+    Issues fixed include (but are not limited to) #699, #680, #638, #617,
+    #607, #603, #601, #597, #561, and #46.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 12.8 Release Notes                                         #
 #                                                                             #
 ###############################################################################
