@@ -413,10 +413,6 @@ KOKKOS_INLINE_FUNCTION
 void
 Matrix<T, M, N, ES>::set_dimensions(Index const rows, Index const cols)
 {
-  if (IS_DYNAMIC == false) {
-    assert(rows * cols <= M * N);
-  }
-
   TensorBase<T, Store>::set_dimension(rows * cols, ORDER);
   rows_ = rows;
   cols_ = cols;

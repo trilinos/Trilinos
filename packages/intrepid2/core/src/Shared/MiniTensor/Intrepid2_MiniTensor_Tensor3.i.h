@@ -142,12 +142,7 @@ KOKKOS_INLINE_FUNCTION
 void
 Tensor3<T, N, ES>::set_dimension(Index const dimension)
 {
-  if (IS_DYNAMIC == false) {
-    assert(dimension <= N);
-  }
-
   TensorBase<T, Store>::set_dimension(dimension, ORDER);
-
   return;
 }
 
