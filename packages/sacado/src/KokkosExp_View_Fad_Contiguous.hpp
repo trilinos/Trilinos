@@ -578,17 +578,17 @@ public:
     {
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( m_handle + index
                            , m_handle + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 >
   KOKKOS_FORCEINLINE_FUNCTION
@@ -598,17 +598,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(0,i0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 >
   KOKKOS_FORCEINLINE_FUNCTION
@@ -618,17 +618,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(i0,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 >
   KOKKOS_FORCEINLINE_FUNCTION
@@ -638,17 +638,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(0,i0,i1);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 >
   KOKKOS_FORCEINLINE_FUNCTION
@@ -658,17 +658,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(i0,i1,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
 
   template< typename I0 , typename I1 , typename I2 >
@@ -679,17 +679,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 , typename I2 >
   KOKKOS_FORCEINLINE_FUNCTION
@@ -699,17 +699,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3 >
   KOKKOS_FORCEINLINE_FUNCTION
@@ -719,17 +719,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2,i3);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3 >
   KOKKOS_FORCEINLINE_FUNCTION
@@ -739,17 +739,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,i3,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 >
@@ -761,17 +761,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2,i3,i4);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 >
@@ -783,17 +783,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,i3,i4,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 >
@@ -805,17 +805,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2,i3,i4,i5);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 >
@@ -827,17 +827,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,i3,i4,i5,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 , typename I6 >
@@ -849,17 +849,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2,i3,i4,i5,i6);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 , typename I6 >
@@ -871,17 +871,17 @@ public:
     { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,i3,i4,i5,i6,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
-      const unsigned stride = blockDim.x;
+      const unsigned strd = blockDim.x;
       const unsigned size = (m_fad_size.value+blockDim.x-threadIdx.x-1) / blockDim.x;
 #else
       const unsigned index = m_fad_index;
-      const unsigned stride = m_fad_stride;
+      const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
       return reference_type( beg + index
                            , beg + m_original_fad_size
                            , size
-                           , stride ); }
+                           , strd ); }
 
   //----------------------------------------
 
