@@ -54,6 +54,11 @@
 
 namespace Xpetra {
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration of BlockedMap, needed to prevent circular inclusions
+  template<class LO, class GO, class N> class BlockedMap;
+#endif
+
 /*!
   @class MapUtils
   @brief Xpetra utility class for common map-related routines
@@ -292,6 +297,61 @@ public:
     return ovlDomainMap;
   }
 
+  /*! @brief replace set of global ids by new global ids
+   *
+    @param  xx                Hello
+    @return                      Overlapping map compatible to "input" using the GIDs as defined by "nonOvlReferenceInput"
+
+  */
+  static Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > transformThyra2XpetraGIDs(
+      const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& input, GlobalOrdinal offset) {
+
+    const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+    RCP< const Teuchos::Comm<int> > comm = input.getComm();
+
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rcpInput = Teuchos::rcpFromRef(input);
+
+    // check whether input map is a BlockedMap or a standard Map
+    RCP<const Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node> > rcpBlockedInput = Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node> >(rcpInput);
+    if(rcpBlockedInput.is_null() == true) {
+
+      // create a new map with Xpetra GIDs (may start not from GID = 0)
+      std::vector<GlobalOrdinal> gids;
+      for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(rcpInput->getNodeNumElements()); ++l) {
+        GlobalOrdinal gid = rcpInput->getGlobalElement(l) + offset;
+        gids.push_back(gid);
+      }
+      Teuchos::ArrayView<GO> gidsView(&gids[0], gids.size());
+      RCP<Map> fullMap = MapFactory::Build(rcpInput->lib(), INVALID, gidsView, rcpInput->getIndexBase(), comm);
+      return fullMap;
+    }
+
+    // SPECIAL CASE: input is a blocked map
+    // we have to recursively call this routine to get a BlockedMap containing (unique) Xpetra style GIDs
+
+    size_t numMaps = rcpBlockedInput->getNumMaps();
+
+    // first calucale GID offsets in submaps
+    // we need that for generating Xpetra GIDs
+    std::vector<GlobalOrdinal> gidOffsets(numMaps,0);
+    for(int i = 1; i < numMaps; ++i) {
+      gidOffsets[i] = rcpBlockedInput->getMap(i-1,true)->getMaxAllGlobalIndex() + gidOffsets[i-1] + 1;
+    }
+
+    std::vector<RCP<const Map> > mapsXpetra(rcpBlockedInput->getNumMaps(), Teuchos::null);
+    std::vector<RCP<const Map> > mapsThyra (rcpBlockedInput->getNumMaps(), Teuchos::null);
+    for (int b = 0; b < rcpBlockedInput->getNumMaps(); ++b){
+      // extract sub map with Thyra style gids
+      // this can be an underlying Map or BlockedMap object
+      RCP<const Map> subMapThyra  = rcpBlockedInput->getMap(b,true);
+      RCP<const Map> subMapXpetra = MapUtils::transformThyra2XpetraGIDs(*subMapThyra, gidOffsets[b] + offset); // recursive call
+      mapsXpetra[b] = subMapXpetra; // map can be of type Map or BlockedMap
+      mapsThyra[b]  = subMapThyra;  // map can be of type Map or BlockedMap
+    }
+
+    Teuchos::RCP<Map> resultMap = Teuchos::rcp(new Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node>(mapsXpetra, mapsThyra));
+    return resultMap;
+  }
 
 };
 
