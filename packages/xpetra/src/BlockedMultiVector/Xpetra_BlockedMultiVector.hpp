@@ -96,7 +96,7 @@ namespace Xpetra {
      * \param NumVectors Number of vector columns in multi vector
      * \param zeroOut If true initialize multivector with zeros
      */
-    BlockedMultiVector(const Teuchos::RCP< const BlockedMap< LocalOrdinal, GlobalOrdinal, Node > > &map,
+    BlockedMultiVector(const Teuchos::RCP< const BlockedMap > &map,
         size_t NumVectors,
         bool zeroOut=true) :
           map_(map) {
@@ -434,7 +434,7 @@ namespace Xpetra {
     }
 
     //! Import.
-    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import&importer, CombineMode CM) {
+    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import& importer, CombineMode CM) {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::doImport: Not supported by BlockedMultiVector.");
     }
 
