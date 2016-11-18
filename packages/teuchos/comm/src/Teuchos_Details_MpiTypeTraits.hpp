@@ -209,8 +209,119 @@ public:
 // types to exist.  If I don't have MPI_VERSION >= 3, I create custom
 // MPI_Datatype for these types.
 #ifdef HAVE_TEUCHOS_COMPLEX
+
+namespace Impl {
+
+/// \brief Struct for use in computeStdComplexMpiDatatype (see below).
+///
+/// The actual real and imaginary fields in std::complex<T> are
+/// private.  While the instance methods real() and imag() return
+/// references to those fields, it's not legal to take the addresses
+/// of the return values of those methods ("invalid initialization"
+/// errors, etc.).  Thus, we construct another struct here which
+/// should have exactly the same layout, and use it in the function
+/// below.
+template<class T>
+struct MyComplex {
+  T re;
+  T im;
+};
+
+/// \brief Compute MPI_Datatype for instance of std::complex<T>.
+///
+/// This function assumes the following:
+/// <ul>
+/// <li> <tt> MpiTypeTraits<T>::isSpecialized </tt> </li>
+/// <li> <tt> ! MpiTypeTraits<T>::needsFree </tt>
+/// <li> std::complex<T> has the same layout as
+///      <tt>struct { T re; T im; };</tt> </li>
+/// <li> Every instance of T has the same MPI_Datatype </li>
+/// </ul>
+template<class T>
+MPI_Datatype
+computeStdComplexMpiDatatype (const std::complex<T>& z)
+{
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  static_assert (MpiTypeTraits<T>::isSpecialized, "This function only "
+                 "works if MpiTypeTraits<T>::isSpecialized.");
+  static_assert (! MpiTypeTraits<T>::needsFree, "This function requires "
+                 "! MpiTypeTraits<T>::needsFree, since otherwise it would "
+                 "leak memory.");
+#endif // HAVE_TEUCHOSCORE_CXX11
+
+  // We assume here that every instance of T has the same
+  // MPI_Datatype, i.e., has the same binary representation.
+  MPI_Datatype innerDatatype = MpiTypeTraits<T>::getType (z.real ());
+  MPI_Datatype outerDatatype; // return value
+
+  // If std::complex<T> has the same layout as T[2], then we can use a
+  // contiguous derived MPI_Datatype.  This is likely the only code
+  // path that will execute.  Contiguous types are likely more
+  // efficient for MPI to execute, and almost certainly more efficient
+  // for MPI to set up.
+  if (sizeof (std::complex<T>) == 2 * sizeof (T)) {
+    (void) MPI_Type_contiguous (2, innerDatatype, &outerDatatype);
+  }
+  else { // must use the general struct approach
+    // I borrowed and adapted the code below from the MPICH
+    // documentation:
+    //
+    // www.mpich.org/static/docs/v3.1/www3/MPI_Type_struct.html
+    int blockLengths[3];
+    MPI_Aint arrayOfDisplacements[3];
+    MPI_Datatype arrayOfTypes[3];
+
+#ifdef HAVE_TEUCHOSCORE_CXX11
+    // See documentation of MyComplex (above) for explanation.
+    static_assert (sizeof (MyComplex<T>) == sizeof (std::complex<T>),
+                   "Attempt to construct a struct of the same size and layout "
+                   "as std::complex<T> failed.");
+#endif // HAVE_TEUCHOSCORE_CXX11
+    MyComplex<T> z2;
+
+    // First entry in the struct.
+    blockLengths[0] = 1;
+    // Normally, &z2.re would equal &z2, but I'll be conservative and
+    // actually compute the offset, even though it's probably just 0.
+    //
+    // Need the cast to prevent the compiler complaining about
+    // subtracting addresses of different types.
+    arrayOfDisplacements[0] = reinterpret_cast<uintptr_t> (&z2.re) - reinterpret_cast<uintptr_t> (&z2);
+    arrayOfTypes[0] = innerDatatype;
+
+    // Second entry in the struct.
+    blockLengths[1] = 1;
+    arrayOfDisplacements[1] = reinterpret_cast<uintptr_t> (&z2.im) - reinterpret_cast<uintptr_t> (&z2);
+    arrayOfTypes[1] = innerDatatype;
+
+#if MPI_VERSION < 2
+    // Upper bound of the struct.
+    blockLengths[2] = 1;
+    arrayOfDisplacements[2] = sizeof (MyComplex<T>);
+    arrayOfTypes[2] = MPI_UB; // "upper bound type"; signals end of struct
+#endif // MPI_VERSION < 2
+
+    // Define the MPI_Datatype.
+#if MPI_VERSION < 2
+    (void) MPI_Type_struct (3, blockLengths, arrayOfDisplacements,
+                            arrayOfTypes, &outerDatatype);
+#else
+    // Don't include the upper bound with MPI_Type_create_struct.
+    (void) MPI_Type_create_struct (2, blockLengths, arrayOfDisplacements,
+                                   arrayOfTypes, &outerDatatype);
+#endif // MPI_VERSION < 2
+  }
+
+  MPI_Type_commit (&outerDatatype);
+  return outerDatatype;
+}
+
+} // namespace Impl
+
+
+//! Specialization of MpiTypeTraits for std::complex<double>.
 template<>
-class MpiTypeTraits<std::complex<double> > {
+class MpiTypeTraits< std::complex<double> > {
 private:
 #if MPI_VERSION >= 3
   static const bool hasMpi3 = true;
@@ -226,43 +337,40 @@ public:
   ///   of getType (both versions) after use.
   static const bool needsFree = ! hasMpi3;
 
-  //! MPI_Datatype corresponding to the given T instance.
-  static MPI_Datatype getType (const std::complex<double>&) {
+  //! MPI_Datatype corresponding to the given std::complex<double> instance.
+  static MPI_Datatype getType (const std::complex<double>& z) {
+    if (hasMpi3) {
 #if MPI_VERSION >= 3
-    return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
+      return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
 #else
-    // The code below asssumes that std::complex<double> is just two
-    // doubles in a row.  The static_assert below checks that.
-    static_assert (sizeof (std::complex<double>) == 2 * sizeof (double),
-                   "std::complex<double> does not have the expected size of "
-                   "2*sizeof(double).  This means we cannot construct an "
-                   "MPI_Datatype for it.");
-    MPI_Datatype mpiDatatype;
-    (void) MPI_Type_contiguous (2, MPI_DOUBLE, &mpiDatatype);
-    return mpiDatatype;
+      return MPI_DATATYPE_NULL; // FIXME (mfh 17 Nov 2016) Better to throw?
 #endif // MPI_VERSION >= 3
+    }
+    else { // ! hasMpi3
+      return Impl::computeStdComplexMpiDatatype<double> (z);
+    }
   }
 
-  //! MPI_Datatype corresponding to the type T.
+  //! MPI_Datatype corresponding to all std::complex<double> instances.
   static MPI_Datatype getType () {
+    if (hasMpi3) {
 #if MPI_VERSION >= 3
-    return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
+      return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
 #else
-    // The code below asssumes that std::complex<double> is just two
-    // doubles in a row.  The static_assert below checks that.
-    static_assert (sizeof (std::complex<double>) == 2 * sizeof (double),
-                   "std::complex<double> does not have the expected size of "
-                   "2*sizeof(double).  This means we cannot construct an "
-                   "MPI_Datatype for it.");
-    MPI_Datatype mpiDatatype;
-    (void) MPI_Type_contiguous (2, MPI_DOUBLE, &mpiDatatype);
-    return mpiDatatype;
+      return MPI_DATATYPE_NULL; // FIXME (mfh 17 Nov 2016) Better to throw?
 #endif // MPI_VERSION >= 3
+    }
+    else { // ! hasMpi3
+      // Values are arbitrary.  The function just looks at the address
+      // offsets of the class fields, not their contents.
+      std::complex<double> z (3.0, 4.0);
+      return Impl::computeStdComplexMpiDatatype<double> (z);
+    }
   }
 };
 
 template<>
-class MpiTypeTraits<std::complex<float> > {
+class MpiTypeTraits< std::complex<float> > {
 private:
 #if MPI_VERSION >= 3
   static const bool hasMpi3 = true;
@@ -278,40 +386,38 @@ public:
   ///   of getType (both versions) after use.
   static const bool needsFree = ! hasMpi3;
 
-  //! MPI_Datatype corresponding to the given T instance.
-  static MPI_Datatype getType (const std::complex<float>&) {
+  //! MPI_Datatype corresponding to the given std::complex<float> instance.
+  static MPI_Datatype getType (const std::complex<float>& z) {
+    if (hasMpi3) {
 #if MPI_VERSION >= 3
-    return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
+      return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
 #else
-    // The code below asssumes that std::complex<float> is just two
-    // floats in a row.  The static_assert below checks that.
-    static_assert (sizeof (std::complex<float>) == 2 * sizeof (float),
-                   "std::complex<float> does not have the expected size of "
-                   "2*sizeof(float).  This means we cannot construct an "
-                   "MPI_Datatype for it.");
-    MPI_Datatype mpiDatatype;
-    (void) MPI_Type_contiguous (2, MPI_FLOAT, &mpiDatatype);
-    return mpiDatatype;
+      return MPI_DATATYPE_NULL; // FIXME (mfh 17 Nov 2016) Better to throw?
 #endif // MPI_VERSION >= 3
+    }
+    else { // ! hasMpi3
+      return Impl::computeStdComplexMpiDatatype<float> (z);
+    }
   }
 
-  //! MPI_Datatype corresponding to the type T.
+  //! MPI_Datatype corresponding to all std::complex<float> instances.
   static MPI_Datatype getType () {
+    if (hasMpi3) {
 #if MPI_VERSION >= 3
-    return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
+      return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
 #else
-    // The code below asssumes that std::complex<float> is just two
-    // floats in a row.  The static_assert below checks that.
-    static_assert (sizeof (std::complex<float>) == 2 * sizeof (float),
-                   "std::complex<float> does not have the expected size of "
-                   "2*sizeof(float).  This means we cannot construct an "
-                   "MPI_Datatype for it.");
-    MPI_Datatype mpiDatatype;
-    (void) MPI_Type_contiguous (2, MPI_FLOAT, &mpiDatatype);
-    return mpiDatatype;
+      return MPI_DATATYPE_NULL; // FIXME (mfh 17 Nov 2016) Better to throw?
 #endif // MPI_VERSION >= 3
+    }
+    else { // ! hasMpi3
+      // Values are arbitrary.  The function just looks at the address
+      // offsets of the class fields, not their contents.
+      std::complex<float> z (3.0, 4.0);
+      return Impl::computeStdComplexMpiDatatype<float> (z);
+    }
   }
 };
+
 #endif // HAVE_TEUCHOS_COMPLEX
 
 //! Specialization for T = double.

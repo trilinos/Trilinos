@@ -84,20 +84,6 @@ namespace Details {
 
 namespace Impl {
 
-/// \brief Struct for use in computeKokkosComplexMpiDatatype (see below).
-///
-/// The actual re_ and im_ fields in Kokkos::complex<T> are private.
-/// While the instance methods real() and imag() return references to
-/// those fields, it's not legal to take the addresses of the return
-/// values of those methods ("invalid initialization" errors, etc.).
-/// Thus, we construct another struct here which should have exactly
-/// the same layout, and use it in the function below.
-template<class T>
-struct MyComplex {
-  T re;
-  T im;
-};
-
 /// \brief Compute MPI_Datatype for instance of Kokkos::complex<T>.
 ///
 /// This function assumes the following:
@@ -138,13 +124,12 @@ computeKokkosComplexMpiDatatype (const ::Kokkos::complex<T>& z)
     int blockLengths[3];
     MPI_Aint arrayOfDisplacements[3];
     MPI_Datatype arrayOfTypes[3];
-    MPI_Datatype outerDatatype;
 
     // See documentation of MyComplex (above) for explanation.
     static_assert (sizeof (MyComplex<T>) == sizeof ( ::Kokkos::complex<T>),
                    "Attempt to construct a struct of the same size and layout "
                    "as Kokkos::complex<T> failed.");
-    MyComplex<T> z2;
+    ::Teuchos::Details::Impl::MyComplex<T> z2;
 
     // First entry in the struct.
     blockLengths[0] = 1;
@@ -206,7 +191,11 @@ public:
   //! MPI_Datatype corresponding to the given Kokkos::complex<double> instance.
   static MPI_Datatype getType (const ::Kokkos::complex<double>& z) {
     if (hasMpi3) {
+#if MPI_VERSION >= 3
       return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
+#else
+      return MPI_DATATYPE_NULL; // FIXME (mfh 17 Nov 2016) Better to throw?
+#endif // MPI_VERSION >= 3
     }
     else { // ! hasMpi3
       return Impl::computeKokkosComplexMpiDatatype<double> (z);
@@ -216,7 +205,11 @@ public:
   //! MPI_Datatype corresponding to all Kokkos::complex<double> instances.
   static MPI_Datatype getType () {
     if (hasMpi3) {
+#if MPI_VERSION >= 3
       return MPI_C_DOUBLE_COMPLEX; // requires MPI 2.?
+#else
+      return MPI_DATATYPE_NULL; // FIXME (mfh 17 Nov 2016) Better to throw?
+#endif // MPI_VERSION >= 3
     }
     else { // ! hasMpi3
       // Values are arbitrary.  The function just looks at the address
@@ -247,7 +240,11 @@ public:
   //! MPI_Datatype corresponding to the given Kokkos::complex<float> instance.
   static MPI_Datatype getType (const ::Kokkos::complex<float>& z) {
     if (hasMpi3) {
+#if MPI_VERSION >= 3
       return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
+#else
+      return MPI_DATATYPE_NULL; // FIXME (mfh 17 Nov 2016) Better to throw?
+#endif // MPI_VERSION >= 3
     }
     else { // ! hasMpi3
       return Impl::computeKokkosComplexMpiDatatype<float> (z);
@@ -257,7 +254,11 @@ public:
   //! MPI_Datatype corresponding to all Kokkos::complex<float> instances.
   static MPI_Datatype getType () {
     if (hasMpi3) {
+#if MPI_VERSION >= 3
       return MPI_C_FLOAT_COMPLEX; // requires MPI 2.?
+#else
+      return MPI_DATATYPE_NULL; // FIXME (mfh 17 Nov 2016) Better to throw?
+#endif // MPI_VERSION >= 3
     }
     else { // ! hasMpi3
       // Values are arbitrary.  The function just looks at the address
