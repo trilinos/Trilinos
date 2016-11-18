@@ -51,9 +51,7 @@
 #ifdef HAVE_TEUCHOS_MPI
 
 #include "mpi.h"
-#ifdef HAVE_TEUCHOS_COMPLEX
-#  include <complex>
-#endif // HAVE_TEUCHOS_COMPLEX
+#include <complex>
 
 namespace Teuchos {
 namespace Details {
@@ -208,7 +206,6 @@ public:
 // conservatively to assume that I need MPI_VERSION >= 3 for these
 // types to exist.  If I don't have MPI_VERSION >= 3, I create custom
 // MPI_Datatype for these types.
-#ifdef HAVE_TEUCHOS_COMPLEX
 
 namespace Impl {
 
@@ -417,8 +414,6 @@ public:
     }
   }
 };
-
-#endif // HAVE_TEUCHOS_COMPLEX
 
 //! Specialization for T = double.
 template<>
