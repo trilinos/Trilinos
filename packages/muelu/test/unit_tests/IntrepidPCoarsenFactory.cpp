@@ -58,7 +58,6 @@
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_IntrepidPCoarsenFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -67,9 +66,12 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_CreateXpetraPreconditioner.hpp"
 
+#ifdef HAVE_MUELU_INTREPID2
+#include "MueLu_IntrepidPCoarsenFactory.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
- #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_FieldContainer.hpp"
+
 
 
 namespace MueLuTests {
@@ -579,3 +581,4 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
 
 
 } // namespace MueLuTests
+#endif
