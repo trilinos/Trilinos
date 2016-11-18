@@ -846,9 +846,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(ThyraBlockedOperator, ReorderBlockOperator2Thy
   Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > xres =
         Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(B, comm);
 
-  Teuchos::ArrayRCP<const Scalar> xdata = xres->getData(0);
+  Teuchos::RCP<Xpetra::BlockedMultiVector<Scalar,LO,GO,Node> > xresb =
+      Teuchos::rcp_dynamic_cast<Xpetra::BlockedMultiVector<Scalar,LO,GO,Node>>(xres);
+  TEST_EQUALITY(xresb.is_null(), false);
+
+  Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > xresmerged = xresb->Merge();
+
+  Teuchos::ArrayRCP<const Scalar> xdata = xresmerged->getData(0);
   bool bCheck = true;
-  for(int i=0; i<Teuchos::as<int>(xres->getLocalLength()); i++) {
+  for(int i=0; i<Teuchos::as<int>(xresmerged->getLocalLength()); i++) {
     if (i>=0  && i< 160) { if(xdata[i] != (Scalar) 7.0){ std::cout << i << " " << xdata[i] << std::endl; bCheck = false; }}
     if (i>=160 && i< 180) { if(xdata[i] != (Scalar) 4.0){std::cout << i << " " << xdata[i] << std::endl; bCheck = false; }}
     if (i>=180 && i< 190) { if(xdata[i] != (Scalar) 3.0){std::cout << i << " " << xdata[i] << std::endl; bCheck = false; }}
@@ -856,7 +862,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(ThyraBlockedOperator, ReorderBlockOperator2Thy
   TEST_EQUALITY(bCheck, true);
 
   brop->apply(*ones_A, *exp);
-  exp->update(-STS::one(),*xres,STS::one());
+  exp->update(-STS::one(),*xresmerged,STS::one());
   TEST_EQUALITY(exp->norm1(), STS::zero());
 #endif // HAVE_XPETRA_THYRA
 }

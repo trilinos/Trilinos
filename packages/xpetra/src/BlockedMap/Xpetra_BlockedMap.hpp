@@ -307,8 +307,7 @@ namespace Xpetra {
 
     //! Return a view of the global indices owned by this process.
     virtual Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const {
-      throw Xpetra::Exceptions::RuntimeError("BlockedMap::getNodeElementList: routine not implemented.");
-      return Teuchos::ArrayView< const GlobalOrdinal >();
+      return fullmap_->getNodeElementList();
     };
 
     //@}
