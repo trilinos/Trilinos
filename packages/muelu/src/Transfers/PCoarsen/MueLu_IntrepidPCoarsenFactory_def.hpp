@@ -440,7 +440,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     RCP<const Map> colMap = Acrs.getColMap();
     RCP<const Map> domainMap = A->getDomainMap();
     int NumProc = rowMap->getComm()->getSize();
-    assert(&*rowMap == &*domainMap);
+    assert(rowMap.isSameAs(domainMap));
     std::vector<bool> Pn_nodeIsOwned(colMap->getNodeNumElements(),false);
     LO num_owned_rows = 0;
     for(size_t i=0; i<rowMap->getNodeNumElements(); i++) {
