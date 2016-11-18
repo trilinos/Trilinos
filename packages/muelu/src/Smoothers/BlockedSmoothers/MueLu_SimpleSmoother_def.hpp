@@ -311,7 +311,7 @@ namespace MueLu {
       if(bZ->Rows() == 1 && bZ->Cols() == 1 && rangeMapExtractor_->getThyraMode() == true) bZThyraSpecialTreatment = true;
     }
 
-#if 1// new implementation
+#if 0// new implementation (does not work for nested problems with BlockedMultiVector from external)
 
     // create a new vector for storing the current residual in a blocked multi vector
     RCP<MultiVector> res = MultiVectorFactory::Build(B.getMap(), B.getNumVectors(), true);

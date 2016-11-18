@@ -185,7 +185,8 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
 #endif
 
-#if 0
+#if 1
+    // go back to MultiVector routines without internal BlockedMultiVectors
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempres = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
@@ -215,6 +216,13 @@ namespace MueLu {
         Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(rcpX, i, bDomainThyraMode);
         Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, i, bRangeThyraMode);
         Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(i, X.getNumVectors(), bDomainThyraMode);
+
+        /*std::cout << "Xi " << Xi->getMap()->getMinGlobalIndex() << " - " << Xi->getMap()->getMaxGlobalIndex() << std::endl;
+        std::cout << "ri " << ri->getMap()->getMinGlobalIndex() << " - " << ri->getMap()->getMaxGlobalIndex() << std::endl;
+        std::cout << "tXi " << tXi->getMap()->getMinGlobalIndex() << " - " << tXi->getMap()->getMaxGlobalIndex() << std::endl;
+        std::cout << "do thy " << domainMapExtractor_->getThyraMode() << " full map " << domainMapExtractor_->getFullMap()->getMinGlobalIndex() << "-" << domainMapExtractor_->getFullMap()->getMaxGlobalIndex() << " [0,f] " << domainMapExtractor_->getMap(0,false)->getMinGlobalIndex() << "-" << domainMapExtractor_->getMap(0,false)->getMaxGlobalIndex() << " [1,f] " << domainMapExtractor_->getMap(1,false)->getMinGlobalIndex() << "-" << domainMapExtractor_->getMap(1,false)->getMaxGlobalIndex() << std::endl;
+        std::cout << "rg thy " << rangeMapExtractor_->getThyraMode() << " full map " << rangeMapExtractor_->getFullMap()->getMinGlobalIndex() << "-" << rangeMapExtractor_->getFullMap()->getMaxGlobalIndex() << " [0,f] " << rangeMapExtractor_->getMap(0,false)->getMinGlobalIndex() << "-" << rangeMapExtractor_->getMap(0,false)->getMaxGlobalIndex() << " [1,f] " << rangeMapExtractor_->getMap(1,false)->getMinGlobalIndex() << "-" << rangeMapExtractor_->getMap(1,false)->getMaxGlobalIndex() << std::endl;*/
+
 
         // apply solver/smoother
         Inverse_.at(i)->Apply(*tXi, *ri, false);
@@ -265,6 +273,13 @@ namespace MueLu {
         Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(bX, i, bDomainThyraMode);
         Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, i, bRangeThyraMode);
         Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(i, X.getNumVectors(), bDomainThyraMode, true);
+
+        // the nested ExtractVector call return wrong GIDs
+        /*std::cout << "Xi " << Xi->getMap()->getMinGlobalIndex() << " - " << Xi->getMap()->getMaxGlobalIndex() << std::endl;
+        std::cout << "ri " << ri->getMap()->getMinGlobalIndex() << " - " << ri->getMap()->getMaxGlobalIndex() << std::endl;
+        std::cout << "tXi " << tXi->getMap()->getMinGlobalIndex() << " - " << tXi->getMap()->getMaxGlobalIndex() << std::endl;
+        std::cout << "do thy " << domainMapExtractor_->getThyraMode() << " full map " << domainMapExtractor_->getFullMap()->getMinGlobalIndex() << "-" << domainMapExtractor_->getFullMap()->getMaxGlobalIndex() << " [0,f] " << domainMapExtractor_->getMap(0,false)->getMinGlobalIndex() << "-" << domainMapExtractor_->getMap(0,false)->getMaxGlobalIndex() << " [1,f] " << domainMapExtractor_->getMap(1,false)->getMinGlobalIndex() << "-" << domainMapExtractor_->getMap(1,false)->getMaxGlobalIndex() << std::endl;
+        std::cout << "rg thy " << rangeMapExtractor_->getThyraMode() << " full map " << rangeMapExtractor_->getFullMap()->getMinGlobalIndex() << "-" << rangeMapExtractor_->getFullMap()->getMaxGlobalIndex() << " [0,f] " << rangeMapExtractor_->getMap(0,false)->getMinGlobalIndex() << "-" << rangeMapExtractor_->getMap(0,false)->getMaxGlobalIndex() << " [1,f] " << rangeMapExtractor_->getMap(1,false)->getMinGlobalIndex() << "-" << rangeMapExtractor_->getMap(1,false)->getMaxGlobalIndex() << std::endl;*/
 
         // apply solver/smoother
         Inverse_.at(i)->Apply(*tXi, *ri, false);
