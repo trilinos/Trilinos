@@ -254,6 +254,7 @@ void Add(
 
 namespace MMdetails{
 
+  // Matrix multiplication functions
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -288,6 +289,20 @@ void mult_A_B_newmatrix(
   const std::string& label = std::string(),
   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+
+
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
+void mult_A_B_newmatrix_kernel_wrapper(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  const std::string& label = std::string(),
+  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -299,6 +314,10 @@ void mult_A_B_reuse(
   const std::string& label = std::string(),
   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+
+
+
+  // Matrix jacobi functions
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -325,6 +344,7 @@ void jacobi_A_B_reuse(
   const std::string & label = std::string(),
   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+  // Other functions
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
@@ -344,6 +364,25 @@ template<class Scalar,
          class Node>
 void setMaxNumEntriesPerRow(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview);
+
+
+  // Kernel wrappers struct
+  // Because C++ doesn't support partial template specialization of functions.
+  template<class Scalar,
+	   class LocalOrdinal,
+	   class GlobalOrdinal,
+	   class Node>
+  struct KernelWrappers {
+    static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,					   
+						  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+						  const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
+						  const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
+						  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+						  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+						  const std::string& label = std::string(),
+						  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    
+  };
 
 }//end namespace MMdetails
 
