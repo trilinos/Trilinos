@@ -85,13 +85,16 @@ template<typename Int, typename Size, typename Sclr> class Tester {
       // True x.
       ut::gen_rand_vector(xt.size(), xt);
       // Generate the rhs b.
+      std::vector<Sclr> y(d.m);
       for (Int irhs = 0; irhs < max_nrhs; ++irhs) {
         const Sclr* const xtp = xt.data() + irhs*d.m;
         Sclr* const bp = b.data() + irhs*ldb;
-        std::vector<Sclr> y(d.m);
         for (Int i = 0; i < d.m; ++i)
           x[i] = xtp[d.q[i]];
         ut::mvp(d, to.transpose, to.conjugate, x.data(), y.data());
+        if (to.has_unit_diag())
+          for (Int i = 0; i < d.m; ++i)
+            y[i] += x[i];
         for (Int i = 0; i < d.m; ++i)
           bp[d.p[i]] = y[i];
         for (Int i = 0; i < d.m; ++i)
@@ -153,7 +156,7 @@ template<typename Int, typename Size, typename Sclr> class Tester {
           ((to.upper && ! to.transpose) || ( ! to.upper && to.transpose)) &&
           d.m > 1 && nnz > static_cast<Size>(d.m) /* not diag */)
         ++nerr;
-      for (int slv = 0; slv < 2; ++slv) {
+      for (int slv = 0; slv <= 2; ++slv) {
         // Check each solve interface.
         switch (slv) {
         case 0:
@@ -192,8 +195,8 @@ template<typename Int, typename Size, typename Sclr> class Tester {
         for (Int i = 0; i < d.m; ++i)
           xbp[i] = bp[i];
       }
-      ihts::solve_serial(T, ! to.upper, xb.data(), to.nrhs, d.p.data(),
-                         d.q.data(), d.r.data(), w.data());
+      ihts::solve_serial(T, ! to.upper, to.has_unit_diag(), xb.data(), to.nrhs,
+                         d.p.data(), d.q.data(), d.r.data(), w.data());
       const double rd = ut::reldif(xt.data(), xb.data(), d.m*to.nrhs);
       if (rd >= tol) {
         ++nerr;
@@ -220,8 +223,8 @@ template<typename Int, typename Size, typename Sclr> class Tester {
     bool correct_exception_thrown = false;
     try {
       test(to, false, true);
-    } catch (const hts::NotFullDiagonal&) {
-      correct_exception_thrown = to.matrix_type == TestOptions::missing_diag;
+    } catch (const hts::NotFullDiagonalException&) {
+      correct_exception_thrown = to.matrix_type == TestOptions::missing_some_diag;
     } catch (const hts::NotTriangularException&) {
       correct_exception_thrown = ut::is_not_tri(to.matrix_type);
     }
@@ -284,13 +287,15 @@ public:
                   to.matrix_type = TestOptions::diag;
                   nerr += test(to, print_options);
                   print_options = false;
-                  to.matrix_type = TestOptions::dense;  nerr += test(to);
+                  to.matrix_type = TestOptions::dense; nerr += test(to);
                   to.matrix_type = TestOptions::sparse; nerr += test(to);
                   to.matrix_type = TestOptions::block_sparse; nerr += test(to);
+                  to.matrix_type = TestOptions::implicit_unit_diag; nerr += test(to);
+                  to.matrix_type = TestOptions::block_sparse_implicit_unit_diag; nerr += test(to);
                   if (to.n > 2) {
                     to.matrix_type = TestOptions::not_tri;
                     nerr += test_for_exception(to);
-                    to.matrix_type = TestOptions::missing_diag;
+                    to.matrix_type = TestOptions::missing_some_diag;
                     nerr += test_for_exception(to);
                     to.matrix_type = TestOptions::not_tri_almost_diag;
                     nerr += test_for_exception(to);

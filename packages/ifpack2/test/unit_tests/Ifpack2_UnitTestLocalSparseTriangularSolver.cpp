@@ -99,7 +99,26 @@ referenceApply (const CrsMatrixType& A,
   }
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareToLocalSolve, Scalar, LocalOrdinal, GlobalOrdinal)
+struct TrisolverDetails {
+  enum Enum { Internal, HTS };
+};
+
+static bool isGblSuccess (const bool success, Teuchos::FancyOStream& out)
+{
+  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int lclSuccess = success ? 1 : 0;
+  int gblSuccess = 0; // to be revised
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return false;
+  }
+  return true;
+}
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
+void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
+                              const TrisolverDetails::Enum trisolverType)
 {
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
@@ -111,8 +130,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareToLocalSol
   typedef Ifpack2::LocalSparseTriangularSolver<row_matrix_type> solver_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename crs_matrix_type::mag_type mag_type;
-  int lclSuccess = 1;
-  int gblSuccess = 1;
 
   out << "Ifpack2::LocalSparseTriangularSolver CompareToLocalSolve" << endl;
   Teuchos::OSTab tab0 (out);
@@ -250,26 +267,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareToLocalSol
         TEST_NOTHROW( A->insertGlobalValues (gblRow, gblColInds, vals) );
       }
 
-      lclSuccess = success ? 1 : 0;
-      gblSuccess = 0; // to be revised
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY( gblSuccess, 1 );
-      if (! gblSuccess) {
-        out << "Aborting test" << endl;
-        return;
-      }
+      if (! isGblSuccess (success, out)) return;
 
       out << "Call fillComplete on the test matrix A" << endl;
 
       TEST_NOTHROW( A->fillComplete () );
-      lclSuccess = success ? 1 : 0;
-      gblSuccess = 0; // to be revised
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY( gblSuccess, 1 );
-      if (! gblSuccess) {
-        out << "Aborting test" << endl;
-        return;
-      }
+      if (! isGblSuccess (success, out)) return;
 
       out << "Make a deep copy of A" << endl;
       // Make a true deep copy of A.  This will help us test whether
@@ -292,37 +295,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareToLocalSol
         TEST_NOTHROW( A_copy = rcp (new crs_matrix_type (rowMap, A->getColMap (), ptr, ind, val)) );
       }
       TEST_ASSERT( ! A_copy.is_null () );
-      lclSuccess = success ? 1 : 0;
-      gblSuccess = 0; // to be revised
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY( gblSuccess, 1 );
-      if (! gblSuccess) {
-        out << "Aborting test" << endl;
-        return;
-      }
+      if (! isGblSuccess (success, out)) return;
 
       out << "Call fillComplete on the deep copy of A" << endl;
       TEST_NOTHROW( A_copy->fillComplete (A->getDomainMap (), A->getRangeMap ()) );
-      lclSuccess = success ? 1 : 0;
-      gblSuccess = 0; // to be revised
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY( gblSuccess, 1 );
-      if (! gblSuccess) {
-        out << "Aborting test" << endl;
-        return;
-      }
+      if (! isGblSuccess (success, out)) return;
 
       out << "Create the solver" << endl;
       RCP<solver_type> solver;
       TEST_NOTHROW( solver = rcp (new solver_type (A)) );
       TEST_ASSERT( ! solver.is_null () );
-      lclSuccess = success ? 1 : 0;
-      gblSuccess = 0; // to be revised
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY( gblSuccess, 1 );
-      if (! gblSuccess) {
-        out << "Aborting test" << endl;
-        return;
+      if (! isGblSuccess (success, out)) return;
+
+      if (trisolverType == TrisolverDetails::HTS) {
+        out << "Set solver parameters" << endl;
+        // This line can throw. It should throw if HTS is not built in.
+        Teuchos::ParameterList pl ("LocalSparseTriangularSolver parameters");
+        pl.set ("trisolver: type", "HTS");
+        try {
+          solver->setParameters (pl);
+        } catch (...) {
+#ifdef HAVE_IFPACK2_SHYLUHTS
+          // This should not happen.
+          isGblSuccess (false, out);
+          return;
+#else
+          // This should happen. Continue with the default solver.
+#endif
+        }
       }
 
       out << "Set up the solver" << endl;
@@ -330,28 +330,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareToLocalSol
       if (success) {
         TEST_NOTHROW( solver->compute () );
       }
-      lclSuccess = success ? 1 : 0;
-      gblSuccess = 0; // to be revised
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY( gblSuccess, 1 );
-      if (! gblSuccess) {
-        out << "Aborting test" << endl;
-        return;
-      }
+      if (! isGblSuccess (success, out)) return;
 
       out << "Make sure that we can call setMatrix with a null input matrix, "
         "and that this resets the solver" << endl;
       TEST_NOTHROW( solver->setMatrix (Teuchos::null) );
       TEST_ASSERT( ! solver->isInitialized () );
       TEST_ASSERT( ! solver->isComputed () );
-      lclSuccess = success ? 1 : 0;
-      gblSuccess = 0; // to be revised
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY( gblSuccess, 1 );
-      if (! gblSuccess) {
-        out << "Aborting test" << endl;
-        return;
-      }
+      if (! isGblSuccess (success, out)) return;
 
       out << "Set up the solver again with the original input matrix A" << endl;
       TEST_NOTHROW( solver->setMatrix (A) );
@@ -359,14 +345,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareToLocalSol
       if (success) {
         TEST_NOTHROW( solver->compute () );
       }
-      lclSuccess = success ? 1 : 0;
-      gblSuccess = 0; // to be revised
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY( gblSuccess, 1 );
-      if (! gblSuccess) {
-        out << "Aborting test" << endl;
-        return;
-      }
+      if (! isGblSuccess (success, out)) return;
+
+      out << "Call compute() on the solver again, testing reuse of the nonzero pattern" << endl;
+      TEST_NOTHROW( solver->compute () );
 
       out << "Test the solver" << endl;
 
@@ -431,33 +413,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareToLocalSol
               Tpetra::deep_copy (Y_copy, Y);
 
               TEST_NOTHROW( solver->apply (X, Y, mode, alpha, beta) );
-
               // Don't continue unless no processes threw.  Otherwise, the
               // test may deadlock if run with multiple MPI processes,
               // since comparing the vectors requires all-reduces.
-              lclSuccess = success ? 1 : 0;
-              gblSuccess = 0; // to be revised
-              reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-              TEST_EQUALITY( gblSuccess, 1 );
-              if (! gblSuccess) {
-                out << "Aborting test" << endl;
-                return;
-              }
+              if (! isGblSuccess (success, out)) return;
 
               // Test against a reference implementation.
               TEST_NOTHROW( referenceApply (*A_copy, X_copy, Y_copy, mode, alpha, beta) );
-
-              // Don't continue unless no processes threw.  Otherwise, the
-              // test may deadlock if run with multiple MPI processes,
-              // since comparing the vectors requires all-reduces.
-              lclSuccess = success ? 1 : 0;
-              gblSuccess = 0; // to be revised
-              reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-              TEST_EQUALITY( gblSuccess, 1 );
-              if (! gblSuccess) {
-                out << "Aborting test" << endl;
-                return;
-              }
+              if (! isGblSuccess (success, out)) return;
 
               // Compare Y and Y_copy.  Compute difference in Y_copy.
               Y_copy.update (ONE, Y, -ONE); // Y_copy := Y - Y_copy
@@ -478,13 +441,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareToLocalSol
   }
 
   // Make sure that all processes succeeded.
-  lclSuccess = success ? 1 : 0;
-  gblSuccess = 0; // to be revised
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  TEST_EQUALITY( gblSuccess, 1 );
-  if (gblSuccess != 1) {
-    out << "The test FAILED on at least one MPI process." << endl;
-  }
+  if (! isGblSuccess (success, out)) return;
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareInternalToLocalSolve, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  testCompareToLocalSolve<Scalar, LocalOrdinal, GlobalOrdinal> (success, out, TrisolverDetails::Internal);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareHTSToLocalSolve, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+#ifdef HAVE_IFPACK2_SHYLUHTS
+  testCompareToLocalSolve<Scalar, LocalOrdinal, GlobalOrdinal> (success, out, TrisolverDetails::HTS);
+#else
+  
+#endif
 }
 
 // Solve Ax = b for x, where A is either upper or lower triangular.
@@ -1375,7 +1346,8 @@ TEUCHOS_UNIT_TEST(LocalSparseTriangularSolver, ArrowMatrix)
 #endif // HAVE_TPETRA_INST_DOUBLE
 
 #define UNIT_TEST_GROUP_SC_LO_GO(SC, LO, GO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareToLocalSolve, SC, LO, GO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareInternalToLocalSolve, SC, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareHTSToLocalSolve, SC, LO, GO)
 
 #include "Ifpack2_ETIHelperMacros.h"
 

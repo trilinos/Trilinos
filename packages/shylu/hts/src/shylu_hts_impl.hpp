@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <limits>
 #include "shylu_hts.hpp"
 
 #ifdef HAVE_SHYLUHTS_MKL
@@ -72,15 +73,20 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     const Size* const ir; // row pointer
     const Int* const jc;  // col
     const Sclr* const d;
-    Direction::Enum dir;
-    bool conj;
+    const Direction::Enum dir;
+    const bool conj;
     mutable typename HTS<Int, Size, Sclr>::Deallocator* deallocator;
+    // Either inferred by determine_shape from the user's matrix, or these data
+    // are propagated.
+    mutable bool unitdiag, is_lo;
 
     ConstCrsMatrix (const Int inrow, const Int incol, const Size* iir,
                     const Int* ijc, const Sclr* id, Direction::Enum idir,
-                    const bool iconj, bool ideallocate)
+                    const bool iconj, bool ideallocate,
+                    const bool unit_diag, const bool is_lower)
       : m(inrow), n(incol), ir(iir), jc(ijc), d(id), dir(idir), conj(iconj),
-        deallocator(0), deallocate_(ideallocate)
+        deallocator(0), unitdiag(unit_diag), is_lo(is_lower),
+        deallocate_(ideallocate)
     {}
     ~ConstCrsMatrix();
 
@@ -118,10 +124,18 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
 
     Partition () : cm(0), A_idxs(0) {}
     ~Partition () { clear(); }
-    void alloc_d();
-    void alloc_A_idxs(const Size nnz);
     void clear();
+
+    void alloc_d();
     void clear_d();
+
+    void alloc_A_idxs(const Size nnz);
+    // Handle implicit unit diag. A_idxs[i] can't point to anything if the i'th
+    // element is a diagonal entry and the matrix has an implicit unit diag.
+    void A_invalidate (const Size& i)
+    { if (A_idxs) A_idxs[i] = std::numeric_limits<Size>::max(); }
+    bool A_valid (const Size& i) const
+    { return A_idxs[i] != std::numeric_limits<Size>::max(); }
   };
 
   // Finds level sets.
@@ -499,7 +513,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   // Top-level solver.
   class TriSolver {
     Int n_;
-    bool is_lo_;
+    bool is_lo_, unitdiag_; // Properties to be discovered of the user's T.
     Int nthreads_;
     Partition p_[2];
 
@@ -544,10 +558,11 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   struct Shape {
     const bool is_lower, is_triangular;
     const bool has_full_diag; // Valid only if is_triangular.
+    const bool has_no_diag;   // Ditto.
     Shape (const bool iis_lower, const bool iis_triangular,
-           const bool ihas_full_diag)
+           const bool ihas_full_diag, const bool ihas_no_diag)
       : is_lower(iis_lower), is_triangular(iis_triangular),
-        has_full_diag(ihas_full_diag) {}
+        has_full_diag(ihas_full_diag), has_no_diag(ihas_no_diag) {}
   };
 
   class PermVec {
@@ -626,6 +641,9 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
   static void get_idxs(const Int n, const LevelSetter& lstr,
                        Array<Int>& lsis, Array<Int>& dpis);
   static Shape determine_shape(const ConstCrsMatrix& A);
+  static void get_matrix_common_with_covers_all(
+    const ConstCrsMatrix& A, const PermVec& pv, const PermVec& qv, Partition& p,
+    const bool get_A_idxs, const bool pp);
   static void get_matrix_pp_with_covers_all(
     const ConstCrsMatrix& A, const PermVec& pv, Partition& p,
     const bool get_A_idxs);
@@ -668,7 +686,10 @@ struct HTS<Int, Size, Sclr>::CrsMatrix
   typedef typename htsimpl::Impl<Int, Size, Sclr>::ConstCrsMatrix CCM;
   CrsMatrix (const Int inrow, const Size* iir, const Int* ijc, const Sclr* id,
              const typename htsimpl::Direction::Enum idir, const bool iconj)
-    : CCM(inrow, inrow, iir, ijc, id, idir, iconj, false)
+    : CCM(inrow, inrow, iir, ijc, id, idir, iconj,
+          false /* don't dealloc */,
+          false /* unknown whether implicit unit diag */,
+          false /* unknown whether lower tri*/)
   {}
 };
 

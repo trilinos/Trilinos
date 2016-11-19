@@ -155,12 +155,36 @@ public:
   LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A,
                                const Teuchos::RCP<Teuchos::FancyOStream>& out);
 
+  /// \brief Constructor that takes no input matrix.
+  ///
+  /// Call setMatrix to initialize the matrix.
+  LocalSparseTriangularSolver ();
+
+  /// \brief Constructor that takes no input matrix.
+  ///
+  /// Call setMatrix to initialize the matrix.
+  ///
+  /// \param unused [in] Disambiguate the constructor so that the ctor taking A
+  ///   can cast A implicitly. This ctor is meant for debugging, so I prefer to
+  ///   make it a bit awkward than require careful explicit casting of A in the
+  ///   other ctor.
+  ///
+  /// \param out [in/out] Optional debug output stream.  If nonnull,
+  ///   this solver will print copious debug output to the stream.
+  LocalSparseTriangularSolver (const bool /* unused */, const Teuchos::RCP<Teuchos::FancyOStream>& out);
+
   //! Destructor (virtual for memory safety).
   virtual ~LocalSparseTriangularSolver ();
 
   /// \brief Set this object's parameters.
   ///
-  /// This object does not currently take any parameters.
+  /// \param plist [in] List of parameters.
+  ///
+  /// If Trilinos_ENABLE_ShyLUHTS=TRUE, then these parameters are available:
+  ///   - "trisolver: type" (\c string): One of {"Internal" (default), "HTS"}.
+  ///   - "trisolver: block size" (\c int): The triangular matrix can usefully be
+  ///     thought of as being blocked int little blocks of this size. Default
+  ///     is 1.
   void setParameters (const Teuchos::ParameterList& params);
 
   /// \brief "Symbolic" phase of setup
@@ -196,7 +220,7 @@ public:
   ///
   /// \param X [in] MultiVector to which to apply the preconditioner.
   /// \param Y [in/out] On input: Initial guess, if applicable.
-  ///   On output: Result of applying the preconditioner.
+  ///   On output: Result of applying the preconditioner. Y may alias X.
   /// \param mode [in] Whether to apply the transpose (Teuchos::TRANS)
   ///   or conjugate transpose (Teuchos::CONJ_TRANS).  The default
   ///   (Teuchos::NO_TRANS) is not to apply the transpose or conjugate
@@ -331,6 +355,10 @@ private:
   double computeTime_;
   double applyTime_;
 
+  //! Optional HTS implementation.
+  class HtsImpl;
+  Teuchos::RCP<HtsImpl> htsImpl_;
+
   /// \brief The purely local part of apply().
   ///
   /// This is where all implementation effort should go.  If you want
@@ -355,6 +383,8 @@ private:
               const Teuchos::ETransp mode,
               const scalar_type& alpha,
               const scalar_type& beta) const;
+
+  void initializeState();
 };
 
 } // namespace Ifpack2

@@ -548,6 +548,7 @@ private:
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
+  void allocateSolvers ();
   void allocate_L_and_U ();
   static void checkOrderingConsistency (const row_matrix_type& A);
   void initAllValues (const row_matrix_type& A);

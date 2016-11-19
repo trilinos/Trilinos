@@ -594,7 +594,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
   superluList.set("ILU_Flag",false);
 #elif defined(HAVE_AMESOS2_KLU2)
   subdomainList.set("Amesos2 solver name","klu");
-  ParameterList &amesos2List = subdomainList.sublist("Amesos2"); // sublist required by Amesos2
+  subdomainList.sublist("Amesos2"); // sublist required by Amesos2
 #else
 #  error "This test requires Amesos2 to have support for either SuperLU or KLU."
 #endif

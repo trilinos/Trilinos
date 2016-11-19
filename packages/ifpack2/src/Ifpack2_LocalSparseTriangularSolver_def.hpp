@@ -45,22 +45,174 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+
+#ifdef HAVE_IFPACK2_SHYLUHTS
+# include "ShyLUHTS_config.h"
+# include "shylu_hts.hpp"
+#endif
 
 namespace Ifpack2 {
+
+namespace Details {
+struct TrisolverType {
+  enum Enum {
+    Internal, //!< Tpetra::CrsMatrix::localSolve
+    HTS       //!< Multicore ShyLU/HTS
+  };
+
+  static void loadPLTypeOption (Teuchos::Array<std::string>& type_strs, Teuchos::Array<Enum>& type_enums) {
+    type_strs.resize(2);
+    type_strs[0] = "Internal";
+    type_strs[1] = "HTS";
+    type_enums.resize(2);
+    type_enums[0] = Internal;
+    type_enums[1] = HTS;
+  }
+};
+}
+
+template<class MatrixType>
+class LocalSparseTriangularSolver<MatrixType>::HtsImpl {
+public:
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
+
+  void reset () {
+#ifdef HAVE_IFPACK2_SHYLUHTS
+    Timpl_ = Teuchos::null;
+    levelset_block_size_ = 1;
+#endif
+  }
+
+  void setParameters (const Teuchos::ParameterList& pl) {
+#ifdef HAVE_IFPACK2_SHYLUHTS
+    if (pl.isType<int>("trisolver: block size"))
+      levelset_block_size_ = pl.get<int>("trisolver: block size");
+    if (levelset_block_size_ < 1)
+      levelset_block_size_ = 1;
+#endif
+  }
+
+  // HTS has the phases symbolic+numeric, numeric, and apply. Hence the first
+  // call to compute() will trigger the symbolic+numeric phase, and subsequent
+  // calls (with the same Timpl_) will trigger the numeric phase. In the call to
+  // initialize(), essentially nothing happens.
+  void initialize (const crs_matrix_type& /* unused */) {
+#ifdef HAVE_IFPACK2_SHYLUHTS
+    reset();
+    transpose_ = conjugate_ = false;
+#endif
+  }
+
+  void compute (const crs_matrix_type& T_in, const Teuchos::RCP<Teuchos::FancyOStream>& out) {
+#ifdef HAVE_IFPACK2_SHYLUHTS
+    using Teuchos::ArrayRCP;
+
+    Teuchos::ArrayRCP<const size_t> rowptr;
+    Teuchos::ArrayRCP<const local_ordinal_type> colidx;
+    Teuchos::ArrayRCP<const scalar_type> val;
+    T_in.getAllValues(rowptr, colidx, val);
+
+    Teuchos::RCP<HtsCrsMatrix> T_hts = Teuchos::rcpWithDealloc(
+      HTST::make_CrsMatrix(rowptr.size() - 1,
+                           rowptr.getRawPtr(), colidx.getRawPtr(), val.getRawPtr(),
+                           transpose_, conjugate_),
+      HtsCrsMatrixDeleter());
+
+    if (Teuchos::nonnull(Timpl_)) {
+      // Reuse the nonzero pattern.
+      HTST::reprocess_numeric(Timpl_.get(), T_hts.get());
+    } else {
+      // Build from scratch.
+      if (T_in.getCrsGraph().is_null()) {
+        if (Teuchos::nonnull(out))
+          *out << "HTS compute failed because T_in.getCrsGraph().is_null().\n";
+        return;
+      }
+      if ( ! T_in.getCrsGraph()->isSorted()) {
+        if (Teuchos::nonnull(out))
+          *out << "HTS compute failed because ! T_in.getCrsGraph().isSorted().\n";
+        return;
+      }
+      if ( ! T_in.isStorageOptimized()) {
+        if (Teuchos::nonnull(out))
+          *out << "HTS compute failed because ! T_in.isStorageOptimized().\n";
+        return;
+      }
+
+      typename HTST::PreprocessArgs args;
+      args.T = T_hts.get();
+      args.max_nrhs = 1;
+      args.nthreads = omp_get_max_threads();
+      args.save_for_reprocess = true;
+      typename HTST::Options opts;
+      opts.levelset_block_size = levelset_block_size_;
+      args.options = &opts;
+
+      try {
+        Timpl_ = Teuchos::rcpWithDealloc(HTST::preprocess(args), TImplDeleter());
+      } catch (const std::exception& e) {
+        if (Teuchos::nonnull(out))
+          *out << "HTS preprocess threw: " << e.what() << "\n";
+      }
+    }
+#endif
+  }
+
+  // HTS may not be able to handle a matrix, so query whether compute()
+  // succeeded.
+  bool isComputed () {
+#ifdef HAVE_IFPACK2_SHYLUHTS
+    return Teuchos::nonnull(Timpl_);
+#else
+    return false;
+#endif
+  }
+
+  // Y := beta * Y + alpha * (M * X)
+  void localApply (const MV& X, MV& Y,
+                   const Teuchos::ETransp mode,
+                   const scalar_type& alpha, const scalar_type& beta) const {
+#ifdef HAVE_IFPACK2_SHYLUHTS
+    const auto& X_view = X.template getLocalView<Kokkos::HostSpace>();
+    const auto& Y_view = Y.template getLocalView<Kokkos::HostSpace>();
+    // Only does something if #rhs > current capacity.
+    HTST::reset_max_nrhs(Timpl_.get(), X_view.dimension_1());
+    // Switch alpha and beta because of HTS's opposite convention.
+    HTST::solve_omp(Timpl_.get(), X_view.data(), X_view.dimension_1(), Y_view.data(), beta, alpha);
+#endif
+  }
+
+private:
+#ifdef HAVE_IFPACK2_SHYLUHTS
+  typedef ::Experimental::HTS<local_ordinal_type, size_t, scalar_type> HTST;
+  typedef typename HTST::Impl TImpl;
+  typedef typename HTST::CrsMatrix HtsCrsMatrix;
+
+  struct TImplDeleter {
+    void free (TImpl* impl) {
+      HTST::delete_Impl(impl);
+    }
+  };
+
+  struct HtsCrsMatrixDeleter {
+    void free (HtsCrsMatrix* T) {
+      HTST::delete_CrsMatrix(T);
+    }
+  };
+
+  Teuchos::RCP<TImpl> Timpl_;
+  bool transpose_, conjugate_;
+  int levelset_block_size_;
+#endif
+};
 
 template<class MatrixType>
 LocalSparseTriangularSolver<MatrixType>::
 LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A) :
-  A_ (A),
-  isInitialized_ (false),
-  isComputed_ (false),
-  numInitialize_ (0),
-  numCompute_ (0),
-  numApply_ (0),
-  initializeTime_ (0.0),
-  computeTime_ (0.0),
-  applyTime_ (0.0)
+  A_ (A)
 {
+  initializeState();
   typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type> crs_matrix_type;
   if (! A.is_null ()) {
@@ -79,16 +231,9 @@ LocalSparseTriangularSolver<MatrixType>::
 LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A,
                              const Teuchos::RCP<Teuchos::FancyOStream>& out) :
   A_ (A),
-  out_ (out),
-  isInitialized_ (false),
-  isComputed_ (false),
-  numInitialize_ (0),
-  numCompute_ (0),
-  numApply_ (0),
-  initializeTime_ (0.0),
-  computeTime_ (0.0),
-  applyTime_ (0.0)
+  out_ (out)
 {
+  initializeState();
   if (! out_.is_null ()) {
     *out_ << ">>> DEBUG Ifpack2::LocalSparseTriangularSolver constructor"
           << std::endl;
@@ -108,14 +253,71 @@ LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A,
 
 template<class MatrixType>
 LocalSparseTriangularSolver<MatrixType>::
+LocalSparseTriangularSolver ()
+{
+  initializeState();
+}
+
+template<class MatrixType>
+LocalSparseTriangularSolver<MatrixType>::
+LocalSparseTriangularSolver (const bool /* unused */, const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+  out_ (out)
+{
+  initializeState();
+  if (! out_.is_null ()) {
+    *out_ << ">>> DEBUG Ifpack2::LocalSparseTriangularSolver constructor"
+          << std::endl;
+  }
+}
+
+template<class MatrixType>
+void LocalSparseTriangularSolver<MatrixType>::initializeState ()
+{
+  isInitialized_ = false;
+  isComputed_ = false;
+  numInitialize_ = 0;
+  numCompute_ = 0;
+  numApply_ = 0;
+  initializeTime_ = 0.0;
+  computeTime_ = 0.0;
+  applyTime_ = 0.0;
+}
+
+template<class MatrixType>
+LocalSparseTriangularSolver<MatrixType>::
 ~LocalSparseTriangularSolver ()
 {}
 
 template<class MatrixType>
 void
 LocalSparseTriangularSolver<MatrixType>::
-setParameters (const Teuchos::ParameterList& /*params*/)
-{}
+setParameters (const Teuchos::ParameterList& pl)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using Teuchos::Array;
+
+  Details::TrisolverType::Enum trisolverType = Details::TrisolverType::Internal;
+  do {
+    static const char typeName[] = "trisolver: type";
+
+    if ( ! pl.isType<std::string>(typeName)) break;
+
+    // Map std::string <-> TrisolverType::Enum.
+    Array<std::string> trisolverTypeStrs;
+    Array<Details::TrisolverType::Enum> trisolverTypeEnums;
+    Details::TrisolverType::loadPLTypeOption (trisolverTypeStrs, trisolverTypeEnums);
+    Teuchos::StringToIntegralParameterEntryValidator<Details::TrisolverType::Enum>
+      s2i(trisolverTypeStrs (), trisolverTypeEnums (), typeName, false);
+
+    trisolverType = s2i.getIntegralValue(pl.get<std::string>(typeName));
+  } while (0);
+
+  if (trisolverType == Details::TrisolverType::HTS) {
+    htsImpl_ = Teuchos::rcp (new HtsImpl ());
+    htsImpl_->setParameters (pl);
+  }
+}
 
 template<class MatrixType>
 void
@@ -153,6 +355,9 @@ initialize ()
     (! G->isFillComplete (), std::runtime_error, "If you call this method, "
      "the matrix's graph must be fill complete.  It is not.");
 
+  if (Teuchos::nonnull (htsImpl_))
+    htsImpl_->initialize (*A_crs_);
+
   isInitialized_ = true;
   ++numInitialize_;
 }
@@ -186,6 +391,9 @@ compute ()
     (! isInitialized_, std::logic_error, prefix << "initialize() should have "
      "been called by this point, but isInitialized_ is false.  "
      "Please report this bug to the Ifpack2 developers.");
+
+  if (Teuchos::nonnull (htsImpl_))
+    htsImpl_->compute (*A_crs_, out_);
 
   isComputed_ = true;
   ++numCompute_;
@@ -303,6 +511,12 @@ localApply (const MV& X,
             const scalar_type& alpha,
             const scalar_type& beta) const
 {
+  if (mode == Teuchos::NO_TRANS && Teuchos::nonnull (htsImpl_) &&
+      htsImpl_->isComputed ()) {
+    htsImpl_->localApply (X, Y, mode, alpha, beta);
+    return;
+  }
+
   using Teuchos::RCP;
   typedef scalar_type ST;
   typedef Teuchos::ScalarTraits<ST> STS;
@@ -399,6 +613,9 @@ description () const
        << A_->getGlobalNumRows () << ", "
        << A_->getGlobalNumCols () << "]";
   }
+
+  if (Teuchos::nonnull (htsImpl_))
+    os << ", HTS computed: " << (htsImpl_->isComputed () ? "true" : "false");
 
   os << "}";
   return os.str ();
@@ -508,6 +725,9 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
       A_crs_ = A_crs;
       A_ = A;
     }
+
+    if (Teuchos::nonnull (htsImpl_))
+      htsImpl_->reset ();
   } // pointers are not the same
 }
 

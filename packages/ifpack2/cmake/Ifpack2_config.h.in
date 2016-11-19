@@ -75,6 +75,8 @@
 /* Define if we have Zoltan2 */
 #cmakedefine HAVE_IFPACK2_ZOLTAN2
 
+/* Define if we have ShyLU/HTS */
+#cmakedefine HAVE_IFPACK2_SHYLUHTS
 
 /*
  * TPL (third-party library) dependencies
