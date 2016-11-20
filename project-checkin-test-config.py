@@ -45,7 +45,6 @@ configuration = {
                 '-DTrilinos_ENABLE_CI_TEST_MODE=ON',
                 '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON',
                 '-DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF',
-                '-DTrilinos_ENABLE_TESTS=ON',
                 '-DTeuchos_ENABLE_DEFAULT_STACKTRACE=OFF',
                 ]),
 
