@@ -118,6 +118,8 @@ namespace {
     typedef Kokkos::View<LO*, device_type> int_vec_type;
     typedef Kokkos::View<IST*, device_type> scalar_vec_type;
 
+    const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
+
     TEST_ASSERT( execution_space::is_initialized () );
     if (! execution_space::is_initialized ()) {
       return; // don't bother to continue
@@ -157,7 +159,7 @@ namespace {
     // Compare the two solutions
     Teuchos::ArrayView<ST> ptr1 (reinterpret_cast<ST*> (A.ptr_on_device ()), 9);
     Teuchos::ArrayView<ST> ptr2 (reinterpret_cast<ST*> (true_A.ptr_on_device ()), 9);
-    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, tol );
     TEST_COMPARE_ARRAYS( ipiv, true_piv );
 
     // Create a RHS
@@ -184,7 +186,7 @@ namespace {
     // Compare the solutions
     Teuchos::ArrayView<ST> ptr3 (reinterpret_cast<ST*> (rhs.ptr_on_device ()), 3);
     Teuchos::ArrayView<ST> ptr4 (reinterpret_cast<ST*> (true_rhs.ptr_on_device ()), 3);
-    TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, 1e-10 );
+    TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, tol );
 
     // Compute the inverse
     scalar_vec_type work("work",3);
@@ -198,7 +200,7 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the inverses
-    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, tol );
   }
 
 
@@ -214,6 +216,8 @@ namespace {
     typedef Kokkos::View<IST**, Kokkos::LayoutLeft, device_type> block_type;
     typedef Kokkos::View<LO*, device_type> int_vec_type;
     typedef Kokkos::View<IST*, device_type> scalar_vec_type;
+
+    const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
 
     TEST_ASSERT( execution_space::is_initialized () );
     if (! execution_space::is_initialized ()) {
@@ -255,7 +259,7 @@ namespace {
     // Compare the two solutions
     Teuchos::ArrayView<ST> ptr1 (reinterpret_cast<ST*> (A.ptr_on_device ()), 9);
     Teuchos::ArrayView<ST> ptr2 (reinterpret_cast<ST*> (true_A.ptr_on_device ()), 9);
-    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, tol );
     TEST_COMPARE_ARRAYS( ipiv, true_piv );
 
     // Create a RHS
@@ -282,7 +286,7 @@ namespace {
     // Compare the solutions
     Teuchos::ArrayView<ST> ptr3 (reinterpret_cast<ST*> (rhs.ptr_on_device ()), 3);
     Teuchos::ArrayView<ST> ptr4 (reinterpret_cast<ST*> (true_rhs.ptr_on_device ()), 3);
-    TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, 1e-10 );
+    TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, tol );
 
     // Compute the inverse
     scalar_vec_type work("work",3);
@@ -296,7 +300,7 @@ namespace {
     TEST_EQUALITY_CONST( info, 0 );
 
     // Compare the inverses
-    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, tol );
   }
 
 
