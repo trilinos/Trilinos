@@ -342,10 +342,12 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, Ind
        const ViewType1& x,
        const ViewType2& y)
   {
+    using Kokkos::Details::ArithTraits;
     static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AXPY: x and y must have the same rank.");
+
     const IndexType numRows = static_cast<IndexType> (y.dimension_0 ());
-    if (alpha != 0.0) {
+    if (alpha != ArithTraits<CoefficientType>::zero ()) {
       for (IndexType i = 0; i < numRows; ++i) {
         y(i) += alpha * x(i);
       }
@@ -368,12 +370,13 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, Ind
        const ViewType1& X,
        const ViewType2& Y)
   {
+    using Kokkos::Details::ArithTraits;
     static_assert (ViewType1::rank == ViewType2::rank,
                    "AXPY: X and Y must have the same rank.");
     const IndexType numRows = static_cast<IndexType> (Y.dimension_0 ());
     const IndexType numCols = static_cast<IndexType> (Y.dimension_1 ());
 
-    if (alpha != 0.0) {
+    if (alpha != ArithTraits<CoefficientType>::zero ()) {
       for (IndexType i = 0; i < numRows; ++i) {
         for (IndexType j = 0; j < numCols; ++j) {
           Y(i,j) += alpha * X(i,j);
@@ -397,7 +400,9 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::
        const ViewType1& X,
        const ViewType2& Y)
   {
-    static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
+    using Kokkos::Details::ArithTraits;
+    static_assert (static_cast<int> (ViewType1::rank) ==
+                   static_cast<int> (ViewType2::rank),
                    "AXPY: X and Y must have the same rank.");
     typedef typename std::decay<decltype (X(0,0)) >::type SX;
     typedef typename std::decay<decltype (Y(0,0)) >::type SY;
@@ -406,7 +411,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::
     const SX* const X_raw = X.ptr_on_device ();
     SY* const Y_raw = Y.ptr_on_device ();
 
-    if (alpha != 0.0) {
+    if (alpha != ArithTraits<CoefficientType>::zero ()) {
       for (IndexType i = 0; i < N; ++i) {
         Y_raw[i] += alpha * X_raw[i];
       }
@@ -428,6 +433,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::L
        const ViewType1& X,
        const ViewType2& Y)
   {
+    using Kokkos::Details::ArithTraits;
     static_assert (ViewType1::rank == ViewType2::rank,
                    "AXPY: X and Y must have the same rank.");
     typedef typename std::decay<decltype (X(0,0)) >::type SX;
@@ -437,7 +443,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::L
     const SX* const X_raw = X.ptr_on_device ();
     SY* const Y_raw = Y.ptr_on_device ();
 
-    if (alpha != 0.0) {
+    if (alpha != ArithTraits<CoefficientType>::zero ()) {
       for (IndexType i = 0; i < N; ++i) {
         Y_raw[i] += alpha * X_raw[i];
       }
