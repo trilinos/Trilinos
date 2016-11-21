@@ -140,11 +140,19 @@ computeBasisValues(typename Traits::EvalData d)
   typedef Intrepid2::CellTools<PHX::exec_space> CTD;
   typedef Intrepid2::FunctionSpaceTools<PHX::exec_space> FST;
 
-  Kokkos::DynRankView<int,PHX::Device> inCell("inCell", 1);
-  Kokkos::DynRankView<double,PHX::Device> physical_points_cell(
-    "physical_points_cell", 1, num_dim);
-  for (size_t i=0; i<num_dim; ++i)
-    physical_points_cell(0,i) = point_[i];
+  const int num_points = 1; // Always a single point in this evaluator!
+  Kokkos::DynRankView<int,PHX::Device> inCell("inCell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points);
+  Kokkos::DynRankView<double,PHX::Device> physical_points_cell("physical_points_cell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points, num_dim);
+  for (size_t cell=0; cell<d.num_cells; ++cell)
+    for (size_t dim=0; dim<num_dim; ++dim)
+      physical_points_cell(cell,0,dim) = point_[dim];
+
+  const double tol = 1.0e-12;
+  CTD::checkPointwiseInclusion(inCell,
+                               physical_points_cell,
+                               this->wda(d).cell_vertex_coordinates.get_view(),
+                               *topology_,
+                               tol);
 
   // Find which cell contains our point
   cellIndex_ = -1;
@@ -155,14 +163,8 @@ computeBasisValues(typename Traits::EvalData d)
     //                              this->wda(d).cell_vertex_coordinates,
     //                              *topology_,
     //                              cell);
-    // const double tol = 1.0e-12;
-    // CTD::checkPointwiseInclusion(inCell,
-    //                              physical_points_cell,
-    //                              this->wda(d).cell_vertex_coordinates.get_view(),
-    //                              *topology_,
-    //                              tol);
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ROGER: checkPointwiseInclusion() broken!!!");
-    if (inCell(0) == 1) {
+
+    if (inCell(cell,0) == 1) {
       cellIndex_ = cell;
       haveProbe = true;
       break;

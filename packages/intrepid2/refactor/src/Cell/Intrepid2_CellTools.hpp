@@ -1368,8 +1368,7 @@ namespace Intrepid2 {
         \param  threshold         [in]  - "tightness" of the inclusion test
     */
     template<typename inCellValueType, class ...inCellProperties,                                                       
-             typename pointValueType, class ...pointProperties,
-             typename cellWorksetValueType, class ...cellWorksetProperties>  
+             typename pointValueType, class ...pointProperties>  
     static void checkPointwiseInclusion( /**/  Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,                     
                                          const Kokkos::DynRankView<pointValueType,pointProperties...> points,                       
                                          const shards::CellTopology cellTopo,                                                       

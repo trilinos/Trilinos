@@ -224,8 +224,7 @@ namespace Intrepid2 {
 
   template<typename SpT>
   template<typename inCellValueType, class ...inCellProperties,
-           typename pointValueType, class ...pointProperties,
-           typename cellWorksetValueType, class ...cellWorksetProperties>
+           typename pointValueType, class ...pointProperties>
   void
   CellTools<SpT>::
   checkPointwiseInclusion( /**/  Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
@@ -234,9 +233,6 @@ namespace Intrepid2 {
                            const double threshold ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inCell.rank() > 1, std::invalid_argument, 
-                                    ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): use checkPointInclusion instead.");  
-
       INTREPID2_TEST_FOR_EXCEPTION( inCell.rank() != (points.rank()-1), std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): rank difference between inCell and points is 1.");  
       const ordinal_type iend = inCell.rank();
