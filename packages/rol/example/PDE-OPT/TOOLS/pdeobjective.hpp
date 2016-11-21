@@ -46,6 +46,7 @@
 
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_CompositeObjective_SimOpt.hpp"
+#include "ROL_LinearCombinationObjective_SimOpt.hpp"
 #include "ROL_StdObjective.hpp"
 #include "integralobjective.hpp"
 #include "qoi.hpp"
@@ -54,7 +55,7 @@
 template <class Real>
 class PDE_Objective : public ROL::Objective_SimOpt<Real> {
 private:
-  const std::vector<Teuchos::RCP<QoI<Real> > > qoi_vec_;
+  std::vector<Teuchos::RCP<QoI<Real> > > qoi_vec_;
   const Teuchos::RCP<ROL::StdObjective<Real> > std_obj_;
   const Teuchos::RCP<Assembler<Real> > assembler_;
 
@@ -72,6 +73,40 @@ public:
       obj_vec_[i] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec[i],assembler));
     }
     obj_ = Teuchos::rcp(new ROL::CompositeObjective_SimOpt<Real>(obj_vec_,std_obj_));
+  }
+
+  PDE_Objective(const std::vector<Teuchos::RCP<QoI<Real> > > &qoi_vec,
+                const Teuchos::RCP<Assembler<Real> > &assembler)
+    : qoi_vec_(qoi_vec), std_obj_(Teuchos::null), assembler_(assembler) {
+    int size = qoi_vec_.size();
+    obj_vec_.clear(); obj_vec_.resize(size,Teuchos::null);
+    for (int i = 0; i < size; ++i) {
+      obj_vec_[i] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec[i],assembler));
+    }
+    obj_ = Teuchos::rcp(new ROL::LinearCombinationObjective_SimOpt<Real>(obj_vec_));
+  }
+
+  PDE_Objective(const std::vector<Teuchos::RCP<QoI<Real> > > &qoi_vec,
+                const std::vector<Real> &weights,
+                const Teuchos::RCP<Assembler<Real> > &assembler)
+    : qoi_vec_(qoi_vec), std_obj_(Teuchos::null), assembler_(assembler) {
+    int size = qoi_vec_.size();
+    obj_vec_.clear(); obj_vec_.resize(size,Teuchos::null);
+    for (int i = 0; i < size; ++i) {
+      obj_vec_[i] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec[i],assembler));
+    }
+    obj_ = Teuchos::rcp(new ROL::LinearCombinationObjective_SimOpt<Real>(weights,obj_vec_));
+  }
+
+  PDE_Objective(const Teuchos::RCP<QoI<Real> > &qoi,
+                const Teuchos::RCP<Assembler<Real> > &assembler)
+    : std_obj_(Teuchos::null), assembler_(assembler) {
+    int size = 1;
+    qoi_vec_.clear(); qoi_vec_.resize(size,Teuchos::null);
+    obj_vec_.clear(); obj_vec_.resize(size,Teuchos::null);
+    qoi_vec_[0] = qoi;
+    obj_vec_[0] = Teuchos::rcp(new IntegralObjective<Real>(qoi_vec_[0],assembler));
+    obj_ = obj_vec_[0];
   }
 
   void setParameter(const std::vector<Real> &param) {
