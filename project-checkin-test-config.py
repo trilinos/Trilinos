@@ -21,8 +21,9 @@ configuration = {
         # Default options that are common to all builds.
         'common': [
             # Shared libs safes a ton of disk space and catches more errors
+            # than static builds.
             '-DBUILD_SHARED_LIBS=ON',
-            # For graceful disables, we want to turn this on
+            # For graceful disables, we want to turn this on.
             '-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON',
             # We want to see tracing of added tests to help in debugging
             # problems.
@@ -35,27 +36,25 @@ configuration = {
         # developers prefer one case to fail earlier than another).
         'default-builds': [
 
-            # Options for the MPI_DEBUG build.
-            ('MPI_RELEASE_DEBUG_SHARED', [
-                '-DTPL_ENABLE_MPI=ON',
-                '-DCMAKE_BUILD_TYPE=RELEASE',
-                '-DTrilinos_ENABLE_DEBUG=ON',
-                '-DBUILD_SHARED_LIBS=ON',
-                '-DTrilinos_ENABLE_DEBUG_SYMBOLS=ON',
-                '-DTrilinos_ENABLE_CI_TEST_MODE=ON',
-                '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON',
-                '-DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF',
-                '-DTeuchos_ENABLE_DEFAULT_STACKTRACE=OFF',
+            ('MPI_RELEASE_DEBUG_SHARED_PT', [
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake',
                 ]),
 
-#            # Options for the SERIAL_RELEASE build.
-#            ('SERIAL_RELEASE_SHARED', [
-#                '-DTPL_ENABLE_MPI:BOOL=OFF',
-#                '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
-#                '-DTrilinos_ENABLE_DEBUG:BOOL=OFF',
-#                '-DBUILD_SHARED_LIBS=ON',
-#                '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF',
-#                ]),
+            ('MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX', [
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake',
+                '-DTrilinos_ENABLE_COMPLEX=ON',
+                ]),
+
+            ## Options for the SERIAL_RELEASE build.
+            #('SERIAL_RELEASE_SHARED', [
+            #    '-DTPL_ENABLE_MPI:BOOL=OFF',
+            #    '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
+            #    '-DTrilinos_ENABLE_DEBUG:BOOL=OFF',
+            #    '-DBUILD_SHARED_LIBS=ON',
+            #    '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF',
+            #    ]),
+            # ToDo: Should we define serial builds to allow developers to run
+            # them if they want?
 
             ], # default-builds
 

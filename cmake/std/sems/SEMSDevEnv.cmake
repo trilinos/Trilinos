@@ -3,24 +3,7 @@
 #
 
 #
-# A) Set up some basic Trilinos options defaults
-#
-
-# All of this was moved to Trilinos/cmake/CallbackSetupExtraOptions.cmake
-
-## Turn off float and complex by default
-#SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-#SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-#SET(Sacado_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-#SET(Thyra_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-#SET(Tpetra_INST_COMPLEX_DOUBLE OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-#SET(Tpetra_INST_COMPLEX_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-#SET(Anasazi_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-## ToDo: Remove the above when Trlinos_ENABLE_FLOAT and Trilinos_ENABLE_COMPLEX
-## are supported and are off by default (see Trilinos #362)
-
-#
-# B) Define the compilers and basic env
+# A) Define the compilers and basic env
 #
 # NOTE: Set up different compilers depending on if MPI is enabled or not.
 #

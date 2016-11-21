@@ -99,25 +99,21 @@ source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
 # B) Set up the bulid configurations
 #
 
-# Leave the COMMON.config file for the user to fil in for any strange aspects
-# to their system not coverted by SEMS (I can't imagine what that might be).
-
-# All of the options needed for the --default-builds=MPI_RELEASE_DEBUG_SHARED
-# is set in project-checkin-test-config.py.
+# Should not need any extra COMMON options on a machine with the SEMS env
+# present.
 echo "
-" > MPI_RELEASE_DEBUG_SHARED.config
+" > COMMON.config
+
+# All of the options needed for the --default-builds
+# MPI_RELEASE_DEBUG_SHARED_PT and MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX are in
+# project-checkin-test-config.py so no need to set them here.  Also note that
+# the SEMS env will be read in automatically because load_ci_sems_dev_env.sh
+# was sourced above.
 
 echo "
--DTPL_ENABLE_MPI=ON
--DCMAKE_BUILD_TYPE=RELEASE
--DTrilinos_ENABLE_DEBUG=ON
--DBUILD_SHARED_LIBS=ON
--DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
--DTrilinos_ENABLE_COMPLEX=ON
--DTrilinos_ENABLE_DEBUG_SYMBOLS=ON
--DTrilinos_ENABLE_CI_TEST_MODE=ON
--DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON
--DTeuchos_ENABLE_DEFAULT_STACKTRACE=OFF
+" > MPI_RELEASE_DEBUG_SHARED_PT.config
+
+echo "
 " > MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX.config
 
 echo "
@@ -199,8 +195,15 @@ fi
 #
 # D) Run the checkin-test.py script!
 #
-# NOTE: default args are read in from the local-checkin-test-defaults.py file!
+# NOTE: default args are read in from the local-checkin-test-defaults.py file
+#
+# NOTE: to run the other PT default builds, use:
+#
+#   --default-builds=MPI_RELEASE_DEBUG_SHARED_PT,MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX
 #
 
 $TRILINOS_DIR/checkin-test.py \
+--default-builds=MPI_RELEASE_DEBUG_SHARED_PT \
 "$@"
+
+
