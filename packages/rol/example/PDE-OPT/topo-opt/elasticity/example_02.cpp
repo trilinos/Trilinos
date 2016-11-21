@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
     opt.setSolutionStatistic(one);
 
     ROL::AugmentedLagrangian<RealT> augLag(opt.getObjective(),
-                                           opt.getEqualityConstraint,
+                                           opt.getEqualityConstraint(),
                                            *c2p,
                                            1,
                                            *opt.getSolutionVector(),
