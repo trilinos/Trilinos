@@ -52,7 +52,7 @@
 
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 // for testing gather/scatter construction
 #include "Panzer_PureBasis.hpp"

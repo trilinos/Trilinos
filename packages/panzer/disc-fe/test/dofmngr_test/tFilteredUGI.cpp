@@ -57,7 +57,7 @@
 
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 

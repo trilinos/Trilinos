@@ -72,7 +72,7 @@
 // Panzer includes
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_FieldPattern.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_FieldAggPattern.hpp"
 

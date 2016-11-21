@@ -48,7 +48,7 @@
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"

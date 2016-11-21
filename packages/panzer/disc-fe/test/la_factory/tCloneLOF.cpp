@@ -53,7 +53,7 @@
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_LinearObjFactory_Utilities.hpp"

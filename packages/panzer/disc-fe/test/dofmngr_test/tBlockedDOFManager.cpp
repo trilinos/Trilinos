@@ -53,7 +53,7 @@
 #include "Phalanx_KokkosUtilities.hpp"
 
 #include "Panzer_BlockedDOFManager.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"
 
 #include "UnitTest_ConnManager.hpp"

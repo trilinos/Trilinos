@@ -56,7 +56,7 @@
 #include "PanzerCore_config.hpp"
 
 #include "Panzer_ConnManager.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 

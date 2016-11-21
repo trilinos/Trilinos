@@ -6,7 +6,7 @@
 
 #include "PanzerCore_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
 
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"

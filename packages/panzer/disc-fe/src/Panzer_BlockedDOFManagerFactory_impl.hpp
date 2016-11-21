@@ -45,7 +45,7 @@
 
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_HashUtils.hpp"
 

@@ -45,7 +45,7 @@
 
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 

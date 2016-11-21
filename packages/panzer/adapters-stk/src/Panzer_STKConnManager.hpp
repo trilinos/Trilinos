@@ -55,7 +55,7 @@
 #include "Panzer_ConnManager.hpp"
 
 #include "Panzer_STK_Interface.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 namespace panzer_stk {
 

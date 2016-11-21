@@ -53,7 +53,7 @@
 #include "Intrepid2_config.h"
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 
 #include "TestFieldPattern.hpp"

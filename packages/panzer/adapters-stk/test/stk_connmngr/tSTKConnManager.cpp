@@ -50,7 +50,7 @@
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Intrepid2_Basis_Const_FEM.hpp"
 

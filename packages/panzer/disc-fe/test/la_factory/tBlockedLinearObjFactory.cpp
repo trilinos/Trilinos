@@ -60,7 +60,7 @@
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_PauseToAttach.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 #include "UnitTest_UniqueGlobalIndexer.hpp"
 

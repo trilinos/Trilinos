@@ -51,7 +51,7 @@
 #include "Phalanx_KokkosUtilities.hpp"
 
 #include "Panzer_FieldAggPattern.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 

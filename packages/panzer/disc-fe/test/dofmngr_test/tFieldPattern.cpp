@@ -51,7 +51,7 @@
 #include "Phalanx_KokkosUtilities.hpp"
 
 #include "Panzer_FieldPattern.hpp"
-#include "Panzer_IntrepidFieldPattern_DynRankView.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 // include some intrepid basis functions
 // 2D basis 
