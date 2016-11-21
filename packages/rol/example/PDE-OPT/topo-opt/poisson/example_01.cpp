@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_02.cpp
-    \brief Shows how to solve the Poisson problem.
+/*! \file  example_01.cpp
+    \brief Shows how to solve the Poisson topology optimization problem.
 */
 
 #include "Teuchos_Comm.hpp"
@@ -58,7 +58,6 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_ScaledStdVector.hpp"
-#include "ROL_Reduced_AugmentedLagrangian_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_CompositeEqualityConstraint_SimOpt.hpp"
@@ -210,13 +209,13 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
     Teuchos::RCP<ROL::Objective<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj,con,up,lp,true,false));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj,con,up,zp,lp,true,false));
 
     // Initialize volume constraint
     Teuchos::RCP<QoI<RealT> > qoi_vol
       = Teuchos::rcp(new QoI_Volume_Poisson_TopOpt<RealT>(pde->getFE(),*parlist));
-    Teuchos::RCP<IntegralConstraint<RealT> > vcon
-      = Teuchos::rcp(new IntegralConstraint<RealT>(qoi_vol,assembler));
+    Teuchos::RCP<IntegralOptConstraint<RealT> > vcon
+      = Teuchos::rcp(new IntegralOptConstraint<RealT>(qoi_vol,assembler));
     // Create volume constraint vector and set to zero
     RealT vecScaling = one / std::pow(domainWidth*domainHeight*(one-volFraction), 2);
     Teuchos::RCP<std::vector<RealT> > scalevec_rcp = Teuchos::rcp(new std::vector<RealT>(1,vecScaling));
@@ -237,7 +236,7 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
 
     // Initialize Augmented Lagrangian functional.
-    ROL::Reduced_AugmentedLagrangian_SimOpt<RealT> augLag(obj,pdeWithFilter,vcon,up,zp,lp,c1p,c2p,1,*parlist);
+    ROL::AugmentedLagrangian<RealT> augLag(robj,vcon,*c2p,1,*zp,*c1p,*parlist);
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);

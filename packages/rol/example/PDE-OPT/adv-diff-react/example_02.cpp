@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,pdeCon.getAssembler()));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp, true, false));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp, true, false));
 
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
                << " seconds." << std::endl << std::endl;
 
     Teuchos::Array<RealT> res(1,0);
-    pdeCon.value(*rp,*up,*zp,tol);
+    pdeCon.solve(*rp,*up,*zp,tol);
     r_rcp->norm2(res.view(0,1));
 
     /*************************************************************************/

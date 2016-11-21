@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
       = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(nx));
     pconSimOpt->setSolveParameters(*parlist);
     Teuchos::RCP<ROL::Objective<RealT> > pObj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,pp));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,zp,pp));
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
     xvec[0]->set(xr);

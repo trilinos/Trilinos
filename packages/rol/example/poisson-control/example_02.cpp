@@ -97,7 +97,7 @@ int main( int argc, char *argv[] ) {
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<double> > pCon
       = Teuchos::rcp(new DiffusionEqualityConstraint<double>(fem));
     Teuchos::RCP<ROL::Objective<double> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<double>(pObj,pCon,u,p));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<double>(pObj,pCon,u,z,p));
     ROL::RiskNeutralObjective<double> obj(robj,sampler);
   
     /***************************************************************************/

@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp, true, false));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp, true, false));
 
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
@@ -298,11 +298,11 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > stateCost
       = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[0],assembler));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > redStateCost
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(stateCost, con, up, pp, true, false));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(stateCost, con, up, zp, pp, true, false));
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > ctrlCost
       = Teuchos::rcp(new IntegralObjective<RealT>(qoi_vec[1],assembler));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > redCtrlCost
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(ctrlCost, con, up, pp, true, false));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(ctrlCost, con, up, zp, pp, true, false));
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler_dist
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp_dist,bounds,bman));
     std::stringstream name;
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
                << " seconds." << std::endl << std::endl;
 
     Teuchos::Array<RealT> res(1,0);
-    pdeCon->value(*rp,*up,*zp,tol);
+    pdeCon->solve(*rp,*up,*zp,tol);
     r_rcp->norm2(res.view(0,1));
 
     /*************************************************************************/

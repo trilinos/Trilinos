@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
        = Teuchos::rcp(new ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP<RealT>(data, filter, parlist));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
-       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, dwp));
+       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, dwp));
     Teuchos::RCP<ROL::EqualityConstraint<RealT> > volcon
        = Teuchos::rcp(new EqualityConstraint_PDEOPT_ElasticitySIMP_Volume<RealT>(data, parlist));
 

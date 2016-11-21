@@ -1034,7 +1034,7 @@ int main(int argc, char *argv[]) {
     // Initialize reduced objective function
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
-    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,cp);
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,xzp,cp);
 
     // Check derivatives.
     obj.checkGradient(x,y,true,*outStream);

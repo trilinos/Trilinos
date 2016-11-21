@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
     bool storage = true, fdhess = false;
     Teuchos::RCP<ROL::Objective<RealT> > robj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(
-          pobj,pcon,up,lp,gup,cp,storage,fdhess));
+          pobj,pcon,up,zp,lp,gup,gzp,cp,storage,fdhess));
     RealT order = 2.0, prob = 0.95;
     Teuchos::RCP<ROL::Objective<RealT> > obj
       = Teuchos::rcp(new ROL::HMCRObjective<RealT>(

@@ -1,8 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
-   ${PROJECT_NAME}_ENABLE_Epetra   AND
-   ${PROJECT_NAME}_ENABLE_Amesos   AND
+   ${PROJECT_NAME}_ENABLE_MueLu   AND
    ${PROJECT_NAME}_ENABLE_Amesos2  AND
    ${PROJECT_NAME}_ENABLE_Tpetra )
 

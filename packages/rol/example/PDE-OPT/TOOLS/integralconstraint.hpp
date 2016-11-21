@@ -152,6 +152,65 @@ public:
     obj_->hessVec_22(ahwv,v,u,z,tol);
     ahwv.scale((*wp)[0]);
   }
-};
+}; // class IntegralConstraint
+
+
+template<class Real>
+class IntegralOptConstraint : public ROL::EqualityConstraint<Real> {
+private:
+  const Teuchos::RCP<QoI<Real> > qoi_;
+  const Teuchos::RCP<Assembler<Real> > assembler_;
+  Teuchos::RCP<IntegralOptObjective<Real> > obj_;
+  Teuchos::RCP<ROL::Vector<Real> > dualZVector_;
+  bool isZvecInitialized_;
+
+public:
+  IntegralOptConstraint(const Teuchos::RCP<QoI<Real> > &qoi,
+                        const Teuchos::RCP<Assembler<Real> > &assembler)
+    : qoi_(qoi), assembler_(assembler), isZvecInitialized_(false) {
+    obj_ = Teuchos::rcp(new IntegralOptObjective<Real>(qoi,assembler));
+  }
+
+  void setParameter(const std::vector<Real> &param) {
+    ROL::EqualityConstraint<Real>::setParameter(param);
+    obj_->setParameter(param);
+  }
+
+  void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &z, Real &tol) {
+    Teuchos::RCP<std::vector<Real> > cp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(c)).getVector();
+    (*cp)[0] = obj_->value(z,tol);
+  }
+
+  void applyJacobian(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
+                     const ROL::Vector<Real> &z, Real &tol ) {
+    if ( !isZvecInitialized_ ) {
+      dualZVector_ = z.dual().clone();
+      isZvecInitialized_ = true;
+    }
+    Teuchos::RCP<std::vector<Real> > jvp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
+    obj_->gradient(*dualZVector_,z,tol);
+    (*jvp)[0] = v.dot(dualZVector_->dual());
+  }
+
+  void applyAdjointJacobian(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
+                            const ROL::Vector<Real> &z, Real &tol ) {
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
+    obj_->gradient(jv,z,tol);
+    jv.scale((*vp)[0]);
+  }
+
+  void applyAdjointHessian(ROL::Vector<Real> &ahwv,
+                           const ROL::Vector<Real> &w, const ROL::Vector<Real> &v, 
+                           const ROL::Vector<Real> &z, Real &tol ) {
+    Teuchos::RCP<const std::vector<Real> > wp =
+      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(w)).getVector();
+    obj_->hessVec(ahwv,v,z,tol);
+    ahwv.scale((*wp)[0]);
+  }
+
+}; // class IntegralOptConstraint
 
 #endif

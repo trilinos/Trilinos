@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
     Teuchos::RCP<ROL::Objective<RealT> > objReduced =
-      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp));
+      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bcon_control =
       Teuchos::rcp(new ROL::BoundConstraint<RealT>(z_lo_p, z_up_p));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bcon_state =

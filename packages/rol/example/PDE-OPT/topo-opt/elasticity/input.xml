@@ -6,6 +6,10 @@
     <Parameter name="Number of output samples"    type="int"     value="4"             />
     <!-- STOCHASTIC INFORMATION -->
     <Parameter name="Number of samples"           type="int"     value="4"             />
+    <Parameter name="Min load perturbation"       type="double"  value="0.0"           />
+    <Parameter name="Max load perturbation"       type="double"  value="1.0"           />
+    <Parameter name="Min angle perturbation"      type="double"  value="0.0"           />
+    <Parameter name="Max angle perturbation"      type="double"  value="90.0"          />
     <!-- PROBLEM INFORMATION -->
     <Parameter name="Young's Modulus"             type="double"  value="1.0"           />
     <Parameter name="Poisson Ratio"               type="double"  value="0.3"           />
@@ -19,6 +23,7 @@
     <Parameter name="Load Width"                  type="string"  value="{1e-2, 1e-2}"  />
     <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
     <Parameter name="Objective Scaling"           type="double"  value="2.2e-2"        />
+    <Parameter name="Use state storage"           type="bool"    value="true"          />
     <Parameter name="Use Filter"                  type="bool"    value="true"          />
     <Parameter name="Filter Radius"               type="double"  value="0.1"           />
     <!-- FINITE ELEMENT INFORMATION -->
@@ -317,6 +322,6 @@
     <Parameter name="Gradient Tolerance"   type="double" value="1.e-3"    />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-5"    />
     <Parameter name="Step Tolerance"       type="double" value="-1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="20"       />
+    <Parameter name="Iteration Limit"      type="int"    value="40"       />
   </ParameterList>
 </ParameterList>

@@ -93,30 +93,43 @@ public:
   }
 
   Real loadFunc(const std::vector<Real> & coords, const int dir, const std::vector<Real> & param) const {
+    Real loadMagNoise(0), loadAngNoise0(0), loadAngNoise1(0);
+    if (param.size() > 0) {
+      loadMagNoise  = param[0];
+    }
+    if (param.size() > 1) {
+      loadAngNoise0 = DegreesToRadians(param[1]);
+    }
+    if (param.size() > 2) {
+      loadAngNoise1 = DegreesToRadians(param[2]);
+    }
+    const Real half(0.5);
+    const Real loadMagnitude = loadMagnitude_ + loadMagNoise;
+    const Real loadAngle0    = loadAngle_[0] + loadAngNoise0;
+    const Real Gx = std::exp(-half*std::pow(coords[0]-loadLocation_[0],2)/std::pow(loadWidth_[0],2));
+    const Real Gy = std::exp(-half*std::pow(coords[1]-loadLocation_[1],2)/std::pow(loadWidth_[1],2));
+
     Real val=0;
     int d = coords.size();
     if (d==2) {
-      Real Gx = std::exp(-std::pow(coords[0]-loadLocation_[0],2)/std::pow(loadWidth_[0],2));
-      Real Gy = std::exp(-std::pow(coords[1]-loadLocation_[1],2)/std::pow(loadWidth_[1],2));
       if (dir==0) {
-        val = loadMagnitude_*std::cos(loadAngle_[0])*Gx*Gy;
+        val = loadMagnitude*std::cos(loadAngle0)*Gx*Gy;
       }
       if (dir==1) {
-        val = loadMagnitude_*std::sin(loadAngle_[0])*Gx*Gy;
+        val = loadMagnitude*std::sin(loadAngle0)*Gx*Gy;
       }
     }
     if (d==3) {
-      Real Gx = std::exp(-std::pow(coords[0]-loadLocation_[0],2)/std::pow(loadWidth_[0],2));
-      Real Gy = std::exp(-std::pow(coords[1]-loadLocation_[1],2)/std::pow(loadWidth_[1],2));
-      Real Gz = std::exp(-std::pow(coords[2]-loadLocation_[2],2)/std::pow(loadWidth_[2],2));
+      const Real loadAngle1 = loadAngle_[1] + loadAngNoise1;
+      const Real Gz = std::exp(-half*std::pow(coords[2]-loadLocation_[2],2)/std::pow(loadWidth_[2],2));
       if (dir==0) {
-        val = loadMagnitude_*std::sin(loadAngle_[0])*std::cos(loadAngle_[1])*Gx*Gy*Gz;
+        val = loadMagnitude*std::sin(loadAngle0)*std::cos(loadAngle1)*Gx*Gy*Gz;
       }
       if (dir==1) {
-        val = loadMagnitude_*std::sin(loadAngle_[0])*std::sin(loadAngle_[1])*Gx*Gy*Gz;
+        val = loadMagnitude*std::sin(loadAngle0)*std::sin(loadAngle1)*Gx*Gy*Gz;
       }
       if (dir==2) {
-        val = loadMagnitude_*std::cos(loadAngle_[0])*Gx*Gy*Gz;
+        val = loadMagnitude*std::cos(loadAngle0)*Gx*Gy*Gz;
       }
     }
     return val;

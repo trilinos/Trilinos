@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_02.cpp
-    \brief Shows how to solve the Poisson problem.
+/*! \file  example_01.cpp
+    \brief Shows how to solve the Poisson control problem.
 */
 
 #include "Teuchos_Comm.hpp"
@@ -56,7 +56,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
@@ -153,7 +152,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize reduced objective function
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp));
 
     // Run derivative checks
     obj->checkGradient(x,d,true,*outStream);

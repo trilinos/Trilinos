@@ -56,7 +56,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
 
 #include "../TOOLS/meshmanager.hpp"

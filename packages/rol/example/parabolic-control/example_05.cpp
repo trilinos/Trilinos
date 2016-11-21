@@ -962,7 +962,7 @@ int main(int argc, char *argv[]) {
     // Initialize reduced objective function
     RCP<ROL::Objective_SimOpt<RealT> > pobj = rcp(&obj,false);
     RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = rcp(&con,false);
-    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,cp);
+    ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,xzp,cp);
 
     // Check deriatives.
     obj.checkGradient(x,y,true);

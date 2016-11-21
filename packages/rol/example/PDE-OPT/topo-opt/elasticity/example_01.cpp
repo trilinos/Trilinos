@@ -57,11 +57,11 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_ScaledStdVector.hpp"
-#include "ROL_Reduced_AugmentedLagrangian_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
+#include "ROL_Reduced_EqualityConstraint_SimOpt.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_CompositeEqualityConstraint_SimOpt.hpp"
 
@@ -215,14 +215,12 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new StdObjective_TopoOpt<RealT>());
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
-    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp, true, false));
 
     // Initialize volume constraint,
     Teuchos::RCP<QoI<RealT> > qoi_vol
       = Teuchos::rcp(new QoI_Volume_TopoOpt<RealT>(pde->getFE(),pde->getFieldHelper(),*parlist));
-    Teuchos::RCP<IntegralConstraint<RealT> > vcon
-      = Teuchos::rcp(new IntegralConstraint<RealT>(qoi_vol,assembler));
+    Teuchos::RCP<IntegralOptConstraint<RealT> > vcon
+      = Teuchos::rcp(new IntegralOptConstraint<RealT>(qoi_vol,assembler));
     // Create volume constraint vector and set to zero
     RealT vecScaling = one / std::pow(domainWidth*domainHeight*(one-volFraction), 2);
     Teuchos::RCP<std::vector<RealT> > scalevec_rcp = Teuchos::rcp(new std::vector<RealT>(1,vecScaling));
@@ -243,7 +241,16 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
 
     // Initialize Augmented Lagrangian functional.
-    ROL::Reduced_AugmentedLagrangian_SimOpt<RealT> augLag(obj,pdeWithFilter,vcon,up,zp,pp,c1p,c2p,1,*parlist);
+    bool storage = parlist->sublist("Problem").get("Use state storage",true);
+    Teuchos::RCP<ROL::SimController<RealT> > stateStore
+      = Teuchos::rcp(new ROL::SimController<RealT>());
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objRed
+      = Teuchos::rcp(new
+        ROL::Reduced_Objective_SimOpt<RealT>(obj,pdeWithFilter,
+                                             stateStore,up,zp,pp,
+                                             storage));
+    ROL::AugmentedLagrangian<RealT> augLag(objRed,vcon,*c2p,1,
+                                           *zp,*c1p,*parlist);
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
@@ -326,15 +333,17 @@ int main(int argc, char *argv[]) {
       pdeWithFilter->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
 
       *outStream << "\n\nCheck Gradient of Reduced Objective Function\n";
-      robj->checkGradient(*zp,*dzp,true,*outStream);
+      objRed->checkGradient(*zp,*dzp,true,*outStream);
       *outStream << "\n\nCheck Hessian of Reduced Objective Function\n";
-      robj->checkHessVec(*zp,*dzp,true,*outStream);
+      objRed->checkHessVec(*zp,*dzp,true,*outStream);
+
       *outStream << "\n\nCheck Full Jacobian of Volume Constraint\n";
-      vcon->checkApplyJacobian(x,d,*c1p,true,*outStream);
+      vcon->checkApplyJacobian(*zp,*dzp,*c1p,true,*outStream);
       *outStream << "\n";
-      vcon->checkAdjointConsistencyJacobian(*c1p,d,x,true,*outStream);
+      vcon->checkAdjointConsistencyJacobian(*c1p,*dzp,*zp,true,*outStream);
       *outStream << "\n\nCheck Full Hessian of Volume Constraint\n";
-      vcon->checkApplyAdjointHessian(x,*c2p,d,x,true,*outStream);
+      vcon->checkApplyAdjointHessian(*zp,*c2p,*dzp,*zp,true,*outStream);
+
       *outStream << "\n\nCheck Gradient of Augmented Lagrangian Function\n";
       augLag.checkGradient(*zp,*dzp,true,*outStream);
       *outStream << "\n\nCheck Hessian of Augmented Lagrangian Function\n";

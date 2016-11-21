@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp, true, false));
+      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp, true, false));
 
     up->zero();
     zp->zero();

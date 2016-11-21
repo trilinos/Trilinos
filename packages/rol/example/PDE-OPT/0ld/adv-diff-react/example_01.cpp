@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
     Teuchos::RCP<ROL::Objective<RealT> > objReduced =
-      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, pp));
+      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, zp, pp));
 
     /*** Check functional interface. ***/
     obj->checkGradient(x,d,true,*outStream);
