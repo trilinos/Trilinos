@@ -1708,6 +1708,7 @@ namespace {
 
     const ST two = STS::one () + STS::one ();
     const ST three = two + STS::one ();
+    const auto tol = 10.0 * STS::eps ();
 
     out << "Testing Tpetra::BlockCrsMatrix::localGaussSeidel "
       "with a matrix whose graph is diagonal" << endl;
@@ -1858,7 +1859,7 @@ namespace {
       ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
       out << "row = " << lclRowInd << endl;
       for (LO k = 0; k < blockSize; ++k) {
-        TEST_FLOATING_EQUALITY( x[k], exactSolution[k], 1e-12 );
+        TEST_FLOATING_EQUALITY( x[k], exactSolution[k], tol );
         x[k] = -STS::one ();
       }
     }
@@ -1870,7 +1871,7 @@ namespace {
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
       ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
       for (LO k = 0; k < blockSize; ++k) {
-        TEST_FLOATING_EQUALITY( x[k], exactSolution[k], 1e-12 );
+        TEST_FLOATING_EQUALITY( x[k], exactSolution[k], tol );
       }
     }
 
@@ -1897,6 +1898,7 @@ namespace {
 
     const ST two = STS::one () + STS::one ();
     const ST three = STS::one () + STS::one () + STS::one ();
+    const auto tol = 10.0 * STS::eps ();
 
     out << "Testing Tpetra::BlockCrsMatrix::localGaussSeidel "
       "with a triangular matrix ( ??? )" << endl;
@@ -2047,7 +2049,7 @@ namespace {
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
       ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
       for (LO k = 0; k < blockSize; ++k) {
-        TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], 1e-12 );
+        TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], tol );
         x[k] = -STS::one ();
       }
     }
@@ -2112,7 +2114,7 @@ namespace {
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
       ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
       for (LO k = 0; k < blockSize; ++k) {
-        TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], 1e-12 );
+        TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], tol );
         x[k] = -STS::one ();
       }
     }
