@@ -280,11 +280,16 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
-    ROL::StochasticProblem<RealT> opt(*parlist,objRed,sampler,zp,bnd);
+    ROL::StochasticProblem<RealT> opt(*parlist,objRed,sampler,zp,bnd,vcon);
     opt.setSolutionStatistic(one);
 
-    ROL::AugmentedLagrangian<RealT> augLag(opt.getObjective(),vcon,*c2p,1,
-                                           *opt.getSolutionVector(),*c1p,*parlist);
+    ROL::AugmentedLagrangian<RealT> augLag(opt.getObjective(),
+                                           opt.getEqualityConstraint,
+                                           *c2p,
+                                           1,
+                                           *opt.getSolutionVector(),
+                                           *c1p,
+                                           *parlist);
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
