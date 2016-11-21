@@ -55,6 +55,9 @@
 #include "ROL_RiskVector.hpp"
 #include "ROL_RiskBoundConstraint.hpp"
 
+// Risk-Less Includes
+#include "ROL_RiskLessEqualityConstraint.hpp"
+
 // BPOE Includes
 #include "ROL_BPOEObjective.hpp"
 
@@ -67,13 +70,15 @@ class StochasticProblem : public OptimizationProblem<Real> {
 private:
   Teuchos::RCP<Teuchos::ParameterList> parlist_;
 
-  Teuchos::RCP<Objective<Real> > ORIGINAL_obj_;
-  Teuchos::RCP<Vector<Real> >                ORIGINAL_vec_;
-  Teuchos::RCP<BoundConstraint<Real> >       ORIGINAL_bnd_;
+  Teuchos::RCP<Objective<Real> >          ORIGINAL_obj_;
+  Teuchos::RCP<Vector<Real> >             ORIGINAL_vec_;
+  Teuchos::RCP<BoundConstraint<Real> >    ORIGINAL_bnd_;
+  Teuchos::RCP<EqualityConstraint<Real> > ORIGINAL_con_;
 
-  Teuchos::RCP<Objective<Real> >       obj_;
-  Teuchos::RCP<Vector<Real> >          vec_;
-  Teuchos::RCP<BoundConstraint<Real> > bnd_;
+  Teuchos::RCP<Objective<Real> >          obj_;
+  Teuchos::RCP<Vector<Real> >             vec_;
+  Teuchos::RCP<BoundConstraint<Real> >    bnd_;
+  Teuchos::RCP<EqualityConstraint<Real> > con_;
 
   Teuchos::RCP<SampleGenerator<Real> > vsampler_;
   Teuchos::RCP<SampleGenerator<Real> > gsampler_;
@@ -85,15 +90,19 @@ public:
   StochasticProblem(void)
     : OptimizationProblem<Real>(),
       parlist_(Teuchos::null),
-      ORIGINAL_obj_(Teuchos::null), ORIGINAL_vec_(Teuchos::null), ORIGINAL_bnd_(Teuchos::null),
-      obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
+      ORIGINAL_obj_(Teuchos::null), ORIGINAL_vec_(Teuchos::null),
+      ORIGINAL_bnd_(Teuchos::null), ORIGINAL_con_(Teuchos::null),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
       vsampler_(Teuchos::null), gsampler_(Teuchos::null), hsampler_(Teuchos::null),
       setVector_(false) {}
 
   StochasticProblem(Teuchos::ParameterList &parlist)
     : OptimizationProblem<Real>(),
-      ORIGINAL_obj_(Teuchos::null), ORIGINAL_vec_(Teuchos::null), ORIGINAL_bnd_(Teuchos::null),
-      obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
+      ORIGINAL_obj_(Teuchos::null), ORIGINAL_vec_(Teuchos::null),
+      ORIGINAL_bnd_(Teuchos::null), ORIGINAL_con_(Teuchos::null),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
       vsampler_(Teuchos::null), gsampler_(Teuchos::null), hsampler_(Teuchos::null),
       setVector_(false) {
     parlist_ = Teuchos::rcpFromRef(parlist);
@@ -104,14 +113,17 @@ public:
                     const Teuchos::RCP<SampleGenerator<Real> > &sampler,
                     const Teuchos::RCP<Vector<Real> > &vec)
     : OptimizationProblem<Real>(),
-      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec), ORIGINAL_bnd_(Teuchos::null),
-      obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(Teuchos::null), ORIGINAL_con_(Teuchos::null),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
       vsampler_(sampler), gsampler_(sampler), hsampler_(sampler),
       setVector_(false) {
     parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(Teuchos::null);
+    setEqualityConstraint(Teuchos::null);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
@@ -120,14 +132,17 @@ public:
                     const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
                     const Teuchos::RCP<Vector<Real> > &vec)
     : OptimizationProblem<Real>(),
-      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec), ORIGINAL_bnd_(Teuchos::null),
-      obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(Teuchos::null), ORIGINAL_con_(Teuchos::null),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(gsampler),
       setVector_(false) {
     parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(Teuchos::null);
+    setEqualityConstraint(Teuchos::null);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
@@ -137,14 +152,17 @@ public:
                     const Teuchos::RCP<SampleGenerator<Real> > &hsampler,
                     const Teuchos::RCP<Vector<Real> > &vec)
     : OptimizationProblem<Real>(),
-      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec), ORIGINAL_bnd_(Teuchos::null),
-      obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(Teuchos::null), ORIGINAL_con_(Teuchos::null),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(hsampler),
       setVector_(false) {
     parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(Teuchos::null);
+    setEqualityConstraint(Teuchos::null);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
@@ -153,14 +171,17 @@ public:
                     const Teuchos::RCP<Vector<Real> > &vec,
                     const Teuchos::RCP<BoundConstraint<Real> > &bnd)
     : OptimizationProblem<Real>(),
-      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec), ORIGINAL_bnd_(bnd),
-      obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(bnd), ORIGINAL_con_(Teuchos::null),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
       vsampler_(sampler), gsampler_(sampler), hsampler_(sampler),
       setVector_(false) {
     parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(bnd);
+    setEqualityConstraint(Teuchos::null);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
@@ -170,14 +191,17 @@ public:
                     const Teuchos::RCP<Vector<Real> > &vec,
                     const Teuchos::RCP<BoundConstraint<Real> > &bnd)
     : OptimizationProblem<Real>(),
-      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec), ORIGINAL_bnd_(bnd),
-      obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(bnd), ORIGINAL_con_(Teuchos::null),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(gsampler),
       setVector_(false) {
     parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(bnd);
+    setEqualityConstraint(Teuchos::null);
   }
 
   StochasticProblem(Teuchos::ParameterList &parlist,
@@ -188,14 +212,140 @@ public:
                     const Teuchos::RCP<Vector<Real> > &vec,
                     const Teuchos::RCP<BoundConstraint<Real> > &bnd)
     : OptimizationProblem<Real>(),
-      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec), ORIGINAL_bnd_(bnd),
-      obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(bnd), ORIGINAL_con_(Teuchos::null),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(hsampler),
       setVector_(false) {
     parlist_ = Teuchos::rcpFromRef(parlist);
     setObjective(obj);
     setSolutionVector(vec);
     setBoundConstraint(bnd);
+    setEqualityConstraint(Teuchos::null);
+  }
+
+  StochasticProblem(Teuchos::ParameterList &parlist,
+                    const Teuchos::RCP<Objective<Real> > &obj,
+                    const Teuchos::RCP<SampleGenerator<Real> > &sampler,
+                    const Teuchos::RCP<Vector<Real> > &vec,
+                    const Teuchos::RCP<EqualityConstraint<Real> > &con)
+    : OptimizationProblem<Real>(),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(Teuchos::null), ORIGINAL_con_(con),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
+      vsampler_(sampler), gsampler_(sampler), hsampler_(sampler),
+      setVector_(false) {
+    parlist_ = Teuchos::rcpFromRef(parlist);
+    setObjective(obj);
+    setSolutionVector(vec);
+    setBoundConstraint(Teuchos::null);
+    setEqualityConstraint(con);
+  }
+
+  StochasticProblem(Teuchos::ParameterList &parlist,
+                    const Teuchos::RCP<Objective<Real> > &obj,
+                    const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
+                    const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
+                    const Teuchos::RCP<Vector<Real> > &vec,
+                    const Teuchos::RCP<EqualityConstraint<Real> > &con)
+    : OptimizationProblem<Real>(),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(Teuchos::null), ORIGINAL_con_(con),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
+      vsampler_(vsampler), gsampler_(gsampler), hsampler_(gsampler),
+      setVector_(false) {
+    parlist_ = Teuchos::rcpFromRef(parlist);
+    setObjective(obj);
+    setSolutionVector(vec);
+    setBoundConstraint(Teuchos::null);
+    setEqualityConstraint(con);
+  }
+
+  StochasticProblem(Teuchos::ParameterList &parlist,
+                    const Teuchos::RCP<Objective<Real> > &obj,
+                    const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
+                    const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
+                    const Teuchos::RCP<SampleGenerator<Real> > &hsampler,
+                    const Teuchos::RCP<Vector<Real> > &vec,
+                    const Teuchos::RCP<EqualityConstraint<Real> > &con)
+    : OptimizationProblem<Real>(),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(Teuchos::null), ORIGINAL_con_(con),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
+      vsampler_(vsampler), gsampler_(gsampler), hsampler_(hsampler),
+      setVector_(false) {
+    parlist_ = Teuchos::rcpFromRef(parlist);
+    setObjective(obj);
+    setSolutionVector(vec);
+    setBoundConstraint(Teuchos::null);
+    setEqualityConstraint(con);
+  }
+
+  StochasticProblem(Teuchos::ParameterList &parlist,
+                    const Teuchos::RCP<Objective<Real> > &obj,
+                    const Teuchos::RCP<SampleGenerator<Real> > &sampler,
+                    const Teuchos::RCP<Vector<Real> > &vec,
+                    const Teuchos::RCP<BoundConstraint<Real> > &bnd,
+                    const Teuchos::RCP<EqualityConstraint<Real> > &con)
+    : OptimizationProblem<Real>(),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(bnd), ORIGINAL_con_(con),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
+      vsampler_(sampler), gsampler_(sampler), hsampler_(sampler),
+      setVector_(false) {
+    parlist_ = Teuchos::rcpFromRef(parlist);
+    setObjective(obj);
+    setSolutionVector(vec);
+    setBoundConstraint(bnd);
+    setEqualityConstraint(con);
+  }
+
+  StochasticProblem(Teuchos::ParameterList &parlist,
+                    const Teuchos::RCP<Objective<Real> > &obj,
+                    const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
+                    const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
+                    const Teuchos::RCP<Vector<Real> > &vec,
+                    const Teuchos::RCP<BoundConstraint<Real> > &bnd,
+                    const Teuchos::RCP<EqualityConstraint<Real> > &con)
+    : OptimizationProblem<Real>(),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(bnd), ORIGINAL_con_(con),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
+      vsampler_(vsampler), gsampler_(gsampler), hsampler_(gsampler),
+      setVector_(false) {
+    parlist_ = Teuchos::rcpFromRef(parlist);
+    setObjective(obj);
+    setSolutionVector(vec);
+    setBoundConstraint(bnd);
+    setEqualityConstraint(con);
+  }
+
+  StochasticProblem(Teuchos::ParameterList &parlist,
+                    const Teuchos::RCP<Objective<Real> > &obj,
+                    const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
+                    const Teuchos::RCP<SampleGenerator<Real> > &gsampler,
+                    const Teuchos::RCP<SampleGenerator<Real> > &hsampler,
+                    const Teuchos::RCP<Vector<Real> > &vec,
+                    const Teuchos::RCP<BoundConstraint<Real> > &bnd,
+                    const Teuchos::RCP<EqualityConstraint<Real> > &con)
+    : OptimizationProblem<Real>(),
+      ORIGINAL_obj_(obj), ORIGINAL_vec_(vec),
+      ORIGINAL_bnd_(bnd), ORIGINAL_con_(con),
+      obj_(Teuchos::null), vec_(Teuchos::null),
+      bnd_(Teuchos::null), con_(Teuchos::null),
+      vsampler_(vsampler), gsampler_(gsampler), hsampler_(hsampler),
+      setVector_(false) {
+    parlist_ = Teuchos::rcpFromRef(parlist);
+    setObjective(obj);
+    setSolutionVector(vec);
+    setBoundConstraint(bnd);
+    setEqualityConstraint(con);
   }
 
   void setParameterList(Teuchos::ParameterList &parlist) {
@@ -342,6 +492,30 @@ public:
       }
       // Set OptimizationProblem data
       OptimizationProblem<Real>::setBoundConstraint(bnd_);
+    }
+  }
+
+  void setEqualityConstraint(const Teuchos::RCP<EqualityConstraint<Real> > &con) {
+    if ( parlist_ == Teuchos::null ) {
+     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+       ">>> ERROR (ROL::StochasticProblem): parameter list not set!");
+    }
+    else {
+      ORIGINAL_con_ = con;
+      // Determine Stochastic Optimization Type
+      std::string type = parlist_->sublist("SOL").get("Stochastic Optimization Type","Risk Neutral");
+      if ( type == "Risk Neutral" || type == "Mean Value" ) {
+        con_ = con;
+      }
+      else if ( type == "Risk Averse" || type == "BPOE" ) {
+        con_ = Teuchos::rcp(new RiskLessEqualityConstraint<Real>(con));
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                                   "Invalid stochastic optimization type" << type);
+      }
+      // Set OptimizationProblem data
+      OptimizationProblem<Real>::setEqualityConstraint(con_);
     }
   }
 
