@@ -584,7 +584,7 @@ public:
     }
     // Update trust-region information;
     // Performs a hard update on the objective function
-    TRflag_   = TRUSTREGION_FLAG_SUCCESS;
+    TRflag_ = TRUSTREGION_FLAG_SUCCESS;
     state->nfval = 0;
     state->ngrad = 0;
     Real fold = algo_state.value;
