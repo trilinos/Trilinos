@@ -100,12 +100,18 @@ inline std::string tolower(const std::string & str) {
   return data;
 }
 
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+template<class Scalar,class KokkosExecutionSpace>
+Teuchos::RCP< Intrepid2::Basis<KokkosExecutionSpace,Scalar,Scalar> > BasisFactory(const std::string & name)
+#else
 template<class Scalar>
-Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name) {
+Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name)
+#endif
+{
     using std::string;
     using Teuchos::rcp;
     string myerror("IntrepidBasisFactory: cannot parse string name '"+name+"'");
-    
+
 
     // Syntax [HGRAD|HCURL|HDIV][_| ][HEX|LINE|POLY|PYR|QUAD|TET|TRI|WEDGE][_| ][C|I][1|2|n]
 
@@ -133,14 +139,27 @@ Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  Basi
     if(degree<=0) throw std::runtime_error(myerror);
 
     // FIXME LATER: Allow for alternative point types for Kirby elements
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     if(deriv=="hgrad" && el=="quad" && poly=="c"){
-      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Scalar,Intrepid2::FieldContainer<Scalar> >());
-      else          return rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<Scalar,Intrepid2::FieldContainer<Scalar> >(degree,Intrepid2::POINTTYPE_EQUISPACED));
+      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<KokkosExecutionSpace,Scalar,Scalar>());
+      else          return rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<KokkosExecutionSpace,Scalar,Scalar>(degree,Intrepid2::POINTTYPE_EQUISPACED));
     }
     else if(deriv=="hgrad" && el=="line" && poly=="c"){
-      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_LINE_C1_FEM<Scalar,Intrepid2::FieldContainer<Scalar> >());
-      else          return rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Scalar,Intrepid2::FieldContainer<Scalar> >(degree,Intrepid2::POINTTYPE_EQUISPACED));
+      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_LINE_C1_FEM<KokkosExecutionSpace,Scalar,Scalar>());
+      else          return rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<KokkosExecutionSpace,Scalar,Scalar>(degree,Intrepid2::POINTTYPE_EQUISPACED));
     }
+#else
+    typedef Intrepid2::FieldContainer<Scalar> ArrayScalar;
+    if(deriv=="hgrad" && el=="quad" && poly=="c"){
+      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Scalar,ArrayScalar>());
+      else          return rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar>(degree,Intrepid2::POINTTYPE_EQUISPACED));
+    }
+    else if(deriv=="hgrad" && el=="line" && poly=="c"){
+      if(degree==1) return rcp(new Intrepid2::Basis_HGRAD_LINE_C1_FEM<Scalar,ArrayScalar>());
+      else          return rcp(new Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>(degree,Intrepid2::POINTTYPE_EQUISPACED));
+    }
+#endif
+
 
     // Error out
     throw std::runtime_error(myerror);
@@ -148,7 +167,37 @@ Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  Basi
 }
 
 /*********************************************************************************************************/
-template <class Scalar, class ArrayScalar>
+
+
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+template<class Scalar,class KokkosDeviceType>
+void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> >&hi_basis,
+			   const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> >&lo_basis,
+			   std::vector<size_t> & lo_node_in_hi,
+			   Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords) {
+  
+  typedef typename KokkosDeviceType::execution_space KokkosExecutionSpace;
+  // Figure out which unknowns in hi_basis correspond to nodes on lo_basis. This varies by element type.
+  size_t degree         = hi_basis->getDegree();
+  lo_node_in_hi.resize(0);
+
+  if(!rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<KokkosExecutionSpace,Scalar,Scalar> >(hi_basis).is_null()) {
+    // HGRAD QUAD Cn: Numbering as per the Kirby convention (straight across, bottom to top) 
+    lo_node_in_hi.insert(lo_node_in_hi.end(),{0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)});
+  }
+  else if(!rcp_dynamic_cast<Intrepid2::Basis_HGRAD_LINE_Cn_FEM<KokkosExecutionSpace,Scalar,Scalar> >(hi_basis).is_null()) {
+    // HGRAD LINE Cn: Numbering as per the Kirby convention (straight across) 
+    lo_node_in_hi.insert(lo_node_in_hi.end(),{0,degree});
+  } 
+  else
+    throw std::runtime_error("IntrepidPCoarsenFactory: Unknown element type");
+  
+  // Get coordinates of the hi_basis dof's
+  Kokkos::Experimental::resize(hi_DofCoords,hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
+  hi_basis->getDofCoords(hi_DofCoords);
+}
+#else
+typedef<class Scalar, class ArrayScalar>
 void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
 			   const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
 			   std::vector<size_t> & lo_node_in_hi,
@@ -175,14 +224,15 @@ void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScala
   hi_DofCoords.resize(hi_basis->getCardinality(),hi_basis->getBaseCellTopology().getDimension());
   hi_dci->getDofCoords(hi_DofCoords);
 }
+#endif
 
 
 /*********************************************************************************************************/
-template <class LocalOrdinal>
-void BuildLoElemToNode(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode,
+  template <class LocalOrdinal, class LOFieldContainer>
+void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
 		       const std::vector<bool> & hi_nodeIsOwned,
 		       const std::vector<size_t> & lo_node_in_hi,
-		       Intrepid2::FieldContainer<LocalOrdinal> & lo_elemToNode,
+		       LOFieldContainer & lo_elemToNode,
 		       std::vector<bool> & lo_nodeIsOwned,
 		       std::vector<LocalOrdinal> & hi_to_lo_map,
 		       int & lo_numOwnedNodes) {
@@ -194,7 +244,7 @@ void BuildLoElemToNode(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemTo
   size_t hi_numNodes = hi_nodeIsOwned.size();
 
   size_t lo_nperel = lo_node_in_hi.size();
-  lo_elemToNode.resize(numElem, lo_nperel);
+  Kokkos::Experimental::resize(lo_elemToNode,numElem, lo_nperel);
 
   // Build lo_elemToNode (in the hi local index ordering) and flag owned ones
   std::vector<bool> is_low_order(hi_numNodes,false);
@@ -291,21 +341,25 @@ void BuildLoElemToNode(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemTo
 /*********************************************************************************************************/
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode, 
+void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GenerateLinearCoarsening_pn_kirby_to_p1(const LOFieldContainer & hi_elemToNode, 
 														 const std::vector<bool> & hi_nodeIsOwned,
-														 const Intrepid2:: FieldContainer<double> hi_DofCoords,
+														 const SCFieldContainer hi_DofCoords,
 														 const std::vector<size_t> &lo_node_in_hi,
-														 const Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > &lo_basis,
+														 const Basis &lo_basis,
 														 const std::vector<LocalOrdinal> & hi_to_lo_map,
 														 const Teuchos::RCP<const Map> & lo_colMap, 
 														 const Teuchos::RCP<const Map> & lo_domainMap, 
 														 const Teuchos::RCP<const Map> & hi_map,
 														 Teuchos::RCP<Matrix>& P) const{
-  typedef Intrepid2::FieldContainer<double> FC;
+  typedef SCFieldContainer FC;
   // Evaluate the linear basis functions at the Pn nodes
   size_t numFieldsHi = hi_elemToNode.dimension(1);
   size_t numFieldsLo = lo_basis.getCardinality();
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+  FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
+#else
   FC LoValues_at_HiDofs(numFieldsLo,numFieldsHi);
+#endif
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
 
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
@@ -376,16 +430,18 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "P Coarsening", coarseLevel);
-
     std::string levelIDs = toString(coarseLevel.GetLevelID());
-
     const std::string prefix = "MueLu::IntrepidPCoarsenFactory(" + levelIDs + "): ";
-    typedef Intrepid2::FieldContainer<LO> FCi;
-    //    typedef Intrepid2::FieldContainer<SC> FC;
-    //    typedef Intrepid2::Basis<SC,FC> Basis;
-    // NOTE: This is hardwired to double on purpose.  See the note below.
+
+    // NOTE: This is hardwired to double on purpose.  See the note below.    
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
+    typedef Kokkos::DynRankView<double,typename Node::device_type> FC;
+#else
+    typedef Intrepid2::FieldContainer<LocalOrdinal> FCi;
     typedef Intrepid2::FieldContainer<double> FC;
-    typedef Intrepid2::Basis<double,FC> Basis;
+#endif
+
 
     GO go_invalid = Teuchos::OrdinalTraits<GO>::invalid();
     LO lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
@@ -419,13 +475,25 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     // Get the Intrepid bases
     // NOTE: To make sure Stokhos works we only instantiate these guys with double.  There's a lot
     // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double,typename Node::device_type::execution_space>(pL.get<std::string>("ipc: hi basis"));
+    RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double,typename Node::device_type::execution_space>(pL.get<std::string>("ipc: lo basis"));
+#else
     RCP<Basis> hi_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("ipc: hi basis"));
     RCP<Basis> lo_basis = MueLuIntrepid::BasisFactory<double>(pL.get<std::string>("ipc: lo basis"));
-
+#endif
     // Get reference coordinates and the lo-to-hi injection list for the reference element
     std::vector<size_t> lo_node_in_hi;
     FC hi_DofCoords;
     MueLuIntrepid::IntrepidGetLoNodeInHi(hi_basis,lo_basis,lo_node_in_hi,hi_DofCoords);
+
+    /*
+  template<class Scalar,class KokkosDeviceType>
+    void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<KokkosDeviceType,Scalar,Scalar> > &hi_basis,
+			       const Teuchos::RCP<Intrepid2::Basis<KokkosDeviceType,Scalar,Scalar> > &lo_basis,
+			       std::vector<size_t> & lo_node_in_hi,
+			       Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords);
+    */
 
     /*******************/    
     // Get the higher-order element-to-node map 

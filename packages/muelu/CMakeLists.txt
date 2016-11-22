@@ -156,6 +156,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable MueLu code refactored to use Kokkos."
   NO)
 
+# Intrepid2 Refactor support
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Intrepid2_Refactor
+  HAVE_${PACKAGE_NAME_UC}_INTREPID2_REFACTOR
+  "Enable Intrepid2 Refactor."
+  ${Intrepid2_ENABLE_KokkosDynRankView})
+
+
+
 IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
   MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
 ENDIF()

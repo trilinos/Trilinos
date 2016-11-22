@@ -61,7 +61,12 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 #include "Intrepid2_Basis.hpp"
+
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+#include "Kokkos_DynRankView.hpp"
+#else
 #include "Intrepid2_FieldContainer.hpp"
+#endif
 
 #include <Xpetra_Import.hpp>
 
@@ -104,7 +109,15 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> LOFieldContainer;
+    typedef Kokkos::DynRankView<double,typename Node::device_type> SCFieldContainer;
+    typedef Intrepid2::Basis<typename Node::device_type::execution_space,double,double> Basis; // Hardwired on purpose
+#else
+    typedef Intrepid2::FieldContainer<LocalOrdinal> LOFieldContainer;
+    typedef Intrepid2::FieldContainer<double> SCFieldContainer;
+    typedef Intrepid2::Basis<double,SCFieldContainer>
+#endif
     //! @name Constructors/Destructors.
     //@{
 
@@ -144,11 +157,11 @@ namespace MueLu {
     //! @name Internal Utilities
     //@{
     // NOTE: This is hardwired to double on purpose.
-    void GenerateLinearCoarsening_pn_kirby_to_p1(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode, 
+    void GenerateLinearCoarsening_pn_kirby_to_p1(const LOFieldContainer & hi_elemToNode, 
 						 const std::vector<bool> & hi_nodeIsOwned,
-						 const Intrepid2:: FieldContainer<double> hi_DofCoords,
+						 const SCFieldContainer hi_DofCoords,
 						 const std::vector<size_t> &lo_node_in_hi,
-						 const Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > &lo_Basis,
+						 const Basis &lo_Basis,
 						 const std::vector<LocalOrdinal> & hi_to_lo_map,
 						 const Teuchos::RCP<const Map> & lo_colMap, 
 						 const Teuchos::RCP<const Map> & lo_domainMap, 
@@ -162,25 +175,39 @@ namespace MueLu {
 
   /* Utility functions for use with Intrepid */
   namespace MueLuIntrepid {
+
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+    template<class Scalar,class KokkosExecutionSpace>
+    Teuchos::RCP<Intrepid2::Basis<KokkosExecutionSpace,Scalar,Scalar> >  BasisFactory(const std::string & name);
+#else
     // NOTE: This function will not work with Stokhos scalar types, due to deficiencies upstream.
     template<class Scalar>
     Teuchos::RCP<Intrepid2::Basis<Scalar,Intrepid2::FieldContainer<Scalar> > >  BasisFactory(const std::string & name);
+#endif
 
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
+    template<class Scalar,class KokkosDeviceType>
+    void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> > &hi_basis,
+			       const Teuchos::RCP<Intrepid2::Basis<typename KokkosDeviceType::execution_space,Scalar,Scalar> > &lo_basis,
+			       std::vector<size_t> & lo_node_in_hi,
+			       Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords);
+#else
     template <class Scalar, class ArrayScalar>
     void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &hi_basis,
 			       const Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayScalar> > &lo_basis,
 			       std::vector<size_t> & lo_node_in_hi,
 			       ArrayScalar & hi_DofCoords);
+#endif
 
-
-    template <class LocalOrdinal>
-    void BuildLoElemToNode(const Intrepid2::FieldContainer<LocalOrdinal> & hi_elemToNode,
+    template <class LocalOrdinal, class LOFieldContainer>
+    void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
 			   const std::vector<bool> & hi_nodeIsOwned,
 			   const std::vector<size_t> & lo_node_in_hi,
-			   Intrepid2::FieldContainer<LocalOrdinal> & lo_elemToNode,
+			   LOFieldContainer & lo_elemToNode,
 			   std::vector<bool> & lo_nodeIsOwned,
 			   std::vector<LocalOrdinal> & hi_to_lo_map,
 			   int & lo_numOwnedNodes);
+
 
     template <class LocalOrdinal, class GlobalOrdinal, class Node> 
     void GenerateColMapFromImport(const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & hi_importer,const std::vector<LocalOrdinal> &hi_to_lo_map,const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & lo_domainMap, const size_t & lo_columnMapLength, RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & lo_columnMap);

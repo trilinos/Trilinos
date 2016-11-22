@@ -85,7 +85,11 @@
 
 //Intrepid
 #ifdef HAVE_MUELU_INTREPID2
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+#include "Kokkos_DynRankView.hpp"
+#else
 #include "Intrepid2_FieldContainer.hpp"
+#endif
 #endif
 
 #include "MueLu_NoFactory.hpp"
@@ -336,8 +340,14 @@ namespace MueLuTests {
       } // Build2DPoisson()
 
 #ifdef HAVE_MUELU_INTREPID2      
-      static RCP<Matrix> Build1DPseudoPoissonHigherOrder(GO nx, int degree,Intrepid2::FieldContainer<LocalOrdinal> & elem_to_node,
-							 Xpetra::UnderlyingLib lib=Xpetra::NotSpecified){
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+     static RCP<Matrix> Build1DPseudoPoissonHigherOrder(GO nx, int degree,Kokkos::DynRankView<LO,typename Node::device_type> & elem_to_node,
+							 Xpetra::UnderlyingLib lib=Xpetra::NotSpecified)
+#else
+     static RCP<Matrix> Build1DPseudoPoissonHigherOrder(GO nx, int degree,Intrepid2::FieldContainer<LocalOrdinal> & elem_to_node,
+							 Xpetra::UnderlyingLib lib=Xpetra::NotSpecified)
+#endif
+      {
 	GO go_invalid=Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 	LO lo_invalid=Teuchos::OrdinalTraits<LO>::invalid();
 
@@ -455,7 +465,11 @@ namespace MueLuTests {
 
 	// Fill elem_to_node using Kirby-style ordering
 	// Ownership rule: I own the element if I own the left node in said element
+#ifdef HAVE_MUELU_INTREPID2_REFACTOR
+	Kokkos::Experimental::resize(elem_to_node,local_num_elements,degree+1);
+#else
 	elem_to_node.resize(local_num_elements,degree+1);
+#endif
 	for(size_t i=0; i<local_num_elements; i++) { 
 	  // End Nodes
 	  // NTS: This only works for lines
