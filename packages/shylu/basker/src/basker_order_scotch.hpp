@@ -590,7 +590,9 @@ namespace BaskerNS
             printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
             printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
           }
-	exit(EXIT_FAILURE);
+      printf(" ShyLU Basker Error: num domains != ideal num domains\n");
+      // Make this throw exception instead
+    	exit(EXIT_FAILURE);
       }
 
 

@@ -1355,9 +1355,9 @@ namespace BaskerNS
       {
 	for(Int j=M.col_ptr[k-bcol]; j<M.col_ptr[k-bcol+1]; j++)
 	  {
-	    //printf("print %d \n", j);
-	    fprintf(fp, "%ld %ld %e \n", 
-		    M.row_idx[j]+1, k-bcol+1, M.val[j]);
+	    //fprintf(fp, "%ld %ld %e \n",  //NDE
+	    fprintf(fp, "%d %d %e \n", 
+		    M.row_idx[j]+1, k-bcol+1, M.val[j]); //NDE - warning: arg 3, 4 type 'int' but expects %ld
 	  }//over nnz in each column
       }//over each column
 

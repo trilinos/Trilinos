@@ -528,7 +528,7 @@ namespace BaskerNS
     
     //Get needed variables
     const Int L_col = S(l)(kid);
-    const Int L_row = 0;
+//    const Int L_row = 0; //NDE - warning: unused 
     const Int U_col = S(lvl)(kid);
 
     Int my_row_leader = S(0)(find_leader(kid,lvl-1));
@@ -547,7 +547,7 @@ namespace BaskerNS
     #endif
     //end get needed variables//
 
-    BASKER_MATRIX        &L = LL(L_col)(L_row);
+    //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L
     BASKER_MATRIX        &U = LU(U_col)(U_row); 
     
     //Ask C++ guru if this is ok
@@ -1216,7 +1216,8 @@ namespace BaskerNS
     Int *pattern   = &(color[ws_size]);
 
     Int i,j;
-    Int top, top1, maxindex, t;
+//    Int top, top1, maxindex, t; //NDE - warning: top1 set but unused
+    Int top, maxindex, t;
     Int lnnz, unnz, xnnz, lcnt, ucnt;
     Int cu_ltop, cu_utop;
 
@@ -1229,7 +1230,7 @@ namespace BaskerNS
     cu_ltop = lval;
     cu_utop = uval;
     top = ws_size;
-    top1 = ws_size;
+//    top1 = ws_size; //NDE - warning: top1 set but unused
     
     lnnz = lval;
     unnz = uval;
@@ -3057,42 +3058,34 @@ namespace BaskerNS
    const Int l
    )
   {
-    
     //printf("before call. lkid: %d kid: %d task: %d size: %d k: %d \n",
     //	       leader_kid, my_kid, function_n, size, k);
-    
 
     #ifdef HAVE_VTUNE
     //__itt_pause();
     #endif
 
-
-	//if(size < 0)
-     if(size <= thread.team_size())
-      {
-	thread.team_barrier();
-      }
+    //if(size < 0)
+    if(size <= thread.team_size())
+    {
+      thread.team_barrier();
+    }
     else
-      {
-	
-	
-	basker_barrier.BarrierDomain
-	  (
-	   leader_kid,
-	   my_kid, 
-	   function_n,
-	   size, 
-	   k, l
-	   );
-	
-	
-      }
+    {
 
+      basker_barrier.BarrierDomain
+        (
+         leader_kid,
+         my_kid, 
+         function_n,
+         size, 
+         k, l
+        );
+    }
 
     #ifdef HAVE_VTUNE
     //__itt_resume();
     #endif
-
 
   }//end t_basker_barrier
 
@@ -3110,26 +3103,23 @@ namespace BaskerNS
    )
   {
 
-
     if(size <= thread.team_size())
-      {
-	thread.team_barrier();
-      }
+    {
+      thread.team_barrier();
+    }
     else
-      {
+    {
 
-	//basker_barrier.Barrier(leader_kid, 
+      //basker_barrier.Barrier(leader_kid, 
 
-
-	/* Old Atomic Barrier
-	BaskerBarrier<Int,Entry,Exe_Space> BB;
-	BB.Barrier(thread_array[leader_kid].token[sublvl][function_n],
-		   thread_array[leader_kid].token[sublvl][1],
-		   size);
-	*/
-      }
+      /* Old Atomic Barrier
+         BaskerBarrier<Int,Entry,Exe_Space> BB;
+         BB.Barrier(thread_array[leader_kid].token[sublvl][function_n],
+         thread_array[leader_kid].token[sublvl][1],
+         size);
+         */
+    }
   }//end t_basker_barrier()
-  
 
 
 }//end namespace BaskerNS--functions

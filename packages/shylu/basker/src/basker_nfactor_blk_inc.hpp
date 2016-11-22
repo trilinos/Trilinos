@@ -135,7 +135,8 @@ namespace BaskerNS
     Int          uval  = 0;
 
     Int i,j,k;
-    Int top, top1, maxindex, t; 
+//    Int top, top1, maxindex, t;  //NDE - warning: top1 set but not used
+    Int top, maxindex, t; 
     Int lnnz, unnz, xnnz, lcnt, ucnt;
     Int cu_ltop, cu_utop;
    
@@ -162,7 +163,7 @@ namespace BaskerNS
     cu_ltop = lval;
     cu_utop = uval;
     top = ws_size;
-    top1 = ws_size;
+//    top1 = ws_size; //NDE - warning: top1 set but not used
     
     lnnz = lval;
     unnz = uval;
@@ -671,7 +672,8 @@ namespace BaskerNS
     
 
     Int i, t, head, i1;
-    Int start, end, done;
+//    Int start, end, done; //NDE - warning: done set but unused
+    Int start, end;
 
 
     Int inc_lvl = 0;
@@ -744,7 +746,7 @@ namespace BaskerNS
 	    BASKER_ASSERT(inc_lvl >= 0, 
 			  "inc_lvl too small 2");
 	  }
-	done = 1;
+//	done = 1; //NDE - warning: set but unused
 	
 
 	if(inc_lvl <= Options.inc_lvl)
@@ -1565,7 +1567,7 @@ namespace BaskerNS
 
     Int *color   = &(ws(0));
     Int *pattern = &(color[ws_size]);
-    Int *stack   = &(pattern[ws_size]);
+//    Int *stack   = &(pattern[ws_size]); //NDE - warning: unused
    
     //Fill Colog with correct index marks from already L
     for(Int i = L.col_ptr(k); i < L.col_ptr(k+1); i++)
@@ -2758,7 +2760,7 @@ namespace BaskerNS
    
     Int *color =   &(ws(0));
     Int *pattern = &(color[ws_size]);
-    Int *stack   = &(pattern[ws_size]); //Temp store the fill-in
+//    Int *stack   = &(pattern[ws_size]); //Temp store the fill-in //NDE - warning: unused
     
     //For Debug
     /*
@@ -3214,7 +3216,7 @@ namespace BaskerNS
     INT_1DARRAY   ws    = LL(X_col)(X_row).iws;
     ENTRY_1DARRAY X     = LL(X_col)(X_row).ews;
     const Int   ws_size = LL(X_col)(X_row).iws_size;
-    const Int   p_size  = LL(X_col)(X_row).p_size;
+    //const Int   p_size  = LL(X_col)(X_row).p_size; //NDE - warning: unused
 
 
    
@@ -3235,9 +3237,10 @@ namespace BaskerNS
     if(L.nrow > (llnnz - lnnz))
       {
 	printf("no enough memory in dense \n");
-	printf("kid: %d llnnz: %d lnnz: %d \n",
-	       kid, lnnz, lnnz);
-	
+//	printf("kid: %ld llnnz: %ld lnnz: %ld \n",kid, llnnz, lnnz);
+  std::cout << "kid: " << kid
+            << " llnz: " << llnnz
+            << " lnz: " << lnnz << std::endl;
 
       }
     
@@ -3467,7 +3470,7 @@ namespace BaskerNS
 	  }
 	*/
 
-	
+	//NDE Unnecessary...
 	if(flvl+1 > Options.inc_lvl)
 	  {
 	    //printf("Continued skip because too large\n");
@@ -3844,11 +3847,11 @@ namespace BaskerNS
 	
 	for(Int blk = l+1; blk < endblk; ++blk)
 	  {
-	    ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews;
+//	    ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews; //NDE - warning: unused
 	    INT_1DARRAY  &wsL = LL(leader_idx)(blk).iws;
 	    //Int      p_sizeL  = LL(leader_idx)(blk).p_size;
 	    Int      ws_sizeL = LL(leader_idx)(blk).iws_size;
-	    ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews;
+//	    ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews; //NDE - warning: unused
 	    INT_1DARRAY   &ws = LL(my_idx)(blk).iws;
 	    const Int ws_size = LL(my_idx)(blk).iws_size;
 	    //Int       p_size  = LL(my_idx)(blk).p_size;
@@ -3961,7 +3964,7 @@ namespace BaskerNS
 	//printf("===========T ADD ORIG FILL CALLED\n");
 	const Int leader_id  = find_leader(kid, l);
 	//const Int lteam_size = pow(2,l+1);
-	const Int L_col      = S(lvl-1)(leader_id);
+//	const Int L_col      = S(lvl-1)(leader_id); //NDE - warning: unused
 	//Int L_row             = 0;
 	//const Int U_col      = S(lvl)(leader_id); 
 	//Int U_row            = LU_size(U_col)-1;
