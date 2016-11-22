@@ -122,15 +122,15 @@ public:
    void setOwnedVector_Epetra(const Teuchos::RCP<const Epetra_Vector>&
       ownedVector);
 
-   //! Get the owned vector (Epetra version)
-   Teuchos::RCP<const Epetra_Vector> getOwnedVector_Epetra() const;
-
    //! Get the ghosted vector (Epetra version)
    Teuchos::RCP<Epetra_Vector> getGhostedVector_Epetra() const;
 
    //! Set the owned vector (Thyra version)
    void setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >&
       ownedVector);
+
+   //! Get the owned map.
+   Teuchos::RCP<const Epetra_Map> getOwnedMap() const;
 
    //! Get the owned vector (Thyra version)
    Teuchos::RCP<const Thyra::VectorBase<double> > getOwnedVector() const;

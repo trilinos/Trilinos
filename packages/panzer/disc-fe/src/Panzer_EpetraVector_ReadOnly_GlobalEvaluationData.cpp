@@ -105,19 +105,6 @@ setOwnedVector_Epetra(const Teuchos::RCP<const Epetra_Vector>& ownedVector)
   ownedVector_ = Thyra::create_Vector(ownedVector, ownedSpace_);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
-//  getOwnedVector_Epetra()
-//
-///////////////////////////////////////////////////////////////////////////////
-Teuchos::RCP<const Epetra_Vector> EpetraVector_ReadOnly_GlobalEvaluationData::
-getOwnedVector_Epetra() const
-{
-  TEUCHOS_ASSERT(isInitialized_);
-  TEUCHOS_ASSERT(ownedVector_ != Teuchos::null);
-  return Thyra::get_Epetra_Vector(*ownedMap_, ownedVector_);
-} // end of getOwnedVector_Epetra()
-
 Teuchos::RCP<Epetra_Vector> 
 EpetraVector_ReadOnly_GlobalEvaluationData::
 getGhostedVector_Epetra() const
@@ -143,6 +130,18 @@ setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >&
   std::cout << std::endl;
 */
 }
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getOwnedMap()
+//
+///////////////////////////////////////////////////////////////////////////////
+Teuchos::RCP<const Epetra_Map> EpetraVector_ReadOnly_GlobalEvaluationData::
+getOwnedMap() const
+{
+  TEUCHOS_ASSERT(isInitialized_);
+  return ownedMap_;
+} // end of getOwnedMap()
 
 Teuchos::RCP<const Thyra::VectorBase<double> > 
 EpetraVector_ReadOnly_GlobalEvaluationData::

@@ -183,9 +183,10 @@ preEvaluate(typename TRAITS::PreEvalData d)
 //    0x000000000518da92 in typeinfo for Thyra::LinearOpBase<double> ()
 //
 ///////////////////////////////////////////////////////////////////////////////
-    xOwned_   = ro_ged->getOwnedVector_Epetra();                                 // JMG:  Problem child.
+    ownedMap_ = ro_ged->getOwnedMap();
+    xOwned_   = ro_ged->getOwnedVector();                                        // JMG:  Problem child.
     xGhosted_ = ro_ged->getGhostedVector_Epetra();
-    x_ = ro_ged->getGhostedVector_Epetra();
+    x_        = ro_ged->getGhostedVector_Epetra();
     return;
   }
 
@@ -218,9 +219,10 @@ preEvaluate(typename TRAITS::PreEvalData d)
   {
     RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged =
       rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged, true);
-    xOwned_   = ro_ged->getOwnedVector_Epetra();
+    ownedMap_ = ro_ged->getOwnedMap();
+    xOwned_   = ro_ged->getOwnedVector();
     xGhosted_ = ro_ged->getGhostedVector_Epetra();
-    x_ = ro_ged->getGhostedVector_Epetra();
+    x_        = ro_ged->getGhostedVector_Epetra();
   }
 }
 
@@ -264,21 +266,21 @@ evaluateFields(typename TRAITS::EvalData workset)
         int lid    = LIDs[offset];
         if (x_.is_null())
         {
-          const Epetra_Vector& xOwned   = *xOwned_;
-          Epetra_Vector&       xGhosted = *xGhosted_;
           if (lid < numOwnedIndices)
+          {
+            Teuchos::RCP<const Epetra_Vector> xOwned =
+              Thyra::get_Epetra_Vector(*ownedMap_, xOwned_);
             (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
-              xOwned[lid];
+              (*xOwned)[lid];
+          }
           else
             (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
-//              xGhosted[lid - numOwnedIndices];                                 // JMG:  This is what it should be but it's
-              xGhosted[lid];                                                     //       commented out because I'm trying to get
+//              (*xGhosted_)[lid - numOwnedIndices];                             // JMG:  This is what it should be but it's
+              (*xGhosted_)[lid];                                                 //       commented out because I'm trying to get
         }                                                                        //       things working where xGhosted_ is
         else                                                                     //       actually the owned and ghosted indices.
-        {
-          Epetra_Vector& x = *x_;
-          (gatherFields_[fieldIndex])(worksetCellIndex, basis) = x[lid];
-        }
+          (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
+            (*x_)[lid];
       }
     }
   }

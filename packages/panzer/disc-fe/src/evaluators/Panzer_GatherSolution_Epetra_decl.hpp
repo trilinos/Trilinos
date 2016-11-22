@@ -43,6 +43,8 @@
 #ifndef PANZER_EVALUATOR_GATHER_SOLUTION_EPETRA_DECL_HPP
 #define PANZER_EVALUATOR_GATHER_SOLUTION_EPETRA_DECL_HPP
 
+#include "Epetra_Map.h"
+
 #include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
@@ -55,6 +57,8 @@
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
+
+#include "Thyra_VectorBase.hpp"
 
 class Epetra_Vector;
 class Epetra_CrsMatrix;
@@ -124,9 +128,10 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<Epetra_Vector>       x_;
-  Teuchos::RCP<const Epetra_Vector> xOwned_;
-  Teuchos::RCP<Epetra_Vector>       xGhosted_;
+  Teuchos::RCP<Epetra_Vector>                   x_;
+  Teuchos::RCP<const Epetra_Map>                ownedMap_;
+  Teuchos::RCP<const Thyra::VectorBase<double>> xOwned_;
+  Teuchos::RCP<Epetra_Vector>                   xGhosted_;
 
   // Fields for storing tangent components dx/dp of solution vector x
   // These are not actually used by the residual specialization of this evaluator,
