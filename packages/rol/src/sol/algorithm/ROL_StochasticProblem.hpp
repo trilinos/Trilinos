@@ -502,17 +502,22 @@ public:
     }
     else {
       ORIGINAL_con_ = con;
-      // Determine Stochastic Optimization Type
-      std::string type = parlist_->sublist("SOL").get("Stochastic Optimization Type","Risk Neutral");
-      if ( type == "Risk Neutral" || type == "Mean Value" ) {
-        con_ = con;
-      }
-      else if ( type == "Risk Averse" || type == "BPOE" ) {
-        con_ = Teuchos::rcp(new RiskLessEqualityConstraint<Real>(con));
+      if ( con != Teuchos::null ) {
+        // Determine Stochastic Optimization Type
+        std::string type = parlist_->sublist("SOL").get("Stochastic Optimization Type","Risk Neutral");
+        if ( type == "Risk Neutral" || type == "Mean Value" ) {
+          con_ = con;
+        }
+        else if ( type == "Risk Averse" || type == "BPOE" ) {
+          con_ = Teuchos::rcp(new RiskLessEqualityConstraint<Real>(con));
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                                     "Invalid stochastic optimization type" << type);
+        }
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                                   "Invalid stochastic optimization type" << type);
+        con_ = con;
       }
       // Set OptimizationProblem data
       OptimizationProblem<Real>::setEqualityConstraint(con_);
