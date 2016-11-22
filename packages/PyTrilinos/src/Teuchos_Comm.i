@@ -371,10 +371,15 @@ Comm = Comm_int
 SerialComm = SerialComm_int
 %}
 
+/////////////////////////////////////
+// Teuchos::EReductionType support //
+/////////////////////////////////////
+%rename(reductionTypeToString) Teuchos::toString;
+%include "Teuchos_EReductionType.hpp"
+
 //////////////////////////////////
 // Teuchos::Comm Helper support //
 //////////////////////////////////
-%rename(reductionTypeToString) Teuchos::toString;
 %include "Teuchos_CommHelpers.hpp"
 %template(rank_int   ) Teuchos::rank<int>;
 %template(size_int   ) Teuchos::size<int>;
