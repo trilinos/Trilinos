@@ -350,7 +350,7 @@ public:
 
   /** \brief MDMap accessor method
    */
-  const Teuchos::RCP< const MDMap< Node > >
+  inline const Teuchos::RCP< const MDMap< Node > >
   getMDMap() const;
 
   /** \brief Query whether this processor is on the sub-communicator
@@ -359,7 +359,7 @@ public:
    * using the (parent,ordinal) or (parent,slice) constructors.  For a
    * full communicator, this method will always return true.
    */
-  bool onSubcommunicator() const;
+  inline bool onSubcommunicator() const;
 
   /** \brief Get the Teuchos communicator
    *
@@ -367,7 +367,7 @@ public:
    * sub-communicator, that the underlying Comm pointer may be NULL,
    * depending on this processor's rank.
    */
-  Teuchos::RCP< const Teuchos::Comm< int > > getTeuchosComm() const;
+  inline Teuchos::RCP< const Teuchos::Comm< int > > getTeuchosComm() const;
 
   /** \brief Get the number of dimensions
    *
@@ -375,7 +375,7 @@ public:
    * sub-communicator and this processor does not belong to the
    * sub-communicator.
    */
-  int numDims() const;
+  inline int numDims() const;
 
   /** \brief Get the communicator size along the given axis
    *
@@ -386,7 +386,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getCommDim(int axis) const;
+  inline int getCommDim(int axis) const;
 
   /** \brief Return the periodic flag for the given axis.
    *
@@ -397,7 +397,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  bool isPeriodic(int axis) const;
+  inline bool isPeriodic(int axis) const;
 
   /** \brief Get the axis rank of this processor
    *
@@ -408,7 +408,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getCommIndex(int axis) const;
+  inline int getCommIndex(int axis) const;
 
   /** \brief Get the rank of the lower neighbor
    *
@@ -426,7 +426,7 @@ public:
    * of the calling processor is the highest axis rank processor along
    * this axis, then the returned lower neighbor will be zero.
    */
-  int getLowerNeighbor(int axis) const;
+  inline int getLowerNeighbor(int axis) const;
 
   /** \brief Get the rank of the upper neighbor
    *
@@ -445,7 +445,7 @@ public:
    * of the calling processor is zero, then the returned lower
    * neighbor will be the highest axis rank processor along this axis.
    */
-  int getUpperNeighbor(int axis) const;
+  inline int getUpperNeighbor(int axis) const;
 
   /** \brief Get the global dimension along the specified axis
    *
@@ -455,7 +455,7 @@ public:
    * \param withBndryPad [in] specify whether the dimension should
    *        include boundary padding or not
    */
-  dim_type getGlobalDim(int axis, bool withBndryPad=false) const;
+  inline dim_type getGlobalDim(int axis, bool withBndryPad=false) const;
 
   /** \brief Get the bounds of the global problem
    *
@@ -465,7 +465,7 @@ public:
    * \param withBndryPad [in] specify whether the bounds should
    *        include boundary padding or not
    */
-  Slice getGlobalBounds(int axis, bool withBndryPadding=false) const;
+  inline Slice getGlobalBounds(int axis, bool withBndryPadding=false) const;
 
   /** \brief Get the global loop bounds on this processor along the
    *         specified axis
@@ -481,7 +481,7 @@ public:
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getGlobalRankBounds(int axis, bool withBndryPad=false) const;
+  inline Slice getGlobalRankBounds(int axis, bool withBndryPad=false) const;
 
   /** \brief Get the local dimension along the specified axis
    *
@@ -491,7 +491,7 @@ public:
    * \param withCommPad [in] specify whether the dimension should
    *        include communication padding or not
    */
-  dim_type getLocalDim(int axis, bool withCommPad=false) const;
+  inline dim_type getLocalDim(int axis, bool withCommPad=false) const;
 
   /** \brief Get the local loop bounds along every axis
    *
@@ -500,7 +500,7 @@ public:
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.  For this method, padding is included in the bounds.
    */
-  Teuchos::ArrayView< const Slice > getLocalBounds() const;
+  inline Teuchos::ArrayView< const Slice > getLocalBounds() const;
 
   /** \brief Get the local looping bounds along the specified axis
    *
@@ -515,7 +515,7 @@ public:
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getLocalBounds(int axis, bool withPad=false) const;
+  inline Slice getLocalBounds(int axis, bool withPad=false) const;
 
   /** \brief Get the local interior looping bounds along the specified
    *         axis
@@ -534,7 +534,7 @@ public:
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getLocalInteriorBounds(int axis) const;
+  inline Slice getLocalInteriorBounds(int axis) const;
 
   /** \brief Return true if there is any padding stored locally
    *
@@ -546,7 +546,7 @@ public:
    * specified but boundary padding was, then boundary processors will
    * have padding and this method will return true.
    */
-  bool hasPadding() const;
+  inline bool hasPadding() const;
 
   /** \brief Get the size of the lower padding along the given axis
    *
@@ -556,7 +556,7 @@ public:
    * Note that the returned padding can be either communication
    * padding or boundary padding as appropriate.
    */
-  int getLowerPadSize(int axis) const;
+  inline int getLowerPadSize(int axis) const;
 
   /** \brief Get the size of the upper padding along the given axis
    *
@@ -566,7 +566,7 @@ public:
    * Note that the returned padding can be either communication
    * padding or boundary padding as appropriate.
    */
-  int getUpperPadSize(int axis) const;
+  inline int getUpperPadSize(int axis) const;
 
   /** \brief Get the communication padding size along the given axis
    *
@@ -577,7 +577,7 @@ public:
    * given axis at the time of construction, regardless of the
    * processor's position relative to the domain boundary.
    */
-  int getCommPadSize(int axis) const;
+  inline int getCommPadSize(int axis) const;
 
   /** \brief Get the size of the lower boundary padding along the
    *         given axis
@@ -585,7 +585,7 @@ public:
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    */
-  int getLowerBndryPad(int axis) const;
+  inline int getLowerBndryPad(int axis) const;
 
   /** \brief Get the size of the upper boundary padding along the
    *         given axis
@@ -593,7 +593,7 @@ public:
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    */
-  int getUpperBndryPad(int axis) const;
+  inline int getUpperBndryPad(int axis) const;
 
   /** \brief Get the boundary padding size along the given axis
    *
@@ -604,7 +604,7 @@ public:
    * axis at the time of construction, regardless of whether a sub-map
    * reduced these values.
    */
-  int getBndryPadSize(int axis) const;
+  inline int getBndryPadSize(int axis) const;
 
   /** \brief Assign all elements of the lower pad a constant value
    *
@@ -626,11 +626,11 @@ public:
 
   /** \brief Return whether the given axis supports a replicated boundary
    */
-  bool isReplicatedBoundary(int axis) const;
+  inline bool isReplicatedBoundary(int axis) const;
 
   /** \brief Get the storage order
    */
-  Layout getLayout() const;
+  inline Layout getLayout() const;
 
   /** \brief True if there are no stride gaps on any processor
    *
@@ -641,7 +641,7 @@ public:
    * not, but this method returns True only if all processes' local
    * data is contiguous.
    */
-  bool isContiguous() const;
+  inline bool isContiguous() const;
 
   //@}
 
