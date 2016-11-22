@@ -226,10 +226,10 @@ namespace Xpetra {
 
       fullmap_ = MapFactory::Build(input.getFullMap(),1);
 
-      maps_.resize(input.NumMaps(), Teuchos::null);
+      maps_.resize(input.getNumMaps(), Teuchos::null);
       if(bThyraMode_ == true)
-        thyraMaps_.resize(input.NumMaps(), Teuchos::null);
-      for(size_t i = 0; i < input.NumMaps(); ++i) {
+        thyraMaps_.resize(input.getNumMaps(), Teuchos::null);
+      for(size_t i = 0; i < input.getNumMaps(); ++i) {
         maps_[i] = MapFactory::Build(input.getMap(i,false),1);
         if(bThyraMode_ == true)
           thyraMaps_[i] = MapFactory::Build(input.getMap(i,true),1);
@@ -331,10 +331,36 @@ namespace Xpetra {
     virtual bool isDistributed() const {return fullmap_->isDistributed();};
 
     //! True if and only if map is compatible with this Map.
-    virtual bool isCompatible(const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { std::cout << " TODO BlockedMap::isCompatible" << std::endl; return false; };
+    virtual bool isCompatible(const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > &map) const {
+      RCP<const Map> rcpMap = Teuchos::rcpFromRef(map);
+      RCP<const BlockedMap> rcpBMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rcpMap);
+      if(rcpBMap.is_null() == true) return false;
+
+      for(size_t v = 0; v < maps_.size(); ++v) {
+        bool bSame = getMap(v,false)->isCompatible(*(rcpBMap->getMap(v,false)));
+        if (bSame == false) return false;
+        if (bThyraMode_) {
+          bSame = getMap(v,true)->isCompatible(*(rcpBMap->getMap(v,true)));
+        }
+      }
+      return true;
+    };
 
     //! True if and only if map is identical to this Map.
-    virtual bool isSameAs(const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { std::cout << " TODO BlockedMap isSameAs" << std::endl; return false;};
+    virtual bool isSameAs(const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > &map) const {
+      RCP<const Map> rcpMap = Teuchos::rcpFromRef(map);
+      RCP<const BlockedMap> rcpBMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rcpMap);
+      if(rcpBMap.is_null() == true) return false;
+
+      for(size_t v = 0; v < maps_.size(); ++v) {
+        bool bSame = getMap(v,false)->isSameAs(*(rcpBMap->getMap(v,false)));
+        if (bSame == false) return false;
+        if (bThyraMode_) {
+          bSame = getMap(v,true)->isSameAs(*(rcpBMap->getMap(v,true)));
+        }
+      }
+      return true;
+    };
 
     //@}
 

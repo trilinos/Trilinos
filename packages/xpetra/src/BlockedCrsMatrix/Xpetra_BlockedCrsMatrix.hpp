@@ -965,7 +965,10 @@ namespace Xpetra {
     }
 
     //! \brief Returns the Map associated with the full domain of this operator.
-    RCP<const Map > getDomainMap() const            { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap()"); return domainmaps_->getFullMap(); }
+    RCP<const Map > getFullDomainMap() const            { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap()"); return domainmaps_->getFullMap(); }
+
+    //! \brief Returns the Map associated with the domain of this operator.
+    RCP<const Map > getDomainMap() const            { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap()"); return domainmaps_->getMap(); /*domainmaps_->getFullMap();*/ }
 
     //! \brief Returns the Map associated with the i'th block domain of this operator.
     RCP<const Map > getDomainMap(size_t i) const    { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap(size_t)"); return domainmaps_->getMap(i, bDomainThyraMode_); }
@@ -974,7 +977,10 @@ namespace Xpetra {
     RCP<const Map > getDomainMap(size_t i, bool bThyraMode) const    { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap(size_t,bool)"); return domainmaps_->getMap(i, bThyraMode); }
 
     //! Returns the Map associated with the full range of this operator.
-    RCP<const Map > getRangeMap() const             { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap()"); return rangemaps_->getFullMap(); }
+    RCP<const Map > getFullRangeMap() const             { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap()"); return rangemaps_->getFullMap(); }
+
+    //! Returns the Map associated with the range of this operator.
+    RCP<const Map > getRangeMap() const             { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap()"); return rangemaps_->getMap(); /*rangemaps_->getFullMap();*/ }
 
     //! Returns the Map associated with the i'th block range of this operator.
     RCP<const Map > getRangeMap(size_t i) const     { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap(size_t)"); return rangemaps_->getMap(i, bRangeThyraMode_); }
