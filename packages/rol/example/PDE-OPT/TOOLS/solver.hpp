@@ -154,6 +154,9 @@ public:
         solverBelos_ = Teuchos::rcp(new Belos::BlockGmresSolMgr<Real,MV,OP>(problemBelos_, parlistBelos));
         firstSolve_ = false;
       }
+      else {
+        problemBelos_trans_->setOperator(A_trans_);
+      }
     }
   }
 

@@ -36,6 +36,21 @@
     <ParameterList name="Direct">
       <Parameter name="Solver Type"               type="string"  value="KLU2"          />
     </ParameterList>
+    <ParameterList name="MueLu">
+      <Parameter name="verbosity"                 type="string"  value="none"          />
+      <Parameter name="number of equations"       type="int"     value="2"             />
+      <Parameter name="problem: symmetric"        type="bool"    value="false"         />
+      <Parameter name="multigrid algorithm"       type="string"  value="sa"            />
+      <Parameter name="coarse: type"              type="string"  value="KLU2"          />
+    </ParameterList>
+    <ParameterList name="Belos">
+      <Parameter name="Block Size"                type="int"     value="1"             />
+      <Parameter name="Maximum Iterations"        type="int"     value="100"            />
+      <Parameter name="Convergence Tolerance"     type="double"  value="1e-10"         />
+      <Parameter name="Output Style"              type="int"     value="1"             />
+      <Parameter name="Output Frequency"          type="int"     value="1"             />
+      <Parameter name="Verbosity"                 type="int"     value="0"             />
+    </ParameterList>
   </ParameterList>
 
   <!-- VECTOR INFORMATION -->
