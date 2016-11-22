@@ -206,8 +206,8 @@ namespace Intrepid2 {
         ordinal_type idx = 0;
         for (ordinal_type j=0;j<ndofLine;++j) { // y
           for (ordinal_type i=0;i<ndofLine;++i,++idx) { // x
-            refPtsSubcell(idx, 0) = refPtsLine(i);
-            refPtsSubcell(idx, 1) = refPtsLine(j);
+            refPtsSubcell(idx, 0) = refPtsLine(i,0);
+            refPtsSubcell(idx, 1) = refPtsLine(j,0);
           }
         }
         INTREPID2_TEST_FOR_EXCEPTION( idx != ndofSubcell,
@@ -255,7 +255,7 @@ namespace Intrepid2 {
       DynRankViewHostType outValues("outValues", numSubcellBasis, nptsSubcell);
       subcellBasis.getValues(outValues, ortPtsSubcell);
 
-      auto orient_values = [&](const ordinal_type c) { 
+      auto orient_values = [ndofSubcell,&subcellBasis,subcellDim,nptsSubcell,&outValues](const ordinal_type c) {
         for (ordinal_type i=0;i<ndofSubcell;++i) {
           const ordinal_type ii = subcellBasis.getDofOrdinal(subcellDim, 0, i);
           for (ordinal_type j=0;j<nptsSubcell;++j) 

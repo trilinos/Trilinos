@@ -154,7 +154,7 @@ namespace Intrepid2 {
     
     // Newton method to solve the equation F(refPoints) - physPoints = 0:
     // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
-    for (size_type iter=0;iter<Parameters::MaxNewton;++iter) {
+    for (ordinal_type iter=0;iter<Parameters::MaxNewton;++iter) {
       
       // Jacobians at the old iterates and their inverses. 
       setJacobian(jacobian, xOld, worksetCell, basis);
