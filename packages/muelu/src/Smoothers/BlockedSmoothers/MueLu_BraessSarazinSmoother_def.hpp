@@ -234,10 +234,23 @@ namespace MueLu {
                                "MueLu::BraessSarazinSmoother::Apply(): Setup() has not been called");
 
 #ifdef HAVE_MUELU_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(A_->getRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
-    TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
+    // TODO simplify this debug check
+    RCP<MultiVector> rcpDebugX = Teuchos::rcpFromRef(X);
+    RCP<const MultiVector> rcpDebugB = Teuchos::rcpFromRef(B);
+    RCP<BlockedMultiVector> rcpBDebugX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rcpDebugX);
+    RCP<const BlockedMultiVector> rcpBDebugB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpDebugB);
+    RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if(rcpBDebugB.is_null() == false) {
+      TEUCHOS_TEST_FOR_EXCEPTION(A_->getRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(bA->getFullRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
+    }
+    if(rcpBDebugX.is_null() == false) {
+      TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(bA->getFullDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
+    }
 #endif
-
 
     // The following boolean flags catch the case where we need special transformation
     // for the GIDs when calling the subsmoothers.
@@ -251,9 +264,23 @@ namespace MueLu {
 
     // use the GIDs of the sub blocks
     // This is valid as the subblocks actually represent the GIDs (either Thyra, Xpetra or pseudo Xpetra)
-    RCP<MultiVector> deltaX0 = MultiVectorFactory::Build(A00_->getRowMap(), X.getNumVectors());
-    RCP<MultiVector> deltaX1 = MultiVectorFactory::Build(A10_->getRowMap(), X.getNumVectors());
-    RCP<MultiVector> Rtmp    = MultiVectorFactory::Build(A10_->getRowMap(), B.getNumVectors());
+    RCP<MultiVector> deltaX0 = Teuchos::null;
+    RCP<MultiVector> deltaX1 = Teuchos::null;
+    RCP<MultiVector> Rtmp    = Teuchos::null;
+    RCP<BlockedCrsMatrix> bA00 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A00_);
+    RCP<BlockedCrsMatrix> bA10 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A10_);
+
+    if(bA00.is_null() == true)
+      deltaX0 = MultiVectorFactory::Build(A00_->getRangeMap(), X.getNumVectors());
+    else
+      deltaX0 = MultiVectorFactory::Build(bA00->getFullRangeMap(), X.getNumVectors());
+    if(bA10.is_null() == true) {
+      deltaX1 = MultiVectorFactory::Build(A10_->getRangeMap(), X.getNumVectors());
+      Rtmp    = MultiVectorFactory::Build(A10_->getRangeMap(), B.getNumVectors());
+    } else {
+      deltaX1 = MultiVectorFactory::Build(bA10->getFullRangeMap(), X.getNumVectors());
+      Rtmp    = MultiVectorFactory::Build(bA10->getFullRangeMap(), B.getNumVectors());
+    }
 
     typedef Teuchos::ScalarTraits<SC> STS;
     SC one = STS::one(), zero = STS::zero();

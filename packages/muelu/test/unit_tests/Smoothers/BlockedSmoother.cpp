@@ -1564,7 +1564,10 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -1745,7 +1748,10 @@ namespace MueLuTests {
 
         // solve system
         simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-        Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+        RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+        TEST_EQUALITY(bX.is_null(), false);
+        RCP<MultiVector> XX = bX->Merge();
+        Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
         bool bCheck = true;
         for(size_t i=0; i<X->getLocalLength(); i++) {
           if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -1928,7 +1934,10 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -2109,7 +2118,10 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -2478,7 +2490,7 @@ namespace MueLuTests {
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
       TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 55e-4, out, success);
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 35e-4, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 25e-4, out, success);
     } // end UseTpetra
   }
 
@@ -2705,7 +2717,10 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -2858,7 +2873,10 @@ namespace MueLuTests {
 
       // solve system
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -2996,7 +3014,10 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 5 ) { if(xdata[i] != (SC) 1.0) bCheck = false; }
@@ -3153,7 +3174,10 @@ namespace MueLuTests {
 
       // solve system
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -3307,7 +3331,10 @@ namespace MueLuTests {
 
       // solve system
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10 ) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -3873,7 +3900,10 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -4051,7 +4081,10 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -4415,7 +4448,7 @@ namespace MueLuTests {
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
       TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 11e-3, out, success);
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 6e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 5e-3, out, success);
     } // end UseTpetra
   }
 
@@ -4679,7 +4712,10 @@ namespace MueLuTests {
 
       // solve system
       inSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -4857,7 +4893,10 @@ namespace MueLuTests {
 
       // solve system
       inSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      TEST_EQUALITY(bX.is_null(), false);
+      RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -5220,8 +5259,8 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 2e-2, out, success);
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 13e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 15e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 9e-3, out, success);
     } // end UseTpetra
   }
 

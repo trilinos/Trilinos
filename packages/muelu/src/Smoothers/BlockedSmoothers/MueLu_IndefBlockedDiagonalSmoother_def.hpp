@@ -253,7 +253,7 @@ namespace MueLu {
 
       // 2) solve F * \Delta \tilde{x}_1 = r_1
       //    start with zero guess \Delta \tilde{x}_1
-      RCP<MultiVector> xtilde1 = MultiVectorFactory::Build(F_->getRowMap(),X.getNumVectors(),true);
+      RCP<MultiVector> xtilde1 = MultiVectorFactory::Build(r1->getMap(),X.getNumVectors(),true);
 
       // Special handling if SchurComplement operator was a 1x1 blocked operator in Thyra mode
       // Then, we have to translate the Xpetra offset GIDs to plain Thyra GIDs and vice versa
@@ -284,7 +284,7 @@ namespace MueLu {
 
       // 3) solve SchurComp equation
       //    start with zero guess \Delta \tilde{x}_2
-      RCP<MultiVector> xtilde2 = MultiVectorFactory::Build(Z_->getRowMap(),X.getNumVectors(),true);
+      RCP<MultiVector> xtilde2 = MultiVectorFactory::Build(r2->getMap(),X.getNumVectors(),true);
 
       // Special handling if SchurComplement operator was a 1x1 blocked operator in Thyra mode
       // Then, we have to translate the Xpetra offset GIDs to plain Thyra GIDs and vice versa
