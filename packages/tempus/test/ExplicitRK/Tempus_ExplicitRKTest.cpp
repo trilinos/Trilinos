@@ -76,11 +76,6 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
       if (RKMethods[m] == "General ERK") {
         pl->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper 2");
-
-        std::ofstream ftmp("PL.txt");
-        pl->print(ftmp);
-        ftmp.close();
-
       } else {
         pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
       }

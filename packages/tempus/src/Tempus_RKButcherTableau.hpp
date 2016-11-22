@@ -272,28 +272,7 @@ class GeneralExplicit_RKBT :
 {
   public:
   GeneralExplicit_RKBT()
-  {
-    std::ostringstream Description;
-    Description << this->description() << "\n"
-      << "The format of the Butcher Tableau parameter list is\n"
-      << "  <Parameter name=\"A\" type=\"string\" value=\"# # # ;\n"
-      << "                                                # # # ;\n"
-      << "                                                # # #\"/>\n"
-      << "  <Parameter name=\"b\" type=\"string\" value=\"# # #\"/>\n"
-      << "  <Parameter name=\"c\" type=\"string\" value=\"# # #\"/>\n\n"
-      << "Note the number of stages is implicit in the number of entries.\n"
-      << "The number of stages must be consistent.\n"
-      << "\n"
-      << "Default tableau is Forward Euler (order=1):\n"
-      << "  A = [ 0 ]\n"
-      << "  b = [ 1 ]'\n"
-      << "  c = [ 0 ]'" << std::endl;
-
-    this->setDescription(Description.str());
-    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
-                     this->getValidParameters());
-    this->setParameterList(this->pList_);
-  }
+    { this->setParameterList(Teuchos::parameterList()); }
 
   virtual std::string description() const
     { return "General ERK"; }
@@ -305,21 +284,17 @@ class GeneralExplicit_RKBT :
     TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
     pl->validateParametersAndSetDefaults(*this->getValidParameters());
     Teuchos::readVerboseObjectSublist(&*pl,this);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "Error - GeneralExplicit_RKBT()\n"
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+    this->setDescription(pl->get<std::string>("Description"));
 
-    // do some error checking
-    Teuchos::ParameterList tableauPL = pl->sublist("Tableau");
-    bool has_A = tableauPL.isType<std::string>("A");
-    bool has_b = tableauPL.isType<std::string>("b");
-    bool has_c = tableauPL.isType<std::string>("c");
-    bool has_bstar = tableauPL.isType<std::string>("bstar");
-    bool has_order = tableauPL.isType<int>("order");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(!has_A,std::runtime_error,this->description());
-    TEUCHOS_TEST_FOR_EXCEPTION(!has_b,std::runtime_error,this->description());
-    TEUCHOS_TEST_FOR_EXCEPTION(!has_c,std::runtime_error,this->description());
-
+    Teuchos::RCP<Teuchos::ParameterList> tableauPL = sublist(pl,"Tableau",true);
     std::size_t numStages = -1;
-    int order = has_order ? tableauPL.get<int>("order") : 1;
+    int order = tableauPL->get<int>("order");
     Teuchos::SerialDenseMatrix<int,Scalar> A;
     Teuchos::SerialDenseVector<int,Scalar> b;
     Teuchos::SerialDenseVector<int,Scalar> c;
@@ -328,7 +303,7 @@ class GeneralExplicit_RKBT :
     // read in the A matrix
     {
       std::vector<std::string> A_row_tokens;
-      Tempus::StringTokenizer(A_row_tokens,tableauPL.get<std::string>("A"),
+      Tempus::StringTokenizer(A_row_tokens, tableauPL->get<std::string>("A"),
                               ";",true);
 
       // this is the only place where numStages is set
@@ -362,7 +337,7 @@ class GeneralExplicit_RKBT :
     // read in the b vector
     {
       std::vector<std::string> tokens;
-      Tempus::StringTokenizer(tokens,tableauPL.get<std::string>("b")," ",true);
+      Tempus::StringTokenizer(tokens,tableauPL->get<std::string>("b")," ",true);
       std::vector<double> values;
       Tempus::TokensToDoubles(values,tokens);
 
@@ -377,7 +352,7 @@ class GeneralExplicit_RKBT :
     // read in the c vector
     {
       std::vector<std::string> tokens;
-      Tempus::StringTokenizer(tokens,tableauPL.get<std::string>("c")," ",true);
+      Tempus::StringTokenizer(tokens,tableauPL->get<std::string>("c")," ",true);
       std::vector<double> values;
       Tempus::TokensToDoubles(values,tokens);
 
@@ -389,30 +364,36 @@ class GeneralExplicit_RKBT :
         c(i) = values[i];
     }
 
-    if (tableauPL.get<std::string>("bstar") != "1.0") {
-        bstar.size(as<int>(numStages));
-        // read in the bstar vector
-        {
-          std::vector<std::string> tokens;
-          Tempus::StringTokenizer(tokens,tableauPL.get<std::string>("bstar")," ",true);
-          std::vector<double> values;
-          Tempus::TokensToDoubles(values,tokens);
+    if (tableauPL->get<std::string>("bstar") != "1.0") {
+      bstar.size(as<int>(numStages));
+      // read in the bstar vector
+      {
+        std::vector<std::string> tokens;
+        Tempus::StringTokenizer(
+          tokens, tableauPL->get<std::string>("bstar"), " ", true);
+        std::vector<double> values;
+        Tempus::TokensToDoubles(values,tokens);
 
-          TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
-            "Error parsing bstar vector, wrong number of stages.\n"
-            + this->description());
+        TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+          "Error parsing bstar vector, wrong number of stages.\n"
+          + this->description());
 
-          for(std::size_t i=0;i<numStages;i++)
-            bstar(i) = values[i];
-        }
-        this->initialize(A,b,c,order,this->description(), true,
-                bstar);
-    } else{
-        this->initialize(A,b,c,order,this->description());
+        for(std::size_t i=0;i<numStages;i++)
+          bstar(i) = values[i];
+      }
+      this->initialize(A,b,c,order,this->description(), true, bstar);
+    } else {
+      this->initialize(A,b,c,order,this->description());
     }
 
     this->setMyParamList(pl);
     this->pList_ = pl;
+
+    //std::stringstream ss;
+    //this->pList_->unused(ss);
+    //this->pList_->sublist("Tableau").unused(ss);
+    //TEUCHOS_TEST_FOR_EXCEPTION( ss.str().length(), std::logic_error,
+    // "Error - GeneralExplicit_RKBT()  Found unused parameters!\n" + ss.str());
   }
 
   Teuchos::RCP<const Teuchos::ParameterList>
@@ -422,15 +403,31 @@ class GeneralExplicit_RKBT :
 
     if (is_null(validPL)) {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      pl->set("Description","",this->getDescription());
-      pl->set("Stepper Type","",this->description());
+
+      std::stringstream Description;
+      Description << this->description() << "\n"
+        << "The format of the Butcher Tableau parameter list is\n"
+        << "  <Parameter name=\"A\" type=\"string\" value=\"# # # ;\n"
+        << "                                           # # # ;\n"
+        << "                                           # # #\"/>\n"
+        << "  <Parameter name=\"b\" type=\"string\" value=\"# # #\"/>\n"
+        << "  <Parameter name=\"c\" type=\"string\" value=\"# # #\"/>\n\n"
+        << "Note the number of stages is implicit in the number of entries.\n"
+        << "The number of stages must be consistent.\n"
+        << "\n"
+        << "Default tableau is Forward Euler (order=1):\n"
+        << "  A = [ 0 ]\n"
+        << "  b = [ 1 ]'\n"
+        << "  c = [ 0 ]'" << std::endl;
+
+      pl->set("Description", Description.str(), Description.str());
+      pl->set("Stepper Type", this->description());
       Teuchos::RCP<Teuchos::ParameterList> tableau = Teuchos::parameterList();
       tableau->set("A", "0.0");
       tableau->set("b", "1.0");
       tableau->set("bstar", "1.0");
       tableau->set("c", "0.0");
       tableau->set<int>("order", 1);
-      std::cout << *(tableau) << std::endl;
       pl->set("Tableau", *tableau);
       Teuchos::setupVerboseObjectSublist(&*pl);
       validPL = pl;
