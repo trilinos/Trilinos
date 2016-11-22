@@ -95,6 +95,17 @@ private:
 
   void assemble(const Teuchos::RCP<const Tpetra::MultiVector<> > &zf,
                 const Teuchos::RCP<const std::vector<Real> > &zp) {
+    // Initialize field component of z.
+    if (initZvec_ && zf != Teuchos::null) {
+      zvec_ = assembler_->createControlVector();
+      zvec_->putScalar(static_cast<Real>(0));
+    }
+    initZvec_ = false;
+    // Initialize parameter component of z.
+    if (initZpar_ && zp != Teuchos::null) {
+      zpar_ = Teuchos::rcp(new std::vector<Real>(zp->size(),static_cast<Real>(0)));
+    }
+    initZpar_ = false;
     // Assemble affine term.
     if (assembleRHS_) {
       assembler_->assemblePDEResidual(vecR_,pde_,uvec_,zvec_,zpar_);
@@ -253,21 +264,7 @@ public:
   void update_1(const ROL::Vector<Real> &u, bool flag = true, int iter = -1) {}
 
   using ROL::EqualityConstraint_SimOpt<Real>::update_2;
-  void update_2(const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
-    // Initialize field component of z.
-    Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
-    if (initZvec_ && zf != Teuchos::null) {
-      zvec_ = assembler_->createControlVector();
-      zvec_->putScalar(static_cast<Real>(0));
-    }
-    initZvec_ = false;
-    // Initialize parameter component of z.
-    Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
-    if (initZpar_ && zp != Teuchos::null) {
-      zpar_ = Teuchos::rcp(new std::vector<Real>(zp->size(),static_cast<Real>(0)));
-    }
-    initZpar_ = false;
-  }
+  void update_2(const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {}
 
   using ROL::EqualityConstraint_SimOpt<Real>::update;
   void update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
