@@ -64,7 +64,6 @@
 // here have been defined.
 #include "Tpetra_CrsMatrix_decl.hpp"
 
-
 namespace { // (anonymous)
 
   template<class T, class D>
@@ -1149,7 +1148,8 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
   for(size_t i = 0; i < NumRows; i++){
     size_t start=CRS_rowptr[i];
-    if(start >= nnz) continue;
+    CRS_rowptr[i] = old_curr;
+    if(start >= nnz) continue;// FIXME!!!!! THIS GUY IS THE PROBLEM
 
     Scalar* locValues   = &CRS_vals[start];
     size_t NumEntries   = CRS_rowptr[i+1] - start;
@@ -1190,8 +1190,6 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
         new_curr++;
       }
     }
-
-    CRS_rowptr[i] = old_curr;
     old_curr=new_curr;
   }
 
