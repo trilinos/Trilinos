@@ -1149,7 +1149,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   for(size_t i = 0; i < NumRows; i++){
     size_t start=CRS_rowptr[i];
     CRS_rowptr[i] = old_curr;
-    if(start >= nnz) continue;// FIXME!!!!! THIS GUY IS THE PROBLEM
+    if(start >= nnz) continue;
 
     Scalar* locValues   = &CRS_vals[start];
     size_t NumEntries   = CRS_rowptr[i+1] - start;
