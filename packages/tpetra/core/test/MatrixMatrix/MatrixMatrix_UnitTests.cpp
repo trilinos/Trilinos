@@ -343,7 +343,7 @@ mult_test_results multiply_test_autofc(
   typedef Map<LO,GO,NT> Map_t;
   RCP<const Map_t> map = C->getRowMap();
 
-  RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 1));
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 0));
   SC one = Teuchos::ScalarTraits<SC>::one();
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, true);
@@ -623,7 +623,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 
       if (verbose)
         newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
-#if 0
+
       results = multiply_test_autofc(name, A, B, AT, BT, C, comm, newOut);
 
       if (verbose) {
@@ -633,7 +633,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
         newOut << "\tcompNorm: " << results.compNorm << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
-#endif
 
       if (verbose)
         newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
