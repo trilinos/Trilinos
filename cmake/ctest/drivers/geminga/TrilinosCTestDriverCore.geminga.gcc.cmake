@@ -77,6 +77,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
     "-DCMAKE_VERBOSE_MAKEFILE=ON"
 
+    "-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
+
     "-DTrilinos_ENABLE_Fortran=OFF"
 
     "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
