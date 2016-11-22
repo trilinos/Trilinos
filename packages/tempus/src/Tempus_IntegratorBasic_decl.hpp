@@ -37,66 +37,66 @@ public:
   /// \name Basic integrator methods
   //@{
     /// Advance the solution to timeMax, and return true if successful.
-    bool advanceTime();
+    virtual bool advanceTime();
     /// Advance the solution to timeFinal, and return true if successful.
-    bool advanceTime(const Scalar timeFinal);
+    virtual bool advanceTime(const Scalar timeFinal);
     /// Perform tasks before start of integrator.
-    void startIntegrator();
+    virtual void startIntegrator();
     /// Start time step.
-    void startTimeStep();
+    virtual void startTimeStep();
     /// Only accept step after meeting time step criteria.
-    void acceptTimeStep();
+    virtual void acceptTimeStep();
     /// Perform tasks after end of integrator.
-    void endIntegrator();
+    virtual void endIntegrator();
   //@}
 
   /// \name Accessor methods
   //@{
     /// Get current time
-    Scalar getTime() const {return solutionHistory_->getCurrentTime();}
+    virtual Scalar getTime() const {return solutionHistory_->getCurrentTime();}
     /// Get current index
-    Scalar getIndex() const {return solutionHistory_->getCurrentIndex();}
+    virtual Scalar getIndex() const {return solutionHistory_->getCurrentIndex();}
     /// Get the Stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const
       {return stepper_;}
     /// Set the Stepper
-    void setStepper(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+    virtual void setStepper(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
     /// Set the Stepper
-    void setStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
+    virtual void setStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
     /// Get the SolutionHistory
-    Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
+    virtual Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
       {return solutionHistory_;}
     /// Set the SolutionHistory
-    void setSolutionHistory(
+    virtual void setSolutionHistory(
       Teuchos::RCP<SolutionHistory<Scalar> > sh = Teuchos::null);
     /// Get the TimeStepControl
-    Teuchos::RCP<TimeStepControl<Scalar> > getTimeStepControl()
+    virtual Teuchos::RCP<TimeStepControl<Scalar> > getTimeStepControl()
       {return timeStepControl_;}
     /// Set the TimeStepControl
-    void setTimeStepControl(
+    virtual void setTimeStepControl(
       Teuchos::RCP<TimeStepControl<Scalar> > tsc = Teuchos::null);
     /// Get the Observer
-    Teuchos::RCP<IntegratorObserver<Scalar> > getObserver()
+    virtual Teuchos::RCP<IntegratorObserver<Scalar> > getObserver()
       {return integratorObserver_;}
     /// Set the Observer
-    void setObserver(
+    virtual void setObserver(
       Teuchos::RCP<IntegratorObserver<Scalar> > obs = Teuchos::null);
     /// Initializes the Integrator after set* function calls
-    void initialize();
+    virtual void initialize();
 
 
     /// Get current the solution, x
-    Teuchos::RCP<Thyra::VectorBase<double> > getX() const
+    virtual Teuchos::RCP<Thyra::VectorBase<double> > getX() const
       {return solutionHistory_->getCurrentState()->getX();}
     /// Get current the time derivative of the solution, xdot
-    Teuchos::RCP<Thyra::VectorBase<double> > getXdot() const
+    virtual Teuchos::RCP<Thyra::VectorBase<double> > getXdot() const
       {return solutionHistory_->getCurrentState()->getXDot();}
     /// Get current the second time derivative of the solution, xdotdot
-    Teuchos::RCP<Thyra::VectorBase<double> > getXdotdot() const
+    virtual Teuchos::RCP<Thyra::VectorBase<double> > getXdotdot() const
       {return solutionHistory_->getCurrentState()->getXDotDot();}
 
     /// Get current state
-    Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
+    virtual Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
       {return solutionHistory_->getCurrentState();}
   //@}
 
