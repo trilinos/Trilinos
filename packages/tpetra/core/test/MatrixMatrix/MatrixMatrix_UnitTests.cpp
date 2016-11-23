@@ -132,6 +132,38 @@ getIdentityMatrix (Teuchos::FancyOStream& out,
   return identityMatrix;
 }
 
+template<class SC, class LO, class GO,class NT>
+RCP<CrsMatrix<SC, LO, GO, NT> >
+getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
+			  Teuchos::RCP<const Tpetra::Map<LO,GO,NT> >& identityRowMap,
+			  const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+{
+  using Teuchos::RCP;
+  using std::endl;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> Matrix_t;
+
+  Teuchos::OSTab tab0 (out);
+  out << "getIdentityMatrix" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  out << "Create CrsMatrix" << endl;
+  RCP<Matrix_t> identityMatrix =
+    Tpetra::createCrsMatrix<SC, LO, GO, NT> (identityRowMap, 1);
+
+  out << "Fill CrsMatrix" << endl;
+  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getNodeElementList ();
+  for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
+    Teuchos::Array<GO> col (1, *it);
+    Teuchos::Array<SC> val (1, Teuchos::ScalarTraits<SC>::one ());
+    identityMatrix->insertGlobalValues (*it, col (), val ());
+  }
+
+  out << "Call fillComplete" << endl;
+  identityMatrix->fillComplete ();
+
+  out << "Done!" << endl;
+  return identityMatrix;
+}
 
 
 
@@ -777,14 +809,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   int rank = comm->getRank();
   global_size_t globalNumRows = numRowsPerProc*numProcs;
 
-  newOut << "Create identityMatrix" << endl;
-  RCP<Matrix_t > identityMatrix =
+  RCP<Matrix_t > dummy =
     getIdentityMatrix<SC,LO,GO,NT> (newOut, globalNumRows, comm);
 
   // This is just to fulfill syntax requirements.  It could even be null.
-  RCP<NT> node = identityMatrix->getNode ();
+  RCP<NT> node = dummy->getNode ();
 
-  newOut << "Fill identityMatrix" << endl;
 //Create "B"
   Array<GO> myRows = tuple<GO>(
     rank*numRowsPerProc,
@@ -816,6 +846,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   RCP<const Map_t > bDomainMap =
     Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2, comm, node);
 
+  newOut << "Create identityMatrix" << endl;
+  RCP<Matrix_t > identityMatrix =
+    getIdentityMatrixWithMap<SC,LO,GO,NT> (newOut, bRowMap, comm);
+
+
   newOut << "Create bMatrix" << endl;
   RCP<Matrix_t > bMatrix =
     Tpetra::createCrsMatrix<SC,LO,GO,NT>(bRowMap, 1);
@@ -834,7 +869,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   bMatrix->fillComplete(bDomainMap, bRangeMap);
 
   newOut << "Regular I*P" << endl;
-  mult_test_results results = multiply_test_autofc(
+  mult_test_results results = multiply_test_manualfc(
     "Different Range and Row Maps",
     identityMatrix,
     bMatrix,
@@ -1034,7 +1069,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
   // FIXME (mfh 03 May 2016) I'm not sure what this message means, so
   // I'll leave it.
   newOut << "Regular I*P" << endl;
-  mult_test_results results = multiply_test_autofc(
+  mult_test_results results = multiply_test_manualfc(
     "Different Range and Row Maps",
     aMat,
     identityMatrix,
