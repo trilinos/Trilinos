@@ -130,12 +130,49 @@ namespace MueLu {
   void BlockedDirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector &X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(this->IsSetup() == false, Exceptions::RuntimeError,
                                "MueLu::BlockedDirectSolver::Apply(): Setup() has not been called");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.getMap()->isSameAs(*(A_->getDomainMap())) == false, Exceptions::RuntimeError,
-                               "MueLu::BlockedDirectSolver::Apply(): Map of solution vector X is not same as domain map of A.");
-    TEUCHOS_TEST_FOR_EXCEPTION(B.getMap()->isSameAs(*(A_->getRangeMap())) == false, Exceptions::RuntimeError,
-                               "MueLu::BlockedDirectSolver::Apply(): Map of rhs vector X is not same as range map of A.");
 
-    s_->Apply(X, B, InitialGuessIsZero);
+    RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
+    RCP<const MultiVector> rcpB = Teuchos::rcpFromRef(B);
+    RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rcpX);
+    RCP<const BlockedMultiVector> bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
+
+#ifdef HAVE_MUELU_DEBUG
+    RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if(bB.is_null() == false) {
+      TEUCHOS_TEST_FOR_EXCEPTION(A_->getRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(bA->getFullRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
+    }
+    if(bX.is_null() == false) {
+      TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(bA->getFullDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
+    }
+#endif
+
+    if (bB.is_null() == true && bX.is_null() == true) {
+      // standard case (neither B nor X are blocked)
+      s_->Apply(X, B, InitialGuessIsZero);
+    } else if(bB.is_null() == false && bX.is_null() == false) {
+      // both B and X are blocked
+      RCP<MultiVector> mergedX = bX->Merge();
+      RCP<const MultiVector> mergedB = bB->Merge();
+      s_->Apply(*mergedX, *mergedB, InitialGuessIsZero);
+      RCP<MultiVector> xx = Teuchos::rcp(new BlockedMultiVector(bX->getBlockedMap(),mergedX));
+      SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+      X.update(one,*xx,zero);
+    } else if (bB.is_null() == true && bX.is_null() == false) {
+      // the solution vector is blocked
+      RCP<MultiVector> mergedX = bX->Merge();
+      s_->Apply(*mergedX, B, InitialGuessIsZero);
+      RCP<MultiVector> xx = Teuchos::rcp(new BlockedMultiVector(bX->getBlockedMap(),mergedX));
+      SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+      X.update(one,*xx,zero);
+    } else if (bB.is_null() == false && bX.is_null() == true) {
+      // only the RHS vector is blocked
+      RCP<const MultiVector> mergedB = bB->Merge();
+      s_->Apply(X, *mergedB, InitialGuessIsZero);
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
