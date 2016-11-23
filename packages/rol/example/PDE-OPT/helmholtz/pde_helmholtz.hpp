@@ -204,13 +204,22 @@ private:
    
     ctrlWeight_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
 
+    const Real zero(0), one(1);
+    bool inside(false);
     std::vector<Real> x(d);
     for (int i = 0; i < c; ++i) {
+      inside = false;
       for (int j = 0; j < p; ++j) {
         for (int k = 0; k < d; ++k) {
           x[k] = (*fe_->cubPts())(i,j,k);
         }
-        (*ctrlWeight_)(i,j) = evaluateControlWeight(x);
+        if ( insideControlDomain(x) ) {
+          inside = true;
+          break;
+        }
+      }
+      for (int j = 0; j < p; ++j) {
+        (*ctrlWeight_)(i,j) = (inside ? one : zero);
       }
     }
   }
@@ -305,16 +314,14 @@ public:
     return val;
   }
 
-  virtual Real evaluateControlWeight(const std::vector<Real> &x) const {
-    const Real one(1), zero(0);
-    Real xnorm(0), val(0);
+  virtual bool insideControlDomain(const std::vector<Real> &x) const {
+    Real xnorm(0);
     const int d = x.size();
     for (int i = 0; i < d; ++i) {
       xnorm += x[i]*x[i];
     }
     xnorm = std::sqrt(xnorm);
-    val   = (xnorm <= outerAnnulusRadius_ && xnorm >= innerAnnulusRadius_) ? one : zero;
-    return val;
+    return (xnorm <= outerAnnulusRadius_ && xnorm >= innerAnnulusRadius_);
   }
 
   virtual Real evaluateForce(const std::vector<Real> &x, const int component) const {

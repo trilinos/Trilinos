@@ -318,6 +318,14 @@ public:
                                                   *BgradU,
                                                   *(fe_->gradNdetJ()),
                                                   Intrepid::COMP_CPP, true);
+    // ADD RHS
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs =
+      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    computeRHS(rhs);
+    Intrepid::FunctionSpaceTools::integrate<Real>(*res,
+                                                  *rhs,
+                                                  *(fe_->NdetJ()),
+                                                  Intrepid::COMP_CPP, true);
     // ADD CONTROL TERM
     if ( z_coeff != Teuchos::null ) {
       Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
@@ -375,14 +383,6 @@ public:
     Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
                                                   *BgradUgradN,
                                                   *(fe_->gradNdetJ()),
-                                                  Intrepid::COMP_CPP, true);
-    // ADD RHS
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    computeRHS(rhs);
-    Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
-                                                  *rhs,
-                                                  *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, true);
   }
 

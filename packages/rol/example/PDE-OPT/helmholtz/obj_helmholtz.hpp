@@ -57,6 +57,7 @@ private:
   const Teuchos::RCP<FE<Real> > fe_;
   const Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
 
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > weight_;
   std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > target_;
 
   Real RoiRadius_;
@@ -64,6 +65,33 @@ private:
   Real angle_;
 
 protected:
+  void computeDomainWeight(void) {
+    int c = fe_->gradN()->dimension(0);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+
+    weight_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p));
+   
+    const Real zero(0), one(1);
+    bool inside(false);
+    std::vector<Real> x(d);
+    for (int i = 0; i < c; ++i) {
+      inside = false;
+      for (int j = 0; j < p; ++j) {
+        for (int k = 0; k < d; ++k) {
+          x[k] = (*fe_->cubPts())(i,j,k);
+        }
+        if ( insideDomain(x) ) {
+          inside = true;
+          break;
+        }
+      }
+      for (int j = 0; j < p; ++j) {
+        (*weight_)(i,j) = (inside ? one : zero);
+      }
+    }
+  }
+
   void computeTarget(void) {
     int c = fe_->gradN()->dimension(0);
     int p = fe_->gradN()->dimension(2);
@@ -79,10 +107,10 @@ protected:
         for (int k = 0; k < d; ++k) {
           x[k] = (*fe_->cubPts())(i,j,k);
         }
-        (*target_[0])(i,j) = evaluateRealTarget(x);
-        (*target_[1])(i,j) = evaluateImagTarget(x);
+        (*target_[0])(i,j) = evaluateTarget(x,0);
+        (*target_[1])(i,j) = evaluateTarget(x,1);
       }
-    } 
+    }
   }
 
   Real DegreesToRadians(const Real deg) const {
@@ -98,31 +126,23 @@ public:
     waveNumber_ = parlist.sublist("Problem").get("Wave Number",10.0);
     angle_      = parlist.sublist("Problem").get("Target Angle",45.0);
     angle_      = DegreesToRadians(angle_);
+    computeDomainWeight();
     computeTarget();
   }
 
-  virtual Real evaluateRealTarget(const std::vector<Real> &x) const {
-    const Real arg = waveNumber_ * (std::cos(angle_)*x[0] + std::sin(angle_)*x[1]);
-    Real xnorm(0), val(0);
+  virtual bool insideDomain(const std::vector<Real> &x) const {
+    Real xnorm(0);
     const int d = x.size();
     for (int i = 0; i < d; ++i) {
       xnorm += x[i]*x[i];
     }
     xnorm = std::sqrt(xnorm);
-    val   = (xnorm <= RoiRadius_) ? std::cos(arg) : static_cast<Real>(0);
-    return val;
+    return (xnorm <= RoiRadius_);
   }
 
-  virtual Real evaluateImagTarget(const std::vector<Real> &x) const {
+  virtual Real evaluateTarget(const std::vector<Real> &x, const int component) const {
     const Real arg = waveNumber_ * (std::cos(angle_)*x[0] + std::sin(angle_)*x[1]);
-    Real xnorm(0), val(0);
-    const int d = x.size();
-    for (int i = 0; i < d; ++i) {
-      xnorm += x[i]*x[i];
-    }
-    xnorm = std::sqrt(xnorm);
-    val   = (xnorm <= RoiRadius_) ? std::sin(arg) : static_cast<Real>(0);
-    return val;
+    return (component==0) ? std::cos(arg) : std::sin(arg);
   }
 
   Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
@@ -137,13 +157,17 @@ public:
     // Get components of the control
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
-    // Evaluate on FE basis
+    // Evaluate tracking term
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > diffU
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > WdiffU
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     for (int i=0; i<2; ++i) {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval
-        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      fe_->evaluateValue(valU_eval, U[i]);
-      Intrepid::RealSpaceTools<Real>::subtract(*valU_eval,*target_[i]);
-      fe_->computeIntegral(val,valU_eval,valU_eval,true);
+      diffU->initialize(); WdiffU->initialize(0);
+      fe_->evaluateValue(diffU, U[i]);
+      Intrepid::RealSpaceTools<Real>::subtract(*diffU,*target_[i]);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*WdiffU,*weight_,*diffU);
+      fe_->computeIntegral(val,WdiffU,diffU,true);
     }
     Intrepid::RealSpaceTools<Real>::scale(*val,static_cast<Real>(0.5));
     return static_cast<Real>(0);
@@ -162,20 +186,23 @@ public:
     // Get components of the control
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
-    // Evaluate on FE basis
+    // Evaluate tracking term
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > diffU
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > WdiffU
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     for (int i=0; i<2; ++i) {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval
-        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      fe_->evaluateValue(valU_eval, U[i]);
-      Intrepid::RealSpaceTools<Real>::subtract(*valU_eval,*target_[i]);
+      diffU->initialize(); WdiffU->initialize(0);
+      fe_->evaluateValue(diffU, U[i]);
+      Intrepid::RealSpaceTools<Real>::subtract(*diffU,*target_[i]);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*WdiffU,*weight_,*diffU);
       G[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
       Intrepid::FunctionSpaceTools::integrate<Real>(*G[i],
-                                                    *valU_eval,
+                                                    *WdiffU,
                                                     *(fe_->NdetJ()),
                                                     Intrepid::COMP_CPP,
                                                     false);
     }
-
     fieldHelper_->combineFieldCoeff(grad, G);
   }
 
@@ -200,19 +227,22 @@ public:
     // Get components of the control
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > V;
     fieldHelper_->splitFieldCoeff(V, v_coeff);
-    // Evaluate on FE basis
+    // Evaluate tracking term
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valV
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > WvalV
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     for (int i=0; i<2; ++i) {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > valV_eval
-        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      fe_->evaluateValue(valV_eval, V[i]);
+      valV->initialize(); WvalV->initialize(0);
+      fe_->evaluateValue(valV, V[i]);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*WvalV,*weight_,*valV);
       H[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
       Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
-                                                    *valV_eval,
+                                                    *WvalV,
                                                     *(fe_->NdetJ()),
                                                     Intrepid::COMP_CPP,
                                                     false);
     }
-
     fieldHelper_->combineFieldCoeff(hess, H);
   }
 
@@ -254,23 +284,31 @@ private:
   Real RoiRadius_;
   Real alpha_;
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > ctrlWeight_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > weight_;
 
-  void computeControlWeight(void) {
+  void computeDomainWeight(void) {
     int c = fe_->gradN()->dimension(0);
     int p = fe_->gradN()->dimension(2);
     int d = fe_->gradN()->dimension(3);
-   
-    ctrlWeight_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
 
-    const Real one(1);
+    weight_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,p));
+   
+    const Real zero(0);
+    bool inside(false);
     std::vector<Real> x(d);
     for (int i = 0; i < c; ++i) {
+      inside = false;
       for (int j = 0; j < p; ++j) {
         for (int k = 0; k < d; ++k) {
           x[k] = (*fe_->cubPts())(i,j,k);
         }
-        (*ctrlWeight_)(i,j) = (alpha_-one) * evaluateControlWeight(x) + one;
+        if ( insideDomain(x) ) {
+          inside = true;
+          break;
+        }
+      }
+      for (int j = 0; j < p; ++j) {
+        (*weight_)(i,j) = (inside ? alpha_ : zero);
       }
     }
   }
@@ -286,19 +324,17 @@ public:
     innerAnnulusRadius_ = RoiRadius_ + dist2annulus;
     outerAnnulusRadius_ = innerAnnulusRadius_ + annulusWidth;
     alpha_              = parlist.sublist("Problem").get("Control Penalty",1e-4);
-    computeControlWeight();
+    computeDomainWeight();
   }
 
-  virtual Real evaluateControlWeight(const std::vector<Real> &x) const {
-    const Real one(1), zero(0);
-    Real xnorm(0), val(0);
+  virtual bool insideDomain(const std::vector<Real> &x) const {
+    Real xnorm(0);
     const int d = x.size();
     for (int i = 0; i < d; ++i) {
       xnorm += x[i]*x[i];
     }
     xnorm = std::sqrt(xnorm);
-    val   = (xnorm <= outerAnnulusRadius_ && xnorm >= innerAnnulusRadius_) ? one : zero;
-    return val;
+    return (xnorm <= outerAnnulusRadius_ && xnorm >= innerAnnulusRadius_);
   }
 
   Real value(Teuchos::RCP<Intrepid::FieldContainer<Real> > & val,
@@ -313,15 +349,16 @@ public:
     // Get components of the control
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > Z;
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
-    // Evaluate on FE basis
+    // Evaluate control penalty
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > WvalZ
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     for (int i=0; i<2; ++i) {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
-        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      fe_->evaluateValue(valZ_eval, Z[i]);
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > wZ
-        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*wZ,*ctrlWeight_,*valZ_eval);
-      fe_->computeIntegral(val,wZ,valZ_eval,true);
+      valZ->initialize(); WvalZ->initialize();
+      fe_->evaluateValue(valZ, Z[i]);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*WvalZ,*weight_,*valZ);
+      fe_->computeIntegral(val,WvalZ,valZ,true);
     }
     Intrepid::RealSpaceTools<Real>::scale(*val,static_cast<Real>(0.5));
     return static_cast<Real>(0);
@@ -347,22 +384,22 @@ public:
     // Get components of the control
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > Z;
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
-    // Evaluate on FE basis
+    // Evaluate control penalty
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > WvalZ
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     for (int i=0; i<2; ++i) {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval
-        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      fe_->evaluateValue(valZ_eval, Z[i]);
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > wZ
-        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*wZ,*ctrlWeight_,*valZ_eval);
+      valZ->initialize(); WvalZ->initialize();
+      fe_->evaluateValue(valZ, Z[i]);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*WvalZ,*weight_,*valZ);
       G[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
       Intrepid::FunctionSpaceTools::integrate<Real>(*G[i],
-                                                    *wZ,
+                                                    *WvalZ,
                                                     *(fe_->NdetJ()),
                                                     Intrepid::COMP_CPP,
                                                     false);
     }
-
     fieldHelper_->combineFieldCoeff(grad, G);
   }
 
@@ -404,22 +441,22 @@ public:
     // Get components of the control
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > V;
     fieldHelper_->splitFieldCoeff(V, v_coeff);
-    // Evaluate on FE basis
+    // Evaluate control penalty
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > valV
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > WvalV
+      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
     for (int i=0; i<2; ++i) {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > valV_eval
-        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      fe_->evaluateValue(valV_eval, V[i]);
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > wV
-        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*wV,*ctrlWeight_,*valV_eval);
+      valV->initialize(); WvalV->initialize();
+      fe_->evaluateValue(valV, V[i]);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*WvalV,*weight_,*valV);
       H[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
       Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
-                                                    *wV,
+                                                    *WvalV,
                                                     *(fe_->NdetJ()),
                                                     Intrepid::COMP_CPP,
                                                     false);
     }
-
     fieldHelper_->combineFieldCoeff(hess, H);
   }
 
