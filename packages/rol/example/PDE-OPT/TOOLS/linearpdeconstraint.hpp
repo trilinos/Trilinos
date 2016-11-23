@@ -80,7 +80,7 @@ private:
   const Teuchos::RCP<PDE<Real> > pde_;
   Teuchos::RCP<Assembler<Real> > assembler_;
   Teuchos::RCP<Solver<Real> >    solver_;
-  bool initZvec_, initZpar_;
+  bool initZvec_, initZpar_, isStochastic_;
   bool assembleRHS_, assembleJ1_, assembleJ2_, assembleJ3_, setSolver_;
 
   Teuchos::RCP<Tpetra::MultiVector<> > cvec_;
@@ -231,9 +231,10 @@ public:
                         const Teuchos::RCP<MeshManager<Real> > &meshMgr,
                         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                         Teuchos::ParameterList &parlist,
-                        std::ostream &outStream = std::cout)
+                        std::ostream &outStream = std::cout,
+                        const bool isStochastic = false)
     : ROL::EqualityConstraint_SimOpt<Real>(), pde_(pde),
-      initZvec_(true), initZpar_(true),
+      initZvec_(true), initZpar_(true), isStochastic_(isStochastic),
       assembleRHS_(true), assembleJ1_(true), assembleJ2_(true), assembleJ3_(true), setSolver_(true) {
     // Construct assembler.
     assembler_ = Teuchos::rcp(new Assembler<Real>(pde_->getFields(),meshMgr,comm,parlist,outStream));
@@ -247,13 +248,15 @@ public:
   }
 
   void setParameter(const std::vector<Real> &param) {
-    ROL::EqualityConstraint_SimOpt<Real>::setParameter(param);
-    pde_->setParameter(param);
-    assembleRHS_  = true;
-    assembleJ1_   = true;
-    assembleJ2_   = true;
-    assembleJ3_   = true;
-    setSolver_    = true;
+    if (isStochastic_) {
+      ROL::EqualityConstraint_SimOpt<Real>::setParameter(param);
+      pde_->setParameter(param);
+      assembleRHS_ = true;
+      assembleJ1_  = true;
+      assembleJ2_  = true;
+      assembleJ3_  = true;
+      setSolver_   = true;
+    }
   }
 
   const Teuchos::RCP<Assembler<Real> > getAssembler(void) const {
