@@ -169,24 +169,9 @@ preEvaluate(typename TRAITS::PreEvalData d)
     ged = d.gedc.getDataObject(globalDataKey_ + post);
     RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged =
       rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged, true);
-///////////////////////////////////////////////////////////////////////////////
-//
-//  The following line is the problem-child.  At this point I'm not even doing
-//  anything with xOwned_ past this line.  Comment out the next line, and it's
-//  a Teuchos::null and everything's fine (I've commented stuff out to the
-//  point where xOwned_ and xGhosted_ aren't used at all---they're just sitting
-//  here).  Leave the next line as-is, and the test case seems to run out to
-//  time = 0.25, get to "F) Check the solution to the forward problem ...",
-//  and then GDB shows:
-//
-//    Program received signal SIGILL, Illegal instruction.
-//    0x000000000518da92 in typeinfo for Thyra::LinearOpBase<double> ()
-//
-///////////////////////////////////////////////////////////////////////////////
     ownedMap_ = ro_ged->getOwnedMap();
-    xOwned_   = ro_ged->getOwnedVector();                                        // JMG:  Problem child.
+    xOwned_   = ro_ged->getOwnedVector();
     xGhosted_ = ro_ged->getGhostedVector_Epetra();
-    x_        = ro_ged->getGhostedVector_Epetra();
     return;
   }
 
@@ -222,7 +207,6 @@ preEvaluate(typename TRAITS::PreEvalData d)
     ownedMap_ = ro_ged->getOwnedMap();
     xOwned_   = ro_ged->getOwnedVector();
     xGhosted_ = ro_ged->getGhostedVector_Epetra();
-    x_        = ro_ged->getGhostedVector_Epetra();
   }
 }
 
