@@ -390,17 +390,20 @@ applyDirichletBCs(const LinearObjContainer & counter,
   }
 }
 
-template <typename Traits,typename LocalOrdinalT>
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildDomainContainer()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename Traits, typename LocalOrdinalT>
 Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>
-EpetraLinearObjFactory<Traits,LocalOrdinalT>::
-buildDomainContainer() const
+EpetraLinearObjFactory<Traits, LocalOrdinalT>::buildDomainContainer() const
 {
-  Teuchos::RCP<EpetraVector_ReadOnly_GlobalEvaluationData> vec_ged
-    = Teuchos::rcp(new EpetraVector_ReadOnly_GlobalEvaluationData);
-  vec_ged->initialize(getGhostedImport(),getGhostedColMap(),getColMap());
-
+  Teuchos::RCP<EpetraVector_ReadOnly_GlobalEvaluationData> vec_ged =
+    Teuchos::rcp(new EpetraVector_ReadOnly_GlobalEvaluationData);
+  vec_ged->initialize(getGhostedImport2(), getGhostedColMap2(), getColMap());
   return vec_ged;
-}
+} // end of buildDomainContainer()
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::MpiComm<int> EpetraLinearObjFactory<Traits,LocalOrdinalT>::
@@ -527,21 +530,61 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::get
    return cMap_;
 }
 
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedMap() const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedMap()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedMap() const
 {
-   if(ghostedMap_==Teuchos::null) ghostedMap_ = buildGhostedMap();
+  if (ghostedMap_ == Teuchos::null)
+    ghostedMap_ = buildGhostedMap();
+  return ghostedMap_;
+} // end of getGhostedMap()
 
-   return ghostedMap_;
-}
-
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedColMap() const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedMap2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedMap2() const
 {
-   if(cGhostedMap_==Teuchos::null) cGhostedMap_ = buildGhostedColMap();
+  if (ghostedMap_ == Teuchos::null)
+    ghostedMap_ = buildGhostedMap2();
+  return ghostedMap_;
+} // end of getGhostedMap2()
 
-   return cGhostedMap_;
-}
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedColMap()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedColMap() const
+{
+  if (cGhostedMap_ == Teuchos::null)
+    cGhostedMap_ = buildGhostedColMap();
+  return cGhostedMap_;
+} // end of getGhostedColMap()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedColMap2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
+getGhostedColMap2() const
+{
+  if (cGhostedMap_ == Teuchos::null)
+    cGhostedMap_ = buildGhostedColMap2();
+  return cGhostedMap_;
+} // end of getGhostedColMap2()
 
 // get the graph of the crs matrix
 template <typename Traits,typename LocalOrdinalT>
@@ -560,14 +603,33 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
    return ghostedGraph_;
 }
 
-template <typename Traits,typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Import> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedImport() const
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedImport()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Import>
+EpetraLinearObjFactory<Traits, LocalOrdinalT>::getGhostedImport() const
 {
-   if(importer_==Teuchos::null)
-      importer_ = Teuchos::rcp(new Epetra_Import(*getGhostedMap(),*getMap()));
+  if (importer_ == Teuchos::null)
+    importer_ = Teuchos::rcp(new Epetra_Import(*getGhostedMap(), *getMap()));
+  return importer_;
+} // end of getGhostedImport()
 
-   return importer_;
-}
+///////////////////////////////////////////////////////////////////////////////
+//
+//  getGhostedImport2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Import>
+EpetraLinearObjFactory<Traits, LocalOrdinalT>::getGhostedImport2() const
+{
+  if (importer_ == Teuchos::null)
+    importer_ = Teuchos::rcp(new Epetra_Import(*getGhostedMap2(), *getMap()));
+  return importer_;
+} // end of getGhostedImport2()
 
 template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Import> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedColImport() const
@@ -633,21 +695,41 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits,LocalOrdinalT>::bui
    return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
 }
 
-// Build the ghosted map.
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildGhostedMap()
+//
+///////////////////////////////////////////////////////////////////////////////
 template <typename Traits, typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
 buildGhostedMap() const
 {
   std::vector<int> indices;
-//  if (newWay)                                                                  // JMG:  We probably need these ifs in here, but
-//    gidProvider_->getGhostedIndices(indices);                                  //       I'm trying to get things working where
-//  else                                                                         //       the ghosted map actually pertains to the
-    gidProvider_->getOwnedAndGhostedIndices(indices);                            //       owned and ghosted indices.
+  gidProvider_->getOwnedAndGhostedIndices(indices);
   return Teuchos::rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0,
     *comm_));
-}
+} // end of buildGhostedMap()
 
-// Build the ghosted map.
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildGhostedMap2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
+buildGhostedMap2() const
+{
+  std::vector<int> indices;
+  gidProvider_->getGhostedIndices(indices);
+  return Teuchos::rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0,
+    *comm_));
+} // end of buildGhostedMap2()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildGhostedColMap()
+//
+///////////////////////////////////////////////////////////////////////////////
 template <typename Traits, typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
 buildGhostedColMap() const
@@ -655,13 +737,27 @@ buildGhostedColMap() const
   if (!hasColProvider_)
     return buildGhostedMap();
   std::vector<int> indices;
-//  if (newWay)
-//    colGidProvider_->getGhostedIndices(indices);
-//  else
-    colGidProvider_->getOwnedAndGhostedIndices(indices);
+  colGidProvider_->getOwnedAndGhostedIndices(indices);
   return Teuchos::rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0,
     *comm_));
-}
+} // end of buildGhostedColMap()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildGhostedColMap2()
+//
+///////////////////////////////////////////////////////////////////////////////
+template <typename Traits, typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<Traits, LocalOrdinalT>::
+buildGhostedColMap2() const
+{
+  if (!hasColProvider_)
+    return buildGhostedMap2();
+  std::vector<int> indices;
+  colGidProvider_->getGhostedIndices(indices);
+  return Teuchos::rcp(new Epetra_Map(-1, indices.size(), &indices[0], 0,
+    *comm_));
+} // end of buildGhostedColMap2()
 
 // get the graph of the crs matrix
 template <typename Traits,typename LocalOrdinalT>

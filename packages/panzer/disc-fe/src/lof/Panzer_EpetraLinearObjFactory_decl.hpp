@@ -226,12 +226,14 @@ public:
 
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedMap() const;
+   virtual const Teuchos::RCP<Epetra_Map> getGhostedMap2() const;
 
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedMap(int) const { return getGhostedMap(); }
 
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap() const;
+   virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap2() const;
 
    virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap(int) const { return getGhostedColMap(); }
 
@@ -248,6 +250,7 @@ public:
 
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Import> getGhostedImport() const;
+   virtual const Teuchos::RCP<Epetra_Import> getGhostedImport2() const;
 
    virtual const Teuchos::RCP<Epetra_Import> getGhostedImport(int ) const { return getGhostedImport(); }
 
@@ -287,7 +290,9 @@ protected:
    virtual const Teuchos::RCP<Epetra_Map> buildMap() const;
    virtual const Teuchos::RCP<Epetra_Map> buildColMap() const;
    virtual const Teuchos::RCP<Epetra_Map> buildGhostedMap() const;
+   virtual const Teuchos::RCP<Epetra_Map> buildGhostedMap2() const;
    virtual const Teuchos::RCP<Epetra_Map> buildGhostedColMap() const;
+   virtual const Teuchos::RCP<Epetra_Map> buildGhostedColMap2() const;
 
    // get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> buildGraph() const;

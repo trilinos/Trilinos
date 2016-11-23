@@ -259,10 +259,9 @@ evaluateFields(typename TRAITS::EvalData workset)
           }
           else
             (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
-//              (*xGhosted_)[lid - numOwnedIndices];                             // JMG:  This is what it should be but it's
-              (*xGhosted_)[lid];                                                 //       commented out because I'm trying to get
-        }                                                                        //       things working where xGhosted_ is
-        else                                                                     //       actually the owned and ghosted indices.
+              (*xGhosted_)[lid - numOwnedIndices];
+        }
+        else
           (gatherFields_[fieldIndex])(worksetCellIndex, basis) =
             (*x_)[lid];
       }
