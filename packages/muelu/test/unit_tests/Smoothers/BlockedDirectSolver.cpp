@@ -434,7 +434,9 @@ namespace MueLuTests {
 
       // solve system
       solver->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      Teuchos::RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      Teuchos::RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
@@ -544,7 +546,9 @@ namespace MueLuTests {
 
       // solve system
       solver->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      Teuchos::RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      Teuchos::RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
@@ -712,7 +716,9 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      Teuchos::RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      Teuchos::RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
@@ -879,7 +885,9 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
-      Teuchos::ArrayRCP<const Scalar> xdata = X->getData(0);
+      Teuchos::RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
+      Teuchos::RCP<MultiVector> XX = bX->Merge();
+      Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<X->getLocalLength(); i++) {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
