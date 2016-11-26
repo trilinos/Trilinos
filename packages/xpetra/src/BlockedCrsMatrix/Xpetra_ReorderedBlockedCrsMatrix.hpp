@@ -231,6 +231,7 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > mergeSubBlockM
       TEUCHOS_ASSERT(subMaps[i].is_null()==false);
     }
 
+    // what, if we have Thyra Maps??
     map = MapUtils::concatenateMaps(subMaps);
   }
   TEUCHOS_ASSERT(map.is_null()==false);
