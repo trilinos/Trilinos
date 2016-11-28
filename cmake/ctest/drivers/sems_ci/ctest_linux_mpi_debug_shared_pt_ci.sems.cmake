@@ -54,73 +54,38 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.sems.cmake")
 
 #
-# Platform/compiler specific options for geminga using gcc
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_DIR_NAME MPI_RELEASE_DEBUG_SHARED_PT_CI)
+#SET(CTEST_TEST_TIMEOUT 900)
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+#override the default number of processors to run on.
+SET( CTEST_BUILD_FLAGS "-j10 -i" )
+SET( CTEST_PARALLEL_LEVEL "10" )
 
-  SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
-  SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  SET(CTEST_BUILD_FLAGS     "-j35 -i" )
+SET(TRIBITS_2ND_CTEST_DROP_SITE
+  "testing.sandia.gov" )
+SET(TRIBITS_2ND_CTEST_DROP_LOCATION
+  "/extended/cdash/submit.php?project=Trilinos" )
 
-  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
-  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
-  SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+SET(Trilinos_BRANCH develop)
 
-      "-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
+SET(EXTRA_EXCLUDE_PACKAGES)
 
-      "-DBUILD_SHARED_LIBS:BOOL=ON"
-
-      ### COMPILERS AND FLAGS ###
-      "-DTrilinos_ENABLE_CXX11:BOOL=ON"
-        "-DTrilinos_CXX11_FLAGS:STRING='-std=c++11 -expt-extended-lambda'"
-      "-DCMAKE_CXX_FLAGS:STRING='-Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow'"
-      "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
-
-      ### TPLS ###
-      "-DTPL_ENABLE_CUDA:BOOL=ON"
-      "-DTPL_ENABLE_CUSPARSE:BOOL=ON"
-      "-DTPL_ENABLE_HWLOC:BOOL=OFF"
-
-      ### PACKAGE CONFIGURATION ###
-          "-DKokkos_ENABLE_Cuda:BOOL=ON"
-          "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-          "-DMueLu_ENABLE_BROKEN_TESTS:BOOL=ON"
-          "-DXpetra_ENABLE_BROKEN_TESTS:BOOL=ON"
-
-      ### MISC ###
-      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake"
   )
+# NOTE: That above must match *exactly* what is listed is listed in
+# project-checkin-test-config.py.
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.2")
+SET(CTEST_TEST_TYPE Continuous)
 
-  # Ensure that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
-
-    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DTPL_ENABLE_MPI:BOOL=ON"
-            "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.10.0"
-       )
-
-  ELSE()
-
-    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/gcc-4.9.2/bin/g++"
-        "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/gcc-4.9.2/bin/gcc"
-      )
-
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

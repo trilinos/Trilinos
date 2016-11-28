@@ -556,8 +556,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_DOUBLE)
 GLOBAL_SET(HAVE_TPETRA_DOUBLE ${Tpetra_INST_DOUBLE})
 
-# Scalar = float is NOT enabled by default.
-GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT OFF)
+IF (Trilinos_ENABLE_FLOAT)
+  GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT  ON)
+ELSE()
+  GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT  OFF)
+ENDIF()
 
 # Set up the Tpetra_INST_FLOAT option: whether to instantiate / test
 # Scalar = float.
@@ -590,38 +593,31 @@ IF (Tpetra_INST_FLOAT)
   ENDIF ()
 ENDIF ()
 
-# Decide whether to instantiate / test Scalar = std::complex<float> or
-# std::complex<double> by default.  Both require a complex-arithmetic
-# BLAS.  Furthermore, std::complex<T> requires the corresponding
+# Decide whether to instantiate / test Scalar = std::complex<float> and/or
+# std::complex<double> by default.  Both require a complex-arithmetic BLAS
+# provided by Teuchos.  Furthermore, std::complex<T> requires the corresponding
 # Scalar=T instantiation to be ON.
 #
-# In a debug build, we enable Scalar = complex, in order that this
-# capability be tested.  In a release build, we disable this case, in
-# order to reduce build time.  Users may always enable it explicitly.
-ASSERT_DEFINED (Tpetra_ENABLE_DEBUG)
+# The decision to enable or disable std::complex<T> instantiations is also
+# controlled by Trilinos-level configure options.
 # mfh 18 Aug 2015: Teuchos currently doesn't even define
 # HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
 # Thanks to Andrew Bradley for pointing this out.
-IF (DEFINED HAVE_COMPLEX_BLAS)
-  IF (HAVE_COMPLEX_BLAS)
-    IF (Tpetra_INST_DOUBLE)
-      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ${Tpetra_ENABLE_DEBUG})
-    ELSE()
-      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
-    ENDIF()
-    IF (Tpetra_INST_FLOAT)
-      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ${Tpetra_ENABLE_DEBUG})
-    ELSE()
-      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-    ENDIF()
+IF (DEFINED HAVE_COMPLEX_BLAS  AND  HAVE_COMPLEX_BLAS)
+  IF (Tpetra_INST_DOUBLE AND Trilinos_ENABLE_COMPLEX_DOUBLE) 
+    GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ON)
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+  ENDIF()
+  IF (Tpetra_INST_FLOAT AND Trilinos_ENABLE_COMPLEX_FLOAT)
+    GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ON)
+  ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-  ENDIF() # HAVE_COMPLEX_BLAS
-ELSE () # NOT DEFINED HAVE_COMPLEX_BLAS (consider OFF)
+  ENDIF()
+ELSE()
   GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
   GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-ENDIF () # DEFINED HAVE_COMPLEX_BLAS
+ENDIF()
 
 # Set up the Tpetra_INST_COMPLEX_DOUBLE option: whether to instantiate
 # / test Scalar = std::complex<double>.
