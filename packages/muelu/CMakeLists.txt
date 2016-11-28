@@ -161,7 +161,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Intrepid2_Refactor
   HAVE_${PACKAGE_NAME_UC}_INTREPID2_REFACTOR
   "Enable Intrepid2 Refactor."
-  ${Intrepid2_ENABLE_KokkosDynRankView})
+  "${Intrepid2_ENABLE_KokkosDynRankView}")
 
 
 
