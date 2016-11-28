@@ -61,6 +61,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_ReorderedBlockedMultiVector.hpp>
 #include <Xpetra_Exceptions.hpp>
 #include <Xpetra_ThyraUtils.hpp>
 
@@ -323,6 +324,395 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, Constructor, M, MA, 
 
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorReordered, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVector;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  typedef Xpetra::ThyraUtils<Scalar,LO,GO,Node> ThyraUtils;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 6;
+
+  Teuchos::RCP<MultiVector>         vv = CreateMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<const BlockedMultiVector> bvv = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+  TEST_EQUALITY(bvv.is_null(),false);
+
+  Teuchos::ArrayRCP<const Scalar> vData = bvv->getMultiVector(0)->getData(0);
+  for(size_t i=0; i< bvv->getBlockedMap()->getMap(0,false)->getNodeNumElements(); i++) {
+    TEST_EQUALITY(vData[i], bvv->getBlockedMap()->getMap(0,false)->getGlobalElement(i));
+  }
+
+  vData = bvv->getMultiVector(1)->getData(0);
+  for(size_t i=0; i< bvv->getBlockedMap()->getMap(1,false)->getNodeNumElements(); i++) {
+    TEST_EQUALITY(vData[i], bvv->getBlockedMap()->getMap(1,false)->getGlobalElement(i));
+  }
+
+  vData = bvv->getMultiVector(2)->getData(0);
+  for(size_t i=0; i< bvv->getBlockedMap()->getMap(2,false)->getNodeNumElements(); i++) {
+    TEST_EQUALITY(vData[i], bvv->getBlockedMap()->getMap(2,false)->getGlobalElement(i));
+  }
+
+  // first reordered multivector
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 0 [ 1 2 ] [ [ 3 4 ] 5 ] ]");
+
+  Teuchos::RCP<const MultiVector> bmv = buildReorderedBlockedMultiVector(brm, bvv);
+  TEST_EQUALITY(bmv.is_null(),false);
+  {
+    Teuchos::RCP<const BlockedMultiVector> bbmv = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bmv);
+    TEST_EQUALITY(bbmv.is_null(),false);
+    vData = bbmv->getMultiVector(0)->getData(0);
+    for(size_t i=0; i< bbmv->getBlockedMap()->getMap(0,false)->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], bbmv->getBlockedMap()->getMap(0,false)->getGlobalElement(i));
+    }
+  }
+
+  Teuchos::RCP<const Map> fullmap = bmv->getMap();
+  TEST_EQUALITY(fullmap.is_null(),false);
+  Teuchos::RCP<const BlockedMap> fullBlockedMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(fullmap);
+  TEST_EQUALITY(fullBlockedMap.is_null(),false);
+  TEST_EQUALITY(fullBlockedMap->getNumMaps(), 3);
+  TEST_EQUALITY(fullBlockedMap->getThyraMode(), false);
+  TEST_EQUALITY(fullBlockedMap->getMap(1,false)->getMinAllGlobalIndex(), 5);
+  TEST_EQUALITY(fullBlockedMap->getMap(1,false)->getMaxAllGlobalIndex(), (comm->getSize()-1) * 160 + 19);
+  Teuchos::RCP<const Map> map0 = fullBlockedMap->getMap(0,false);
+  Teuchos::RCP<const BlockedMap> bmap0 = Teuchos::rcp_dynamic_cast<const BlockedMap>(map0);
+  TEST_EQUALITY(bmap0.is_null(),true);
+  Teuchos::RCP<const Map> map1 = fullBlockedMap->getMap(1,false);
+  Teuchos::RCP<const BlockedMap> bmap1 = Teuchos::rcp_dynamic_cast<const BlockedMap>(map1);
+  TEST_EQUALITY(bmap1.is_null(),false);
+  TEST_EQUALITY(fullBlockedMap->getMap(2,false)->getMinAllGlobalIndex(), 20);
+  TEST_EQUALITY(fullBlockedMap->getMap(2,false)->getMaxAllGlobalIndex(), comm->getSize() * 160 - 1);
+  Teuchos::RCP<const Map> map2 = fullBlockedMap->getMap(2,false);
+  Teuchos::RCP<const BlockedMap> bmap2 = Teuchos::rcp_dynamic_cast<const BlockedMap>(map2);
+  TEST_EQUALITY(bmap2.is_null(),false);
+
+  Teuchos::RCP<const BlockedMultiVector> bbmv = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bmv);
+  TEST_EQUALITY(bbmv.is_null(),false);
+  TEST_EQUALITY(bbmv->getNumVectors(),2);
+  TEST_EQUALITY(bbmv->getBlockedMap()->getNumMaps(),3);
+  Teuchos::RCP<const MultiVector> bmv1 = bbmv->getMultiVector(1,false);
+  TEST_EQUALITY(bmv1.is_null(),false);
+  Teuchos::RCP<const BlockedMultiVector> bmv11 = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bmv1);
+  TEST_EQUALITY(bmv11.is_null(),false);
+  TEST_EQUALITY(bmv11->getBlockedMap()->getNumMaps(),2);
+  TEST_EQUALITY(bmv11->getBlockedMap()->getMap(0,false)->getMinAllGlobalIndex(),5);
+  TEST_EQUALITY(bmv11->getBlockedMap()->getMap(0,false)->getMaxAllGlobalIndex(),(comm->getSize()-1) * 160 + 9);
+  TEST_EQUALITY(bmv11->getBlockedMap()->getMap(1,false)->getMinAllGlobalIndex(),10);
+  TEST_EQUALITY(bmv11->getBlockedMap()->getMap(1,false)->getMaxAllGlobalIndex(),(comm->getSize()-1) * 160 + 19);
+  {
+    vData = bmv11->getMultiVector(0)->getData(0);
+    for(size_t i=0; i< bmv11->getBlockedMap()->getMap(0,false)->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], bmv11->getBlockedMap()->getMap(0,false)->getGlobalElement(i));
+    }
+  }
+  {
+    vData = bmv11->getMultiVector(1)->getData(0);
+    for(size_t i=0; i< bmv11->getBlockedMap()->getMap(1,false)->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], bmv11->getBlockedMap()->getMap(1,false)->getGlobalElement(i));
+    }
+  }
+  Teuchos::RCP<const MultiVector> bmv2 = bbmv->getMultiVector(2,false);
+  TEST_EQUALITY(bmv2.is_null(),false);
+  Teuchos::RCP<const BlockedMultiVector> bmv21 = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bmv2);
+  TEST_EQUALITY(bmv21.is_null(),false);
+  TEST_EQUALITY(bmv21->getBlockedMap()->getNumMaps(),2);
+  TEST_EQUALITY(bmv21->getBlockedMap()->getMap(0,false)->getMinAllGlobalIndex(),20);
+  TEST_EQUALITY(bmv21->getBlockedMap()->getMap(0,false)->getMaxAllGlobalIndex(),(comm->getSize()-1) * 160 + 79);
+  TEST_EQUALITY(bmv21->getBlockedMap()->getMap(1,false)->getMinAllGlobalIndex(),80);
+  TEST_EQUALITY(bmv21->getBlockedMap()->getMap(1,false)->getMaxAllGlobalIndex(),comm->getSize() * 160 - 1);
+
+  Teuchos::RCP<const BlockedMultiVector> bmv211 = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bmv21->getMultiVector(0,false));
+  TEST_EQUALITY(bmv211.is_null(),false);
+  TEST_EQUALITY(bmv211->getBlockedMap()->getNumMaps(),2);
+  TEST_EQUALITY(bmv211->getBlockedMap()->getMap(0,false)->getMinAllGlobalIndex(),20);
+  TEST_EQUALITY(bmv211->getBlockedMap()->getMap(0,false)->getMaxAllGlobalIndex(),(comm->getSize()-1) * 160 + 39);
+  TEST_EQUALITY(bmv211->getBlockedMap()->getMap(1,false)->getMinAllGlobalIndex(),40);
+  TEST_EQUALITY(bmv211->getBlockedMap()->getMap(1,false)->getMaxAllGlobalIndex(),(comm->getSize()-1) * 160 + 79);
+
+  Teuchos::RCP<const MultiVector> bmv212 = bmv21->getMultiVector(1,false);
+  TEST_EQUALITY(bmv212.is_null(),false);
+  Teuchos::RCP<const BlockedMultiVector> bmv212t = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bmv212);
+  TEST_EQUALITY(bmv212t.is_null(),false);
+  TEST_EQUALITY(bmv212t->getBlockedMap()->getNumMaps(),1);
+  TEST_EQUALITY(bmv212t->getBlockedMap()->getMap(0,false)->getMinAllGlobalIndex(),80);
+  TEST_EQUALITY(bmv212t->getBlockedMap()->getMap(0,false)->getMaxAllGlobalIndex(),comm->getSize() * 160 -1);
+  TEST_EQUALITY(bmv212t->getMap()->getMinAllGlobalIndex(),80);
+  TEST_EQUALITY(bmv212t->getMap()->getMaxAllGlobalIndex(),comm->getSize() * 160 -1);
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm2 = Xpetra::blockedReorderFromString("[ 4 1 ]");
+
+  Teuchos::RCP<const MultiVector> bvvv = buildReorderedBlockedMultiVector(brm2, bvv);
+  TEST_EQUALITY(bvvv.is_null(),false);
+  Teuchos::RCP<const BlockedMultiVector> brvvv = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bvvv);
+  TEST_EQUALITY(brvvv.is_null(),false);
+  TEST_EQUALITY(brvvv->getBlockedMap()->getNumMaps(),2);
+  TEST_EQUALITY(brvvv->getBlockedMap()->getMap(0,false)->getMinAllGlobalIndex(),40);
+  TEST_EQUALITY(brvvv->getBlockedMap()->getMap(0,false)->getMaxAllGlobalIndex(),(comm->getSize()-1) * 160 + 79);
+  TEST_EQUALITY(brvvv->getBlockedMap()->getMap(1,false)->getMinAllGlobalIndex(),5);
+  TEST_EQUALITY(brvvv->getBlockedMap()->getMap(1,false)->getMaxAllGlobalIndex(),(comm->getSize()-1) * 160 + 9);
+  TEST_EQUALITY(brvvv->getMap()->getMinAllGlobalIndex(),5);
+  TEST_EQUALITY(brvvv->getMap()->getMaxAllGlobalIndex(),(comm->getSize()-1) * 160 + 79);
+
+
+  Teuchos::RCP<const MultiVector> bm = brvvv->Merge();
+  {
+     Teuchos::ArrayRCP<const Scalar> vData  = bm->getData(0);
+     for(size_t i=0; i< bm->getLocalLength(); i++) {
+       TEST_EQUALITY(vData[i], bm->getMap()->getGlobalElement(i));
+     }
+   }
+
+#if 0
+  Teuchos::RCP<const Map> map1 = MapFactory::Build(bvv->getMap()->lib(), 10, 0, comm);
+  Teuchos::RCP<const Map> map2 = MapFactory::Build(bvv->getMap()->lib(), 15, 0, comm);
+  Teuchos::RCP<const Map> map3 = MapFactory::Build(bvv->getMap()->lib(), 18, 0, comm);
+
+  // create Thyra product vector space
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs1 = ThyraUtils::toThyra(map1);
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs2 = ThyraUtils::toThyra(map2);
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs3 = ThyraUtils::toThyra(map3);
+
+  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > vecSpacesInner(2);
+  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > vecSpacesOuter(2);
+
+  vecSpacesInner[0] = vs2;
+  vecSpacesInner[1] = vs3;
+
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > psInner =
+    Thyra::productVectorSpace<Scalar>(vecSpacesInner());
+
+  vecSpacesOuter[0] = vs1;
+  vecSpacesOuter[1] = psInner;
+
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > ps =
+    Thyra::productVectorSpace<Scalar>(vecSpacesOuter());
+
+  Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > pps =
+    Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<Scalar> >(ps);
+  TEST_EQUALITY(pps.is_null(),false);
+
+  Teuchos::RCP<const Map> ppm = ThyraUtils::toXpetra(ps, comm);
+  TEST_EQUALITY(ppm.is_null(),false);
+
+  TEST_EQUALITY(ppm->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(ppm->getMaxAllGlobalIndex(), 42);
+
+  Teuchos::RCP<const BlockedMap> ppbm = Teuchos::rcp_dynamic_cast<const BlockedMap>(ppm);
+  TEST_EQUALITY(ppbm.is_null(),false);
+
+  TEST_EQUALITY(ppbm->getMap(0,false)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(ppbm->getMap(0,false)->getMaxAllGlobalIndex(), 9);
+
+  TEST_EQUALITY(ppbm->getMap(1,false)->getMinAllGlobalIndex(), 10);
+  TEST_EQUALITY(ppbm->getMap(1,false)->getMaxAllGlobalIndex(), 42);
+
+  Teuchos::RCP<const Map> pp2m = ppbm->getMap(1,true);
+  Teuchos::RCP<const BlockedMap> pp2bm = Teuchos::rcp_dynamic_cast<const BlockedMap>(pp2m);
+  TEST_EQUALITY(pp2bm.is_null(),false);
+
+  // there are no nested Xpetra style blocked maps!
+  Teuchos::RCP<const Map> pp3m = ppbm->getMap(1,false);
+  Teuchos::RCP<const BlockedMap> pp3bm = Teuchos::rcp_dynamic_cast<const BlockedMap>(pp3m);
+  TEST_EQUALITY(pp3bm.is_null(),false);
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorReorderedSmall, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVector;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  typedef Xpetra::ThyraUtils<Scalar,LO,GO,Node> ThyraUtils;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 3;
+
+  Teuchos::RCP<MultiVector>         vv = CreateMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<const BlockedMultiVector> bvv = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+  TEST_EQUALITY(bvv.is_null(),false);
+
+  Teuchos::ArrayRCP<const Scalar> vData  = bvv->getMultiVector(0)->getData(0);
+  Teuchos::ArrayRCP<const Scalar> vData2 = bvv->getMultiVector(0)->getData(1);
+  for(size_t i=0; i< bvv->getBlockedMap()->getMap(0,false)->getNodeNumElements(); i++) {
+    TEST_EQUALITY(vData[i], bvv->getBlockedMap()->getMap(0,false)->getGlobalElement(i));
+    TEST_EQUALITY(vData2[i], i);
+  }
+
+  vData  = bvv->getMultiVector(1)->getData(0);
+  vData2 = bvv->getMultiVector(1)->getData(1);
+  for(size_t i=0; i< bvv->getBlockedMap()->getMap(1,false)->getNodeNumElements(); i++) {
+    TEST_EQUALITY(vData[i], bvv->getBlockedMap()->getMap(1,false)->getGlobalElement(i));
+    TEST_EQUALITY(vData2[i], 5 + i);
+  }
+
+  vData  = bvv->getMultiVector(2)->getData(0);
+  vData2 = bvv->getMultiVector(2)->getData(1);
+  for(size_t i=0; i< bvv->getBlockedMap()->getMap(2,false)->getNodeNumElements(); i++) {
+    TEST_EQUALITY(vData[i], bvv->getBlockedMap()->getMap(2,false)->getGlobalElement(i));
+    TEST_EQUALITY(vData2[i], 10 + i);
+  }
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 0 [ 1 2 ] ]");
+
+  Teuchos::RCP<const MultiVector> bmv = buildReorderedBlockedMultiVector(brm, bvv);
+  TEST_EQUALITY(bmv.is_null(),false);
+  Teuchos::RCP<const BlockedMultiVector> bbmv = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bmv);
+  TEST_EQUALITY(bbmv.is_null(),false);
+  Teuchos::RCP<const BlockedMultiVector> bbmv1 = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bbmv->getMultiVector(1));
+  TEST_EQUALITY(bbmv1.is_null(),false);
+
+  {
+    vData  = bbmv->getMultiVector(0)->getData(0);
+    vData2 = bbmv->getMultiVector(0)->getData(1);
+    for(size_t i=0; i< bbmv->getBlockedMap()->getMap(0,false)->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], bbmv->getBlockedMap()->getMap(0,false)->getGlobalElement(i));
+      TEST_EQUALITY(vData2[i], i);
+    }
+
+    vData  = bbmv1->getMultiVector(0,false)->getData(0);
+    vData2 = bbmv1->getMultiVector(0,false)->getData(1);
+    for(size_t i=0; i< bbmv1->getBlockedMap()->getMap(0,false)->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], bbmv1->getBlockedMap()->getMap(0,false)->getGlobalElement(i));
+      TEST_EQUALITY(vData2[i], 5 + i);
+    }
+
+    vData  = bbmv1->getMultiVector(1,false)->getData(0);
+    vData2 = bbmv1->getMultiVector(1,false)->getData(1);
+    for(size_t i=0; i< bbmv1->getBlockedMap()->getMap(1,false)->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], bbmv1->getBlockedMap()->getMap(1,false)->getGlobalElement(i));
+      TEST_EQUALITY(vData2[i], 10 + i);
+    }
+  }
+
+  Teuchos::RCP<const MultiVector> mmv = bbmv->Merge();
+  TEST_EQUALITY(mmv.is_null(),false);
+
+  {
+    vData  = mmv->getData(0);
+    vData2 = mmv->getData(1);
+    for(size_t i=0; i< mmv->getMap()->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], mmv->getMap()->getGlobalElement(i));
+      TEST_EQUALITY(vData2[i], i);
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorReorderedSmall2, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVector;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  typedef Xpetra::ThyraUtils<Scalar,LO,GO,Node> ThyraUtils;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 3;
+
+  Teuchos::RCP<MultiVector>         vv = CreateMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<const BlockedMultiVector> bvv = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+  TEST_EQUALITY(bvv.is_null(),false);
+
+  Teuchos::ArrayRCP<const Scalar> vData  = bvv->getMultiVector(0)->getData(0);
+  Teuchos::ArrayRCP<const Scalar> vData2 = bvv->getMultiVector(0)->getData(1);
+  for(size_t i=0; i< bvv->getBlockedMap()->getMap(0,false)->getNodeNumElements(); i++) {
+    TEST_EQUALITY(vData[i], bvv->getBlockedMap()->getMap(0,false)->getGlobalElement(i));
+    TEST_EQUALITY(vData2[i], i);
+  }
+
+  vData  = bvv->getMultiVector(1)->getData(0);
+  vData2 = bvv->getMultiVector(1)->getData(1);
+  for(size_t i=0; i< bvv->getBlockedMap()->getMap(1,false)->getNodeNumElements(); i++) {
+    TEST_EQUALITY(vData[i], bvv->getBlockedMap()->getMap(1,false)->getGlobalElement(i));
+    TEST_EQUALITY(vData2[i], 5 + i);
+  }
+
+  vData  = bvv->getMultiVector(2)->getData(0);
+  vData2 = bvv->getMultiVector(2)->getData(1);
+  for(size_t i=0; i< bvv->getBlockedMap()->getMap(2,false)->getNodeNumElements(); i++) {
+    TEST_EQUALITY(vData[i], bvv->getBlockedMap()->getMap(2,false)->getGlobalElement(i));
+    TEST_EQUALITY(vData2[i], 10 + i);
+  }
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ [ 2 0 ] 1 ]");
+
+  Teuchos::RCP<const MultiVector> bmv = buildReorderedBlockedMultiVector(brm, bvv);
+  TEST_EQUALITY(bmv.is_null(),false);
+  Teuchos::RCP<const BlockedMultiVector> bbmv = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bmv);
+  TEST_EQUALITY(bbmv.is_null(),false);
+  Teuchos::RCP<const BlockedMultiVector> bbmv0 = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bbmv->getMultiVector(0));
+  TEST_EQUALITY(bbmv0.is_null(),false);
+
+  {
+    vData  = bbmv->getMultiVector(1)->getData(0);
+    vData2 = bbmv->getMultiVector(1)->getData(1);
+    for(size_t i=0; i< bbmv->getBlockedMap()->getMap(1,false)->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], bbmv->getBlockedMap()->getMap(1,false)->getGlobalElement(i));
+      TEST_EQUALITY(vData2[i], 5 + i);
+    }
+
+    vData  = bbmv0->getMultiVector(0,false)->getData(0);
+    vData2 = bbmv0->getMultiVector(0,false)->getData(1);
+    for(size_t i=0; i< bbmv0->getBlockedMap()->getMap(0,false)->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], bbmv0->getBlockedMap()->getMap(0,false)->getGlobalElement(i));
+      TEST_EQUALITY(vData2[i], 10 + i);
+    }
+
+    vData  = bbmv0->getMultiVector(1,false)->getData(0);
+    vData2 = bbmv0->getMultiVector(1,false)->getData(1);
+    for(size_t i=0; i< bbmv0->getBlockedMap()->getMap(1,false)->getNodeNumElements(); i++) {
+      TEST_EQUALITY(vData[i], bbmv0->getBlockedMap()->getMap(1,false)->getGlobalElement(i));
+      TEST_EQUALITY(vData2[i], i);
+    }
+  }
+
+  Teuchos::RCP<const MultiVector> mmv = bbmv->Merge();
+  TEST_EQUALITY(mmv.is_null(),false);
+
+  {
+    vData  = mmv->getData(0);
+    vData2 = mmv->getData(1);
+    for(size_t i=0; i< mmv->getMap()->getNodeNumElements(); i++) {
+      GO expected, expected2;
+      if(i >=0 && i < 10) expected = comm->getRank() * 20 + 10 + i;
+      if(i >=10 && i < 15) expected = comm->getRank() * 20 + i - 10;
+      if(i >=15 && i < 20) expected = comm->getRank() * 20 + 5 + i - 15;
+      if(i >=0 && i < 10) expected2 = 10 + i;
+      if(i >=10 && i < 15) expected2 = i - 10;
+      if(i >=15 && i < 20) expected2 = 5 + i - 15;
+      TEST_EQUALITY(vData[i], expected);
+      TEST_EQUALITY(vData2[i], expected2);
+    }
+  }
+}
+
 //
 // INSTANTIATIONS
 //
@@ -344,6 +734,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, Constructor, M, MA, 
 
 #define XP_BLOCKEDMULTIVECTOR_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedMultiVector, Constructor, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedMultiVector, ConstructorReordered, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedMultiVector, ConstructorReorderedSmall, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedMultiVector, ConstructorReorderedSmall2, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
 
 //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ExtractVector, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N )
 //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ExtractVectorThyra, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N )
