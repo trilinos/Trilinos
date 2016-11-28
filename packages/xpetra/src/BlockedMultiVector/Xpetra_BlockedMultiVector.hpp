@@ -670,9 +670,23 @@ namespace Xpetra {
     ///   does a deep copy.
     ///
     /// Each subclass must implement this.  This includes
-    /// Xpetra::EpetraMultiVector and Xpetra::TpetraMultiVector.
+    /// Xpetra::EpetraMultiVector and Xpetra::TpetraMultiVector as well as
+    /// Xpetra::BockedMultiVector
     virtual void assign (const MultiVector& rhs) {
-      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::assign: Not (yet) supported by BlockedMultiVector.");
+      Teuchos::RCP<const MultiVector> rcpRhs = Teuchos::rcpFromRef(rhs);
+      Teuchos::RCP<const BlockedMultiVector> bRhs = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpRhs);
+      if(bRhs == Teuchos::null)
+        throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::assign: argument is not a blocked multi vector.");
+
+      map_ = Teuchos::rcp(new BlockedMap(*(bRhs->getBlockedMap())));
+      vv_ = std::vector<Teuchos::RCP<MultiVector> >(map_->getNumMaps());
+      for(size_t r = 0; r < map_->getNumMaps(); ++r) {
+        // create new (empty) multivector (is of type MultiVector or BlockedMultiVector)
+        RCP<MultiVector> vv = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(map_->getMap(r,bRhs->getBlockedMap()->getThyraMode()),rcpRhs->getNumVectors(),true);
+        *vv = *(bRhs->getMultiVector(r,map_->getThyraMode()));
+        vv_[r] = vv;
+      }
+      numVectors_ = rcpRhs->getNumVectors();
     }
 
   private:
