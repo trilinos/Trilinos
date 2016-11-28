@@ -299,9 +299,9 @@ public:
 
   /*! @brief replace set of global ids by new global ids
    *
-    @param  xx                Hello
-    @return                      Overlapping map compatible to "input" using the GIDs as defined by "nonOvlReferenceInput"
-
+    @param  input map (either Map or BlockedMap) containing Thyra GIDs
+    @param  offset GID offset for resulting Xpetra GIDs
+    @return Map (or BlockedMap) containing Xpetra GIDs
   */
   static Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > transformThyra2XpetraGIDs(
       const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& input, GlobalOrdinal offset) {
