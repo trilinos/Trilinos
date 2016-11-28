@@ -223,36 +223,11 @@ namespace Xpetra {
     //! copy constructor
     BlockedMap(const BlockedMap& input) {
       bThyraMode_ = input.getThyraMode();
-
-      fullmap_ = MapFactory::Build(input.getFullMap(),1);
-
+      fullmap_ = Teuchos::null;
       maps_.resize(input.getNumMaps(), Teuchos::null);
-      if(bThyraMode_ == true)
-        thyraMaps_.resize(input.getNumMaps(), Teuchos::null);
-      for(size_t i = 0; i < input.getNumMaps(); ++i) {
-        maps_[i] = MapFactory::Build(input.getMap(i,false),1);
-        if(bThyraMode_ == true)
-          thyraMaps_[i] = MapFactory::Build(input.getMap(i,true),1);
-      }
-
-      // plausibility check
-      size_t numAllElements = 0;
-      for(size_t v = 0; v < maps_.size(); ++v) {
-        numAllElements += maps_[v]->getGlobalNumElements();
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(fullmap_->getGlobalNumElements() != numAllElements, std::logic_error,
-                                 "logic error. full map and sub maps have not same number of elements. This cannot be. Please report the bug to the Xpetra developers!");
-
-      // build importers for sub maps
-      importers_.resize(maps_.size());
-      for (unsigned i = 0; i < maps_.size(); ++i)
-        if (maps_[i] != null)
-          importers_[i] = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap_, maps_[i]);
-      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
-                                 "logic error. full map and sub maps are inconsistently distributed over the processors.");
+      thyraMaps_.resize(input.getNumMaps(), Teuchos::null);
+      this->assign(input);
     }
-
-
 
     //! Destructor.
     virtual ~BlockedMap() { }
@@ -500,8 +475,36 @@ namespace Xpetra {
   protected:
     /// \brief Implementation of the assignment operator (operator=);
     ///   does a deep copy.
-    virtual void assign (const BlockedMap& rhs) {
-      throw Xpetra::Exceptions::RuntimeError("BlockedMap::assign: Not (yet) supported by BlockedMultiVector.");
+    virtual void assign (const BlockedMap& input) {
+      // TODO check implementation, simplify copy constructor
+      bThyraMode_ = input.getThyraMode();
+
+      fullmap_ = MapFactory::Build(input.getFullMap(),1);
+
+      maps_.resize(input.getNumMaps(), Teuchos::null);
+      if(bThyraMode_ == true)
+        thyraMaps_.resize(input.getNumMaps(), Teuchos::null);
+      for(size_t i = 0; i < input.getNumMaps(); ++i) {
+        maps_[i] = MapFactory::Build(input.getMap(i,false),1);
+        if(bThyraMode_ == true)
+          thyraMaps_[i] = MapFactory::Build(input.getMap(i,true),1);
+      }
+
+      // plausibility check
+      size_t numAllElements = 0;
+      for(size_t v = 0; v < maps_.size(); ++v) {
+        numAllElements += maps_[v]->getGlobalNumElements();
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(fullmap_->getGlobalNumElements() != numAllElements, std::logic_error,
+                                 "logic error. full map and sub maps have not same number of elements. This cannot be. Please report the bug to the Xpetra developers!");
+
+      // build importers for sub maps
+      importers_.resize(maps_.size());
+      for (unsigned i = 0; i < maps_.size(); ++i)
+        if (maps_[i] != null)
+          importers_[i] = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap_, maps_[i]);
+      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
+                                 "logic error. full map and sub maps are inconsistently distributed over the processors.");
     }
 
   private:
