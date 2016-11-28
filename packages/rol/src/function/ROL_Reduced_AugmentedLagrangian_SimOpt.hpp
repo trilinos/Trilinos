@@ -125,7 +125,7 @@ public:
                                                                       *control,
                                                                       *augConVec,
                                                                       parlist));
-    rAugLagSimOpt_ = Teuchos::rcp(new Reduced_Objective_SimOpt<Real>(augLagSimOpt_,redCon,state,adjoint));
+    rAugLagSimOpt_ = Teuchos::rcp(new Reduced_Objective_SimOpt<Real>(augLagSimOpt_,redCon,state,control,adjoint));
     rAugLagSimOpt_->update(*control);
     Real tol = 1e-8;
     rAugLagSimOpt_->value(*control,tol);
