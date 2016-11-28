@@ -90,12 +90,12 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     COMM serial mpi
     )
 
-  TRIBITS_ADD_EXECUTABLE(
-    Example_Poisson2D_pn_tpetra
-    SOURCES example_Poisson2D_pn_tpetra.cpp
-    TrilinosCouplings_Pamgen_Utils.cpp
-    COMM mpi
-    )
+#  TRIBITS_ADD_EXECUTABLE(
+#    Example_Poisson2D_pn_tpetra
+#    SOURCES example_Poisson2D_pn_tpetra.cpp
+#    TrilinosCouplings_Pamgen_Utils.cpp
+#    COMM mpi
+#    )
 
  TRIBITS_ADD_TEST(
    Example_Poisson2D_pn
@@ -121,13 +121,13 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
    NUM_MPI_PROCS 1
    )
 
- TRIBITS_ADD_TEST(
-   Example_Poisson2D_pn_tpetra
-   NAME "Poisson2D_pn=4_tpetra"
-   ARGS "--mesh=Poisson2D_p4.xml --solver=muelu_ho.xml"
-   COMM mpi
-   NUM_MPI_PROCS 1
-   )
+# TRIBITS_ADD_TEST(
+#   Example_Poisson2D_pn_tpetra
+#   NAME "Poisson2D_pn=4_tpetra"
+#   ARGS "--mesh=Poisson2D_p4.xml --solver=muelu_ho.xml"
+#   COMM mpi
+#   NUM_MPI_PROCS 1
+#   )
 
 
   
