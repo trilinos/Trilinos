@@ -591,7 +591,10 @@ mult_test_results jacobi_reuse_test(
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT)  {
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
-  typedef CrsMatrix<SC,LO,GO,NT> Matrix_t;
+  
+  // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+  typedef CrsMatrix<MT,LO,GO,NT> Matrix_t;
   const int myRank = comm->getRank ();
   //const int numProcs = comm->getSize();
 
