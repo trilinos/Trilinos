@@ -41,8 +41,8 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDefNodeInfo.hpp
+    \brief  Definition file for node data and subcell functions of the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -176,7 +176,7 @@ namespace Intrepid2 {
   template<typename cellVertexValueType, class ...cellVertexProperties>
   void
   CellTools<SpT>::
-  getReferenceVertex( /**/  Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
+  getReferenceVertex(       Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                       const shards::CellTopology cell,
                       const ordinal_type         vertexOrd ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -202,7 +202,7 @@ namespace Intrepid2 {
   template<typename subcellVertexValueType, class ...subcellVertexProperties>
   void
   CellTools<SpT>::
-  getReferenceSubcellVertices( /**/  Kokkos::DynRankView<subcellVertexValueType,subcellVertexProperties...> subcellVertices,
+  getReferenceSubcellVertices(       Kokkos::DynRankView<subcellVertexValueType,subcellVertexProperties...> subcellVertices,
                                const ordinal_type         subcellDim,
                                const ordinal_type         subcellOrd,
                                const shards::CellTopology parentCell ) {
@@ -238,7 +238,7 @@ namespace Intrepid2 {
   template<typename cellNodeValueType, class ...cellNodeProperties>
   void
   CellTools<SpT>::
-  getReferenceNode( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNode,
+  getReferenceNode(       Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNode,
                     const shards::CellTopology  cell,
                     const ordinal_type          nodeOrd ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -317,7 +317,7 @@ namespace Intrepid2 {
   template<typename subcellNodeValueType, class ...subcellNodeProperties>
   void
   CellTools<SpT>::
-  getReferenceSubcellNodes( /**/  Kokkos::DynRankView<subcellNodeValueType,subcellNodeProperties...> subcellNodes,
+  getReferenceSubcellNodes(       Kokkos::DynRankView<subcellNodeValueType,subcellNodeProperties...> subcellNodes,
                             const ordinal_type         subcellDim,
                             const ordinal_type         subcellOrd,
                             const shards::CellTopology parentCell ) {
@@ -359,7 +359,7 @@ namespace Intrepid2 {
   template<typename refEdgeTangentValueType, class ...refEdgeTangentProperties>
   void
   CellTools<SpT>::
-  getReferenceEdgeTangent( /**/ Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
+  getReferenceEdgeTangent(       Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
                            const ordinal_type         edgeOrd,
                            const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -396,8 +396,8 @@ namespace Intrepid2 {
            typename refFaceTanVValueType, class ...refFaceTanVProperties>
   void
   CellTools<SpT>::
-  getReferenceFaceTangents( /**/  Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
-                            /**/  Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
+  getReferenceFaceTangents(       Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
+                                  Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
                             const ordinal_type         faceOrd,
                             const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -439,7 +439,7 @@ namespace Intrepid2 {
   template<typename refSideNormalValueType, class ...refSideNormalProperties>
   void
   CellTools<SpT>::
-  getReferenceSideNormal( /**/  Kokkos::DynRankView<refSideNormalValueType,refSideNormalProperties...> refSideNormal,
+  getReferenceSideNormal(       Kokkos::DynRankView<refSideNormalValueType,refSideNormalProperties...> refSideNormal,
                           const ordinal_type         sideOrd,
                           const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -472,7 +472,7 @@ namespace Intrepid2 {
   template<typename refFaceNormalValueType, class ...refFaceNormalProperties>
   void 
   CellTools<SpT>::
-  getReferenceFaceNormal( /**/  Kokkos::DynRankView<refFaceNormalValueType,refFaceNormalProperties...> refFaceNormal,
+  getReferenceFaceNormal(       Kokkos::DynRankView<refFaceNormalValueType,refFaceNormalProperties...> refFaceNormal,
                           const ordinal_type         faceOrd,
                           const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -505,7 +505,7 @@ namespace Intrepid2 {
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
   CellTools<SpT>::
-  getPhysicalEdgeTangents( /**/  Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
+  getPhysicalEdgeTangents(       Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                            const ordinal_type         worksetEdgeOrd,
                            const shards::CellTopology parentCell ) {
@@ -553,8 +553,8 @@ namespace Intrepid2 {
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
   CellTools<SpT>::
-  getPhysicalFaceTangents( /**/  Kokkos::DynRankView<faceTanUValueType,faceTanUProperties...> faceTanU,
-                           /**/  Kokkos::DynRankView<faceTanVValueType,faceTanVProperties...> faceTanV,
+  getPhysicalFaceTangents(       Kokkos::DynRankView<faceTanUValueType,faceTanUProperties...> faceTanU,
+                                 Kokkos::DynRankView<faceTanVValueType,faceTanVProperties...> faceTanV,
                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                            const ordinal_type         worksetFaceOrd,
                            const shards::CellTopology parentCell ) {
@@ -611,7 +611,7 @@ namespace Intrepid2 {
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void 
   CellTools<SpT>::
-  getPhysicalSideNormals( /**/  Kokkos::DynRankView<sideNormalValueType,sideNormalProperties...> sideNormals,
+  getPhysicalSideNormals(       Kokkos::DynRankView<sideNormalValueType,sideNormalProperties...> sideNormals,
                           const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                           const ordinal_type         worksetSideOrd,
                           const shards::CellTopology parentCell ) {
@@ -654,7 +654,7 @@ namespace Intrepid2 {
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
   CellTools<SpT>::
-  getPhysicalFaceNormals( /**/  Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
+  getPhysicalFaceNormals(       Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
                           const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                           const ordinal_type         worksetFaceOrd,
                           const shards::CellTopology parentCell ) {

@@ -41,9 +41,9 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
-    \author Created by P. Bochev and D. Ridzal.
+/** \file   Intrepid2_CellToolsDefControlVolume.hpp
+    \brief  Definition file for the control volume functions of the Intrepid2::CellTools class.
+    \author Created by P. Bochev, D. Ridzal and K. Peterson.
             Kokkorized by Kyungjoo Kim
 */
 #ifndef __INTREPID2_CELLTOOLS_DEF_CONTROL_VOLUME_HPP__
@@ -64,9 +64,13 @@ namespace Intrepid2 {
 
   namespace FunctorCellTools {
 
+    /** \brief  Computes cell barycenter
+         \param  center            [out] - cell barycenter
+         \param  verts             [in]  - cell vertices
+    */
     template<typename centerViewType, typename vertViewType>
     KOKKOS_INLINE_FUNCTION
-    void getBaryCenter( /**/  centerViewType center,
+    void getBaryCenter(       centerViewType center,
                         const vertViewType verts) {
       // the enumeration already assumes the ordering of vertices (circling around the polygon)
       const ordinal_type nvert = verts.dimension(0);
@@ -105,7 +109,7 @@ namespace Intrepid2 {
     
     template<typename midPointViewType, typename nodeMapViewType, typename vertViewType>
     KOKKOS_INLINE_FUNCTION      
-    void getMidPoints( /**/  midPointViewType midpts,
+    void getMidPoints(       midPointViewType midpts,
                        const nodeMapViewType map,
                        const vertViewType verts) {
       const ordinal_type npts = map.dimension(0);
@@ -126,8 +130,13 @@ namespace Intrepid2 {
     template<typename subcvCoordViewType,
              typename cellCoordViewType,
              typename mapViewType>
+    /**
+     \brief Functor for calculation of sub-control volume coordinates on polygons
+
+       See Intrepid2::CellTools::getSubcvCoords for more documentation.
+    */
     struct F_getSubcvCoords_Polygon2D {
-      /**/  subcvCoordViewType _subcvCoords;
+            subcvCoordViewType _subcvCoords;
       const cellCoordViewType  _cellCoords;
       const mapViewType        _edgeMap;
       
@@ -139,17 +148,17 @@ namespace Intrepid2 {
       
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell) const {
-        // ** vertices of cell (P,D)
+        // vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
         const ordinal_type nvert = verts.dimension(0);
         const ordinal_type dim   = verts.dimension(1);
 
-        // ** control volume coords (N,P,D), here N corresponds to cell vertices
+        // control volume coords (N,P,D), here N corresponds to cell vertices
         auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
                                                 Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
 
-        // ** work space for barycenter and midpoints on edges
+        // work space for barycenter and midpoints on edges
         typedef typename subcvCoordViewType::value_type value_type;
         value_type buf_center[2], buf_midpts[4*2];
         Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 2);
@@ -173,8 +182,13 @@ namespace Intrepid2 {
     template<typename subcvCoordViewType,
              typename cellCoordViewType,
              typename mapViewType>
+    /**
+     \brief Functor for calculation of sub-control volume coordinates on hexahedra
+
+       See Intrepid2::CellTools::getSubcvCoords for more documentation.
+    */
     struct F_getSubcvCoords_Hexahedron {
-      /**/  subcvCoordViewType _subcvCoords;
+            subcvCoordViewType _subcvCoords;
       const cellCoordViewType  _cellCoords;
       const mapViewType        _edgeMap, _faceMap;
       
@@ -187,17 +201,17 @@ namespace Intrepid2 {
       
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell) const {
-        // ** vertices of cell (P,D)
+        // vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        //const ordinal_type nvert = verts.dimension(0);
+        // const ordinal_type nvert = verts.dimension(0);
         const ordinal_type dim   = verts.dimension(1);
 
-        // ** control volume coords (N,P,D), here N corresponds to cell vertices
+        // control volume coords (N,P,D), here N corresponds to cell vertices
         auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
                                                 Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
 
-        // ** work space for barycenter and midpoints on edges
+        //  work space for barycenter and midpoints on edges
         typedef typename subcvCoordViewType::value_type value_type;
         value_type buf_center[3], buf_edge_midpts[12*3], buf_face_midpts[6*3];
         Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 3);
@@ -260,8 +274,13 @@ namespace Intrepid2 {
     template<typename subcvCoordViewType,
              typename cellCoordViewType,
              typename mapViewType>
+    /**
+     \brief Functor for calculation of sub-control volume coordinates on tetrahedra
+
+       See Intrepid2::CellTools::getSubcvCoords for more documentation.
+    */
     struct F_getSubcvCoords_Tetrahedron {
-      /**/  subcvCoordViewType _subcvCoords;
+            subcvCoordViewType _subcvCoords;
       const cellCoordViewType  _cellCoords;
       const mapViewType        _edgeMap, _faceMap;
       
@@ -280,11 +299,11 @@ namespace Intrepid2 {
         //const ordinal_type nvert = verts.dimension(0);
         const ordinal_type dim   = verts.dimension(1);
 
-        // ** control volume coords (N,P,D), here N corresponds to cell vertices
+        //  control volume coords (N,P,D), here N corresponds to cell vertices
         auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
                                                 Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
 
-        // ** work space for barycenter and midpoints on edges
+        //  work space for barycenter and midpoints on edges
         typedef typename subcvCoordViewType::value_type value_type;
         value_type buf_center[3], buf_edge_midpts[6*3], buf_face_midpts[4*3];
         Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 3);
@@ -360,7 +379,7 @@ namespace Intrepid2 {
            typename cellCoordValueType,  class ...cellCoordProperties>
   void
   CellTools<SpT>::
-  getSubcvCoords( /**/  Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoords,
+  getSubcvCoords(       Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoords,
                   const Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoords,
                   const shards::CellTopology primaryCell ) {
 #ifdef HAVE_INTREPID2_DEBUG

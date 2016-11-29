@@ -41,8 +41,8 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDefInclusion.hpp
+    \brief  Definition file for point inclusion functions of the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -227,7 +227,7 @@ namespace Intrepid2 {
            typename pointValueType, class ...pointProperties>
   void
   CellTools<SpT>::
-  checkPointwiseInclusion( /**/  Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
+  checkPointwiseInclusion(       Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
                            const Kokkos::DynRankView<pointValueType,pointProperties...> points,
                            const shards::CellTopology cellTopo,
                            const double threshold ) {
@@ -273,7 +273,7 @@ namespace Intrepid2 {
            typename cellWorksetValueType, class ...cellWorksetProperties>
   void
   CellTools<SpT>::
-  checkPointwiseInclusion( /**/  Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
+  checkPointwiseInclusion(       Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
                            const Kokkos::DynRankView<pointValueType,pointProperties...> points,
                            const Kokkos::DynRankView<cellWorksetValueType,cellWorksetProperties...> cellWorkset,
                            const shards::CellTopology cellTopo,

@@ -41,8 +41,8 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDefPhysToRef.hpp
+    \brief  Definition file for the physical to reference mappings in the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -69,7 +69,7 @@ namespace Intrepid2 {
            typename worksetCellValueType, class ...worksetCellProperties>
   void
   CellTools<SpT>::
-  mapToReferenceFrame( /**/  Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+  mapToReferenceFrame(       Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                        const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                        const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                        const shards::CellTopology cellTopo ) {
@@ -107,7 +107,7 @@ namespace Intrepid2 {
            typename HGradBasisPtrType>
   void
   CellTools<SpT>::
-  mapToReferenceFrameInitGuess( /**/  Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+  mapToReferenceFrameInitGuess(       Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                                 const Kokkos::DynRankView<initGuessValueType,initGuessProperties...>     initGuess,
                                 const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                                 const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,

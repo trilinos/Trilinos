@@ -41,13 +41,13 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDefDebug.hpp
+    \brief  Definition file for the debug functions of the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
-#ifndef __INTREPID2_CELLTOOLS_DEF_HPP__
-#define __INTREPID2_CELLTOOLS_DEF_HPP__
+#ifndef __INTREPID2_CELLTOOLS_DEBUG_DEF_HPP__
+#define __INTREPID2_CELLTOOLS_DEBUG_DEF_HPP__
 
 // disable clang warnings
 #if defined (__clang__) && !defined (__INTEL_COMPILER)

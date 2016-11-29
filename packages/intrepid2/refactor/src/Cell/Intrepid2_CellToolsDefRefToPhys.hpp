@@ -41,8 +41,8 @@
 // @HEADER
 
 
-/** \file   Intrepid_CellToolsDef.hpp
-    \brief  Definition file for the Intrepid2::CellTools class.
+/** \file   Intrepid2_CellToolsDefRefToPhys.hpp
+    \brief  Definition file for the reference to physical mappings in the Intrepid2::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -68,8 +68,13 @@ namespace Intrepid2 {
     template<typename physPointViewType,
              typename worksetCellType,
              typename basisValType>
+    /**
+     \brief Functor for mapping reference points to physical frame
+
+       See Intrepid2::CellTools::mapToPhysicalFrame for more documentation.
+    */
     struct F_mapToPhysicalFrame {
-      /**/  physPointViewType _physPoints;
+            physPointViewType _physPoints;
       const worksetCellType   _worksetCells;
       const basisValType      _basisVals;
 
@@ -86,12 +91,12 @@ namespace Intrepid2 {
                            _physPoints.dimension(0),
                            _physPoints.dimension(1),
                            iter );
-        /**/  auto phys = Kokkos::subdynrankview( _physPoints, cell, pt, Kokkos::ALL());
+              auto phys = Kokkos::subdynrankview( _physPoints, cell, pt, Kokkos::ALL());
         const auto dofs = Kokkos::subdynrankview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());
 
         const auto valRank = _basisVals.rank();
         const auto val = ( valRank == 2 ? Kokkos::subdynrankview( _basisVals,       Kokkos::ALL(), pt) :
-                           /**/           Kokkos::subdynrankview( _basisVals, cell, Kokkos::ALL(), pt));
+                                          Kokkos::subdynrankview( _basisVals, cell, Kokkos::ALL(), pt));
 
         const ordinal_type dim = phys.dimension(0);
         const ordinal_type cardinality = val.dimension(0);
@@ -105,6 +110,26 @@ namespace Intrepid2 {
     };
   }
 
+/*
+  template<typename SpT>
+  template<typename physPointValueType,   class ...physPointProperties,
+           typename refPointValueType,    class ...refPointProperties,
+           typename worksetCellValueType, class ...worksetCellProperties>
+  void
+  CellTools<SpT>::
+  mapToPhysicalFrame(       Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+                      const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+                      const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
+                      const shards::CellTopology cellTopo ) {
+
+   auto basis = createHGradBasis<refPointValueType,refPointValueType>(cellTopo);
+   mapToPhysicalFrame(physPoints,
+                      refPoints,
+                      worksetCell,
+                      basis);
+  }
+*/
+
   template<typename SpT>
   template<typename physPointValueType,   class ...physPointProperties,
            typename refPointValueType,    class ...refPointProperties,
@@ -112,7 +137,7 @@ namespace Intrepid2 {
            typename HGradBasisPtrType>
   void
   CellTools<SpT>::
-  mapToPhysicalFrame( /**/  Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+  mapToPhysicalFrame(       Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                       const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                       const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                       const HGradBasisPtrType basis ) {
@@ -167,7 +192,7 @@ namespace Intrepid2 {
            typename paramPointValueType, class ...paramPointProperties>
   void
   CellTools<SpT>::
-  mapToReferenceSubcell( /**/  Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
+  mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
                          const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
                          const ordinal_type subcellDim,
                          const ordinal_type subcellOrd,
