@@ -49,6 +49,7 @@
 // Teuchos includes
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #ifdef HAVE_MPI
 // MPI include
@@ -286,6 +287,45 @@ SIZE_TYPE computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
 
 ////////////////////////////////////////////////////////////////////////
 
+/** \brief Return and array of integers that represent the prime
+ *         factors of the input argument
+ *
+ * \param n [in] integer to be factored
+ */
+Teuchos::Array< int >
+factor(int n);
+
+////////////////////////////////////////////////////////////////////////
+
+/** \brief Return the index of the maximum value in the provided
+ *         sequence of floating point values
+ *
+ * \param seq [in] a sequence of floating point values
+ */
+int indexOfMax(const Teuchos::ArrayView< const float > & seq);
+
+////////////////////////////////////////////////////////////////////////
+
+/** \brief Return a decomposition of processors, given on the total
+ *         number of processors and the dimensions of the field that
+ *         will be decomposed. The size of the dimensions input
+ *         argument determines the size of the output
+ *         decomposition. The product of the output decomposition will
+ *         equal the total number of processors. The decomposition
+ *         values will be as close to the relative sizes of the
+ *         dimensions as the algorithm can get.
+ *
+ * \param nprocs [in] total number of processors
+ *
+ * \param dimensions [in] an array of dimensions of the field that
+ *                        will be decomposed
+ */
+Teuchos::Array< int >
+decomposeProcs(int nprocs,
+               const Teuchos::ArrayView< dim_type > & dimensions);
+
+////////////////////////////////////////////////////////////////////////
+
 /** \brief Compute a valid commDims array, given the number of
  *         processors, the number of dimensions, and a candidate
  *         commDims array.
@@ -313,6 +353,30 @@ Teuchos::Array< int >
 regularizeCommDims(int numProcs,
                    int numDims,
                    const Teuchos::ArrayView< const int > & commDims);
+
+////////////////////////////////////////////////////////////////////////
+
+/** \brief Given a Domi ParameterList, replace the "comm dimensions"
+ *         parameter with a valid commDims array, given the number of
+ *         processors and data from the ParameterList: the number of
+ *         dimensions, the provided commDim array, and the dimensions
+ *         of the field to be decomposed.
+ *
+ * \param numDims [in] the number of dimensions
+ *
+ * \param plist [in/out] ParameterList with construction information
+ *        \htmlonly
+ *        <iframe src="domi.xml" width="100%" scrolling="no" frameborder="0">
+ *        </iframe>
+ *        <hr />
+ *        \endhtmlonly
+ *
+ * This function assumes that the ParameterList has already been
+ * validated prior to being called.
+ */
+Teuchos::Array< int >
+regularizeCommDims(int numProcs,
+                   Teuchos::ParameterList & plist);
 
 ////////////////////////////////////////////////////////////////////////
 
