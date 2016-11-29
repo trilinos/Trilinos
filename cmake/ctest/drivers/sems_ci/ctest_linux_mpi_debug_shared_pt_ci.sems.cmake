@@ -74,7 +74,7 @@ SET(TRIBITS_2ND_CTEST_DROP_SITE
 SET(TRIBITS_2ND_CTEST_DROP_LOCATION
   "/extended/cdash/submit.php?project=Trilinos" )
 
-SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
+SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)
 
 SET(Trilinos_BRANCH develop)
 
@@ -82,9 +82,11 @@ SET(EXTRA_EXCLUDE_PACKAGES)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake"
+  "-DTrilinos_TEST_CATEGORIES=BASIC"
   )
 # NOTE: That above must match *exactly* what is listed is listed in
-# project-checkin-test-config.py.
+# project-checkin-test-config.py and produced by the checkin-test-sems.sh
+# --default-builds=MPI_RELEASE_DEBUG_SHARED_PT build!
 
 SET(CTEST_TEST_TYPE Continuous)
 
