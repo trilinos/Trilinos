@@ -88,6 +88,7 @@
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_ReorderedBlockedMultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_Exceptions.hpp>
@@ -641,6 +642,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperator2, M, M
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorThyra, M, MA, Scalar, LO, GO, Node )
 {
+  typedef Xpetra::Matrix<Scalar,LO,GO,Node> Matrix;
   typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
   typedef Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> ReorderedBlockedCrsMatrix;
 
@@ -682,18 +684,42 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorThyra, 
   TEST_EQUALITY(brop00->getRangeMap()->getMaxGlobalIndex(),comm->getSize() * 20 + comm->getRank() * 20 + 19);
   TEST_EQUALITY(brop00->getRangeMap()->getMinAllGlobalIndex(),0);
   TEST_EQUALITY(brop00->getRangeMap()->getMaxAllGlobalIndex(),comm->getSize() * 40 - 1);
-  // Thyra maps (these might have duplicate GID entries!)
+  // Thyra maps (since it is a blocked matrix, they should be unique!)
   TEST_EQUALITY(brop00->getRangeMap(0,true)->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(brop00->getRangeMap(0,true)->getMaxAllGlobalIndex(), comm->getSize()*5 - 1);
   TEST_EQUALITY(brop00->getRangeMap(1,true)->getGlobalNumElements(), Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 35));
   TEST_EQUALITY(brop00->getRangeMap(1,true)->getMinAllGlobalIndex(), 0);
-  TEST_EQUALITY(brop00->getRangeMap(1,true)->getMaxAllGlobalIndex(), comm->getSize() * 20 - 1);
+  TEST_EQUALITY(brop00->getRangeMap(1,true)->getMaxAllGlobalIndex(), comm->getSize() * 35 - 1);
   // Xpetra maps
   TEST_EQUALITY(brop00->getRangeMap(0,false)->getMinAllGlobalIndex(), 0);
   TEST_EQUALITY(brop00->getRangeMap(0,false)->getMaxAllGlobalIndex(), comm->getSize()*5 - 1);
   TEST_EQUALITY(brop00->getRangeMap(1,false)->getGlobalNumElements(), Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 35));
   TEST_EQUALITY(brop00->getRangeMap(1,false)->getMinAllGlobalIndex(), comm->getSize()*5);
   TEST_EQUALITY(brop00->getRangeMap(1,false)->getMaxAllGlobalIndex(), comm->getSize()*5 + comm->getSize() * 35 - 1);
+
+  // subblock 11 of block 00
+  Teuchos::RCP<const ReorderedBlockedCrsMatrix> sbrop11 =
+      Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(brop00->getMatrix(1,1));
+
+  TEST_EQUALITY(sbrop11->Rows(),2);
+  TEST_EQUALITY(sbrop11->Cols(),2);
+  TEST_EQUALITY(sbrop11->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(sbrop11->getDomainMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(sbrop11->getRangeMap()->getGlobalNumElements(),Teuchos::as<Xpetra::global_size_t>(35 * comm->getSize()));
+  TEST_EQUALITY(sbrop11->getDomainMap()->getGlobalNumElements(),Teuchos::as<Xpetra::global_size_t>(35 * comm->getSize()));
+  TEST_EQUALITY(sbrop11->getRangeMap()->getMaxGlobalIndex(),comm->getSize() * 20 + comm->getRank() * 20 + 19);
+  // Thyra maps (since it is a blocked matrix, they should be unique!)
+  TEST_EQUALITY(sbrop11->getRangeMap(0,true)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(sbrop11->getRangeMap(0,true)->getMaxAllGlobalIndex(), comm->getSize()*5 + comm->getSize() * 10 - 1);
+  TEST_EQUALITY(sbrop11->getRangeMap(1,true)->getGlobalNumElements(), Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 20));
+  TEST_EQUALITY(sbrop11->getRangeMap(1,true)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(sbrop11->getRangeMap(1,true)->getMaxAllGlobalIndex(), comm->getSize() * 20 - 1);
+  // Xpetra maps
+  TEST_EQUALITY(sbrop11->getRangeMap(0,false)->getMinAllGlobalIndex(), comm->getSize() * 5);
+  TEST_EQUALITY(sbrop11->getRangeMap(0,false)->getMaxAllGlobalIndex(), comm->getSize()*20 - 1);
+  TEST_EQUALITY(sbrop11->getRangeMap(1,false)->getGlobalNumElements(), Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 20));
+  TEST_EQUALITY(sbrop11->getRangeMap(1,false)->getMinAllGlobalIndex(), comm->getSize()*20);
+  TEST_EQUALITY(sbrop11->getRangeMap(1,false)->getMaxAllGlobalIndex(), comm->getSize()*40 - 1);
 
 
   // block 11
@@ -722,6 +748,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorThyra, 
   TEST_EQUALITY(brop11test->getMatrix(0,0)->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 39);
   TEST_EQUALITY(brop11test->getMatrix(0,0)->getRangeMap()->getMinAllGlobalIndex(),0);
   TEST_EQUALITY(brop11test->getMatrix(0,0)->getRangeMap()->getMaxAllGlobalIndex(),comm->getSize() * 40 - 1);
+
+  Teuchos::RCP<Matrix> crsmat11 = Teuchos::rcp_const_cast<ReorderedBlockedCrsMatrix>(brop11test)->getInnermostCrsMatrix();
+  TEST_EQUALITY(crsmat11.is_null(), false);
+  Teuchos::ArrayView<const LO> inds;
+  Teuchos::ArrayView<const Scalar> vals;
+  crsmat11->getLocalRowView(0, inds, vals);
+  TEST_EQUALITY(inds.size(),1);
+  TEST_EQUALITY(vals.size(),1);
+  TEST_EQUALITY(inds[0],0);
+  TEST_EQUALITY(vals[0],5*Teuchos::ScalarTraits<Scalar>::one());
 
   // block 22
   Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop22 =
@@ -890,8 +926,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperator2Thyra,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply, M, MA, Scalar, LO, GO, Node )
 {
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVectorClass;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVectorClass;
+  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVectorClass;
   typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactoryClass;
   typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
@@ -913,24 +955,64 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply, 
   TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), false);
 
   // build gloabl vector with one entries
-  Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(bop->getRangeMap(), true);
-  Teuchos::RCP<VectorClass> exp  = VectorFactoryClass::Build(bop->getRangeMap(), true);
-  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(bop->getRangeMap(), true);
-  Teuchos::RCP<VectorClass> rnd  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  // The MultiVector objects "ones" and "exp" are BlockedMultiVectors with 8 sub blocks
+  // compatible to bop
+  Teuchos::RCP<MultiVectorClass> ones = MultiVectorFactoryClass::Build(bop->getRangeMap(), 1, true);
+  Teuchos::RCP<MultiVectorClass> exp  = MultiVectorFactoryClass::Build(bop->getRangeMap(), 1, true);
   ones->putScalar(STS::one());
-  rnd->randomize();
-
   bop->apply(*ones, *exp);
-  brop->apply(*ones, *res);
-  res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
 
-  bop->apply(*rnd, *exp);
-  brop->apply(*rnd, *res);
+  // reorganize "ones" and "res" to be BlockedMultiVectors with 3 sub blocks (nested)
+  // compatible to brop
+  // They use and work with the same 8 sub vectors from "ones" and "exp"
+  Teuchos::RCP<const MultiVectorClass> cones = Teuchos::rcp_const_cast<const MultiVectorClass>(ones);
+  Teuchos::RCP<const MultiVectorClass> brones =
+      Xpetra::buildReorderedBlockedMultiVector(brm, Teuchos::rcp_dynamic_cast<const BlockedMultiVectorClass>(cones));
+  Teuchos::RCP<MultiVectorClass> res  = MultiVectorFactoryClass::Build(bop->getRangeMap(), 1, true);
+  Teuchos::RCP<const MultiVectorClass> cres = Teuchos::rcp_const_cast<const MultiVectorClass>(res);
+  Teuchos::RCP<const MultiVectorClass> brcres =
+      Xpetra::buildReorderedBlockedMultiVector(brm, Teuchos::rcp_dynamic_cast<const BlockedMultiVectorClass>(cres));
+  Teuchos::RCP<MultiVectorClass> brres = Teuchos::rcp_const_cast<MultiVectorClass>(brcres);
+
+  brop->apply(*brones, *brres);
+
+  Teuchos::Array<typename STS::magnitudeType> nn(res->getNumVectors());
+  TEST_NOTHROW( res->norm1(nn) );
+  TEUCHOS_TEST_COMPARE(nn[0], >, 1e3, out, success);
+
+  // res contains exactly the same data as brres, the only difference is
+  // that res is a MultiVector with 8 sub blocks and brres a MultiVector with
+  // 3 nested sub blocks (compatible to brop)
   res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+
+  nn[0] = STS::magnitude(STS::one());
+  TEST_NOTHROW( res->norm1(nn) );
+  TEST_EQUALITY( nn[0], STS::zero());
+  TEST_NOTHROW( res->norm2(nn) );
+  TEST_EQUALITY( nn[0], STS::zero());
+  TEST_NOTHROW( res->normInf(nn) );
+  TEST_EQUALITY( nn[0], STS::zero());
+
+  // compatibility with plain maps
+  Teuchos::RCP<const Map> map = bop->getRangeMap();
+  Teuchos::RCP<const BlockedMap> bmap = Teuchos::rcp_dynamic_cast<const BlockedMap>(map);
+  Teuchos::RCP<const Map> rgMap = bmap->getFullMap();
+
+  Teuchos::RCP<VectorClass> vrnd  = VectorFactoryClass::Build(rgMap, true);
+  Teuchos::RCP<VectorClass> vexp  = VectorFactoryClass::Build(rgMap, true);
+  Teuchos::RCP<VectorClass> vres  = VectorFactoryClass::Build(rgMap, true);
+  vrnd->randomize();
+
+  // apply with plain blocked operators works with plain vectors
+  TEST_NOTHROW( bop->apply(*vrnd, *vexp) );
+
+  // nested blocked operators do not work with plain vectors
+  // TODO implement doImport in BlockedMultiVector
+  TEST_THROW( brop->apply(*vrnd, *vres), Xpetra::Exceptions::RuntimeError );
+
+  //res->update(-STS::one(),*exp,STS::one());
+  //TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
+  //TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply2, M, MA, Scalar, LO, GO, Node )
@@ -969,8 +1051,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply2,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyThyra, M, MA, Scalar, LO, GO, Node )
 {
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
   typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVectorClass;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVectorClass;
+  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVectorClass;
   typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactoryClass;
   typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
@@ -991,6 +1079,67 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyTh
   TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), true);
 
   // build gloabl vector with one entries
+  // The MultiVector objects "ones" and "exp" are BlockedMultiVectors with 8 sub blocks
+  // compatible to bop
+  Teuchos::RCP<MultiVectorClass> ones = MultiVectorFactoryClass::Build(bop->getRangeMap(), 1, true);
+  Teuchos::RCP<MultiVectorClass> exp  = MultiVectorFactoryClass::Build(bop->getRangeMap(), 1, true);
+  ones->putScalar(STS::one());
+  bop->apply(*ones, *exp);
+
+  // reorganize "ones" and "res" to be BlockedMultiVectors with 3 sub blocks (nested)
+  // compatible to brop
+  // They use and work with the same 8 sub vectors from "ones" and "exp"
+  Teuchos::RCP<const MultiVectorClass> cones = Teuchos::rcp_const_cast<const MultiVectorClass>(ones);
+  Teuchos::RCP<const MultiVectorClass> brones =
+      Xpetra::buildReorderedBlockedMultiVector(brm, Teuchos::rcp_dynamic_cast<const BlockedMultiVectorClass>(cones));
+  Teuchos::RCP<MultiVectorClass> res  = MultiVectorFactoryClass::Build(bop->getRangeMap(), 1, true);
+  Teuchos::RCP<const MultiVectorClass> cres = Teuchos::rcp_const_cast<const MultiVectorClass>(res);
+  Teuchos::RCP<const MultiVectorClass> brcres =
+      Xpetra::buildReorderedBlockedMultiVector(brm, Teuchos::rcp_dynamic_cast<const BlockedMultiVectorClass>(cres));
+  Teuchos::RCP<MultiVectorClass> brres = Teuchos::rcp_const_cast<MultiVectorClass>(brcres);
+
+  brop->apply(*brones, *brres);
+#if 0
+  Teuchos::Array<typename STS::magnitudeType> nn(res->getNumVectors());
+  TEST_NOTHROW( res->norm1(nn) );
+  TEUCHOS_TEST_COMPARE(nn[0], >, 1e3, out, success);
+
+  // res contains exactly the same data as brres, the only difference is
+  // that res is a MultiVector with 8 sub blocks and brres a MultiVector with
+  // 3 nested sub blocks (compatible to brop)
+  res->update(-STS::one(),*exp,STS::one());
+
+  nn[0] = STS::magnitude(STS::one());
+  TEST_NOTHROW( res->norm1(nn) );
+  TEST_EQUALITY( nn[0], STS::zero());
+  TEST_NOTHROW( res->norm2(nn) );
+  TEST_EQUALITY( nn[0], STS::zero());
+  TEST_NOTHROW( res->normInf(nn) );
+  TEST_EQUALITY( nn[0], STS::zero());
+
+  // compatibility with plain maps
+  Teuchos::RCP<const Map> map = bop->getRangeMap();
+  Teuchos::RCP<const BlockedMap> bmap = Teuchos::rcp_dynamic_cast<const BlockedMap>(map);
+  Teuchos::RCP<const Map> rgMap = bmap->getFullMap();
+
+  Teuchos::RCP<VectorClass> vrnd  = VectorFactoryClass::Build(rgMap, true);
+  Teuchos::RCP<VectorClass> vexp  = VectorFactoryClass::Build(rgMap, true);
+  Teuchos::RCP<VectorClass> vres  = VectorFactoryClass::Build(rgMap, true);
+  vrnd->randomize();
+
+  // apply with plain blocked operators works with plain vectors
+  TEST_NOTHROW( bop->apply(*vrnd, *vexp) );
+
+  // nested blocked operators do not work with plain vectors
+  // TODO implement doImport in BlockedMultiVector
+  TEST_THROW( brop->apply(*vrnd, *vres), Xpetra::Exceptions::RuntimeError );
+
+  //res->update(-STS::one(),*exp,STS::one());
+  //TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
+  //TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+#endif
+#if 0
+  // build gloabl vector with one entries
   Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(bop->getRangeMap(), true);
   Teuchos::RCP<VectorClass> exp  = VectorFactoryClass::Build(bop->getRangeMap(), true);
   Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(bop->getRangeMap(), true);
@@ -1009,7 +1158,126 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyTh
   res->update(-STS::one(),*exp,STS::one());
   TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
   TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+#endif
 }
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyThyraSmall, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
+  typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVectorClass;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVectorClass;
+  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVectorClass;
+  typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactoryClass;
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 3;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 2 1 ]");
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  TEST_EQUALITY(brop->Rows(),2);
+  TEST_EQUALITY(brop->Cols(),2);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), true);
+
+  // build gloabl vector with one entries
+  // The MultiVector objects "ones" and "exp" are BlockedMultiVectors with 8 sub blocks
+  // compatible to bop
+  Teuchos::RCP<MultiVectorClass> ones = MultiVectorFactoryClass::Build(bop->getRangeMap(), 1, true);
+  Teuchos::RCP<MultiVectorClass> exp  = MultiVectorFactoryClass::Build(bop->getRangeMap(), 1, true);
+  ones->putScalar(STS::one());
+  bop->apply(*ones, *exp);   // check later
+
+  exp->describe(out,Teuchos::VERB_EXTREME);
+
+  // reorganize "ones" and "res" to be BlockedMultiVectors with 2 sub blocks (nested)
+  // compatible to brop
+  Teuchos::RCP<const MultiVectorClass> cones = Teuchos::rcp_const_cast<const MultiVectorClass>(ones);
+  Teuchos::RCP<const MultiVectorClass> brones =
+      Xpetra::buildReorderedBlockedMultiVector(brm, Teuchos::rcp_dynamic_cast<const BlockedMultiVectorClass>(cones));
+  Teuchos::RCP<MultiVectorClass> res  = MultiVectorFactoryClass::Build(bop->getRangeMap(), 1, true);
+  Teuchos::RCP<const MultiVectorClass> cres = Teuchos::rcp_const_cast<const MultiVectorClass>(res);
+  Teuchos::RCP<const MultiVectorClass> brcres =
+      Xpetra::buildReorderedBlockedMultiVector(brm, Teuchos::rcp_dynamic_cast<const BlockedMultiVectorClass>(cres));
+  Teuchos::RCP<MultiVectorClass> brres = Teuchos::rcp_const_cast<MultiVectorClass>(brcres);
+
+  brop->apply(*brones, *brres);
+
+  //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+  brres->describe(out,Teuchos::VERB_EXTREME);
+
+#if 0
+  Teuchos::Array<typename STS::magnitudeType> nn(res->getNumVectors());
+  TEST_NOTHROW( res->norm1(nn) );
+  TEUCHOS_TEST_COMPARE(nn[0], >, 1e3, out, success);
+
+  // res contains exactly the same data as brres, the only difference is
+  // that res is a MultiVector with 8 sub blocks and brres a MultiVector with
+  // 3 nested sub blocks (compatible to brop)
+  res->update(-STS::one(),*exp,STS::one());
+
+  nn[0] = STS::magnitude(STS::one());
+  TEST_NOTHROW( res->norm1(nn) );
+  TEST_EQUALITY( nn[0], STS::zero());
+  TEST_NOTHROW( res->norm2(nn) );
+  TEST_EQUALITY( nn[0], STS::zero());
+  TEST_NOTHROW( res->normInf(nn) );
+  TEST_EQUALITY( nn[0], STS::zero());
+
+  // compatibility with plain maps
+  Teuchos::RCP<const Map> map = bop->getRangeMap();
+  Teuchos::RCP<const BlockedMap> bmap = Teuchos::rcp_dynamic_cast<const BlockedMap>(map);
+  Teuchos::RCP<const Map> rgMap = bmap->getFullMap();
+
+  Teuchos::RCP<VectorClass> vrnd  = VectorFactoryClass::Build(rgMap, true);
+  Teuchos::RCP<VectorClass> vexp  = VectorFactoryClass::Build(rgMap, true);
+  Teuchos::RCP<VectorClass> vres  = VectorFactoryClass::Build(rgMap, true);
+  vrnd->randomize();
+
+  // apply with plain blocked operators works with plain vectors
+  TEST_NOTHROW( bop->apply(*vrnd, *vexp) );
+
+  // nested blocked operators do not work with plain vectors
+  // TODO implement doImport in BlockedMultiVector
+  TEST_THROW( brop->apply(*vrnd, *vres), Xpetra::Exceptions::RuntimeError );
+
+  //res->update(-STS::one(),*exp,STS::one());
+  //TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
+  //TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+#endif
+#if 0
+  // build gloabl vector with one entries
+  Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> exp  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> rnd  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  ones->putScalar(STS::one());
+  rnd->randomize();
+
+  bop->apply(*ones, *exp);
+  brop->apply(*ones, *res);
+  res->update(-STS::one(),*exp,STS::one());
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
+
+  bop->apply(*rnd, *exp);
+  brop->apply(*rnd, *res);
+  res->update(-STS::one(),*exp,STS::one());
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+#endif
+}
+
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply2Thyra, M, MA, Scalar, LO, GO, Node )
 {
@@ -2586,6 +2854,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, BlockedOperatorApply, M, MA
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApply2, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApplyThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApplyThyraSmall, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApply2Thyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, Apply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, getLocalDiagCopy, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \

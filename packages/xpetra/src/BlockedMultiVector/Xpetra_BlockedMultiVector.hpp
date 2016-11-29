@@ -350,27 +350,41 @@ namespace Xpetra {
       Teuchos::RCP<const BlockedMultiVector> bA = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpA);
       TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != rcpA->getNumVectors(),Xpetra::Exceptions::RuntimeError,"BlockedMultiVector::update: update with incompatible vector (different number of vectors in multivector).");
       if(bA != Teuchos::null) {
+        // A is a BlockedMultiVector (and compatible with this)
+        // Call update recursively on all sub vectors
         TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() != bA->getBlockedMap()->getThyraMode(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different thyra mode).");
         TEUCHOS_TEST_FOR_EXCEPTION(map_->getNumMaps() != bA->getBlockedMap()->getNumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different number of partial vectors).");
         for(size_t r = 0; r < map_->getNumMaps(); r++) {
-          if(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false) {
-            std::cout << " PROBLEM " << std::endl;
-            std::cout << " A " << getMultiVector(r)->getMap()->getMinAllGlobalIndex() << " - " << getMultiVector(r)->getMap()->getMaxAllGlobalIndex() << " " << getMultiVector(r)->getMap()->getNodeNumElements() << std::endl;
-            std::cout << " B " << bA->getMultiVector(r)->getMap()->getMinAllGlobalIndex() << " - " << bA->getMultiVector(r)->getMap()->getMaxAllGlobalIndex() << " " << bA->getMultiVector(r)->getMap()->getNodeNumElements() << std::endl;
-            for(size_t t = 0; t < getMultiVector(r)->getMap()->getNodeNumElements(); t++) {
-              std::cout << "t=" << t << " " << getMultiVector(r)->getMap()->getGlobalElement(t) << " " << bA->getMultiVector(r)->getMap()->getGlobalElement(t) << std::endl;
-            }
-            std::cout << getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap())) << std::endl;
-          }
           XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different maps in partial vector " << r << ").");
           getMultiVector(r)->update(alpha, *(bA->getMultiVector(r)), beta);
         }
       } else {
-        XPETRA_TEST_FOR_EXCEPTION(map_->getFullMap()->isSameAs(*(rcpA->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (maps of full vector do not match with map in MapExtractor).");
-        for(size_t r = 0; r < map_->getNumMaps(); r++) {
-          Teuchos::RCP<const MultiVector> part = this->ExtractVector(rcpA, r, map_->getThyraMode());
-          getMultiVector(r)->update(alpha, *part, beta);
+        // A is a MultiVector
+        // If this is a BlockedMultiVector with only one sub-vector of same length we can just update
+        // Otherwise, A is not compatible with this as BlockedMultiVector and we have to extract the vector data from A
+
+        if(getBlockedMap()->getNumMaps() == 1) {
+          // TODO check local length of single subvector
+          //XPETRA_TEST_FOR_EXCEPTION(map_->getFullMap()->isSameAs(*(rcpA->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (maps of full vector do not match with map in MapExtractor).");
+          getMultiVector(0)->update(alpha,*rcpA,beta);
+        } else {
+          // general case: A has to be splitted and subparts have to be extracted and stored in this BlockedMultiVector
+          XPETRA_TEST_FOR_EXCEPTION(map_->getFullMap()->isSameAs(*(rcpA->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (maps of full vector do not match with map in MapExtractor).");
+          for(size_t r = 0; r < map_->getNumMaps(); r++) {
+            Teuchos::RCP<const MultiVector> part = this->ExtractVector(rcpA, r, map_->getThyraMode());
+            getMultiVector(r)->update(alpha, *part, beta);
+          }
         }
+        /*if(map_->getFullMap()->isSameAs(*(rcpA->getMap()))==false) {
+          std::cout << " PROBLEM XX" << std::endl;
+          RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(rcp(&std::cout,false)));
+          rcpA->getMap()->describe(*out, Teuchos::VERB_EXTREME);
+          std::cout << " A " << map_->getFullMap()->getMinAllGlobalIndex() << " - " << map_->getFullMap()->getMaxAllGlobalIndex() << " " << map_->getFullMap()->getNodeNumElements() << std::endl;
+          std::cout << " B " << rcpA->getMap()->getMinAllGlobalIndex() << " - " << rcpA->getMap()->getMaxAllGlobalIndex() << " " << rcpA->getMap()->getNodeNumElements() << std::endl;
+          for(size_t t = 0; t < map_->getFullMap()->getNodeNumElements(); t++) {
+            std::cout << "t=" << t << " " << map_->getFullMap()->getGlobalElement(t) << " " << rcpA->getMap()->getGlobalElement(t) << std::endl;
+          }
+        }*/
       }
     }
 
@@ -389,10 +403,6 @@ namespace Xpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != bB->getNumVectors(),Xpetra::Exceptions::RuntimeError,"BlockedMultiVector::update: update with incompatible vector (different number of vectors in multivector in vector B).");
 
         for(size_t r = 0; r < map_->getNumMaps(); r++) {
-          if(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false) {
-            std::cout << " PROBLEM " << std::endl;
-
-          }
           XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different maps in partial vector " << r << ").");
           getMultiVector(r)->update(alpha, *(bA->getMultiVector(r)), beta, *(bB->getMultiVector(r)), gamma);
         }
@@ -498,7 +508,7 @@ namespace Xpetra {
 
     //! Print the object with the given verbosity level to a FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
-      out << "BlockedMultiVector: " << std::endl;
+      out << description() << std::endl;
       for(size_t r = 0; r < map_->getNumMaps(); r++)
         getMultiVector(r)->describe(out, verbLevel);
     }
@@ -519,12 +529,20 @@ namespace Xpetra {
         return;
       }
       RCP<const BlockedMap> mybmap = Teuchos::rcp_dynamic_cast<const BlockedMap>(map_);
-      TEUCHOS_TEST_FOR_EXCEPTION(mybmap->getThyraMode() != bmap->getThyraMode(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::replaceMap: inconsistent Thyra mode of stored and newly provided maps.");
-      TEUCHOS_TEST_FOR_EXCEPTION(mybmap->getNumMaps() != bmap->getNumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::replaceMap: the old map has " << mybmap->getNumMaps() << " blocks. The new map has " << bmap->getNumMaps() << " blocks.");
-      // TODO add more debug checks
+      if(mybmap->getThyraMode() != bmap->getThyraMode())
+        std::cout << "PROBLEM" << std::endl;
+
+      map_ = bmap;
       for(size_t r = 0; r < map_->getNumMaps(); r++)
         getMultiVector(r)->replaceMap(bmap->getMap(r,map_->getThyraMode()));
-      map_ = bmap;
+
+      //RCP<const BlockedMap> mybmap = Teuchos::rcp_dynamic_cast<const BlockedMap>(map_);
+      //if(mybmap->getThyraMode() != bmap->getThyraMode())
+      //  std::cout << "PROBLEM" << std::endl;
+      //TEUCHOS_TEST_FOR_EXCEPTION(mybmap->getThyraMode() != bmap->getThyraMode(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::replaceMap: inconsistent Thyra mode of stored and newly provided maps.");
+      //TEUCHOS_TEST_FOR_EXCEPTION(mybmap->getNumMaps() != bmap->getNumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::replaceMap: the old map has " << mybmap->getNumMaps() << " blocks. The new map has " << bmap->getNumMaps() << " blocks.");
+      // TODO add more debug checks
+
     }
 
     //! Import.
@@ -634,7 +652,17 @@ namespace Xpetra {
       XPETRA_MONITOR("BlockedMultiVector::getMultiVector(r,bThyraMode)");
       TEUCHOS_TEST_FOR_EXCEPTION(r > map_->getNumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << map_->getNumMaps() << " partial blocks.");
       Teuchos::RCP<MultiVector> ret = vv_[r];
+
+      /*std::cout << "DEBUG: getMultiVector(" <<r<<","<< bThyraMode << ")"<< std::endl;
+      RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(rcp(&std::cout,false)));
+      ret->getMap()->describe(*out,Teuchos::VERB_EXTREME);
+      std::cout << " END DEBUG" << std::endl;*/
+
       if(map_->getThyraMode() != bThyraMode) {
+        // TODO STOP
+        // TODO think about Thyra Mode and getMultiVector
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector don't trust that code GET MULTIVECTOR");
+
         // deep copy of partial vector
         Teuchos::RCP<MultiVector> ret2 = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(ret->getMap(),ret->getNumVectors());
         *ret2 = *ret; // deep copy
@@ -647,6 +675,10 @@ namespace Xpetra {
 
     /// set partial multivector associated with block row r
     void setMultiVector(size_t r, Teuchos::RCP<const MultiVector> v, bool bThyraMode) {
+      // The map of the MultiVector should be the same as the stored submap
+      // In thyra mode the vectors should live on the thyra maps
+      // in xpetra mode the should live in the xpetra maps
+      // that should be also ok in the nested case for thyra (if the vectors are distributed accordingly)
       XPETRA_MONITOR("BlockedMultiVector::setMultiVector");
       TEUCHOS_TEST_FOR_EXCEPTION(r >= map_->getNumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << map_->getNumMaps() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != v->getNumVectors(),Xpetra::Exceptions::RuntimeError,"The BlockedMultiVectors expects " << getNumVectors() << " vectors. The provided partial multivector has " << v->getNumVectors() << " vectors.");
@@ -659,6 +691,9 @@ namespace Xpetra {
         vv_[r] = vv;
       }
       else {
+        // TODO STOP
+        // TODO think about Thyra Mode and SetMultiVector
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector don't trust that code SET MULTIVECTOR");
         // standard case: map_->getThyraMode() == true but bThyraMode == false
         XPETRA_TEST_FOR_EXCEPTION(map_->getMap(r,bThyraMode)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << map_->getMap(r,map_->getThyraMode())->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
         // deep copy of partial vector
