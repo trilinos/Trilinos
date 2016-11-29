@@ -54,13 +54,14 @@ class Sacado_StdInequalityConstraint : public Sacado_StdEqualityConstraint<Real,
                                        public InequalityConstraint<Real> {
 
   typedef Sacado_StdEqualityConstraint<Real,Constr> SEC;
+  typedef Vector<Real>     V;
 
 public:
 
-  using SEC::value;
-  using SEC::applyJacobian;
-  using SEC::applyAdjointJacobian;
-  using SEC::applyAdjointHessian;
+  using EqualityConstraint<Real>::value;
+  void value(V &c, const V &x, Real &tol ) {
+    SEC::value(c,x,tol);
+  }
 
 }; // class Sacado_StdInequalityConstraint
  
