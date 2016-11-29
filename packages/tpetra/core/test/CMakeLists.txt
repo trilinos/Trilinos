@@ -24,6 +24,7 @@ ADD_SUBDIRECTORIES(
   Node
   PerformanceCGSolve
   Platform
+  Sort
   Utils
   RowMatrixTransposer
   TypeStack
