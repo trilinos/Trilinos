@@ -382,6 +382,8 @@ public:
     Objective<Real>::setParameter(param);
     con_->setParameter(param);
     obj_->setParameter(param);
+    stateStore_->objectiveUpdate(true);
+    adjointStore_->objectiveUpdate(true);
   }
 }; // class Reduced_Objective_SimOpt
 

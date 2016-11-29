@@ -117,7 +117,7 @@ public:
                         const bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
-      firstUpdate_(true), storage_(true) {
+      firstUpdate_(true), storage_(storage) {
     value_storage_.clear();
     gradient_storage_.clear();
   }
@@ -128,7 +128,7 @@ public:
                         const bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
-      firstUpdate_(true), storage_(true) {
+      firstUpdate_(true), storage_(storage) {
     value_storage_.clear();
     gradient_storage_.clear();
   }
@@ -138,7 +138,7 @@ public:
                         const bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
-      firstUpdate_(true), storage_(true) {
+      firstUpdate_(true), storage_(storage) {
     value_storage_.clear();
     gradient_storage_.clear();
   }
