@@ -658,8 +658,19 @@ namespace MueLuTests {
       Teuchos::RCP<MultiVector> v0 = doMapExtractor->ExtractVector(X,0);
       Teuchos::RCP<MultiVector> v1 = doMapExtractor->ExtractVector(X,1);
 
-      TEST_EQUALITY((v0->getData(0))[0], Teuchos::as<Scalar>(0.25));
-      TEST_EQUALITY((v1->getData(0))[0], Teuchos::as<Scalar>(0.5));
+      Teuchos::RCP<BlockedMultiVector> bv0 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v0);
+      Teuchos::RCP<BlockedMultiVector> bv1 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v1);
+      TEST_EQUALITY(bv0.is_null(),false);
+      TEST_EQUALITY(bv1.is_null(),false);
+
+      Teuchos::RCP<MultiVector> bv00 = bv0->getMultiVector(0,false);
+      Teuchos::RCP<MultiVector> bv01 = bv0->getMultiVector(1,false);
+      Teuchos::RCP<MultiVector> bv10 = bv1->getMultiVector(0,false);
+      Teuchos::RCP<MultiVector> bv11 = bv1->getMultiVector(1,false);
+
+      TEST_EQUALITY((bv00->getData(0))[0], Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY((bv01->getData(0))[0], Teuchos::as<Scalar>(1.0));
+      TEST_EQUALITY((bv10->getData(0))[0], Teuchos::as<Scalar>(0.5));
 
       Teuchos::Array<magnitude_type> n0(1); v0->norm1(n0);
       Teuchos::Array<magnitude_type> n1(1); v1->norm1(n1);
