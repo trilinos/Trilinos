@@ -502,7 +502,91 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
       TEST_EQUALITY(bbvecit->getBlockedMap()->getMap(1,true)->getGlobalElement(i), map3->getGlobalElement(i) );
     }
   }
+}
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, BlockedMapDeepCopy, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  typedef Xpetra::ThyraUtils<Scalar,LO,GO,Node> ThyraUtils;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  M testMap(1,0,comm);
+  Xpetra::UnderlyingLib lib = testMap.lib();
+
+  Teuchos::RCP<const Map> map1 = MapFactory::Build(lib, 10, 0, comm);
+  Teuchos::RCP<const Map> map2 = MapFactory::Build(lib, 15, 0, comm);
+  Teuchos::RCP<const Map> map3 = MapFactory::Build(lib, 18, 0, comm);
+
+  // create Thyra product vector space
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs1 = ThyraUtils::toThyra(map1);
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs2 = ThyraUtils::toThyra(map2);
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs3 = ThyraUtils::toThyra(map3);
+
+  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > vecSpacesInner(2);
+  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > vecSpacesOuter(2);
+
+  vecSpacesInner[0] = vs2;
+  vecSpacesInner[1] = vs3;
+
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > psInner =
+    Thyra::productVectorSpace<Scalar>(vecSpacesInner());
+
+  vecSpacesOuter[0] = vs1;
+  vecSpacesOuter[1] = psInner;
+
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > ps =
+    Thyra::productVectorSpace<Scalar>(vecSpacesOuter());
+
+  Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > pps =
+    Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<Scalar> >(ps);
+  TEST_EQUALITY(pps.is_null(),false);
+
+  Teuchos::RCP<const Map> ppm = ThyraUtils::toXpetra(ps, comm);
+  TEST_EQUALITY(ppm.is_null(),false);
+
+  Teuchos::RCP<const BlockedMap> ppbm = Teuchos::rcp_dynamic_cast<const BlockedMap>(ppm);
+  TEST_EQUALITY(ppbm.is_null(),false);
+  TEST_EQUALITY(ppbm->getThyraMode(),true);
+
+  Teuchos::RCP<const BlockedMap> ppbm2 = Teuchos::rcp(new BlockedMap(*ppbm));
+  TEST_EQUALITY(ppbm.is_null(),false);
+
+  TEST_EQUALITY(ppbm->isSameAs(*ppbm2),true);
+
+  TEST_EQUALITY(ppbm->getMap(0,false)->isSameAs(*(ppbm->getMap(0,false))),true);
+  TEST_EQUALITY(ppbm->getMap(1,false)->isSameAs(*(ppbm->getMap(1,false))),true);
+  TEST_EQUALITY(ppbm->getMap(0,true)->isSameAs(*(ppbm->getMap(0,true))),true);
+  TEST_EQUALITY(ppbm->getMap(1,true)->isSameAs(*(ppbm->getMap(1,true))),true);
+
+  ppbm = Teuchos::null;
+
+  TEST_EQUALITY(ppbm2.is_null(), false);
+  TEST_EQUALITY(ppbm2->getThyraMode(),true);
+  TEST_EQUALITY(ppbm2->getMap(0,false)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(ppbm2->getMap(0,false)->getMaxAllGlobalIndex(), 9);
+  TEST_EQUALITY(ppbm2->getMap(1,false)->getMinAllGlobalIndex(), 10);
+  TEST_EQUALITY(ppbm2->getMap(1,false)->getMaxAllGlobalIndex(), 42);
+
+  Teuchos::RCP<const BlockedMap> subMapThyra = Teuchos::rcp_dynamic_cast<const BlockedMap>(ppbm2->getMap(1,true));
+  TEST_EQUALITY(subMapThyra.is_null(), false);
+  TEST_EQUALITY(subMapThyra->getNumMaps(), 2);
+  TEST_EQUALITY(subMapThyra->getFullMap()->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(subMapThyra->getFullMap()->getMaxAllGlobalIndex(), 32);
+
+  Teuchos::RCP<const BlockedMap> subMapXpetra = Teuchos::rcp_dynamic_cast<const BlockedMap>(ppbm2->getMap(1,false));
+  TEST_EQUALITY(subMapXpetra.is_null(), false);
+  TEST_EQUALITY(subMapXpetra->getNumMaps(), 2);
+  TEST_EQUALITY(subMapXpetra->getFullMap()->getMinAllGlobalIndex(), 10);
+  TEST_EQUALITY(subMapXpetra->getFullMap()->getMaxAllGlobalIndex(), 42);
 
 }
 
@@ -529,6 +613,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
 #define XP_BLOCKEDMULTIVECTOR_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedMultiVector, Constructor, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedMultiVector, ConstructorNested, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedMultiVector, BlockedMapDeepCopy, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+
 
 //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ExtractVector, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N )
 //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ExtractVectorThyra, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N )

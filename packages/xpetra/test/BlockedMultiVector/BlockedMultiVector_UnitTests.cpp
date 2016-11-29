@@ -1358,6 +1358,47 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReorderedSmall
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, BlockedMapDeepCopy, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::BlockedMap<LO, GO, Node> BlockedMap;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::ReorderedBlockedMultiVector<Scalar, LO, GO, Node> ReorderedBlockedMultiVector;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 3;
+
+  Teuchos::RCP<MultiVector>         vv = CreateMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<const BlockedMultiVector> bvv = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+  TEST_EQUALITY(bvv.is_null(),false);
+
+  Teuchos::RCP<const BlockedMap> ppbm = bvv->getBlockedMap();
+  TEST_EQUALITY(ppbm.is_null(),false);
+  TEST_EQUALITY(ppbm->getThyraMode(),false);
+
+  Teuchos::RCP<const BlockedMap> ppbm2 = Teuchos::rcp(new BlockedMap(*ppbm));
+  TEST_EQUALITY(ppbm.is_null(),false);
+
+  TEST_EQUALITY(ppbm->isSameAs(*ppbm2),true);
+
+  TEST_EQUALITY(ppbm->getMap(0,false)->isSameAs(*(ppbm->getMap(0,false))),true);
+  TEST_EQUALITY(ppbm->getMap(1,false)->isSameAs(*(ppbm->getMap(1,false))),true);
+  TEST_THROW(ppbm->getMap(0,true)->isSameAs(*(ppbm->getMap(0,true))),Xpetra::Exceptions::RuntimeError);
+  TEST_THROW(ppbm->getMap(1,true)->isSameAs(*(ppbm->getMap(1,true))),Xpetra::Exceptions::RuntimeError);
+
+  ppbm = Teuchos::null;
+
+  TEST_EQUALITY(ppbm2.is_null(), false);
+  TEST_EQUALITY(ppbm2->getThyraMode(),false);
+}
+
 //
 // INSTANTIATIONS
 //
@@ -1393,6 +1434,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReorderedSmall
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ConstructorReordered, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ConstructorReorderedSmall, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ConstructorReorderedSmall2, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, BlockedMapDeepCopy, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
 
 
 //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ExtractVector, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N )
