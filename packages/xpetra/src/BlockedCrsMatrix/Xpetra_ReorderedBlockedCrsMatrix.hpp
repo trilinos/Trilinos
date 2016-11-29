@@ -231,8 +231,20 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > mergeSubBlockM
       TEUCHOS_ASSERT(subMaps[i].is_null()==false);
     }
 
-    // what, if we have Thyra Maps??
+#if 1
+    // concatenate submaps
+    // for Thyra mode this map isn't important
+    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > fullMap = MapUtils::concatenateMaps(subMaps);
+
+    // create new BlockedMap (either in Thyra Mode or Xpetra mode)
+    map = Teuchos::rcp(new Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node>(fullMap, subMaps, bThyraMode));
+#else
+    // TAW: 11/27/16 we just concatenate the submaps to one monolithic Map object.
+    // Alternatively, we could create a new BlockedMap using the concatenated map and the submaps
+    // However, the block smoothers only need the concatenated map for creating MultiVectors...
+    // But for the Thyra mode version concatenating would not be ok for the whole map
     map = MapUtils::concatenateMaps(subMaps);
+#endif
   }
   TEUCHOS_ASSERT(map.is_null()==false);
   return map;
