@@ -51,7 +51,7 @@
 #include "Xpetra_Map.hpp"
 //#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_ImportFactory.hpp"
-#include "Xpetra_MapUtils.hpp"
+//#include "Xpetra_MapUtils.hpp"
 
 namespace Xpetra {
 
@@ -163,7 +163,7 @@ namespace Xpetra {
         //fullMapGids.erase(std::unique(fullMapGids.begin(), fullMapGids.end()), fullMapGids.end());
 
         Teuchos::ArrayView<GlobalOrdinal> fullMapGidsView(&fullMapGids[0], fullMapGids.size());
-        fullmap_ = MapFactory::Build(fullmap->lib(), INVALID, fullMapGidsView, fullmap->getIndexBase(), fullmap->getComm());
+        fullmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap->lib(), INVALID, fullMapGidsView, fullmap->getIndexBase(), fullmap->getComm());
 
         // plausibility check
         size_t numAllElements = 0;
@@ -201,7 +201,7 @@ namespace Xpetra {
       thyraMaps_ = thyramaps;
       maps_      = maps;
 
-      fullmap_ = Xpetra::MapUtils<LocalOrdinal,GlobalOrdinal,Node>::concatenateMaps(maps);
+      fullmap_ = this->concatenateMaps(maps);
 
       // plausibility check
       size_t numAllElements = 0;
@@ -487,15 +487,15 @@ namespace Xpetra {
       // TODO check implementation, simplify copy constructor
       bThyraMode_ = input.getThyraMode();
 
-      fullmap_ = MapFactory::Build(input.getFullMap(),1);
+      fullmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(input.getFullMap(),1);
 
       maps_.resize(input.getNumMaps(), Teuchos::null);
       if(bThyraMode_ == true)
         thyraMaps_.resize(input.getNumMaps(), Teuchos::null);
       for(size_t i = 0; i < input.getNumMaps(); ++i) {
-        maps_[i] = MapFactory::Build(input.getMap(i,false),1);
+        maps_[i] = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(input.getMap(i,false),1);
         if(bThyraMode_ == true)
-          thyraMaps_[i] = MapFactory::Build(input.getMap(i,true),1);
+          thyraMaps_[i] = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(input.getMap(i,true),1);
       }
 
       // plausibility check
@@ -513,6 +513,40 @@ namespace Xpetra {
           importers_[i] = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap_, maps_[i]);
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
                                  "logic error. full map and sub maps are inconsistently distributed over the processors.");
+    }
+
+    /*! @brief Helper function to concatenate several maps
+
+      @param  subMaps    vector of maps which are concatenated
+      @return            concatenated map
+
+      The routine builds a global map by concatenating all provided maps in the ordering defined by the vector.
+      The GIDs are just appended in the same ordering as in the subMaps. No reordering or sorting is performed.
+      This routine is supposed to generate the full map in an Xpetra::MapExtractor for a block operator. Note, it
+      should not be used for strided maps since the GIDs are not reordered.
+
+      Example: subMap[0] = { 0, 1, 3, 4 };
+               subMap[1] = { 2, 5 };
+               concatenated map = { 0, 1, 3, 4, 2 ,5 };
+      */
+    static Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > concatenateMaps(const std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > & subMaps) {
+
+      // merge submaps to global map
+      std::vector<GlobalOrdinal> gids;
+      for(size_t tt = 0; tt<subMaps.size(); ++tt) {
+        Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > subMap = subMaps[tt];
+        for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(subMap->getNodeNumElements()); ++l) {
+          GlobalOrdinal gid = subMap->getGlobalElement(l);
+          gids.push_back(gid);
+        }
+      }
+
+      const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+      //std::sort(gids.begin(), gids.end());
+      //gids.erase(std::unique(gids.begin(), gids.end()), gids.end());
+      Teuchos::ArrayView<GlobalOrdinal> gidsView(&gids[0], gids.size());
+      Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > fullMap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(subMaps[0]->lib(), INVALID, gidsView, subMaps[0]->getIndexBase(), subMaps[0]->getComm());
+      return fullMap;
     }
 
   private:
