@@ -43,6 +43,7 @@ configuration = {
             ('MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX', [
                 '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake',
                 '-DTrilinos_ENABLE_COMPLEX=ON',
+                '-DIntrepid2_refactor_perf-test_DynRankView_Serial_Test_01_MPI_1_DISABLE=ON',
                 ]),
 
             ## Options for the SERIAL_RELEASE build.
