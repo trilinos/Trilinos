@@ -325,13 +325,21 @@ namespace Xpetra {
     virtual bool isSameAs(const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > &map) const {
       RCP<const Map> rcpMap = Teuchos::rcpFromRef(map);
       RCP<const BlockedMap> rcpBMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rcpMap);
-      if(rcpBMap.is_null() == true) return false;
+      if(rcpBMap.is_null() == true) {
+        // If this is a blocked map with > 1 blocks but "map" is a plain map they can't be the same
+        if (this->getNumMaps() > 1)
+          return false;
+        // special case: this is a single blocked map and "map" is a plain map object
+        bool bSame = getMap(0,bThyraMode_)->isSameAs(*rcpMap);
+        return bSame;
+      }
 
       for(size_t v = 0; v < maps_.size(); ++v) {
         bool bSame = getMap(v,false)->isSameAs(*(rcpBMap->getMap(v,false)));
         if (bSame == false) return false;
         if (bThyraMode_) {
           bSame = getMap(v,true)->isSameAs(*(rcpBMap->getMap(v,true)));
+        if (bSame == false) return false;
         }
       }
       return true;
