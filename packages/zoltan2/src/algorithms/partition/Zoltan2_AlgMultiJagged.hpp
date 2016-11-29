@@ -1383,8 +1383,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
         this->myActualRank = this->myRank = 1;
 
 #ifdef HAVE_ZOLTAN2_OMP
-        int actual_num_threads = omp_get_num_threads();
-        omp_set_num_threads(1);
+        //int actual_num_threads = omp_get_num_threads();
+        //omp_set_num_threads(1);
 #endif
 
     //weights are uniform for task mapping
@@ -1843,7 +1843,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
     this->free_work_memory();
 
 #ifdef HAVE_ZOLTAN2_OMP
-    omp_set_num_threads(actual_num_threads);
+    //omp_set_num_threads(actual_num_threads);
 #endif
 }
 
@@ -2410,7 +2410,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_local_min_max_coo
     else {
         mj_scalar_t my_total_weight = 0;
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel
+#pragma omp parallel num_threads(this->num_threads)
 #endif
         {
             //if uniform weights are used, then weight is equal to count.
@@ -2701,7 +2701,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
 
     size_t total_reduction_size = 0;
 #ifdef HAVE_ZOLTAN2_OMP
-#pragma omp parallel shared(total_incomplete_cut_count,  rectilinear_cut_count)
+#pragma omp parallel shared(total_incomplete_cut_count,  rectilinear_cut_count) num_threads(this->num_threads)
 #endif
     {
         int me = 0;

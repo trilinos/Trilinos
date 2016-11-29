@@ -1398,6 +1398,7 @@ protected:
   typedef typename Adapter::scalar_t pcoord_t;
   typedef typename Adapter::scalar_t tcoord_t;
   typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;
 
 #endif
 
@@ -1405,6 +1406,8 @@ protected:
   ArrayRCP<part_t> proc_to_task_xadj; //  = allocMemory<part_t> (this->no_procs+1); //holds the pointer to the task array
   ArrayRCP<part_t> proc_to_task_adj; // = allocMemory<part_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
   ArrayRCP<part_t> task_to_proc; //allocMemory<part_t>(this->no_procs); //holds the processors mapped to tasks.
+  ArrayRCP<part_t> local_task_to_rank; //allocMemory<part_t>(this->no_procs); //holds the processors mapped to tasks.
+
   bool isOwnerofModel;
   CoordinateCommunicationModel<pcoord_t,tcoord_t,part_t> *proc_task_comm;
   part_t nprocs;
@@ -1500,6 +1503,7 @@ protected:
 
     int sender = int(globalCost[1]);
 
+    /*
     if ( this->comm->getRank() == 0){
       std::cout << "me:" << localCost[1] <<
             " localcost:" << localCost[0]<<
@@ -1508,6 +1512,7 @@ protected:
             " procDim" << proc_task_comm->proc_coord_dim <<
             " taskDim:" << proc_task_comm->task_coord_dim << std::endl;
     }
+    */
     //cout << "me:" << localCost[1] << " localcost:" << localCost[0]<< " bestcost:" << globalCost[0] << endl;
     //cout << "me:" << localCost[1] << " proc:" << globalCost[1] << endl;
     broadcast (*subComm, sender, this->ntasks, this->task_to_proc.getRawPtr());
@@ -1572,7 +1577,6 @@ protected:
         inpFile << std::endl;
       }
       inpFile.close();
-
     }
     gnuPlotCode << ss;
     gnuPlotCode << "\nreplot\n pause -1 \n";
@@ -1749,13 +1753,11 @@ public:
     proc_to_task_adj_ = this->proc_to_task_adj.getRawPtr();
   }
 
-  void map(RCP<MappingSolution<Adapter> > &mappingsoln) {
+  virtual void map(const RCP<MappingSolution<Adapter> > &mappingsoln) {
 
     // Mapping was already computed in the constructor; we need to store it
     // in the solution.
-
-    mappingsoln->setMap_PartsForRank(this->proc_to_task_xadj,
-                                     this->proc_to_task_adj);
+    mappingsoln->setMap_RankForLocalElements(local_task_to_rank);
 
     // KDDKDD TODO:  Algorithm is also creating task_to_proc, which maybe 
     // KDDKDD is not needed once we use MappingSolution to answer queries 
@@ -1774,6 +1776,20 @@ public:
     }
   }
 
+  void create_local_task_to_rank(
+      const lno_t num_local_coords,
+      const part_t *local_coord_parts,
+      const ArrayRCP<part_t> task_to_proc_){
+    local_task_to_rank = ArrayRCP <part_t> (num_local_coords);
+
+    for (lno_t i = 0; i < num_local_coords; ++i){
+      part_t local_coord_part = local_coord_parts[i];
+      part_t rank_index = task_to_proc_[local_coord_part];
+      local_task_to_rank[i] = rank_index;
+    }
+  }
+
+
 
   /*! \brief Constructor.
    * When this constructor is called, in order to calculate the communication metric,
@@ -1790,7 +1806,8 @@ public:
       const Teuchos::RCP <const MachineRepresentation<pcoord_t,part_t> > machine_,
       const Teuchos::RCP <const Adapter> input_adapter_,
       const Teuchos::RCP <const Zoltan2::PartitioningSolution<Adapter> > soln_,
-      const Teuchos::RCP <const Environment> envConst):
+      const Teuchos::RCP <const Environment> envConst,
+      bool is_input_adapter_distributed = true):
         PartitionMapping<Adapter> (comm_, machine_, input_adapter_, soln_, envConst),
         proc_to_task_xadj(0),
         proc_to_task_adj(0),
@@ -1807,6 +1824,11 @@ public:
     RCP<Zoltan2::CoordinateModel<ctm_base_adapter_t> > coordinateModel_ ;
 
     RCP<const Teuchos::Comm<int> > rcp_comm = comm_;
+    RCP<const Teuchos::Comm<int> > ia_comm = rcp_comm;
+    if (!is_input_adapter_distributed){
+      ia_comm =  Teuchos::createSerialComm<int>();
+    }
+
     RCP<const Environment> envConst_ = envConst;
 
     RCP<const ctm_base_adapter_t> baseInputAdapter_ (
@@ -1818,7 +1840,7 @@ public:
     //since this is coordinate task mapper,
     //the adapter has to have the coordinates
     coordinateModel_ = rcp(new CoordinateModel<ctm_base_adapter_t>(
-          baseInputAdapter_, envConst_, rcp_comm, coordFlags_));
+          baseInputAdapter_, envConst_, ia_comm, coordFlags_));
 
     //if the adapter has also graph model, we will use graph model
     //to calculate the cost mapping.
@@ -1828,7 +1850,7 @@ public:
         inputType_ == MeshAdapterType)
     {
       graph_model_ = rcp(new GraphModel<ctm_base_adapter_t>(
-          baseInputAdapter_, envConst_, rcp_comm,
+          baseInputAdapter_, envConst_, ia_comm,
             graphFlags_));
     }
 
@@ -1901,7 +1923,7 @@ public:
     //get centers for the parts.
     getSolutionCenterCoordinates<Adapter, t_scalar_t,part_t>(
         envConst.getRawPtr(),
-        comm_.getRawPtr(),
+        ia_comm.getRawPtr(),
         coordinateModel_.getRawPtr(),
         this->solution_parts,
         //soln_->getPartListView();
@@ -1917,7 +1939,7 @@ public:
     if (graph_model_.getRawPtr() != NULL){
       getCoarsenedPartGraph<Adapter, t_scalar_t, part_t> (
           envConst.getRawPtr(),
-          comm_.getRawPtr(),
+          ia_comm.getRawPtr(),
           graph_model_.getRawPtr(),
           this->ntasks,
           this->solution_parts,
@@ -1992,7 +2014,10 @@ public:
     //each processor in the group obtains a mapping with a different rotation
     //and best one is broadcasted all processors.
     this->getBestMapping();
-
+    this->create_local_task_to_rank(
+        coordinateModel_->getLocalNumCoordinates(),
+        this->solution_parts,
+        this->task_to_proc);
     /*
     {
       if (task_communication_xadj.getRawPtr() && task_communication_adj.getRawPtr())
@@ -2253,6 +2278,10 @@ public:
     //and best one is broadcasted all processors.
     this->getBestMapping();
 
+    this->create_local_task_to_rank(
+         coordinateModel_->getLocalNumCoordinates(),
+         this->solution_parts,
+         this->task_to_proc);
     /*
 
     {
