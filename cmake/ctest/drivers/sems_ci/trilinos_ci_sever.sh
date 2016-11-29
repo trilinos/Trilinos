@@ -28,6 +28,9 @@ echo "PAUSE_FILE = '$PAUSE_FILE'"
 # Executate
 #
 
+# Have to source this or you don't even get the module command!
+source /etc/bashrc
+
 HOSTNAME=`hostname`
 MAILMSG=$TRILINOS_DIR/cmake/tribits/python_utils/mailmsg.py
 
