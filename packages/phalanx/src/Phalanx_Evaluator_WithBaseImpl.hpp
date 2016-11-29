@@ -138,10 +138,10 @@ namespace PHX {
     virtual void evaluateFields(typename Traits::EvalData d) = 0;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-    virtual Kokkos::Future<void,PHX::Device::execution_space>
-    createTask(Kokkos::TaskPolicy<PHX::Device::execution_space>& policy,
+    virtual Kokkos::Future<void,PHX::exec_space>
+    createTask(Kokkos::TaskScheduler<PHX::exec_space>& policy,
 	       const int& work_size,
-               const std::vector<Kokkos::Future<void,PHX::Device::execution_space>>& dependent_futures,
+               const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
 	       typename Traits::EvalData d);
 
     virtual unsigned taskSize() const;

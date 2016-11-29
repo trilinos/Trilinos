@@ -61,8 +61,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-#include "Kokkos_TaskPolicy.hpp"
-#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
+#include "Kokkos_TaskScheduler.hpp"
 #endif
 
 namespace PHX {
@@ -246,7 +245,7 @@ namespace PHX {
     bool allow_multiple_evaluators_for_same_field_;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-    //std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_;
+    //std::vector<Kokkos::Experimental::Future<void,PHX::exec_space>> node_futures_;
 #endif
 
     //! A map that returns all evalautors that bind the memory of a particular field. Key is unique field identifier.  

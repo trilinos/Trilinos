@@ -54,8 +54,7 @@
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
 // amt only works with pthread and qthreads
-#include "Kokkos_TaskPolicy.hpp"
-#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
+#include "Kokkos_TaskScheduler.hpp"
 #include "Kokkos_Threads.hpp"
 #endif
 
@@ -128,10 +127,10 @@ namespace PHX {
 	@param work_size The number of parallel work units.
 	@param d User defined data.
     */ 
-    virtual Kokkos::Future<void,PHX::Device::execution_space>
-    createTask(Kokkos::TaskPolicy<PHX::Device::execution_space>& policy,
+    virtual Kokkos::Future<void,PHX::exec_space>
+    createTask(Kokkos::TaskScheduler<PHX::exec_space>& policy,
 	       const int& work_size,
-               const std::vector<Kokkos::Future<void,PHX::Device::execution_space>>& dependent_futures,
+               const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
 	       typename Traits::EvalData d) = 0;
 
     //! Returns the size of the kokkos task for AMT.
