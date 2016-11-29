@@ -473,7 +473,22 @@ namespace Xpetra {
 
     //! Print the object with the given verbosity level to a FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
-      out << "BlockedMap: TODO" << std::endl;
+      out << "------------- Blocked Map -----------" << std::endl;
+      out << description() << std::endl;
+      out << "Thyra mode: " << getThyraMode() << std::endl;
+      out << "No of submaps: " << getNumMaps() << std::endl;
+      Teuchos::OSTab tab(out);
+      for(size_t r = 0; r < getNumMaps(); r++) {
+        std::cout << "MAP " << r << "/" << getNumMaps() - 1 << std::endl;
+        getMap(r,false)->describe(out, verbLevel);
+      }
+      if(getThyraMode() == true) {
+        for(size_t r = 0; r < getNumMaps(); r++) {
+          std::cout << "Thyra MAP " << r << "/" << getNumMaps() - 1 << std::endl;
+          getMap(r,true)->describe(out, verbLevel);
+        }
+      }
+      out << "-------------------------------------" << std::endl;
     }
 
 
