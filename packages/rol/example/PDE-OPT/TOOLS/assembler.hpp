@@ -83,6 +83,19 @@ namespace ROL {
     Teuchos::RCP<Teuchos::Time> AssemblePDEHessian31      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian31");
     Teuchos::RCP<Teuchos::Time> AssemblePDEHessian32      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian32");
     Teuchos::RCP<Teuchos::Time> AssemblePDEHessian33      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble PDE Hessian33");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIValue          = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Value");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIGradient1      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Gradient1");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIGradient2      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Gradient2");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIGradient3      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI Gradient3");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIHessVec11      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec11");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIHessVec12      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec12");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIHessVec13      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec13");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIHessVec21      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec21");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIHessVec22      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec22");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIHessVec23      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec23");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIHessVec31      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec31");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIHessVec32      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec32");
+    Teuchos::RCP<Teuchos::Time> AssembleQOIHessVec33      = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: Assemble QOI HessVec33");
   }
 }
 #endif
@@ -1075,6 +1088,9 @@ public:
                         const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                         const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                         const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIValue);
+    #endif
     Real val(0);
     try {
       // Integrate obj object
@@ -1110,6 +1126,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIGradient1);
+    #endif
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
@@ -1155,6 +1174,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIGradient2);
+    #endif
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
@@ -1200,6 +1222,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIGradient3);
+    #endif
     if ( z_param != Teuchos::null ) {
       const int size = z_param->size();
       if ( g3 == Teuchos::null ) {
@@ -1248,6 +1273,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessVec11);
+    #endif
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
@@ -1296,6 +1324,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessVec12);
+    #endif
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
@@ -1344,43 +1375,51 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > &z_param = Teuchos::null) {
-    try {
-      // Get u_coeff from u and z_coeff from z
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
-      getCoeffFromStateVector(u_coeff,u);
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
-      getCoeffFromControlVector(z_coeff,z);
-      // Compute local gradient
-      qoi->HessVec_13(locHess, v, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
-      // Initialize state-control HessVec vectors
-      if ( H13 == Teuchos::null ) {
-        H13 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
-      }
-      if ( qoi_vecH13_overlap_ == Teuchos::null ) {
-        qoi_vecH13_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
-      }
-      // Assembly in to the overlap gradient
-      H13->scale(static_cast<Real>(0));
-      qoi_vecH13_overlap_->scale(static_cast<Real>(0));
-      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-      int numLocalDofs = cellDofs.dimension(1);
-      for (int i=0; i<numCells_; ++i) {
-        for (int j=0; j<numLocalDofs; ++j) {
-          qoi_vecH13_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                                  0,
-                                                  (*locHess)[i*numLocalDofs+j]);
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessVec13);
+    #endif
+    if (z_param != Teuchos::null) {
+      try {
+        // Get u_coeff from u and z_coeff from z
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
+        getCoeffFromStateVector(u_coeff,u);
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
+        getCoeffFromControlVector(z_coeff,z);
+        // Compute local gradient
+        qoi->HessVec_13(locHess, v, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
+        // Initialize state-control HessVec vectors
+        if ( H13 == Teuchos::null ) {
+          H13 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
         }
+        if ( qoi_vecH13_overlap_ == Teuchos::null ) {
+          qoi_vecH13_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapStateMap_, 1, true));
+        }
+        // Assembly in to the overlap gradient
+        H13->scale(static_cast<Real>(0));
+        qoi_vecH13_overlap_->scale(static_cast<Real>(0));
+        Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+        int numLocalDofs = cellDofs.dimension(1);
+        for (int i=0; i<numCells_; ++i) {
+          for (int j=0; j<numLocalDofs; ++j) {
+            qoi_vecH13_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                    0,
+                                                    (*locHess)[i*numLocalDofs+j]);
+          }
+        }
+        // Change to local map
+        Tpetra::Export<> exporter(qoi_vecH13_overlap_->getMap(), H13->getMap()); // redistribution
+        H13->doExport(*qoi_vecH13_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
       }
-      // Change to local map
-      Tpetra::Export<> exporter(qoi_vecH13_overlap_->getMap(), H13->getMap()); // redistribution
-      H13->doExport(*qoi_vecH13_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      catch (Exception::Zero &ez) {
+        throw Exception::Zero(">>> (Assembler::assembleQoIHessVec13): Hessian is zero.");
+      }
+      catch (Exception::NotImplemented &eni) {
+        throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec13): Hessian not implemented.");
+      }
     }
-    catch (Exception::Zero &ez) {
-      throw Exception::Zero(">>> (Assembler::assembleQoIHessVec12): Hessian is zero.");
-    }
-    catch (Exception::NotImplemented &eni) {
-      throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec12): Hessian not implemented.");
+    else {
+      throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec13): Hessian not implemented.");
     }
   }
 
@@ -1390,6 +1429,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessVec21);
+    #endif
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
@@ -1438,6 +1480,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessVec22);
+    #endif
     try {
       // Get u_coeff from u and z_coeff from z
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
@@ -1486,44 +1531,53 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    try {
-      // Get u_coeff from u and z_coeff from z
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
-      getCoeffFromStateVector(u_coeff,u);
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
-      getCoeffFromControlVector(z_coeff,z);
-      // Compute local gradient
-      qoi->HessVec_23(locHess, v, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
-      // Initialize control-control HessVec vectors
-      if ( H23 == Teuchos::null ) {
-        H23 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
-      }
-      if ( qoi_vecH23_overlap_ == Teuchos::null ) {
-        qoi_vecH23_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
-      }
-      // Assembly in to the overlap gradient
-      H23->scale(static_cast<Real>(0));
-      qoi_vecH23_overlap_->scale(static_cast<Real>(0));
-      Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-      int numLocalDofs = cellDofs.dimension(1);
-      for (int i=0; i<numCells_; ++i) {
-        for (int j=0; j<numLocalDofs; ++j) {
-          qoi_vecH23_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                                  0,
-                                                  (*locHess)[i*numLocalDofs+j]);
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessVec23);
+    #endif
+    if (z_param != Teuchos::null) {
+      try {
+        // Get u_coeff from u and z_coeff from z
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > locHess;
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > u_coeff = Teuchos::null;
+        getCoeffFromStateVector(u_coeff,u);
+        Teuchos::RCP<Intrepid::FieldContainer<Real> > z_coeff = Teuchos::null;
+        getCoeffFromControlVector(z_coeff,z);
+        // Compute local gradient
+        qoi->HessVec_23(locHess, v, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
+        // Initialize control-control HessVec vectors
+        if ( H23 == Teuchos::null ) {
+          H23 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
         }
+        if ( qoi_vecH23_overlap_ == Teuchos::null ) {
+          qoi_vecH23_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapControlMap_, 1, true));
+        }
+        // Assembly in to the overlap gradient
+        H23->scale(static_cast<Real>(0));
+        qoi_vecH23_overlap_->scale(static_cast<Real>(0));
+        Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+        int numLocalDofs = cellDofs.dimension(1);
+        for (int i=0; i<numCells_; ++i) {
+          for (int j=0; j<numLocalDofs; ++j) {
+            qoi_vecH23_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
+                                                    0,
+                                                    (*locHess)[i*numLocalDofs+j]);
+          }
+        }
+        // Change to local map
+        Tpetra::Export<> exporter(qoi_vecH23_overlap_->getMap(), H23->getMap()); // redistribution
+        H23->doExport(*qoi_vecH23_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
       }
-      // Change to local map
-      Tpetra::Export<> exporter(qoi_vecH23_overlap_->getMap(), H23->getMap()); // redistribution
-      H23->doExport(*qoi_vecH23_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
+      catch (Exception::Zero &ez) {
+        throw Exception::Zero(">>> (Assembler::assembleQoIHessVec23): Hessian is zero.");
+      }
+      catch (Exception::NotImplemented &eni) {
+        throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec23): Hessian not implemented.");
+      }
     }
-    catch (Exception::Zero &ez) {
-      throw Exception::Zero(">>> (Assembler::assembleQoIHessVec23): Hessian is zero.");
-    }
-    catch (Exception::NotImplemented &eni) {
+    else {
       throw Exception::NotImplemented(">>> (Assembler::assembleQoIHessVec23): Hessian not implemented.");
     }
+
   }
 
   void assembleQoIHessVec31(Teuchos::RCP<std::vector<Real> > &H31,
@@ -1532,6 +1586,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessVec31);
+    #endif
     if ( z_param != Teuchos::null ) {
       const int size = z_param->size();
       if ( H31 == Teuchos::null ) {
@@ -1582,6 +1639,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessVec32);
+    #endif
     if ( z_param != Teuchos::null ) {
       const int size = z_param->size();
       if ( H32 == Teuchos::null ) {
@@ -1632,6 +1692,9 @@ public:
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &u,
                             const Teuchos::RCP<const Tpetra::MultiVector<> > &z = Teuchos::null,
                             const Teuchos::RCP<const std::vector<Real> > &z_param = Teuchos::null) {
+    #ifdef ROL_TIMERS
+      Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssembleQOIHessVec33);
+    #endif
     if ( z_param != Teuchos::null ) {
       const int size = z_param->size();
       if ( H33 == Teuchos::null ) {

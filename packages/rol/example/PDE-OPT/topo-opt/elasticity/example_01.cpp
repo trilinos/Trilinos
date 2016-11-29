@@ -211,10 +211,8 @@ int main(int argc, char *argv[]) {
                                                      pde->getLoad(),
                                                      pde->getFieldHelper(),
                                                      objScaling));
-    Teuchos::RCP<StdObjective_TopoOpt<RealT> > std_obj
-      = Teuchos::rcp(new StdObjective_TopoOpt<RealT>());
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
-      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,std_obj,assembler));
+      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_vec,assembler));
 
     // Initialize volume constraint,
     Teuchos::RCP<QoI<RealT> > qoi_vol
