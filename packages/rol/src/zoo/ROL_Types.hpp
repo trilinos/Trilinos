@@ -178,6 +178,15 @@ std::string NumberToString( T Number )
     return output;
   }
 
+  // Types of optimization problem
+  enum EProblem {
+    TYPE_U = 0,
+    TYPE_B,
+    TYPE_E,
+    TYPE_EB,
+    TYPE_LAST
+  };
+
   /** \enum   ROL::EStep
       \brief  Enumeration of step types.
 
@@ -217,7 +226,48 @@ std::string NumberToString( T Number )
     }
     return retString;
   }
+
+  inline int isCompatibleStep( EProblem p, EStep s ) {
+    int comp;
+    switch(p) {
+
+      case TYPE_U:    comp = ( (s == STEP_LINESEARCH) ||
+                                (s == STEP_TRUSTREGION) );
+        break;
+
+      case TYPE_B:    comp = ( (s == STEP_LINESEARCH)  ||
+                                (s == STEP_TRUSTREGION) || 
+                                (s == STEP_MOREAUYOSIDAPENALTY) );
+        break;
+
+      case TYPE_E:    comp = ( (s == STEP_COMPOSITESTEP) || 
+                                (s == STEP_AUGMENTEDLAGRANGIAN) );  
+        break;
+
+      case TYPE_EB:   comp = ( (s == STEP_AUGMENTEDLAGRANGIAN) || 
+                                (s == STEP_MOREAUYOSIDAPENALTY) );
+        break;
+
+      case TYPE_LAST: comp = 0; break;
+      default:        comp = 0;      
+    }
+    return comp;
+  }
+
+  inline std::string EProblemToString( EProblem p ) {
+    std::string retString;
+    switch(p) {
+      case TYPE_U:     retString = "Type-U";             break;
+      case TYPE_E:     retString = "Type-E";             break;
+      case TYPE_B:     retString = "Type-B";             break;
+      case TYPE_EB:    retString = "Type-EB";            break;
+      case TYPE_LAST:  retString = "Type-Last (Dummy)";  break;
+      default:         retString = "Invalid EProblem";
+    }
+    return retString;
+  }
   
+ 
   /** \brief  Verifies validity of a TrustRegion enum.
     
       \param  tr  [in]  - enum of the TrustRegion

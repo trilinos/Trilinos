@@ -1,0 +1,32 @@
+<ParameterList name = "Inputs">
+
+  <Parameter name = "Verbose"      type = "bool"    value = "false"                />
+
+  <Parameter name = "Type-U Step"  type = "string"  value = "Trust Region"         />
+  <Parameter name = "Type-B Step"  type = "string"  value = "Trust Region"         />
+  <Parameter name = "Type-E Step"  type = "string"  value = "Composite Step"       />
+  <Parameter name = "Type-EB Step" type = "string"  value = "Augmented Lagrangian" />
+  
+
+   
+  <ParameterList name = "Step">
+
+    <ParameterList name = "Trust Region">
+      <Parameter name = "Subproblem Solver"     type = "string"   value = "Truncated CG" />
+      <Parameter name = "Subproblem Model"      type = "string"   value = "Kelley-Sachs" />
+    </ParameterList>
+
+    <ParameterList name = "Composite Step">
+    </ParameterList>
+
+    <ParameterList name = "Augmented Lagrangian">
+    </ParameterList>
+
+    <ParameterList name = "Status Test"> 
+      <Parameter name = "Constraint Tolerance"   type = "double"   value = "1e-9" />
+      <Parameter name = "Gradient Tolerance"     type = "double"   value = "1e-7" />
+    </ParameterList>
+
+
+  </ParameterList> 
+</ParameterList>

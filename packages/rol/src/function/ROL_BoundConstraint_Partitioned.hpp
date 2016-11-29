@@ -83,13 +83,11 @@ public:
     : bnd_(bnd), dim_(bnd.size()) {
     BoundConstraint<Real>::deactivate();
     for( uint k=0; k<dim_; ++k ) {
-      std::cout << bnd_[k]->isActivated() << std::endl;
       if( bnd_[k]->isActivated() ) {
         BoundConstraint<Real>::activate();
         break;
       }
     }
-    std::cout << BoundConstraint<Real>::isActivated() << std::endl;
     std::vector<Teuchos::RCP<Vector<Real> > > lp;
     std::vector<Teuchos::RCP<Vector<Real> > > up;
 

@@ -49,7 +49,6 @@
 #include "ROL_SlacklessObjective.hpp"
 
 namespace ROL {
-namespace Refactor {
 
 /* Represents optimization problems in Type-EB form 
  */
@@ -79,7 +78,7 @@ private:
   Teuchos::RCP<EQCON>    con_;
   Teuchos::RCP<V>        mul_;
 
-  Teuchos::RCP<Teuchos::ParameterList>  parlist_;
+  EProblem problemType_;
 
 public:
   virtual ~OptimizationProblem(void) {}
@@ -91,9 +90,7 @@ public:
                        const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon,
                        const Teuchos::RCP<Vector<Real> >               &le,
                        const Teuchos::RCP<InequalityConstraint<Real> > &incon,
-                       const Teuchos::RCP<Vector<Real> >               &li,
-                       const Teuchos::RCP<Teuchos::ParameterList>      &parlist = Teuchos::null ) : 
-      parlist_(parlist) { 
+                       const Teuchos::RCP<Vector<Real> >               &li ) {
    
     using Teuchos::RCP; using Teuchos::rcp; 
 
@@ -144,12 +141,29 @@ public:
     }
 
     else {  // There is no inequality constraint
-
+   
       obj_ = obj;
       sol_ = x;
       mul_ = le;
       bnd_ = bnd;
       con_ = eqcon;
+    }
+
+    if( con_ == Teuchos::null ) {    // Type-U or Type-B
+      if( bnd_ == Teuchos::null ) {  // Type-U
+        problemType_ = TYPE_U;        
+      }
+      else { // Type-B
+        problemType_ = TYPE_B; 
+      }
+    }
+    else { // Type-E or Type-EB
+      if( bnd_ == Teuchos::null ) { // Type-E
+        problemType_ = TYPE_E;     
+      }
+      else { // Type-EB
+        problemType_ = TYPE_EB; 
+      }
     }
   }
 
@@ -158,18 +172,16 @@ public:
                        const Teuchos::RCP<Vector<Real> >               &x,
                        const Teuchos::RCP<BoundConstraint<Real> >      &bnd,   
                        const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon, 
-                       const Teuchos::RCP<Vector<Real> >               &le,    
-                       const Teuchos::RCP<Teuchos::ParameterList>      &parlist = Teuchos::null ) :
-     OptimizationProblem( obj, x, bnd, eqcon, le, Teuchos::null, Teuchos::null, parlist ) { } 
+                       const Teuchos::RCP<Vector<Real> >               &le ) :    
+     OptimizationProblem( obj, x, bnd, eqcon, le, Teuchos::null, Teuchos::null ) { } 
 
   // No equality constructor [3]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
                        const Teuchos::RCP<Vector<Real> >               &x,
                        const Teuchos::RCP<BoundConstraint<Real> >      &bnd,
                        const Teuchos::RCP<InequalityConstraint<Real> > &incon,
-                       const Teuchos::RCP<Vector<Real> >               &li,
-                       const Teuchos::RCP<Teuchos::ParameterList>      &parlist = Teuchos::null ) :
-     OptimizationProblem( obj, x, bnd, Teuchos::null, Teuchos::null, incon, li, parlist ) { } 
+                       const Teuchos::RCP<Vector<Real> >               &li ): 
+     OptimizationProblem( obj, x, bnd, Teuchos::null, Teuchos::null, incon, li ) { } 
 
   // No bound constuctor [4]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
@@ -177,38 +189,33 @@ public:
                        const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon, 
                        const Teuchos::RCP<Vector<Real> >               &le,   
                        const Teuchos::RCP<InequalityConstraint<Real> > &incon,
-                       const Teuchos::RCP<Vector<Real> >               &li,   
-                       const Teuchos::RCP<Teuchos::ParameterList>      &parlist = Teuchos::null ) :
-     OptimizationProblem( obj, x, Teuchos::null, eqcon, le, incon, li, parlist ) {}
+                       const Teuchos::RCP<Vector<Real> >               &li ) :
+     OptimizationProblem( obj, x, Teuchos::null, eqcon, le, incon, li ) {}
 
   // No inequality or equality [5]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
                        const Teuchos::RCP<Vector<Real> >               &x,
-                       const Teuchos::RCP<BoundConstraint<Real> >      &bnd,
-                       const Teuchos::RCP<Teuchos::ParameterList>      &parlist = Teuchos::null ) :
-     OptimizationProblem( obj, x, bnd, Teuchos::null, Teuchos::null, Teuchos::null, Teuchos::null, parlist ) { } 
+                       const Teuchos::RCP<BoundConstraint<Real> >     &bnd ) :
+     OptimizationProblem( obj, x, bnd, Teuchos::null, Teuchos::null, Teuchos::null, Teuchos::null ) { } 
   // No inequality or bound [6]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
                        const Teuchos::RCP<Vector<Real> >               &x,
                        const Teuchos::RCP<EqualityConstraint<Real> >   &eqcon,
-                       const Teuchos::RCP<Vector<Real> >               &le,
-                       const Teuchos::RCP<Teuchos::ParameterList>      &parlist = Teuchos::null ) :
-     OptimizationProblem( obj, x, Teuchos::null, eqcon, le, Teuchos::null, Teuchos::null, parlist ) { } 
+                       const Teuchos::RCP<Vector<Real> >               &le ) :
+     OptimizationProblem( obj, x, Teuchos::null, eqcon, le, Teuchos::null, Teuchos::null ) { } 
 
   // No equality or bound [7]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
                        const Teuchos::RCP<Vector<Real> >               &x,
                        const Teuchos::RCP<InequalityConstraint<Real> > &incon,
-                       const Teuchos::RCP<Vector<Real> >               &li,
-                       const Teuchos::RCP<Teuchos::ParameterList>      &parlist = Teuchos::null ) :
-     OptimizationProblem( obj, x, Teuchos::null, Teuchos::null, Teuchos::null, incon, li, parlist ) { } 
+                       const Teuchos::RCP<Vector<Real> >               &li ) :
+     OptimizationProblem( obj, x, Teuchos::null, Teuchos::null, Teuchos::null, incon, li ) { } 
 
   // Unconstrained problem [8]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >            &obj,
-                       const Teuchos::RCP<Vector<Real> >               &x,
-                       const Teuchos::RCP<Teuchos::ParameterList>      &parlist = Teuchos::null ) :
+                       const Teuchos::RCP<Vector<Real> >               &x ) :
      OptimizationProblem( obj, x, Teuchos::null, Teuchos::null, Teuchos::null, 
-                          Teuchos::null, Teuchos::null, parlist ) { } 
+                          Teuchos::null, Teuchos::null ) { } 
 
   /* Get/Set methods */
 
@@ -252,17 +259,11 @@ public:
     mul_ = mul;
   }
 
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList(void) {
-    return parlist_;
-  }
-
-  void setParameterList( const Teuchos::RCP<Teuchos::ParameterList> &parlist ) {
-    parlist_ = parlist;
+  EProblem getProblemType(void) {
+    return problemType_;
   }
 
 }; // class OptimizationProblem
-
-}  // namespace Refactor
 
 }  // namespace ROL
 

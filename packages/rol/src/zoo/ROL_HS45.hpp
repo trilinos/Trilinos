@@ -153,7 +153,7 @@ void getHS45( Teuchos::RCP<Objective<Real> >       &obj,
               Teuchos::RCP<Vector<Real> >          &x0,
               Teuchos::RCP<Vector<Real> >          &x ) {
   // Problem dimension
-  int n = 5;
+  int n = 10;
 
   // Get Initial Guess
   Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
