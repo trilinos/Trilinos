@@ -12,7 +12,7 @@ echo "TRILINOS_DIR='${TRILINOS_DIR}'"
 
 BASE_COMMAND=$DRIVER_SCRIPT_DIR/single_ci_iter.sh
 LOOP_INTERVAL=3m
-TODAY_RUN_TILL=23:59:00
+TODAY_RUN_TILL=18:00:00
 PAUSE_FILE=$PWD/pause_ci_server.txt
 
 # Un-comment to test out locally
