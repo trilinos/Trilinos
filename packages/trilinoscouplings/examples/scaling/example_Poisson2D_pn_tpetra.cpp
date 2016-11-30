@@ -1171,7 +1171,7 @@ int main(int argc, char *argv[]) {
     std::cout << "found \"" << lev0List << "\" sublist" << std::endl;
     ParameterList &sl = amgList.sublist(lev0List);
     std::string smooType = sl.get<std::string>("smoother: type");
-    if (smooType == "BLOCK RELAXATION" && sl.isParameter("smoother: params")) {
+    if ( (smooType == "SPARSE BLOCK RELAXATION" || smooType == "BLOCK RELAXATION") && sl.isParameter("smoother: params")) {
       ParameterList &ssl = sl.sublist("smoother: params");
       std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
       int numLocalParts;
@@ -1189,6 +1189,26 @@ int main(int argc, char *argv[]) {
       std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
       ssl.set("partitioner: local parts", numLocalParts);
     }
+    std::string coarseType = sl.get<std::string>("coarse: type");
+    if ((coarseType == "SPARSE BLOCK RELAXATION"|| coarseType == "BLOCK RELAXATION") && sl.isParameter("coarse: params")) {
+      ParameterList &ssl = sl.sublist("coarse: params");
+      std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
+      int numLocalParts;
+      std::cout << "setting \"partitioner: map\"" << std::endl;
+      if (seedType == "node") {
+        ssl.set("partitioner: map", nodeSeeds);
+        numLocalParts = numNodeSeeds;
+      } else if (seedType == "edge") {
+        ssl.set("partitioner: map", edgeSeeds);
+        numLocalParts = numEdgeSeeds;
+      } else if (seedType == "cell") {
+        ssl.set("partitioner: map", cellSeeds);
+        numLocalParts = numCellSeeds;
+      }
+      std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
+      ssl.set("partitioner: local parts", numLocalParts);
+    }
+
   }
 
   // /////////////////////////////////////////////////////////////////////// //
