@@ -328,11 +328,24 @@ struct BacktrackingLineSearch
 };
 
 ///
+/// Trust region subproblem base
+///
+template<typename T, Index N>
+struct TrustRegionSubproblemBase
+{
+  PreconditionerType
+  preconditioner_type{PreconditionerType::IDENTITY};
+
+  Vector<T, N>
+  lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b);
+};
+
+///
 /// Trust region subproblem with a given objective function.
 /// Exact algorithm, Nocedal 2nd Ed 4.3
 ///
 template<typename T, Index N>
-struct TrustRegionExactValue
+struct TrustRegionExactValue : public TrustRegionSubproblemBase<T, N>
 {
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
@@ -349,7 +362,7 @@ struct TrustRegionExactValue
 /// Exact algorithm, Nocedal 2nd Ed 4.3
 ///
 template<typename T, Index N>
-struct TrustRegionExactGradient
+struct TrustRegionExactGradient : public TrustRegionSubproblemBase<T, N>
 {
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
@@ -366,7 +379,7 @@ struct TrustRegionExactGradient
 /// Dog leg algorithm.
 ///
 template<typename T, Index N>
-struct TrustRegionDogLegValue
+struct TrustRegionDogLegValue : public TrustRegionSubproblemBase<T, N>
 {
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
@@ -380,7 +393,7 @@ struct TrustRegionDogLegValue
 /// Dog leg algorithm.
 ///
 template<typename T, Index N>
-struct TrustRegionDogLegGradient
+struct TrustRegionDogLegGradient : public TrustRegionSubproblemBase<T, N>
 {
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
@@ -417,6 +430,12 @@ struct StepBase
 
   virtual
   ~StepBase() {}
+
+  PreconditionerType
+  preconditioner_type{PreconditionerType::IDENTITY};
+
+  Vector<T, N>
+  lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b);
 };
 
 ///

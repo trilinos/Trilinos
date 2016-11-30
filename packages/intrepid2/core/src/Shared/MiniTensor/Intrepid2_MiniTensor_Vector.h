@@ -287,11 +287,41 @@ public:
   operator()(Index const i);
 
   ///
+  /// const Vector indexing convenience operator for some algorithms
+  /// \param i the index
+  ///
+  KOKKOS_INLINE_FUNCTION
+  T const &
+  operator()(Index const i, Index const) const;
+
+  ///
+  /// Vector indexing convenience operator for some algorithms
+  /// \param i the index
+  ///
+  KOKKOS_INLINE_FUNCTION
+  T &
+  operator()(Index const i, Index const);
+
+  ///
   /// \return dimension
   ///
   KOKKOS_INLINE_FUNCTION
   Index
   get_dimension() const;
+
+  ///
+  /// \return number rows
+  ///
+  KOKKOS_INLINE_FUNCTION
+  Index
+  get_num_rows() const;
+
+  ///
+  /// \return number rows
+  ///
+  KOKKOS_INLINE_FUNCTION
+  Index
+  get_num_cols() const;
 
   ///
   /// \param dimension of vector

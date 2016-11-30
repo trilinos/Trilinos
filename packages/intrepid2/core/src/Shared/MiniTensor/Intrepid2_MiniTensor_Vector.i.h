@@ -404,6 +404,28 @@ Vector<T, N, ES>::get_dimension() const
 }
 
 //
+// Get number rows
+//
+template<typename T, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Index
+Vector<T, N, ES>::get_num_rows() const
+{
+  return get_dimension();
+}
+
+//
+// Get number columns
+//
+template<typename T, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Index
+Vector<T, N, ES>::get_num_cols() const
+{
+  return static_cast<Index>(1);
+}
+
+//
 // Set dimension
 //
 template<typename T, Index N, typename ES>
@@ -427,12 +449,34 @@ Vector<T, N, ES>::operator()(Index const i) const
 }
 
 //
-// Vector indexing
+// Indexing for vector
 //
 template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T &
 Vector<T, N, ES>::operator()(Index const i)
+{
+  return (*this)[i];
+}
+
+//
+// Indexing for constant vector (convenience)
+//
+template<typename T, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+T const &
+Vector<T, N, ES>::operator()(Index const i, Index const) const
+{
+  return (*this)[i];
+}
+
+//
+// Indexing for vector (convenience)
+//
+template<typename T, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+T &
+Vector<T, N, ES>::operator()(Index const i, Index const)
 {
   return (*this)[i];
 }

@@ -53,13 +53,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 inverse(Tensor<T, N, ES> const & A)
 {
-  Index const
-  dimension = A.get_dimension();
-
-  bool const
-  use_fast = dimension == 2 || dimension == 3;
-
-  return use_fast == true ? inverse_fast23(A) : inverse_full_pivot(A);
+  return inverse_fast23(A);
 }
 
 //
@@ -77,108 +71,10 @@ inverse_full_pivot(Tensor<T, N, ES> const & A)
   Index const
   dimension = A.get_dimension();
 
-  Index const
-  maximum_dimension = num_digits<Index>();
-
-  if (dimension > maximum_dimension) {
-    MT_ERROR_EXIT("Max dim (%d) exceeded: %d.", dimension, maximum_dimension);
-  }
-
-  switch (dimension) {
-
-  case 1:
-    return Tensor<T, N, ES>(1, ONES) / A(0,0);
-    break;
-
-  default:
-    break;
-  }
-
-  Tensor<T, N, ES>
-  S = A;
-
   Tensor<T, N, ES>
   B = identity<T, N, ES>(dimension);
 
-  // Set 1 ... dimension bits to one.
-  Index
-  intact_rows = static_cast<Index>((1UL << dimension) - 1);
-
-  Index
-  intact_cols = static_cast<Index>((1UL << dimension) - 1);
-
-  // Gauss-Jordan elimination with full pivoting
-  for (Index k = 0; k < dimension; ++k) {
-
-    // Determine full pivot
-    T
-    pivot = 0.0;
-
-    Index
-    pivot_row = dimension;
-
-    Index
-    pivot_col = dimension;
-
-    for (Index row = 0; row < dimension; ++row) {
-
-      if (!(intact_rows & (1 << row))) continue;
-
-      for (Index col = 0; col < dimension; ++col) {
-
-        if (!(intact_cols & (1 << col))) continue;
-
-        T
-        s = std::abs(S(row, col));
-        if (s > pivot) {
-
-          pivot_row = row;
-          pivot_col = col;
-
-          pivot = s;
-
-        }
-
-      }
-
-    }
-
-    assert(pivot_row < dimension);
-    assert(pivot_col < dimension);
-
-    // Gauss-Jordan elimination
-    T const
-    t = S(pivot_row, pivot_col);
-
-    assert(t != 0.0);
-
-    for (Index j = 0; j < dimension; ++j) {
-      S(pivot_row, j) /= t;
-      B(pivot_row, j) /= t;
-    }
-
-    for (Index i = 0; i < dimension; ++i) {
-      if (i == pivot_row) continue;
-
-      T const
-      c = S(i, pivot_col);
-
-      for (Index j = 0; j < dimension; ++j) {
-        S(i, j) -= c * S(pivot_row, j);
-        B(i, j) -= c * B(pivot_row, j);
-      }
-    }
-
-    // Eliminate current row and col from intact rows and cols
-    intact_rows &= ~(1 << pivot_row);
-    intact_cols &= ~(1 << pivot_col);
-
-  }
-
-  Tensor<T, N, ES> const
-  X = t_dot(S, B);
-
-  return X;
+  return solve_full_pivot(A, B);
 }
 
 //
@@ -237,28 +133,33 @@ inverse_fast23(Tensor<T, N, ES> const & A)
 //
 //
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N, typename RHS, typename ES>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-solve_full_pivot(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b)
+RHS
+solve_full_pivot(Tensor<T, N, ES> const & A, RHS const & b)
 {
   Index const
-  dimension = A.get_dimension();
+  dimension{A.get_dimension()};
 
   Index const
-  maximum_dimension = num_digits<Index>();
+  maximum_dimension{num_digits<Index>()};
 
   if (dimension > maximum_dimension) {
     MT_ERROR_EXIT("Max dim (%d) exceeded: %d.", dimension, maximum_dimension);
   }
 
-  Vector<T, N, ES>
-  B = b;
+  RHS
+  B{b};
+
+  Index const
+  num_rhs{B.get_num_cols()};
 
   switch (dimension) {
 
   case 1:
-    B(0) = b(0) / A(0,0);
+    for (Index i{0}; i < num_rhs; ++i) {
+      B(0, i) = b(0, i) / A(0, 0);
+    }
     return B;
     break;
 
@@ -267,43 +168,42 @@ solve_full_pivot(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b)
   }
 
   Tensor<T, N, ES>
-  S = A;
+  S{A};
 
   // Set 1 ... dimension bits to one.
   Index
-  intact_rows = static_cast<Index>((1UL << dimension) - 1);
+  intact_rows{static_cast<Index>((1UL << dimension) - 1)};
 
   Index
-  intact_cols = static_cast<Index>((1UL << dimension) - 1);
+  intact_cols{static_cast<Index>((1UL << dimension) - 1)};
 
   // Gauss-Jordan elimination with full pivoting
-  for (Index k = 0; k < dimension; ++k) {
+  for (Index k{0}; k < dimension; ++k) {
 
     // Determine full pivot
     T
-    pivot = 0.0;
+    pivot{0.0};
 
     Index
-    pivot_row = dimension;
+    pivot_row{dimension};
 
     Index
-    pivot_col = dimension;
+    pivot_col{dimension};
 
-    for (Index row = 0; row < dimension; ++row) {
+    for (Index row{0}; row < dimension; ++row) {
 
       if (!(intact_rows & (1 << row))) continue;
 
-      for (Index col = 0; col < dimension; ++col) {
+      for (Index col{0}; col < dimension; ++col) {
 
         if (!(intact_cols & (1 << col))) continue;
 
         T
-        s = std::abs(S(row, col));
+        s{std::abs(S(row, col))};
         if (s > pivot) {
 
           pivot_row = row;
           pivot_col = col;
-
           pivot = s;
 
         }
@@ -317,25 +217,29 @@ solve_full_pivot(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b)
 
     // Gauss-Jordan elimination
     T const
-    t = S(pivot_row, pivot_col);
+    t{S(pivot_row, pivot_col)};
 
     assert(t != 0.0);
 
-    for (Index j = 0; j < dimension; ++j) {
+    for (Index j{0}; j < dimension; ++j) {
       S(pivot_row, j) /= t;
     }
-    B(pivot_row) /= t;
+    for (Index j{0}; j < num_rhs; ++j) {
+      B(pivot_row, j) /= t;
+    }
 
-    for (Index i = 0; i < dimension; ++i) {
+    for (Index i{0}; i < dimension; ++i) {
       if (i == pivot_row) continue;
 
       T const
-      c = S(i, pivot_col);
+      c{S(i, pivot_col)};
 
       for (Index j = 0; j < dimension; ++j) {
         S(i, j) -= c * S(pivot_row, j);
       }
-      B(i) -= c * B(pivot_row);
+      for (Index j = 0; j < num_rhs; ++j) {
+        B(i, j) -= c * B(pivot_row, j);
+      }
     }
 
     // Eliminate current row and col from intact rows and cols
@@ -344,10 +248,10 @@ solve_full_pivot(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b)
 
   }
 
-  Vector<T, N, ES> const
-  x = dot(B, S);
+  RHS const
+  X = t_dot(S, B);
 
-  return x;
+  return X;
 }
 
 //
@@ -2561,7 +2465,7 @@ namespace {
 //
 //
 //
-template<typename T, Index N, typename ES, typename RHS>
+template<typename T, Index N, typename RHS, typename ES>
 KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, RHS>
 identity_precon(Tensor<T, N, ES> const & A, RHS const & B)
@@ -2572,7 +2476,7 @@ identity_precon(Tensor<T, N, ES> const & A, RHS const & B)
 //
 //
 //
-template<typename T, Index N, typename ES, typename RHS>
+template<typename T, Index N, typename RHS, typename ES>
 KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, RHS>
 diagonal_precon(Tensor<T, N, ES> const & A, RHS const & B)
@@ -2592,7 +2496,7 @@ diagonal_precon(Tensor<T, N, ES> const & A, RHS const & B)
 //
 //
 //
-template<typename T, Index N, typename ES, typename RHS>
+template<typename T, Index N, typename RHS, typename ES>
 KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, RHS>
 maxabsrow_precon(Tensor<T, N, ES> const & A, RHS & B)
@@ -2615,7 +2519,7 @@ maxabsrow_precon(Tensor<T, N, ES> const & A, RHS & B)
 //
 //
 //
-template<typename T, Index N, typename ES, typename RHS>
+template<typename T, Index N, typename RHS, typename ES>
 KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, RHS>
 precon(PreconditionerType const pt, Tensor<T, N, ES> const & A, RHS const & B)
@@ -2643,7 +2547,7 @@ precon(PreconditionerType const pt, Tensor<T, N, ES> const & A, RHS const & B)
 // This is meant for the solution of small linear systems of equations
 // typically found in constitutive updates.
 // Right now the implementation is very inefficient (but accurate)
-// as it just uses the inverse function. It is intended to be used in
+// as it just Gauss-Jordan elimination. It is intended to be used in
 // conjunction with Kokkos to take advantage of thread parallelism.
 //
 template<typename T, Index N, typename ES>

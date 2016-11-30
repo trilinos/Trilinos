@@ -420,6 +420,28 @@ recordFinals(FN & fn, Vector<T, N> const & x)
 }
 
 //
+// Linear solver for step methods
+//
+template<typename FN, typename T, Index N>
+Vector<T, N>
+StepBase<FN, T, N>::
+lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b)
+{
+  return solve(A, b, preconditioner_type);
+}
+
+//
+// Linear solve for trust region subproblems
+//
+template<typename T, Index N>
+Vector<T, N>
+TrustRegionSubproblemBase<T, N>::
+lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b)
+{
+  return solve(A, b, preconditioner_type);
+}
+
+//
 // Trust region subproblem with given objective function.
 // Exact algorithm, Nocedal 2nd Ed 4.3
 //
@@ -458,10 +480,10 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
       MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
     }
 
-    step = - Intrepid2::solve(K, gradient);
+    step = - this->lin_solve(K, gradient);
 
     Vector<T, N> const
-    q = Intrepid2::solve(L, step);
+    q = this->lin_solve(L, step);
 
     T const
     np = norm(step);
@@ -529,10 +551,10 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
       MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
     }
 
-    step = - Intrepid2::solve(K, HTr);
+    step = - this->lin_solve(K, HTr);
 
     Vector<T, N> const
-    q = Intrepid2::solve(L, step);
+    q = this->lin_solve(L, step);
 
     T const
     np = norm(step);
@@ -579,7 +601,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
   step_minimizer = - normg_squared / normg_H * gradient;
 
   Vector<T, N> const
-  step_unconstrained = - Intrepid2::solve(Hessian, gradient);
+  step_unconstrained = - this->lin_solve(Hessian, gradient);
 
   T const
   normg_cubed = norm(gradient) * normg_squared;
@@ -635,7 +657,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
   step_minimizer = - normHTr_squared / normHTr_HTH * HTr;
 
   Vector<T, N> const
-  step_unconstrained = - Intrepid2::solve(HTH, HTr);
+  step_unconstrained = - this->lin_solve(HTH, HTr);
 
   Vector<T, N>
   step{tau * step_minimizer};
@@ -810,7 +832,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   Hessian = fn.hessian(soln);
 
   Vector<T, N> const
-  step = - Intrepid2::solve(Hessian, resi);
+  step = - this->lin_solve(Hessian, resi);
 
   return step;
 }
@@ -839,7 +861,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   Hessian = fn.hessian(soln);
 
   Vector<T, N> const
-  step = - Intrepid2::solve(Hessian, resi);
+  step = - this->lin_solve(Hessian, resi);
 
   // Newton back-tracking line search.
   BacktrackingLineSearch<T, N>
@@ -877,7 +899,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
 
   // Compute full Newton step first.
   Vector<T, N>
-  step = - Intrepid2::solve(Hessian, resi);
+  step = - this->lin_solve(Hessian, resi);
 
   T const
   norm_step = Intrepid2::norm(step);
@@ -950,7 +972,7 @@ initialize(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & gradient)
   Tensor<T, N> const
   Hessian = fn.hessian(soln);
 
-  precon_resi = - Intrepid2::solve(Hessian, gradient);
+  precon_resi = - this->lin_solve(Hessian, gradient);
 
   search_direction = precon_resi;
 
@@ -995,7 +1017,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const &)
   Tensor<T, N> const
   Hessian = fn.hessian(soln_next);
 
-  precon_resi = - Intrepid2::solve(Hessian, gradient_next);
+  precon_resi = - this->lin_solve(Hessian, gradient_next);
 
   projection_new = - dot(gradient_next, precon_resi);
 
@@ -1071,17 +1093,15 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & gradient)
   } else {
 
     // Standard Newton step
-    step = - Intrepid2::solve(Hessian, gradient);
+    step = - this->lin_solve(Hessian, gradient);
 
   }
-
 
   NewtonLineSearch<T, N>
   newton_ls;
 
   Vector<T, N> const
   ls_step = newton_ls.step(fn, step, soln);
-
 
   return ls_step;
 }

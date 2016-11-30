@@ -535,7 +535,7 @@ enum class PreconditionerType
 /// Compute a precondioner for improving the conditioning of a
 /// linear system.
 ///
-template<typename T, Index N, typename ES, typename RHS>
+template<typename T, Index N, typename RHS, typename ES>
 KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, RHS>
 precon(PreconditionerType const pt, Tensor<T, N, ES> const & A, RHS const & B);
@@ -557,15 +557,10 @@ Vector<T, N, ES>
 solve(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b,
     PreconditionerType const pt = PreconditionerType::IDENTITY);
 
-template<typename T, Index N, typename ES>
+template<typename T, Index N, typename RHS, typename ES>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-solve_full_pivot(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b);
-
-template<typename T, Index N, Index P, typename ES>
-KOKKOS_INLINE_FUNCTION
-Matrix<T, N, P, ES>
-solve_full_pivot(Tensor<T, N, ES> const & A, Matrix<T, N, P, ES> const & B);
+RHS
+solve_full_pivot(Tensor<T, N, ES> const & A, RHS const & b);
 
 ///
 /// Condition number: ratio of largest to smalest singular values.

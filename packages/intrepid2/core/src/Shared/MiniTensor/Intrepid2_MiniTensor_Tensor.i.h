@@ -472,6 +472,28 @@ Tensor<T, N, ES>::get_dimension() const
 }
 
 //
+// Get number rows
+//
+template<typename T, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Index
+Tensor<T, N, ES>::get_num_rows() const
+{
+  return get_dimension();
+}
+
+//
+// Get number columns
+//
+template<typename T, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Index
+Tensor<T, N, ES>::get_num_cols() const
+{
+  return get_dimension();
+}
+
+//
 // Set dimension
 //
 template<typename T, Index N, typename ES>
@@ -1214,6 +1236,52 @@ t_dot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
   }
 
   return C;
+}
+
+//
+// Tensor matrix product C = A^T B
+//
+template<typename S, typename T, Index N, Index P, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, N, P, ES>
+t_dot(Tensor<S, N, ES> const & A, Matrix<T, N, P, ES> const & B)
+{
+  Index const
+  dimension{A.get_dimension()};
+
+  Index const
+  num_cols{B.get_num_cols()};
+
+  assert(B.get_num_rows() == dimension);
+
+  Matrix<typename Promote<S, T>::type, N, P, ES>
+  C(dimension, num_cols);
+
+  for (Index i{0}; i < dimension; ++i) {
+    for (Index j{0}; j < num_cols; ++j) {
+
+      typename Promote<S, T>::type
+      s = 0.0;
+
+      for (Index p{0}; p < dimension; ++p) {
+        s += A(p, i) * B(p, j);
+      }
+      C(i, j) = s;
+    }
+  }
+
+  return C;
+}
+
+//
+// Tensor vector product C = A^T B
+//
+template<typename S, typename T, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Vector<typename Promote<S, T>::type, N, ES>
+t_dot(Tensor<S, N, ES> const & A, Vector<T, N, ES> const & B)
+{
+  return dot(B, A);
 }
 
 //

@@ -317,6 +317,20 @@ public:
   get_dimension() const;
 
   ///
+  /// \return number rows
+  ///
+  KOKKOS_INLINE_FUNCTION
+  Index
+  get_num_rows() const;
+
+  ///
+  /// \return number rows
+  ///
+  KOKKOS_INLINE_FUNCTION
+  Index
+  get_num_cols() const;
+
+  ///
   /// \param dimension of vector
   ///
   KOKKOS_INLINE_FUNCTION
@@ -609,6 +623,28 @@ template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 t_dot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
+
+///
+/// Tensor matrix product C = A^T B
+/// \param A tensor
+/// \param B matrix
+/// \return a matrix \f$ A^T \cdot B \f$
+///
+template<typename S, typename T, Index N, Index P, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, N, P, ES>
+t_dot(Tensor<S, N, ES> const & A, Matrix<T, N, P, ES> const & B);
+
+///
+/// Tensor vector product C = A^T B
+/// \param A tensor
+/// \param B vector
+/// \return a vector \f$ A^T \cdot B \f$
+///
+template<typename S, typename T, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Vector<typename Promote<S, T>::type, N, ES>
+t_dot(Tensor<S, N, ES> const & A, Vector<T, N, ES> const & B);
 
 ///
 /// Tensor tensor product C = A B^T

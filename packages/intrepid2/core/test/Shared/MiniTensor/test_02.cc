@@ -315,7 +315,7 @@ bool testSystemsAndMethods()
 
 } // anonymous namespace
 
-TEST(LinearSystems, LinearSolver)
+TEST(MiniTensor, LinearSolver)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -362,7 +362,7 @@ TEST(LinearSystems, LinearSolver)
   ASSERT_LE(error, tolerance);
 }
 
-TEST(LinearSystems, Preconditioners)
+TEST(MiniTensor, Preconditioners)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -439,7 +439,7 @@ TEST(LinearSystems, Preconditioners)
   ASSERT_LE(error, tolerance);
 }
 
-TEST(NonlinearSystems, NonlinearMethods)
+TEST(MiniTensor, NonlinearMethods)
 {
   bool const
   passed = testSystemsAndMethods();
@@ -447,7 +447,7 @@ TEST(NonlinearSystems, NonlinearMethods)
   ASSERT_EQ(passed, true);
 }
 
-TEST(Testing, OptimizationMethods)
+TEST(MiniTensor, OptimizationMethods)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -488,7 +488,7 @@ TEST(Testing, OptimizationMethods)
   ASSERT_EQ(minimizer.converged, true);
 }
 
-TEST(Testing, ValueGradientHessian)
+TEST(MiniTensor, ValueGradientHessian)
 {
   constexpr Index
   dimension{2};
@@ -532,7 +532,7 @@ TEST(Testing, ValueGradientHessian)
   ASSERT_LE(error, machine_epsilon<Real>());
 }
 
-TEST(Testing, MixedStorage)
+TEST(MiniTensor, MixedStorage)
 {
   Index const
   dimension{2};
@@ -577,7 +577,7 @@ TEST(Testing, MixedStorage)
   ASSERT_EQ(passed, true);
 }
 
-TEST(Testing, FailedFlag)
+TEST(MiniTensor, FailedFlag)
 {
   constexpr Index
   dimension{1};
@@ -605,7 +605,7 @@ TEST(Testing, FailedFlag)
   ASSERT_EQ(minimizer.failed, true);
 }
 
-TEST(Testing, Monotonicity)
+TEST(MiniTensor, Monotonicity)
 {
   constexpr Index
   dimension{1};
@@ -636,7 +636,7 @@ TEST(Testing, Monotonicity)
   ASSERT_EQ(minimizer.failed, true);
 }
 
-TEST(Testing, Boundedness)
+TEST(MiniTensor, Boundedness)
 {
   bool const
   print_output = ::testing::GTEST_FLAG(print_time);
@@ -679,7 +679,7 @@ TEST(Testing, Boundedness)
   ASSERT_EQ(minimizer.failed, false);
 }
 
-TEST(Testing, ConstraintIdentity)
+TEST(MiniTensor, ConstraintIdentity)
 {
   constexpr Index
   NUM_CONSTR{2};
