@@ -402,8 +402,8 @@ void getCoarsenedPartGraph(
 
   RCP<const Teuchos::Comm<int> > tcomm = rcpFromRef(*comm);
   typedef Tpetra::Map<>::node_type t_node_t;
-  typedef Tpetra::Map<part_t, part_t, t_node_t> map_t;
-  Teuchos::RCP<const map_t> map = Teuchos::rcp (new map_t (np, 0, tcomm));
+  typedef Tpetra::Map<part_t, part_t, t_node_t> t_map_t;
+  Teuchos::RCP<const t_map_t> map = Teuchos::rcp (new t_map_t (np, 0, tcomm));
   typedef Tpetra::CrsMatrix<t_scalar_t, part_t, part_t, t_node_t> tcrsMatrix_t;
   Teuchos::RCP<tcrsMatrix_t> tMatrix(new tcrsMatrix_t (map, 0));
 
@@ -483,16 +483,16 @@ void getCoarsenedPartGraph(
 
   //create a map where all processors own all rows.
   //so that we do a gatherAll for crsMatrix.
-  Teuchos::RCP<const map_t> gatherRowMap(new map_t (
+  Teuchos::RCP<const t_map_t> gatherRowMap(new t_map_t (
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), global_ids, 0, tcomm));
 
   envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE Import");
   //create the importer for gatherAll
   Teuchos::RCP<tcrsMatrix_t> A_gather =
       Teuchos::rcp (new tcrsMatrix_t (gatherRowMap, 0));
-  typedef Tpetra::Import<typename map_t::local_ordinal_type,
-                         typename map_t::global_ordinal_type,
-                         typename map_t::node_type> import_type;
+  typedef Tpetra::Import<typename t_map_t::local_ordinal_type,
+                         typename t_map_t::global_ordinal_type,
+                         typename t_map_t::node_type> import_type;
   import_type import (map, gatherRowMap);
   A_gather->doImport (*tMatrix, import, Tpetra::INSERT);
   A_gather->fillComplete ();

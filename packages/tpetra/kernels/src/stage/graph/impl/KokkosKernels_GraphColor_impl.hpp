@@ -403,9 +403,9 @@ public:
                 nnz_lno_t row_size2 = h_xadj(n + 1) - nbegin2;
 
                 while (true){
-                  for (nnz_lno_t jj = 0; jj < row_size2; ++jj){
-                    size_type j = jj +  nbegin2;
-                    nnz_lno_t n2 = h_adj(j);
+                  for (nnz_lno_t kk = 0; kk < row_size2; ++kk){
+                    size_type ll = kk +  nbegin2;
+                    nnz_lno_t n2 = h_adj(ll);
                     if (n2 >= nv || n2 == n) continue;
                     if (vertex_cs[n2] == my_d1_cs) my_d1_forbidden = my_d1_forbidden | colors(n2);
                     if (~my_d1_forbidden == 0){
@@ -663,10 +663,10 @@ public:
                   while (true){
                     col_d1_forbidden = 0;
                     //std::cout << "\ti:" << i << " creating forbid for col:" << col << " in cs:" << col_d1_cs << std::endl;
-                    for (nnz_lno_t jj = 0; jj < col_size2; ++jj){
+                    for (nnz_lno_t kk = 0; kk < col_size2; ++kk){
                       //howmany++;
-                      size_type j = jj +  row_begin2;
-                      nnz_lno_t d2_row = h_c_adj(j);
+                      size_type ll = kk +  row_begin2;
+                      nnz_lno_t d2_row = h_c_adj(ll);
                       if (d2_row >= this->nv) continue;
                       if (row_cs[d2_row] == col_d1_cs) col_d1_forbidden = col_d1_forbidden | colors(d2_row);
                       if (~col_d1_forbidden == 0){
@@ -1248,16 +1248,16 @@ private:
    *  \param current_vertexListLength_: size of current conflictlist
    */
   void  resolveConflicts(
-      nnz_lno_t nv,
+      nnz_lno_t _nv,
       const_lno_row_view_t xadj_,
       const_lno_nnz_view_t adj_,
       color_view_type vertex_colors_,
       nnz_lno_temp_work_view_t current_vertexList_,
       size_type current_vertexListLength_) {
 
-    color_t *forbidden = new color_t[nv];
+    color_t *forbidden = new color_t[_nv];
     nnz_lno_t i=0;
-    nnz_lno_t end = nv;
+    nnz_lno_t end = _nv;
     typename nnz_lno_temp_work_view_t::HostMirror h_recolor_list;
 
     if (this->_conflictlist){
@@ -2435,10 +2435,10 @@ public:
     }
 
     size_type numEdges = 0;
-    nnz_lno_persistent_work_view_t kok_src, kok_dst;
+    nnz_lno_persistent_work_view_t _kok_src, _kok_dst;
 
 
-    this->cp->get_lower_diagonal_edge_list (this->nv, this->ne, this->xadj, this->adj, numEdges, kok_src, kok_dst);
+    this->cp->get_lower_diagonal_edge_list (this->nv, this->ne, this->xadj, this->adj, numEdges, _kok_src, _kok_dst);
     size_type num_work_edges = numEdges;
 
     //allocate memory for vertex ban colors, and tentative bans
@@ -2483,8 +2483,8 @@ public:
 
 
     if (tictoc){
-    std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kok_src);
-    std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kok_dst);
+    std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(_kok_src);
+    std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(_kok_dst);
     std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kok_colors);
     std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(color_set);
     }
@@ -2498,7 +2498,7 @@ public:
       Kokkos::parallel_for(
           my_exec_space(0,num_work_edges),
           halfedge_mark_conflicts (
-              kok_src, kok_dst,
+              _kok_src, _kok_dst,
               kok_colors, color_set,
               color_ban, tentative_color_ban
               ,edge_conflict_indices
@@ -2523,7 +2523,7 @@ public:
       Kokkos::parallel_reduce(
           my_exec_space(0, num_work_edges),
           halfedge_conflict_count(
-              kok_src, kok_dst,
+              _kok_src, _kok_dst,
               kok_colors, color_set,
               edge_conflict_indices,
               edge_conflict_marker
@@ -2598,7 +2598,7 @@ public:
       Kokkos::parallel_for (
           my_exec_space(0,num_work_edges),
           halfedge_ban_colors(
-              kok_src, kok_dst,
+              _kok_src, _kok_dst,
               kok_colors, color_set,
               color_ban,edge_conflict_indices, edge_conflict_marker
           )
@@ -2616,7 +2616,7 @@ public:
       Kokkos::parallel_for (
           my_exec_space(0,num_work_edges),
           halfedge_expand_ban_for_unmatched_neighbors(
-              kok_src, kok_dst,
+              _kok_src, _kok_dst,
               kok_colors, color_set,
               color_ban,
               tentative_color_ban,edge_conflict_indices)

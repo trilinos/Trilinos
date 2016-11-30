@@ -305,11 +305,11 @@ int read_mtx (
   idx nE = 0, noDiagonal = 0;
   for (idx i = 0; i < nnz; ++i){
     getline(mmf, fline);
-    std::stringstream ss (fline);
+    std::stringstream ss2 (fline);
     struct Edge<idx, wt> tmp;
     idx s,d;
     wt w;
-    ss >> s >> d >> w;
+    ss2 >> s >> d >> w;
     if (!transpose){
       tmp.src = s - 1;
       tmp.dst = d - 1;

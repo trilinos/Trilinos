@@ -408,7 +408,7 @@ int main (int argc, char ** argv){
   }
 
 #endif
-
+#define KOKKOS_HAVE_OPENMP
 #if defined( KOKKOS_HAVE_OPENMP )
 
   if ( cmdline[ CMD_USE_OPENMP ] ) {
@@ -467,29 +467,29 @@ int main (int argc, char ** argv){
     }else if (cmdline[ CMD_MM_MODE ] == 1){
       {
         std::cout << "MULTIPLYING A*P" << std::endl;
-        idx m = 0, nnzA = 0;
-        idx *xadj, *adj;
-        wt *ew;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        idx m_ = 0, nnzA_ = 0;
+        idx *xadj_, *adj_;
+        wt *ew_;
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
 
-        row_map_view_t rowmap_view("rowmap_view", m+1);
-        cols_view_t columns_view("colsmap_view", nnzA);
-        values_view_t values_view("values_view", nnzA);
+        row_map_view_t rowmap_view_("rowmap_view", m_+1);
+        cols_view_t columns_view_("colsmap_view", nnzA_);
+        values_view_t values_view_("values_view", nnzA_);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA_, ew_, values_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA_, adj_, columns_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m_+1, xadj_, rowmap_view_);
 
 
         idx ncols = 0;
-        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA_, columns_view_, ncols);
         ncols += 1;
 
-        graph_t static_graph (columns_view, rowmap_view);
-        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
-        delete [] xadj;
-        delete [] adj;
-        delete [] ew;
+        graph_t static_graph_ (columns_view_, rowmap_view_);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view_, static_graph_);
+        delete [] xadj_;
+        delete [] adj_;
+        delete [] ew_;
         crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
         /*
@@ -504,31 +504,31 @@ int main (int argc, char ** argv){
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
-        idx m = 0, nnzA = 0;
-        idx *xadj, *adj;
-        wt *ew;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        idx m__ = 0, nnzA__ = 0;
+        idx *xadj__, *adj__;
+        wt *ew__;
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m__, &nnzA__, &xadj__, &adj__, &ew__, r_mtx_bin_file);
 
-        row_map_view_t rowmap_view("rowmap_view", m+1);
-        cols_view_t columns_view("colsmap_view", nnzA);
-        values_view_t values_view("values_view", nnzA);
+        row_map_view_t rowmap_view__("rowmap_view", m__+1);
+        cols_view_t columns_view__("colsmap_view", nnzA__);
+        values_view_t values_view__("values_view", nnzA__);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA__, ew__, values_view__);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA__, adj__, columns_view__);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m__+1, xadj__, rowmap_view__);
 
         idx ncols = 0;
-        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA__, columns_view__, ncols);
         ncols += 1;
 
 
-        graph_t static_graph (columns_view, rowmap_view);
-        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        graph_t static_graph__ (columns_view__, rowmap_view__);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view__, static_graph__);
 
 
-        delete [] xadj;
-        delete [] adj;
-        delete [] ew;
+        delete [] xadj__;
+        delete [] adj__;
+        delete [] ew__;
 
         //cmdline[ CMD_SPGEMM_ALGO ] = 1;
         crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
@@ -538,104 +538,104 @@ int main (int argc, char ** argv){
     else if (cmdline[ CMD_MM_MODE ] == 2){
       {
         std::cout << "MULTIPLYING R*A" << std::endl;
-        idx m = 0, nnzA = 0;
-        idx *xadj, *adj;
-        wt *ew;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        idx m_ = 0, nnzA_ = 0;
+        idx *xadj_, *adj_;
+        wt *ew_;
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, r_mtx_bin_file);
 
-        row_map_view_t rowmap_view("rowmap_view", m+1);
-        cols_view_t columns_view("colsmap_view", nnzA);
-        values_view_t values_view("values_view", nnzA);
+        row_map_view_t rowmap_view_("rowmap_view", m_+1);
+        cols_view_t columns_view_("colsmap_view", nnzA_);
+        values_view_t values_view_("values_view", nnzA_);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA_, ew_, values_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA_, adj_, columns_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m_+1, xadj_, rowmap_view_);
 
         idx ncols = 0;
-        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA_, columns_view_, ncols);
         ncols += 1;
 
 
-        graph_t static_graph (columns_view, rowmap_view);
-        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
-        delete [] xadj;
-        delete [] adj;
-        delete [] ew;
+        graph_t static_graph_ (columns_view_, rowmap_view_);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view_, static_graph_);
+        delete [] xadj_;
+        delete [] adj_;
+        delete [] ew_;
         crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
-        idx m = 0, nnzA = 0;
-        idx *xadj, *adj;
-        wt *ew;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        idx m_ = 0, nnzA_ = 0;
+        idx *xadj_, *adj_;
+        wt *ew_;
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
 
-        row_map_view_t rowmap_view("rowmap_view", m+1);
-        cols_view_t columns_view("colsmap_view", nnzA);
-        values_view_t values_view("values_view", nnzA);
+        row_map_view_t rowmap_view_("rowmap_view", m_+1);
+        cols_view_t columns_view_("colsmap_view", nnzA_);
+        values_view_t values_view_("values_view", nnzA_);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA_, ew_, values_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA_, adj_, columns_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m_+1, xadj_, rowmap_view_);
 
 
         idx ncols = 0;
-        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA_, columns_view_, ncols);
         ncols += 1;
 
-        graph_t static_graph (columns_view, rowmap_view);
-        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
-        delete [] xadj;
-        delete [] adj;
-        delete [] ew;
+        graph_t static_graph_ (columns_view_, rowmap_view_);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view_, static_graph_);
+        delete [] xadj_;
+        delete [] adj_;
+        delete [] ew_;
         crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 3){
       {
         std::cout << "MULTIPLYING R*P" << std::endl;
-        idx m = 0, nnzA = 0;
-        idx *xadj, *adj;
-        wt *ew;
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+        idx m_ = 0, nnzA_ = 0;
+        idx *xadj_, *adj_;
+        wt *ew_;
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, r_mtx_bin_file);
 
-        row_map_view_t rowmap_view("rowmap_view", m+1);
-        cols_view_t columns_view("colsmap_view", nnzA);
-        values_view_t values_view("values_view", nnzA);
+        row_map_view_t rowmap_view_("rowmap_view", m_+1);
+        cols_view_t columns_view_("colsmap_view", nnzA_);
+        values_view_t values_view_("values_view", nnzA_);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA_, ew_, values_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA_, adj_, columns_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m_+1, xadj_, rowmap_view_);
 
         idx ncols = 0;
-        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA_, columns_view_, ncols);
         ncols += 1;
 
 
-        graph_t static_graph (columns_view, rowmap_view);
-        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        graph_t static_graph_ (columns_view_, rowmap_view_);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view_, static_graph_);
         crsmat = crsmat2;
 
-        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
-        rowmap_view = row_map_view_t ("rowmap_view", m+1);
-        columns_view = cols_view_t ("colsmap_view", nnzA);
-        values_view = values_view_t ("values_view", nnzA);
+        KokkosKernels::Experimental::Util::read_matrix<idx, wt> (&m_, &nnzA_, &xadj_, &adj_, &ew_, p_mtx_bin_file);
+        rowmap_view_ = row_map_view_t ("rowmap_view", m_+1);
+        columns_view_ = cols_view_t ("colsmap_view", nnzA_);
+        values_view_ = values_view_t ("values_view", nnzA_);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA_, ew_, values_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA_, adj_, columns_view_);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m_+1, xadj_, rowmap_view_);
 
         ncols = 0;
-        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA_, columns_view_, ncols);
         ncols += 1;
 
 
-        static_graph = graph_t (columns_view, rowmap_view);
-        crsmat2 = crsMat_t ("CrsMatrix2", ncols, values_view, static_graph);
+        static_graph_ = graph_t (columns_view_, rowmap_view_);
+        crsmat2 = crsMat_t ("CrsMatrix2", ncols, values_view_, static_graph_);
 
-        delete [] xadj;
-        delete [] adj;
-        delete [] ew;
+        delete [] xadj_;
+        delete [] adj_;
+        delete [] ew_;
         crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ], cmdline[ CMD_VERBOSE]);
 
 
@@ -645,10 +645,10 @@ int main (int argc, char ** argv){
           int *c_xadj = (int *)crsmat.graph.row_map.ptr_on_device();
           int *c_adj = (int *)crsmat.graph.entries.ptr_on_device();
           double *c_ew = (double *) crsmat.values.ptr_on_device();
-          int m = crsmat.graph.row_map.dimension_0() - 1;
-          int nnzA = crsmat.values.dimension_0();
+          int _m = crsmat.graph.row_map.dimension_0() - 1;
+          int _nnzA = crsmat.values.dimension_0();
           KokkosKernels::Experimental::Util::write_graph_bin<int, double>
-          (m, nnzA, c_xadj, c_adj, c_ew, "result.bin");
+          (_m, _nnzA, c_xadj, c_adj, c_ew, "result.bin");
         }
 
       }

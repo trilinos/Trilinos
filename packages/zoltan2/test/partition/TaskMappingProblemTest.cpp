@@ -23,12 +23,12 @@
 #include <Zoltan2_EvaluatePartition.hpp>
 #include <Zoltan2_EvaluateMapping.hpp>
 
-typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
-typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
-typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t> my_adapter_t;
+typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> mytest_tcrsGraph_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> mytest_tMVector_t;
+typedef Zoltan2::XpetraCrsGraphAdapter<mytest_tcrsGraph_t, mytest_tMVector_t> mytest_adapter_t;
 typedef Tpetra::Map<>::node_type mytest_znode_t;
-typedef Tpetra::Map<zlno_t, zgno_t, mytest_znode_t> map_t;
-typedef my_adapter_t::part_t part_t;
+typedef Tpetra::Map<zlno_t, zgno_t, mytest_znode_t> mytest_map_t;
+typedef mytest_adapter_t::part_t mytest_part_t;
 
 enum MappingScenarios{
   TwoPhase,
@@ -41,7 +41,7 @@ enum MappingInputDistributution{
   AllHaveCopies
 };
 
-RCP<tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int numProcs, Teuchos::RCP<const Teuchos::Comm<int> > tcomm,
+RCP<mytest_tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int numProcs, Teuchos::RCP<const Teuchos::Comm<int> > tcomm,
     RCP<Zoltan2::Environment> env, zscalar_t ** &partCenters, zgno_t & myTasks){
 
   int rank = tcomm->getRank();
@@ -109,9 +109,9 @@ RCP<tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int numProcs
   env->timerStop(Zoltan2::MACRO_TIMERS, "TaskGraphCreate");
 
   using namespace Teuchos;
-  RCP<const map_t> map = rcp (new map_t (numGlobalTasks, myTasks, 0, tcomm));
+  RCP<const mytest_map_t> map = rcp (new mytest_map_t (numGlobalTasks, myTasks, 0, tcomm));
 
-  RCP<tcrsGraph_t> TpetraCrsGraph(new tcrsGraph_t (map, 0));
+  RCP<mytest_tcrsGraph_t> TpetraCrsGraph(new mytest_tcrsGraph_t (map, 0));
 
   env->timerStart(Zoltan2::MACRO_TIMERS, "TpetraGraphCreate");
 
@@ -129,8 +129,8 @@ RCP<tcrsGraph_t> create_tpetra_input_matrix(int nx, int ny, int nz, int numProcs
 }
 
 
-RCP <Zoltan2::XpetraMultiVectorAdapter<tMVector_t> > create_multi_vector_adapter(
-    RCP<const map_t> map,
+RCP <Zoltan2::XpetraMultiVectorAdapter<mytest_tMVector_t> > create_multi_vector_adapter(
+    RCP<const mytest_map_t> map,
     zscalar_t ** partCenters, zgno_t myTasks){
 
   const int coord_dim = 3;
@@ -150,16 +150,16 @@ RCP <Zoltan2::XpetraMultiVectorAdapter<tMVector_t> > create_multi_vector_adapter
     coordView[1] = a;
     coordView[2] = a;
   }
-  RCP<tMVector_t> coords(new tMVector_t(map, coordView.view(0, coord_dim), coord_dim));//= set multivector;
-  RCP<const tMVector_t> const_coords = rcp_const_cast<const tMVector_t>(coords);
-  RCP <Zoltan2::XpetraMultiVectorAdapter<tMVector_t> > adapter (new Zoltan2::XpetraMultiVectorAdapter<tMVector_t>(const_coords));
+  RCP<mytest_tMVector_t> coords(new mytest_tMVector_t(map, coordView.view(0, coord_dim), coord_dim));//= set multivector;
+  RCP<const mytest_tMVector_t> const_coords = rcp_const_cast<const mytest_tMVector_t>(coords);
+  RCP <Zoltan2::XpetraMultiVectorAdapter<mytest_tMVector_t> > adapter (new Zoltan2::XpetraMultiVectorAdapter<mytest_tMVector_t>(const_coords));
   return adapter;
 }
 
 
 void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teuchos::Comm<int> > global_tcomm){
   Teuchos::RCP<const Teuchos::Comm<int> > tcomm =  global_tcomm;//Teuchos::createSerialComm<int>();
-  part_t numProcs = tcomm->getSize();
+  mytest_part_t numProcs = tcomm->getSize();
   Teuchos::ParameterList distributed_problemParams;
   //create mapping problem parameters
   distributed_problemParams.set("machine_coord_transformation", "EIGNORE");
@@ -177,17 +177,17 @@ void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const T
   zscalar_t **partCenters;
   zgno_t myTasks ;
   //create tpetra input graph
-  RCP<tcrsGraph_t> distributed_tpetra_graph = create_tpetra_input_matrix(nx, ny, nz, numProcs, tcomm, env, partCenters, myTasks);
-  RCP<const map_t> distributed_map = distributed_tpetra_graph->getMap();
+  RCP<mytest_tcrsGraph_t> distributed_tpetra_graph = create_tpetra_input_matrix(nx, ny, nz, numProcs, tcomm, env, partCenters, myTasks);
+  RCP<const mytest_map_t> distributed_map = distributed_tpetra_graph->getMap();
   global_tcomm->barrier();
 
   //create input adapter from tpetra graph
   env->timerStart(Zoltan2::MACRO_TIMERS, "AdapterCreate");
-  RCP<const tcrsGraph_t> const_tpetra_graph = rcp_const_cast<const tcrsGraph_t>(distributed_tpetra_graph);
-  RCP<my_adapter_t> ia (new my_adapter_t(const_tpetra_graph));
+  RCP<const mytest_tcrsGraph_t> const_tpetra_graph = rcp_const_cast<const mytest_tcrsGraph_t>(distributed_tpetra_graph);
+  RCP<mytest_adapter_t> ia (new mytest_adapter_t(const_tpetra_graph));
 
   //create multivector for coordinates and
-  RCP <Zoltan2::XpetraMultiVectorAdapter<tMVector_t> > distributed_adapter = create_multi_vector_adapter(distributed_map, partCenters, myTasks);
+  RCP <Zoltan2::XpetraMultiVectorAdapter<mytest_tMVector_t> > distributed_adapter = create_multi_vector_adapter(distributed_map, partCenters, myTasks);
   ia->setCoordinateInput(distributed_adapter.getRawPtr());
   env->timerStop(Zoltan2::MACRO_TIMERS, "AdapterCreate");
   global_tcomm->barrier();
@@ -204,15 +204,15 @@ void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const T
   //it will perform partitioning as well.
 
   //FIRST CREATE A PARTITIONG PROBLEM.
-  Zoltan2::PartitioningProblem<my_adapter_t> partitioning_problem (ia.getRawPtr(), &distributed_problemParams, global_tcomm);
+  Zoltan2::PartitioningProblem<mytest_adapter_t> partitioning_problem (ia.getRawPtr(), &distributed_problemParams, global_tcomm);
   partitioning_problem.solve();
-  Zoltan2::PartitioningSolution<my_adapter_t> partition_solution = partitioning_problem.getSolution();
+  Zoltan2::PartitioningSolution<mytest_adapter_t> partition_solution = partitioning_problem.getSolution();
 
   //FOR THE SECOND CASE WE DONT NEED a solution.
 
   //FOR the third case we create our own solution and set unique parts to each element.
   //Basically each element has its global id as part number.
-  Zoltan2::PartitioningSolution<my_adapter_t> single_phase_mapping_solution(env, global_tcomm, 0);
+  Zoltan2::PartitioningSolution<mytest_adapter_t> single_phase_mapping_solution(env, global_tcomm, 0);
   Teuchos::ArrayView< const zgno_t> gids = distributed_map->getNodeElementList();
 
   ArrayRCP<int> initial_part_ids(myTasks);
@@ -224,14 +224,14 @@ void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const T
 
   env->timerStart(Zoltan2::MACRO_TIMERS, "Problem Create");
   //create mapping problem for the first case, provide the partition solution by MJ.
-  Zoltan2::MappingProblem<my_adapter_t> distributed_map_problem_1(ia.getRawPtr(), &distributed_problemParams, global_tcomm, &partition_solution);
+  Zoltan2::MappingProblem<mytest_adapter_t> distributed_map_problem_1(ia.getRawPtr(), &distributed_problemParams, global_tcomm, &partition_solution);
 
   //create mapping problem for the second case. We don't provide a solution in this case.
   //Mapping assumes that the elements in the current processor is attached together and are in the same part.
-  Zoltan2::MappingProblem<my_adapter_t> distributed_map_problem_2(ia.getRawPtr(), &distributed_problemParams, global_tcomm);
+  Zoltan2::MappingProblem<mytest_adapter_t> distributed_map_problem_2(ia.getRawPtr(), &distributed_problemParams, global_tcomm);
 
   //create a mapping problem for the third case. We provide a solution in which all elements belong to unique part.
-  Zoltan2::MappingProblem<my_adapter_t> distributed_map_problem_3(ia.getRawPtr(), &distributed_problemParams, global_tcomm, &single_phase_mapping_solution);
+  Zoltan2::MappingProblem<mytest_adapter_t> distributed_map_problem_3(ia.getRawPtr(), &distributed_problemParams, global_tcomm, &single_phase_mapping_solution);
 
   env->timerStop(Zoltan2::MACRO_TIMERS, "Problem Create");
   //solve mapping problem.
@@ -242,15 +242,15 @@ void test_distributed_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const T
   env->timerStop(Zoltan2::MACRO_TIMERS, "Problem Solve");
 
   //get the solution.
-  Zoltan2::MappingSolution<my_adapter_t> *msoln1 = distributed_map_problem_1.getSolution();
-  Zoltan2::MappingSolution<my_adapter_t> *msoln2 = distributed_map_problem_2.getSolution();
-  Zoltan2::MappingSolution<my_adapter_t> *msoln3 = distributed_map_problem_3.getSolution();
+  Zoltan2::MappingSolution<mytest_adapter_t> *msoln1 = distributed_map_problem_1.getSolution();
+  Zoltan2::MappingSolution<mytest_adapter_t> *msoln2 = distributed_map_problem_2.getSolution();
+  Zoltan2::MappingSolution<mytest_adapter_t> *msoln3 = distributed_map_problem_3.getSolution();
 
   timer->printAndResetToZero();
 
   //typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
   //typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
-  typedef Zoltan2::EvaluateMapping<my_adapter_t> quality_t;
+  typedef Zoltan2::EvaluateMapping<mytest_adapter_t> quality_t;
 
   RCP<quality_t> metricObject_1 = rcp(new quality_t(ia.getRawPtr(),&distributed_problemParams,global_tcomm,msoln1, distributed_map_problem_1.getMachine().getRawPtr()));
   //metricObject_1->evaluate();
@@ -276,7 +276,7 @@ void test_serial_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teucho
   Teuchos::RCP<const Teuchos::Comm<int> > serial_comm =  Teuchos::createSerialComm<int>();
 
   //for the input creation, let processor think that it is the only processor.
-  part_t numProcs = serial_comm->getSize();
+  mytest_part_t numProcs = serial_comm->getSize();
   Teuchos::ParameterList serial_problemParams;
   //create mapping problem parameters
   serial_problemParams.set("machine_coord_transformation", "EIGNORE");
@@ -293,17 +293,17 @@ void test_serial_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teucho
   zscalar_t **partCenters;
   zgno_t myTasks ;
   //create tpetra input graph
-  RCP<tcrsGraph_t> serial_tpetra_graph = create_tpetra_input_matrix(nx, ny, nz, numProcs, serial_comm, env, partCenters, myTasks);
-  RCP<const map_t> serial_map = serial_tpetra_graph->getMap();
+  RCP<mytest_tcrsGraph_t> serial_tpetra_graph = create_tpetra_input_matrix(nx, ny, nz, numProcs, serial_comm, env, partCenters, myTasks);
+  RCP<const mytest_map_t> serial_map = serial_tpetra_graph->getMap();
   global_tcomm->barrier();
 
   //create input adapter from tpetra graph
   env->timerStart(Zoltan2::MACRO_TIMERS, "AdapterCreate");
-  RCP<const tcrsGraph_t> const_tpetra_graph = rcp_const_cast<const tcrsGraph_t>(serial_tpetra_graph);
-  RCP<my_adapter_t> ia (new my_adapter_t(const_tpetra_graph));
+  RCP<const mytest_tcrsGraph_t> const_tpetra_graph = rcp_const_cast<const mytest_tcrsGraph_t>(serial_tpetra_graph);
+  RCP<mytest_adapter_t> ia (new mytest_adapter_t(const_tpetra_graph));
 
   //create multivector for coordinates and
-  RCP <Zoltan2::XpetraMultiVectorAdapter<tMVector_t> > serial_adapter = create_multi_vector_adapter(serial_map, partCenters, myTasks);
+  RCP <Zoltan2::XpetraMultiVectorAdapter<mytest_tMVector_t> > serial_adapter = create_multi_vector_adapter(serial_map, partCenters, myTasks);
   ia->setCoordinateInput(serial_adapter.getRawPtr());
   env->timerStop(Zoltan2::MACRO_TIMERS, "AdapterCreate");
   global_tcomm->barrier();
@@ -327,7 +327,7 @@ void test_serial_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teucho
   //FOR the third case we create our own solution and set unique parts to each element.
   //Basically each element has its global id as part number.
   //It global ids are same as local ids here because each processors owns the whole thing.
-  Zoltan2::PartitioningSolution<my_adapter_t> single_phase_mapping_solution(env, global_tcomm, 0);
+  Zoltan2::PartitioningSolution<mytest_adapter_t> single_phase_mapping_solution(env, global_tcomm, 0);
   Teuchos::ArrayView< const zgno_t> gids = serial_map->getNodeElementList();
 
   ArrayRCP<int> initial_part_ids(myTasks);
@@ -341,7 +341,7 @@ void test_serial_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teucho
   //create a mapping problem for the third case. We provide a solution in which all elements belong to unique part.
   //even the input is not distributed, we still provide the global_tcomm because processors will calculate different mappings
   //and the best one will be chosen.
-  Zoltan2::MappingProblem<my_adapter_t> serial_map_problem(ia.getRawPtr(), &serial_problemParams, global_tcomm, &single_phase_mapping_solution);
+  Zoltan2::MappingProblem<mytest_adapter_t> serial_map_problem(ia.getRawPtr(), &serial_problemParams, global_tcomm, &single_phase_mapping_solution);
 
   env->timerStop(Zoltan2::MACRO_TIMERS, "Problem Create");
   //solve mapping problem.
@@ -350,12 +350,12 @@ void test_serial_input_adapter(int nx, int ny, int nz, Teuchos::RCP<const Teucho
   env->timerStop(Zoltan2::MACRO_TIMERS, "Problem Solve");
 
   //get the solution.
-  Zoltan2::MappingSolution<my_adapter_t> *msoln3 = serial_map_problem.getSolution();
+  Zoltan2::MappingSolution<mytest_adapter_t> *msoln3 = serial_map_problem.getSolution();
 
   timer->printAndResetToZero();
 
   //typedef Zoltan2::EvaluatePartition<my_adapter_t> quality_t;
-  typedef Zoltan2::EvaluateMapping<my_adapter_t> quality_t;
+  typedef Zoltan2::EvaluateMapping<mytest_adapter_t> quality_t;
 
 
   //input is not distributed in this case.

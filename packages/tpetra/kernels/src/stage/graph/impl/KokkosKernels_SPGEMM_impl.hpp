@@ -146,9 +146,9 @@ void spgemm_debug(
       const size_type b_row_end = h_rmb(col + 1);
       lno_t b_row_size = b_row_end - b_row_begin;
       for (lno_t z = 0; z < b_row_size; ++z){
-        size_type ind = b_row_begin + z;
-        lno_t b_col = h_entb(ind);
-        scalar_t b_val = h_valb(ind);
+        size_type ind_ = b_row_begin + z;
+        lno_t b_col = h_entb(ind_);
+        scalar_t b_val = h_valb(ind_);
         //if (i == 0) std::cout << "\tb col:" <<  b_col << std::endl;
         if (acc_flag[b_col] == false){
           acc_flag[b_col] = true;
@@ -503,9 +503,9 @@ public:
 
         Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(teamMember, left_work),
-            [&] (nnz_lno_t i) {
-          const size_type adjind = i + rowBegin;
-          const size_type oldadjind = i + oldRowBegin;
+            [&] (nnz_lno_t i_) {
+          const size_type adjind = i_ + rowBegin;
+          const size_type oldadjind = i_ + oldRowBegin;
 
           out_set_index_entries(adjind) = set_index_entries(oldadjind);
           out_set_entries (adjind) =  set_entries(oldadjind);
@@ -609,9 +609,9 @@ public:
       for (nnz_lno_t i = 1; i < left_work; ++i){
         nnz_lno_t n_set = 1;
         const size_type adjind = i + rowBegin;
-        const nnz_lno_t n = entries(adjind);
-        nnz_lno_t n_set_index = n >> compression_bit_divide_shift;
-        n_set = n_set << (n & compression_bit_mask);
+        const nnz_lno_t nn = entries(adjind);
+        nnz_lno_t n_set_index = nn >> compression_bit_divide_shift;
+        n_set = n_set << (nn & compression_bit_mask);
         if (prev_nset_ind == n_set_index){
           prev_nset = prev_nset | n_set;
         } else {
@@ -756,19 +756,19 @@ public:
                                           teamMember, vector_size, hash,n_set_index, n_set, used_hash_sizes, shared_memory_hash_size);
 
         Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &overall_num_unsuccess) {
-          overall_num_unsuccess += num_unsuccess;
+            [&] (const int threadid, int &overall_num_unsuccess_) {
+          overall_num_unsuccess_ += num_unsuccess;
         }, overall_num_unsuccess);
 
 
         //if one of the inserts was successfull, which means we run out shared memory
         if (overall_num_unsuccess){
-          nnz_lno_t hash = -1;
-          if (num_unsuccess) hash = n_set_index % hm2.hash_key_size;
+          nnz_lno_t hash_ = -1;
+          if (num_unsuccess) hash_ = n_set_index % hm2.hash_key_size;
 
           //int insertion =
           hm2.vector_atomic_insert_into_hash_mergeOr(
-              teamMember, vector_size, hash,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size);
+              teamMember, vector_size, hash_,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size);
         }
 
         left_work -= work_to_handle;
@@ -810,8 +810,8 @@ public:
             typename b_oldrow_view_t, typename b_row_view_t>
   size_t getMaxRoughRowNNZ(
       nnz_lno_t m,
-      a_row_view_t row_mapA,
-      a_nnz_view_t entriesA,
+      a_row_view_t row_mapA_,
+      a_nnz_view_t entriesA_,
 
       b_oldrow_view_t row_pointers_begin_B,
       b_row_view_t row_pointers_end_B){
@@ -819,15 +819,15 @@ public:
 
     //get the execution space type.
     //KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
-    int suggested_vector_size = this->handle->get_suggested_vector_size(m, entriesA.dimension_0());
+    int suggested_vector_size = this->handle->get_suggested_vector_size(m, entriesA_.dimension_0());
     int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
     nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , m);
 
     PredicMaxRowNNZ<a_row_view_t, a_nnz_view_t, b_oldrow_view_t, b_row_view_t>
       pcnnnz(
         m,
-        row_mapA,
-        entriesA,
+        row_mapA_,
+        entriesA_,
         row_pointers_begin_B,
         row_pointers_end_B,
         team_row_chunk_size );
@@ -883,15 +883,15 @@ public:
 
       Kokkos::parallel_reduce(
                     Kokkos::ThreadVectorRange(teamMember, col_end - col_begin),
-                    [&] (size_type i, size_type &nnz) {
-        const size_type col_a_index = i + col_begin;
+                    [&] (size_type i_, size_type &nnz_) {
+        const size_type col_a_index = i_ + col_begin;
         nnz_lno_t c_rows = in_set_entries[col_a_index];
                 size_type c = 0;
         while (c_rows){
           c_rows &= (c_rows-1) ;
           c++;
         }
-        nnz += c;
+        nnz_ += c;
       }, nnz);
 
       //out_rowmap(row_index) = nnz;
@@ -1282,10 +1282,10 @@ public:
           scalar_t valA = valuesA[a_col];
 
           size_type rowBegin = row_mapB(rowB);
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+          nnz_lno_t left_work_ = row_mapB(rowB + 1) - rowBegin;
 
-          while (left_work){
-            nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work);
+          while (left_work_){
+            nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work_);
             nnz_lno_t b_col_ind = -1;
             scalar_t b_val = -1;
             nnz_lno_t hash = -1;
@@ -1308,25 +1308,25 @@ public:
             int overall_num_unsuccess = 0;
 
             Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-                [&] (const int threadid, int &overall_num_unsuccess) {
-              overall_num_unsuccess += num_unsuccess;
+                [&] (const int threadid, int &overall_num_unsuccess_) {
+              overall_num_unsuccess_ += num_unsuccess;
             }, overall_num_unsuccess);
 
             if (overall_num_unsuccess){
-              nnz_lno_t hash = -1;
+              nnz_lno_t hash_ = -1;
               if (num_unsuccess) {
-                hash = b_col_ind % global_memory_hash_size;
+                hash_ = b_col_ind % global_memory_hash_size;
               }
 
               //int insertion =
               hm2.vector_atomic_insert_into_hash_mergeAdd(
                   teamMember, vector_size,
-                  hash,b_col_ind,b_val,
+                  hash_,b_col_ind,b_val,
                   used_hash_sizes + 1, hm2.max_value_size
               );
 
             }
-            left_work -= work_to_handle;
+            left_work_ -= work_to_handle;
             rowBegin += work_to_handle;
           }
         }
@@ -1465,10 +1465,10 @@ public:
           scalar_t valA = valuesA[a_col];
 
           size_type rowBegin = row_mapB(rowB);
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+          nnz_lno_t left_work_ = row_mapB(rowB + 1) - rowBegin;
 
           Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange(teamMember, left_work),
+              Kokkos::ThreadVectorRange(teamMember, left_work_),
               [&] (nnz_lno_t i) {
             const size_type adjind = i + rowBegin;
             nnz_lno_t acc_index = entriesB[adjind];
@@ -1513,10 +1513,10 @@ public:
           scalar_t valA = valuesA[a_col];
 
           size_type rowBegin = row_mapB(rowB);
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+          nnz_lno_t left_work_ = row_mapB(rowB + 1) - rowBegin;
 
           Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange(teamMember, left_work),
+              Kokkos::ThreadVectorRange(teamMember, left_work_),
               [&] (nnz_lno_t i) {
             const size_type adjind = i + rowBegin;
             nnz_lno_t acc_index = entriesB[adjind];
@@ -1559,10 +1559,10 @@ public:
           scalar_t valA = valuesA[a_col];
 
           size_type rowBegin = row_mapB(rowB);
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+          nnz_lno_t left_work_ = row_mapB(rowB + 1) - rowBegin;
 
           Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange(teamMember, left_work),
+              Kokkos::ThreadVectorRange(teamMember, left_work_),
               [&] (nnz_lno_t i) {
             const size_type adjind = i + rowBegin;
             nnz_lno_t col_ind = entriesB[adjind];
@@ -1842,9 +1842,9 @@ public:
           scalar_t valA = valuesA[a_col];
 
           size_type rowBegin = row_mapB(rowB);
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+          nnz_lno_t left_work_ = row_mapB(rowB + 1) - rowBegin;
 
-          for ( nnz_lno_t i = 0; i < left_work; ++i){
+          for ( nnz_lno_t i = 0; i < left_work_; ++i){
             const size_type adjind = i + rowBegin;
             nnz_lno_t b_col_ind = entriesB[adjind];
             scalar_t b_val = valuesB[adjind] * valA;
@@ -1940,10 +1940,10 @@ public:
           scalar_t valA = valuesA[a_col];
 
           size_type rowBegin = row_mapB(rowB);
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+          nnz_lno_t left_work_ = row_mapB(rowB + 1) - rowBegin;
 
-          while (left_work){
-            nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work);
+          while (left_work_){
+            nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work_);
             nnz_lno_t b_col_ind = -1;
             scalar_t b_val = -1;
             nnz_lno_t hash = -1;
@@ -1965,8 +1965,8 @@ public:
             int overall_num_unsuccess = 0;
 
             Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-                [&] (const int threadid, int &overall_num_unsuccess) {
-              overall_num_unsuccess += num_unsuccess;
+                [&] (const int threadid, int &overall_num_unsuccess_) {
+              overall_num_unsuccess_ += num_unsuccess;
             }, overall_num_unsuccess);
 
             if (overall_num_unsuccess){
@@ -1994,23 +1994,23 @@ public:
                 hm2.hash_nexts = (nnz_lno_t *) (tmp);
               }
 
-              nnz_lno_t hash = -1;
+              nnz_lno_t hash_ = -1;
               if (num_unsuccess) {
-                hash = b_col_ind & pow2_hash_func;
+                hash_ = b_col_ind & pow2_hash_func;
               }
 
               //this has to be a success, we do not need to check for the success.
               //int insertion =
               hm2.vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
                   teamMember, vector_size,
-                  hash,b_col_ind,b_val,
+                  hash_,b_col_ind,b_val,
                   used_hash_sizes + 1, hm2.max_value_size
                   ,globally_used_hash_count, globally_used_hash_indices
               );
 
             }
 
-            left_work -= work_to_handle;
+            left_work_ -= work_to_handle;
             rowBegin += work_to_handle;
           }
         }
@@ -2486,8 +2486,8 @@ public:
           int overall_num_unsuccess = 0;
 
           Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-              [&] (const int threadid, int &overall_num_unsuccess) {
-            overall_num_unsuccess += num_unsuccess;
+              [&] (const int threadid, int &overall_num_unsuccess_) {
+            overall_num_unsuccess_ += num_unsuccess;
           }, overall_num_unsuccess);
 
 
@@ -2523,13 +2523,13 @@ public:
               hm2.max_value_size = MaxRoughNonZero;
             }
 
-            nnz_lno_t hash = -1;
-            if (num_unsuccess) hash = b_set_ind & pow2_hash_func;
+            nnz_lno_t hash_ = -1;
+            if (num_unsuccess) hash_ = b_set_ind & pow2_hash_func;
 
             //int insertion =
             hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
                 teamMember, vector_size,
-                hash,b_set_ind,b_set,
+                hash_,b_set_ind,b_set,
                 used_hash_sizes + 1, hm2.max_value_size
                 ,globally_used_hash_count, globally_used_hash_indices
                 );
@@ -2567,8 +2567,8 @@ public:
 
       if (is_global_alloced){
         nnz_lno_t num_global_elements = 0;
-        nnz_lno_t num_compressed_elements = used_hash_sizes[1];
-        Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, num_compressed_elements),
+        nnz_lno_t num_compressed_elements_ = used_hash_sizes[1];
+        Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, num_compressed_elements_),
             [&] (const nnz_lno_t ii, nnz_lno_t &num_nnz_in_row) {
           nnz_lno_t c_rows = hm2.values[ii];
           nnz_lno_t num_el = 0;
@@ -2902,8 +2902,8 @@ public:
           int overall_num_unsuccess = 0;
 
           Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-              [&] (const int threadid, int &overall_num_unsuccess) {
-            overall_num_unsuccess += num_unsuccess;
+              [&] (const int threadid, int &overall_num_unsuccess_) {
+            overall_num_unsuccess_ += num_unsuccess;
           }, overall_num_unsuccess);
 
 
@@ -2939,13 +2939,13 @@ public:
               hm2.max_value_size = MaxRoughNonZero;
             }
 
-            nnz_lno_t hash = -1;
-            if (num_unsuccess) hash = b_set_ind & pow2_hash_func;
+            nnz_lno_t hash_ = -1;
+            if (num_unsuccess) hash_ = b_set_ind & pow2_hash_func;
 
             //int insertion =
             hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
                 teamMember, vector_size,
-                hash,b_set_ind,b_set,
+                hash_,b_set_ind,b_set,
                 used_hash_sizes + 1, hm2.max_value_size
                 ,globally_used_hash_count, globally_used_hash_indices
                 );
@@ -2987,8 +2987,8 @@ public:
 
 
       if (is_global_alloced){
-        nnz_lno_t num_compressed_elements = used_hash_sizes[1];
-        Kokkos::parallel_for( Kokkos::ThreadVectorRange(teamMember, num_compressed_elements),
+        nnz_lno_t num_compressed_elements_ = used_hash_sizes[1];
+        Kokkos::parallel_for( Kokkos::ThreadVectorRange(teamMember, num_compressed_elements_),
             [&] (const nnz_lno_t ii) {
           nnz_lno_t c_rows_setind = hm2.keys[ii];
           nnz_lno_t c_rows = hm2.values[ii];
@@ -3038,11 +3038,11 @@ public:
               typename c_row_view_t>
   void symbolic_c(
       nnz_lno_t m,
-      a_row_view_t row_mapA,
-      a_nnz_view_t entriesA,
+      a_row_view_t row_mapA_,
+      a_nnz_view_t entriesA_,
 
       b_original_row_view_t old_row_mapB,
-      b_compressed_row_view_t row_mapB,
+      b_compressed_row_view_t row_mapB_,
       b_nnz_view_t entriesSetIndex,
       b_nnz_view_t entriesSets,
 
@@ -3052,7 +3052,7 @@ public:
     typedef KokkosKernels::Experimental::Util::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
 
     //get the number of rows and nonzeroes of B.
-    nnz_lno_t brows = row_mapB.dimension_0() - 1;
+    nnz_lno_t brows = row_mapB_.dimension_0() - 1;
     size_type bnnz =  entriesSetIndex.dimension_0();
 
     //get the SPGEMMAlgorithm to run.
@@ -3126,10 +3126,10 @@ public:
     c_row_view_t, /* nnz_lno_temp_work_view_t,*/ pool_memory_space>
     sc(
         m,
-        row_mapA,
-        entriesA,
+        row_mapA_,
+        entriesA_,
         old_row_mapB,
-        row_mapB,
+        row_mapB_,
         entriesSetIndex,
         entriesSets,
         rowmapC,
@@ -3182,14 +3182,14 @@ public:
     }
     //if we need to find the max nnz in a row.
     {
-      Kokkos::Impl::Timer timer1;
+      Kokkos::Impl::Timer timer1_;
       size_type c_max_nnz = 0;
       KokkosKernels::Experimental::Util::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
       MyExecSpace::fence();
       this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 
       if (KOKKOSKERNELS_VERBOSE){
-        std::cout << "\tReduce Max Row Size Time:" << timer1.seconds() << std::endl;
+        std::cout << "\tReduce Max Row Size Time:" << timer1_.seconds() << std::endl;
       }
     }
 
@@ -3219,11 +3219,11 @@ public:
       b_original_row_view_t, b_compressed_row_view_t, b_nnz_view_t,
       c_row_view_t, nnz_lno_temp_work_view_t,
       pool_memory_space>
-      sc( m,
-          row_mapA,
-          entriesA,
+      nnzc_( m,
+          row_mapA_,
+          entriesA_,
           old_row_mapB,
-          row_mapB,
+          row_mapB_,
           entriesSetIndex,
           entriesSets,
           rowmapC,
@@ -3235,14 +3235,14 @@ public:
 
       timer1.reset();
       if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA) {
-        Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), nnzc_);
       }
       else {
         if (use_dynamic_schedule){
-          Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
+          Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), nnzc_);
         }
         else {
-          Kokkos::parallel_for( multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
+          Kokkos::parallel_for( multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), nnzc_);
         }
       }
 

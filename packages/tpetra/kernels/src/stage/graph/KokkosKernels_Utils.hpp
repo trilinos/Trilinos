@@ -514,8 +514,8 @@ struct Fill_Reverse_Map{
   Fill_Reverse_Map(
       forward_map_type forward_map_,
       reverse_map_type reverse_map_xadj_,
-      reverse_map_type reverse_map_adj):
-        forward_map(forward_map_), reverse_map_xadj(reverse_map_xadj_), reverse_map_adj(reverse_map_adj){}
+      reverse_map_type reverse_map_adj_):
+        forward_map(forward_map_), reverse_map_xadj(reverse_map_xadj_), reverse_map_adj(reverse_map_adj_){}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &ii) const {
