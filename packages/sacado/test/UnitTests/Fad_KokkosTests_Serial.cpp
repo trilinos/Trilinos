@@ -66,7 +66,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, MixedViewFadTypes )
   FadType2 x = 0.0;
   x = v(1);
 
-  int sz = x.size();
+  const size_t sz = x.size();
   TEUCHOS_TEST_EQUALITY(sz, fad_size, out, success);
 }
 
