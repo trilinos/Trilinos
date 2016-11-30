@@ -185,6 +185,8 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
 
+    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
+
     /** \brief  FEM basis evaluation on a <strong>reference Tetrahedron</strong> cell. 
     
         Returns values of <var>operatorType</var> acting on FEM basis functions for a set of

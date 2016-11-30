@@ -131,6 +131,8 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType scalarViewType;
 
+    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
+
     virtual
     void
     getValues( /**/  outputViewType outputValues,

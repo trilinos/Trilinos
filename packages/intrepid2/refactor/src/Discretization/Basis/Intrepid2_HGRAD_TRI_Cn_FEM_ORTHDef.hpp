@@ -62,7 +62,7 @@ namespace Intrepid2 {
              typename outputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
-    void OrthPolynomial<1>::generate( /**/  outputViewType output,
+    void OrthPolynomial<0>::generate( /**/  outputViewType output,
                                       const inputViewType input,
                                       const ordinal_type order ) {
       typedef outputViewType::value_type value_type;
