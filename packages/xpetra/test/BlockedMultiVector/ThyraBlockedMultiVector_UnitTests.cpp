@@ -449,35 +449,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
     Teuchos::ArrayRCP<const Scalar> vData  = bvec->getMultiVector(0)->getData(0);
     Teuchos::ArrayRCP<const Scalar> vData2 = bvec->getMultiVector(0)->getData(1);
     for(size_t i=0; i< bvec->getBlockedMap()->getMap(0,true)->getNodeNumElements(); i++) {
-      TEST_EQUALITY(vData[i], comm->getRank() * 100 + i);
-      TEST_EQUALITY(vData2[i], i);
+      TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + i));
+      TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
       TEST_EQUALITY(bvec->getMultiVector(0)->getMap()->getGlobalElement(i), bvec->getMultiVector(0)->getMap()->getMinGlobalIndex() + i );
     }
   }
 
-  Teuchos::RCP<const MultiVector> bvecix = bvec->getMultiVector(1,false);
-  TEST_EQUALITY(bvecix.is_null(),false);
-  TEST_EQUALITY(bvecix->getMap()->getMinAllGlobalIndex(), 10);
-  TEST_EQUALITY(bvecix->getMap()->getMaxAllGlobalIndex(), 42);
-  {
-    Teuchos::RCP<const BlockedMultiVector> bbvecix = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(bvecix);
-    Teuchos::ArrayRCP<const Scalar> vData  = bbvecix->getMultiVector(0)->getData(0);
-    Teuchos::ArrayRCP<const Scalar> vData2 = bbvecix->getMultiVector(0)->getData(1);
-    for(size_t i=0; i< bbvecix->getMultiVector(0)->getMap()->getNodeNumElements(); i++) {
-      TEST_EQUALITY(vData[i], comm->getRank() * 100 + 10 + i);
-      TEST_EQUALITY(vData2[i], i);
-      TEST_EQUALITY(bbvecix->getBlockedMap()->getMap(0,false)->getGlobalElement(i), map2->getGlobalElement(i) + 10 );
-      TEST_EQUALITY(bbvecix->getBlockedMap()->getMap(0,true)->getGlobalElement(i), map2->getGlobalElement(i) );
-    }
-    vData  = bbvecix->getMultiVector(1)->getData(0);
-    vData2 = bbvecix->getMultiVector(1)->getData(1);
-    for(size_t i=0; i< bbvecix->getMultiVector(1)->getMap()->getNodeNumElements(); i++) {
-      TEST_EQUALITY(vData[i], comm->getRank() * 100 + 25 + i);
-      TEST_EQUALITY(vData2[i], i);
-      TEST_EQUALITY(bbvecix->getBlockedMap()->getMap(1,false)->getGlobalElement(i), map3->getGlobalElement(i) + 25 );
-      TEST_EQUALITY(bbvecix->getBlockedMap()->getMap(1,true)->getGlobalElement(i), map3->getGlobalElement(i) );
-    }
-  }
+  // sub vectors are Thyra vectors: currently the implementation throws if we try to
+  // access the Xpetra version. We probably can remove the getMultiVector(...,bool)
+  // routine...
+  TEST_THROW(bvec->getMultiVector(1,false),Xpetra::Exceptions::RuntimeError);
 
   Teuchos::RCP<const MultiVector> bvecit = bvec->getMultiVector(1,true);
   TEST_EQUALITY(bvecit.is_null(),false);
@@ -488,16 +469,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, ConstructorNested, M
     Teuchos::ArrayRCP<const Scalar> vData  = bbvecit->getMultiVector(0)->getData(0);
     Teuchos::ArrayRCP<const Scalar> vData2 = bbvecit->getMultiVector(0)->getData(1);
     for(size_t i=0; i< bbvecit->getMultiVector(0)->getMap()->getNodeNumElements(); i++) {
-      TEST_EQUALITY(vData[i], comm->getRank() * 100 + 10 + i);
-      TEST_EQUALITY(vData2[i], i);
+      TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + 10 + i));
+      TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
       TEST_EQUALITY(bbvecit->getBlockedMap()->getMap(0,false)->getGlobalElement(i), map2->getGlobalElement(i) );
       TEST_EQUALITY(bbvecit->getBlockedMap()->getMap(0,true)->getGlobalElement(i), map2->getGlobalElement(i) );
     }
     vData  = bbvecit->getMultiVector(1)->getData(0);
     vData2 = bbvecit->getMultiVector(1)->getData(1);
     for(size_t i=0; i< bbvecit->getMultiVector(1)->getMap()->getNodeNumElements(); i++) {
-      TEST_EQUALITY(vData[i], comm->getRank() * 100 + 25 + i);
-      TEST_EQUALITY(vData2[i], i);
+      TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + 25 + i));
+      TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
       TEST_EQUALITY(bbvecit->getBlockedMap()->getMap(1,false)->getGlobalElement(i), map3->getGlobalElement(i) + 15 );
       TEST_EQUALITY(bbvecit->getBlockedMap()->getMap(1,true)->getGlobalElement(i), map3->getGlobalElement(i) );
     }
@@ -706,8 +687,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedMultiVector, BlockedVectorDeepCop
     Teuchos::ArrayRCP<const Scalar> vData  = bvec->getMultiVector(0)->getData(0);
     Teuchos::ArrayRCP<const Scalar> vData2 = bvec->getMultiVector(0)->getData(1);
     for(size_t i=0; i< bvec->getBlockedMap()->getMap(0,true)->getNodeNumElements(); i++) {
-      TEST_EQUALITY(vData[i], comm->getRank() * 100 + i);
-      TEST_EQUALITY(vData2[i], i);
+      TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(comm->getRank() * 100 + i));
+      TEST_EQUALITY(vData2[i], Teuchos::as<Scalar>(i));
       TEST_EQUALITY(bvec->getMultiVector(0)->getMap()->getGlobalElement(i), bvec->getMultiVector(0)->getMap()->getMinGlobalIndex() + i );
     }
   }

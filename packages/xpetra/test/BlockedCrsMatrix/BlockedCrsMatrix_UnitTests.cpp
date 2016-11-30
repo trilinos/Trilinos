@@ -757,7 +757,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorThyra, 
   TEST_EQUALITY(inds.size(),1);
   TEST_EQUALITY(vals.size(),1);
   TEST_EQUALITY(inds[0],0);
-  TEST_EQUALITY(vals[0],5*Teuchos::ScalarTraits<Scalar>::one());
+  TEST_EQUALITY(vals[0],Teuchos::as<Scalar>(5.0)*Teuchos::ScalarTraits<Scalar>::one());
 
   // block 22
   Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop22 =
@@ -1007,12 +1007,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply, 
   TEST_NOTHROW( bop->apply(*vrnd, *vexp) );
 
   // nested blocked operators do not work with plain vectors
-  // TODO implement doImport in BlockedMultiVector
-  TEST_THROW( brop->apply(*vrnd, *vres), Xpetra::Exceptions::RuntimeError );
+  TEST_NOTHROW( brop->apply(*vrnd, *vres) );
 
-  //res->update(-STS::one(),*exp,STS::one());
-  //TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
-  //TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+  vres->update(-STS::one(),*vexp,STS::one());
+  TEUCHOS_TEST_COMPARE(vres->norm2(), <, 5e-14, out, success);
+  TEUCHOS_TEST_COMPARE(vres->normInf(), <, 5e-14, out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply2, M, MA, Scalar, LO, GO, Node )
@@ -1125,68 +1124,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyTh
   // not supported, yet. doImport for BlockedMultiVectors missing
   // fix this by checking the input vectors in the apply routine and switch to
   // ReorderedBlockedMultiVectors. Does this fix the problem? Do it in a two stage fashion.
-  TEST_THROW(brop->apply(*vones,*vres), Xpetra::Exceptions::RuntimeError);
+  TEST_NOTHROW(brop->apply(*vones,*vres));
+  TEST_NOTHROW( vres->norm1(nn2) );
+  TEST_EQUALITY(nn2[0], comm->getSize() * 4485 * STS::magnitude(STS::one()));
 
-#if 0
-  Teuchos::Array<typename STS::magnitudeType> nn(res->getNumVectors());
-  TEST_NOTHROW( res->norm1(nn) );
-  TEUCHOS_TEST_COMPARE(nn[0], >, 1e3, out, success);
-
-  // res contains exactly the same data as brres, the only difference is
-  // that res is a MultiVector with 8 sub blocks and brres a MultiVector with
-  // 3 nested sub blocks (compatible to brop)
-  res->update(-STS::one(),*exp,STS::one());
-
-  nn[0] = STS::magnitude(STS::one());
-  TEST_NOTHROW( res->norm1(nn) );
-  TEST_EQUALITY( nn[0], STS::zero());
-  TEST_NOTHROW( res->norm2(nn) );
-  TEST_EQUALITY( nn[0], STS::zero());
-  TEST_NOTHROW( res->normInf(nn) );
-  TEST_EQUALITY( nn[0], STS::zero());
-
-  // compatibility with plain maps
-  Teuchos::RCP<const Map> map = bop->getRangeMap();
-  Teuchos::RCP<const BlockedMap> bmap = Teuchos::rcp_dynamic_cast<const BlockedMap>(map);
-  Teuchos::RCP<const Map> rgMap = bmap->getFullMap();
-
-  Teuchos::RCP<VectorClass> vrnd  = VectorFactoryClass::Build(rgMap, true);
-  Teuchos::RCP<VectorClass> vexp  = VectorFactoryClass::Build(rgMap, true);
-  Teuchos::RCP<VectorClass> vres  = VectorFactoryClass::Build(rgMap, true);
-  vrnd->randomize();
+  Teuchos::RCP<VectorClass> vrnd2  = VectorFactoryClass::Build(bop->getFullRangeMap(), true);
+  Teuchos::RCP<VectorClass> vexp2  = VectorFactoryClass::Build(bop->getFullRangeMap(), true);
+  Teuchos::RCP<VectorClass> vres2  = VectorFactoryClass::Build(bop->getFullRangeMap(), true);
+  vrnd2->randomize();
 
   // apply with plain blocked operators works with plain vectors
-  TEST_NOTHROW( bop->apply(*vrnd, *vexp) );
+  TEST_NOTHROW( bop->apply(*vrnd2, *vexp2) );
 
   // nested blocked operators do not work with plain vectors
-  // TODO implement doImport in BlockedMultiVector
-  TEST_THROW( brop->apply(*vrnd, *vres), Xpetra::Exceptions::RuntimeError );
+  TEST_NOTHROW( brop->apply(*vrnd2, *vres2));
 
-  //res->update(-STS::one(),*exp,STS::one());
-  //TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
-  //TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
-#endif
-#if 0
-  // build gloabl vector with one entries
-  Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(bop->getRangeMap(), true);
-  Teuchos::RCP<VectorClass> exp  = VectorFactoryClass::Build(bop->getRangeMap(), true);
-  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(bop->getRangeMap(), true);
-  Teuchos::RCP<VectorClass> rnd  = VectorFactoryClass::Build(bop->getRangeMap(), true);
-  ones->putScalar(STS::one());
-  rnd->randomize();
-
-  bop->apply(*ones, *exp);
-  brop->apply(*ones, *res);
-  res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
-
-  bop->apply(*rnd, *exp);
-  brop->apply(*rnd, *res);
-  res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
-#endif
+  vres2->update(-STS::one(),*vexp2,STS::one());
+  TEUCHOS_TEST_COMPARE(vres2->norm2(), <, 5e-14, out, success);
+  TEUCHOS_TEST_COMPARE(vres2->normInf(), <, 5e-14, out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyThyraSmall, M, MA, Scalar, LO, GO, Node )
@@ -1268,7 +1223,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyTh
   // not supported, yet. doImport for BlockedMultiVectors missing
   // fix this by checking the input vectors in the apply routine and switch to
   // ReorderedBlockedMultiVectors. Does this fix the problem? Do it in a two stage fashion.
-  TEST_THROW(brop->apply(*vones,*vres), Xpetra::Exceptions::RuntimeError);
+  TEST_NOTHROW(brop->apply(*vones,*vres));
+
+  TEST_NOTHROW( vres->norm1(nn2) );
+  TEST_EQUALITY(nn2[0], comm->getSize() * 45 * STS::magnitude(STS::one()));
 }
 
 
