@@ -614,12 +614,12 @@ namespace MueLu {
       // TODO: this is not a proper place to check. If we consider direct solver to be a special
       // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
       // have a single factory responsible for those. Then, this check would belong there.
-      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
+      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" || 
           coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
           coarseType == "Amesos" ||
-          coarseType == "LINESMOOTHING_BANDEDRELAXATION" ||
-          coarseType == "LINESMOOTHING_BANDED_RELAXATION" ||
-          coarseType == "LINESMOOTHING_BANDED RELAXATION")
+	  coarseType == "BLOCK RELAXATION" || coarseType == "BLOCK_RELAXATION" || coarseType == "BLOCKRELAXATION"  ||
+	  coarseType == "SPARSE BLOCK RELAXATION" || coarseType == "SPARSE_BLOCK_RELAXATION" || coarseType == "SPARSEBLOCKRELAXATION" ||
+          coarseType == "LINESMOOTHING_BANDEDRELAXATION" || coarseType == "LINESMOOTHING_BANDED_RELAXATION" || coarseType == "LINESMOOTHING_BANDED RELAXATION")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else {
 #ifdef HAVE_MUELU_MATLAB
