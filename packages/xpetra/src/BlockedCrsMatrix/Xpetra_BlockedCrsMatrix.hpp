@@ -934,9 +934,9 @@ namespace Xpetra {
 
             // If Ablock is a blocked operator the local vectors are using (pseudo) Xpetra-style gids
             // that have to be translated to Thyra based GIDs if bRangeThyraMode is set
-            if(bBlockedSubMatrix == true && bRangeThyraMode_ == true) {
+            //if(bBlockedSubMatrix == true && bRangeThyraMode_ == true) {
             //  tmpYblock->replaceMap(rangemaps_->getMap(row, true)); // switch to Thyra maps (compatible to Yblock)
-            }
+            //}
             Yblock->update(one, *tmpYblock, one);
           }
           rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
