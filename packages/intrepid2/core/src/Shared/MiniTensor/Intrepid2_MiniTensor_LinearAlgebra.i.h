@@ -48,7 +48,7 @@ namespace Intrepid2 {
 // R^N tensor Frobenius norm
 // \return \f$ \sqrt{A:A} \f$
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 norm(Tensor<T, N, ES> const & A)
@@ -91,7 +91,7 @@ norm(Tensor<T, N, ES> const & A)
 // R^N tensor 1-norm
 // \return \f$ \max_{j \in {0,\cdots,N}}\Sigma_{i=0}^N |A_{ij}| \f$
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 norm_1(Tensor<T, N, ES> const & A)
@@ -150,7 +150,7 @@ norm_1(Tensor<T, N, ES> const & A)
 // R^N tensor infinity-norm
 // \return \f$ \max_{i \in {0,\cdots,N}}\Sigma_{j=0}^N |A_{ij}| \f$
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 norm_infinity(Tensor<T, N, ES> const & A)
@@ -209,7 +209,7 @@ norm_infinity(Tensor<T, N, ES> const & A)
 // \param i index
 // \param j index
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 swap_row(Tensor<T, N, ES> & A, Index const i, Index const j)
@@ -231,7 +231,7 @@ swap_row(Tensor<T, N, ES> & A, Index const i, Index const j)
 // \param i index
 // \param j index
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 swap_col(Tensor<T, N, ES> & A, Index const i, Index const j)
@@ -255,7 +255,7 @@ swap_col(Tensor<T, N, ES> & A, Index const i, Index const j)
 // \param A tensor
 // \return \f$ \det A \f$
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 det(Tensor<T, N, ES> const & A)
@@ -303,7 +303,7 @@ det(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return \f$ A:I \f$
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 trace(Tensor<T, N, ES> const & A)
@@ -343,7 +343,7 @@ trace(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return \f$ I_A = A:I \f$
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 I1(Tensor<T, N, ES> const & A)
@@ -356,7 +356,7 @@ I1(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return \f$ II_A \f$
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 I2(Tensor<T, N, ES> const & A)
@@ -404,7 +404,7 @@ I2(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return \f$ III_A \f$
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 I3(Tensor<T, N, ES> const & A)
@@ -466,7 +466,7 @@ cond(Tensor<T, N, ES> const & A)
 //
 // Reciprocal condition number.
 //
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 inv_cond(Tensor<T, N, ES> const & A)

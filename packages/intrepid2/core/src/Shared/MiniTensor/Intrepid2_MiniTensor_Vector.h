@@ -51,13 +51,13 @@
 
 namespace Intrepid2 {
 
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 using vector_store = Storage<T, dimension_power<N, 1>::value, ES>;
 
 ///
 /// Vector class.
 ///
-template<typename T, Index N = DYNAMIC,  typename ES = NOKOKKOS>
+template<typename T, Index N = DYNAMIC, typename ES = NOKOKKOS>
 class Vector: public TensorBase<T, vector_store<T, N, ES>>
 {
 public:
@@ -306,7 +306,7 @@ public:
 /// Vector addition
 /// \return \f$ u + v \f$
 ///
-template<typename S, typename T, Index N,  typename ES>
+template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 operator+(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
@@ -315,7 +315,7 @@ operator+(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 /// Vector substraction
 /// \return \f$ u - v \f$
 ///
-template<typename S, typename T, Index N,  typename ES>
+template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 operator-(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
@@ -324,7 +324,7 @@ operator-(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 /// Vector minus
 /// \return \f$ -u \f$
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 operator-(Vector<T, N, ES> const & u);
@@ -333,7 +333,7 @@ operator-(Vector<T, N, ES> const & u);
 /// Vector dot product
 /// \return \f$ u \cdot v \f$
 ///
-template<typename S, typename T, Index N,  typename ES>
+template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 typename Promote<S, T>::type
 operator*(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
@@ -342,7 +342,7 @@ operator*(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 /// Vector equality tested by components
 /// \return \f$ u \equiv v \f$
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 operator==(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v);
@@ -351,7 +351,7 @@ operator==(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v);
 /// Vector inequality tested by components
 /// \return \f$ u \neq v \f$
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 operator!=(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v);
@@ -362,7 +362,7 @@ operator!=(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v);
 /// \param u vector factor
 /// \return \f$ s u \f$
 ///
-template<typename S, typename T, Index N,  typename ES>
+template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 typename lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N, ES>>::type
 operator*(S const & s, Vector<T, N, ES> const & u);
@@ -373,7 +373,7 @@ operator*(S const & s, Vector<T, N, ES> const & u);
 /// \param s scalar factor
 /// \return \f$ s u \f$
 ///
-template<typename S, typename T, Index N,  typename ES>
+template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 typename lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N, ES>>::type
 operator*(Vector<T, N, ES> const & u, S const & s);
@@ -384,7 +384,7 @@ operator*(Vector<T, N, ES> const & u, S const & s);
 /// \param s scalar that divides each component of vector
 /// \return \f$ u / s \f$
 ///
-template<typename S, typename T, Index N,  typename ES>
+template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 operator/(Vector<T, N, ES> const & u, S const & s);
@@ -395,7 +395,7 @@ operator/(Vector<T, N, ES> const & u, S const & s);
 /// \param u vector that divides scalar with each component
 /// \return \f$ s / u \f$
 ///
-template<typename S, typename T, Index N,  typename ES>
+template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 operator/(S const & s, Vector<T, N, ES> const & u);
@@ -404,7 +404,7 @@ operator/(S const & s, Vector<T, N, ES> const & u);
 /// Vector dot product
 /// \return \f$ u \cdot v \f$
 ///
-template<typename S, typename T, Index N,  typename ES>
+template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 typename Promote<S, T>::type
 dot(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
@@ -414,7 +414,7 @@ dot(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 /// R^N with N != 3 will produce an error.
 /// \return \f$ u \times v \f$
 ///
-template<typename S, typename T, Index N,  typename ES>
+template<typename S, typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 cross(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
@@ -423,7 +423,7 @@ cross(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 /// Vector 2-norm
 /// \return \f$ \sqrt{u \cdot u} \f$
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 norm(Vector<T, N, ES> const & u);
@@ -432,7 +432,7 @@ norm(Vector<T, N, ES> const & u);
 /// Vector 2-norm square. Used for fast distance calculation.
 /// \return \f$ u \cdot u \f$
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 norm_square(Vector<T, N, ES> const & u);
@@ -441,7 +441,7 @@ norm_square(Vector<T, N, ES> const & u);
 /// Vector 1-norm
 /// \return \f$ |u_0|+|u_1|+|u_2| \f$
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 norm_1(Vector<T, N, ES> const & u);
@@ -450,7 +450,7 @@ norm_1(Vector<T, N, ES> const & u);
 /// Vector infinity-norm
 /// \return \f$ \max(|u_0|,|u_1|,|u_2|) \f$
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 norm_infinity(Vector<T, N, ES> const & u);
@@ -458,7 +458,7 @@ norm_infinity(Vector<T, N, ES> const & u);
 ///
 /// \return u / |u|, fails for |u| = 0
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 unit(Vector<T, N, ES> const & u);
@@ -469,7 +469,7 @@ unit(Vector<T, N, ES> const & u);
 /// \f$ Px = |X|e_1, P := I - \beta v v^T\f$
 /// \return v, beta
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 std::pair<Vector<T, N, ES>, T>
 house(Vector<T, N, ES> const & x);
@@ -480,7 +480,7 @@ house(Vector<T, N, ES> const & x);
 /// \param is input stream
 /// \return is input stream
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 std::istream &
 operator>>(std::istream & is, Vector<T, N, ES> & u);
 
@@ -490,7 +490,7 @@ operator>>(std::istream & is, Vector<T, N, ES> & u);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N, typename ES>
 std::ostream &
 operator<<(std::ostream & os, Vector<T, N, ES> const & u);
 

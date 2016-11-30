@@ -315,6 +315,130 @@ bool testSystemsAndMethods()
 
 } // anonymous namespace
 
+TEST(LinearSystems, LinearSolver)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Index
+  DIM{11};
+
+  Tensor<Real, DIM> const
+  A = 2.0 * eye<Real, DIM>() + Tensor<Real, DIM>(RANDOM_UNIFORM);
+
+  os << "\n\nMatrix A:" << A;
+
+  Vector<Real, DIM> const
+  x(RANDOM_UNIFORM);
+
+  os << "\n\nVector x:" << x;
+
+  Vector<Real, DIM> const
+  b = A * x;
+
+  os << "\n\nVector b = A * x:" << b;
+
+  Vector<Real, DIM> const
+  y = solve(A, b);
+
+  os << "\n\nVector y = solve(A, b):" << y;
+
+  Real const
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  // See Golub & Van Loan, Matrix Computations 4th Ed., pp 122-123
+  Real const
+  tolerance = 2 * (DIM - 1) * machine_epsilon<Real>();
+
+  ASSERT_LE(error, tolerance);
+}
+
+TEST(LinearSystems, Preconditioners)
+{
+  bool const
+  print_output = ::testing::GTEST_FLAG(print_time);
+
+  // outputs nothing
+  Teuchos::oblackholestream
+  bhs;
+
+  std::ostream &
+  os = (print_output == true) ? std::cout : bhs;
+
+  constexpr Index
+  DIM{2};
+
+  Tensor<Real, DIM> const
+  A(2.0e32, 1.0e32, 1.0, 2.0);
+
+  os << "\n\nMatrix A:" << A;
+
+  Vector<Real, DIM> const
+  b(1.0e32, 2.0);
+
+  os << "\n\nVector b:" << b;
+
+  Vector<Real, DIM> const
+  x(0.0, 1.0);
+
+  os << "\n\nVector x:" << x;
+
+  // See Golub & Van Loan, Matrix Computations 4th Ed., pp 122-123
+  Real const
+  tolerance = 2 * (DIM - 1) * machine_epsilon<Real>();
+
+  Vector<Real, DIM>
+  y = solve(A, b, PreconditionerType::IDENTITY);
+
+  os << "\n\nVector y = solve(A, b, IDENTITY):" << y;
+
+  Real
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  ASSERT_LE(error, tolerance);
+
+  y = solve(A, b, PreconditionerType::DIAGONAL);
+
+  os << "\n\nVector y = solve(A, b, DIAGONAL):" << y;
+
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  ASSERT_LE(error, tolerance);
+
+  y = solve(A, b, PreconditionerType::MAX_ABS_ROW);
+
+  os << "\n\nVector y = solve(A, b, MAX_ABS_ROW):" << y;
+
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  ASSERT_LE(error, tolerance);
+
+  y = solve_full_pivot(A, b);
+
+  os << "\n\nVector y = solve_full_pivot(A, b):" << y;
+
+  error = norm(y - x);
+
+  os << "\n\nerror = norm(y - x):" << error << '\n';
+
+  ASSERT_LE(error, tolerance);
+}
+
 TEST(NonlinearSystems, NonlinearMethods)
 {
   bool const

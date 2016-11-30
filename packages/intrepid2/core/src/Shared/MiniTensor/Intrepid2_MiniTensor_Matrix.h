@@ -53,13 +53,13 @@
 
 namespace Intrepid2 {
 
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 using matrix_store = Storage<T, dimension_product<M, N>::value, ES>;
 
 ///
 /// General rectangular matrix.
 ///
-template<typename T, Index M = DYNAMIC, Index N = DYNAMIC,  typename ES = NOKOKKOS>
+template<typename T, Index M = DYNAMIC, Index N = DYNAMIC, typename ES = NOKOKKOS>
 class Matrix: public TensorBase<T, matrix_store<T, M, N, ES>>
 {
 public:
@@ -378,7 +378,7 @@ private:
 /// Matrix addition
 /// \return \f$ A + B \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 operator+(Matrix<S, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
@@ -387,7 +387,7 @@ operator+(Matrix<S, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
 /// Matrix subtraction
 /// \return \f$ A - B \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 operator-(Matrix<S, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
@@ -396,7 +396,7 @@ operator-(Matrix<S, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
 /// Matrix minus
 /// \return \f$ -A \f$
 ///
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>
 operator-(Matrix<T, M, N, ES> const & A);
@@ -406,7 +406,7 @@ operator-(Matrix<T, M, N, ES> const & A);
 /// Tested by components
 /// \return \f$ A \equiv B \f$
 ///
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 operator==(Matrix<T, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
@@ -416,7 +416,7 @@ operator==(Matrix<T, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
 /// Tested by components
 /// \return \f$ A \neq B \f$
 ///
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 operator!=(Matrix<T, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
@@ -427,7 +427,7 @@ operator!=(Matrix<T, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
 /// \param u vector
 /// \return \f$ A u \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, M, ES>
 operator*(Matrix<T, M, N, ES> const & A, Vector<S, N, ES> const & u);
@@ -438,7 +438,7 @@ operator*(Matrix<T, M, N, ES> const & A, Vector<S, N, ES> const & u);
 /// \param u vector
 /// \return \f$ u A = A^T u \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 operator*(Vector<S, M, ES> const & u, Matrix<T, M, N, ES> const & A);
@@ -447,7 +447,7 @@ operator*(Vector<S, M, ES> const & u, Matrix<T, M, N, ES> const & A);
 /// Matrix dot product C = A B
 /// \return \f$ A \cdot B \f$
 ///
-template<typename S, typename T, Index M, Index P, Index N,  typename ES>
+template<typename S, typename T, Index M, Index P, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 operator*(Matrix<S, M, P, ES> const & A, Matrix<T, P, N, ES> const & B);
@@ -458,7 +458,7 @@ operator*(Matrix<S, M, P, ES> const & A, Matrix<T, P, N, ES> const & B);
 /// \param A matrix
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 typename lazy_disable_if<order_1234<S>, apply_matrix<Promote<S, T>, M, N, ES>>::type
 operator*(S const & s, Matrix<T, M, N, ES> const & A);
@@ -469,7 +469,7 @@ operator*(S const & s, Matrix<T, M, N, ES> const & A);
 /// \param s scalar
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 typename lazy_disable_if<order_1234<S>, apply_matrix<Promote<S, T>, M, N, ES>>::type
 operator*(Matrix<T, M, N, ES> const & A, S const & s);
@@ -480,7 +480,7 @@ operator*(Matrix<T, M, N, ES> const & A, S const & s);
 /// \param s scalar
 /// \return \f$ A / s \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 operator/(Matrix<T, M, N, ES> const & A, S const & s);
@@ -491,7 +491,7 @@ operator/(Matrix<T, M, N, ES> const & A, S const & s);
 /// \param A matrix that divides scalar with each component
 /// \return \f$ s / A \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 operator/(S const & s, Matrix<T, M, N, ES> const & A);
@@ -502,7 +502,7 @@ operator/(S const & s, Matrix<T, M, N, ES> const & A);
 /// \param is input stream
 /// \return is input stream
 ///
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 std::istream &
 operator>>(std::istream & is, Matrix<T, M, N, ES> & A);
 
@@ -512,7 +512,7 @@ operator>>(std::istream & is, Matrix<T, M, N, ES> & A);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 std::ostream &
 operator<<(std::ostream & os, Matrix<T, M, N, ES> const & A);
 
@@ -522,7 +522,7 @@ operator<<(std::ostream & os, Matrix<T, M, N, ES> const & A);
 /// \param i index of row
 /// \return \f$ v = A(i,:) \f$
 ///
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 row(Matrix<T, M, N, ES> const & A, Index const i);
@@ -533,7 +533,7 @@ row(Matrix<T, M, N, ES> const & A, Index const i);
 /// \param j index of column
 /// \return \f$ v = A(:,j) \f$
 ///
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, M, ES>
 col(Matrix<T, M, N, ES> const & A, Index const j);
@@ -544,7 +544,7 @@ col(Matrix<T, M, N, ES> const & A, Index const j);
 /// \param u vector
 /// \return \f$ A u \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, M, ES>
 dot(Matrix<T, M, N, ES> const & A, Vector<S, N, ES> const & u);
@@ -555,7 +555,7 @@ dot(Matrix<T, M, N, ES> const & A, Vector<S, N, ES> const & u);
 /// \param u vector
 /// \return \f$ u A = A^T u \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 dot(Vector<S, M, ES> const & u, Matrix<T, M, N, ES> const & A);
@@ -566,7 +566,7 @@ dot(Vector<S, M, ES> const & u, Matrix<T, M, N, ES> const & A);
 /// \param B matrix
 /// \return a matrix \f$ A \cdot B \f$
 ///
-template<typename S, typename T, Index M, Index P, Index N,  typename ES>
+template<typename S, typename T, Index M, Index P, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 dot(Matrix<S, M, P, ES> const & A, Matrix<T, P, N, ES> const & B);
@@ -577,7 +577,7 @@ dot(Matrix<S, M, P, ES> const & A, Matrix<T, P, N, ES> const & B);
 /// \param B matrix
 /// \return a matrix \f$ A^T \cdot B \f$
 ///
-template<typename S, typename T, Index M, Index P, Index N,  typename ES>
+template<typename S, typename T, Index M, Index P, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 t_dot(Matrix<S, P, M, ES> const & A, Matrix<T, P, N, ES> const & B);
@@ -588,7 +588,7 @@ t_dot(Matrix<S, P, M, ES> const & A, Matrix<T, P, N, ES> const & B);
 /// \param B matrix
 /// \return a matrix \f$ A \cdot B^T \f$
 ///
-template<typename S, typename T, Index M, Index P, Index N,  typename ES>
+template<typename S, typename T, Index M, Index P, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 dot_t(Matrix<S, M, P, ES> const & A, Matrix<T, N, P, ES> const & B);
@@ -599,7 +599,7 @@ dot_t(Matrix<S, M, P, ES> const & A, Matrix<T, N, P, ES> const & B);
 /// \param B matrix
 /// \return a tensor \f$ A^T \cdot B^T \f$
 ///
-template<typename S, typename T, Index M, Index P, Index N,  typename ES>
+template<typename S, typename T, Index M, Index P, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 t_dot_t(Matrix<S, P, M, ES> const & A, Matrix<T, N, P, ES> const & B);
@@ -610,7 +610,7 @@ t_dot_t(Matrix<S, P, M, ES> const & A, Matrix<T, N, P, ES> const & B);
 /// \param B matrix
 /// \return a scalar \f$ A : B \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 typename Promote<S, T>::type
 dotdot(Matrix<S, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
@@ -621,7 +621,7 @@ dotdot(Matrix<S, M, N, ES> const & A, Matrix<T, M, N, ES> const & B);
 /// \param v vector
 /// \return \f$ u \otimes v \f$
 ///
-template<typename S, typename T, Index M, Index N,  typename ES>
+template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<typename Promote<S, T>::type, M, N, ES>
 matrix(Vector<S, M, ES> const & u, Vector<T, N, ES> const & v);
@@ -629,7 +629,7 @@ matrix(Vector<S, M, ES> const & u, Vector<T, N, ES> const & v);
 ///
 /// matrix transpose
 ///
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>
 transpose(Matrix<T, N, M, ES> const & A);
@@ -637,7 +637,7 @@ transpose(Matrix<T, N, M, ES> const & A);
 ///
 /// matrix adjoint
 ///
-template<typename T, Index M, Index N,  typename ES>
+template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>
 adjoint(Matrix<T, N, M, ES> const & A);

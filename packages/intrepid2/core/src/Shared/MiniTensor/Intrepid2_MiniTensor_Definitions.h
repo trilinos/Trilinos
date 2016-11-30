@@ -48,6 +48,10 @@
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Sacado.hpp"
 
+#if !defined( KOKKOS_INLINE_FUNCTION )
+#define KOKKOS_INLINE_FUNCTION  inline
+#endif
+
 #if defined(KOKKOS_HAVE_CUDA)
 #define MT_ERROR_EXIT(...) \
   Kokkos::abort(#__VA_ARGS__)
@@ -57,6 +61,16 @@
   fprintf(stderr, __VA_ARGS__); \
   fprintf(stderr, "\n"); \
   exit(1)
+#endif // KOKKOS_HAVE_CUDA
+
+#if defined(KOKKOS_HAVE_CUDA)
+#define MT_WARNING(...) \
+  Kokkos::abort(#__VA_ARGS__)
+#else
+#define MT_WARNING(...) \
+  fprintf(stderr, "WARNING in: %s\n", __PRETTY_FUNCTION__); \
+  fprintf(stderr, __VA_ARGS__); \
+  fprintf(stderr, "\n")
 #endif // KOKKOS_HAVE_CUDA
 
 namespace Intrepid2 {
