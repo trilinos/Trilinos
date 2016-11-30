@@ -454,6 +454,10 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
       A = Utilities::Transpose(*A, true); // build transpose of A explicitly
     }
+    
+    // Find the Dirichlet rows in A
+    std::vector<LocalOrdinal> A_dirichletRows;
+    Utilities::FindDirichletRows(A,A_dirichletRows);
 
     // Build final prolongator
     RCP<Matrix> finalP;
@@ -486,14 +490,6 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
     std::vector<size_t> lo_node_in_hi;
     FC hi_DofCoords;
     MueLuIntrepid::IntrepidGetLoNodeInHi(hi_basis,lo_basis,lo_node_in_hi,hi_DofCoords);
-
-    /*
-  template<class Scalar,class KokkosDeviceType>
-    void IntrepidGetLoNodeInHi(const Teuchos::RCP<Intrepid2::Basis<KokkosDeviceType,Scalar,Scalar> > &hi_basis,
-			       const Teuchos::RCP<Intrepid2::Basis<KokkosDeviceType,Scalar,Scalar> > &lo_basis,
-			       std::vector<size_t> & lo_node_in_hi,
-			       Kokkos::DynRankView<Scalar,KokkosDeviceType> & hi_DofCoords);
-    */
 
     /*******************/    
     // Get the higher-order element-to-node map 
@@ -538,6 +534,9 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
     // Generate the coarsening
     GenerateLinearCoarsening_pn_kirby_to_p1(*Pn_elemToNode,Pn_nodeIsOwned,hi_DofCoords,lo_node_in_hi,*lo_basis,hi_to_lo_map,P1_colMap,P1_domainMap,A->getRowMap(),finalP);
+
+    // Zero out the Dirichlet rows in P
+    Utilities::ZeroDirichletRows(finalP,A_dirichletRows);
 
     // Level Set
     if (!restrictionMode_) {
