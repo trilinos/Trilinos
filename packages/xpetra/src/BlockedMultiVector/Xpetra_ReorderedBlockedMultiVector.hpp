@@ -377,6 +377,22 @@ Teuchos::RCP<const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   return rbvec;
 }
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > buildReorderedBlockedMultiVector(Teuchos::RCP<const Xpetra::BlockReorderManager> brm, Teuchos::RCP<Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bvec) {
+
+  typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedMultiVector;
+  Teuchos::RCP<const MultiVector> rbvec = Teuchos::null;
+  if(bvec->getBlockedMap()->getThyraMode() == false) {
+    rbvec = mergeSubBlocks(brm,Teuchos::rcp_const_cast<const BlockedMultiVector>(bvec));
+  } else {
+    rbvec = mergeSubBlocksThyra(brm,Teuchos::rcp_const_cast<const BlockedMultiVector>(bvec));
+  }
+  TEUCHOS_ASSERT(rbvec.is_null() == false);
+  return Teuchos::rcp_const_cast<MultiVector>(rbvec);
+}
+
+
 } //namespace Xpetra
 
 #define XPETRA_REORDEREDBLOCKEDMULTIVECTOR_SHORT
