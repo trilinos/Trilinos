@@ -1189,24 +1189,26 @@ int main(int argc, char *argv[]) {
       std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
       ssl.set("partitioner: local parts", numLocalParts);
     }
-    std::string coarseType = sl.get<std::string>("coarse: type");
-    if ((coarseType == "SPARSE BLOCK RELAXATION"|| coarseType == "BLOCK RELAXATION") && sl.isParameter("coarse: params")) {
-      ParameterList &ssl = sl.sublist("coarse: params");
-      std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
-      int numLocalParts;
-      std::cout << "setting \"partitioner: map\"" << std::endl;
-      if (seedType == "node") {
-        ssl.set("partitioner: map", nodeSeeds);
-        numLocalParts = numNodeSeeds;
-      } else if (seedType == "edge") {
-        ssl.set("partitioner: map", edgeSeeds);
-        numLocalParts = numEdgeSeeds;
-      } else if (seedType == "cell") {
-        ssl.set("partitioner: map", cellSeeds);
-        numLocalParts = numCellSeeds;
-      }
-      std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
-      ssl.set("partitioner: local parts", numLocalParts);
+    if(sl.isParameter("coarse: type")) {
+	std::string coarseType = sl.get<std::string>("coarse: type");
+	if ((coarseType == "SPARSE BLOCK RELAXATION"|| coarseType == "BLOCK RELAXATION") && sl.isParameter("coarse: params")) {
+	  ParameterList &ssl = sl.sublist("coarse: params");
+	  std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
+	  int numLocalParts;
+	  std::cout << "setting \"partitioner: map\"" << std::endl;
+	  if (seedType == "node") {
+	    ssl.set("partitioner: map", nodeSeeds);
+	    numLocalParts = numNodeSeeds;
+	  } else if (seedType == "edge") {
+	    ssl.set("partitioner: map", edgeSeeds);
+	    numLocalParts = numEdgeSeeds;
+	  } else if (seedType == "cell") {
+	    ssl.set("partitioner: map", cellSeeds);
+	    numLocalParts = numCellSeeds;
+	  }
+	  std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
+	  ssl.set("partitioner: local parts", numLocalParts);
+	}
     }
 
   }
