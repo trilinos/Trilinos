@@ -53,6 +53,7 @@
 
 #include "Xpetra_MapUtils.hpp"
 
+#include "Xpetra_ReorderedBlockedMultiVector.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
@@ -158,7 +159,94 @@ namespace Xpetra {
                        Scalar alpha = ScalarTraits<Scalar>::one(),
                        Scalar beta  = ScalarTraits<Scalar>::zero()) const
     {
-      Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(X,Y,mode,alpha,beta);
+
+      // Nested sub-operators should just use the provided X and B vectors
+      if(fullOp_->getNodeNumRows() != this->getNodeNumRows()) {
+        Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(X,Y,mode,alpha,beta);
+        return;
+      }
+
+      // Special handling for the top level of the nested operator
+
+      // check whether input parameters are blocked or not
+      RCP<const MultiVector>         refX = rcpFromRef(X);
+      RCP<const BlockedMultiVector> refbX = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(refX);
+      RCP<MultiVector>               tmpY = rcpFromRef(Y);
+      RCP<BlockedMultiVector>       tmpbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(tmpY);
+
+
+      bool bCopyResultX = false;
+      bool bCopyResultY = false;
+
+      // TODO create a nested ReorderedBlockedMultiVector out of a nested BlockedMultiVector!
+      // probably not necessary, is it?
+      // check whether X and B are blocked but not ReorderedBlocked operators
+      /*if (refbX != Teuchos::null && fullOp_->getNodeNumRows() == this->getNodeNumRows()) {
+        RCP<const ReorderedBlockedMultiVector> rbCheck = Teuchos::rcp_dynamic_cast<const ReorderedBlockedMultiVector>(refbX);
+        if(rbCheck == Teuchos::null) {
+          RCP<const BlockedMultiVector> bX =
+            Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(Xpetra::buildReorderedBlockedMultiVector(brm_, refbX));
+          TEUCHOS_ASSERT(bX.is_null()==false);
+          refbX.swap(bX);
+        }
+      }
+      if (tmpbY != Teuchos::null && fullOp_->getNodeNumRows() == this->getNodeNumRows()) {
+        RCP<ReorderedBlockedMultiVector> rbCheck = Teuchos::rcp_dynamic_cast<ReorderedBlockedMultiVector>(tmpbY);
+        if(rbCheck == Teuchos::null) {
+          RCP<BlockedMultiVector> bY =
+              Teuchos::rcp_dynamic_cast<BlockedMultiVector>(Xpetra::buildReorderedBlockedMultiVector(brm_, tmpbY));
+          TEUCHOS_ASSERT(bY.is_null()==false);
+          tmpbY.swap(bY);
+        }
+      }*/
+
+      // if X and B are not blocked, create a blocked version here and use the blocked vectors
+      // for the internal (nested) apply call.
+
+      // Check whether "this" operator is the reordered variant of the underlying fullOp_.
+      // Note, that nested ReorderedBlockedCrsMatrices always have the same full operator "fullOp_"
+      // stored underneath for being able to "translate" the block ids.
+      if (refbX == Teuchos::null && fullOp_->getNodeNumRows() == this->getNodeNumRows()) {
+        // create a new (non-nested) blocked multi vector (using the blocked range map of fullOp_)
+        RCP<const BlockedMap> blkRgMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(fullOp_->getRangeMap());
+        TEUCHOS_ASSERT(blkRgMap.is_null()==false);
+        RCP<const BlockedMultiVector> bXtemp = Teuchos::rcp(new BlockedMultiVector(blkRgMap, refX));
+        TEUCHOS_ASSERT(bXtemp.is_null()==false);
+        RCP<const BlockedMultiVector> bX =
+          Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(Xpetra::buildReorderedBlockedMultiVector(brm_, bXtemp));
+        TEUCHOS_ASSERT(bX.is_null()==false);
+        refbX.swap(bX);
+        bCopyResultX = true;
+      }
+
+      if (tmpbY == Teuchos::null && fullOp_->getNodeNumRows() == this->getNodeNumRows()) {
+        // create a new (non-nested) blocked multi vector (using the blocked range map of fullOp_)
+        RCP<const BlockedMap> blkRgMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(fullOp_->getRangeMap());
+        TEUCHOS_ASSERT(blkRgMap.is_null()==false);
+        RCP<BlockedMultiVector> tmpbYtemp = Teuchos::rcp(new BlockedMultiVector(blkRgMap, tmpY));
+        TEUCHOS_ASSERT(tmpbYtemp.is_null()==false);
+        RCP<BlockedMultiVector> bY =
+            Teuchos::rcp_dynamic_cast<BlockedMultiVector>(Xpetra::buildReorderedBlockedMultiVector(brm_, tmpbYtemp));
+        TEUCHOS_ASSERT(bY.is_null()==false);
+        tmpbY.swap(bY);
+        bCopyResultY = true;
+      }
+
+      TEUCHOS_ASSERT(refbX.is_null()==false);
+      TEUCHOS_ASSERT(tmpbY.is_null()==false);
+
+      Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(*refbX,*tmpbY,mode,alpha,beta);
+
+      if (bCopyResultX == true) {
+        RCP<const MultiVector> Xmerged = refbX->Merge();
+        RCP<MultiVector>         nonconstX = Teuchos::rcp_const_cast<MultiVector>(refX);
+        nonconstX->update(Teuchos::ScalarTraits<Scalar>::one(), *Xmerged, Teuchos::ScalarTraits<Scalar>::zero());
+      }
+      if (bCopyResultY == true) {
+        RCP<      MultiVector> Ymerged = tmpbY->Merge();
+        Y.update(Teuchos::ScalarTraits<Scalar>::one(), *Ymerged, Teuchos::ScalarTraits<Scalar>::zero());
+      }
+
     }
 
     // @}
