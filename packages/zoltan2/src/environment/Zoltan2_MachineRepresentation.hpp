@@ -8,9 +8,9 @@
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 
 #include <Teuchos_ParameterList.hpp>
+#include <Zoltan2_MachineRCA.hpp>
 
 //#define HAVE_ZOLTAN2_BGQTEST
-
 namespace Zoltan2{
 
 /*! \brief MachineRepresentation Class
@@ -24,7 +24,7 @@ public:
     typedef part_t machine_part_t;
 #if defined(HAVE_ZOLTAN2_LDMS)
     typedef MachineLDMS<pcoord_t,part_t> machine_t;
-#elif defined(HAVE_ZOLTAN2_RCA)
+#elif defined(HAVE_ZOLTAN2_RCALIB)
     typedef MachineRCA<pcoord_t,part_t> machine_t;
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
     typedef MachineTopoMgr<pcoord_t,part_t> machine_t;
@@ -39,7 +39,8 @@ public:
      */
 
     MachineRepresentation(const Teuchos::Comm<int> &comm) :
-      machine(new machine_t(comm)) { }
+      machine(new machine_t(comm)) {
+   }
 
     MachineRepresentation(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ) :
           machine(new machine_t(comm, pl)) { }
