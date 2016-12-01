@@ -212,13 +212,13 @@ namespace BaskerNS
 	      j = M.row_idx(i);
 	      X(j) = M.val(i);
 	           
-              #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+        #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
 	      printf("i: %d row: %d  val: %g  top: %d \n", 
 		     i, j ,M.val(i), top);
 	      printf("Nx in Ak %d %g %d color = %d \n",
 		     j, X[j], brow,  
                      color[j] );
-              #endif
+        #endif
 
 	 
 
@@ -396,8 +396,8 @@ namespace BaskerNS
 		{
 	      printf("\n\n");
 	      printf("----------------------\n");
-              printf("b: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
-                     b, llnnz, lnnz, lcnt, newsize);
+              printf("b: %ld Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
+                     (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
 		}
 
 	      if(Options.realloc == BASKER_FALSE)
@@ -427,8 +427,8 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("-------------------\n");
 
-              printf("b: %d Reallocing U oldsize: %d newsize: %d \n",
-                     b, uunnz, newsize);
+              printf("b: %ld Reallocing U oldsize: %ld newsize: %ld \n",
+                     (long)b, (long)uunnz, (long)newsize);
 		}
 
 	       if(Options.realloc == BASKER_FALSE)
@@ -1224,7 +1224,7 @@ namespace BaskerNS
 		BASKER_ASSERT((*top-1) >= 0, "Top pass pattern\n");
 		if((*top-1)<0)
 		  {
-		printf("blk: %d kid: %d \n", b, kid);
+		printf("blk: %ld kid: %ld \n", (long)b, (long)kid);
 		  }
 
 		color[j] = 2;
@@ -2089,9 +2089,9 @@ namespace BaskerNS
 
 	if(Options.verbose == BASKER_TRUE)
 	  {
-	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d newsize: %d  \n",
-	       blkcol, blkrow, kid,
-	       llnnz,lnnz,p_size, newsize  );
+	printf("-Warning, Need to remalloc L: %ld %ld kid: %ld current size: %ld used_size: %ld  addition: %ld newsize: %ld  \n",
+	       (long)blkcol, (long)blkrow, (long)kid,
+	       (long)llnnz, (long)lnnz, (long)p_size, (long)newsize  );
 	  }
 	BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
 
@@ -2383,8 +2383,8 @@ namespace BaskerNS
 	      printf("----------------------\n");
 
               newsize = lnnz * 1.1 + 2 *A.nrow + 1;
-              printf("b: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
-                     b, llnnz, lnnz, lcnt, newsize);
+              printf("b: %ld Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
+                     (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
             }
           if(unnz+ucnt > uunnz)
             {
@@ -2393,8 +2393,8 @@ namespace BaskerNS
 	      printf("-------------------\n");
 
               newsize = uunnz*1.1 + 2*A.nrow+1;
-              printf("b: %d Reallocing U oldsize: %d newsize: %d \n",
-                     b, uunnz, newsize);
+              printf("b: %ld Reallocing U oldsize: %ld newsize: %ld \n",
+                     (long)b, (long)uunnz, (long)newsize);
             }
 
           L.row_idx[lnnz] = maxindex;

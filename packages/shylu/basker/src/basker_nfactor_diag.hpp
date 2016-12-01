@@ -173,8 +173,8 @@ namespace BaskerNS
 
 	if(Options.verbose == BASKER_TRUE)
 	  {
-	    printf("kid: %d factoring current_chunk: %d size: %d start: %d\n",
-		   kid, c, c_size, btf_tabs(c));
+	    printf("kid: %ld factoring current_chunk: %ld size: %ld start: %ld\n",
+		   (long)kid, (long)c, (long)c_size, (long)btf_tabs(c));
 	  }
 
 	Int err = BASKER_SUCCESS;
@@ -270,12 +270,12 @@ namespace BaskerNS
 
     
     #ifdef BASKER_DEBUG_NFACTOR_DIAG
-    printf("CURRENT BLK: %d \n", c);
-    printf("btab: %d %d\n", btab, c-btab);
-    printf("brow2: %d \n", brow2);
-    printf("col_start: %d \n", btf_tabs(c));
-    printf("BLK size %d \n",
-	   btf_tabs(c+1)-btf_tabs(c));
+    printf("CURRENT BLK: %ld \n", (long)c);
+    printf("btab: %ld %ld\n", (long)btab, (long)c-btab);
+    printf("brow2: %ld \n", (long)brow2);
+    printf("col_start: %ld \n", (long)btf_tabs(c));
+    printf("BLK size %ld \n",
+	   (long)btf_tabs(c+1)-(long)btf_tabs(c));
     #endif
     
 
@@ -523,12 +523,10 @@ namespace BaskerNS
 	      
 	      if (Options.verbose == BASKER_TRUE)
 		{
-              printf("Diag blk: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
-                     c,
-		     llnnz, lnnz, lcnt, newsize);
-	      printf("Columns in blks: %d %d %d \n",
-		     btf_tabs(c), btf_tabs(c+1), 
-		     (btf_tabs(c+1)-btf_tabs(c)));
+              printf("Diag blk: %ld Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
+                     (long)c, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
+	      printf("Columns in blks: %ld %ld %ld \n",
+		     (long)btf_tabs(c), (long)btf_tabs(c+1), (long)(btf_tabs(c+1)-btf_tabs(c)));
 		}
 	      
 	      if(Options.realloc == BASKER_FALSE)
@@ -557,10 +555,9 @@ namespace BaskerNS
 
 	      if(Options.verbose == BASKER_TRUE)
 		{
-              printf("Diag blk: %d Reallocing U oldsize: %d %d newsize: %d \n",
-                     c, uunnz, unnz+ucnt, newsize);
-	      printf("blk: %d column: %d \n",
-		     c, k);
+              printf("Diag blk: %ld Reallocing U oldsize: %ld %ld newsize: %ld \n",
+                     (long)c, (long)uunnz, (long)unnz+ucnt, (long)newsize);
+	      printf("blk: %ld column: %ld \n", (long)c, (long)k);
 		}
 
 	      if(Options.realloc == BASKER_FALSE)
@@ -676,8 +673,8 @@ namespace BaskerNS
 	  U.val(unnz)       = lastU;
 	  if(lastU == 0)
 	    {
-	      printf("diag btf zero, error, c: %d k: %d \n",
-		     c, k);
+	      printf("diag btf zero, error, c: %ld k: %ld \n",
+		     (long)c, (long)k);
 	    }
           ++unnz;
 

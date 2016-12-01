@@ -448,8 +448,8 @@ namespace BaskerNS
 
         if (Options.verbose == BASKER_TRUE)
         {
-          printf("b: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
-              b, llnnz, lnnz, lcnt, newsize);
+          printf("b: %ld Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
+              (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
         }
 
         if(Options.realloc == BASKER_FALSE)
@@ -479,8 +479,8 @@ namespace BaskerNS
 
         if (Options.verbose == BASKER_TRUE)
         {
-          printf("b: %d Reallocing U oldsize: %d newsize: %d  k: %d \n",
-              b, uunnz, unnz+ucnt, k);
+          printf("b: %ld Reallocing U oldsize: %ld newsize: %ld  k: %ld \n",
+              (long)b, (long)uunnz, (long)unnz+ucnt, (long)k);
         }
 
         if(Options.realloc == BASKER_FALSE)
@@ -1404,8 +1404,8 @@ namespace BaskerNS
 
 	 if (Options.verbose == BASKER_TRUE)
 	   {
-	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d \n",
-	       blkcol, blkrow, kid, llnnz,lnnz,p_size  );
+	printf("-Warning, Need to remalloc L: %ld %ld kid: %ld current size: %ld used_size: %ld  addition: %ld \n",
+	       (long)blkcol, (long)blkrow, (long)kid, (long)llnnz, (long)lnnz, (long)p_size  );
 	   }
 	//BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
 	

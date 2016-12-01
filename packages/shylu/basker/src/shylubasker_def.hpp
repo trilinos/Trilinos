@@ -122,12 +122,12 @@ namespace BaskerNS
     if(nd_flag == BASKER_TRUE)
       {
         FREE_INT_1DARRAY(order_scotch_array);
-        nd_flag == BASKER_FALSE;
+        nd_flag = BASKER_FALSE;
       }
     if(amd_flag == BASKER_TRUE)
       {
         FREE_INT_1DARRAY(order_csym_array);
-        amd_flag == BASKER_FALSE;
+        amd_flag = BASKER_FALSE;
       }
 
     //NDE: Free workspace and permutation arrays
@@ -287,9 +287,8 @@ namespace BaskerNS
     // printf("befor symbolic\n");
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Symbolic\n");
-      printf("Matrix: %d %d %d \n",
-          nrow, ncol, nnz);
+      std::cout << "Basker Symbolic" << std::endl;
+      std::cout << "Matrix: " << nrow << " " << ncol << " " << nnz << std::endl;
     }
     //Init Matrix A.
     if(matrix_flag == BASKER_TRUE)
@@ -469,9 +468,8 @@ namespace BaskerNS
 
     if (Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Factor Called\n");
-      printf("Matrix: %d %d %d \n",
-          nrow, ncol, nnz);
+      std::cout << "Basker Factor Called" << std::endl;
+      std::cout << "Matrix: " << nrow << " " << ncol << " " << nnz << std::endl;
     }
 
     /*

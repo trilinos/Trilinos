@@ -74,7 +74,7 @@ namespace BaskerNS
     BASKER_INLINE
       void init_token(const Int size)
       {
-        printf("token size: %d \n", size);
+        printf("token size: %ld \n", (long)size);
         token = (Int **)malloc(size*sizeof(Int*));
         for(Int i = 0; i < size; i++)
         {
@@ -464,8 +464,8 @@ namespace BaskerNS
       else if(size > col_counts_flg)
       {
         printf("realloc call init_col_counts\n");
-        printf("oldsize: %d newsize: %d \n",
-            col_counts_flg, size);
+        printf("oldsize: %ld newsize: %ld \n",
+            (long)col_counts_flg, (long)size);
         BASKER_ASSERT(size > 0, "struct col count size2");
         REALLOC_1DARRAY(col_counts, col_counts_flg, size);
         col_counts_flg = size;

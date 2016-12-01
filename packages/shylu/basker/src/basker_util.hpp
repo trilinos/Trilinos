@@ -948,97 +948,93 @@ namespace BaskerNS
     //over each blk
     //for(Int l = 0; l < tree.nblks; l++)
     for(Int l = 0; l < tree.nblks; l++)
+    {
+      //over each column
+      for(Int k=0; k < LL[l][0].ncol; k++)
       {
-	//over each column
-	for(Int k=0; k < LL[l][0].ncol; k++)
-	  {
-	    fprintf(fp, "k=%d \n", k+LL[l][0].scol);
-	    for(Int r = 0; r < LL_size[l]; r++)
-            {
-	      //printf("L - col: %d blk: %d %d \n",
-	      //     k+LL[l][0].scol, l, r);
-              BASKER_MATRIX &myL = LL[l][r];
-	      Int brow = myL.srow;
-	      Int bcol = myL.scol;
-	      //printf("L - Col: %d %d blk: %d %d \n",
-	      //     k, bcol, l, r);
-              for(Int j = myL.col_ptr[k]; 
-		  j < myL.col_ptr[k+1]; j++)
-                {
-                  fprintf(fp, "(%d , %d , %d, %d, %d) %g , ",
-                          k+myL.scol, myL.row_idx[j], 
-			  myL.row_idx[j]+myL.srow,
-			  myL.srow,
-			  gperm(myL.row_idx[j]+myL.srow),
-                          myL.val[j]);
-		  total_Lnnz++;
-                }//end over each nnz in column (k) of local U              
-            }//end over each matrix row
-            fprintf(fp, " \n \n ");
-	  }//end over each column
-      }//end over all nblks
+        fprintf(fp, "k=%ld \n", (long)k+LL[l][0].scol);
+        for(Int r = 0; r < LL_size[l]; r++)
+        {
+          //printf("L - col: %d blk: %d %d \n",
+          //     k+LL[l][0].scol, l, r);
+          BASKER_MATRIX &myL = LL[l][r];
+          //Int brow = myL.srow;
+          //Int bcol = myL.scol;
+          //printf("L - Col: %d %d blk: %d %d \n",
+          //     k, bcol, l, r);
+          for(Int j = myL.col_ptr[k]; 
+              j < myL.col_ptr[k+1]; j++)
+          {
+            fprintf(fp, "(%ld , %ld , %ld, %ld, %ld) %g , ",
+                (long)k+myL.scol, (long)myL.row_idx[j], 
+                (long)myL.row_idx[j]+myL.srow,
+                (long)myL.srow,
+                (long)gperm(myL.row_idx[j]+myL.srow),
+                myL.val[j]);
+            total_Lnnz++;
+          }//end over each nnz in column (k) of local U              
+        }//end over each matrix row
+        fprintf(fp, " \n \n ");
+      }//end over each column
+    }//end over all nblks
     if(Options.btf == BASKER_TRUE)
+    {
+      Int nblks = btf_nblks-btf_tabs_offset;
+      for(Int i =0; i < nblks; i++)
       {
-	Int nblks = btf_nblks-btf_tabs_offset;
-	for(Int i =0; i < nblks; i++)
-	  {
 
-	    
-	    BASKER_MATRIX &myL = LBTF(i);
-	    Int brow = myL.srow;
-	    Int bcol = myL.scol;
-	    
-	   
-	    //printf("L(%d) %d %d %d %d \n",
-	    //	   i, 
-	    ///	   myL.srow, myL.nrow,
-	    //	   myL.scol, myL.ncol);
-	    
-	    
-	    for(Int k = 0; k < myL.ncol; k++)
-	      {
+        BASKER_MATRIX &myL = LBTF(i);
+        //Int brow = myL.srow;
+        //Int bcol = myL.scol;
 
-		//	printf("k=%d \n", myL.scol+k);
-		fprintf(fp, "k=%d \n", myL.scol+k);
-		
-		/*
-		printf("col_ptr: %d %d \n",
-		       myL.col_ptr(k),
-		       myL.col_ptr(k+1));
-		*/
-		for(Int j = myL.col_ptr(k);
-		    j< myL.col_ptr(k+1); j++)
-		  {
-		    /*
-		       printf( "(%d , %d , %d) %f , ", 
-		    	    k+myL.scol, myL.row_idx[j], 
-		    	    myL.row_idx[j], 
-		    	    myL.val[j]);
-		    */
-		    
-		    //printf("test: %d %d %d \n",
-		    //	   k+myL.scol,
-		    //	   myL.row_idx[j],
-		    //	   myL.row_idx[j]+myL.srow);
+        //printf("L(%d) %d %d %d %d \n",
+        //	   i, 
+        ///	   myL.srow, myL.nrow,
+        //	   myL.scol, myL.ncol);
 
-		    //printf("test2: %d \n",
-		    //	   gperm(myL.row_idx[j]+myL.srow));
+        for(Int k = 0; k < myL.ncol; k++)
+        {
+          //	printf("k=%d \n", myL.scol+k);
+          fprintf(fp, "k=%ld \n", (long)myL.scol+k);
 
-		    fprintf(fp, "(%d , %d , %d, %d) %g , ", 
-			    k+myL.scol, myL.row_idx[j], 
-			    myL.row_idx[j]+myL.srow,
-			    gperm(myL.row_idx[j]+myL.srow),
-			    myL.val[j]);
-		    total_Lnnz++;
-		  }//over all nnz
-		//printf( "\n \n");
-		fprintf(fp, " \n \n ");
-	      }//over all columns
-	  }//over all blks
-      }//end option btf
+          /*
+             printf("col_ptr: %d %d \n",
+             myL.col_ptr(k),
+             myL.col_ptr(k+1));
+             */
+          for(Int j = myL.col_ptr(k);
+              j< myL.col_ptr(k+1); j++)
+          {
+            /*
+               printf( "(%d , %d , %d) %f , ", 
+               k+myL.scol, myL.row_idx[j], 
+               myL.row_idx[j], 
+               myL.val[j]);
+               */
+
+            //printf("test: %d %d %d \n",
+            //	   k+myL.scol,
+            //	   myL.row_idx[j],
+            //	   myL.row_idx[j]+myL.srow);
+
+            //printf("test2: %d \n",
+            //	   gperm(myL.row_idx[j]+myL.srow));
+
+            fprintf(fp, "(%ld , %ld , %ld, %ld) %g , ", 
+                (long)k+myL.scol, myL.row_idx[j], 
+                (long)myL.row_idx[j]+myL.srow,
+                (long)gperm(myL.row_idx[j]+myL.srow),
+                myL.val[j]);
+            total_Lnnz++;
+          }//over all nnz
+          //printf( "\n \n");
+          fprintf(fp, " \n \n ");
+        }//over all columns
+      }//over all blks
+    }//end option btf
 
     fclose(fp);
-    printf("Total L nnz: %d \n", total_Lnnz);
+    printf("Total L nnz: %ld \n", (long)total_Lnnz);
     printf("-----Done Print L2d ---------\n");
     return 0;
   }//print L2d()
@@ -1052,110 +1048,103 @@ namespace BaskerNS
 
     fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
     fprintf(fp, "%%Generated by **Basker** \n");
-    fprintf(fp, "%d %d %d \n", gn, gn, nnz);
+    fprintf(fp, "%ld %ld %ld \n", (long)gn, (long)gn, (long)nnz);
 
     //over each blk
     //for(Int l = 0; l < tree.nblks; l++)
     for(Int l = 0; l < tree.nblks; l++)
+    {
+      //over each column
+      for(Int k=0; k < LL[l][0].ncol; k++)
       {
-	//over each column
-	for(Int k=0; k < LL[l][0].ncol; k++)
-	  {
-	    //fprintf(fp, "k=%d \n", k+LL[l][0].scol);
-	    for(Int r = 0; r < LL_size[l]; r++)
-            {
-	      //printf("L - col: %d blk: %d %d \n",
-	      //     k+LL[l][0].scol, l, r);
-              BASKER_MATRIX &myL = LL[l][r];
-	      Int brow = myL.srow;
-	      Int bcol = myL.scol;
-	      //printf("L - Col: %d %d blk: %d %d \n",
-	      //     k, bcol, l, r);
-              for(Int j = myL.col_ptr[k]; 
-		  j < myL.col_ptr[k+1]; j++)
-                {
-		  
-		  fprintf(fp, "%d %d %g \n",
-			  gperm(myL.row_idx(j)+myL.srow)+1,
-			  k+myL.scol+1,
-			  myL.val(j));
+        //fprintf(fp, "k=%d \n", k+LL[l][0].scol);
+        for(Int r = 0; r < LL_size[l]; r++)
+        {
+          //printf("L - col: %d blk: %d %d \n",
+          //     k+LL[l][0].scol, l, r);
+          BASKER_MATRIX &myL = LL[l][r];
+          //Int brow = myL.srow;
+          //Int bcol = myL.scol;
+          //printf("L - Col: %d %d blk: %d %d \n",
+          //     k, bcol, l, r);
+          for(Int j = myL.col_ptr[k]; 
+              j < myL.col_ptr[k+1]; j++)
+          {
 
-                  //fprintf(fp, "(%d , %d , %d, %d, %d) %g , ",
-		  ///      k+myL.scol, myL.row_idx[j], 
-		  ///	  myL.row_idx[j]+myL.srow,
-		  ///	  myL.srow,
-		  ///	  gperm(myL.row_idx[j]+myL.srow),
-		  //     myL.val[j]);
-		  //total_Lnnz++;
-                }//end over each nnz in column (k) of local U              
-            }//end over each matrix row
-            //fprintf(fp, " \n \n ");
-	  }//end over each column
-      }//end over all nblks
+            fprintf(fp, "%ld %ld %g \n",
+                (long)gperm(myL.row_idx(j)+myL.srow)+1,
+                (long)k+myL.scol+1,
+                myL.val(j));
+
+            //fprintf(fp, "(%d , %d , %d, %d, %d) %g , ",
+            ///      k+myL.scol, myL.row_idx[j], 
+            ///	  myL.row_idx[j]+myL.srow,
+            ///	  myL.srow,
+            ///	  gperm(myL.row_idx[j]+myL.srow),
+            //     myL.val[j]);
+            //total_Lnnz++;
+          }//end over each nnz in column (k) of local U              
+        }//end over each matrix row
+        //fprintf(fp, " \n \n ");
+      }//end over each column
+    }//end over all nblks
     if(Options.btf == BASKER_TRUE)
+    {
+      Int nblks = btf_nblks-btf_tabs_offset;
+      for(Int i =0; i < nblks; i++)
       {
-	Int nblks = btf_nblks-btf_tabs_offset;
-	for(Int i =0; i < nblks; i++)
-	  {
 
-	    
-	    BASKER_MATRIX &myL = LBTF(i);
-	    Int brow = myL.srow;
-	    Int bcol = myL.scol;
-	    
-	   
-	    //printf("L(%d) %d %d %d %d \n",
-	    //	   i, 
-	    ///	   myL.srow, myL.nrow,
-	    //	   myL.scol, myL.ncol);
-	    
-	    
-	    for(Int k = 0; k < myL.ncol; k++)
-	      {
+        BASKER_MATRIX &myL = LBTF(i);
+        //Int brow = myL.srow;
+        //Int bcol = myL.scol;
 
-		//	printf("k=%d \n", myL.scol+k);
-		//fprintf(fp, "k=%d \n", myL.scol+k);
-		
-		/*
-		printf("col_ptr: %d %d \n",
-		       myL.col_ptr(k),
-		       myL.col_ptr(k+1));
-		*/
-		for(Int j = myL.col_ptr(k);
-		    j< myL.col_ptr(k+1); j++)
-		  {
-		    /*
-		       printf( "(%d , %d , %d) %f , ", 
-		    	    k+myL.scol, myL.row_idx[j], 
-		    	    myL.row_idx[j], 
-		    	    myL.val[j]);
-		    */
-		    
-		  
-		    fprintf(fp, "%d %d %g \n",
-			    gperm(myL.row_idx(j)+myL.srow)+1,
-			    k+myL.scol+1,
-			    myL.val(j));
-		    /*
-		    fprintf(fp, "(%d , %d , %d, %d) %g , ", 
-			    k+myL.scol, myL.row_idx[j], 
-			    myL.row_idx[j]+myL.srow,
-			    gperm(myL.row_idx[j]+myL.srow),
-			    myL.val[j]);
-		    total_Lnnz++;
-		    */
-		  }//over all nnz
-		//printf( "\n \n");
-		//fprintf(fp, " \n \n ");
-	      }//over all columns
-	  }//over all blks
-      }//end option btf
+        //printf("L(%d) %d %d %d %d \n",
+        //	   i, 
+        ///	   myL.srow, myL.nrow,
+        //	   myL.scol, myL.ncol);
+
+        for(Int k = 0; k < myL.ncol; k++)
+        {
+          //	printf("k=%d \n", myL.scol+k);
+          //fprintf(fp, "k=%d \n", myL.scol+k);
+
+          /*
+             printf("col_ptr: %d %d \n",
+             myL.col_ptr(k),
+             myL.col_ptr(k+1));
+             */
+          for(Int j = myL.col_ptr(k);
+              j< myL.col_ptr(k+1); j++)
+          {
+            /*
+               printf( "(%d , %d , %d) %f , ", 
+               k+myL.scol, myL.row_idx[j], 
+               myL.row_idx[j], 
+               myL.val[j]);
+               */
+
+            fprintf(fp, "%ld %ld %g \n",
+                (long)gperm(myL.row_idx(j)+myL.srow)+1,
+                (long)k+myL.scol+1,
+                myL.val(j));
+            /*
+               fprintf(fp, "(%d , %d , %d, %d) %g , ", 
+               k+myL.scol, myL.row_idx[j], 
+               myL.row_idx[j]+myL.srow,
+               gperm(myL.row_idx[j]+myL.srow),
+               myL.val[j]);
+               total_Lnnz++;
+               */
+          }//over all nnz
+          //printf( "\n \n");
+          //fprintf(fp, " \n \n ");
+        }//over all columns
+      }//over all blks
+    }//end option btf
 
     fclose(fp);
     
     return 0;
-
-
   }//end printLMTX
   
   template <class Int, class Entry, class Exe_Space>
@@ -1168,78 +1157,77 @@ namespace BaskerNS
     fp = fopen("U.mtx", "w");
     fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
     fprintf(fp, "%%Generated by **Basker** \n");
-    fprintf(fp, "%d %d %d \n", gn, gn, nnz_u);
+    fprintf(fp, "%ld %ld %ld \n", (long)gn, (long)gn, (long)nnz_u);
 
     //over each blks
     for(Int l = 0; l < tree.nblks; l++)
+    {
+      //over each column
+      for(Int k = 0; k < LU[l][0].ncol; k++)
       {
-        //over each column
-        for(Int k = 0; k < LU[l][0].ncol; k++)
-          {
-            //fprintf(fp, "k=%d \n", k+LU[l][0].scol);
-	    
-            //over each row of U
-            //printf("column: %d U.size %d \n", k+LU[l][0].scol, LU[l].size());
-            //for(Int r = 0; r < LU[l].size(); r++)
-	    for(Int r = 0; r < LU_size[l]; r++)
-            {
-              BASKER_MATRIX &myU = LU[l][r];
-              //printf("nnz: %d %d  in k: %d r: %d \n",
-              //     myU.col_ptr[k+1],myU.col_ptr[k] , k+myU.scol, r);
-              //over each nnz in column (k) of local U
-              for(Int j = myU.col_ptr[k]; j < myU.col_ptr[k+1]; j++)
-                {
+        //fprintf(fp, "k=%d \n", k+LU[l][0].scol);
 
-		  BASKER_ASSERT((myU.row_idx(j)+myU.srow+1)>0, "location 1-1");
-		  BASKER_ASSERT((k+myU.scol+1)>0, "location 1-2");
-		  
-		  fprintf(fp, "%d %d %g \n", 
-			  myU.row_idx(j)+myU.srow+1,
-			  k+myU.scol+1,
-			  myU.val(j));
-		  
-                }//end over each nnz in column (k) of local U              
-            }//end over each matrix row
-          }//end over each column
-      }//end over nblks
+        //over each row of U
+        //printf("column: %d U.size %d \n", k+LU[l][0].scol, LU[l].size());
+        //for(Int r = 0; r < LU[l].size(); r++)
+        for(Int r = 0; r < LU_size[l]; r++)
+        {
+          BASKER_MATRIX &myU = LU[l][r];
+          //printf("nnz: %d %d  in k: %d r: %d \n",
+          //     myU.col_ptr[k+1],myU.col_ptr[k] , k+myU.scol, r);
+          //over each nnz in column (k) of local U
+          for(Int j = myU.col_ptr[k]; j < myU.col_ptr[k+1]; j++)
+          {
+
+            BASKER_ASSERT((myU.row_idx(j)+myU.srow+1)>0, "location 1-1");
+            BASKER_ASSERT((k+myU.scol+1)>0, "location 1-2");
+
+            fprintf(fp, "%ld %ld %g \n", 
+                (long)myU.row_idx(j)+myU.srow+1,
+                (long)k+myU.scol+1,
+                myU.val(j));
+
+          }//end over each nnz in column (k) of local U              
+        }//end over each matrix row
+      }//end over each column
+    }//end over nblks
 
     if(Options.btf == BASKER_TRUE)
+    {
+      Int nblks = btf_nblks-btf_tabs_offset;
+      for(Int i =0; i < nblks; i++)
       {
-	Int nblks = btf_nblks-btf_tabs_offset;
-	for(Int i =0; i < nblks; i++)
-	  {
-	    BASKER_MATRIX &myU = UBTF[i];
-	    Int brow = myU.srow;
-	    Int bcol = myU.scol;
-	    for(Int k = 0; k < myU.ncol; k++)
-	      {
+        BASKER_MATRIX &myU = UBTF[i];
+        //Int brow = myU.srow;
+        //Int bcol = myU.scol;
+        for(Int k = 0; k < myU.ncol; k++)
+        {
 
-		//fprintf(fp, "k=%d \n", k+myU.scol);
-		//printf("k=%d \n", k+myU.scol);
+          //fprintf(fp, "k=%d \n", k+myU.scol);
+          //printf("k=%d \n", k+myU.scol);
 
-		for(Int j = myU.col_ptr[k];
-		    j< myU.col_ptr[k+1]; j++)
-		  {
-		    
-		    BASKER_ASSERT((myU.row_idx(j)+myU.srow+1)>0, "location 2-1");
-		    BASKER_ASSERT((k+myU.scol+1)>0, "location 2-2");
-		    fprintf(fp, "%d %d %g \n",
-			    myU.row_idx(j)+myU.srow+1,
-			    k+myU.scol+1,
-			    myU.val(j));
+          for(Int j = myU.col_ptr[k];
+              j< myU.col_ptr[k+1]; j++)
+          {
 
-		    
-		    //fprintf(fp, "(%d , %d , %d) %f , ", 
-		    //	    k+myU.scol, myU.row_idx[j], 
-		    //	    myU.row_idx[j]+myU.srow, 
-		    //	    myU.val[j]);
-		    //total_Lnnz++;
-		  }//over all nnz
-		//printf("\n \n");
-		//fprintf(fp, " \n \n ");
-	      }//over all columns
-	  }//over all blks
-      }//end option btf
+            BASKER_ASSERT((myU.row_idx(j)+myU.srow+1)>0, "location 2-1");
+            BASKER_ASSERT((k+myU.scol+1)>0, "location 2-2");
+            fprintf(fp, "%ld %ld %g \n",
+                (long)myU.row_idx(j)+myU.srow+1,
+                (long)k+myU.scol+1,
+                myU.val(j));
+
+            //fprintf(fp, "(%d , %d , %d) %f , ", 
+            //	    k+myU.scol, myU.row_idx[j], 
+            //	    myU.row_idx[j]+myU.srow, 
+            //	    myU.val[j]);
+            //total_Lnnz++;
+          }//over all nnz
+          //printf("\n \n");
+          //fprintf(fp, " \n \n ");
+        }//over all columns
+      }//over all blks
+    }//end option btf
 
     fclose(fp);
     printf("---------Done Print U ------\n");
@@ -1257,76 +1245,78 @@ namespace BaskerNS
     
     //over each blks
     for(Int l = 0; l < tree.nblks; l++)
+    {
+      //over each column
+      for(Int k = 0; k < LU[l][0].ncol; k++)
       {
-        //over each column
-        for(Int k = 0; k < LU[l][0].ncol; k++)
-          {
-            fprintf(fp, "k=%d \n", k+LU[l][0].scol);
+        fprintf(fp, "k=%ld \n", (long)k+LU[l][0].scol);
 
-            //over each row of U
-            //printf("column: %d U.size %d \n", k+LU[l][0].scol, LU[l].size());
-            //for(Int r = 0; r < LU[l].size(); r++)
-	    for(Int r = 0; r < LU_size[l]; r++)
-            {
-              BASKER_MATRIX &myU = LU[l][r];
-              //printf("nnz: %d %d  in k: %d r: %d \n",
-              //     myU.col_ptr[k+1],myU.col_ptr[k] , k+myU.scol, r);
-              //over each nnz in column (k) of local U
-              for(Int j = myU.col_ptr[k]; j < myU.col_ptr[k+1]; j++)
-                {
-		  /*
-		  fprintf(fp, "(%d, %d, %d) %e , ",
-			  k+myU.scol, myU.row_idx[j], 
-			  myU.row_idx[j], myU.val[j]);
-		  */
-		  
-                  fprintf(fp, "(%d , %d , %d) %f , ",
-                          k+myU.scol, myU.row_idx[j], 
-			  myU.row_idx[j]+myU.srow,
-                          myU.val[j]);
-		  
-		  
-                }//end over each nnz in column (k) of local U              
-            }//end over each matrix row
-            fprintf(fp, " \n \n ");
-          }//end over each column
-      }//end over nblks
+        //over each row of U
+        //printf("column: %d U.size %d \n", k+LU[l][0].scol, LU[l].size());
+        //for(Int r = 0; r < LU[l].size(); r++)
+        for(Int r = 0; r < LU_size[l]; r++)
+        {
+          BASKER_MATRIX &myU = LU[l][r];
+          //printf("nnz: %d %d  in k: %d r: %d \n",
+          //     myU.col_ptr[k+1],myU.col_ptr[k] , k+myU.scol, r);
+          //over each nnz in column (k) of local U
+          for(Int j = myU.col_ptr[k]; j < myU.col_ptr[k+1]; j++)
+          {
+            /*
+               fprintf(fp, "(%d, %d, %d) %e , ",
+               k+myU.scol, myU.row_idx[j], 
+               myU.row_idx[j], myU.val[j]);
+               */
+
+            fprintf(fp, "(%ld , %ld , %ld) %f , ",
+                (long)k+myU.scol, 
+                (long)myU.row_idx[j], 
+                (long)myU.row_idx[j]+myU.srow,
+                myU.val[j]);
+
+
+          }//end over each nnz in column (k) of local U              
+        }//end over each matrix row
+        fprintf(fp, " \n \n ");
+      }//end over each column
+    }//end over nblks
 
     if(Options.btf == BASKER_TRUE)
+    {
+      Int nblks = btf_nblks-btf_tabs_offset;
+      for(Int i =0; i < nblks; i++)
       {
-	Int nblks = btf_nblks-btf_tabs_offset;
-	for(Int i =0; i < nblks; i++)
-	  {
-	    BASKER_MATRIX &myU = UBTF[i];
-	    Int brow = myU.srow;
-	    Int bcol = myU.scol;
-	    for(Int k = 0; k < myU.ncol; k++)
-	      {
+        BASKER_MATRIX &myU = UBTF[i];
+        //Int brow = myU.srow;
+        //Int bcol = myU.scol;
+        for(Int k = 0; k < myU.ncol; k++)
+        {
 
-		fprintf(fp, "k=%d \n", k+myU.scol);
-		//printf("k=%d \n", k+myU.scol);
+          fprintf(fp, "k=%ld \n", (long)k+myU.scol);
+          //printf("k=%d \n", k+myU.scol);
 
-		for(Int j = myU.col_ptr[k];
-		    j< myU.col_ptr[k+1]; j++)
-		  {
+          for(Int j = myU.col_ptr[k];
+              j< myU.col_ptr[k+1]; j++)
+          {
 
-		    // printf( "(%d , %d , %d) %f , ", 
-		    //	    k+myU.scol, myU.row_idx[j], 
-		    //	    myU.row_idx[j], 
-		    //	    myU.val[j]);
+            // printf( "(%d , %d , %d) %f , ", 
+            //	    k+myU.scol, myU.row_idx[j], 
+            //	    myU.row_idx[j], 
+            //	    myU.val[j]);
 
 
-		    fprintf(fp, "(%d , %d , %d) %f , ", 
-			    k+myU.scol, myU.row_idx[j], 
-			    myU.row_idx[j]+myU.srow, 
-			    myU.val[j]);
-		    //total_Lnnz++;
-		  }//over all nnz
-		//printf("\n \n");
-		fprintf(fp, " \n \n ");
-	      }//over all columns
-	  }//over all blks
-      }//end option btf
+            fprintf(fp, "(%ld , %ld , %ld) %f , ", 
+                (long)k+myU.scol, 
+                (long)myU.row_idx[j], 
+                (long)myU.row_idx[j]+myU.srow, 
+                myU.val[j]);
+            //total_Lnnz++;
+          }//over all nnz
+          //printf("\n \n");
+          fprintf(fp, " \n \n ");
+        }//over all columns
+      }//over all blks
+    }//end option btf
 
     fclose(fp);
     printf("---------Done Print U ------\n");
@@ -1346,20 +1336,19 @@ namespace BaskerNS
     fp = fopen(fname.c_str(), "w");
     fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
     fprintf(fp, "%%Generated by **Basker** \n");
-    fprintf(fp, "%%Starting Row %d  Starting Col %d \n",
-	    M.srow, M.scol);
-    fprintf(fp, "%d %d %d \n", M.nrow, M.ncol, M.nnz);
+    fprintf(fp, "%%Starting Row %ld  Starting Col %ld \n",
+	    (long)M.srow, (long)M.scol);
+    fprintf(fp, "%ld %ld %ld \n", (long)M.nrow, (long)M.ncol, (long)M.nnz);
    
     Int bcol=M.scol;
     for(Int k=M.scol; k < M.scol+M.ncol; k++)
+    {
+      for(Int j=M.col_ptr[k-bcol]; j<M.col_ptr[k-bcol+1]; j++)
       {
-	for(Int j=M.col_ptr[k-bcol]; j<M.col_ptr[k-bcol+1]; j++)
-	  {
-	    //fprintf(fp, "%ld %ld %e \n",  //NDE
-	    fprintf(fp, "%d %d %e \n", 
-		    M.row_idx[j]+1, k-bcol+1, M.val[j]); //NDE - warning: arg 3, 4 type 'int' but expects %ld
-	  }//over nnz in each column
-      }//over each column
+        fprintf(fp, "%ld %ld %e \n", 
+            (long)M.row_idx[j]+1, (long)k-bcol+1, M.val[j]); 
+      }//over nnz in each column
+    }//over each column
 
     fclose(fp);
     //printf("Done Writing Matrix \n");
@@ -1377,36 +1366,34 @@ namespace BaskerNS
     fprintf(fp, "%%Generated by **Basker** \n");
     fprintf(fp, "%%Starting Row %d  Starting Col %d \n",
 	    M.srow, M.scol);
-    fprintf(fp, "%d %d %d \n", M.nrow, M.ncol, M.nnz);
+    fprintf(fp, "%ld %ld %ld \n", (long)M.nrow, (long)M.ncol, (long)M.nnz);
    
     Int bcol=M.scol;
     Int brow=M.srow;
     for(Int k=M.scol; k < M.scol+M.ncol; k++)
+    {
+      for(Int j=M.col_ptr[k-bcol]; j<M.col_ptr[k-bcol+1]; j++)
       {
-	for(Int j=M.col_ptr[k-bcol]; j<M.col_ptr[k-bcol+1]; j++)
-	  {
-	    if(off == BASKER_FALSE)
-	      {
-	    fprintf(fp, "%d %d %e \n", 
-		    M.row_idx[j]+1, k-bcol+1, M.val[j]);
-	      }
-	    else
-	      {
-		fprintf(fp, "%d %d %e \n", 
-			M.row_idx[j]+1-brow, k-bcol+1,M.val[j]);
-	      }
-	  }//over nnz in each column
-      }//over each column
+        if(off == BASKER_FALSE)
+        {
+          fprintf(fp, "%ld %ld %e \n", 
+              (long)M.row_idx[j]+1, (long)k-bcol+1, M.val[j]);
+        }
+        else
+        {
+          fprintf(fp, "%ld %ld %e \n", 
+              (long)M.row_idx[j]+1-brow, (long)k-bcol+1,M.val[j]);
+        }
+      }//over nnz in each column
+    }//over each column
 
     fclose(fp);
     printf("Done Writing Matrix \n");
   }//end printMTX() 
 
   template<class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::readMTX(std::string fname,
-					    BASKER_MATRIX &M)
+  void Basker<Int,Entry,Exe_Space>::readMTX(std::string fname, BASKER_MATRIX &M)
   {
-
     //Note: Adapted from Siva's original bsk_util
 
     cout << "ReadingMTX " << fname << endl;
@@ -1421,77 +1408,79 @@ namespace BaskerNS
 
     if (inp_str.is_open())
     {
+      getline(inp_str, s);
+      //cout << s << endl;
+
+      // Check if matrix is pattern-only or symmetric
+      p1 = s.find("pattern");
+      if (p1 != string::npos)
+        ptype = 2;
+      else
+        ptype = 3;
+      p1 = s.find("symmetric");
+      p2 = s.find("hermitian");
+      p3 = s.find("skew-symmetric");
+      if ((p1 != string::npos) || (p2 != string::npos) || (p3 != string::npos))
+        sym_type = 1;
+      else
+        sym_type = 0;
+
+      (void)ptype; //NDE silence warning
+      (void)sym_type; //NDE silence warning
+
+      while (inp_str.peek() == '%') // Skip the comments.
         getline(inp_str, s);
-        //cout << s << endl;
 
-        // Check if matrix is pattern-only or symmetric
-        p1 = s.find("pattern");
-        if (p1 != string::npos)
-            ptype = 2;
-        else
-            ptype = 3;
-        p1 = s.find("symmetric");
-        p2 = s.find("hermitian");
-        p3 = s.find("skew-symmetric");
-        if ((p1 != string::npos) || (p2 != string::npos) || 
-	    (p3 != string::npos))
-            sym_type = 1;
-        else
-            sym_type = 0;
+      // Find the # of rows, cols and nnzs.
+      inp_str >> nrows;
+      inp_str >> ncols;
+      inp_str >> nnz;
 
-        while (inp_str.peek() == '%') // Skip the comments.
-            getline(inp_str, s);
+      cout << nrows << " " << ncols  << " " << nnz << endl;
+      M.ncol = ncols;
+      M.nrow = nrows;
+      M.nnz = nnz;
 
-        // Find the # of rows, cols and nnzs.
-        inp_str >> nrows;
-        inp_str >> ncols;
-        inp_str >> nnz;
+      BASKER_ASSERT((ncols+1)>0, "util ncols");
+      MALLOC_INT_1DARRAY(M.col_ptr, ncols+1);
+      init_value(M.col_ptr, ncols+1,(Int) 0);
+      BASKER_ASSERT(nnz>0, "util nnz");
+      MALLOC_INT_1DARRAY(M.row_idx, nnz);
+      init_value(M.row_idx, nnz, (Int) 0);
+      MALLOC_ENTRY_1DARRAY(M.val, nnz);
+      init_value(M.val, nnz, (Entry) 0.0);
+      Int innz = 0;
+      //cout << "MTX Malloc Done " << endl;
 
-        cout << nrows << " " << ncols  << " " << nnz << endl;
-	M.ncol = ncols;
-	M.nrow = nrows;
-	M.nnz = nnz;
+      while(nnz > 0)
+      {
+        inp_str >> i;
+        //cout << "row: " << i-1 ;
+        M.row_idx[innz] = i-1;
+        inp_str >> j;
+        //cout << " col: " << j-1;
+        M.col_ptr[j] = M.col_ptr[j]+1;
+        inp_str >> val;
+        //cout << " val: " << val << endl;
+        M.val[innz] = val;
 
-	BASKER_ASSERT((ncols+1)>0, "util ncols");
-	MALLOC_INT_1DARRAY(M.col_ptr, ncols+1);
-	init_value(M.col_ptr, ncols+1,(Int) 0);
-	BASKER_ASSERT(nnz>0, "util nnz");
-	MALLOC_INT_1DARRAY(M.row_idx, nnz);
-	init_value(M.row_idx, nnz, (Int) 0);
-	MALLOC_ENTRY_1DARRAY(M.val, nnz);
-	init_value(M.val, nnz, (Entry) 0.0);
-	Int innz = 0;
-	//cout << "MTX Malloc Done " << endl;
+        //Other type options..
+        innz++;
+        nnz--;
+      }
+      inp_str.close();
 
-	while(nnz > 0)
-	  {
-	    inp_str >> i;
-	    //cout << "row: " << i-1 ;
-	    M.row_idx[innz] = i-1;
-	    inp_str >> j;
-	    //cout << " col: " << j-1;
-	    M.col_ptr[j] = M.col_ptr[j]+1;
-	    inp_str >> val;
-	    //cout << " val: " << val << endl;
-	    M.val[innz] = val;
+      //cout << "MTX done reading" << endl;
 
-	    //Other type options..
-	    innz++;
-	    nnz--;
-	  }
-	inp_str.close();
-	
-	//cout << "MTX done reading" << endl;
+      //count col_sums
 
-	//count col_sums
-	
-	for(Int k =1 ; k<(ncols+1); k++)
-	  {
-	    M.col_ptr[k] = M.col_ptr[k] +M.col_ptr[k-1];
-	  }
-	//cout << "MTX done sorting " << endl;
-	
-	//Sort index in column...
+      for(Int k =1 ; k<(ncols+1); k++)
+      {
+        M.col_ptr[k] = M.col_ptr[k] +M.col_ptr[k-1];
+      }
+      //cout << "MTX done sorting " << endl;
+
+      //Sort index in column...
 
     }//end if open
   
@@ -1505,24 +1494,23 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::printRHS()
   {
     if(solve_flag == false)
-      {return -1;}
-   
+    {return -1;}
+
     FILE *fp;
     fp = fopen("RHS.txt", "w");
-    
+
     //over each row
     for(Int r = 0; r < A.nrow; r++)
+    {
+      //over each column NOTE: come back to
+      //for(Int k = 0; k < rhs.size(); k++)
+      for(Int k = 0; k < 1; k++)
       {
-        //over each column NOTE: come back to
-        //for(Int k = 0; k < rhs.size(); k++)
-	for(Int k = 0; k < 1; k++)
-          {
-            fprintf(fp, "%d %d %f, ",
-                    r, gperm[r], rhs[k][r]);
-          }//end over each column
-        fprintf(fp, "\n");
-      }//end over each row
-    
+        fprintf(fp, "%ld %ld %f, ", (long)r, (long)gperm[r], rhs[k][r]);
+      }//end over each column
+      fprintf(fp, "\n");
+    }//end over each row
+
     fclose(fp);
     return 0;
   }//end printRHS()
@@ -1539,16 +1527,15 @@ namespace BaskerNS
     
     //over each row
     for(Int r = 0; r < A.nrow; r++)
+    {
+      //over each column Note: come back to
+      //for(Int k = 0; k < rhs.size(); k++)
+      for(Int k = 0 ; k < 1; k++)
       {
-        //over each column Note: come back to
-        //for(Int k = 0; k < rhs.size(); k++)
-	for(Int k = 0 ; k < 1; k++)
-          {
-            fprintf(fp, "%d %d %f, ",
-                    r, gperm[r], sol[k][r]);
-          }//end over each column
-        fprintf(fp, "\n");
-      }//end over each row
+        fprintf(fp, "%ld %ld %f, ", (long)r, (long)gperm[r], sol[k][r]);
+      }//end over each column
+      fprintf(fp, "\n");
+    }//end over each row
     
     fclose(fp);
     return 0;
@@ -1561,32 +1548,32 @@ namespace BaskerNS
     FILE *fp;
     fp = fopen("Tree_Info.txt", "w");
 
-    fprintf(fp,"nblks: %d \n", tree.nblks);
-    
+    fprintf(fp,"nblks: %ld \n", (long)tree.nblks);
+
     fprintf(fp,"row_tabs: ");
     for(Int i=0; i < tree.nblks+1; i++)
-      {
-	fprintf(fp, "%d ", tree.row_tabs[i]);
-      }
+    {
+      fprintf(fp, "%ld ", (long)tree.row_tabs[i]);
+    }
     fprintf(fp, "\n");
     fprintf(fp, "col_tabs: ");
     for(Int i=0; i < tree.nblks+1; i++)
-      {
-	fprintf(fp, "%d ", tree.col_tabs[i]);
-      }
+    {
+      fprintf(fp, "%ld ", (long)tree.col_tabs[i]);
+    }
     fprintf(fp, "\n");
     fprintf(fp, "tree_tabs: ");
     for(Int i=0; i< tree.nblks+1; i++)
-      {
-	fprintf(fp, "%d ", tree.treetab[i]);
-      }
+    {
+      fprintf(fp, "%ld ", (long)tree.treetab[i]);
+    }
     fprintf(fp, "\n");
     fprintf(fp, "Sep Sizes: ");
     for(Int i=0; i < tree.nblks; i++)
-      {
-	fprintf(fp, "%d %d \n", 
-		i, tree.col_tabs[i+1]-tree.col_tabs[i]);
-      }
+    {
+      fprintf(fp, "%ld %ld \n", 
+          (long)i, (long)tree.col_tabs[i+1]-(long)tree.col_tabs[i]);
+    }
     fprintf(fp, "\n");
 
     fclose(fp);
@@ -1602,35 +1589,33 @@ namespace BaskerNS
     FILE *fp = fopen("ASEP.csv", "w");
 
     for(Int b = 0; b < LU_size[tree.nblks-1]; ++b)
-      {
-	BASKER_MATRIX &M = AVM(tree.nblks-1)(b);
-	
-	for(Int k = 0; k < M.ncol; ++k)
-	  {
-	    fprintf(fp, "%ld, ", 
-		    M.col_ptr(k+1)-M.col_ptr(k));
-	  }//over all columns
-	fprintf(fp, "\n");
+    {
+      BASKER_MATRIX &M = AVM(tree.nblks-1)(b);
 
-      }//over all blks
-    
+      for(Int k = 0; k < M.ncol; ++k)
+      {
+        fprintf(fp, "%ld, ",(long)(M.col_ptr(k+1)-M.col_ptr(k)) );
+      }//over all columns
+      fprintf(fp, "\n");
+
+    }//over all blks
+
     fclose(fp);
 
     FILE *fp2 = fopen("LSEP.csv", "w");
 
     for(Int b = 0; b < LU_size[tree.nblks-1]; ++b)
-      {
-	BASKER_MATRIX &M = LU(tree.nblks-1)(b);
-	
-	for(Int k = 0; k < M.ncol; ++k)
-	  {
-	    fprintf(fp2, "%ld, ", 
-		    M.col_ptr(k+1)-M.col_ptr(k));
-	  }//over all columns
-	fprintf(fp2, "\n");
+    {
+      BASKER_MATRIX &M = LU(tree.nblks-1)(b);
 
-      }//over all blks
-    
+      for(Int k = 0; k < M.ncol; ++k)
+      {
+        fprintf(fp2, "%ld, ", (long)(M.col_ptr(k+1)-M.col_ptr(k)) );
+      }//over all columns
+      fprintf(fp2, "\n");
+
+    }//over all blks
+
     fclose(fp2);    
   }//end print_sep_bal()
   
@@ -1644,36 +1629,36 @@ namespace BaskerNS
     //A side note totoal LNNZ might be bigger than INT size
     //May want to use a LO and GO type in the future
     Int total_nnz = 0;
-   
+
     //Get total from ND TREE
     for(Int l = 0; l < tree.nblks; ++l)
+    {
+      //over each Lower half  
+      for(Int r = 0; r < LL_size(l); r++)
       {
-	//over each Lower half  
-	for(Int r = 0; r < LL_size(l); r++)
-	  {
-	    BASKER_MATRIX &myL = LL(l)(r);
-	    total_nnz += myL.col_ptr(myL.ncol);  
-	  }//end over each matrix row
-      }//end over all nblks
+        BASKER_MATRIX &myL = LL(l)(r);
+        total_nnz += myL.col_ptr(myL.ncol);  
+      }//end over each matrix row
+    }//end over all nblks
 
-    #ifdef BASKER_DEBUG_UTIL
+#ifdef BASKER_DEBUG_UTIL
     printf("nnz in ND: %d \n", total_nnz);
-    #endif
+#endif
 
     //Get nnz for BTF L
     if(Options.btf == BASKER_TRUE)
+    {
+      Int nblks = btf_nblks-btf_tabs_offset;
+      for(Int i =0; i < nblks; i++)
       {
-	Int nblks = btf_nblks-btf_tabs_offset;
-	for(Int i =0; i < nblks; i++)
-	  {
-	    BASKER_MATRIX &myL = LBTF(i);
-	    total_nnz += myL.col_ptr(myL.ncol);
-	  }//over all blks
-      }//end option btf
+        BASKER_MATRIX &myL = LBTF(i);
+        total_nnz += myL.col_ptr(myL.ncol);
+      }//over all blks
+    }//end option btf
 
-    #ifdef BASKER_DEBUG_UTIL
+#ifdef BASKER_DEBUG_UTIL
     printf("Total L nnz: %d \n", total_nnz);
-    #endif
+#endif
     //printf("-----Done Print L2d ---------\n");
 
     return total_nnz;
@@ -1686,33 +1671,33 @@ namespace BaskerNS
 
     //Get total from ND TREE
     for(Int l = 0; l < tree.nblks; ++l)
+    {
+      //over each Lower half  
+      for(Int r = 0; r < LU_size(l); r++)
       {
-	//over each Lower half  
-	for(Int r = 0; r < LU_size(l); r++)
-	  {
-	    BASKER_MATRIX &myU = LU(l)(r);
-	    total_nnz += myU.col_ptr(myU.ncol);  
-	  }//end over each matrix row
-      }//end over all nblks
+        BASKER_MATRIX &myU = LU(l)(r);
+        total_nnz += myU.col_ptr(myU.ncol);  
+      }//end over each matrix row
+    }//end over all nblks
 
-    #ifdef BASKER_DEBUG_UTIL
+#ifdef BASKER_DEBUG_UTIL
     printf("nnz in ND: %d \n", total_nnz);
-    #endif
+#endif
     //Get nnz for BTF L
     if(Options.btf == BASKER_TRUE)
+    {
+      Int nblks = btf_nblks-btf_tabs_offset;
+      for(Int i =0; i < nblks; i++)
       {
-	Int nblks = btf_nblks-btf_tabs_offset;
-	for(Int i =0; i < nblks; i++)
-	  {
-	    BASKER_MATRIX &myU = UBTF(i);
-	    total_nnz += myU.col_ptr(myU.ncol);
-	  }//over all blks
-      }//end option btf
+        BASKER_MATRIX &myU = UBTF(i);
+        total_nnz += myU.col_ptr(myU.ncol);
+      }//over all blks
+    }//end option btf
 
-    #ifdef BASKER_DEBUG_UTIL
+#ifdef BASKER_DEBUG_UTIL
     printf("Total U nnz: %d \n", total_nnz);
     //printf("-----Done Print L2d ---------\n");
-    #endif
+#endif
 
     return total_nnz;
   }//end get_Unnz()
@@ -1742,87 +1727,60 @@ namespace BaskerNS
     Int total_Lnnz = 0;
     //over each blk
     for(Int l = 0; l < tree.nblks; l++)
+    {
+      //over each column
+      for(Int k=0; k < LL(l)(0).ncol; ++k)
       {
-	//over each column
-	for(Int k=0; k < LL(l)(0).ncol; ++k)
-	  {
-	    //printf("k=%d \n", k+LL[l][0].scol);
-	    for(Int r = 0; r < LL_size(l); r++)
-            {
-              BASKER_MATRIX &myL = LL[l][r];
-	      Int brow = myL.srow;
-	      Int bcol = myL.scol;
-  
-              for(Int j = myL.col_ptr(k); 
-		  j < myL.col_ptr(k+1); ++j)
-                {
-		  (*row_idx)[ptr]=gperm(myL.row_idx(j)+myL.srow);
-		  (*val)[ptr]    = myL.val(j);
-		  ptr++;
-		  total_Lnnz++;
-                }//end over each nnz in column (k) of local U              
-            }//end over each matrix row
-	    (*col_ptr)[k+LL(l)(0).scol+1] = ptr; 
-	  }//end over each column
-      }//end over all nblks
+        //printf("k=%d \n", k+LL[l][0].scol);
+        for(Int r = 0; r < LL_size(l); r++)
+        {
+          BASKER_MATRIX &myL = LL[l][r];
+          Int brow = myL.srow;
+          Int bcol = myL.scol;
+
+          for(Int j = myL.col_ptr(k); j < myL.col_ptr(k+1); ++j)
+          {
+            (*row_idx)[ptr]=gperm(myL.row_idx(j)+myL.srow);
+            (*val)[ptr]    = myL.val(j);
+            ptr++;
+            total_Lnnz++;
+          }//end over each nnz in column (k) of local U              
+        }//end over each matrix row
+        (*col_ptr)[k+LL(l)(0).scol+1] = ptr; 
+      }//end over each column
+    }//end over all nblks
     if(Options.btf == BASKER_TRUE)
+    {
+      Int nblks = btf_nblks-btf_tabs_offset;
+      for(Int i =0; i < nblks; i++)
       {
-	Int nblks = btf_nblks-btf_tabs_offset;
-	for(Int i =0; i < nblks; i++)
-	  {
-	    BASKER_MATRIX &myL = LBTF(i);
-	    Int brow = myL.srow;
-	    Int bcol = myL.scol;
-	    
-      	    for(Int k = 0; k < myL.ncol; k++)
-	      {
+        BASKER_MATRIX &myL = LBTF(i);
+        Int brow = myL.srow;
+        Int bcol = myL.scol;
 
-		for(Int j = myL.col_ptr(k);
-		    j< myL.col_ptr(k+1); j++)
-		  {
-		
-		    (*row_idx)[ptr]= gperm(myL.row_idx(j)+myL.srow);
-		    (*val)[ptr]    = myL.val(j);
-		    ptr++;
-		    total_Lnnz++;
-		  }//over all nnz
-		//printf( "\n \n");
-		(*col_ptr)[k+myL.scol+1] = ptr;
-	      }//over all columns
-	  }//over all blks
-      }//end option btf
+        for(Int k = 0; k < myL.ncol; k++)
+        {
 
-   
-    #ifdef BASKER_DEBUG_UTIL
+          for(Int j = myL.col_ptr(k); j< myL.col_ptr(k+1); j++)
+          {
+            (*row_idx)[ptr]= gperm(myL.row_idx(j)+myL.srow);
+            (*val)[ptr]    = myL.val(j);
+            ptr++;
+            total_Lnnz++;
+          }//over all nnz
+          //printf( "\n \n");
+          (*col_ptr)[k+myL.scol+1] = ptr;
+        }//over all columns
+      }//over all blks
+    }//end option btf
+
+
+#ifdef BASKER_DEBUG_UTIL
     printf("Total L nnz: %d ptr: %d  \n", total_Lnnz, ptr);
     printf("-----Done Print GetL ---------\n");
-    #endif
-
-    //Test Printf
-    /*
-    FILE *fp;
-    fp = fopen("L_col_ptr.csc", "w");
-    for(Int i = 0; i < n+1; i++)
-      {
-	fprintf(fp, "%d \n", (*col_ptr)[i]);
-      }
-    fclose(fp);
-    fp = fopen("L_row_idx.csc", "w");
-    for(Int i = 0; i < nnz; i++)
-      {
-	fprintf(fp, "%d \n", (*row_idx)[i]);
-      }
-    fclose(fp);
-    fp = fopen("L_val.csc", "w");
-    for(Int i = 0; i < nnz; i++)
-      {
-	fprintf(fp, "%f \n", (*val)[i]);
-      }
-    fclose(fp);
-    */
+#endif
 
     return 0;
-
   }//end get_L();
 
   //Provides U to a set of arrays
@@ -1836,10 +1794,9 @@ namespace BaskerNS
    Entry**  val
    )
   {
-  
+
     //Add Check
-    
-    
+
     n       = gn;
     nnz = get_Unnz();
     (*col_ptr) = new Int[gn+1]();
@@ -1851,67 +1808,63 @@ namespace BaskerNS
     Int ptr = 0;
     //over each blks
     for(Int l = 0; l < tree.nblks; l++)
+    {
+      //over each column
+      for(Int k = 0; k < LU(l)(0).ncol; k++)
       {
-        //over each column
-        for(Int k = 0; k < LU(l)(0).ncol; k++)
+        //printf("k=%d \n", k+LU[l][0].scol);
+
+        for(Int r = 0; r < LU_size(l); r++)
+        {
+          BASKER_MATRIX &myU = LU(l)(r);
+
+          for(Int j = myU.col_ptr(k); j < myU.col_ptr(k+1); j++)
           {
-            //printf("k=%d \n", k+LU[l][0].scol);
+            (*row_idx)[ptr] = myU.row_idx(j)+myU.srow;
+            (*val)[ptr]     = myU.val(j);
+            ptr++;
+            total_Unnz++;
+          }//end over each nnz in column (k) of local U              
+        }//end over each matrix row
 
-	    for(Int r = 0; r < LU_size(l); r++)
-	      {
-		BASKER_MATRIX &myU = LU(l)(r);
-		
-		for(Int j = myU.col_ptr(k); j < myU.col_ptr(k+1);
-		    j++)
-                {
-		  
-		  (*row_idx)[ptr] = myU.row_idx(j)+myU.srow;
-		  (*val)[ptr]     = myU.val(j);
-		  ptr++;
-		  total_Unnz++;
-		  
-                }//end over each nnz in column (k) of local U              
-            }//end over each matrix row
-	    (*col_ptr)[k+LU(l)(0).scol+1] = ptr;
-          }//end over each column
-      }//end over nblks
-    
+        (*col_ptr)[k+LU(l)(0).scol+1] = ptr;
+      }//end over each column
+    }//end over nblks
+
     if(Options.btf == BASKER_TRUE)
+    {
+      Int nblks = btf_nblks-btf_tabs_offset;
+      for(Int i =0; i < nblks; i++)
       {
-	Int nblks = btf_nblks-btf_tabs_offset;
-	for(Int i =0; i < nblks; i++)
-	  {
-	    BASKER_MATRIX &myU = UBTF(i);
-	    Int brow = myU.srow;
-	    Int bcol = myU.scol;
-	    for(Int k = 0; k < myU.ncol; k++)
-	      {
-		//printf("k=%d \n", k+myU.scol);
-		for(Int j = myU.col_ptr[k];
-		    j< myU.col_ptr[k+1]; j++)
-		  {
+        BASKER_MATRIX &myU = UBTF(i);
+        Int brow = myU.srow;
+        Int bcol = myU.scol;
+        for(Int k = 0; k < myU.ncol; k++)
+        {
+          //printf("k=%d \n", k+myU.scol);
+          for(Int j = myU.col_ptr[k]; j< myU.col_ptr[k+1]; j++)
+          {
+            // printf( "(%d , %d , %d) %f , ", 
+            //	    k+myU.scol, myU.row_idx[j], 
+            //	    myU.row_idx[j], 
+            //	    myU.val[j]);
 
-		    // printf( "(%d , %d , %d) %f , ", 
-		    //	    k+myU.scol, myU.row_idx[j], 
-		    //	    myU.row_idx[j], 
-		    //	    myU.val[j]);
+            (*row_idx)[ptr] = myU.row_idx(j)+myU.srow;
+            (*val)[ptr]     = myU.val(j);
 
-		    (*row_idx)[ptr] = myU.row_idx(j)+myU.srow;
-		    (*val)[ptr]     = myU.val(j);
-		    
-		    ptr++;
-		    total_Unnz++;
+            ptr++;
+            total_Unnz++;
 
-		  }//over all nnz
-		//printf("\n \n");
-		(*col_ptr)[k+myU.scol+1] = ptr;
-	      }//over all columns
-	  }//over all blks
-      }//end option btf
+          }//over all nnz
+          //printf("\n \n");
+          (*col_ptr)[k+myU.scol+1] = ptr;
+        }//over all columns
+      }//over all blks
+    }//end option btf
 
-    #ifdef BASKER_DEBUG_UTIL
+#ifdef BASKER_DEBUG_UTIL
     printf("---------Done Get U : %d ------\n",  total_Unnz);
-    #endif
+#endif
     return 0;
   }//end get_U()
 
@@ -1921,13 +1874,12 @@ namespace BaskerNS
   {
 
     //(*p) = new Int[gperm[0].size()];
-    (*p) = new Int[A.nrow];
-
+    (*p) = new Int[A.nrow]; // NDE when is cleanup?
 
     for(Int i=0; i < A.nrow; i++)
-      {
-        (*p)[i] = gperm[i];
-      }
+    {
+      (*p)[i] = gperm[i];
+    }
 
     return 0;
   }//end get_p()
@@ -1968,36 +1920,30 @@ namespace BaskerNS
     //printf("ws_size: %d \n", ws_size);
     //init_value(ws, ws_size, (Int)0);
     for(Int j = 0; j < ws_size; ++j)
-      {
-	ws(j) = (Int) 0;
-      }
+    {
+      ws(j) = (Int) 0;
+    }
     //printf("alloc transpose workspace \n");
     
-    //test
-    //Int* ws_test = new Int[ws_size]();
-
     //Note could get number of nonzeros here inplace of nnz() for faster
 
     //get row counts
-    //for(Int j = M.col_ptr[M.scol]; 
-    //j < M.col_ptr[M.scol+M.ncol]; j++)
     Int total =0 ;
     Int maxv  =0;
-    for(Int j = M.col_ptr(0);
-	j < M.col_ptr(M.ncol); ++j)
+    for(Int j = M.col_ptr(0); j < M.col_ptr(M.ncol); ++j)
+    {
+      if(M.row_idx(j) > maxv)
       {
-	if(M.row_idx(j) > maxv)
-	  {
-	    maxv = M.row_idx(j);
-	  }
-	if(M.row_idx(j) > (ws_size-1))
-	  {
-	    printf("error type 1\n");
-	  }
-	ws(M.row_idx(j)) = ws(M.row_idx(j)) + 1;
-	
-	total++;
+        maxv = M.row_idx(j);
       }
+      if(M.row_idx(j) > (ws_size-1))
+      {
+        printf("error type 1\n");
+      }
+      ws(M.row_idx(j)) = ws(M.row_idx(j)) + 1;
+
+      total++;
+    }
     //printf("got row counts, total: %d  %d \n", total, M.nnz);
     //printf("debug 0: %d 1: %d 2: %d 3: %d \n",
     //	   ws(0), ws(1), ws(2), ws(3));
@@ -2009,47 +1955,44 @@ namespace BaskerNS
     total = 0;
     //Int total2 = 0; //Not used
     for(Int j = 0; j < ws_size; ++j)
-      {
-	total = total + ws(j);
-	//total2 = total2 + ws_test[j];
-      }
+    {
+      total = total + ws(j);
+      //total2 = total2 + ws_test[j];
+    }
    
     for(Int j = 1; j < M.nrow; ++j)
-      {
-	ws(j)  = ws(j) + ws(j-1);
- 
-      }//for-j
+    {
+      ws(j)  = ws(j) + ws(j-1);
+    }//for-j
   
     //copy over to AT
     AT.col_ptr(0) = (Int) 0;
     for(Int j = 1; j <= M.nrow; ++j)
-      {
-	AT.col_ptr(j) = ws(j-1);
-      }
+    {
+      AT.col_ptr(j) = ws(j-1);
+    }
 
     //set ws
     for(Int j = 0; j < M.nrow; ++j)
-      {
-	ws(j) = AT.col_ptr(j);
-      }
+    {
+      ws(j) = AT.col_ptr(j);
+    }
 
     for(Int k = 0; k < M.ncol; ++k)
+    {
+
+      for(Int j = M.col_ptr(k); j < M.col_ptr(k+1); ++j)
       {
 
-        for(Int j = M.col_ptr(k); 
-	    j < M.col_ptr(k+1); ++j)
-          {
-	    	    
-	    if(ws(M.row_idx(j)) >= AT.nnz)
-	      { 
-		printf("error \n");
-	      }
-	    
-            AT.row_idx(ws(M.row_idx(j))++) = k; 
-	    //starting at zero
-    
-          }
+        if(ws(M.row_idx(j)) >= AT.nnz)
+        { 
+          printf("error \n");
+        }
+
+        AT.row_idx(ws(M.row_idx(j))++) = k; 
+        //starting at zero
       }
+    }
     //printf("updated trans \n");
  
     
@@ -2091,39 +2034,36 @@ namespace BaskerNS
     //Note could get number of nonzeros here inplace of nnz() for faster
 
     //get row counts
-    for(Int j = MV.col_ptr(MV.scol); 
-	j < MV.col_ptr(MV.scol+MV.ncol); ++j)
+    for(Int j = MV.col_ptr(MV.scol); j < MV.col_ptr(MV.scol+MV.ncol); ++j)
+    {
+      if(MV.good(j) != 0)
       {
-        if(MV.good(j) != 0)
-          {
-            continue;
-          }
-        ws[MV.row_idx(j)-brow]++;
+        continue;
       }
+      ws[MV.row_idx(j)-brow]++;
+    }
 
     AT.col_ptr[1] = ws[0];
     for(Int j = 1; j < AT.nrow; j++)
-      {
-        ws[j] = ws[j]+ws[j-1];
-        AT.col_ptr[j+1] = ws[j];
-        ws[j-1] = AT.col_ptr[j-1];
-      }
+    {
+      ws[j] = ws[j]+ws[j-1];
+      AT.col_ptr[j+1] = ws[j];
+      ws[j-1] = AT.col_ptr[j-1];
+    }
     ws[AT.nrow-1] = AT.col_ptr[AT.nrow-1];
     
     for(Int k = 0; k < AT.ncol; k++)
+    {
+      for(Int j = MV.col_ptr(MV.scol+k); j < MV.col_ptr(MV.scol+k+1); ++j)
       {
-        for(Int j = MV.col_ptr(MV.scol+k); 
-	    j < MV.col_ptr(MV.scol+k+1); ++j)
-          {
-            if(MV.good(j) != 0)
-              {
-                continue;
-              }
-            
-            AT.row_idx[ws[MV.row_idx(j)-brow]++] = k; //starting at zero
+        if(MV.good(j) != 0)
+        {
+          continue;
+        }
 
-          }
+        AT.row_idx[ws[MV.row_idx(j)-brow]++] = k; //starting at zero
       }
+    }
 
     FREE_INT_1DARRAY(ws);
   }//end matrix_transpose
@@ -2149,16 +2089,16 @@ namespace BaskerNS
     AT.nnz   = nnz_;
 
     if(matrix_flag == BASKER_FALSE)
-      {
-	BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol");
-	MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
-	//init_value(AT.col_ptr, AT.ncol+1, (Int)0);
-	MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
-	BASKER_ASSERT((AT.nnz)>0, "util trans nnz");
-	//init_value(AT.row_idx, AT.nnz, (Int)0);
-	MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
-	//init_value(AT.val,     AT.nnz, (Entry)1.0);
-      }    
+    {
+      BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol");
+      MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
+      //init_value(AT.col_ptr, AT.ncol+1, (Int)0);
+      MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
+      BASKER_ASSERT((AT.nnz)>0, "util trans nnz");
+      //init_value(AT.row_idx, AT.nnz, (Int)0);
+      MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
+      //init_value(AT.val,     AT.nnz, (Entry)1.0);
+    }    
     init_value(AT.col_ptr, AT.ncol+1, (Int)0);
     init_value(AT.row_idx, AT.nnz, (Int)0);
     init_value(AT.val,     AT.nnz, (Entry)1.0);
@@ -2169,82 +2109,78 @@ namespace BaskerNS
     BASKER_ASSERT(ws_size > 0, "util trans ws");
     MALLOC_INT_1DARRAY(ws, ws_size);
     //printf("ws_size: %d \n", ws_size);
-    
+
     for(Int j = 0; j < ws_size; ++j)
-      {
-	ws(j) = (Int) 0;
-      }
-  
+    {
+      ws(j) = (Int) 0;
+    }
+
     Int total =0 ;
     Int maxv  =0;
     // for(Int j = M.col_ptr(0);
     //	j < M.col_ptr(M.ncol); ++j)
-    for(Int j = col_ptr[0]; 
-	j < col_ptr[n_]; ++j)
+    for(Int j = col_ptr[0]; j < col_ptr[n_]; ++j)
+    {
+      if(row_idx[j] > maxv)
       {
-	if(row_idx[j] > maxv)
-	  {
-	    maxv = row_idx[j];
-	  }
-	if(row_idx[j] > (ws_size-1))
-	  {
-	    printf("error type 1\n");
-	  }
-	ws(row_idx[j]) = ws(row_idx[j]) + 1;
-	
-	total++;
+        maxv = row_idx[j];
       }
+      if(row_idx[j] > (ws_size-1))
+      {
+        printf("error type 1\n");
+      }
+      ws(row_idx[j]) = ws(row_idx[j]) + 1;
+
+      total++;
+    }
     //write stupid code!
     //add them all up
     total = 0;
     //Int total2 = 0; //Not used
     for(Int j = 0; j < ws_size; ++j)
-      {
-	total = total + ws(j);
-	//total2 = total2 + ws_test[j];
-      }
-   
+    {
+      total = total + ws(j);
+      //total2 = total2 + ws_test[j];
+    }
+
     for(Int j = 1; j < n_; ++j)
-      {
-	ws(j)  = ws(j) + ws(j-1);
- 
-      }//for-j
-  
+    {
+      ws(j)  = ws(j) + ws(j-1);
+
+    }//for-j
+
     //copy over to AT
     AT.col_ptr(0) = (Int) 0;
     for(Int j = 1; j <= n_; ++j)
-      {
-	AT.col_ptr(j) = ws(j-1);
-      }
+    {
+      AT.col_ptr(j) = ws(j-1);
+    }
 
     //set ws
     for(Int j = 0; j < n_; ++j)
-      {
-	ws(j) = AT.col_ptr(j);
-      }
+    {
+      ws(j) = AT.col_ptr(j);
+    }
 
     for(Int k = 0; k < n_; ++k)
+    {
+
+      for(Int j = col_ptr[k]; j < col_ptr[k+1]; ++j)
       {
 
-        //for(Int j = M.col_ptr(k); 
-	//   j < M.col_ptr(k+1); ++j)
-	for(Int j = col_ptr[k]; 
-	    j < col_ptr[k+1]; ++j)
-          {
-	    	    
-	    if(ws(row_idx[j]) >= AT.nnz)
-	      { 
-		printf("error \n");
-	      }
-	    
-            //AT.row_idx(ws(row_idx[j])++) = k;
-	    AT.row_idx(ws(row_idx[j])) = k;
-	    AT.val(ws(row_idx[j])) = val[j];
-	    ws(row_idx[j])++;
-	    //starting at zero
-    
-          }
+        if(ws(row_idx[j]) >= AT.nnz)
+        { 
+          printf("error \n");
+        }
+
+        //AT.row_idx(ws(row_idx[j])++) = k;
+        AT.row_idx(ws(row_idx[j])) = k;
+        AT.val(ws(row_idx[j])) = val[j];
+        ws(row_idx[j])++;
+        //starting at zero
+
       }
+    }
     //printf("updated trans \n");
 
     sort_matrix(AT);
@@ -2266,9 +2202,9 @@ namespace BaskerNS
     FILE *fp;
     fp = fopen(fname.c_str(), "w");
     for(Int i = 0; i < n; i++)
-      {
-        fprintf(fp, "%d \n", x(i));
-      }
+    {
+      fprintf(fp, "%ld \n", (long)x(i));
+    }
     fclose(fp);
   }//end printVec(file,Int);
 
@@ -2284,9 +2220,9 @@ namespace BaskerNS
     FILE *fp;
     fp = fopen(fname.c_str(), "w");
     for(Int i = 0; i < n; i++)
-      {
-        fprintf(fp, "%f \n", x(i));
-      }
+    {
+      fprintf(fp, "%f \n", x(i));
+    }
     fclose(fp);
   }//end printVec(file,Int);
 
@@ -2296,13 +2232,13 @@ namespace BaskerNS
   (
    INT_1DARRAY x,
    Int n
-   )
+  )
   {
     printf("---VECTOR: %d ----\n", n);
     for(Int i = 0 ; i < n;  i++)
-      {
-	printf("%d %d, \n",i,  x(i));
-      }
+    {
+      printf("%ld %ld, \n", (long)i, (long)x(i));
+    }
     printf("---END VECTOR %d --\n", n);
 
   }//end printVec(Int)
@@ -2313,13 +2249,13 @@ namespace BaskerNS
   (
    ENTRY_1DARRAY x,
    Int n
-   )
+  )
   {
     printf("---VECTOR: %d ----\n", n);
     for(Int i = 0; i< n; i++)
-      {
-	printf("%d %g, \n", i, x[i]);
-      }
+    {
+      printf("%ld %g, \n", (long)i, x[i]);
+    }
     printf("---END VECTOR: %d ---\n", n);
 
   }//end printVec Entry
@@ -2329,12 +2265,11 @@ namespace BaskerNS
   Int Basker<Int, Entry, Exe_Space>::t_get_kid
   (
    const TeamMember &thread
-   )
+  )
   {
     return (Int)(thread.league_rank()*thread.team_size()+
 		 thread.team_rank());
   }//end t_get_kid
-
  
 
   template <class Int, class Entry, class Exe_Space>
@@ -2342,7 +2277,7 @@ namespace BaskerNS
   (
    INT_1DARRAY outp_l,
    INT_1DARRAY outp_r
-   )
+  )
   {
 
     INT_1DARRAY temp;
@@ -2350,82 +2285,79 @@ namespace BaskerNS
 
     //Fill with normal ordering
     for(Int i = 0; i < gm; ++i)
-      {
-	outp_l(i) = (Int) i;
-      }
+    {
+      outp_l(i) = (Int) i;
+    }
     for(Int i = 0; i < gn; ++i)
-      {
-	outp_r(i) = (Int) i;
-      }
-    
+    {
+      outp_r(i) = (Int) i;
+    }
+
     //Add Match ordering
     if(match_flag == BASKER_TRUE)
-      {
-	//printf("match perm\n");
-	permute_inv(outp_l, order_match_array,gn);
-      }
+    {
+      //printf("match perm\n");
+      permute_inv(outp_l, order_match_array,gn);
+    }
     if(btf_flag   == BASKER_TRUE)
-      {
-	//printf("btf perm\n");
-	//Strong comp btf
-	permute_inv(outp_l, order_btf_array,gn);
-	permute_inv(outp_r, order_btf_array,gn);
-	
-	//AMD on blks
-	permute_inv(outp_l, order_blk_amd_array,gn);
-	permute_inv(outp_r, order_blk_amd_array,gn);
-      }
+    {
+      //printf("btf perm\n");
+      //Strong comp btf
+      permute_inv(outp_l, order_btf_array,gn);
+      permute_inv(outp_r, order_btf_array,gn);
+
+      //AMD on blks
+      permute_inv(outp_l, order_blk_amd_array,gn);
+      permute_inv(outp_r, order_blk_amd_array,gn);
+    }
     if(nd_flag == BASKER_TRUE)
+    {
+
+      //printf("ND perm\n");
+      //ND ordering
+      for(Int i=0; i < BTF_A.ncol; i++)
       {
-
-	//printf("ND perm\n");
-	//ND ordering
-	for(Int i=0; i < BTF_A.ncol; i++)
-	  {
-	    temp(i) = part_tree.permtab(i);
-	  }
-	for(Int i = BTF_A.ncol; i < gn; i++)
-	  {
-	    temp(i) = i;
-	  }
-
-	permute_inv(outp_l,temp, gn);
-	permute_inv(outp_r,temp, gn);
-
-
+        temp(i) = part_tree.permtab(i);
       }
+      for(Int i = BTF_A.ncol; i < gn; i++)
+      {
+        temp(i) = i;
+      }
+
+      permute_inv(outp_l,temp, gn);
+      permute_inv(outp_r,temp, gn);
+
+    }
     if(amd_flag == BASKER_TRUE)
+    {
+      //printf("camd perm\n");
+      for(Int i=0; i < BTF_A.ncol; i++)
       {
-	//printf("camd perm\n");
-	for(Int i=0; i < BTF_A.ncol; i++)
-	  {
-	    temp(i) = order_csym_array(i);
-	  }
-	for(Int i = BTF_A.ncol; i < gn; i++)
-	  {
-	    temp(i) = i;
-	  }
-
-	//CAMDSYM
-	permute_inv(outp_l, temp, gn);
-	permute_inv(outp_r, temp, gn);
+        temp(i) = order_csym_array(i);
       }
-    
+      for(Int i = BTF_A.ncol; i < gn; i++)
+      {
+        temp(i) = i;
+      }
+
+      //CAMDSYM
+      permute_inv(outp_l, temp, gn);
+      permute_inv(outp_r, temp, gn);
+    }
+
     //printf("piv perm\n");
     permute_inv(outp_l, gperm, gn);
 
-
     //Debug
     if(Options.verbose_matrix_out == BASKER_TRUE)
-      {
-	printVec("left_perm.csc", outp_l, gn);
-	printVec("right_perm.csc", outp_r, gn);
-      }
+    {
+      printVec("left_perm.csc", outp_l, gn);
+      printVec("right_perm.csc", outp_r, gn);
+    }
 
     FREE_INT_1DARRAY(temp);
 
   }//end get_total_perm
-
 
 
  //We need an easier and faster way to do this.  
@@ -2435,25 +2367,23 @@ namespace BaskerNS
   BASKER_INLINE
   Int Basker<Int,Entry,Exe_Space>::find_leader(Int kid, Int l)
   {
-    //printf("find leader called. kid: %d l: %d \n",
-    //	   kid, l);
+    //printf("find leader called. kid: %d l: %d \n", kid, l);
     l = l+1;
     Int my_token = S(l)(kid);
     Int my_loc = kid;
     while((my_loc > 0))
+    {
+      my_loc--;
+      if(S(l)(my_loc) != my_token)
       {
-	my_loc--;
-	if(S(l)(my_loc) != my_token)
-	  {
-	    my_loc++;
-	    break;
-	  }
+        my_loc++;
+        break;
       }
+    }
 
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
-    printf("find_leader, kid: %d l: %d leader: %d \n",
-	   kid, l, my_loc);
-    #endif
+#ifdef BASKER_DEBUG_NFACTOR_BLK
+    printf("find_leader, kid: %d l: %d leader: %d \n", kid, l, my_loc);
+#endif
     return my_loc;
 
   }//end find_leader()
@@ -2462,7 +2392,6 @@ namespace BaskerNS
   //I like printf because it is not a thread race dependend like 
   //c++ streams, however be may get compiler warnings
   //Come back and add own printf style calls
-
  
 }//end namespace basker
 

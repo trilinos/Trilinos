@@ -154,7 +154,7 @@ namespace BaskerNS
 
 	if(Options.verbose == BASKER_TRUE)
 	  {
-	printf("\n\n   ============ SEP: %d ======\n\n",l);
+	printf("\n\n   ============ SEP: %ld ======\n\n",(long)l);
 	  }
 
 	#ifdef BASKER_KOKKOS
@@ -200,7 +200,7 @@ namespace BaskerNS
 		sep_restart++;
 		if(Options.verbose == BASKER_TRUE)
 		  {
-		printf("sep restart l: %d \n", l);
+		printf("sep restart l: %ld \n", (long)l);
 		  }
 		//exit(0);
 		Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
