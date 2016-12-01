@@ -75,6 +75,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("transpose: use implicit");
+    SET_VALID_ENTRY("rap: fix zero diagonals");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",                   null, "Prolongator factory");
@@ -82,7 +83,6 @@ namespace MueLu {
 
     validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
     validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
-    validParamList->set< bool >                  ("rap: fix zero diagonals",  false, "Repair zeros on main diagonal");
 
     return validParamList;
   }
@@ -236,7 +236,7 @@ namespace MueLu {
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiagonal(RCP<Matrix>& Ac) const {
     const Teuchos::ParameterList& pL = GetParameterList();
     bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
-    bool checkAc             = pL.get<bool>("CheckMainDiagonal");
+    bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
 
     if (!checkAc && !repairZeroDiagonals)
       return;

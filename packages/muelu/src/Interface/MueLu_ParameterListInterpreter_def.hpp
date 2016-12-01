@@ -963,6 +963,7 @@ namespace MueLu {
       RAP = rcp(new RAPFactory());
       ParameterList RAPparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
       try {
         if (paramList  .isParameter("aggregation: allow empty prolongator columns")) {
           RAPparams.set("CheckMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
