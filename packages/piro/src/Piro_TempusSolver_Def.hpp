@@ -233,22 +233,17 @@ void Piro::TempusSolver<Scalar>::initialize(
     if (Teuchos::nonnull(piroObserver)) {
       //Get solutionHistory from integrator
       const RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
-      //IKT, 11/3/16, FIXME: replace the Teuchos::null in the following line with 
-      //integrator->getTimeStepControl(), once this function is added to the
-      //Tempus::IntegratorBasic class. 
+      fwdStateIntegrator->getTimeStepControl(); 
       const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = Teuchos::null;
       //Create Tempus::IntegratorObserver object 
       observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory, timeStepControl, piroObserver));
     }
-    //IKT, 11/3/16, FIXME: waiting for Curt to add setObserver() and initialize() routines 
-    //in Tempus::IntegratorBasic class.  Uncomment the following code once those functions have been added. 
-    /*
     if (Teuchos::nonnull(observer)) {
       //Set observer in integrator
       fwdStateIntegrator->setObserver(observer);
       //Reinitialize everything in integrator class, since we have changed the observer. 
       fwdStateIntegrator->initialize(); 
-    }*/
+    }
 
 
   } 
