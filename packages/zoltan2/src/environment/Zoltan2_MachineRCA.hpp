@@ -89,7 +89,16 @@ public:
         for (int i = 0; i < this->numRanks; ++i){
           this->transform_coords( procCoords[0][i], procCoords[1][i], procCoords[2][i]);
         }
-        this->transform_coords(this->machine_extent[0], this->machine_extent[1],this->machine_extent[2]);
+       	pcoord_t mx = this->machine_extent[0];
+        pcoord_t my = this->machine_extent[1];
+        pcoord_t mz = this->machine_extent[2];
+
+        this->transform_coords(mx, my, mz);
+        this->machine_extent[0] = mx;
+        this->machine_extent[1] = my;
+        this->machine_extent[2] = mz;
+
+
         if(this->myRank == 0) std::cout << "Transforming the coordinates" << std::endl;
         this->printAllocation();
       }
