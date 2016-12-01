@@ -152,7 +152,10 @@ int main(int argc, char *argv[])
   typedef zlno_t ncoord_t;
   typedef zlno_t part_t;
 
-  Zoltan2::MachineRepresentation<ncoord_t, part_t> mach(*comm);
+  Teuchos::ParameterList pl;
+  ///pl.set("machine_coord_transformation", "EIGNORE");
+
+  Zoltan2::MachineRepresentation<ncoord_t, part_t> mach(*comm, pl);
 
   // Tests that all machines should pass
   if (mach.getNumRanks() != np) fail += 1;
@@ -165,28 +168,36 @@ int main(int argc, char *argv[])
 
 #if defined(HAVE_ZOLTAN2_LDMS)
   { // Add tests specific to LDMS
+    if (me == 0 ) std::cout << "LDMS Topology" << std::endl;
     if (checkErrorCode(*comm, fail))
       return 1;
   }
-#elif defined(HAVE_ZOLTAN2_RCA)
-  { // Add tests specific to RCA
+#elif defined(HAVE_ZOLTAN2_RCALIB)
+  {
+    if (me == 0 ) std::cout << "RCALIB Topology" << std::endl;
+    // Add tests specific to RCA
     if (checkErrorCode(*comm, fail))
       return 1;
   }
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
-  { // Add tests specific to TopoMgr
+  { 
+    if (me == 0 ) std::cout << "TOPOMANAGER Topology" << std::endl;
+    // Add tests specific to TopoMgr
     if (checkErrorCode(*comm, fail))
       return 1;
   }
 #elif defined(HAVE_ZOLTAN2_BGQTEST)
-  { // Add tests specific to BGQ
+  {
+    if (me == 0 ) std::cout << "BGQTEST Topology" << std::endl;
+    // Add tests specific to BGQ
     if (checkErrorCode(*comm, fail))
       return 1;
   }
 #else
 
-  { // Tests specific to MachineForTesting
-
+  {
+    if (me == 0 ) std::cout << "TEST Topology" << std::endl;
+    // Tests specific to MachineForTesting
     if (mach.getMachineDim() != 3) fail += 10;
 
     int nxyz[3];
