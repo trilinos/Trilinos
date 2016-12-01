@@ -1189,11 +1189,20 @@ namespace MueLuTests {
 
       Teuchos::RCP<const MapExtractor> doMapExtractor = reorderedbA->getDomainMapExtractor();
 
-      Teuchos::RCP<MultiVector> v0 = doMapExtractor->ExtractVector(X,0);
-      Teuchos::RCP<MultiVector> v1 = doMapExtractor->ExtractVector(X,1);
+      // We should remove the boolean from ExtractVector. It is not necessary
+      TEST_THROW(doMapExtractor->ExtractVector(X,0,false),Xpetra::Exceptions::RuntimeError);
+      TEST_THROW(doMapExtractor->ExtractVector(X,1,false),Xpetra::Exceptions::RuntimeError);
+      Teuchos::RCP<MultiVector> v0 = doMapExtractor->ExtractVector(X,0,true);
+      Teuchos::RCP<MultiVector> v1 = doMapExtractor->ExtractVector(X,1,true);
 
-      TEST_EQUALITY((v0->getData(0))[0], Teuchos::as<Scalar>(0.25));
-      TEST_EQUALITY((v1->getData(0))[0], Teuchos::as<Scalar>(0.5));
+      Teuchos::RCP<BlockedMultiVector> bv0 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v0);
+      Teuchos::RCP<BlockedMultiVector> bv1 = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(v1);
+      TEST_EQUALITY((bv0->getMultiVector(0,true)->getData(0))[0],  Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY((bv0->getMultiVector(0,true)->getData(0))[19], Teuchos::as<Scalar>(0.25));
+      TEST_EQUALITY((bv1->getMultiVector(0,true)->getData(0))[0],  Teuchos::as<Scalar>(0.5));
+      TEST_EQUALITY((bv1->getMultiVector(0,true)->getData(0))[4],  Teuchos::as<Scalar>(0.5));
+      TEST_EQUALITY((bv0->getMultiVector(1,true)->getData(0))[0],  Teuchos::as<Scalar>(1.0));
+      TEST_EQUALITY((bv0->getMultiVector(1,true)->getData(0))[4],  Teuchos::as<Scalar>(1.0));
 
       Teuchos::Array<magnitude_type> n0(1); v0->norm1(n0);
       Teuchos::Array<magnitude_type> n1(1); v1->norm1(n1);
@@ -1205,24 +1214,24 @@ namespace MueLuTests {
       TEST_EQUALITY(v0->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v0->getMap()->getMaxLocalIndex(), 24);
       TEST_EQUALITY(v0->getMap()->getMinAllGlobalIndex(), 0);
-      TEST_EQUALITY(v0->getMap()->getMinGlobalIndex(), comm->getRank() * 5);
-      TEST_EQUALITY(v0->getMap()->getMaxGlobalIndex(), comm->getSize() * 40 - (comm->getSize() - comm->getRank() - 1) * 20 - 1);
-      TEST_EQUALITY(v0->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 1);
+      TEST_EQUALITY(v0->getMap()->getMinGlobalIndex(), comm->getRank() * 20);
+      TEST_EQUALITY(v0->getMap()->getMaxGlobalIndex(), comm->getSize() * 20 + comm->getRank() * 5 + 4);
+      TEST_EQUALITY(v0->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 25 - 1);
 
       TEST_EQUALITY(v1->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v1->getMap()->getMaxLocalIndex(), 14);
-      TEST_EQUALITY(v1->getMap()->getMinAllGlobalIndex(), comm->getSize() * 5);
-      TEST_EQUALITY(v1->getMap()->getMinGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 5);
-      TEST_EQUALITY(v1->getMap()->getMaxGlobalIndex(), comm->getSize() * 10 + comm->getRank() * 10 + 9);
-      TEST_EQUALITY(v1->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 20 - 1);
+      TEST_EQUALITY(v1->getMap()->getMinAllGlobalIndex(), 0);
+      TEST_EQUALITY(v1->getMap()->getMinGlobalIndex(), comm->getRank() * 5);
+      TEST_EQUALITY(v1->getMap()->getMaxGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 10 + 9);
+      TEST_EQUALITY(v1->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 15 - 1);
 
       Teuchos::RCP<BlockedCrsMatrix> b00 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(reorderedbA->getMatrix(0,0));
       TEST_EQUALITY(b00->Rows(), 2);
       TEST_EQUALITY(b00->Cols(), 2);
 
       Teuchos::RCP<const MapExtractor> me00 = b00->getDomainMapExtractor();
-      Teuchos::RCP<MultiVector> v00 = me00->ExtractVector(v0,0);
-      Teuchos::RCP<MultiVector> v01 = me00->ExtractVector(v0,1);
+      Teuchos::RCP<MultiVector> v00 = me00->ExtractVector(v0,0,true);
+      Teuchos::RCP<MultiVector> v01 = me00->ExtractVector(v0,1,true);
       TEST_EQUALITY((v00->getData(0))[0], Teuchos::as<Scalar>(0.25));
       TEST_EQUALITY((v01->getData(0))[0], Teuchos::as<Scalar>(1.0));
       TEST_EQUALITY(v00->getLocalLength(), 20);
@@ -1232,10 +1241,10 @@ namespace MueLuTests {
 
       TEST_EQUALITY(v00->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v00->getMap()->getMaxLocalIndex(), 19);
-      TEST_EQUALITY(v00->getMap()->getMinAllGlobalIndex(), comm->getSize() * 20);
-      TEST_EQUALITY(v00->getMap()->getMinGlobalIndex(), comm->getSize() * 20 + comm->getRank() * 20);
-      TEST_EQUALITY(v00->getMap()->getMaxGlobalIndex(), comm->getSize() * 20 + comm->getRank() * 20 + 19);
-      TEST_EQUALITY(v00->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 40 - 1);
+      TEST_EQUALITY(v00->getMap()->getMinAllGlobalIndex(),0);
+      TEST_EQUALITY(v00->getMap()->getMinGlobalIndex(), comm->getRank() * 20);
+      TEST_EQUALITY(v00->getMap()->getMaxGlobalIndex(), comm->getRank() * 20 + 19);
+      TEST_EQUALITY(v00->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 20 - 1);
 
       TEST_EQUALITY(v01->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v01->getMap()->getMaxLocalIndex(), 4);
@@ -1244,14 +1253,13 @@ namespace MueLuTests {
       TEST_EQUALITY(v01->getMap()->getMaxGlobalIndex(), comm->getRank() * 5 + 4);
       TEST_EQUALITY(v01->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 5 - 1);
 
-
       Teuchos::RCP<BlockedCrsMatrix> b11 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(reorderedbA->getMatrix(1,1));
       TEST_EQUALITY(b11->Rows(), 2);
       TEST_EQUALITY(b11->Cols(), 2);
 
       Teuchos::RCP<const MapExtractor> me11 = b11->getDomainMapExtractor();
-      Teuchos::RCP<MultiVector> v10 = me11->ExtractVector(v1,0);
-      Teuchos::RCP<MultiVector> v11 = me11->ExtractVector(v1,1);
+      Teuchos::RCP<MultiVector> v10 = me11->ExtractVector(v1,0,true);
+      Teuchos::RCP<MultiVector> v11 = me11->ExtractVector(v1,1,true);
       TEST_EQUALITY((v10->getData(0))[0], Teuchos::as<Scalar>(0.5));
       TEST_EQUALITY(v10->getLocalLength(), 5);
       TEST_EQUALITY(v11->getLocalLength(), 10);
@@ -1260,17 +1268,17 @@ namespace MueLuTests {
 
       TEST_EQUALITY(v10->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v10->getMap()->getMaxLocalIndex(), 4);
-      TEST_EQUALITY(v10->getMap()->getMinAllGlobalIndex(), comm->getSize() * 5);
-      TEST_EQUALITY(v10->getMap()->getMinGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 5);
-      TEST_EQUALITY(v10->getMap()->getMaxGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 5 + 4);
-      TEST_EQUALITY(v10->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 10 - 1);
+      TEST_EQUALITY(v10->getMap()->getMinAllGlobalIndex(), 0);
+      TEST_EQUALITY(v10->getMap()->getMinGlobalIndex(), comm->getRank() * 5);
+      TEST_EQUALITY(v10->getMap()->getMaxGlobalIndex(), comm->getRank() * 5 + 4);
+      TEST_EQUALITY(v10->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 5 - 1);
 
       TEST_EQUALITY(v11->getMap()->getMinLocalIndex(), 0);
       TEST_EQUALITY(v11->getMap()->getMaxLocalIndex(), 9);
-      TEST_EQUALITY(v11->getMap()->getMinAllGlobalIndex(), comm->getSize() * 10);
-      TEST_EQUALITY(v11->getMap()->getMinGlobalIndex(), comm->getSize() * 10 + comm->getRank() * 10);
-      TEST_EQUALITY(v11->getMap()->getMaxGlobalIndex(), comm->getSize() * 10 + comm->getRank() * 10 + 9);
-      TEST_EQUALITY(v11->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 20 - 1);
+      TEST_EQUALITY(v11->getMap()->getMinAllGlobalIndex(), 0);
+      TEST_EQUALITY(v11->getMap()->getMinGlobalIndex(), comm->getRank() * 10);
+      TEST_EQUALITY(v11->getMap()->getMaxGlobalIndex(), comm->getRank() * 10 + 9);
+      TEST_EQUALITY(v11->getMap()->getMaxAllGlobalIndex(), comm->getSize() * 10 - 1);
 
       Teuchos::Array<magnitude_type> n00(1); v00->norm1(n00);
       Teuchos::Array<magnitude_type> n11(1); v01->norm1(n11);
@@ -1585,7 +1593,6 @@ namespace MueLuTests {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
-        std::cout << "xdata["<< i <<"]=" << xdata[i] << std::endl;
       }
       TEST_EQUALITY(bCheck, true);
 
