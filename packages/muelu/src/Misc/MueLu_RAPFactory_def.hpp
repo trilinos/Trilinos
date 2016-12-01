@@ -82,6 +82,7 @@ namespace MueLu {
 
     validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
     validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
+    validParamList->set< bool >                  ("rap: fix zero diagonals",  false, "Repair zeros on main diagonal");
 
     return validParamList;
   }
@@ -234,7 +235,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiagonal(RCP<Matrix>& Ac) const {
     const Teuchos::ParameterList& pL = GetParameterList();
-    bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal");
+    bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
     bool checkAc             = pL.get<bool>("CheckMainDiagonal");
 
     if (!checkAc && !repairZeroDiagonals)

@@ -229,6 +229,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: print partition distribution\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
@@ -516,6 +517,8 @@ namespace MueLu {
          ("repartition: rebalance P and R","repartition: rebalance P and R")
       
          ("repartition: use subcommunicators","repartition: use subcommunicators")
+      
+         ("rap: fix zero diagonals","rap: fix zero diagonals")
       
          ("reuse: type","reuse: type")
       

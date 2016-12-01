@@ -887,6 +887,18 @@
 
   </rebalancing>
 
+  <rap>
+    <parameter>
+      <name>rap: fix zero diagonals</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Set zero diagonals on coarse grids to one.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>    
+  </rap>
+
+
   <reuse>
 
     <parameter>
