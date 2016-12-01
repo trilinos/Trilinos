@@ -532,7 +532,7 @@ enum class PreconditionerType
 };
 
 ///
-/// Compute a precondioner for improving the conditioning of a
+/// Compute a preconditioner for improving the conditioning of a
 /// linear system.
 ///
 template<typename T, Index N, typename RHS, typename ES>
@@ -542,19 +542,19 @@ precon(PreconditionerType const pt, Tensor<T, N, ES> const & A, RHS const & B);
 
 ///
 /// Solve linear system of equations.
-/// This is means for the solution of small linear systems of equations
+/// This is meant for the solution of small linear systems of equations
 /// typically found in constitutive updates.
 /// Right now the implementation is very inefficient (but accurate)
 /// as it just uses the inverse function. It is intended to be used in
 /// conjunction with Kokkos to take advantage of thread parallelism.
 /// \param A assumed non-singular tensor
 /// \param b rhs of the system Ax=b
-/// \return x solution to the system Ax=b
+/// \return x solution(s) to the system Ax=b
 ///
-template<typename T, Index N, typename ES>
+template<typename T, Index N, typename RHS, typename ES>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-solve(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b,
+RHS
+solve(Tensor<T, N, ES> const & A, RHS const & b,
     PreconditionerType const pt = PreconditionerType::IDENTITY);
 
 template<typename T, Index N, typename RHS, typename ES>

@@ -89,7 +89,7 @@ Matrix<T, M, N, ES>::Matrix(
 }
 
 //
-//  Create tensor from array
+//  Create matrix from array
 //
 //
 template<typename T, Index M, Index N, typename ES>
@@ -427,7 +427,7 @@ template<typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 T const &
 Matrix<T, M, N, ES>::operator()(Index const i, Index const j) const
-    {
+{
   Matrix<T, M, N, ES> const &
   self = (*this);
 
@@ -816,6 +816,28 @@ operator*(Vector<S, M, ES> const & u, Matrix<T, M, N, ES> const & A)
 }
 
 //
+// Matrix tensor product C = A B
+//
+template<typename S, typename T, Index M, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, M, N, ES>
+operator*(Matrix<T, M, N, ES> const & A, Tensor<S, N, ES> const & B)
+{
+  return dot(A, B);
+}
+
+//
+// Tensor matrix product C = A B
+//
+template<typename S, typename T, Index M, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, M, N, ES>
+operator*(Tensor<S, M, ES> const & A, Matrix<T, M, N, ES> const & B)
+{
+  return dot(A, B);
+}
+
+//
 // Matrix dot product C = A B
 //
 template<typename S, typename T, Index M, Index P, Index N, typename ES>
@@ -890,6 +912,76 @@ dot(Vector<S, M, ES> const & u, Matrix<T, M, N, ES> const & A)
   }
 
   return v;
+}
+
+//
+// Matrix tensor product C = A B
+//
+template<typename S, typename T, Index M, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, M, N, ES>
+dot(Matrix<T, M, N, ES> const & A, Tensor<S, N, ES> const & B)
+{
+  Index const
+  num_rows = A.get_num_rows();
+
+  Index const
+  num_cols = A.get_num_cols();
+
+  assert(B.get_dimension() == num_cols);
+
+  Matrix<typename Promote<S, T>::type, M, N, ES>
+  C(num_rows, num_cols);
+
+  for (Index i = 0; i < num_rows; ++i) {
+    for (Index j = 0; j < num_cols; ++j) {
+
+      typename Promote<S, T>::type
+      s = 0.0;
+
+      for (Index p = 0; p < num_cols; ++p) {
+        s += A(i, p) * B(p, j);
+      }
+      C(i, j) = s;
+    }
+  }
+
+  return C;
+}
+
+//
+// Tensor matrix product C = A B
+//
+template<typename S, typename T, Index M, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, M, N, ES>
+dot(Tensor<S, M, ES> const & A, Matrix<T, M, N, ES> const & B)
+{
+  Index const
+  num_rows = B.get_num_rows();
+
+  Index const
+  num_cols = B.get_num_cols();
+
+  assert(A.get_dimension() == num_rows);
+
+  Matrix<typename Promote<S, T>::type, M, N, ES>
+  C(num_rows, num_cols);
+
+  for (Index i = 0; i < num_rows; ++i) {
+    for (Index j = 0; j < num_cols; ++j) {
+
+      typename Promote<S, T>::type
+      s = 0.0;
+
+      for (Index p = 0; p < num_rows; ++p) {
+        s += A(i, p) * B(p, j);
+      }
+      C(i, j) = s;
+    }
+  }
+
+  return C;
 }
 
 //

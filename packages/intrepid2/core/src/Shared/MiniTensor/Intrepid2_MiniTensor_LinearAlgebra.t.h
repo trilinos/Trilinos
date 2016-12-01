@@ -2550,16 +2550,15 @@ precon(PreconditionerType const pt, Tensor<T, N, ES> const & A, RHS const & B)
 // as it just Gauss-Jordan elimination. It is intended to be used in
 // conjunction with Kokkos to take advantage of thread parallelism.
 //
-template<typename T, Index N, typename ES>
+template<typename T, Index N, typename RHS, typename ES>
 KOKKOS_INLINE_FUNCTION
-Vector<T, N, ES>
-solve(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b,
-    PreconditionerType const pt)
+RHS
+solve(Tensor<T, N, ES> const & A, RHS const & b, PreconditionerType const pt)
 {
   Tensor<T, N, ES>
   PA;
 
-  Vector<T, N, ES>
+  RHS
   Pb;
 
   boost::tie(PA, Pb) = precon(pt, A, b);

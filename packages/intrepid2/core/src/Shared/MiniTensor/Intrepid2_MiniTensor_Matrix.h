@@ -444,6 +444,28 @@ Vector<typename Promote<S, T>::type, N, ES>
 operator*(Vector<S, M, ES> const & u, Matrix<T, M, N, ES> const & A);
 
 ///
+/// Matrix tensor product C = A B
+/// \param A matrix
+/// \param B tensor
+/// \return \f$ A B \f$
+///
+template<typename S, typename T, Index M, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, M, N, ES>
+operator*(Matrix<T, M, N, ES> const & A, Tensor<S, N, ES> const & B);
+
+///
+/// Tensor matrix product C = A B
+/// \param A tensor
+/// \param B matrix
+/// \return \f$ A B = \f$
+///
+template<typename S, typename T, Index M, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, M, N, ES>
+operator*(Tensor<S, M, ES> const & A, Matrix<T, M, N, ES> const & B);
+
+///
 /// Matrix dot product C = A B
 /// \return \f$ A \cdot B \f$
 ///
@@ -559,6 +581,28 @@ template<typename S, typename T, Index M, Index N, typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 dot(Vector<S, M, ES> const & u, Matrix<T, M, N, ES> const & A);
+
+///
+/// Matrix tensor product C = A B
+/// \param A matrix
+/// \param B tensor
+/// \return \f$ A B \f$
+///
+template<typename S, typename T, Index M, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, M, N, ES>
+dot(Matrix<T, M, N, ES> const & A, Tensor<S, N, ES> const & B);
+
+///
+/// Tensor matrix product C = A B
+/// \param A tensor
+/// \param B matrix
+/// \return \f$ A B = \f$
+///
+template<typename S, typename T, Index M, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
+Matrix<typename Promote<S, T>::type, M, N, ES>
+dot(Tensor<S, M, ES> const & A, Matrix<T, M, N, ES> const & B);
 
 ///
 /// Matrix matrix product C = A B
