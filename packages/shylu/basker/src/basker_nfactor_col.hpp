@@ -729,7 +729,7 @@ namespace BaskerNS
 
 	 if (Options.verbose == BASKER_TRUE)
 	   {
-	 printf("kid: %d col: %d need to realloc, unnz: %d ucnt: %d uunnz: %d U_col: %d U_row: %d \n", kid, k, unnz, ucnt, uunnz, U_col, U_row);
+	 printf("kid: %ld col: %ld need to realloc, unnz: %ld ucnt: %ld uunnz: %ld U_col: %ld U_row: %ld \n", (long)kid, (long)k, (long)unnz, (long)ucnt, (long)uunnz, (long)U_col, (long)U_row);
 	   }
 	 BASKER_ASSERT(0==1, "USIZE\n");
 	 
@@ -797,9 +797,10 @@ namespace BaskerNS
 
 	 #ifdef BASKER_2DL
 	 //if(X[j-brow] !=0)
-	 if(X(j) !=0)
+	 if(X(j) != (Entry)(0) )
 	 #else
-	 if(X[j] != 0)
+	 if(X[j] != (Entry)(0) )
+	 //if(X[j] != 0)
 	 #endif
 	  {
 
@@ -841,8 +842,8 @@ namespace BaskerNS
               {
 		//ASSERT if 0==1
 		#ifdef BASKER_2DL
-		printf("----Error--- kid: %d extra L[%d]=%f \n",
-		       kid, j, X[j-brow]);
+		printf("----Error--- kid: %ld extra L[%ld]=%f \n",
+		       (long)kid, (long)j, X[j-brow]);
                 #endif
               }//lower
 	  }//end not 0
@@ -1417,7 +1418,7 @@ namespace BaskerNS
    #endif
 
    //if((maxindex == L.max_idx) || (pivot == 0)
-   if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
+   if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
      {
        if(Options.verbose == BASKER_TRUE)
 	 {
@@ -1512,9 +1513,9 @@ namespace BaskerNS
        #ifdef BASKER_2DL
        //if(X[j-brow] !=0)
        //JDB: removed ;
-       if(X(j) != 0)
+       if(X(j) != (Entry)(0) )
        #else
-       if(X[j] != 0)
+       if(X[j] != (Entry)(0) )
        #endif
 	 {
            #ifdef BASKER_DEBUG_NFACTOR_COL

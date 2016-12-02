@@ -85,7 +85,7 @@ namespace BaskerNS
         delete [] exit_token;
       }
 
-      init_flg == BASKER_FALSE;
+      init_flg = BASKER_FALSE;
     }//end Finalize()
     
     inline

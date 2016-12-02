@@ -286,9 +286,8 @@ namespace BaskerNS
   {
     if(nrow!=_m)
     {
-      printf("Error: Changed m size\n");
-      printf("old m: %d new m: %d \n", 
-          nrow , _m);
+      std::cout << "Error: Changed m size" << std::endl;
+      std::cout << "old m: " << nrow << " new m: " << _m << std::endl;
       return BASKER_ERROR;
     }
     if(ncol==_n)
@@ -297,9 +296,8 @@ namespace BaskerNS
     }
     else
     {
-      printf("ERROR: Changed n size \n");
-      printf("old n: %d new n: %d \n",
-          ncol, _n);
+      std::cout << "Error: Changed n size" << std::endl;
+      std::cout << "old n: " << ncol << " new n: " << _n << std::endl;
       return BASKER_ERROR;
     }
     if(nnz == _nnz)
@@ -309,9 +307,8 @@ namespace BaskerNS
     }
     else
     {
-      printf("ERROR: Changed number of entries \n");
-      printf("old nnz: %d new nnz: %d \n",
-          nnz, _nnz);
+      std::cout << "Error: Changed number of entries " << std::endl;
+      std::cout << "old nnz: " << nnz << " new nnz: " << _nnz << std::endl;
       return BASKER_ERROR;
     }
 
@@ -331,8 +328,8 @@ namespace BaskerNS
   {
     if(nrow!=_m)
     {
-      printf("Error: Changed m size\n");
-      printf("old m: %d new m: %d \n", nrow, _m);
+      std::cout << "Error: Changed m size" << std::endl;
+      std::cout << "old m: " << nrow << " new m: " << _m << std::endl;
       return BASKER_ERROR;
     }
     if(ncol==_n)
@@ -341,8 +338,8 @@ namespace BaskerNS
     }
     else
     {
-      printf("ERROR: Changed n size \n");
-      printf("old n: %d new n: %d \n", ncol, _n);
+      std::cout << "Error: Changed n size" << std::endl;
+      std::cout << "old n: " << ncol << " new n: " << _n << std::endl;
       return BASKER_ERROR;
     }
     if(nnz == _nnz)
@@ -352,8 +349,8 @@ namespace BaskerNS
     }
     else
     {
-      printf("ERROR: Changed number of entries \n");
-      printf("old nnz: %d new nnz: %d \n", nnz, _nnz);
+      std::cout << "Error: Changed number of entries " << std::endl;
+      std::cout << "old nnz: " << nnz << " new nnz: " << _nnz << std::endl;
       return BASKER_ERROR;
     }
 
@@ -560,8 +557,12 @@ namespace BaskerNS
 
         if(j-srow <0)
         {
-          printf("kid: %d j: %d srow: %d k: %d idx: %d   \n", 
-              kid, j, srow, k, i);
+          std::cout << "kid: " << kid 
+                    << " j: " << j 
+                    << " srow: " << srow 
+                    << " k: " << k
+                    << " idx: " << i
+                    << std::endl;
           BASKER_ASSERT(0==1, "j-srow NO");
         }
 
@@ -606,35 +607,42 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::info()
   {
-    printf("\n Matrix Information: scol: %d ncol: %d srow: %d nrow: %d nnz: %d \n \n", 
-	   scol, ncol, srow, nrow, nnz);
+    std::cout << "\n Matrix Information: scol: " << scol
+              << " ncol: " << ncol
+              << " srow: " << srow 
+              << " nrow: " << nrow
+              << " nnz: " << nnz
+              << std::endl;
   }//end info()
   
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::print()
   {
-    printf("\n Matrix Print: \n Label: %s sr: %d sc: %d \n", 
-	   label.c_str(), srow, scol);
-    printf("ncol: %d nnz: %d \n", 
-	   ncol, nnz);
-    printf(" col_ptr: ");
+    std::cout << "\n Matrix Print: \n Label: " << label.c_str()
+              << " sr: " << srow
+              << " sc: " << scol
+              << "\n ncol: " << ncol
+              << " nnz: " << nnz
+              << std::endl;
+
+    std::cout << " col_ptr: ";
     for(Int i=0; i < ncol+1; i++)
       {
-        printf(" %d , ", col_ptr(i));
+        std::cout << col_ptr(i) << " , ";
       }
-    printf("\n row_idx: ");
+    std::cout << "\n row_idx: ";
     for(Int i=0; i < nnz; i++)
       {
-        printf(" %d , ", row_idx(i));
+        std::cout << row_idx(i) << " , ";
       }
-    printf("\n val: ");
+    std::cout << "\n val: ";
     for(Int i=0; i < nnz; i++)
       {
-        printf(" %e , " , val(i));
+        std::cout << val(i) << " , ";
       }
 
-    printf("\n END PRINT \n");
+    std::cout << "\n END PRINT " << std::endl;
 
   }//end print()
 

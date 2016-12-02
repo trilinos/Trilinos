@@ -105,13 +105,13 @@ namespace BaskerNS
     {
       if(gperm(i) < 0)
       {
-        printf("error: %d %d \n",
-            i, gperm(i));
+        printf("error: %ld %ld \n",
+            (long)i, (long)gperm(i));
       }
       if(gperm(i) > gn)
       {
-        printf("serror: %d %d \n",
-            i, gperm(i));
+        printf("serror: %ld %ld \n",
+            (long)i, (long)gperm(i));
       }
       x(gperm(i)) = y(i);
     }
@@ -126,7 +126,7 @@ namespace BaskerNS
     printf("RHS: \n");
     for(Int i =0; i < gm; i++)
     {
-      printf("%d %e,\n ", i, y(i)); 
+      printf("%ld %e,\n ", (long)i, y(i)); 
     }
     printf("\n\n");
 #endif
@@ -164,8 +164,8 @@ namespace BaskerNS
     printf("Solve Compare: \n");
     for(Int i = 0; i < gn; i++)
     {
-      printf("%d %f %f \n", 
-          i, x_known(i), x(i));
+      printf("%ld %f %f \n", 
+          (long)i, x_known(i), x(i));
 
     }
     printf("\n\n");
@@ -330,7 +330,7 @@ namespace BaskerNS
     {
 
 #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("\n\n btf b: %d \n", b);
+      printf("\n\n btf b: %ld \n", (long)b);
 #endif
 
       //---Lower solve
@@ -408,8 +408,8 @@ namespace BaskerNS
 
     //copy lower part down
 #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("copying lower starting: %d \n",
-        btf_tabs[btf_tabs_offset]);
+    printf("copying lower starting: %ld \n",
+        (long)btf_tabs[btf_tabs_offset]);
 #endif
 
     return 0;

@@ -122,18 +122,19 @@ namespace BaskerNS
     if(nd_flag == BASKER_TRUE)
       {
         FREE_INT_1DARRAY(order_scotch_array);
-        nd_flag == BASKER_FALSE;
+        nd_flag = BASKER_FALSE;
       }
     if(amd_flag == BASKER_TRUE)
       {
         FREE_INT_1DARRAY(order_csym_array);
-        amd_flag == BASKER_FALSE;
+        amd_flag = BASKER_FALSE;
       }
 
     //NDE: Free workspace and permutation arrays
     FREE_INT_1DARRAY(perm_comp_array);
     FREE_INT_1DARRAY(perm_inv_comp_array);
     FREE_INT_1DARRAY(perm_comp_iworkspace_array);
+    FREE_ENTRY_1DARRAY(perm_comp_fworkspace_array);
     FREE_ENTRY_1DARRAY(x_view_ptr_copy);
     FREE_ENTRY_1DARRAY(y_view_ptr_copy);
 
@@ -287,9 +288,8 @@ namespace BaskerNS
     // printf("befor symbolic\n");
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Symbolic\n");
-      printf("Matrix: %d %d %d \n",
-          nrow, ncol, nnz);
+      std::cout << "Basker Symbolic" << std::endl;
+      std::cout << "Matrix: " << nrow << " " << ncol << " " << nnz << std::endl;
     }
     //Init Matrix A.
     if(matrix_flag == BASKER_TRUE)
@@ -451,6 +451,7 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
 
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn); 
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
     permute_composition_for_solve();
 
     factor_flag = BASKER_TRUE;
@@ -469,9 +470,8 @@ namespace BaskerNS
 
     if (Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Factor Called\n");
-      printf("Matrix: %d %d %d \n",
-          nrow, ncol, nnz);
+      std::cout << "Basker Factor Called" << std::endl;
+      std::cout << "Matrix: " << nrow << " " << ncol << " " << nnz << std::endl;
     }
 
     /*
@@ -574,6 +574,7 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
 
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn);
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
     permute_composition_for_solve();
 
     factor_flag = BASKER_TRUE;
@@ -593,6 +594,7 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
 
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn);
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
     permute_composition_for_solve();
 
     return 0;

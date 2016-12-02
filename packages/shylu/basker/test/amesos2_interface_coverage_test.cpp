@@ -55,8 +55,8 @@ int main(int argc, char* argv[])
   Entry *x, *xhat, *y;
   x = xhat = y = NULL;
   vn = n;
-  x = new Entry[n]();
-  xhat = new Entry[n]();
+  x = new Entry[vn]();
+  xhat = new Entry[vn]();
   //Populate Vector
   {
     vm = m;
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
     std::cout << "==============Starting Test 1, 1 Threads===========" 
               << std::endl;
 
-    int result = 0;
+//    int result = 0; // NDE: warning unused
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
     std::cout << "============Starting Test 2, 2 Threads================" 
               << std::endl;
 
-    int result = 0;
+//    int result = 0; // NDE: warning unused
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
@@ -253,7 +253,7 @@ int main(int argc, char* argv[])
     std::cout << "============Starting Test 4, 4 Threads=============" 
               << std::endl;
 
-    int result = 0;
+//    int result = 0; // NDE: warning unused
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;

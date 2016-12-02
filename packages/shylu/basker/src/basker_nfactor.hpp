@@ -104,8 +104,8 @@ namespace BaskerNS
 
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("Factoring Dom num_threads: %d \n",
-            num_threads);
+        printf("Factoring Dom num_threads: %ld \n",
+            (long)num_threads);
       }
 
       Int domain_restart = 0;
@@ -146,7 +146,7 @@ namespace BaskerNS
 
       //====TIMER===
 #ifdef BASKER_TIME
-      printf("Time DOMAIN: %f \n", timer.seconds());
+      printf("Time DOMAIN: %lf \n", timer.seconds());
       timer.reset();
 #endif
       //====TIMER====
@@ -184,13 +184,13 @@ namespace BaskerNS
 
         if(Options.verbose == BASKER_TRUE)
         {
-          printf("Factoring Sep num_threads: %d %d \n",
-              lnteams, lthreads);
+          printf("Factoring Sep num_threads: %ld %ld \n",
+              (long)lnteams, (long)lthreads);
         }
 
 #ifdef BASKER_KOKKOS
         Kokkos::Impl::Timer  timer_inner_sep;
-#ifdef BASKER_NO_LAMBDA
+  #ifdef BASKER_NO_LAMBDA
 
         //kokkos_nfactor_sep <Int, Entry, Exe_Space> 
         //sep_nfactor(this, l);
@@ -231,14 +231,16 @@ namespace BaskerNS
         }//end while-true
 
 
-#ifdef BASKER_TIME
-        printf("Time INNERSEP: %d %f \n", 
-            l, timer_inner_sep.seconds());
-#endif
-#else //ELSE BASKER_NO_LAMBDA
+    #ifdef BASKER_TIME
+        printf("Time INNERSEP: %ld %lf \n", 
+            (long)l, timer_inner_sep.seconds());
+    #endif
+  #else //ELSE BASKER_NO_LAMBDA
         //Note: to be added
-#endif //end BASKER_NO_LAMBDA
+  #endif //end BASKER_NO_LAMBDA
+
 #else
+
 #pragma omp parallel
         {
 
@@ -247,7 +249,7 @@ namespace BaskerNS
       }//end over each level
 
 #ifdef BASKER_TIME
-      printf("Time SEP: %f \n", timer.seconds());
+      printf("Time SEP: %lf \n", timer.seconds());
 #endif
     }
 
@@ -261,8 +263,8 @@ namespace BaskerNS
 
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("Factoring BLKs num_threads: %d \n",
-            num_threads);
+        printf("Factoring BLKs num_threads: %ld \n",
+            (long)num_threads);
       }
 
       //=====Timer
@@ -310,7 +312,7 @@ namespace BaskerNS
 
       //====TIMER
 #ifdef BASKER_TIME
-      printf("Time BTF: %f \n", 
+      printf("Time BTF: %lf \n", 
           timer_btf.seconds());
 #endif
       //===TIMER
