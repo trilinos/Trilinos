@@ -358,12 +358,9 @@ mult_test_results multiply_test_kernel(
   const KCRS & Bk = B->getLocalMatrix();
   
   // Setup
-#ifdef HAVE_TPETRAKERNELS_MKL
-  std::vector<std::string> ALGORITHMS={"SPGEMM_MKL","SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
-#else
+  // As a note "SPGEMM_MKL" will *NOT* pass all of these tests
+  //  std::vector<std::string> ALGORITHMS={"SPGEMM_MKL","SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
   std::vector<std::string> ALGORITHMS={"SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
-#endif
-
 
   for(int alg = 0; alg < ALGORITHMS.size(); alg++) {
     std::string myalg = ALGORITHMS[alg];
@@ -381,8 +378,8 @@ mult_test_results multiply_test_kernel(
     
     // Symbolic
     KokkosKernels::Experimental::Graph::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bk.graph.row_map,Bk.graph.entries,false,row_mapC);
-    
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    //    printf("DEBUG: c_nnz_size = %d\n",c_nnz_size); // This isn't relevant for MKL
     if (c_nnz_size){
       entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
@@ -397,14 +394,17 @@ mult_test_results multiply_test_kernel(
     Teuchos::ArrayRCP<const LO> Real_colind;
     Teuchos::ArrayRCP<const SC> Real_vals;
     C->getAllValues(Real_rowptr,Real_colind,Real_vals);
-      
+
+    // Check number of rows
     if((size_t)Real_rowptr.size() != (size_t)row_mapC.size()) throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap size mismatch");
   
-    bool rowmap_mismatch=false;
+    // Check row sizes
+    bool has_mismatch=false;
     for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) {
-      if(Real_rowptr()[i] !=row_mapC[i]) {rowmap_mismatch=true;break;}
+      if(Real_rowptr()[i] !=row_mapC[i]) {has_mismatch=true;break;}
     }
-    if(rowmap_mismatch) {
+    if(has_mismatch) {
+#if 0
       printf("Real rowptr = ");
       for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) 
 	printf("%d ",(int)Real_rowptr()[i]);
@@ -420,15 +420,43 @@ mult_test_results multiply_test_kernel(
       for(size_t i=0; i<(size_t) entriesC.size(); i++) 
 	printf("%d ",(int)entriesC[i]);
       printf("\n");
+#endif
       throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap entries mismatch");
-    }    
+    } 
+
+    // Check graphs & entries (sorted)
+    results.cNorm=0.0;
+    results.compNorm=0.0;
+    results.epsilon=0.0;
+    for(size_t i=0; i<(size_t) Real_rowptr.size()-1; i++) {      
+      size_t nnz = Real_rowptr()[i+1] - Real_rowptr()[i];
+      if(nnz==0) continue;
+      std::vector<std::pair<LO,SC> > R_sorted(nnz), C_sorted(nnz);
+      for(size_t j=0; j<nnz; j++)  {
+	R_sorted[j].first  = Real_colind()[Real_rowptr()[i]+j];
+	R_sorted[j].second = Real_vals()[Real_rowptr()[i]+j];
+	C_sorted[j].first  = entriesC[Real_rowptr()[i]+j];
+	C_sorted[j].second = valuesC[Real_rowptr()[i]+j];
+      }
+      std::sort(R_sorted.begin(),R_sorted.end());
+      std::sort(C_sorted.begin(),C_sorted.end());
+      for(size_t j=0; j<nnz; j++) {
+	if(R_sorted[j].first !=C_sorted[j].first) {has_mismatch=true;break;}
+	results.cNorm+=std::abs(R_sorted[j].second);
+	results.compNorm+=std::abs(C_sorted[j].second);
+	results.epsilon+=std::abs(C_sorted[j].second-R_sorted[j].second);
+      }
+    }
+    if(has_mismatch)
+       throw std::runtime_error("mult_test_results multiply_test_kernel: colmap entries mismatch");
+    
+    if(results.cNorm>1e-10) results.epsilon = results.epsilon / results.cNorm;
+
+    if(results.epsilon>1e-10)
+      throw std::runtime_error("mult_test_results multiply_test_kernel: values mismatch");
+
   }
 
-
-  //  mult_test_results results;
-  //  results.cNorm    = C->getFrobeniusNorm ();
-  //  results.compNorm = diffMatrix->getFrobeniusNorm ();
-  //  results.epsilon  = results.compNorm/results.cNorm;
 
   return results;
 }
