@@ -539,6 +539,29 @@ private:
   }
 
 };
+
+
+  SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string & name) {
+    if(name=="SPGEMM_DEFAULT")             return SPGEMM_DEFAULT;
+    else if(name=="SPGEMM_DEBUG")          return SPGEMM_DEBUG;
+    else if(name=="SPGEMM_SERIAL")         return SPGEMM_SERIAL;
+    else if(name=="SPGEMM_CUSPARSE")       return SPGEMM_CUSPARSE;
+    else if(name=="SPGEMM_CUSP")           return SPGEMM_CUSP;
+    else if(name=="SPGEMM_MKL")            return SPGEMM_MKL;
+    else if(name=="SPGEMM_VIENNA")         return SPGEMM_VIENNA;
+    else if(name=="SPGEMM_KK_SPEED")       return SPGEMM_KK_SPEED;
+    else if(name=="SPGEMM_KK_MEMORY")      return SPGEMM_KK_MEMORY;
+    else if(name=="SPGEMM_KK_COLOR")       return SPGEMM_KK_COLOR;
+    else if(name=="SPGEMM_KK_MULTICOLOR")  return SPGEMM_KK_MULTICOLOR;
+    else if(name=="SPGEMM_KK_MULTICOLOR2") return SPGEMM_KK_MULTICOLOR2;
+    else if(name=="SPGEMM_KK_MEMSPEED")    return SPGEMM_KK_MEMSPEED;
+    else
+      throw std::runtime_error("Invalid SPGEMMAlgorithm name");
+  }
+
+
+
+
 }
 }
 }

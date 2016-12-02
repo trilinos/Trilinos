@@ -358,63 +358,71 @@ mult_test_results multiply_test_kernel(
   const KCRS & Bk = B->getLocalMatrix();
   
   // Setup
-  std::string myalg("SPGEMM_KK_MEMORY");
-  KokkosKernels::Experimental::Graph::SPGEMMAlgorithm alg_enum = KokkosKernels::Experimental::Graph::StringToSPGEMMAlgorithm(myalg);
-  typename KernelHandle::nnz_lno_t AnumRows = Ak.numRows();
-  typename KernelHandle::nnz_lno_t BnumRows = Bk.numRows();
-  typename KernelHandle::nnz_lno_t BnumCols = Bk.numCols();  
-  lno_view_t      row_mapC ("non_const_lnow_row", AnumRows + 1);
-  lno_nnz_view_t  entriesC;
-  scalar_view_t   valuesC;
-  KernelHandle kh;
-  kh.create_spgemm_handle(alg_enum);
+#ifdef HAVE_TPETRAKERNELS_MKL
+  std::vector<std::string> ALGORITHMS={"SPGEMM_MKL","SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
+#else
+  std::vector<std::string> ALGORITHMS={"SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
+#endif
 
-  // Symbolic
-  KokkosKernels::Experimental::Graph::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bk.graph.row_map,Bk.graph.entries,false,row_mapC);
+
+  for(int alg = 0; alg < ALGORITHMS.size(); alg++) {
+    std::string myalg = ALGORITHMS[alg];
+    printf("Testing algorithm %s\n",myalg.c_str());
+    
+    KokkosKernels::Experimental::Graph::SPGEMMAlgorithm alg_enum = KokkosKernels::Experimental::Graph::StringToSPGEMMAlgorithm(myalg);
+    typename KernelHandle::nnz_lno_t AnumRows = Ak.numRows();
+    typename KernelHandle::nnz_lno_t BnumRows = Bk.numRows();
+    typename KernelHandle::nnz_lno_t BnumCols = Bk.numCols();  
+    lno_view_t      row_mapC ("non_const_lnow_row", AnumRows + 1);
+    lno_nnz_view_t  entriesC;
+    scalar_view_t   valuesC;
+    KernelHandle kh;
+    kh.create_spgemm_handle(alg_enum);
+    
+    // Symbolic
+    KokkosKernels::Experimental::Graph::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bk.graph.row_map,Bk.graph.entries,false,row_mapC);
+    
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size){
+      entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+    
+    // Numeric
+    KokkosKernels::Experimental::Graph::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bk.graph.row_map,Bk.graph.entries,Bk.values,false,row_mapC,entriesC,valuesC);
+    kh.destroy_spgemm_handle();
+    
+    // Compare the returned arrays with that of actual C
+    Teuchos::ArrayRCP<const size_t> Real_rowptr;
+    Teuchos::ArrayRCP<const LO> Real_colind;
+    Teuchos::ArrayRCP<const SC> Real_vals;
+    C->getAllValues(Real_rowptr,Real_colind,Real_vals);
+      
+    if((size_t)Real_rowptr.size() != (size_t)row_mapC.size()) throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap size mismatch");
   
-  size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-  if (c_nnz_size){
-    entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    bool rowmap_mismatch=false;
+    for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) {
+      if(Real_rowptr()[i] !=row_mapC[i]) {rowmap_mismatch=true;break;}
+    }
+    if(rowmap_mismatch) {
+      printf("Real rowptr = ");
+      for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) 
+	printf("%d ",(int)Real_rowptr()[i]);
+      printf("\nCalc rowptr = ");
+      for(size_t i=0; i<(size_t) row_mapC.size(); i++) 
+	printf("%d ",(int)row_mapC[i]);
+      printf("\n");
+      
+      printf("Real colind = ");
+      for(size_t i=0; i<(size_t) Real_colind.size(); i++) 
+	printf("%d ",(int)Real_colind()[i]);
+      printf("\nCalc colind = ");
+      for(size_t i=0; i<(size_t) entriesC.size(); i++) 
+	printf("%d ",(int)entriesC[i]);
+      printf("\n");
+      throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap entries mismatch");
+    }    
   }
-
-  // Numeric
-  KokkosKernels::Experimental::Graph::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bk.graph.row_map,Bk.graph.entries,Bk.values,false,row_mapC,entriesC,valuesC);
-  kh.destroy_spgemm_handle();
-
-  // Compare the returned arrays with that of actual C
-  Teuchos::ArrayRCP<const size_t> Real_rowptr;
-  Teuchos::ArrayRCP<const LO> Real_colind;
-  Teuchos::ArrayRCP<const SC> Real_vals;
-  C->getAllValues(Real_rowptr,Real_colind,Real_vals);
-                  
-  
-  if((size_t)Real_rowptr.size() != (size_t)row_mapC.size()) throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap size mismatch");
-  
-  bool rowmap_mismatch=false;
-  for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) {
-    if(Real_rowptr()[i] !=row_mapC[i]) {rowmap_mismatch=true;break;}
-  }
-  if(rowmap_mismatch) {
-    printf("Real rowptr = ");
-    for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) 
-      printf("%d ",(int)Real_rowptr()[i]);
-    printf("\nCalc rowptr = ");
-    for(size_t i=0; i<(size_t) row_mapC.size(); i++) 
-      printf("%d ",(int)row_mapC[i]);
-    printf("\n");
-
-    printf("Real colind = ");
-    for(size_t i=0; i<(size_t) Real_colind.size(); i++) 
-      printf("%d ",(int)Real_colind()[i]);
-    printf("\nCalc colind = ");
-    for(size_t i=0; i<(size_t) entriesC.size(); i++) 
-      printf("%d ",(int)entriesC[i]);
-    printf("\n");
-     throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap entries mismatch");
-  }
-
-
 
 
   //  mult_test_results results;
