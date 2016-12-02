@@ -36,10 +36,6 @@ public:
       return rcp(new StepperForwardEuler<Scalar>(stepperPL, model));
     else if (stepper == "Backward Euler")
       return rcp(new StepperBackwardEuler<Scalar>(stepperPL, model));
-    else if (stepper == "RK Butcher Tableau") {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - User input RK not implemented yet!.\n");
-    }
     else if (
       stepper == "RK Forward Euler" ||
       stepper == "RK Explicit 4 Stage" ||
@@ -50,7 +46,8 @@ public:
       stepper == "RK Explicit 3 Stage 3rd order TVD" ||
       stepper == "RK Explicit 3 Stage 3rd order by Heun" ||
       stepper == "RK Explicit 2 Stage 2nd order by Runge" ||
-      stepper == "RK Explicit Trapezoidal")
+      stepper == "RK Explicit Trapezoidal" ||
+      stepper == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(stepperPL, model));
     else if (
       stepper == "RK Backward Euler" ||

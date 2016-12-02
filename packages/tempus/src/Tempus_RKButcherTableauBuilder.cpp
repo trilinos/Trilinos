@@ -14,7 +14,8 @@ namespace Tempus {
 
   // Nonmember helper function
   template Teuchos::RCP<RKButcherTableau<double> >
-  createRKBT(const std::string& rkbt_name);
+  createRKBT(const std::string& rkbt_name,
+             Teuchos::RCP<Teuchos::ParameterList> pl);
 
 } // namespace Tempus
 

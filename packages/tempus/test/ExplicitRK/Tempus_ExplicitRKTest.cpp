@@ -32,6 +32,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
   RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
   RKMethods.push_back("RK Explicit Trapezoidal");
+  RKMethods.push_back("General ERK");
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(0.051123);
   RKMethodErrors.push_back(8.33251e-07);
@@ -43,6 +44,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethodErrors.push_back(4.16603e-05);
   RKMethodErrors.push_back(0.00166645);
   RKMethodErrors.push_back(0.00166645);
+  RKMethodErrors.push_back(8.33251e-07);
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -72,7 +74,12 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
 
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-      pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
+      if (RKMethods[m] == "General ERK") {
+        pl->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper 2");
+      } else {
+        pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
+      }
+
 
       dt /= 2;
 

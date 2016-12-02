@@ -6,6 +6,8 @@
 #pragma clang system_header
 #endif
 
+#include "Tempus_String_Utilities.hpp"
+
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_Describable.hpp"
@@ -84,7 +86,8 @@ class RKButcherTableau :
           bstar =  Teuchos::SerialDenseVector<int,Scalar>()
         )
     {
-      this->initialize(A,b,c,order,order,order,longDescription,isEmbedded,bstar);
+      this->initialize(A,b,c,order,order,order,
+                       longDescription,isEmbedded,bstar);
     }
 
     virtual void initialize(
@@ -138,12 +141,16 @@ class RKButcherTableau :
       virtual Teuchos::RCP<const Teuchos::ParameterList>
       getValidParameters() const
       {
-        if (is_null(validPL_)) {
-          validPL_ = Teuchos::parameterList();
-          validPL_->set("Description","",this->getDescription());
-          Teuchos::setupVerboseObjectSublist(&*validPL_);
+        static Teuchos::RCP<Teuchos::ParameterList> validPL;
+
+        if (is_null(validPL)) {
+          Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+          pl->set("Description","",this->getDescription());
+          pl->set("Stepper Type","",this->description());
+          Teuchos::setupVerboseObjectSublist(&*pl);
+          validPL = pl;
         }
-        return validPL_;
+        return validPL;
       }
     //@}
 
@@ -197,12 +204,6 @@ class RKButcherTableau :
       }
     }
 
-    void setValidParameterList(
-      const Teuchos::RCP<Teuchos::ParameterList> validPL )
-        { validPL_ = validPL; }
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstValidParameterList()
-     { return validPL_; }
-
   private:
     Teuchos::SerialDenseMatrix<int,Scalar> A_;
     Teuchos::SerialDenseVector<int,Scalar> b_;
@@ -213,10 +214,12 @@ class RKButcherTableau :
     bool isImplicit_;
     bool isDIRK_;
     std::string longDescription_;
-    mutable Teuchos::RCP<Teuchos::ParameterList> validPL_;
 
     bool isEmbedded_ = false;
     Teuchos::SerialDenseVector<int,Scalar> bstar_;
+
+  protected:
+    Teuchos::RCP<Teuchos::ParameterList> pList_;
 };
 
 
@@ -261,6 +264,177 @@ Teuchos::RCP<RKButcherTableau<Scalar> > rKButcherTableau(
   rkbt->initialize(A,b,c,order,orderMin,orderMax,description);
   return(rkbt);
 }
+
+
+template<class Scalar>
+class GeneralExplicit_RKBT :
+  virtual public RKButcherTableau<Scalar>
+{
+  public:
+  GeneralExplicit_RKBT()
+    { this->setParameterList(Teuchos::parameterList()); }
+
+  virtual std::string description() const
+    { return "General ERK"; }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
+  {
+    using Teuchos::as;
+
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    Teuchos::readVerboseObjectSublist(&*pl,this);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "Error - GeneralExplicit_RKBT()\n"
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+    this->setDescription(pl->get<std::string>("Description"));
+
+    Teuchos::RCP<Teuchos::ParameterList> tableauPL = sublist(pl,"Tableau",true);
+    std::size_t numStages = -1;
+    int order = tableauPL->get<int>("order");
+    Teuchos::SerialDenseMatrix<int,Scalar> A;
+    Teuchos::SerialDenseVector<int,Scalar> b;
+    Teuchos::SerialDenseVector<int,Scalar> c;
+    Teuchos::SerialDenseVector<int,Scalar> bstar;
+
+    // read in the A matrix
+    {
+      std::vector<std::string> A_row_tokens;
+      Tempus::StringTokenizer(A_row_tokens, tableauPL->get<std::string>("A"),
+                              ";",true);
+
+      // this is the only place where numStages is set
+      numStages = A_row_tokens.size();
+
+      // allocate the matrix
+      A.shape(as<int>(numStages),as<int>(numStages));
+
+      // fill the rows
+      for(std::size_t r=0;r<numStages;r++) {
+        // parse the row (tokenize on space)
+        std::vector<std::string> tokens;
+        Tempus::StringTokenizer(tokens,A_row_tokens[r]," ",true);
+
+        std::vector<double> values;
+        Tempus::TokensToDoubles(values,tokens);
+
+        TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+          "Error parsing A matrix, wrong number of stages in row " << r << "\n"
+           + this->description());
+
+        for(std::size_t c=0;c<numStages;c++)
+          A(r,c) = values[c];
+      }
+    }
+
+    // size b and c vectors
+    b.size(as<int>(numStages));
+    c.size(as<int>(numStages));
+
+    // read in the b vector
+    {
+      std::vector<std::string> tokens;
+      Tempus::StringTokenizer(tokens,tableauPL->get<std::string>("b")," ",true);
+      std::vector<double> values;
+      Tempus::TokensToDoubles(values,tokens);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+        "Error parsing b vector, wrong number of stages.\n"
+        + this->description());
+
+      for(std::size_t i=0;i<numStages;i++)
+        b(i) = values[i];
+    }
+
+    // read in the c vector
+    {
+      std::vector<std::string> tokens;
+      Tempus::StringTokenizer(tokens,tableauPL->get<std::string>("c")," ",true);
+      std::vector<double> values;
+      Tempus::TokensToDoubles(values,tokens);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+        "Error parsing c vector, wrong number of stages.\n"
+        + this->description());
+
+      for(std::size_t i=0;i<numStages;i++)
+        c(i) = values[i];
+    }
+
+    if (tableauPL->get<std::string>("bstar") != "1.0") {
+      bstar.size(as<int>(numStages));
+      // read in the bstar vector
+      {
+        std::vector<std::string> tokens;
+        Tempus::StringTokenizer(
+          tokens, tableauPL->get<std::string>("bstar"), " ", true);
+        std::vector<double> values;
+        Tempus::TokensToDoubles(values,tokens);
+
+        TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+          "Error parsing bstar vector, wrong number of stages.\n"
+          + this->description());
+
+        for(std::size_t i=0;i<numStages;i++)
+          bstar(i) = values[i];
+      }
+      this->initialize(A,b,c,order,this->description(), true, bstar);
+    } else {
+      this->initialize(A,b,c,order,this->description());
+    }
+
+    this->setMyParamList(pl);
+    this->pList_ = pl;
+
+    //std::stringstream ss;
+    //this->pList_->unused(ss);
+    //this->pList_->sublist("Tableau").unused(ss);
+    //TEUCHOS_TEST_FOR_EXCEPTION( ss.str().length(), std::logic_error,
+    // "Error - GeneralExplicit_RKBT()  Found unused parameters!\n" + ss.str());
+  }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
+  {
+    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+
+    if (is_null(validPL)) {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+
+      std::stringstream Description;
+      Description << this->description() << "\n"
+        << "The format of the Butcher Tableau parameter list is\n"
+        << "  <Parameter name=\"A\" type=\"string\" value=\"# # # ;\n"
+        << "                                           # # # ;\n"
+        << "                                           # # #\"/>\n"
+        << "  <Parameter name=\"b\" type=\"string\" value=\"# # #\"/>\n"
+        << "  <Parameter name=\"c\" type=\"string\" value=\"# # #\"/>\n\n"
+        << "Note the number of stages is implicit in the number of entries.\n"
+        << "The number of stages must be consistent.\n"
+        << "\n"
+        << "Default tableau is Forward Euler (order=1):\n"
+        << "  A = [ 0 ]\n"
+        << "  b = [ 1 ]'\n"
+        << "  c = [ 0 ]'" << std::endl;
+
+      pl->set("Description", Description.str(), Description.str());
+      pl->set("Stepper Type", this->description());
+      Teuchos::RCP<Teuchos::ParameterList> tableau = Teuchos::parameterList();
+      tableau->set("A", "0.0");
+      tableau->set("b", "1.0");
+      tableau->set("bstar", "1.0");
+      tableau->set("c", "0.0");
+      tableau->set<int>("order", 1);
+      pl->set("Tableau", *tableau);
+      Teuchos::setupVerboseObjectSublist(&*pl);
+      validPL = pl;
+    }
+    return validPL;
+  }
+};
 
 
 template<class Scalar>
@@ -931,26 +1105,25 @@ class SDIRK2Stage2ndOrder_RKBT :
     this->setDescription(Description.str());
     typedef Teuchos::ScalarTraits<Scalar> ST;
     const Scalar one = ST::one();
-    gamma_default_ = Teuchos::as<Scalar>( (2*one - ST::squareroot(2*one))/(2*one) );
+    gamma_default_ = Teuchos::as<Scalar>((2*one-ST::squareroot(2*one))/(2*one));
     gamma_ = gamma_default_;
 
-    this->setupData();
-
-    Teuchos::RCP<Teuchos::ParameterList> validPL = Teuchos::parameterList();
-    validPL->set("Description","",this->getDescription());
-    validPL->set<double>("gamma",gamma_default_,
-      "The default value is gamma = (2-sqrt(2))/2. "
-      "This will produce an L-stable 2nd order method with the stage "
-      "times within the timestep.  Other values of gamma will still "
-      "produce an L-stable scheme, but will only be 1st order accurate.");
-    Teuchos::setupVerboseObjectSublist(&*validPL);
-    this->setValidParameterList(validPL);
+    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
+                     this->getValidParameters());
+    this->setParameterList(this->pList_);
   }
+
   virtual std::string description() const
     { return "SDIRK 2 Stage 2nd order"; }
 
-  void setupData()
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
   {
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    pl->validateParameters(*this->getValidParameters());
+    Teuchos::readVerboseObjectSublist(&*pl,this);
+
+    gamma_ = pl->get<double>("gamma",gamma_default_);
+
     typedef Teuchos::ScalarTraits<Scalar> ST;
     int NumStages = 2;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
@@ -967,23 +1140,32 @@ class SDIRK2Stage2ndOrder_RKBT :
     c(0) = gamma_;
     c(1) = one;
 
-    this->set_A(A);
-    this->set_b(b);
-    this->set_c(c);
-    if (gamma_ == gamma_default_) this->set_order(2);
-    else                          this->set_order(1);
-    this->set_orderMin(1);
-    this->set_orderMax(2);
+    int order = 1;
+    if (gamma_ == gamma_default_) order = 2;
+
+    this->initialize(A, b, c, order, 1, 2, this->description());
+    this->setMyParamList(pl);
+    this->pList_ = pl;
   }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
-    paramList->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*paramList,this);
-    gamma_ = paramList->get<double>("gamma",gamma_default_);
-    this->setupData();
-    this->setMyParamList(paramList);
+    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+
+    if (is_null(validPL)) {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->set("Description","",this->getDescription());
+      pl->set("Stepper Type","",this->description());
+      pl->set<double>("gamma",gamma_default_,
+        "The default value is gamma = (2-sqrt(2))/2. "
+        "This will produce an L-stable 2nd order method with the stage "
+        "times within the timestep.  Other values of gamma will still "
+        "produce an L-stable scheme, but will only be 1st order accurate.");
+      Teuchos::setupVerboseObjectSublist(&*pl);
+      validPL = pl;
+    }
+    return validPL;
   }
 
   private:
@@ -1019,31 +1201,29 @@ class SDIRK2Stage3rdOrder_RKBT :
     secondOrderLStable_ = false;
     typedef Teuchos::ScalarTraits<Scalar> ST;
     const Scalar one = ST::one();
-    gamma_default_ = Teuchos::as<Scalar>( (3*one + ST::squareroot(3*one))/(6*one) );
+    gamma_default_ =
+      Teuchos::as<Scalar>( (3*one + ST::squareroot(3*one))/(6*one) );
     gamma_ = gamma_default_;
-    this->setupData();
 
-    Teuchos::RCP<Teuchos::ParameterList> validPL = Teuchos::parameterList();
-    validPL->set("Description","",this->getDescription());
-    validPL->set("3rd Order A-stable",thirdOrderAStable_default_,
-      "If true, set gamma to gamma = (3+sqrt(3))/6 to obtain "
-      "a 3rd order A-stable scheme. '3rd Order A-stable' and "
-      "'2nd Order L-stable' can not both be true.");
-    validPL->set("2nd Order L-stable",secondOrderLStable_default_,
-      "If true, set gamma to gamma = (2+sqrt(2))/2 to obtain "
-      "a 2nd order L-stable scheme. '3rd Order A-stable' and "
-      "'2nd Order L-stable' can not both be true.");
-    validPL->set("gamma",gamma_default_,
-      "If both '3rd Order A-stable' and '2nd Order L-stable' "
-      "are false, gamma will be used. The default value is the "
-      "'3rd Order A-stable' gamma value, (3+sqrt(3))/6.");
-
-    Teuchos::setupVerboseObjectSublist(&*validPL);
-    this->setValidParameterList(validPL);
+    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
+                     this->getValidParameters());
+    this->setParameterList(this->pList_);
   }
 
-  void setupData()
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
   {
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    pl->validateParameters(*this->getValidParameters());
+    Teuchos::readVerboseObjectSublist(&*pl,this);
+    thirdOrderAStable_  = pl->get("3rd Order A-stable",
+                                  thirdOrderAStable_default_);
+    secondOrderLStable_ = pl->get("2nd Order L-stable",
+                                  secondOrderLStable_default_);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      thirdOrderAStable_ && secondOrderLStable_, std::logic_error,
+      "'3rd Order A-stable' and '2nd Order L-stable' can not both be true.");
+    gamma_ = pl->get("gamma",gamma_default_);
+
     typedef Teuchos::ScalarTraits<Scalar> ST;
     using Teuchos::as;
     int NumStages = 2;
@@ -1065,32 +1245,41 @@ class SDIRK2Stage3rdOrder_RKBT :
     c(0) = gamma_;
     c(1) = as<Scalar>( one - gamma_ );
 
-    this->set_A(A);
-    this->set_b(b);
-    this->set_c(c);
-    if (gamma_ == gamma_default_) this->set_order(3);
-    else                          this->set_order(2);
-    this->set_orderMin(2);
-    this->set_orderMax(3);
+    int order = 2;
+    if (gamma_ == gamma_default_) order = 3;
+
+    this->initialize(A, b, c, order, 2, 3, this->description());
+    this->setMyParamList(pl);
+    this->pList_ = pl;
   }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
-    paramList->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*paramList,this);
-    thirdOrderAStable_  = paramList->get("3rd Order A-stable",
-                                         thirdOrderAStable_default_);
-    secondOrderLStable_ = paramList->get("2nd Order L-stable",
-                                         secondOrderLStable_default_);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      thirdOrderAStable_ && secondOrderLStable_, std::logic_error,
-      "'3rd Order A-stable' and '2nd Order L-stable' can not both be true.");
-    gamma_ = paramList->get("gamma",gamma_default_);
+    static Teuchos::RCP<Teuchos::ParameterList> validPL;
 
-    this->setupData();
-    this->setMyParamList(paramList);
+    if (is_null(validPL)) {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->set("Description","",this->getDescription());
+      pl->set("Stepper Type","",this->description());
+      pl->set("3rd Order A-stable",thirdOrderAStable_default_,
+        "If true, set gamma to gamma = (3+sqrt(3))/6 to obtain "
+        "a 3rd order A-stable scheme. '3rd Order A-stable' and "
+        "'2nd Order L-stable' can not both be true.");
+      pl->set("2nd Order L-stable",secondOrderLStable_default_,
+        "If true, set gamma to gamma = (2+sqrt(2))/2 to obtain "
+        "a 2nd order L-stable scheme. '3rd Order A-stable' and "
+        "'2nd Order L-stable' can not both be true.");
+      pl->set("gamma",gamma_default_,
+        "If both '3rd Order A-stable' and '2nd Order L-stable' "
+        "are false, gamma will be used. The default value is the "
+        "'3rd Order A-stable' gamma value, (3+sqrt(3))/6.");
+      Teuchos::setupVerboseObjectSublist(&*pl);
+      validPL = pl;
+    }
+    return validPL;
   }
+
   virtual std::string description() const
     { return "SDIRK 2 Stage 3rd order"; }
 
@@ -1345,23 +1534,19 @@ class IRK1StageTheta_RKBT :
     typedef Teuchos::ScalarTraits<Scalar> ST;
     theta_default_ = ST::one()/(2*ST::one());
     theta_ = theta_default_;
-    this->setupData();
 
-    Teuchos::RCP<Teuchos::ParameterList> validPL = Teuchos::parameterList();
-    validPL->set("Description","",this->getDescription());
-    validPL->set<double>("theta",theta_default_,
-      "Valid values are 0 <= theta <= 1, where theta = 0 "
-      "implies Forward Euler, theta = 1/2 implies midpoint "
-      "method (default), and theta = 1 implies Backward Euler. "
-      "For theta != 1/2, this method is first-order accurate, "
-      "and with theta = 1/2, it is second-order accurate.  "
-      "This method is A-stable, but becomes L-stable with theta=1.");
-    Teuchos::setupVerboseObjectSublist(&*validPL);
-    this->setValidParameterList(validPL);
+    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
+                     this->getValidParameters());
+    this->setParameterList(this->pList_);
   }
 
-  void setupData()
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
   {
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    pl->validateParameters(*this->getValidParameters());
+    Teuchos::readVerboseObjectSublist(&*pl,this);
+    theta_ = pl->get<double>("theta",theta_default_);
+
     typedef Teuchos::ScalarTraits<Scalar> ST;
     int NumStages = 1;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
@@ -1370,27 +1555,39 @@ class IRK1StageTheta_RKBT :
     A(0,0) = theta_;
     b(0) = ST::one();
     c(0) = theta_;
-    this->set_A(A);
-    this->set_b(b);
-    this->set_c(c);
-    if (theta_ == theta_default_) this->set_order(2);
-    else                          this->set_order(1);
-    this->set_orderMin(1);
-    this->set_orderMax(2);
-  }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
-  {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
-    paramList->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*paramList,this);
-    theta_ = paramList->get<double>("theta",theta_default_);
-    this->setupData();
-    this->setMyParamList(paramList);
+    int order = 1;
+    if (theta_ == theta_default_) order = 2;
+
+    this->initialize(A, b, c, order, 1, 2, this->description());
+    this->setMyParamList(pl);
+    this->pList_ = pl;
   }
 
   virtual std::string description() const
     { return  "IRK 1 Stage Theta Method"; }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
+  {
+    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+
+    if (is_null(validPL)) {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->set("Description","",this->getDescription());
+      pl->set("Stepper Type","",this->description());
+      pl->set<double>("theta",theta_default_,
+        "Valid values are 0 <= theta <= 1, where theta = 0 "
+        "implies Forward Euler, theta = 1/2 implies midpoint "
+        "method (default), and theta = 1 implies Backward Euler. "
+        "For theta != 1/2, this method is first-order accurate, "
+        "and with theta = 1/2, it is second-order accurate.  "
+        "This method is A-stable, but becomes L-stable with theta=1.");
+      Teuchos::setupVerboseObjectSublist(&*pl);
+      validPL = pl;
+    }
+    return validPL;
+  }
 
   private:
     Scalar theta_default_;
@@ -1420,30 +1617,30 @@ class IRK2StageTheta_RKBT :
     typedef Teuchos::ScalarTraits<Scalar> ST;
     theta_default_ = ST::one()/(2*ST::one());
     theta_ = theta_default_;
-    this->setupData();
 
-    Teuchos::RCP<Teuchos::ParameterList> validPL = Teuchos::parameterList();
-    validPL->set("Description","",this->getDescription());
-    validPL->set<double>("theta",theta_default_,
-      "Valid values are 0 < theta <= 1, where theta = 0 "
-      "implies Forward Euler, theta = 1/2 implies trapezoidal "
-      "method, and theta = 1 implies Backward Euler. "
-      "For theta != 1/2, this method is first-order accurate, "
-      "and with theta = 1/2, it is second-order accurate.  "
-      "This method is A-stable, but becomes L-stable with theta=1.");
-    Teuchos::setupVerboseObjectSublist(&*validPL);
-    this->setValidParameterList(validPL);
+    this->pList_ = Teuchos::rcp_const_cast<Teuchos::ParameterList>(
+                     this->getValidParameters());
+    this->setParameterList(this->pList_);
   }
 
-  void setupData()
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl)
   {
+    TEUCHOS_TEST_FOR_EXCEPT( is_null(pl) );
+    pl->validateParameters(*this->getValidParameters());
+    Teuchos::readVerboseObjectSublist(&*pl,this);
+    theta_ = pl->get<double>("theta",theta_default_);
+
     typedef Teuchos::ScalarTraits<Scalar> ST;
+    const Scalar one = ST::one();
+    const Scalar zero = ST::zero();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      theta_ == zero, std::logic_error,
+      "'theta' can not be zero, as it makes this IRK stepper explicit.");
+
     int NumStages = 2;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
-    const Scalar one = ST::one();
-    const Scalar zero = ST::zero();
     A(0,0) = zero;
     A(0,1) = zero;
     A(1,0) = Teuchos::as<Scalar>( one - theta_ );
@@ -1453,26 +1650,34 @@ class IRK2StageTheta_RKBT :
     c(0) = theta_;
     c(1) = one;
 
-    this->set_A(A);
-    this->set_b(b);
-    this->set_c(c);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      theta_ == zero, std::logic_error,
-      "'theta' can not be zero, as it makes this IRK stepper explicit.");
-    if (theta_ == theta_default_) this->set_order(2);
-    else                          this->set_order(1);
-    this->set_orderMin(1);
-    this->set_orderMax(2);
+    int order = 1;
+    if (theta_ == theta_default_) order = 2;
+
+    this->initialize(A, b, c, order, 1, 2, this->description());
+    this->setMyParamList(pl);
+    this->pList_ = pl;
   }
 
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
   {
-    TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
-    paramList->validateParameters(*this->getValidParameters());
-    Teuchos::readVerboseObjectSublist(&*paramList,this);
-    theta_ = paramList->get<double>("theta",theta_default_);
-    this->setupData();
-    this->setMyParamList(paramList);
+    static Teuchos::RCP<Teuchos::ParameterList> validPL;
+
+    if (is_null(validPL)) {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->set("Description","",this->getDescription());
+      pl->set("Stepper Type","",this->description());
+      pl->set<double>("theta",theta_default_,
+        "Valid values are 0 < theta <= 1, where theta = 0 "
+        "implies Forward Euler, theta = 1/2 implies trapezoidal "
+        "method, and theta = 1 implies Backward Euler. "
+        "For theta != 1/2, this method is first-order accurate, "
+        "and with theta = 1/2, it is second-order accurate.  "
+        "This method is A-stable, but becomes L-stable with theta=1.");
+      Teuchos::setupVerboseObjectSublist(&*pl);
+      validPL = pl;
+    }
+    return validPL;
   }
 
   virtual std::string description() const { return "IRK 2 Stage Theta Method"; }

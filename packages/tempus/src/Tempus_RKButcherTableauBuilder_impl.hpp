@@ -16,11 +16,13 @@ Teuchos::RCP<RKButcherTableauBuilder<Scalar> > rKButcherTableauBuilder()
 }
 // Nonmember helper function
 template<class Scalar>
-Teuchos::RCP<RKButcherTableau<Scalar> > createRKBT(const std::string& rkbt_name)
+Teuchos::RCP<RKButcherTableau<Scalar> > createRKBT(
+  const std::string& rkbt_name, Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   Teuchos::RCP<RKButcherTableauBuilder<Scalar> >
     rkbtfn = rKButcherTableauBuilder<Scalar>();
   Teuchos::RCP<RKButcherTableau<Scalar> > rkbt = rkbtfn->create(rkbt_name);
+  rkbt->setParameterList(pl);
   return rkbt;
 }
 
@@ -102,6 +104,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
   //
 
   // Explicit
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          GeneralExplicit_RKBT<Scalar> >(),
+      "General ERK");
+
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
                           ForwardEuler_RKBT<Scalar> >(),
