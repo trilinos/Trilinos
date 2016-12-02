@@ -1249,6 +1249,7 @@ namespace BaskerNS
     INT_1DARRAY perm_comp_array;
 
     INT_1DARRAY perm_comp_iworkspace_array;
+    ENTRY_1DARRAY perm_comp_fworkspace_array;
     //end NDE
 
 

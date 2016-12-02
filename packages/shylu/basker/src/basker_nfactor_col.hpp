@@ -797,9 +797,10 @@ namespace BaskerNS
 
 	 #ifdef BASKER_2DL
 	 //if(X[j-brow] !=0)
-	 if(X(j) !=0)
+	 if(X(j) != (Entry)(0) )
 	 #else
-	 if(X[j] != 0)
+	 if(X[j] != (Entry)(0) )
+	 //if(X[j] != 0)
 	 #endif
 	  {
 
@@ -1417,7 +1418,7 @@ namespace BaskerNS
    #endif
 
    //if((maxindex == L.max_idx) || (pivot == 0)
-   if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
+   if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
      {
        if(Options.verbose == BASKER_TRUE)
 	 {
@@ -1512,9 +1513,9 @@ namespace BaskerNS
        #ifdef BASKER_2DL
        //if(X[j-brow] !=0)
        //JDB: removed ;
-       if(X(j) != 0)
+       if(X(j) != (Entry)(0) )
        #else
-       if(X[j] != 0)
+       if(X[j] != (Entry)(0) )
        #endif
 	 {
            #ifdef BASKER_DEBUG_NFACTOR_COL

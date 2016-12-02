@@ -166,7 +166,8 @@ namespace BaskerNS
 
     Int newsize;
     Entry pivot, value;
-    Entry absv, maxv;
+    double absv, maxv;
+    //Entry absv, maxv;
 
     Int llnnz = L.nnz;
     Int uunnz = U.nnz;
@@ -339,7 +340,8 @@ namespace BaskerNS
       //t_locate_pivot(kid, top)	  
       //find pivot
       maxv = 0.0;
-      Entry maxp = 0.0;
+      //Entry maxp = 0.0;
+      double maxp = 0.0;
       for(i = top; i < ws_size; i++)
       {
         //j = pattern[i];
@@ -405,7 +407,7 @@ namespace BaskerNS
 
       ucnt = ws_size - top - lcnt +1;
       //if((maxindex == L.max_idx) || (pivot == 0))
-      if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
+      if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
       {
         if (Options.verbose == BASKER_TRUE)
         {
@@ -1307,7 +1309,7 @@ namespace BaskerNS
       {
 	//Int j = pattern[i];
 	//Int t = gperm(j);
-	if(X(j)!=0)
+	if(X(j) != (Entry)(0) )
 	  {
 
             //Int t = gperm(j+brow);

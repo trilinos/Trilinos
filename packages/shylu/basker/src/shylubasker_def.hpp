@@ -134,6 +134,7 @@ namespace BaskerNS
     FREE_INT_1DARRAY(perm_comp_array);
     FREE_INT_1DARRAY(perm_inv_comp_array);
     FREE_INT_1DARRAY(perm_comp_iworkspace_array);
+    FREE_ENTRY_1DARRAY(perm_comp_fworkspace_array);
     FREE_ENTRY_1DARRAY(x_view_ptr_copy);
     FREE_ENTRY_1DARRAY(y_view_ptr_copy);
 
@@ -450,6 +451,7 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
 
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn); 
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
     permute_composition_for_solve();
 
     factor_flag = BASKER_TRUE;
@@ -572,6 +574,7 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
 
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn);
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
     permute_composition_for_solve();
 
     factor_flag = BASKER_TRUE;
@@ -591,6 +594,7 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_comp_array, gn); //x
 
     MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, gn);
+    MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, gn);
     permute_composition_for_solve();
 
     return 0;

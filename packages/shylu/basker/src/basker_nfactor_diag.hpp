@@ -224,7 +224,7 @@ namespace BaskerNS
     //printf("Single blk slv, kid: %d val:%f idx:%d %d \n",
     //	   kid, M.val[j], M.row_idx[j], M.srow);
 
-    if(M.val(j) == 0)
+    if(M.val(j) == (Entry)(0) )
       {
 	printf("Error, zero diag in single factor\n");
       }
@@ -293,11 +293,13 @@ namespace BaskerNS
     
     Entry pivot, value;
 //    Entry absv, maxc; //NDE - warning: unsed maxc
-    Entry absv;
+    //Entry absv;
+    double absv;
 
     Int llnnz  = L.nnz;
     Int uunnz  = U.nnz;
-    Entry maxv = (Entry) 0;
+    //Entry maxv = (Entry) 0;
+    double maxv = (double) 0;
 
     Int maxindex = 0;
 
@@ -468,7 +470,7 @@ namespace BaskerNS
 
           ucnt = ws_size - top - lcnt +1;
          
-	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
+    if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
             {
 
 	      if (Options.verbose == BASKER_TRUE)
@@ -671,7 +673,7 @@ namespace BaskerNS
           //Fill in last element of U
 	  U.row_idx(unnz) = k - L.scol;
 	  U.val(unnz)       = lastU;
-	  if(lastU == 0)
+	  if(lastU == (Entry)(0) )
 	    {
 	      printf("diag btf zero, error, c: %ld k: %ld \n",
 		     (long)c, (long)k);

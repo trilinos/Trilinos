@@ -976,12 +976,12 @@ namespace BaskerNS
       //Permute
       for(Int i = 0; i < n; i++)
       {
-        perm_comp_iworkspace_array(i) = vec(p(i));
+        perm_comp_fworkspace_array(i) = vec(p(i));
       }
       //Copy back
       for(Int i = 0; i < n; i++)
       {
-        vec(i) = perm_comp_iworkspace_array(i);
+        vec(i) = perm_comp_fworkspace_array(i);
       }
       return BASKER_SUCCESS;
     }
@@ -998,12 +998,12 @@ namespace BaskerNS
       //Permute
       for(Int i = 0; i < n; ++i)
       {
-        perm_comp_iworkspace_array(p(i)) = vec(i);
+        perm_comp_fworkspace_array(p(i)) = vec(i);
       }
       //Copy back
       for(Int i = 0; i < n; ++i)
       {
-        vec(i) = perm_comp_iworkspace_array(i);
+        vec(i) = perm_comp_fworkspace_array(i);
       }
 
       return BASKER_SUCCESS;

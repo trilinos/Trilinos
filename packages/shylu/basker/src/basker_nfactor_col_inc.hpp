@@ -1812,7 +1812,8 @@ namespace BaskerNS
         #endif
 	
 	
-	if(X(j) != 0)
+	//if(X(j) != 0)
+	if(X(j) != (Entry)(0))
 	  {
 	    if(bl == l+1)
 	      {
@@ -2162,7 +2163,7 @@ namespace BaskerNS
    #endif
 
    //if((maxindex == L.max_idx) || (pivot == 0)
-   if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
+   if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
      {
        cout << "Error: Matrix is singular, col, lvl: " << l <<endl;
        cout << "MaxIndex: " << maxindex << " pivot " 
@@ -2853,7 +2854,8 @@ namespace BaskerNS
 	      }
 	    #endif
 	
-	    if(X(jj) !=0)
+//	    if(X(jj) !=0)
+	    if(X(jj) != (Entry)(0))
 	      {
 		#ifdef BASKER_DEBUG_NFACTOR_COL2
 		//if(lower == BASKER_TRUE)

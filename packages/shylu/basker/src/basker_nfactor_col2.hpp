@@ -592,7 +592,7 @@ namespace BaskerNS
 	      }
 	    #endif
 	
-	    if(X(jj) !=0)
+	    if(X(jj) != (Entry)(0) )
 	      {
 		#ifdef BASKER_DEBUG_NFACTOR_COL2
 		if(lower == BASKER_TRUE)
@@ -804,7 +804,7 @@ namespace BaskerNS
         #endif
 	
 	
-	if(X(j) != 0)
+	if(X(j) != (Entry)(0) )
 	  {
 	    if(bl == l+1)
 	      {

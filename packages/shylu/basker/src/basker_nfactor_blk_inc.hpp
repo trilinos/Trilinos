@@ -365,7 +365,7 @@ namespace BaskerNS
 	    }
           //ucnt = ws_size - top - lcnt +1;
     
-	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
+    if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
             {
 	      if(Options.verbose == BASKER_TRUE)
 		{
@@ -3251,7 +3251,8 @@ namespace BaskerNS
 	//printf("Consider L-move (%d %d) %f kid: %d inc: %d \n",
 	//   k+L.scol, j+L.srow, X(j), kid, stack[j]);
 
-	if((X(j)!=0))
+	//if((X(j)!=0))
+	if((X(j)!=(Entry)(0)))
 	  {
 
 	    if((stack[j] != BASKER_MAX_IDX)&&
