@@ -597,7 +597,7 @@ public:
       nnz_lno_t left_work = row_map(row_ind + 1) - rowBegin;
 
       nnz_lno_t used_size = 0;
-
+      if (left_work > 0){
       const nnz_lno_t n = entries(rowBegin);
       nnz_lno_t prev_nset_ind = n >> compression_bit_divide_shift;
       nnz_lno_t prev_nset = 1;
@@ -625,6 +625,7 @@ public:
       pset_index_entries[used_size + rowBegin] = prev_nset_ind ;
       pset_entries[used_size + rowBegin] = prev_nset;
       ++used_size;
+      }
       new_row_map(row_ind) = rowBegin + used_size;
       });
     }
