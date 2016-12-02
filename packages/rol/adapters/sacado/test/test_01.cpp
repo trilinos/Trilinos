@@ -103,11 +103,10 @@ int main(int argc, char *argv[]) {
   RCP<NLP>  nlp;
   RCP<OPT>  opt;
   RCP<PL>   parlist = rcp( new PL() );
+  RCP<PL>   test = rcp( new PL() );
 
-  std::string paramfile("hs_parameters.xml");
-  Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
-
-  bool verbose = parlist->get("Verbose",false);
+  Teuchos::updateParametersFromXmlFile(std::string("hs_parameters.xml"),parlist.ptr());
+  Teuchos::updateParametersFromXmlFile(std::string("test_parameters.xml"),test.ptr());
 
   RCP<V>           x;
   RCP<const STATE> algo_state;
@@ -129,19 +128,19 @@ int main(int argc, char *argv[]) {
       switch( problemType ) {
 
         case TYPE_U:                                   
-          str = parlist->get("Type-U Step","Trust Region");
+          str = test->get("Type-U Step","Trust Region");
         break;
 
         case TYPE_B:           
-          str = parlist->get("Type-B Step","Trust Region");
+          str = test->get("Type-B Step","Trust Region");
         break;
 
         case TYPE_E:  
-          str = parlist->get("Type-E Step","Composite Step");
+          str = test->get("Type-E Step","Composite Step");
         break;
 
         case TYPE_EB:
-          str = parlist->get("Type-EB Step","Augmented Lagrangian");
+          str = test->get("Type-EB Step","Augmented Lagrangian");
         break;
 
         case TYPE_LAST:
@@ -155,12 +154,7 @@ int main(int argc, char *argv[]) {
 
       OptimizationSolver<RealT> solver( *opt, *parlist );
 
-      if(verbose) {
-        solver.solve(*outStream);
-      }
-      else {
-        solver.solve();
-      }
+      solver.solve(*outStream);
 
       algo_state = solver.getAlgorithmState();
 
