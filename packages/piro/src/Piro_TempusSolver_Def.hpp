@@ -150,9 +150,9 @@ void Piro::TempusSolver<Scalar>::initialize(
 
   if (appParams->isSublist("Tempus")) {
     RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
-    *out << "tempusPL = " << *tempusPL << "\n"; 
+    //*out << "tempusPL = " << *tempusPL << "\n"; 
     RCP<Teuchos::ParameterList> integratorPL = sublist(tempusPL, "Tempus Integrator", true);
-    *out << "integratorPL = " << *integratorPL << "\n"; 
+    //*out << "integratorPL = " << *integratorPL << "\n"; 
     //IKT, 10/31/16, FIXME: currently there is no Verbosity Sublist in Tempus, but 
     //Curt will add this at some point.  When this option is added, set Verbosity 
     //based on that sublist, rather than hard-coding it here.
@@ -161,9 +161,9 @@ void Piro::TempusSolver<Scalar>::initialize(
     t_initial = integratorPL->get<Scalar>("Initial Time", 0.0);
     t_final = integratorPL->get<Scalar>("Final Time", 0.1);
     RCP<Teuchos::ParameterList> stepperPL = sublist(tempusPL, "Tempus Stepper", true);
-    *out << "stepperPL = " << *stepperPL << "\n"; 
+    //*out << "stepperPL = " << *stepperPL << "\n"; 
     const std::string stepperType = stepperPL->get<std::string>("Stepper Type", "Backward Euler");
-    *out << "Stepper Type = " << stepperType << "\n"; 
+    //*out << "Stepper Type = " << stepperType << "\n"; 
      
     //
     // *out << "\nB) Create the Stratimikos linear solver factory ...\n";
@@ -233,8 +233,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     if (Teuchos::nonnull(piroObserver)) {
       //Get solutionHistory from integrator
       const RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
-      fwdStateIntegrator->getTimeStepControl(); 
-      const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = Teuchos::null;
+      const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
       //Create Tempus::IntegratorObserver object 
       observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory, timeStepControl, piroObserver));
     }
@@ -595,16 +594,23 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     Teuchos::nonnull(dgxdp_out) || !dgdp_deriv_out.isEmpty();
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
-  RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
-  RCP<Tempus::SolutionState<Scalar> > solutionState = (*solutionHistory)[0];
+  RCP<Tempus::SolutionHistory<Scalar> > solutionHistory;
+  RCP<Tempus::SolutionState<Scalar> > solutionState;
   if (!requestedSensitivities) 
   {
     //
     *out << "\nE) Solve the forward problem ...\n";
     //
     //
-    *out << "T final : " << t_final << " \n";
+    *out << "T final requested: " << t_final << " \n";
 
+    fwdStateIntegrator->advanceTime(t_final);
+
+    double time = fwdStateIntegrator->getTime();
+    *out << "T final actual: " << time << "\n"; 
+
+    solutionHistory = fwdStateIntegrator->getSolutionHistory();
+    solutionState = (*solutionHistory)[0];
     //Get final solution from solutionHistory.
     finalSolution = solutionState->getX();
 
