@@ -55,7 +55,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // setup input condition for nonlinear solve
   MEB::InArgs<Scalar> transientInArgs = transientModel_->createInArgs();
-  transientInArgs.setArgs(basePoint_);
   transientInArgs.set_x(x);
   transientInArgs.set_x_dot(x_dot);
   transientInArgs.set_t(t_);

@@ -263,7 +263,7 @@ void IntegratorBasic<Scalar>::initialize()
     << "    dt = " << dt << "\n");
 
   int order = integratorPL_->get<int>(initOrder_name, initOrder_default);
-  if (order == 0) order = stepper_->getOrderMin();
+  if (order == 0) order = stepper_->getOrder();
   TEUCHOS_TEST_FOR_EXCEPTION(
     (order<timeStepControl_->orderMin_ || order>timeStepControl_->orderMax_),
     std::out_of_range,

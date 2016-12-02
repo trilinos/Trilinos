@@ -5,6 +5,7 @@
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
 #include "Tempus_StepperExplicitRK.hpp"
+#include "Tempus_StepperDIRK.hpp"
 
 
 namespace Tempus {
@@ -50,10 +51,17 @@ public:
       stepper == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(stepperPL, model));
     else if (
-      stepper == "RK Backward Euler" ||
+      stepper == "SDIRK 1 Stage 1st order" ||
       stepper == "SDIRK 2 Stage 2nd order" ||
       stepper == "SDIRK 2 Stage 3rd order" ||
-      stepper == "Diagonal IRK 2 Stage 3rd order" ||
+      stepper == "SDIRK 3 Stage 4th order" ||
+      stepper == "SDIRK 5 Stage 4th order" ||
+      stepper == "SDIRK 5 Stage 5th order"
+      //stepper == "DIRK 2 Stage 3rd order"
+      )
+      return rcp(new StepperDIRK<Scalar>(stepperPL, model));
+    else if (
+      stepper == "RK Backward Euler" ||
       stepper == "RK Implicit 3 Stage 6th Order Kuntzmann & Butcher" ||
       stepper == "RK Implicit 4 Stage 8th Order Kuntzmann & Butcher" ||
       stepper == "RK Implicit 2 Stage 4th Order Hammer & Hollingsworth" ||
@@ -76,10 +84,7 @@ public:
       stepper == "RK Implicit 4 Stage 6th order Lobatto B" ||
       stepper == "RK Implicit 2 Stage 2nd order Lobatto C" ||
       stepper == "RK Implicit 3 Stage 4th order Lobatto C" ||
-      stepper == "RK Implicit 4 Stage 6th order Lobatto C" ||
-      stepper == "SDIRK 5 Stage 5th order" ||
-      stepper == "SDIRK 5 Stage 4th order" ||
-      stepper == "SDIRK 3 Stage 4th order" ) {
+      stepper == "RK Implicit 4 Stage 6th order Lobatto C" ) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error - Implicit RK not implemented yet!.\n");
     }

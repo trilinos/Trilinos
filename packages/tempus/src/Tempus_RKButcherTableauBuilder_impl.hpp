@@ -178,6 +178,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
   // SDIRK
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
+                          SDIRK1Stage1stOrder_RKBT<Scalar> >(),
+      "SDIRK 1 Stage 1st order");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
                           SDIRK2Stage2ndOrder_RKBT<Scalar> >(),
       "SDIRK 2 Stage 2nd order");
 
@@ -205,7 +210,7 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
                           DIRK2Stage3rdOrder_RKBT<Scalar> >(),
-      "Diagonal IRK 2 Stage 3rd order");
+      "DIRK 2 Stage 3rd order");
 
   // IRK
   builder_.setObjectFactory(

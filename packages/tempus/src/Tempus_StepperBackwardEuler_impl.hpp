@@ -210,16 +210,14 @@ void StepperBackwardEuler<Scalar>::takeStep(
   Scalar beta = 1.0;
   Scalar t = time+dt;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> base_point =
-    residualModel_->getNominalValues();
-  residualModel_->initialize(computeXDot, t, alpha, beta, base_point);
+  residualModel_->initialize(computeXDot, t, alpha, beta);
 
-  const Thyra::SolveStatus<double> solve_status =
+  const Thyra::SolveStatus<double> sStatus =
     this->solveNonLinear(residualModel_, *solver_, x, inArgs_);
 
   computeXDot(*x, *xDot);
 
-  if (solve_status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
+  if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
     workingState->stepperState_->stepperStatus_ = Status::PASSED;
   else
     workingState->stepperState_->stepperStatus_ = Status::FAILED;
@@ -296,9 +294,6 @@ void StepperBackwardEuler<Scalar>::setParameterList(
     std::logic_error,
        "Error - Stepper Type is not 'Backward Euler'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
-
-  std::string solverName = pList_->get<std::string>("Solver Name");
-
   Teuchos::readVerboseObjectSublist(&*pList_,this);
 }
 
@@ -314,9 +309,9 @@ StepperBackwardEuler<Scalar>::getValidParameters() const
     Teuchos::setupVerboseObjectSublist(&*pl);
 
     std::ostringstream tmp;
-    tmp << "'Stepper Type' must be 'Backward Euler'.";
-    pl->set("Stepper Type", "Backward Euler", tmp.str());
-
+    pl->set("Stepper Type", this->description());
+    pl->set("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
     validPL = pl;
   }
   return validPL;

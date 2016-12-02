@@ -40,11 +40,9 @@ public:
   /// Set values to compute x dot and evaluate transient model.
   void initialize(
     std::function<void (const Vector &,Vector &)> computeXDot,
-    double t, double alpha, double beta,
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint)
+    double t, double alpha, double beta)
   {
     computeXDot_ = computeXDot; t_ = t; alpha_ = alpha; beta_ = beta;
-    basePoint_ = basePoint;
   }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase

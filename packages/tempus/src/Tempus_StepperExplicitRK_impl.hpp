@@ -2,6 +2,7 @@
 #define Tempus_StepperExplicitRK_impl_hpp
 
 #include "Tempus_RKButcherTableauBuilder.hpp"
+#include "Tempus_RKButcherTableau.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Tempus_RKButcherTableau.hpp"
@@ -72,10 +73,9 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  Teuchos::RCP<SolutionState<Scalar> > currentState =
-    solutionHistory->getCurrentState();
-  Teuchos::RCP<SolutionState<Scalar> > workingState =
-    solutionHistory->getWorkingState();
+  using Teuchos::RCP;
+  RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
+  RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
   const Scalar dt = workingState->getTimeStep();
   const Scalar time = currentState->getTime();
 
@@ -191,8 +191,6 @@ void StepperExplicitRK<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
   //pList->validateParameters(*this->getValidParameters());
   pList_ = pList;
-
-  std::string stepperType = pList_->get<std::string>("Stepper Type");
 
   Teuchos::readVerboseObjectSublist(&*pList_,this);
 }

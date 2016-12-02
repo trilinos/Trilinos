@@ -10,7 +10,24 @@ namespace Tempus {
 
 
 /** \brief Explicit Runge-Kutta time stepper.
- *  Explicit Runge-Kutta time stepper does not require any solver(s).
+ *  The general explicit Runge-Kutta method for \f$s\f$-stages, can be
+ *  written as
+ *  \f[
+ *    X_{i} = x_{n-1}
+ *    + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\bar{f}(X_{j},t_{n-1}+c_{j}\Delta t)
+ *  \f]
+ *  \f[
+ *    x_{n} = x_{n-1}
+ *    + \Delta t\,\sum_{i=1}^{s}b_{i}\,\bar{f}(X_{i},t_{n-1}+c_{i}\Delta t)
+ *  \f]
+ *  where \f$\dot{x}=\bar{f}(x,t)\f$ is the explicit form of the
+ *  ODE, \f$X_{i}\f$ are intermediate approximations to the solution
+ *  at times, \f$t_{n-1}+c_{i}\Delta t\f$, (stage solutions) which may
+ *  be correct to a lower order of accuracy than the solution, \f$x_{n}\f$.
+ *  We should note that these lower-order approximations are combined
+ *  through \f$b_{i}\f$ so that error terms cancel out and produce a
+ *  more accurate solution. Note for explicit RK that \f$a_{ij}=0\f$ for
+ *  \f$j \leq i\f$ and does not require any solves.
  */
 template<class Scalar>
 class StepperExplicitRK : virtual public Tempus::Stepper<Scalar>
