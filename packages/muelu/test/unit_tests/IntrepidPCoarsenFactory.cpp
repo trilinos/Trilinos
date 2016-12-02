@@ -509,11 +509,12 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     // ParameterList
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
-    Params.set("rap: fix zero diagonals",true);
+    //    Params.set("rap: fix zero diagonals",true);
     Params.set("ipc: hi basis",hi_basis);
     Params.set("ipc: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
+     if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
@@ -576,11 +577,12 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     // ParameterList
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
-    Params.set("rap: fix zero diagonals",true);
+    //    Params.set("rap: fix zero diagonals",true);
     Params.set("ipc: hi basis",hi_basis);
     Params.set("ipc: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
+    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
@@ -643,11 +645,12 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_nodes, int degree, st
     // ParameterList
     ParameterList Params, level0;
     Params.set("multigrid algorithm","pcoarsen");
-    Params.set("rap: fix zero diagonals",true);
+    //    Params.set("rap: fix zero diagonals",true);
     Params.set("ipc: hi basis",hi_basis);
     Params.set("ipc: lo basis","hgrad_line_c1");
     Params.set("verbosity","high");
     Params.set("max levels",2);
+    if(lib==Xpetra::UseEpetra) Params.set("coarse: type","RELAXATION");// FIXME remove when we sort out the OAZ issue
     Params.set("coarse: max size",100);
     level0.set("ipc: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
