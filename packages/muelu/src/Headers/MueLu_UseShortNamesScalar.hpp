@@ -101,8 +101,14 @@ typedef MueLu::FilteredAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Filtered
 #ifdef MUELU_FILTEREDAFACTORY_KOKKOS_SHORT
 typedef MueLu::FilteredAFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> FilteredAFactory_kokkos;
 #endif
+#ifdef MUELU_GENERALGEOMETRICPFACTORY_SHORT
+typedef MueLu::GeneralGeometricPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeneralGeometricPFactory;
+#endif
 #ifdef MUELU_GENERICRFACTORY_SHORT
 typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRFactory;
+#endif
+#ifdef MUELU_GEOMETRICCOORDINATESTRANSFERFACTORY_SHORT
+typedef MueLu::GeometricCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricCoordinatesTransferFactory;
 #endif
 #ifdef MUELU_GMRESSOLVER_SHORT
 typedef MueLu::GMRESSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> GMRESSolver;

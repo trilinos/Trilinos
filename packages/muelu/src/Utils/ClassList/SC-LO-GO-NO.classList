@@ -31,7 +31,9 @@ FactoryManager
 FakeSmootherPrototype
 FilteredAFactory
 FilteredAFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+GeneralGeometricPFactory
 GenericRFactory
+GeometricCoordinatesTransferFactory
 GMRESSolver
 Hierarchy
 HierarchyManager

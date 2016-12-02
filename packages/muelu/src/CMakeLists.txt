@@ -40,6 +40,7 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/GeneralGeometric)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Geometric-Interpolation)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
@@ -359,6 +360,7 @@ APPEND_GLOB(SOURCES Transfers/BlockedTransfers/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Energy-Minimization/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Energy-Minimization/Solvers/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
+APPEND_GLOB(SOURCES Transfers/GeneralGeometric/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Geometric-Interpolation/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
@@ -389,6 +391,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BlockedTransfers NOSIER
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Generic NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization/Solvers NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/GeneralGeometric NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Geometric-Interpolation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Petrov-Galerkin-SA NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Smoothed-Aggregation NOSIERRABJAM)
@@ -449,3 +452,4 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
