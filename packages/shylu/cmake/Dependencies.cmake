@@ -6,6 +6,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Tacho                 tacho             EX       OPTIONAL
   BDDC                  bddc              EX       OPTIONAL
   Basker                basker            EX       OPTIONAL
+  FastILU               fastilu           EX       OPTIONAL
   Core                  core              PT       OPTIONAL
   )
 
