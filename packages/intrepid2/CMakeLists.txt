@@ -51,6 +51,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KokkosDynRankView
 #
 IF (${PACKAGE_NAME}_ENABLE_KokkosDynRankView)
   ADD_SUBDIRECTORY(refactor)
+  IF (Intrepid2_ENABLE_Boost AND Intrepid2_ENABLE_Gtest)
+    TRIBITS_ADD_TEST_DIRECTORIES(core/test/Shared/MiniTensor)
+  ENDIF()
 ELSE()
   ADD_SUBDIRECTORY(core)
 ENDIF()
