@@ -53,7 +53,8 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegr
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver)
     : Tempus::IntegratorObserver<Scalar>(solutionHistory, timeStepControl), 
     solutionHistory_(solutionHistory),
-    timeStepControl_(timeStepControl), 
+    timeStepControl_(timeStepControl),
+    wrappedObserver_(wrappedObserver),  
     out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   //Currently, sensitivities are not supported in Tempus.  
@@ -117,14 +118,7 @@ template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeEndIntegrator(const Tempus::Status integratorStatus)
 {
-  if (integratorStatus == Tempus::Status::FAILED) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        true,
-        Teuchos::Exceptions::InvalidParameter, std::endl <<
-        "Error in Piro::ObserverToTempusIntegrationObserverAdapter::observeEndIntegrator: " << 
-        "integrator returned FAILED status.  Aborting before observing solution." );
-  }
-  this->observeTimeStep(); 
+  //Nothing to do? 
 }
 
 template <typename Scalar>
@@ -146,7 +140,7 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   const Scalar scalar_time = solutionHistory_->getWorkingState()->getTime();
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType StampScalar;
   const StampScalar time = Teuchos::ScalarTraits<Scalar>::real(scalar_time);
-  
+ 
   if (Teuchos::nonnull(solution_dot)) 
   {
     wrappedObserver_->observeSolution(*solution, *solution_dot, time);

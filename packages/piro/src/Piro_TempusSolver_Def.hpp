@@ -237,11 +237,14 @@ void Piro::TempusSolver<Scalar>::initialize(
       //Create Tempus::IntegratorObserver object 
       observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory, timeStepControl, piroObserver));
     }
+
     if (Teuchos::nonnull(observer)) {
       //Set observer in integrator
       fwdStateIntegrator->setObserver(observer);
-      //Reinitialize everything in integrator class, since we have changed the observer. 
-      fwdStateIntegrator->initialize(); 
+      //Reinitialize everything in integrator class, since we have changed the observer.
+      //IKT, 12/2/16: it seems we do not need initialize() call here given how initialize()
+      //is implemented, as it nulls out the observer.  Checking with Curt.  
+      //fwdStateIntegrator->initialize(); 
     }
 
 
