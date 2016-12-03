@@ -178,15 +178,23 @@ namespace Xpetra {
       RCP<const BlockedMultiVector> bfull = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(full);
       if(bfull.is_null() == true) {
         // standard case: full is not of type BlockedMultiVector
-
         // first extract partial vector from full vector (using xpetra style GIDs)
         const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), false);
-        ExtractVector(*full, block, *vv);
-        if(bThyraMode == false) return vv;
-        TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
-                   "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-        vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
-        return vv;
+        //if(bThyraMode == false) {
+        //  ExtractVector(*full, block, *vv);
+        //  return vv;
+        //} else {
+          RCP<const Map> oldThyMapFull = full->getMap(); // temporarely store map of full
+          RCP<MultiVector> rcpNonConstFull = Teuchos::rcp_const_cast<MultiVector>(full);
+          rcpNonConstFull->replaceMap(map_->getImporter(block)->getSourceMap());
+          ExtractVector(*rcpNonConstFull, block, *vv);
+          TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
+                     "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
+          if(bThyraMode == true)
+            vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
+          rcpNonConstFull->replaceMap(oldThyMapFull);
+          return vv;
+        //}
       } else {
         // special case: full is of type BlockedMultiVector
         XPETRA_TEST_FOR_EXCEPTION(map_->getNumMaps() != bfull->getBlockedMap()->getNumMaps(), Xpetra::Exceptions::RuntimeError,
@@ -203,12 +211,20 @@ namespace Xpetra {
         // standard case: full is not of type BlockedMultiVector
         // first extract partial vector from full vector (using xpetra style GIDs)
         const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), false);
-        ExtractVector(*full, block, *vv);
-        if(bThyraMode == false) return vv;
-        TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
-                   "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-        vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
-        return vv;
+        //if(bThyraMode == false) {
+        //  ExtractVector(*full, block, *vv);
+        //  return vv;
+        //} else {
+          RCP<const Map> oldThyMapFull = full->getMap(); // temporarely store map of full
+          full->replaceMap(map_->getImporter(block)->getSourceMap());
+          ExtractVector(*full, block, *vv);
+          TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
+                     "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
+          if(bThyraMode == true)
+            vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
+          full->replaceMap(oldThyMapFull);
+          return vv;
+        //}
       } else {
         // special case: full is of type BlockedMultiVector
         XPETRA_TEST_FOR_EXCEPTION(map_->getNumMaps() != bfull->getBlockedMap()->getNumMaps(), Xpetra::Exceptions::RuntimeError,
@@ -245,14 +261,34 @@ namespace Xpetra {
       XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
       if(bThyraMode) {
-        // Temporarily replace underlying map.
-        // Since the partial vector is given by reference we have to switch back to the original map
+        // NOTE: the importer objects in the BlockedMap are always using Xpetra GIDs (or Thyra style Xpetra GIDs)
+        // The source map corresponds to the full map (in Xpetra GIDs) starting with GIDs from zero. The GIDs are consecutive in Thyra mode
+        // The target map is the partial map (in the corresponding Xpetra GIDs)
+
+        // TODO can we skip the Export call in special cases (i.e. Src = Target map, same length, etc...)
+
+        // store original GIDs (could be Thyra GIDs)
         RCP<const MultiVector> rcpPartial = Teuchos::rcpFromRef(partial);
         RCP<MultiVector> rcpNonConstPartial = Teuchos::rcp_const_cast<MultiVector>(rcpPartial);
-        RCP<const Map> oldMap = rcpNonConstPartial->getMap(); // temporarely store map of partial
+        RCP<const Map> oldThyMapPartial = rcpNonConstPartial->getMap(); // temporarely store map of partial
+        RCP<const Map> oldThyMapFull = full.getMap(); // temporarely store map of full
+
+        // check whether getMap(block,false) is identical to target map of importer
+        XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block,false)->isSameAs(*(map_->getImporter(block)->getTargetMap()))==false, Xpetra::Exceptions::RuntimeError,
+                   "MapExtractor::InsertVector: InsertVector in Thyra-style mode: Xpetra GIDs of partial vector are not identical to target Map of Importer. This should not be.");
+
+        //XPETRA_TEST_FOR_EXCEPTION(full.getMap()->isSameAs(*(map_->getImporter(block)->getSourceMap()))==false, Xpetra::Exceptions::RuntimeError,
+        //           "MapExtractor::InsertVector: InsertVector in Thyra-style mode: Xpetra GIDs of full vector are not identical to source Map of Importer. This should not be.");
+
         rcpNonConstPartial->replaceMap(getMap(block,false)); // temporarely switch to xpetra-style map
+        full.replaceMap(map_->getImporter(block)->getSourceMap());     // temporarely switch to Xpetra GIDs
+
+        // do the Export
         full.doExport(*rcpNonConstPartial, *(map_->getImporter(block)), Xpetra::INSERT);
-        rcpNonConstPartial->replaceMap(oldMap); // change map back to original map
+
+        // switch back to original maps
+        full.replaceMap(oldThyMapFull); // reset original map (Thyra GIDs)
+        rcpNonConstPartial->replaceMap(oldThyMapPartial); // change map back to original map
       } else {
         // Xpetra style numbering
         full.doExport(partial, *(map_->getImporter(block)), Xpetra::INSERT);
@@ -265,14 +301,34 @@ namespace Xpetra {
       XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
       if(bThyraMode) {
-        // Temporarily replace underlying map.
-        // Since the partial vector is given by reference we have to switch back to the original map
+        // NOTE: the importer objects in the BlockedMap are always using Xpetra GIDs (or Thyra style Xpetra GIDs)
+        // The source map corresponds to the full map (in Xpetra GIDs) starting with GIDs from zero. The GIDs are consecutive in Thyra mode
+        // The target map is the partial map (in the corresponding Xpetra GIDs)
+
+        // TODO can we skip the Export call in special cases (i.e. Src = Target map, same length, etc...)
+
+        // store original GIDs (could be Thyra GIDs)
         RCP<const MultiVector> rcpPartial = Teuchos::rcpFromRef(partial);
         RCP<MultiVector> rcpNonConstPartial = Teuchos::rcp_const_cast<MultiVector>(rcpPartial);
-        RCP<const Map> oldMap = rcpNonConstPartial->getMap(); // temporarely store map of partial
+        RCP<const Map> oldThyMapPartial = rcpNonConstPartial->getMap(); // temporarely store map of partial
+        RCP<const Map> oldThyMapFull = full.getMap(); // temporarely store map of full
+
+        // check whether getMap(block,false) is identical to target map of importer
+        XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block,false)->isSameAs(*(map_->getImporter(block)->getTargetMap()))==false, Xpetra::Exceptions::RuntimeError,
+                   "MapExtractor::InsertVector: InsertVector in Thyra-style mode: Xpetra GIDs of partial vector are not identical to target Map of Importer. This should not be.");
+
+        //XPETRA_TEST_FOR_EXCEPTION(full.getMap()->isSameAs(*(map_->getImporter(block)->getSourceMap()))==false, Xpetra::Exceptions::RuntimeError,
+        //           "MapExtractor::InsertVector: InsertVector in Thyra-style mode: Xpetra GIDs of full vector are not identical to source Map of Importer. This should not be.");
+
         rcpNonConstPartial->replaceMap(getMap(block,false)); // temporarely switch to xpetra-style map
+        full.replaceMap(map_->getImporter(block)->getSourceMap());     // temporarely switch to Xpetra GIDs
+
+        // do the Export
         full.doExport(*rcpNonConstPartial, *(map_->getImporter(block)), Xpetra::INSERT);
-        rcpNonConstPartial->replaceMap(oldMap); // change map back to original map
+
+        // switch back to original maps
+        full.replaceMap(oldThyMapFull); // reset original map (Thyra GIDs)
+        rcpNonConstPartial->replaceMap(oldThyMapPartial); // change map back to original map
       } else {
         // Xpetra style numbering
         full.doExport(partial, *(map_->getImporter(block)), Xpetra::INSERT);
