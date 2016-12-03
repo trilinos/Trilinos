@@ -41,6 +41,7 @@
 
 #include "gtest/gtest.h"
 #include "Intrepid2_MiniTensor_FunctionSet.h"
+#include "Teuchos_oblackholestream.hpp"
 
 int
 main(int ac, char * av[])
