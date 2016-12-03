@@ -65,6 +65,10 @@ typedef Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node> IteratorO
 typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Vector;
 #endif
 
+#ifdef XPETRA_BLOCKEDVECTOR_SHORT
+typedef Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedVector;
+#endif
+
 #ifdef XPETRA_MULTIVECTOR_SHORT
 typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
 #endif
