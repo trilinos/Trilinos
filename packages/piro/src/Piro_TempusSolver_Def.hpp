@@ -76,6 +76,8 @@
 #  include "Thyra_NonlinearSolver_NOX.hpp"
 #endif
 
+//#define DEBUG_OUTPUT
+
 #include <string>
 #include <stdexcept>
 #include <iostream>
@@ -90,7 +92,9 @@ Piro::TempusSolver<Scalar>::TempusSolver() :
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
 }
 
 #ifdef ALBANY_BUILD
@@ -106,7 +110,9 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
   if (jacobianSource == "Matrix-Free") {
     Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
@@ -132,8 +138,9 @@ void Piro::TempusSolver<Scalar>::initialize(
     const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-
+#endif
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
@@ -287,7 +294,9 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   solnVerbLevel(verbosityLevel),
   isInitialized(true)
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
    TEUCHOS_TEST_FOR_EXCEPTION(
         true,
         Teuchos::Exceptions::InvalidParameter, std::endl <<
@@ -322,9 +331,10 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   solnVerbLevel(verbosityLevel),
   isInitialized(true)
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-  *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-   TEUCHOS_TEST_FOR_EXCEPTION(
+#endif   
+  TEUCHOS_TEST_FOR_EXCEPTION(
         true,
         Teuchos::Exceptions::InvalidParameter, std::endl <<
         "Error! Piro::TempusSolver: constructor which changes underlying model is not yet supported!"); 
@@ -340,7 +350,9 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TempusSolver<Scalar>::get_p_space(int l) const
 #endif
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p || l < 0,
       Teuchos::Exceptions::InvalidParameter,
@@ -362,7 +374,9 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::TempusSolver<Scalar>::get_g_space(int j) const
 #endif
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g || j < 0,
       Teuchos::Exceptions::InvalidParameter,
@@ -389,7 +403,9 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TempusSolver<Scalar>::getNominalValues() const
 #endif
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model->getNominalValues();
   for (int l = 0; l < num_p; ++l) {
@@ -408,7 +424,9 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::TempusSolver<Scalar>::createInArgs() const
 #endif
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(num_p);
@@ -425,7 +443,9 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 Piro::TempusSolver<Scalar>::createOutArgsImpl() const
 #endif
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
 
@@ -504,7 +524,9 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -752,7 +774,9 @@ Piro::tempusSolver(
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out(Teuchos::VerboseObjectBase::getDefaultOStream());
+#ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
 #ifdef ALBANY_BUILD
   return Teuchos::rcp(new TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, piroObserver));
 #else

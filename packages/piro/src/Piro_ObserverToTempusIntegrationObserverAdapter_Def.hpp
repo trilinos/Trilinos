@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// Questions Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -64,21 +64,21 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegr
 template <typename Scalar>
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::~ObserverToTempusIntegrationObserverAdapter() 
 {
-  //Nothing to do? 
+  //Nothing to do 
 }
 
 template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeStartIntegrator() 
 {
-  //Nothing to do? 
+  //Nothing to do 
 }
 
 template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeStartTimeStep()
 {
-  //Nothing to do? 
+  //Nothing to do 
 }
 
 template <typename Scalar>
@@ -94,7 +94,7 @@ template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeBeforeTakeStep()
 {
-  //Nothing to do? 
+  //Nothing to do 
 }
 
 
@@ -102,7 +102,7 @@ template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeAfterTakeStep()
 {
-  //Nothing to do? 
+  //Nothing to do 
 }
 
 
@@ -110,7 +110,7 @@ template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeAcceptedTimeStep(Tempus::Status & integratorStatus)
 {
-  //Nothing to do? 
+  //Nothing to do 
 }
 
 
@@ -118,7 +118,7 @@ template <typename Scalar>
 void 
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeEndIntegrator(const Tempus::Status integratorStatus)
 {
-  //Nothing to do? 
+  this->observeTimeStep();
 }
 
 template <typename Scalar>
@@ -126,7 +126,7 @@ void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep() 
 {
   //IKT, 11/3/16, FIXME: check with Curt that 0 component of solutionHistory is the right 
-  //thing to use here.  I.e., should we be working with currentState or workingState? 
+  //thing to use here.  I.e., should we be working with currentState or workingState?  
   Teuchos::RCP<Tempus::SolutionState<Scalar> > solutionState = (*solutionHistory_)[0];
   //Get solution
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionState->getX();
@@ -137,7 +137,7 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   //In this case, we will need to get x_dotdot from solutionState and Piro::ObserverBase
   //will need to be extended to have a constructor that takes x_dotdot.  
 
-  const Scalar scalar_time = solutionHistory_->getWorkingState()->getTime();
+  const Scalar scalar_time = solutionHistory_->getCurrentState()->getTime();
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType StampScalar;
   const StampScalar time = Teuchos::ScalarTraits<Scalar>::real(scalar_time);
  
