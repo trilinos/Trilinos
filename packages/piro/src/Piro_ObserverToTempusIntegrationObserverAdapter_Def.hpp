@@ -125,14 +125,11 @@ template <typename Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep() 
 {
-  //IKT, 11/3/16, FIXME: check with Curt that 0 component of solutionHistory is the right 
-  //thing to use here.  I.e., should we be working with currentState or workingState?  
-  Teuchos::RCP<Tempus::SolutionState<Scalar> > solutionState = (*solutionHistory_)[0];
   //Get solution
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionState->getX();
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionHistory_->getCurrentState()->getX();
   solution.assert_not_null();
   //Get solution_dot 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dot = solutionState->getXDot();
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution_dot = solutionHistory_->getCurrentState()->getXDot();
   //IKT, 11/3/16: I think we will also need solution_dotdot for 2nd order time integrators. 
   //In this case, we will need to get x_dotdot from solutionState and Piro::ObserverBase
   //will need to be extended to have a constructor that takes x_dotdot.  

@@ -297,10 +297,9 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-   TEUCHOS_TEST_FOR_EXCEPTION(
-        true,
-        Teuchos::Exceptions::InvalidParameter, std::endl <<
-        "Error! Piro::TempusSolver: constructor which changes underlying model is not yet supported!"); 
+  if (fwdStateStepper->getModel() != underlyingModel) {
+    fwdStateStepper->setNonConstModel(underlyingModel);
+  }
 }
 
 #ifdef ALBANY_BUILD
@@ -334,10 +333,9 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif   
-  TEUCHOS_TEST_FOR_EXCEPTION(
-        true,
-        Teuchos::Exceptions::InvalidParameter, std::endl <<
-        "Error! Piro::TempusSolver: constructor which changes underlying model is not yet supported!"); 
+  if (fwdStateStepper->getModel() != underlyingModel) {
+    fwdStateStepper->setNonConstModel(underlyingModel);
+  }
 }
 
 #ifdef ALBANY_BUILD
@@ -619,8 +617,8 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     Teuchos::nonnull(dgxdp_out) || !dgdp_deriv_out.isEmpty();
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
-  RCP<Tempus::SolutionHistory<Scalar> > solutionHistory;
   RCP<Tempus::SolutionState<Scalar> > solutionState;
+  RCP<Tempus::SolutionHistory<Scalar> > solutionHistory;
   if (!requestedSensitivities) 
   {
     //
@@ -632,10 +630,14 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     fwdStateIntegrator->advanceTime(t_final);
 
     double time = fwdStateIntegrator->getTime();
+    
     *out << "T final actual: " << time << "\n"; 
 
+    finalSolution = fwdStateIntegrator->getX();
+
     solutionHistory = fwdStateIntegrator->getSolutionHistory();
-    solutionState = (*solutionHistory)[0];
+    auto numStates = solutionHistory->getNumStates(); 
+    solutionState = (*solutionHistory)[numStates-1];
     //Get final solution from solutionHistory.
     finalSolution = solutionState->getX();
 
