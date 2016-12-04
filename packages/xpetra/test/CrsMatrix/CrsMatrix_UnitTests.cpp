@@ -56,6 +56,8 @@
 #include <Xpetra_DefaultPlatform.hpp>
 
 #include <Xpetra_Map.hpp>
+#include <Xpetra_MapExtractor.hpp>
+#include <Xpetra_MultiVectorFactory.hpp> // taw: include MultiVectorFactory before VectorFactory for BlockedMultiVector
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>

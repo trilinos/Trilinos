@@ -854,9 +854,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Sc
 
 #ifdef HAVE_XPETRA_DEBUG
   // create faulty multivector
-  Teuchos::RCP<MultiVector> vvx = MultiVectorFactory::Build(bvv1->getBlockedMap()->getMap(0),2,true);
-  TEST_THROW(bvv1->update(STS::one(), *vvx, STS::one()), Xpetra::Exceptions::RuntimeError);
-  vvx = MultiVectorFactory::Build(bvv1->getMap(),1,true);
+  Teuchos::RCP<MultiVector> vvx = MultiVectorFactory::Build(bvv1->getMap(),1,true);
   TEST_THROW(bvv1->update(STS::one(), *vvx, STS::one()), Xpetra::Exceptions::RuntimeError);
 #endif
 }
