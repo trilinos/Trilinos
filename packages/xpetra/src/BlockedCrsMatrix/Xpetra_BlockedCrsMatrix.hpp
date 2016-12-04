@@ -58,6 +58,7 @@
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_BlockedMultiVector.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_BlockedVector.hpp"
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
@@ -757,19 +758,34 @@ namespace Xpetra {
       the zero and non-zero diagonals owned by this node. */
     void getLocalDiagCopy(Vector& diag) const {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalDiagCopy");
-      XPETRA_TEST_FOR_EXCEPTION(diag.getMap()->isSameAs(*rangemaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
-        "BlockedCrsMatrix::getLocalDiagCopy(): the map of the vector diag is not compatible with the full map of the blocked operator." );
 
-      TEUCHOS_TEST_FOR_EXCEPTION(Rows() != Cols(), Xpetra::Exceptions::RuntimeError,
-        "BlockedCrsMatrix::getLocalDiagCopy(): you cannot extract the diagonal of a "<< Rows() << "x"<<Cols()<<" blocked matrix." );
+      //RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
-      for (size_t row = 0; row < Rows(); ++row) {
-        if (!getMatrix(row,row).is_null()) {
-          // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
-          bool bThyraMode = rangemaps_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(getMatrix(row,row)) == Teuchos::null);
-          RCP<Vector> dd = rangemaps_->getVector(row, bThyraMode);
-          getMatrix(row,row)->getLocalDiagCopy(*dd);
-          rangemaps_->InsertVector(*dd,row,diag,bThyraMode);
+      Teuchos::RCP<Vector> rcpdiag = Teuchos::rcpFromRef(diag);
+      Teuchos::RCP<BlockedVector> bdiag = Teuchos::rcp_dynamic_cast<BlockedVector>(rcpdiag);
+
+      // special treatment for 1x1 block matrices
+      // ReorderedBlockedCrsMatrix object encapsulate single blocks in ReorderedBlocks
+      // BlockedVectors have Vector objects as Leaf objects.
+      if(Rows() == 1 && Cols() == 1 && bdiag.is_null() == true) {
+        Teuchos::RCP<const Matrix> rm = getMatrix(0,0);
+        rm->getLocalDiagCopy(diag);
+        return;
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(bdiag.is_null() == true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::getLocalDiagCopy: diag must be a Blocked(Multi)Vector.");
+      TEUCHOS_TEST_FOR_EXCEPTION(bdiag->getNumVectors() != 1, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::getLocalDiagCopy: diag must be a Blocked(Multi)Vector with exactly one vector. However, the number of stored vectors is " << bdiag->getNumVectors());
+      TEUCHOS_TEST_FOR_EXCEPTION(bdiag->getBlockedMap()->getNumMaps() != this->Rows(), Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::getLocalDiagCopy(): the number of blocks in diag differ from the number of blocks in this operator." );
+      //XPETRA_TEST_FOR_EXCEPTION(bdiag->getMap()->isSameAs(*(getMap())) == false, Xpetra::Exceptions::RuntimeError,
+      //  "BlockedCrsMatrix::getLocalDiagCopy(): the map of the vector diag is not compatible with the map of the blocked operator." );
+
+      for (size_t row = 0; row < Rows(); row++) {
+        Teuchos::RCP<const Matrix> rm = getMatrix(row,row);
+        if (!rm.is_null()) {
+          Teuchos::RCP<Vector> rv = VectorFactory::Build(bdiag->getBlockedMap()->getMap(row,bdiag->getBlockedMap()->getThyraMode()));
+          rm->getLocalDiagCopy(*rv);
+          bdiag->setMultiVector(row,rv,bdiag->getBlockedMap()->getThyraMode());
         }
       }
     }
@@ -777,6 +793,42 @@ namespace Xpetra {
     //! Left scale matrix using the given vector entries
     void leftScale (const Vector& x) {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::leftScale");
+
+#if 1
+      Teuchos::RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
+      Teuchos::RCP<const BlockedVector> bx = Teuchos::rcp_dynamic_cast<const BlockedVector>(rcpx);
+
+      //RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
+      // special treatment for 1xn block matrices
+      // ReorderedBlockedCrsMatrix object encapsulate single blocks in ReorderedBlocks
+      // BlockedVectors have Vector objects as Leaf objects.
+      if(Rows() == 1 && bx.is_null() == true) {
+        for (size_t col = 0; col < Cols(); ++col) {
+          Teuchos::RCP<Matrix> rm = getMatrix(0,col);
+          rm->leftScale(x);
+        }
+        return;
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(bx.is_null() == true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::leftScale: x must be a Blocked(Multi)Vector.");
+      TEUCHOS_TEST_FOR_EXCEPTION(bx->getNumVectors() != 1, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::leftScale: x must be a Blocked(Multi)Vector with exactly one vector. However, the number of stored vectors is " << bx->getNumVectors());
+      TEUCHOS_TEST_FOR_EXCEPTION(bx->getBlockedMap()->getNumMaps() != this->Rows(), Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::leftScale(): the number of blocks in diag differ from the number of blocks in this operator." );
+
+      for (size_t row = 0; row < Rows(); row++) {
+        Teuchos::RCP<const MultiVector> rmv = bx->getMultiVector(row);
+        Teuchos::RCP<const Vector> rscale = rmv->getVector(0);
+        XPETRA_TEST_FOR_EXCEPTION(rscale.is_null()==true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::leftScale: x must be a Vector.");
+        for (size_t col = 0; col < Cols(); ++col) {
+          Teuchos::RCP<Matrix> rm = getMatrix(row,col);
+          if (!rm.is_null()) {
+            rm->leftScale(*rscale);
+          }
+        }
+      }
+
+#else
       XPETRA_TEST_FOR_EXCEPTION(x.getMap()->isSameAs(*rangemaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
         "BlockedCrsMatrix::leftScale(): the map of the vector x is not compatible with the full map of the blocked operator." );
 
@@ -792,11 +844,47 @@ namespace Xpetra {
           }
         }
       }
+#endif
     }
 
     //! Right scale matrix using the given vector entries
     void rightScale (const Vector& x) {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::rightScale");
+#if 1
+      Teuchos::RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
+      Teuchos::RCP<const BlockedVector> bx = Teuchos::rcp_dynamic_cast<const BlockedVector>(rcpx);
+
+      //RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
+      // special treatment for nx1 block matrices
+      // ReorderedBlockedCrsMatrix object encapsulate single blocks in ReorderedBlocks
+      // BlockedVectors have Vector objects as Leaf objects.
+      if(Cols() == 1 && bx.is_null() == true) {
+        for (size_t row = 0; row < Rows(); ++row) {
+          Teuchos::RCP<Matrix> rm = getMatrix(row,0);
+          rm->rightScale(x);
+        }
+        return;
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(bx.is_null() == true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::rightScale: x must be a Blocked(Multi)Vector.");
+      TEUCHOS_TEST_FOR_EXCEPTION(bx->getNumVectors() != 1, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::rightScale: x must be a Blocked(Multi)Vector with exactly one vector. However, the number of stored vectors is " << bx->getNumVectors());
+      TEUCHOS_TEST_FOR_EXCEPTION(bx->getBlockedMap()->getNumMaps() != this->Cols(), Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::rightScale(): the number of blocks in diag differ from the number of blocks in this operator." );
+
+      for (size_t col = 0; col < Cols(); ++col) {
+        Teuchos::RCP<const MultiVector> rmv = bx->getMultiVector(col);
+        Teuchos::RCP<const Vector> rscale = rmv->getVector(0);
+        XPETRA_TEST_FOR_EXCEPTION(rscale.is_null()==true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::leftScale: x must be a Vector.");
+        for (size_t row = 0; row < Rows(); row++) {
+          Teuchos::RCP<Matrix> rm = getMatrix(row,col);
+          if (!rm.is_null()) {
+            rm->rightScale(*rscale);
+          }
+        }
+      }
+
+#else
       XPETRA_TEST_FOR_EXCEPTION(x.getMap()->isSameAs(*domainmaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
         "BlockedCrsMatrix::rightScale(): the map of the vector x is not compatible with the full map of the blocked operator." );
 
@@ -812,6 +900,7 @@ namespace Xpetra {
           }
         }
       }
+#endif
     }
 
 
