@@ -202,6 +202,8 @@ TEST(MiniTensor_ROL, Rosenbrock)
   ASSERT_LE(error, epsilon);
 }
 
+// Disabled for now
+#if 0
 TEST(MiniTensor_ROL, NLLS01)
 {
   bool const
@@ -327,3 +329,4 @@ TEST(MiniTensor_ROL, NLLS01)
 
   ASSERT_LE(error, tol);
 }
+#endif

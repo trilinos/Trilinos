@@ -142,7 +142,7 @@ solve_full_pivot(Tensor<T, N, ES> const & A, RHS const & b)
   dimension{A.get_dimension()};
 
   Index const
-  maximum_dimension{num_digits<Index>()};
+  maximum_dimension{INDEX_SIZE};
 
   if (dimension > maximum_dimension) {
     MT_ERROR_EXIT("Max dim (%d) exceeded: %d.", dimension, maximum_dimension);
@@ -497,7 +497,7 @@ binary_powering(Tensor<T, N, ES> const & A, Index const exponent)
   rightmost_bit = 1;
 
   Index const
-  number_digits = num_digits<Index>();
+  number_digits = INDEX_SIZE;
 
   Index const
   leftmost_bit = rightmost_bit << (number_digits - 1);
