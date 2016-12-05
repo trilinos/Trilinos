@@ -259,8 +259,8 @@ void Piro::TempusSolver<Scalar>::initialize(
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
         appParams->isSublist("Tempus"),
-        Teuchos::Exceptions::InvalidParameter, std::endl <<
-        "Error! Piro::TempusSolver: must have Tempus sublist ");
+        Teuchos::Exceptions::InvalidParameter,
+        "\n Error! Piro::TempusSolver: must have Tempus sublist ");
 
   }
 
@@ -332,7 +332,15 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif   
+#endif
+  //IKT, 12/5/16: the following exception check is needed until setInitialCondition method
+  //is added to the Tempus::IntegratorBasic class.  
+  if (initialTime > 0.0) {  
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+      "\n Error in Piro::TempusSolver: the constructor employed does not support initialTime > 0.0.  " <<
+      "You have set initialTime = " << initialTime << "\n");
+  }
+
   if (fwdStateStepper->getModel() != underlyingModel) {
     fwdStateStepper->setNonConstModel(underlyingModel);
   }
@@ -354,10 +362,9 @@ Piro::TempusSolver<Scalar>::get_p_space(int l) const
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p || l < 0,
       Teuchos::Exceptions::InvalidParameter,
-      std::endl <<
-      "Error in Piro::TempusSolver::get_p_map():  " <<
+      "\n Error in Piro::TempusSolver::get_p_map():  " <<
       "Invalid parameter index l = " <<
-      l << std::endl);
+      l << "\n");
 
   return model->get_p_space(l);
 }
@@ -378,10 +385,9 @@ Piro::TempusSolver<Scalar>::get_g_space(int j) const
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g || j < 0,
       Teuchos::Exceptions::InvalidParameter,
-      std::endl <<
-      "Error in Piro::TempusSolver::get_g_map():  " <<
+      "\n Error in Piro::TempusSolver::get_g_map():  " <<
       "Invalid response index j = " <<
-      j << std::endl);
+      j << "\n");
 
   if (j < num_g) {
     return model->get_g_space(j);
@@ -551,12 +557,9 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model->getNominalValues();
 
-  std::cout << "IKT t_initial = " << t_initial << std::endl; 
   // Set initial time in ME if needed
 
   if(t_initial > 0.0 && state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t)) {
-
-    std::cout << "IKT here" << std::endl; 
     state_ic.set_t(t_initial);
   }
 
@@ -645,7 +648,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     finalSolution = solutionState->getX();
 
     if (Teuchos::VERB_MEDIUM <= solnVerbLevel) {
-      std::cout << "Final Solution\n" << *finalSolution << std::endl;
+      *out << "Final Solution\n" << *finalSolution << "\n";
     }
 
   }
@@ -655,8 +658,8 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     //
     TEUCHOS_TEST_FOR_EXCEPTION(
         true,
-        Teuchos::Exceptions::InvalidParameter, std::endl <<
-        "Error! Piro::TempusSolver: sensitivities with Tempus are not yet supported!");
+        Teuchos::Exceptions::InvalidParameter, 
+        "\n Error! Piro::TempusSolver: sensitivities with Tempus are not yet supported!");
   }
 
   *out << "\nF) Check the solution to the forward problem ...\n";
