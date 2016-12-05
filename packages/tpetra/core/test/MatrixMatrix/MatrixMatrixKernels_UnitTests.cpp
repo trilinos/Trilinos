@@ -59,6 +59,7 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include <cmath>
 #include "KokkosKernels_SPGEMM.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
 
 namespace {
   static const double defaultEpsilon = 1e-10;
@@ -330,20 +331,29 @@ mult_test_results multiply_test_kernel(
   typedef typename Matrix_t::local_ordinal_type LO;
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NO;
+  typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
   typedef Map<LO,GO,NO> Map_t;
   RCP<const Map_t> map = C->getRowMap();
 
   SC one = Teuchos::ScalarTraits<SC>::one();
   mult_test_results results;
 
-  // Bypass transposes for now
-  if(AT || BT) {
-    results.cNorm=-1.0;
-    results.compNorm=-1.0;
-    results.epsilon=0.0;
-    return results;
+  // Transposes
+  RCP<Matrix_t> Aeff,  Beff;
+  if(AT) {
+    transposer_type transposer(A);
+    Aeff = transposer.createTranspose();
   }
+  else
+    Aeff=A;
+  if(BT) {
+    transposer_type transposer(B);
+    Beff = transposer.createTranspose();
+  }
+  else
+    Beff=B;
 
+  
   // Extract Kokkos CrsMatrices
   typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_type KCRS;
   typedef typename KCRS::device_type device_t;
@@ -354,17 +364,17 @@ mult_test_results multiply_test_kernel(
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<lno_view_t,lno_nnz_view_t, scalar_view_t, typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrix-es
-  const KCRS & Ak = A->getLocalMatrix();
-  const KCRS & Bk = B->getLocalMatrix();
-  
+  const KCRS & Ak = Aeff->getLocalMatrix();
+  const KCRS & Bk = Beff->getLocalMatrix();
+
   // Setup
   // As a note "SPGEMM_MKL" will *NOT* pass all of these tests
   //  std::vector<std::string> ALGORITHMS={"SPGEMM_MKL","SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
   std::vector<std::string> ALGORITHMS={"SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
 
-  for(int alg = 0; alg < ALGORITHMS.size(); alg++) {
+  for(int alg = 0; alg < (int)ALGORITHMS.size(); alg++) {
     std::string myalg = ALGORITHMS[alg];
-    printf("Testing algorithm %s\n",myalg.c_str());
+    printf("Testing algorithm %s on %s\n",myalg.c_str(),name.c_str());
     
     KokkosKernels::Experimental::Graph::SPGEMMAlgorithm alg_enum = KokkosKernels::Experimental::Graph::StringToSPGEMMAlgorithm(myalg);
     typename KernelHandle::nnz_lno_t AnumRows = Ak.numRows();
@@ -404,7 +414,7 @@ mult_test_results multiply_test_kernel(
       if(Real_rowptr()[i] !=row_mapC[i]) {has_mismatch=true;break;}
     }
     if(has_mismatch) {
-#if 0
+#if 1
       printf("Real rowptr = ");
       for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) 
 	printf("%d ",(int)Real_rowptr()[i]);
@@ -415,10 +425,10 @@ mult_test_results multiply_test_kernel(
       
       printf("Real colind = ");
       for(size_t i=0; i<(size_t) Real_colind.size(); i++) 
-	printf("%d ",(int)Real_colind()[i]);
+	printf("%d(%6.1f) ",(int)Real_colind()[i],Real_vals()[i]);
       printf("\nCalc colind = ");
       for(size_t i=0; i<(size_t) entriesC.size(); i++) 
-	printf("%d ",(int)entriesC[i]);
+	printf("%d(%6.1f) ",(int)entriesC[i],valuesC[i]);
       printf("\n");
 #endif
       throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap entries mismatch");
