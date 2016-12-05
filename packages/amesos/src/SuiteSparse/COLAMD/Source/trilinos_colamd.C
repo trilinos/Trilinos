@@ -663,7 +663,7 @@
 /* === Include files ======================================================== */
 /* ========================================================================== */
 
-#include "amesos_colamd.h"
+#include "trilinos_colamd.h"
 #include <limits.h>
 #include <math.h>
 
@@ -693,11 +693,11 @@
 #define ID  UF_long_id
 #define Int_MAX UF_long_max
 
-#define COLAMD_recommended amesos_colamd_l_recommended
-#define COLAMD_set_defaults amesos_colamd_l_set_defaults
-#define COLAMD_MAIN amesos_colamd_l
+#define COLAMD_recommended trilinos_colamd_l_recommended
+#define COLAMD_set_defaults trilinos_colamd_l_set_defaults
+#define COLAMD_MAIN trilinos_colamd_l
 #define SYMAMD_MAIN amesos_symamd_l
-#define COLAMD_report amesos_colamd_l_report
+#define COLAMD_report trilinos_colamd_l_report
 #define SYMAMD_report amesos_symamd_l_report
 
 #else
@@ -706,11 +706,11 @@
 #define ID "%d"
 #define Int_MAX INT_MAX
 
-#define COLAMD_recommended amesos_colamd_recommended
-#define COLAMD_set_defaults amesos_colamd_set_defaults
-#define COLAMD_MAIN amesos_colamd
+#define COLAMD_recommended trilinos_colamd_recommended
+#define COLAMD_set_defaults trilinos_colamd_set_defaults
+#define COLAMD_MAIN trilinos_colamd
 #define SYMAMD_MAIN amesos_symamd
-#define COLAMD_report amesos_colamd_report
+#define COLAMD_report trilinos_colamd_report
 #define SYMAMD_report amesos_symamd_report
 
 #endif
@@ -836,7 +836,7 @@ typedef struct Colamd_Row_struct
 #endif
 
 /* All output goes through the PRINTF macro.  */
-#define PRINTF(params) { if (amesos_colamd_printf != NULL) (void) amesos_colamd_printf params ; }
+#define PRINTF(params) { if (trilinos_colamd_printf != NULL) (void) trilinos_colamd_printf params ; }
 
 /* ========================================================================== */
 /* === Prototypes of PRIVATE routines ======================================= */

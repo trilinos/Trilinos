@@ -150,7 +150,7 @@ ENDIF()
 SET(TRILINOS_KLU_COMMON_H
   SuiteSparse/AMD/Include/trilinos_amd.h
   SuiteSparse/AMD/Include/trilinos_amd_internal.h
-  SuiteSparse/COLAMD/Include/amesos_colamd.h
+  SuiteSparse/COLAMD/Include/trilinos_colamd.h
   SuiteSparse/UFconfig/amesos_UFconfig.h
   )
 
@@ -176,9 +176,9 @@ SET(TRILINOS_KLU_COMMON
   SuiteSparse/AMD/Source/trilinos_amd_l_post_tree.c
   SuiteSparse/AMD/Source/trilinos_amd_l_preprocess.c
   SuiteSparse/AMD/Source/trilinos_amd_l_valid.c
-  SuiteSparse/COLAMD/Source/amesos_colamd.c
-  SuiteSparse/COLAMD/Source/amesos_colamd_l.c
-  SuiteSparse/COLAMD/Source/amesos_colamd_global.c
+  SuiteSparse/COLAMD/Source/trilinos_colamd.c
+  SuiteSparse/COLAMD/Source/trilinos_colamd_l.c
+  SuiteSparse/COLAMD/Source/trilinos_colamd_global.c
   SuiteSparse/CAMD/Source/trilinos_camd_1.c
   SuiteSparse/CAMD/Source/trilinos_camd_defaults.c
   SuiteSparse/CAMD/Source/trilinos_camd_l2.c

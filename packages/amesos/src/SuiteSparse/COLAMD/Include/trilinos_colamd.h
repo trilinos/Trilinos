@@ -45,8 +45,8 @@
 
 */
 
-#ifndef AMESOS_COLAMD_H
-#define AMESOS_COLAMD_H
+#ifndef TRILINOS_COLAMD_H
+#define TRILINOS_COLAMD_H
 
 /* make it easy for C++ programs to include COLAMD */
 #ifdef __cplusplus
@@ -142,7 +142,7 @@ extern "C" {
 /* define UF_long */
 #include "amesos_UFconfig.h"
 
-size_t amesos_colamd_recommended	/* returns recommended value of Alen, */
+size_t trilinos_colamd_recommended	/* returns recommended value of Alen, */
 				/* or 0 if input arguments are erroneous */
 (
     int nnz,			/* nonzeros in A */
@@ -150,7 +150,7 @@ size_t amesos_colamd_recommended	/* returns recommended value of Alen, */
     int n_col			/* number of columns in A */
 ) ;
 
-size_t amesos_colamd_l_recommended	/* returns recommended value of Alen, */
+size_t trilinos_colamd_l_recommended	/* returns recommended value of Alen, */
 				/* or 0 if input arguments are erroneous */
 (
     UF_long nnz,		/* nonzeros in A */
@@ -158,17 +158,17 @@ size_t amesos_colamd_l_recommended	/* returns recommended value of Alen, */
     UF_long n_col		/* number of columns in A */
 ) ;
 
-void amesos_colamd_set_defaults	/* sets default parameters */
+void trilinos_colamd_set_defaults	/* sets default parameters */
 (				/* knobs argument is modified on output */
     double knobs [COLAMD_KNOBS]	/* parameter settings for colamd */
 ) ;
 
-void amesos_colamd_l_set_defaults	/* sets default parameters */
+void trilinos_colamd_l_set_defaults	/* sets default parameters */
 (				/* knobs argument is modified on output */
     double knobs [COLAMD_KNOBS]	/* parameter settings for colamd */
 ) ;
 
-int amesos_colamd		/* returns (1) if successful, (0) otherwise*/
+int trilinos_colamd		/* returns (1) if successful, (0) otherwise*/
 (				/* A and p arguments are modified on output */
     int n_row,			/* number of rows in A */
     int n_col,			/* number of columns in A */
@@ -179,7 +179,7 @@ int amesos_colamd		/* returns (1) if successful, (0) otherwise*/
     int stats [COLAMD_STATS]	/* colamd output statistics and error codes */
 ) ;
 
-UF_long amesos_colamd_l		/* returns (1) if successful, (0) otherwise*/
+UF_long trilinos_colamd_l		/* returns (1) if successful, (0) otherwise*/
 (				/* A and p arguments are modified on output */
     UF_long n_row,		/* number of rows in A */
     UF_long n_col,		/* number of columns in A */
@@ -222,12 +222,12 @@ UF_long amesos_symamd_l			/* return (1) if OK, (0) otherwise */
     					/* mxFree (for MATLAB mexFunction) */
 ) ;
 
-void amesos_colamd_report
+void trilinos_colamd_report
 (
     int stats [COLAMD_STATS]
 ) ;
 
-void amesos_colamd_l_report
+void trilinos_colamd_l_report
 (
     UF_long stats [COLAMD_STATS]
 ) ;
@@ -246,10 +246,10 @@ void amesos_symamd_l_report
 #define EXTERN extern
 #endif
 
-EXTERN int (*amesos_colamd_printf) (const char *, ...) ;
+EXTERN int (*trilinos_colamd_printf) (const char *, ...) ;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* AMESOS_COLAMD_H */
+#endif /* TRILINOS_COLAMD_H */

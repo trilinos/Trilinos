@@ -224,8 +224,8 @@ PARAKLETE_KLU_COMMON = \
 	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_post_tree.c \
 	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_preprocess.c \
 	$(srcdir)/SuiteSparse/AMD/Source/trilinos_amd_valid.c \
-	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd.c \
-	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_global.c \
+	$(srcdir)/SuiteSparse/COLAMD/Source/trilinos_colamd.c \
+	$(srcdir)/SuiteSparse/COLAMD/Source/trilinos_colamd_global.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_common.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_complex.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Core/amesos_cholmod_error.c \
@@ -238,7 +238,7 @@ PARAKLETE_KLU_COMMON = \
 PARAKLETE_KLU_COMMON_H = \
 	$(srcdir)/SuiteSparse/AMD/Include/trilinos_amd.h \
 	$(srcdir)/SuiteSparse/AMD/Include/trilinos_amd_internal.h \
-	$(srcdir)/SuiteSparse/COLAMD/Include/amesos_colamd.h \
+	$(srcdir)/SuiteSparse/COLAMD/Include/trilinos_colamd.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_check.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_core.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod.h \
@@ -331,7 +331,7 @@ PARAKLETE = \
 	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_global.c \
 	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_l2.c \
 	$(srcdir)/SuiteSparse/CAMD/Source/trilinos_camd_l_postorder.c \
-	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c \
+	$(srcdir)/SuiteSparse/COLAMD/Source/trilinos_colamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_global.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l.c \

@@ -13,12 +13,12 @@
 #ifndef NPRINT
 #ifdef MATLAB_MEX_FILE
 #include "mex.h"
-int (*amesos_colamd_printf) (const char *, ...) = mexPrintf ;
+int (*trilinos_colamd_printf) (const char *, ...) = mexPrintf ;
 #else
 #include <stdio.h>
-int (*amesos_colamd_printf) (const char *, ...) = printf ;
+int (*trilinos_colamd_printf) (const char *, ...) = printf ;
 #endif
 #else
-int (*amesos_colamd_printf) (const char *, ...) = ((void *) 0) ;
+int (*trilinos_colamd_printf) (const char *, ...) = ((void *) 0) ;
 #endif
 

@@ -8,7 +8,7 @@
 
 #ifdef HAVE_AMESOS
 #include "trilinos_amd.h"
-#include "amesos_colamd.h"
+#include "trilinos_colamd.h"
 #include "trilinos_ccolamd.h"
 #endif
 
@@ -174,7 +174,7 @@ namespace BaskerNS
 
   template <class Int>
   BASKER_FINLINE
-  int amesos_colamd
+  int trilinos_colamd
   (
    Int n_row, 
    Int n_col,
@@ -186,12 +186,12 @@ namespace BaskerNS
    )
   {
     return -1;
-  }//end amesos_colamd()
+  }//end trilinos_colamd()
   
  
   template < >
   BASKER_FINLINE
-  int amesos_colamd<>
+  int trilinos_colamd<>
   (
    int n_row,
    int n_col, 
@@ -202,15 +202,15 @@ namespace BaskerNS
    int *stats
    )
   {
-    amesos_colamd(n_row,n_col,Alen,A,p,knobs,stats);
+    trilinos_colamd(n_row,n_col,Alen,A,p,knobs,stats);
     return 0;
-  }//end amesos_colamd<int>
+  }//end trilinos_colamd<int>
   
 
   //template<class Entry, class Exe_Space>
   template <>
   BASKER_FINLINE
-  int amesos_colamd<>
+  int trilinos_colamd<>
   (
    long n_row,
    long n_col,
@@ -221,7 +221,7 @@ namespace BaskerNS
    long *stats
    )
   {
-    amesos_colamd_l(n_row, n_col, Alen, A, p, knobs, stats);
+    trilinos_colamd_l(n_row, n_col, Alen, A, p, knobs, stats);
     return 0;
   }
   

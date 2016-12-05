@@ -32,7 +32,7 @@
 #define DLONG 1
 
 #include "amesos_cholmod_internal.h"
-#include "amesos_colamd.h"
+#include "trilinos_colamd.h"
 #include "amesos_cholmod_cholesky.h"
 
 #if (!defined (COLAMD_VERSION) || (COLAMD_VERSION < COLAMD_VERSION_CODE (2,5)))
@@ -99,11 +99,11 @@ int CHOLMOD(colamd)
     s = CHOLMOD(add_size_t) (s, ncol, &ok) ;
 
 #ifdef LONG
-    alen = amesos_colamd_l_recommended (A->nzmax, ncol, nrow) ;
-    amesos_colamd_l_set_defaults (knobs) ;
+    alen = trilinos_colamd_l_recommended (A->nzmax, ncol, nrow) ;
+    trilinos_colamd_l_set_defaults (knobs) ;
 #else
-    alen = amesos_colamd_recommended (A->nzmax, ncol, nrow) ;
-    amesos_colamd_set_defaults (knobs) ;
+    alen = trilinos_colamd_recommended (A->nzmax, ncol, nrow) ;
+    trilinos_colamd_set_defaults (knobs) ;
 #endif
 
     if (!ok || alen == 0)
@@ -123,7 +123,7 @@ int CHOLMOD(colamd)
     /* ---------------------------------------------------------------------- */
 
     /* colamd_printf is only available in colamd v2.4 or later */
-    amesos_colamd_printf = Common->print_function ;
+    trilinos_colamd_printf = Common->print_function ;
 
     C = CHOLMOD(allocate_sparse) (ncol, nrow, alen, TRUE, TRUE, 0,
 	    CHOLMOD_PATTERN, Common) ;
@@ -161,9 +161,9 @@ int CHOLMOD(colamd)
 	Cp = C->p ;
 
 #ifdef LONG
-	amesos_colamd_l (ncol, nrow, alen, C->i, Cp, knobs, stats) ;
+	trilinos_colamd_l (ncol, nrow, alen, C->i, Cp, knobs, stats) ;
 #else
-	amesos_colamd (ncol, nrow, alen, C->i, Cp, knobs, stats) ;
+	trilinos_colamd (ncol, nrow, alen, C->i, Cp, knobs, stats) ;
 #endif
 
 	ok = stats [COLAMD_STATUS] ;

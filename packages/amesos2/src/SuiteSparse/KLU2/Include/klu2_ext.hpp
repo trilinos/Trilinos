@@ -42,7 +42,7 @@
 
 
 #include "trilinos_amd.h"
-#include "amesos_colamd.h"
+#include "trilinos_colamd.h"
 #include "trilinos_btf_decl.h"
 
 /* -------------------------------------------------------------------------- */
