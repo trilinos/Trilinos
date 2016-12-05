@@ -54,10 +54,10 @@
 #define MUELU_PERMUTINGSMOOTHER_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 

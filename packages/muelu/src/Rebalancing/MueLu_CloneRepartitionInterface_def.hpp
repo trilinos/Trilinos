@@ -46,6 +46,9 @@
 #ifndef PACKAGES_MUELU_SRC_REBALANCING_MUELU_CLONEREPARTITIONINTERFACE_DEF_HPP_
 #define PACKAGES_MUELU_SRC_REBALANCING_MUELU_CLONEREPARTITIONINTERFACE_DEF_HPP_
 
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
+
 #include "MueLu_CloneRepartitionInterface_decl.hpp"
 
 #include "MueLu_Level.hpp"

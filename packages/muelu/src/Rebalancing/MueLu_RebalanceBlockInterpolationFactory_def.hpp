@@ -50,10 +50,10 @@
 
 #include <Teuchos_Tuple.hpp>
 
-#include "Xpetra_Vector.hpp"
-#include "Xpetra_VectorFactory.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_Vector.hpp"
+#include "Xpetra_VectorFactory.hpp"
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MapFactory.hpp>

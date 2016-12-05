@@ -52,10 +52,10 @@
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MapExtractor_fwd.hpp>
 #include <Xpetra_MapExtractorFactory_fwd.hpp>
-#include "Xpetra_Vector_fwd.hpp"
-#include "Xpetra_VectorFactory_fwd.hpp"
 #include "Xpetra_MultiVector_fwd.hpp"
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
+#include "Xpetra_Vector_fwd.hpp"
+#include "Xpetra_VectorFactory_fwd.hpp"
 #include "Xpetra_Import_fwd.hpp"
 #include "Xpetra_ImportFactory_fwd.hpp"
 

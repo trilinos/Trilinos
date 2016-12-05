@@ -47,8 +47,8 @@
 #define MUELU_NULLSPACEFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_NullspaceFactory_decl.hpp"
 #include "MueLu_Level.hpp"
