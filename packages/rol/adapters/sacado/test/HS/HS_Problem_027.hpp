@@ -41,21 +41,22 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef HS_PROBLEM_006_HPP
-#define HS_PROBLEM_006_HPP
+#ifndef HS_PROBLEM_027_HPP
+#define HS_PROBLEM_027_HPP
 
 #include "ROL_NonlinearProgram.hpp"
 
 namespace HS {
 
-namespace HS_006 {
+namespace HS_027 {
 template<class Real> 
 class Obj {
 public:
   template<class ScalarT>
   ScalarT value( const std::vector<ScalarT> &x, Real &tol ) {
-    ScalarT a = 1-x[0];
-    return a*a;
+    ScalarT a = x[0]-1;
+    ScalarT b = x[1]-x[0]*x[0];
+    return 0.01*a*a + b*b;
   }
 };
 
@@ -66,14 +67,14 @@ public:
   void value( std::vector<ScalarT> &c,
               const std::vector<ScalarT> &x,
               Real &tol ) {
-    c[0] = 10.0*(x[1]-x[0]*x[0]);    
+    c[0] = x[0] + x[2]*x[2] + 1;    
   }
 };
 }
 
 
 template<class Real> 
-class Problem_006 : public ROL::NonlinearProgram<Real> {
+class Problem_027 : public ROL::NonlinearProgram<Real> {
 
   template<typename T> using RCP = Teuchos::RCP<T>;
 
@@ -84,39 +85,39 @@ class Problem_006 : public ROL::NonlinearProgram<Real> {
 
 public:
 
-  Problem_006() : NP( dimension_x() ) {
+  Problem_027() : NP( dimension_x() ) {
     NP::noBound();
   }
 
-  int dimension_x()  { return 2; }
+  int dimension_x()  { return 3; }
   int dimension_ce() { return 1; }
 
   const RCP<OBJ> getObjective() { 
-    return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_006::Obj> );
+    return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_027::Obj> );
   }
 
   const RCP<EQCON> getEqualityConstraint() {
     return Teuchos::rcp( 
-      new ROL::Sacado_StdEqualityConstraint<Real,HS_006::EqCon> );
+      new ROL::Sacado_StdEqualityConstraint<Real,HS_027::EqCon> );
   }
 
   const RCP<const V> getInitialGuess() {
-    Real x[] = {-1.2,1.0};
+    Real x[] = {2.0,2.0,2.0};
     return NP::createOptVector(x);
   };
    
-  bool initialGuessIsFeasible() { return false; }
+  bool initialGuessIsFeasible() { return true; }
   
   Real getInitialObjectiveValue() { 
-    return Real(4.84);
+    return Real(4.01);
   }
  
   Real getSolutionObjectiveValue() {
-    return Real(0);
+    return Real(0.04);
   }
 
   RCP<const V> getSolutionSet() {
-    Real x[] = {1.0,1.0};
+    Real x[] = {-1.0,1.0,0.0};
     return ROL::CreatePartitionedVector(NP::createOptVector(x));
   }
  
@@ -124,4 +125,4 @@ public:
 
 } // namespace HS
 
-#endif // HS_PROBLEM_006_HPP
+#endif // HS_PROBLEM_027_HPP

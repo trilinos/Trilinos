@@ -55,7 +55,7 @@ public:
   template<class ScalarT> 
   ScalarT value( const std::vector<ScalarT> &x, Real &tol ) {
     ScalarT a = x[0]+x[1];
-    ScalarT b = x[1]-x[0];
+    ScalarT b = x[0]-x[1];
     return std::sin(a) + b*b - 1.5*x[0] + 2.5*x[1] + 1.0;
   }
 };
@@ -104,7 +104,7 @@ public:
   }
 
   RCP<const V> getSolutionSet() {
-    Real x[] = {-pi/3.0+0.5,-pi/3.0-0.5};
+    Real x[] = {-pi/3.0+0.5, -pi/3.0-0.5};
     return ROL::CreatePartitionedVector(NP::createOptVector(x));
   }
  

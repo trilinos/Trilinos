@@ -194,6 +194,8 @@ protected:
     return bnd_;  
   }
 
+
+
 public:
   /** \brief Return the dimension of the optimization (and bound) vectors. */
   virtual int dimension_x() { return 1; }
@@ -246,7 +248,30 @@ public:
   virtual Real getSolutionObjectiveValue() { 
      return ROL_INF<Real>(); 
   };
-   
+
+  /* \brief Return whether the prescribed initial guess produces the correct objective value */
+  bool hasConsistentInitialGuess( const Real &tolerance=std::sqrt(ROL_EPSILON<Real>()) ) {
+    Real tol(0);
+    Teuchos::RCP<OBJ>      obj = getObjective();
+    Teuchos::RCP<const V>  x0  = getInitialGuess();
+    Real initialError = std::abs( obj->value(*x0,tol) - getInitialObjectiveValue() );
+    return initialError < tolerance;    
+  }
+
+  /* \brief Return whether the given solution set produces the correct objective value */
+  bool hasConsistentSolution( const Real &tolerance=std::sqrt(ROL_EPSILON<Real>()) ) {
+    Real tol(0);
+    Teuchos::RCP<OBJ> obj = getObjective();
+    Teuchos::RCP<const PV> xpv = Teuchos::rcp_dynamic_cast<const PV>( getSolutionSet() );
+
+    int dim = xpv->numVectors();
+    Real solutionError(0.0);
+    for(int i=0; i<dim; ++i) {
+      solutionError = std::max( solutionError, std::abs( obj->value(*(xpv->get(i)),tol) - getSolutionObjectiveValue() ) );
+    }
+    return solutionError < tolerance;
+  }
+ 
    /* \brief If the problem has known solutions, return whether ROL
              has acceptibly solved problem */ 
   bool foundAcceptableSolution( const V &x, const Real &tolerance=std::sqrt(ROL_EPSILON<Real>()) ) {

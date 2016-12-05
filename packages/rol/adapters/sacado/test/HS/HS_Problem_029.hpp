@@ -41,87 +41,96 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef HS_PROBLEM_006_HPP
-#define HS_PROBLEM_006_HPP
+#ifndef HS_PROBLEM_029_HPP
+#define HS_PROBLEM_029_HPP
 
 #include "ROL_NonlinearProgram.hpp"
 
 namespace HS {
 
-namespace HS_006 {
+namespace HS_029 {
 template<class Real> 
 class Obj {
 public:
   template<class ScalarT>
   ScalarT value( const std::vector<ScalarT> &x, Real &tol ) {
-    ScalarT a = 1-x[0];
-    return a*a;
+    return -x[0]*x[1]*x[2];
   }
 };
 
+
 template<class Real>
-class EqCon {
+class InCon {
 public:
   template<class ScalarT> 
   void value( std::vector<ScalarT> &c,
               const std::vector<ScalarT> &x,
               Real &tol ) {
-    c[0] = 10.0*(x[1]-x[0]*x[0]);    
+    c[0] = -x[0]*x[0] -2*x[1]*x[1] -4*x[2]*x[2] + 48;
   }
 };
 }
 
 
 template<class Real> 
-class Problem_006 : public ROL::NonlinearProgram<Real> {
+class Problem_029 : public ROL::NonlinearProgram<Real> {
 
   template<typename T> using RCP = Teuchos::RCP<T>;
 
-  typedef ROL::NonlinearProgram<Real>   NP;
-  typedef ROL::Vector<Real>             V;
-  typedef ROL::Objective<Real>          OBJ;
-  typedef ROL::EqualityConstraint<Real> EQCON;
+  typedef ROL::NonlinearProgram<Real>     NP;
+  typedef ROL::Vector<Real>               V;
+  typedef ROL::Objective<Real>            OBJ;
+  typedef ROL::InequalityConstraint<Real> INCON;
 
 public:
 
-  Problem_006() : NP( dimension_x() ) {
+  Problem_029() : NP( dimension_x() ) {
     NP::noBound();
   }
 
-  int dimension_x()  { return 2; }
-  int dimension_ce() { return 1; }
+  int dimension_x()  { return 3; }
+  int dimension_ci() { return 1; }
 
   const RCP<OBJ> getObjective() { 
-    return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_006::Obj> );
+    return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_029::Obj> );
   }
 
-  const RCP<EQCON> getEqualityConstraint() {
+  const RCP<INCON> getInequalityConstraint() {
     return Teuchos::rcp( 
-      new ROL::Sacado_StdEqualityConstraint<Real,HS_006::EqCon> );
+      new ROL::Sacado_StdInequalityConstraint<Real,HS_029::InCon> );
   }
 
   const RCP<const V> getInitialGuess() {
-    Real x[] = {-1.2,1.0};
+    Real x[] = {1.0,1.0,1.0};
     return NP::createOptVector(x);
   };
    
-  bool initialGuessIsFeasible() { return false; }
+  bool initialGuessIsFeasible() { return true; }
   
   Real getInitialObjectiveValue() { 
-    return Real(4.84);
+    return Real(-1.0);
   }
  
   Real getSolutionObjectiveValue() {
-    return Real(0);
+    return Real(-16*std::sqrt(2));
   }
 
   RCP<const V> getSolutionSet() {
-    Real x[] = {1.0,1.0};
-    return ROL::CreatePartitionedVector(NP::createOptVector(x));
+    Real a = 4; Real b = 2*std::sqrt(2); Real c = 2;
+    
+    Real x1[] = { a, b, c};
+    Real x2[] = { a,-b,-c};
+    Real x3[] = {-a, b,-c};
+    Real x4[] = {-a,-b, c};
+
+    return ROL::CreatePartitionedVector(NP::createOptVector(x1),
+                                        NP::createOptVector(x2), 
+                                        NP::createOptVector(x3),
+                                        NP::createOptVector(x4));
   }
  
 };
 
 } // namespace HS
 
-#endif // HS_PROBLEM_006_HPP
+#endif // HS_PROBLEM_029_HPP

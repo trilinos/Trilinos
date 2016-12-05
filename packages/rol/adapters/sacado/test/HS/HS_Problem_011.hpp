@@ -117,6 +117,7 @@ public:
     return Real(-8.498464223);
   }
 
+  // This can't be correct as the objective value for this is 50700
   RCP<const V> getSolutionSet() {
     Real a = 7.5*std::sqrt(6) + std::sqrt(338.5);
     Real x[] = {(a-1/a)/std::sqrt(6),
