@@ -717,9 +717,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
     if (op == "multiply") {
       if (verbose)
         newOut << "Running multiply test (kernel) for " << currentSystem.name() << endl;
-
-      mult_test_results results = multiply_test_kernel(name, A, B, AT, BT, C, comm, newOut);
-
+      mult_test_results results;	
+      try {
+	results = multiply_test_kernel(name, A, B, AT, BT, C, comm, newOut);
+      }
+      catch(...) {
+	printf("FAILED\n");
+      }
       if (verbose) {
         newOut << "Results:"     << endl;
         newOut << "\tEpsilon: "  << results.epsilon  << endl;

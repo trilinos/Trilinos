@@ -391,6 +391,7 @@ mult_test_results multiply_test_autofc(
     name+"_real.mtx", C);
 #endif
 
+#if 0
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   std::cout<<"*** C->colMap() ***"<<std::endl;
   C->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
@@ -413,11 +414,16 @@ mult_test_results multiply_test_autofc(
     std::cout<<"*** computedC->getImporter()->getTargetMap() ***"<<std::endl;
     computedC->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   }
+#endif
+
+  // HAQ
+  if(!A->getGraph()->getImporter().is_null() && !B->getGraph()->getImporter().is_null()) {
+    RCP<const Tpetra::Import<LO,GO,NT> > sumImport = A->getGraph()->getImporter()->setUnion(*B->getGraph()->getImporter());
+  }
 
 
 
-
-  RCP<Matrix_t> diffMatrix;// = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 

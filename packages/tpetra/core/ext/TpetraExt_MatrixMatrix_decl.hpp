@@ -374,13 +374,15 @@ void setMaxNumEntriesPerRow(
 	   class Node>
   struct KernelWrappers {
     static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,					   
-						  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-						  const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
-						  const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
-						  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-						  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
-						  const std::string& label = std::string(),
-						  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+							 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+							 const Teuchos::Array<LocalOrdinal> & Acol2Brow,
+							 const Teuchos::Array<LocalOrdinal> & Acol2Irow,
+							 const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
+							 const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
+							 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+							 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+							 const std::string& label = std::string(),
+							 const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     
   };
 

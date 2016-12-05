@@ -1375,10 +1375,40 @@ void mult_A_B_newmatrix(
   // without a column Map.  Now we have its column Map.
   C.replaceColMap(Ccolmap);
 
+  // mfh 27 Sep 2016: Construct tables that map from local column
+  // indices of A, to local row indices of either B_local (the locally
+  // owned part of B), or B_remote (the "imported" remote part of B).
+  //
+  // For column index Aik in row i of A, if the corresponding row of B
+  // exists in the local part of B ("orig") (which I'll call B_local),
+  // then targetMapToOrigRow[Aik] is the local index of that row of B.
+  // Otherwise, targetMapToOrigRow[Aik] is "invalid" (a flag value).
+  //
+  // For column index Aik in row i of A, if the corresponding row of B
+  // exists in the remote part of B ("Import") (which I'll call
+  // B_remote), then targetMapToImportRow[Aik] is the local index of
+  // that row of B.  Otherwise, targetMapToOrigRow[Aik] is "invalid"
+  // (a flag value).
+
+  // Run through all the hash table lookups once and for all
+  Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
+  Array<LO> targetMapToImportRow(Aview.colMap->getNodeNumElements(), LO_INVALID);
+
+  for (LO i = Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
+    LO B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+    if (B_LID != LO_INVALID) {
+      targetMapToOrigRow[i] = B_LID;
+    } else {
+      LO I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+      targetMapToImportRow[i] = I_LID;
+    }
+  }
+
+
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the TpetraKernels one (other NGP node types)
-  KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_kernel_wrapper(Aview,Bview,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+  KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
 
 }
 
@@ -1393,6 +1423,8 @@ template<class Scalar,
 	 class Node>
 void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,	   
 											       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+											       const Teuchos::Array<LocalOrdinal> & targetMapToOrigRow,
+											       const Teuchos::Array<LocalOrdinal> & targetMapToImportRow,
 											       const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
 											       const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
 											       CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
@@ -1414,8 +1446,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   typedef GlobalOrdinal     GO;
   typedef Node              NO;
   typedef Map<LO,GO,NO>     map_type;
-  size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
@@ -1469,36 +1502,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
   Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
 
-  // mfh 27 Sep 2016: Construct tables that map from local column
-  // indices of A, to local row indices of either B_local (the locally
-  // owned part of B), or B_remote (the "imported" remote part of B).
-  //
-  // For column index Aik in row i of A, if the corresponding row of B
-  // exists in the local part of B ("orig") (which I'll call B_local),
-  // then targetMapToOrigRow[Aik] is the local index of that row of B.
-  // Otherwise, targetMapToOrigRow[Aik] is "invalid" (a flag value).
-  //
-  // For column index Aik in row i of A, if the corresponding row of B
-  // exists in the remote part of B ("Import") (which I'll call
-  // B_remote), then targetMapToImportRow[Aik] is the local index of
-  // that row of B.  Otherwise, targetMapToOrigRow[Aik] is "invalid"
-  // (a flag value).
-
-  // Run through all the hash table lookups once and for all
-  Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
-  Array<LO> targetMapToImportRow(Aview.colMap->getNodeNumElements(), LO_INVALID);
-
-  for (LO i = Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
-    LO B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-    if (B_LID != LO_INVALID) {
-      targetMapToOrigRow[i] = B_LID;
-    } else {
-      LO I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-      targetMapToImportRow[i] = I_LID;
-    }
-  }
-
-  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
   // mfh 27 Sep 2016: The c_status array is an implementation detail
   // of the local sparse matrix-matrix multiply routine.
@@ -1643,6 +1646,8 @@ template<class Scalar,
 struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> {
     static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,					   
 						  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+						  const Teuchos::Array<LocalOrdinal> & Acol2Brow,
+							 const Teuchos::Array<LocalOrdinal> & Acol2Irow,	
 						  const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
 						  const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
 						  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
@@ -1653,11 +1658,14 @@ struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOp
   };
 
 
+/*********************************************************************************************************/
 template<class Scalar,
 	 class LocalOrdinal,
 	 class GlobalOrdinal>
 void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,	
 											       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+											       const Teuchos::Array<LocalOrdinal> & Acol2Brow,
+											       const Teuchos::Array<LocalOrdinal> & Acol2Irow,				  
 											       const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
 											       const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
 											       CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
@@ -1684,47 +1692,184 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
+  typedef typename graph_t::row_map_type::const_type lno_view_t_const;
 
   // Not sure what this does, how it works, or why things are done this way.
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<lno_view_t,lno_nnz_view_t, scalar_view_t, typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
-  // Grab the  Kokkos::SparseCrsMatrix-es
+  // Grab the  Kokkos::SparseCrsMatrices
   const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Bk = Bview.origMatrix->getLocalMatrix();  
   RCP<const KCRS> Bmerged;
 
   // Get the algorithm mode
   std::string alg = nodename+std::string(" algorithm");
+#ifdef HAVE_TPETRAKERNELS_MKL
   std::string myalg("SPGEMM_KK_MEMORY");
+  //  std::string myalg("SPGEMM_MKL");
+#else
+  std::string myalg("SPGEMM_KK_MEMORY");
+#endif
+  //  printf("DEBUG: Using kernel: %s\n",myalg.c_str());
   if(!params.is_null() && params->isParameter(alg)) myalg = params->get(alg,myalg);
   KokkosKernels::Experimental::Graph::SPGEMMAlgorithm alg_enum = KokkosKernels::Experimental::Graph::StringToSPGEMMAlgorithm(myalg);
-
 
   if(!Bview.importMatrix.is_null()) {
     // We do have a Bimport
     // NOTE: We're going merge Borig and Bimport into a single matrix and reindex the columns *before* we multiply.  
     // This option was chosen because we know we don't have any duplicate entries, so we can allocate once.
+    size_t Ak_numcols    = Ak.numCols();
     const KCRS & Ik = Bview.importMatrix->getLocalMatrix();
     size_t Bk_numrows    = Bk.numRows();
     size_t Bk_nnz        = Bk.nnz();   
-    size_t merge_numrows = Bk_numrows + Ik.numRows();
-    size_t merge_nnz     = Bk_nnz     + Ik.nnz();
+    size_t merge_numrows = Ak_numcols;
     lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
+
+    const LocalOrdinal LO_INVALID =Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+  
+    // FIXME - Need to use these guys in the creation of Bmerged
+    //const Teuchos::Array<LocalOrdinal> & Acol2Brow,
+    //    const Teuchos::Array<LocalOrdinal> & Acol2Irow,	
+
+    // Use a Kokkos::parallel_scan to build the rowptr
+    Kokkos::parallel_scan(Ak_numcols,KOKKOS_LAMBDA(const size_t i, size_t & update, const bool final) {
+	if(final) Mrowptr(i) = update;
+	
+	// Get the row count
+	size_t ct=0;   
+	if(Acol2Brow[i]!=LO_INVALID) 
+	  ct = Bk.graph.row_map(Acol2Brow[i]+1) - Bk.graph.row_map(Acol2Brow[i]);
+	else
+	  ct = Ik.graph.row_map(Acol2Irow[i]+1) - Ik.graph.row_map(Acol2Irow[i]);
+	update+=ct;
+	
+	if(final && i+1==merge_numrows)
+	  Mrowptr(i+1)=update;
+      });
+
+#if 0
+    {
+      // Serial sanity check
+      Teuchos::Array<size_t> Mrowptr_check(merge_numrows+1);
+      Mrowptr_check[0]=0;
+      for(size_t i=0; i<Ak_numcols;  i++) {
+	size_t ct=0;
+	if(Acol2Brow[i]!=LO_INVALID) 
+	  ct = Bk.graph.row_map(Acol2Brow[i]+1) - Bk.graph.row_map(Acol2Brow[i]);
+	else
+	  ct = Ik.graph.row_map(Acol2Irow[i]+1) - Ik.graph.row_map(Acol2Irow[i]);
+	Mrowptr_check[i+1]=Mrowptr_check[i]+ct;
+      }
+     int MyPID = Bview.origMatrix->getComm()->getRank();
+     printf("[%d] rowchk = ",MyPID);
+     for(size_t i=0; i<merge_numrows+1; i++) {
+       if(i==Bk_numrows) printf("*** ");
+       printf("%3d ",(int)Mrowptr_check[i]);
+     }
+     printf("\n");
+     printf("[%d] rowptr = ",MyPID);
+     for(size_t i=0; i<merge_numrows+1; i++) {
+       if(i==Bk_numrows) printf("*** ");
+       printf("%3d ",(int)Mrowptr(i));
+     }
+     printf("\n");
+    }
+#endif
+
+    // Allocate nnz
+    size_t merge_nnz = Mrowptr(merge_numrows);
     lno_nnz_view_t Mcolind("Mcolind",merge_nnz);
     scalar_view_t Mvalues("Mvals",merge_nnz);
 
+    // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
+    Kokkos::parallel_for(merge_numrows,KOKKOS_LAMBDA(const size_t i) {
+	if(Acol2Brow[i]!=LO_INVALID) {
+	  size_t row   = Acol2Brow[i];
+	  size_t start = Bk.graph.row_map(row);
+	  for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
+	    Mvalues(j) = Bk.values(j-Mrowptr(i)+start);
+	    Mcolind(j) = Bcol2Ccol[Bk.graph.entries(j-Mrowptr(i)+start)];
+	  }
+	}
+	else {
+	  size_t row   = Acol2Irow[i];
+	  size_t start = Ik.graph.row_map(row);
+	  for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
+	    Mvalues(j) = Ik.values(j-Mrowptr(i)+start);
+	    Mcolind(j) = Icol2Ccol[Ik.graph.entries(j-Mrowptr(i)+start)];
+	  }
+	}       
+      });
+
+#if 0
+    {
+      // Serial sanity check
+      Teuchos::Array<size_t> Mcolind_check(merge_nnz);
+      Teuchos::Array<Scalar> Mvalues_check(merge_nnz);
+      for(size_t i=0; i<merge_numrows;  i++) {
+	if(Acol2Brow[i]!=LO_INVALID) {
+	  size_t brow   = Acol2Brow[i];
+	  size_t start = Bk.graph.row_map(brow);
+	  for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
+	    Mvalues_check[j] = Bk.values(j-Mrowptr(i)+start);
+	    Mcolind_check[j] = Bcol2Ccol[Bk.graph.entries(j-Mrowptr(i)+start)];
+	  }
+	}
+	else {
+	  size_t irow   = Acol2Irow[i];
+	  size_t start = Ik.graph.row_map(irow);
+	  for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
+	    Mvalues_check[j] = Ik.values(j-Mrowptr(i)+start);
+	    Mcolind_check[j] = Icol2Ccol[Ik.graph.entries(j-Mrowptr(i)+start)];
+	  }
+	}
+      }
+      int MyPID = Bview.origMatrix->getComm()->getRank();
+      printf("[%d] colchk = ",MyPID);
+      for(size_t i=0; i<merge_nnz; i++) {
+	if(i==Bk_nnz) printf("*** ");
+	printf("%3d ",(int)Mcolind_check[i]);
+      }
+      printf("\n");
+      
+
+      printf("[%d] colind = ",MyPID);
+      for(size_t i=0; i<merge_nnz; i++) {
+	if(i==Bk_nnz) printf("*** ");
+	printf("%3d ",(int)Mcolind(i));
+      }
+      printf("\n");
+    }
+#endif
+    
+
+
+#if OLD_AND_BUSTED
     // Sanity check A's colmap vs. B+I's rowmap
     for(int i=0; i<(int)Aview.origMatrix->getColMap()->getNodeNumElements(); i++) {
       if(i < (int)Bk_numrows) {
 	if(Aview.origMatrix->getColMap()->getGlobalElement(i) != Bview.origMatrix->getRowMap()->getGlobalElement(i))
 	  printf("[%d] A/B mismatch %d(%d) != %d(%d)\n",Aview.origMatrix->getRowMap()->getComm()->getRank(),i,(int)Aview.origMatrix->getColMap()->getGlobalElement(i),i,(int)Bview.origMatrix->getRowMap()->getGlobalElement(i));
+	else
+	  printf("[%d] A/B    match %d(%d) == %d(%d)\n",Aview.origMatrix->getRowMap()->getComm()->getRank(),i,(int)Aview.origMatrix->getColMap()->getGlobalElement(i),i,(int)Bview.origMatrix->getRowMap()->getGlobalElement(i));
       }
       else
 	if(Aview.origMatrix->getColMap()->getGlobalElement(i) != Bview.importMatrix->getRowMap()->getGlobalElement(i-Bk_numrows))
 	  printf("[%d] A/I mismatch %d(%d) != %d(%d)\n",Aview.origMatrix->getRowMap()->getComm()->getRank(),i,(int)Aview.origMatrix->getColMap()->getGlobalElement(i),i,(int)Bview.importMatrix->getRowMap()->getGlobalElement(i-Bk_numrows));
       }
 
-
+    Kokkos::parallel_for(Acol2Brow.size(),KOKKOS_LAMBDA(const size_t i){
+	LO rid = Acol2Brow[i];
+	if(rid != LO_INVALID) {
+	  Mrowptr(i) = Bk.graph.row_map(rid);
+	  for(size_t j=Bk.graph.row_map(rid); j<Bk.graph.row_map(rid+1); j++) {
+	    Mvalues(j) = Bk.values(j);
+	}
+	else {
+	  rid=Acol2Irow[i];
+	  Mrowptr(i) = Bk.graph.row_map(rid);
+	}
+      }
     // Copy Rowptr
     Kokkos::parallel_for(Bk_numrows+1,KOKKOS_LAMBDA(const size_t i){
 	Mrowptr(i) = Bk.graph.row_map(i);
@@ -1745,14 +1890,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 	Mvalues(Bk_nnz+i) = Ik.values(i);
 	Mcolind(Bk_nnz+i) = Icol2Ccol[Ik.graph.entries(i)];
       });
-
+#endif
 
 #if 0
     {
       // DEBUG
       int MyPID = Bview.origMatrix->getComm()->getRank();
       printf("[%d] rowptr = ",MyPID);
-      for(size_t i=0; i<merge_numrows; i++) {
+      for(size_t i=0; i<(size_t)merge_numrows+1; i++) {
 	if(i==Bk_numrows) printf("*** ");
 	printf("%3d ",(int)Mrowptr(i));
       }
@@ -1767,6 +1912,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
       // END DEBUG
     }
 #endif
+
     Bmerged = Teuchos::rcp(new KCRS("CrsMatrix",merge_numrows,C.getColMap()->getNodeNumElements(),merge_nnz,Mvalues,Mrowptr,Mcolind));
 
   }
@@ -1800,6 +1946,27 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   }
   KokkosKernels::Experimental::Graph::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bmerged->graph.row_map,Bmerged->graph.entries,Bmerged->values,false,row_mapC,entriesC,valuesC);
   
+#if 0
+  {
+    // DEBUG
+    int MyPID = C.getComm()->getRank();
+    printf("[%d] Crowptr = ",MyPID);
+    for(size_t i=0; i<(size_t) row_mapC.size(); i++) {
+      printf("%3d ",(int)row_mapC[i]);
+    }
+    printf("\n");
+    printf("[%d] Ccolind = ",MyPID);
+    for(size_t i=0; i<(size_t)entriesC.size(); i++) {
+      printf("%3d ",(int)entriesC[i]);
+    }
+    printf("\n");
+    fflush(stdout);
+    // END DEBUG
+  }
+#endif
+
+
+
   C.setAllValues(row_mapC,entriesC,valuesC);
   kh.destroy_spgemm_handle();
 
