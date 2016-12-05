@@ -15,6 +15,10 @@ TRIBITS_PACKAGE(Amesos)
 #  MESSAGE(FATAL_ERROR "The Amesos support for the SuperLUIDist TPL requires the ParMETIS TPL.  Either disable Amesos SuperLUDist support or enable the ParMETIS TPL.")
 #ENDIF()
 
+IF(${PACKAGE_NAME}_ENABLE_PARAKLETE)
+  MESSAGE(FATAL_ERROR "Support for the PARAKLETE package has been removed from Amesos.")
+ENDIF()
+
 # if using MUMPS, must be parallel
 IF(${PACKAGE_NAME}_ENABLE_MUMPS)
 IF(NOT TPL_ENABLE_MPI)

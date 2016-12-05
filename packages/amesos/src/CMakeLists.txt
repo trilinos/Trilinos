@@ -147,20 +147,14 @@ ENDIF()
 # PARAKLETE KLU files
 #
 
-SET(PARAKLETE_KLU_COMMON_H
+SET(TRILINOS_KLU_COMMON_H
   SuiteSparse/AMD/Include/trilinos_amd.h
   SuiteSparse/AMD/Include/trilinos_amd_internal.h
   SuiteSparse/COLAMD/Include/amesos_colamd.h
-  SuiteSparse/CHOLMOD/Include/amesos_cholmod_check.h
-  SuiteSparse/CHOLMOD/Include/amesos_cholmod_core.h
-  SuiteSparse/CHOLMOD/Include/amesos_cholmod.h
-  SuiteSparse/CHOLMOD/Include/amesos_cholmod_internal.h
-  SuiteSparse/CHOLMOD/Include/amesos_cholmod_io64.h
-  SuiteSparse/CHOLMOD/Include/amesos_cholmod_partition.h
   SuiteSparse/UFconfig/amesos_UFconfig.h
   )
 
-SET(PARAKLETE_KLU_COMMON
+SET(TRILINOS_KLU_COMMON
   SuiteSparse/AMD/Source/trilinos_amd_1.c
   SuiteSparse/AMD/Source/trilinos_amd_2.c
   SuiteSparse/AMD/Source/trilinos_amd_aat.c
@@ -185,12 +179,6 @@ SET(PARAKLETE_KLU_COMMON
   SuiteSparse/COLAMD/Source/amesos_colamd.c
   SuiteSparse/COLAMD/Source/amesos_colamd_l.c
   SuiteSparse/COLAMD/Source/amesos_colamd_global.c
-  SuiteSparse/CHOLMOD/Core/amesos_cholmod_common.c
-  SuiteSparse/CHOLMOD/Core/amesos_cholmod_complex.c
-  SuiteSparse/CHOLMOD/Core/amesos_cholmod_error.c
-  SuiteSparse/CHOLMOD/Core/amesos_cholmod_memory.c
-  SuiteSparse/CHOLMOD/Core/amesos_cholmod_sparse.c
-  SuiteSparse/CHOLMOD/Core/amesos_cholmod_transpose.c
   SuiteSparse/CAMD/Source/trilinos_camd_1.c
   SuiteSparse/CAMD/Source/trilinos_camd_defaults.c
   SuiteSparse/CAMD/Source/trilinos_camd_l2.c
@@ -210,7 +198,7 @@ SET(PARAKLETE_KLU_COMMON
 
   IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
       IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.2)
-        SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
+        SET_SOURCE_FILES_PROPERTIES(${TRILINOS_KLU_COMMON},
                 PROPERTIES
                 COMPILE_FLAGS "-Wno-all -Wno-pedantic")
       ENDIF()
@@ -219,11 +207,10 @@ SET(PARAKLETE_KLU_COMMON
   ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
       #No flags
   ELSE()
-       SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
+       SET_SOURCE_FILES_PROPERTIES(${TRILINOS_KLU_COMMON},
                 PROPERTIES
                 COMPILE_FLAGS "-Wno-all")
   ENDIF()
-
          
 
 #
@@ -233,7 +220,6 @@ SET(PARAKLETE_KLU_COMMON
 IF (${PACKAGE_NAME}_ENABLE_KLU)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/AMD/Include)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/COLAMD/Include)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/CHOLMOD/Include)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/UFconfig)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU/Include)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/BTF/Include)
@@ -241,7 +227,7 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/CCOLAMD/Include)
 
   SET(HEADERS ${HEADERS}
-    ${PARAKLETE_KLU_COMMON_H}
+    ${TRILINOS_KLU_COMMON_H}
     SuiteSparse/KLU/Include/amesos_klu_decl.h
     SuiteSparse/KLU/Include/amesos_klu_internal.h
     SuiteSparse/KLU/Include/amesos_klu_version.h
@@ -302,160 +288,11 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
 
 
     SET(SOURCES ${SOURCES}
-    ${PARAKLETE_KLU_COMMON}
+    ${TRILINOS_KLU_COMMON}
     Amesos_Klu.cpp
     ${KLU_FILES}
     )
 
-ENDIF()
-
-#
-# PARAKLETE files
-#
-
-IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/AMD/Include)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/COLAMD/Include)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/CHOLMOD/Include)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/UFconfig)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/PARAKLETE/Include)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/CAMD/Include)
-
-  SET(PARAKLETE_HEADERS
-    SuiteSparse/PARAKLETE/Include/amesos_paraklete_decl.h
-    SuiteSparse/CHOLMOD/Include/amesos_cholmod_complexity.h
-    SuiteSparse/CCOLAMD/Include/trilinos_ccolamd.h
-    SuiteSparse/CHOLMOD/Include/amesos_cholmod_blas.h
-    SuiteSparse/CHOLMOD/Include/amesos_cholmod_cholesky.h
-    SuiteSparse/CHOLMOD/Include/amesos_cholmod_config.h
-    SuiteSparse/CHOLMOD/Core/amesos_t_cholmod_dense.c
-    SuiteSparse/CHOLMOD/Include/amesos_cholmod_template.h
-    SuiteSparse/CHOLMOD/Core/amesos_t_cholmod_change_factor.c
-    SuiteSparse/CHOLMOD/Core/amesos_t_cholmod_transpose.c
-    SuiteSparse/CHOLMOD/Core/amesos_t_cholmod_triplet.c
-    SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_solve.c
-    SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_lsolve.c
-    SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_ltsolve.c
-    )
-
-
-   IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-                   IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.2)
-                              SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_HEADERS},
-                                PROPERTIES
-                                COMPILE_FLAGS "-Wno-all -Wno-pedantic")
-                            ENDIF()
-   ELSEIF (WIN32 AND NOT CYGWIN)
-       # No flags
-   ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
-      #No flags
-   ELSE()
-        SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_HEADERS},
-                                PROPERTIES
-                                COMPILE_FLAGS "-Wno-all ")
-   ENDIF()
-  
-
-
-   SET(HEADERS ${HEADERS}
-       ${PARAKLETE_KLU_COMMON_H}
-       Amesos_Paraklete.h
-       ${PARAKLETE_HEADERS}
-  )
-
-  SET(PARAKLETE_SOURCE
-        SuiteSparse/PARAKLETE/Source/amesos_paraklete_analyze.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_btf.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_error.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_factorize.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_finish.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_kernel.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_lsolve_node.c 
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_node.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_reanalyze.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_solve.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_start.c
-    SuiteSparse/PARAKLETE/Source/amesos_paraklete_usolve_node.c 
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_common.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_dense.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_factor.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_change_factor.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_memory.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_complex.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_transpose.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_sparse.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_band.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_copy.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_triplet.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_error.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_aat.c
-    SuiteSparse/CHOLMOD/Core/amesos_cholmod_l_add.c
-    SuiteSparse/CHOLMOD/Check/amesos_cholmod_check.c
-    SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_postorder.c
-    SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_amd.c
-    SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_colamd.c
-    SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_etree.c
-    SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_rowcolcounts.c
-    SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_analyze.c
-    SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_ccolamd.c
-    SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_camd.c
-    SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_csymamd.c
-    SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_metis.c
-    SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c
-    SuiteSparse/AMD/Source/trilinos_amd_l1.c
-    SuiteSparse/AMD/Source/trilinos_amd_l2.c
-    SuiteSparse/AMD/Source/trilinos_amd_l_aat.c
-    SuiteSparse/AMD/Source/trilinos_amd_l_order.c
-    SuiteSparse/AMD/Source/trilinos_amd_l_postorder.c
-    SuiteSparse/AMD/Source/trilinos_amd_l_post_tree.c
-    SuiteSparse/AMD/Source/trilinos_amd_l_preprocess.c
-    SuiteSparse/AMD/Source/trilinos_amd_l_valid.c
-    SuiteSparse/CAMD/Source/trilinos_camd_global.c
-    SuiteSparse/CAMD/Source/trilinos_camd_l2.c
-    SuiteSparse/CAMD/Source/trilinos_camd_l_postorder.c
-    SuiteSparse/COLAMD/Source/amesos_colamd_l.c
-    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_l.c
-    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_global.c
-    SuiteSparse/KLU/Source/amesos_klu_l.c
-    SuiteSparse/KLU/Source/amesos_klu_l_analyze.c
-    SuiteSparse/KLU/Source/amesos_klu_l_analyze_given.c
-    SuiteSparse/KLU/Source/amesos_klu_l_defaults.c
-    SuiteSparse/KLU/Source/amesos_klu_l_free_numeric.c
-    SuiteSparse/KLU/Source/amesos_klu_l_free_symbolic.c
-    SuiteSparse/KLU/Source/amesos_klu_l_factor.c
-    SuiteSparse/KLU/Source/amesos_klu_l_kernel.c
-    SuiteSparse/KLU/Source/amesos_klu_l_memory.c
-    SuiteSparse/KLU/Source/amesos_klu_l_scale.c
-    SuiteSparse/KLU/Source/amesos_klu_l_solve.c
-    SuiteSparse/BTF/Source/trilinos_btf_l_order.c
-    SuiteSparse/BTF/Source/trilinos_btf_l_maxtrans.c
-    SuiteSparse/BTF/Source/trilinos_btf_l_strongcomp.c
- )
-
-    
-  IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-    IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.2)
-     SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_SOURCE},
-                              PROPERTIES
-                              COMPILE_FLAGS "-Wno-all -Wno-pedantic")
-        ENDIF()
-  ELSEIF (WIN32 AND NOT CYGWIN)
-       # No flags
-  ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
-      #No flags
-  ELSE()
-      SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_SOURCE},
-                              PROPERTIES
-                              COMPILE_FLAGS "-Wno-all")
-  ENDIF()
-
-
-  SET(SOURCES ${SOURCES}
-      ${PARAKLETE_KLU_COMMON}
-      ${PARAKLETE_SOURCE}
-       Amesos_Paraklete.cpp
-   )
-      
 ENDIF()
 
 #
