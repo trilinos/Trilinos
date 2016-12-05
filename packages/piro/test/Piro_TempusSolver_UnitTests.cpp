@@ -59,9 +59,6 @@
 
 #include "MockModelEval_A.hpp"
 
-#include "Rythmos_BackwardEulerStepper.hpp"
-#include "Rythmos_SimpleIntegrationControlStrategy.hpp"
-
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 
@@ -107,16 +104,6 @@ RCP<Thyra::ModelEvaluatorDefaultBase<double> > defaultModelNew()
 {
   return thyraModelNew(epetraModelNew());
 }
-/*
-RCP<Rythmos::IntegrationControlStrategyBase<double> > stepStrategyNew(double fixedTimeStep)
-{
-  const RCP<Teuchos::ParameterList> integrationControlPL =
-    rcp(new Teuchos::ParameterList("Rythmos Integration Control"));
-  integrationControlPL->set("Take Variable Steps", false);
-  integrationControlPL->set("Fixed dt", fixedTimeStep);
-  return Rythmos::simpleIntegrationControlStrategy<double>(integrationControlPL);
-}
-*/
 
 const RCP<TempusSolver<double> > solverNew(
     const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
@@ -125,6 +112,8 @@ const RCP<TempusSolver<double> > solverNew(
   const RCP<ParameterList> tempusPL(new ParameterList("Tempus"));
   tempusPL->set("Integrator Name", "Demo Integrator");
   tempusPL->sublist("Demo Integrator").set("Integrator Type", "Integrator Basic"); 
+  tempusPL->sublist("Demo Integrator").set("Initial Time", 0.0); 
+  tempusPL->sublist("Demo Integrator").set("Final Time", finalTime); 
   tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper"); 
   tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited"); 
   tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20); 
@@ -149,10 +138,13 @@ const RCP<TempusSolver<double> > solverNew(
   const RCP<ParameterList> tempusPL(new ParameterList("Tempus"));
   tempusPL->set("Integrator Name", "Demo Integrator");
   tempusPL->sublist("Demo Integrator").set("Integrator Type", "Integrator Basic"); 
+  tempusPL->sublist("Demo Integrator").set("Initial Time", initialTime); 
+  tempusPL->sublist("Demo Integrator").set("Final Time", finalTime); 
   tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper"); 
   tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited"); 
   tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20); 
-  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Simulation Time", 0.0); 
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Simulation Time", initialTime); 
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Simulation Time", finalTime); 
   tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler"); 
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver"); 
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton"); 
@@ -168,50 +160,44 @@ const RCP<TempusSolver<double> > solverNew(
 
   return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
 }
-/*
-const RCP<RythmosSolver<double> > solverNew(
+
+const RCP<TempusSolver<double> > solverNew(
     const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
     double initialTime,
     double finalTime,
     double fixedTimeStep,
     const RCP<Piro::ObserverBase<double> > &observer)
 {
-  const RCP<Rythmos::IntegrationControlStrategyBase<double> > stepStrategy =
-    stepStrategyNew(fixedTimeStep);
-  const RCP<Rythmos::IntegrationObserverBase<double> > rythmosObserver =
-    rcp(new ObserverToRythmosIntegrationObserverAdapter<double>(observer));
-  const RCP<Rythmos::DefaultIntegrator<double> > integrator =
-    Rythmos::defaultIntegrator(stepStrategy, rythmosObserver);
-  const RCP<Thyra::NonlinearSolverBase<double> > stepSolver =
-    Rythmos::timeStepNonlinearSolver<double>();
-  const RCP<Rythmos::SolverAcceptingStepperBase<double> > stepper =
-    Rythmos::backwardEulerStepper<double>(thyraModel, stepSolver);
+  const RCP<ParameterList> tempusPL(new ParameterList("Tempus"));
+  tempusPL->set("Integrator Name", "Demo Integrator");
+  tempusPL->sublist("Demo Integrator").set("Integrator Type", "Integrator Basic"); 
+  tempusPL->sublist("Demo Integrator").set("Initial Time", initialTime); 
+  tempusPL->sublist("Demo Integrator").set("Initial Time Step", fixedTimeStep); 
+  tempusPL->sublist("Demo Integrator").set("Final Time", finalTime); 
+  tempusPL->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper"); 
+  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited"); 
+  tempusPL->sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20); 
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Simulation Time", initialTime); 
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Simulation Time", finalTime); 
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Minimum Time Step", fixedTimeStep); 
+  tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Time Step", fixedTimeStep); 
+  tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler"); 
+  tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver"); 
+  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton"); 
+  Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
+  const RCP<Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
+  const RCP<Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
+  
+  const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer));
+  integrator->setObserver(tempusObserver);
+  const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
+  RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
+  const RCP<Tempus::Stepper<double> > stepper = rcp(new Tempus::StepperBackwardEuler<double>(stepperPL, thyraModel));
 
-  return rcp(new RythmosSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
+  return rcp(new TempusSolver<double>(integrator, stepper, stepSolver, thyraModel, initialTime, finalTime));
 }
 
-const RCP<RythmosSolver<double> > solverNew(
-    const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,
-    double finalTime,
-    const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &steadyStateModel)
-{
-  const RCP<Rythmos::DefaultIntegrator<double> > integrator =
-    Rythmos::defaultIntegrator<double>();
-  const RCP<Thyra::NonlinearSolverBase<double> > stepSolver =
-    Rythmos::timeStepNonlinearSolver<double>();
-  const RCP<Rythmos::SolverAcceptingStepperBase<double> > stepper =
-    Rythmos::backwardEulerStepper<double>(thyraModel, stepSolver);
 
-  return rcp(new RythmosSolver<double>(integrator, stepper, stepSolver, thyraModel, finalTime, steadyStateModel));
-}
-
-const RCP<RythmosSolver<double> > solverNew(
-    const RCP<EpetraExt::ModelEvaluator> &epetraModel,
-    double finalTime)
-{
-  return solverNew(thyraModelNew(epetraModel), finalTime);
-}
-*/
 Thyra::ModelEvaluatorBase::InArgs<double> getStaticNominalValues(const Thyra::ModelEvaluator<double> &model)
 {
   Thyra::ModelEvaluatorBase::InArgs<double> result = model.getNominalValues();
@@ -220,13 +206,7 @@ Thyra::ModelEvaluatorBase::InArgs<double> getStaticNominalValues(const Thyra::Mo
   }
   return result;
 }
-/*
-void vectorAssign(Thyra::VectorBase<double> &target, const ArrayView<const double> &values) {
-  for (int i = 0; i < values.size(); ++i) {
-    Thyra::set_ele(i, values[i], ptrFromRef(target));
-  }
-}
-*/
+
 
 // Floating point tolerance
 const double tol = 1.0e-8;
@@ -363,8 +343,8 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialCondition)
   TEST_FLOATING_EQUALITY(observer->lastStamp(), timeStamp, tol);
 }
 
-/*
-TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ObserveFinalSolution)
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
   const RCP<MockObserver<double> > observer(new MockObserver<double>);
@@ -372,7 +352,7 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ObserveFinalSolution)
   const double finalTime = 0.1;
   const double timeStepSize = 0.05;
 
-  const RCP<RythmosSolver<double> > solver =
+  const RCP<TempusSolver<double> > solver =
     solverNew(model, initialTime, finalTime, timeStepSize, observer);
 
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
@@ -393,5 +373,5 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ObserveFinalSolution)
   TEST_FLOATING_EQUALITY(observer->lastStamp(), finalTime, tol);
 }
 
-*/
+
 #endif /* HAVE_PIRO_TEMPUS */
