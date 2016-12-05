@@ -126,8 +126,9 @@ namespace MueLu {
         diag = VectorFactory::Build(A00->getRangeMap(), true);
         A00->getLocalDiagCopy(*diag);
       } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"MueLu::SchurComplementFactory::Build: Mass lumping not implemented. Implement a mass lumping kernel!");
-        //diag = Utilities::GetLumpedMatrixDiagonal(A00);
+        RCP<BlockedCrsMatrix> bA00 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A00);
+        TEUCHOS_TEST_FOR_EXCEPTION(bA00.is_null()==false, MueLu::Exceptions::RuntimeError,"MueLu::SchurComplementFactory::Build: Mass lumping not implemented. Implement a mass lumping kernel!");
+        diag = Utilities::GetLumpedMatrixDiagonal(A00);
       }
       // invert diagonal vector. Replace all entries smaller than 1e-4 by one!
       RCP<Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, STS::one()));
