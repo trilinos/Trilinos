@@ -88,9 +88,9 @@ namespace Xpetra {
   typedef std::string viewLabel_t;
 
   template <class Scalar,
-            class LocalOrdinal,  // = typename Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal, // = typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node>          // = typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class BlockedCrsMatrix :
     public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
@@ -794,7 +794,6 @@ namespace Xpetra {
     void leftScale (const Vector& x) {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::leftScale");
 
-#if 1
       Teuchos::RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
       Teuchos::RCP<const BlockedVector> bx = Teuchos::rcp_dynamic_cast<const BlockedVector>(rcpx);
 
@@ -827,30 +826,12 @@ namespace Xpetra {
           }
         }
       }
-
-#else
-      XPETRA_TEST_FOR_EXCEPTION(x.getMap()->isSameAs(*rangemaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
-        "BlockedCrsMatrix::leftScale(): the map of the vector x is not compatible with the full map of the blocked operator." );
-
-      RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
-
-      for (size_t row = 0; row < Rows(); ++row) {
-        for (size_t col = 0; col < Cols(); ++col) {
-          if(getMatrix(row,col)!=Teuchos::null) {
-            // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
-            bool bThyraMode = rangemaps_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(getMatrix(row,col)) == Teuchos::null);
-            RCP<Vector> xx = rangemaps_->ExtractVector(rcpx,row,bThyraMode);
-            getMatrix(row,col)->leftScale(*xx);
-          }
-        }
-      }
-#endif
     }
 
     //! Right scale matrix using the given vector entries
     void rightScale (const Vector& x) {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::rightScale");
-#if 1
+
       Teuchos::RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
       Teuchos::RCP<const BlockedVector> bx = Teuchos::rcp_dynamic_cast<const BlockedVector>(rcpx);
 
@@ -883,24 +864,6 @@ namespace Xpetra {
           }
         }
       }
-
-#else
-      XPETRA_TEST_FOR_EXCEPTION(x.getMap()->isSameAs(*domainmaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
-        "BlockedCrsMatrix::rightScale(): the map of the vector x is not compatible with the full map of the blocked operator." );
-
-      RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
-
-      for (size_t col = 0; col < Cols(); ++col) {
-        for (size_t row = 0; row < Rows(); ++row) {
-          if(getMatrix(row,col)!=Teuchos::null) {
-            // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
-            bool bThyraMode = domainmaps_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(getMatrix(row,col)) == Teuchos::null);
-            RCP<Vector> xx = domainmaps_->ExtractVector(rcpx,col,bThyraMode);
-            getMatrix(row,col)->rightScale(*xx);
-          }
-        }
-      }
-#endif
     }
 
 
@@ -1000,32 +963,15 @@ namespace Xpetra {
             // input/output vectors for local block operation
             RCP<const MultiVector> Xblock = Teuchos::null; // subpart of X vector to be applied to subblock of A
 
-
-            //if(bBlockedX)
-            //  refbX->getBlockedMap()->describe(*out, Teuchos::VERB_EXTREME);
-
-            //if(bBlockedSubMatrix) {
-            //  Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Ablock)->getDomainMapExtractor()->getBlockedMap()->describe(*out, Teuchos::VERB_EXTREME);
-            //  domainmaps_->getBlockedMap()->describe(*out, Teuchos::VERB_EXTREME);
-            //}
-
-            //domainmaps_->getMap(col, true)->describe(*out, Teuchos::VERB_EXTREME);
-            //domainmaps_->getMap(col, false)->describe(*out, Teuchos::VERB_EXTREME);
-
             // extract sub part of X using Xpetra or Thyra GIDs
             // if submatrix is again blocked, we extract it using Xpetra style gids. If it is a single
             // block matrix we use the Thyra or Xpetra style GIDs that are used to store the matrix
-            if(bBlockedX) Xblock = domainmaps_->ExtractVector(refbX, col, bDomainThyraMode_ /*true*/ /*bBlockedSubMatrix == true ? false : bDomainThyraMode_*/);
+            if(bBlockedX) Xblock = domainmaps_->ExtractVector(refbX, col, bDomainThyraMode_);
             else          Xblock = domainmaps_->ExtractVector(refX,  col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
 
-            RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_ /*true*/ /*bBlockedSubMatrix == true ? false : bRangeThyraMode_*/, false);  // subpart of Y vector containing part of solution of Xblock applied to Ablock
+            RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, false);  // subpart of Y vector containing part of solution of Xblock applied to Ablock
             Ablock->apply(*Xblock, *tmpYblock);
 
-            // If Ablock is a blocked operator the local vectors are using (pseudo) Xpetra-style gids
-            // that have to be translated to Thyra based GIDs if bRangeThyraMode is set
-            //if(bBlockedSubMatrix == true && bRangeThyraMode_ == true) {
-            //  tmpYblock->replaceMap(rangemaps_->getMap(row, true)); // switch to Thyra maps (compatible to Yblock)
-            //}
             Yblock->update(one, *tmpYblock, one);
           }
           rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
@@ -1049,16 +995,10 @@ namespace Xpetra {
             RCP<const MultiVector> Xblock = Teuchos::null;
 
             // extract sub part of X using Xpetra or Thyra GIDs
-            if(bBlockedX) Xblock = rangemaps_->ExtractVector(refbX, row, bBlockedSubMatrix == true ? false : bRangeThyraMode_);
+            if(bBlockedX) Xblock = rangemaps_->ExtractVector(refbX, row, bRangeThyraMode_);
             else          Xblock = rangemaps_->ExtractVector(refX,  row, bBlockedSubMatrix == true ? false : bRangeThyraMode_);
-            RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bBlockedSubMatrix == true ? false : bDomainThyraMode_, false);
+            RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_, false);
             Ablock->apply(*Xblock, *tmpYblock, Teuchos::TRANS);
-
-            // If Ablock is a blocked operator the local vectors are using (pseudo) Xpetra-style gids
-            // that have to be translated to Thyra based GIDs if bRangeThyraMode is set
-            if(bBlockedSubMatrix == true && bDomainThyraMode_ == true) {
-              tmpYblock->replaceMap(domainmaps_->getMap(col, true)); // switch to Thyra maps (compatible to Yblock)
-            }
 
             Yblock->update(one, *tmpYblock, one);
           }
@@ -1069,7 +1009,10 @@ namespace Xpetra {
     }
 
     //! \brief Returns the Map associated with the full domain of this operator.
-    RCP<const Map > getFullDomainMap() const            { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap()"); return domainmaps_->getFullMap(); }
+    RCP<const Map > getFullDomainMap() const        { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getFullDomainMap()"); return domainmaps_->getFullMap(); }
+
+    //! \brief Returns the BlockedMap associated with the domain of this operator.
+    RCP<const BlockedMap > getBlockedDomainMap() const     { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getBlockedDomainMap()"); return domainmaps_->getBlockedMap(); }
 
     //! \brief Returns the Map associated with the domain of this operator.
     RCP<const Map > getDomainMap() const            { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap()"); return domainmaps_->getMap(); /*domainmaps_->getFullMap();*/ }
@@ -1081,7 +1024,10 @@ namespace Xpetra {
     RCP<const Map > getDomainMap(size_t i, bool bThyraMode) const    { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap(size_t,bool)"); return domainmaps_->getMap(i, bThyraMode); }
 
     //! Returns the Map associated with the full range of this operator.
-    RCP<const Map > getFullRangeMap() const             { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap()"); return rangemaps_->getFullMap(); }
+    RCP<const Map > getFullRangeMap() const         { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap()"); return rangemaps_->getFullMap(); }
+
+    //! \brief Returns the BlockedMap associated with the range of this operator.
+    RCP<const BlockedMap > getBlockedRangeMap() const     { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getBlockedRangeMap()"); return rangemaps_->getBlockedMap(); }
 
     //! Returns the Map associated with the range of this operator.
     RCP<const Map > getRangeMap() const             { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap()"); return rangemaps_->getMap(); /*rangemaps_->getFullMap();*/ }
