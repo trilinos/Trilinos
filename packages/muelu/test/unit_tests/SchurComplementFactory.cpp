@@ -332,7 +332,8 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     RCP<BlockedVector> bv = Teuchos::rcp_dynamic_cast<BlockedVector>(v);
     TEST_EQUALITY(bv->getBlockedMap()->getNumMaps(),2);
 
-    Teuchos::ArrayRCP<const Scalar> vdata = bv->Merge()->getData(0);
+    RCP<MultiVector> mergedv = bv->Merge();
+    Teuchos::ArrayRCP<const Scalar> vdata = mergedv->getData(0);
     bool bCheck = true;
     for(int i=0; i<100; i++) if(vdata[i] != Teuchos::as<Scalar>(3.50)) bCheck = false;
     for(int i=100; i<200; i++) if(vdata[i] != Teuchos::as<Scalar>(4.00)) bCheck = false;
@@ -379,7 +380,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
 
     // generate Schur complement operator
     schurFact->Build(level);
-#if 0
+#if 1
     RCP<Matrix> sOp = level.Get<RCP<Matrix> >("A", schurFact.get());
     TEST_EQUALITY(sOp.is_null(), false);
     TEST_EQUALITY(sOp->getRangeMap()->getMinGlobalIndex(), comm->getRank() * 40 + 5);
@@ -396,7 +397,8 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     TEST_EQUALITY(bv.is_null(),false);
     TEST_EQUALITY(bv->getBlockedMap()->getNumMaps(),2);
 
-    Teuchos::ArrayRCP<const Scalar> vdata = bv->getData(0);
+    RCP<MultiVector> mergedv = bv->Merge();
+    Teuchos::ArrayRCP<const Scalar> vdata = mergedv->getData(0);
     bool bCheck = true;
     for(int i=0; i<5;  i++) if(vdata[i] != Teuchos::as<Scalar>(2.0)) bCheck = false;
     for(int i=5; i<15; i++) if(vdata[i] != Teuchos::as<Scalar>(3.0)) bCheck = false;
