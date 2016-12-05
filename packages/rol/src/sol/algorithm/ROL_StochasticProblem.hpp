@@ -612,6 +612,39 @@ public:
     return OptimizationProblem<Real>::checkObjectiveHessVec(*V,printToStream,outStream,numSteps,order);
   } 
 
+  void printObjectiveSamples(const std::string &filename = "objectiveSamples",
+                             const int prec = 12,
+                             const Teuchos::RCP<SampleGenerator<Real> > &sampler = Teuchos::null) {
+    Teuchos::RCP<SampleGenerator<Real> > samp = sampler;
+    if ( sampler == Teuchos::null ) {
+      samp = vsampler_;
+    }
+
+    int width = prec + 5 + 4;
+    std::stringstream name;
+    name << filename << "_" << samp->batchID() << ".txt";
+    std::ofstream file(name.str().c_str());
+    if (file.is_open()) {
+      Real val(0), tol(ROL_EPSILON<Real>());
+      std::vector<Real> sample;
+      file << std::scientific << std::setprecision(prec);
+      for (int i = 0; i < samp->numMySamples(); ++i) {
+        sample = samp->getMyPoint(i);
+        obj_->setParameter(sample);
+        val = ORIGINAL_obj_->value(*ORIGINAL_vec_,tol);
+        for (int j = 0; j < static_cast<int>(sample.size()); ++j) {
+          file << std::setw(width) << std::left << sample[j];
+        }
+        file << std::setw(width) << std::left << val << std::endl;
+      }
+      file.close();
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> (ROL::StochasticProblem::printObjectiveDistribution): Unable to open file!");
+    }
+  }
+
 private:
   std::vector<Real> computeSampleMean(Teuchos::RCP<SampleGenerator<Real> > &sampler) {
     // Compute mean value of inputs and set parameter in objective
