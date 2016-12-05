@@ -163,7 +163,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     //IKT, 10/31/16, FIXME: currently there is no Verbosity Sublist in Tempus, but 
     //Curt will add this at some point.  When this option is added, set Verbosity 
     //based on that sublist, rather than hard-coding it here.
-    solnVerbLevel = Teuchos::VERB_HIGH;
+    solnVerbLevel = Teuchos::VERB_DEFAULT;
 
     t_initial = integratorPL->get<Scalar>("Initial Time", 0.0);
     t_final = integratorPL->get<Scalar>("Final Time", 0.1);
@@ -551,11 +551,14 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model->getNominalValues();
 
+  std::cout << "IKT t_initial = " << t_initial << std::endl; 
   // Set initial time in ME if needed
 
-  if(t_initial > 0.0 && state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t))
+  if(t_initial > 0.0 && state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t)) {
 
+    std::cout << "IKT here" << std::endl; 
     state_ic.set_t(t_initial);
+  }
 
   if (Teuchos::nonnull(initialConditionModel)) {
     // The initial condition depends on the parameter
