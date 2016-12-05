@@ -121,22 +121,18 @@ namespace MueLu {
     if(A01.is_null() == false && A10.is_null() == false) {
       bool lumping = pL.get<bool>("lumping");
       bool fixing  = pL.get<bool>("fixing");
-
       RCP<Vector> diag = Teuchos::null;
       if (!lumping) {
         diag = VectorFactory::Build(A00->getRangeMap(), true);
         A00->getLocalDiagCopy(*diag);
-
       } else {
-        diag = Utilities::GetLumpedMatrixDiagonal(A00);
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,"MueLu::SchurComplementFactory::Build: Mass lumping not implemented. Implement a mass lumping kernel!");
+        //diag = Utilities::GetLumpedMatrixDiagonal(A00);
       }
-
       // invert diagonal vector. Replace all entries smaller than 1e-4 by one!
       RCP<Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, STS::one()));
-
       // scale with -1/omega
       D->scale(Teuchos::as<Scalar>(-STS::one()/omega));
-
       // left scale matrix T with (scaled) diagonal D
       // Copy the value of A01 so we can do the left scale.
       RCP<Matrix> T = MatrixFactory::BuildCopy(A01);
