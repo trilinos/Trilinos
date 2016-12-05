@@ -1343,7 +1343,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",MueLu::NoFactory::getRCP());
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -1523,7 +1523,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -1575,6 +1575,7 @@ namespace MueLuTests {
 
       // solve system
       simpleSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
       RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
       TEST_EQUALITY(bX.is_null(), false);
       RCP<MultiVector> XX = bX->Merge();
@@ -1584,6 +1585,7 @@ namespace MueLuTests {
         if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
+        std::cout << "xdata["<< i <<"]=" << xdata[i] << std::endl;
       }
       TEST_EQUALITY(bCheck, true);
 
@@ -1685,7 +1687,7 @@ namespace MueLuTests {
         // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
         RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
         SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-        SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+        SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
         SFact->SetFactory("A",rAFact);
 
         // create a 2x2 SIMPLE for the prediction eq.
@@ -1893,7 +1895,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -2055,7 +2057,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
@@ -2260,7 +2262,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       Teuchos::ParameterList paramList;
@@ -2404,7 +2406,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 Simple for the prediction eq.
@@ -2530,7 +2532,7 @@ namespace MueLuTests {
       RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2542,7 +2544,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",MueLu::NoFactory::getRCP());
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -2665,7 +2667,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2677,7 +2679,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -2805,7 +2807,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2817,7 +2819,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<BraessSarazinSmoother> smoProtoCorrect = Teuchos::rcp( new BraessSarazinSmoother() );
@@ -2884,6 +2886,7 @@ namespace MueLuTests {
 
       // solve system
       bsSmoother->Apply(*X, *RHS, true);  //zero initial guess
+
       RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(X);
       TEST_EQUALITY(bX.is_null(), false);
       RCP<MultiVector> XX = bX->Merge();
@@ -2962,7 +2965,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -2974,7 +2977,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -3102,7 +3105,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -3114,7 +3117,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SimpleSmoother> smoProtoCorrect = Teuchos::rcp( new SimpleSmoother() );
@@ -3263,7 +3266,7 @@ namespace MueLuTests {
       smootherPrototype->SetFactory("A",rAFact);
       smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(Teuchos::as<LocalOrdinal>(1)));
       smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0)));
-      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      smootherPrototype->SetParameter("lumping", Teuchos::ParameterEntry(false));
 
       std::vector<RCP<SmootherFactory> >  sF (1, Teuchos::null);
       std::vector<RCP<FactoryManager> >   sM (1, Teuchos::null);
@@ -3275,7 +3278,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<BraessSarazinSmoother> smoProtoCorrect = Teuchos::rcp( new BraessSarazinSmoother() );
@@ -3430,7 +3433,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       Teuchos::ParameterList paramList;
@@ -3551,7 +3554,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 Simple for the prediction eq.
@@ -3646,7 +3649,7 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 35e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 40e-3, out, success);
       TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 15e-3, out, success);
     } // end UseTpetra
   }
@@ -3839,7 +3842,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
@@ -4020,7 +4023,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
@@ -4221,7 +4224,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       Teuchos::ParameterList paramList;
@@ -4364,7 +4367,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 Simple for the prediction eq.
@@ -4651,7 +4654,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 block smoother for the prediction eq.
@@ -4832,7 +4835,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 SIMPLE for the prediction eq.
@@ -5033,7 +5036,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       Teuchos::ParameterList paramList;
@@ -5176,7 +5179,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       // create a 2x2 Simple for the prediction eq.

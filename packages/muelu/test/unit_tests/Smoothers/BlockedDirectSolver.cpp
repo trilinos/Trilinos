@@ -664,7 +664,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
@@ -833,7 +833,7 @@ namespace MueLuTests {
       // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
       RCP<SchurComplementFactory> SFact = Teuchos::rcp(new SchurComplementFactory());
       SFact->SetParameter("omega", Teuchos::ParameterEntry(Teuchos::as<Scalar>(1.0))); // for Simple, omega is always 1.0 in the SchurComplement
-      SFact->SetParameter("lumping", Teuchos::ParameterEntry(true));
+      SFact->SetParameter("lumping", Teuchos::ParameterEntry(false));
       SFact->SetFactory("A",rAFact);
 
       RCP<SmootherPrototype> smoProtoCorrect = rcp(new Ifpack2Smoother(std::string("RELAXATION"), Teuchos::ParameterList(), 0));
