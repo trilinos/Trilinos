@@ -679,4 +679,172 @@ private: // Vector accessor functions
   }
 };
 
+template<class Real>
+class IntegralAffineSimObjective : public ROL::Objective_SimOpt<Real> {
+private:
+  const Teuchos::RCP<QoI<Real> > qoi_;
+  const Teuchos::RCP<Assembler<Real> > assembler_;
+
+  Real shift_;
+  Teuchos::RCP<Tpetra::MultiVector<> > vecG1_;
+  Teuchos::RCP<Tpetra::MultiVector<> > ufield_;
+  Teuchos::RCP<Tpetra::MultiVector<> > zfield_;
+  Teuchos::RCP<std::vector<Real> >     zparam_;
+
+  bool isAssembled_;
+
+  void assemble(const Teuchos::RCP<const Tpetra::MultiVector<> > &zf,
+                const Teuchos::RCP<const std::vector<Real> >     &zp) {
+    if ( !isAssembled_ ) {
+      ufield_ = assembler_->createStateVector();
+      ufield_->putScalar(static_cast<Real>(0));
+      if ( zf != Teuchos::null ) {
+        zfield_ = assembler_->createControlVector();
+        zfield_->putScalar(static_cast<Real>(0));
+      }
+      if ( zp != Teuchos::null ) {
+       zparam_ = Teuchos::rcp(new std::vector<Real>(zp->size(),static_cast<Real>(0)));
+      }
+      shift_ = assembler_->assembleQoIValue(qoi_,ufield_,zfield_,zparam_);
+      assembler_->assembleQoIGradient1(vecG1_,qoi_,ufield_,zfield_,zparam_);
+      isAssembled_ = true;
+    }
+  }
+
+public:
+  IntegralAffineSimObjective(const Teuchos::RCP<QoI<Real> > &qoi,
+                             const Teuchos::RCP<Assembler<Real> > &assembler)
+    : qoi_(qoi), assembler_(assembler), isAssembled_(false) {}
+
+  void setParameter(const std::vector<Real> &param) {
+    ROL::Objective_SimOpt<Real>::setParameter(param);
+    qoi_->setParameter(param);
+    isAssembled_ = false;
+  }
+
+  Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+    Teuchos::RCP<const Tpetra::MultiVector<> > uf = getConstField(u);
+    Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+    Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+    assemble(zf,zp);
+
+    const size_t n = uf->getNumVectors();
+    Teuchos::Array<Real> val(n,0);
+    vecG1_->dot(*uf, val.view(0,n));
+    
+    return val[0] + shift_;
+  }
+
+  void gradient_1(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
+                  const ROL::Vector<Real> &z, Real &tol ) {
+    Teuchos::RCP<Tpetra::MultiVector<> >       gf = getField(g);
+    Teuchos::RCP<const Tpetra::MultiVector<> > zf = getConstField(z);
+    Teuchos::RCP<const std::vector<Real> >     zp = getConstParameter(z);
+
+    assemble(zf,zp);
+
+    gf->scale(static_cast<Real>(1),*vecG1_);
+  }
+
+  void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u,
+                  const ROL::Vector<Real> &z, Real &tol ) {
+    g.zero();
+  }
+
+  void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+             const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
+    hv.zero();
+  }
+
+  void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+    hv.zero();
+  }
+
+  void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+                   const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+    hv.zero();
+  }
+
+  void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+             const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &tol ) {
+    hv.zero();
+  }
+
+private: // Vector accessor functions
+
+  Teuchos::RCP<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
+    Teuchos::RCP<const Tpetra::MultiVector<> > xp;
+    try {
+      xp = Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(x).getVector();
+    }
+    catch (std::exception &e) {
+      Teuchos::RCP<const ROL::TpetraMultiVector<Real> > xvec
+        = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x).getField();
+      if (xvec == Teuchos::null) {
+        xp = Teuchos::null;
+      }
+      else {
+        xp = xvec->getVector();
+      }
+    }
+    return xp;
+  }
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
+    Teuchos::RCP<Tpetra::MultiVector<> > xp;
+    try {
+      xp = Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(x).getVector();
+    }
+    catch (std::exception &e) {
+      Teuchos::RCP<ROL::TpetraMultiVector<Real> > xvec
+        = Teuchos::dyn_cast<PDE_OptVector<Real> >(x).getField();
+      if ( xvec == Teuchos::null ) {
+        xp = Teuchos::null;
+      }
+      else {
+        xp = xvec->getVector();
+      }
+    }
+    return xp;
+  }
+
+  Teuchos::RCP<const std::vector<Real> > getConstParameter(const ROL::Vector<Real> &x) const {
+    Teuchos::RCP<const std::vector<Real> > xp;
+    try {
+      Teuchos::RCP<const ROL::StdVector<Real> > xvec
+        = Teuchos::dyn_cast<const PDE_OptVector<Real> >(x).getParameter();
+      if ( xvec == Teuchos::null ) {
+        xp = Teuchos::null;
+      }
+      else {
+        xp = xvec->getVector();
+      }
+    }
+    catch (std::exception &e) {
+      xp = Teuchos::null;
+    }
+    return xp;
+  }
+
+  Teuchos::RCP<std::vector<Real> > getParameter(ROL::Vector<Real> &x) const {
+    Teuchos::RCP<std::vector<Real> > xp;
+    try {
+      Teuchos::RCP<ROL::StdVector<Real> > xvec
+        = Teuchos::dyn_cast<PDE_OptVector<Real> >(x).getParameter();
+      if ( xvec == Teuchos::null ) {
+        xp = Teuchos::null;
+      }
+      else {
+        xp = xvec->getVector();
+      }
+    }
+    catch (std::exception &e) {
+      xp = Teuchos::null;
+    }
+    return xp;
+  }
+};
+
 #endif
