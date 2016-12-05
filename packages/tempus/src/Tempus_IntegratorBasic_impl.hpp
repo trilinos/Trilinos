@@ -26,7 +26,7 @@ namespace {
   static std::string finalTime_name         = "Final Time";
   static double      finalTime_default      = std::numeric_limits<double>::max();
   static std::string finalTimeIndex_name    = "Final Time Index";
-  static int         finalTimeIndex_default = std::numeric_limits<int>::max();
+  static int         finalTimeIndex_default = 1000000;
 
   static std::string outputScreenTimeList_name     = "Screen Output Time List";
   static std::string outputScreenTimeList_default  = "";
@@ -37,7 +37,8 @@ namespace {
   //static double      outputScreenTimeInterval_default  = 100.0;
   static std::string outputScreenIndexInterval_name    =
     "Screen Output Index Interval";
-  static int         outputScreenIndexInterval_default = 100;
+  static int         outputScreenIndexInterval_default = 1000000;
+
 
   static std::string SolutionHistory_name     = "Solution History";
   static std::string TimeStepControl_name     = "Time Step Control";
@@ -61,7 +62,15 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 
   this->setParameterList(Teuchos::sublist(tempusPL_, integratorName_, true));
   this->setStepper(model);
+  this->setSolutionHistory();
+  this->setTimeStepControl();
+  this->setObserver();
   this->initialize();
+
+  if (integratorTimer_ == Teuchos::null)
+    integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
+  if (stepperTimer_ == Teuchos::null)
+    stepperTimer_    = rcp(new Teuchos::Time("Stepper Timer"));
 
   if (Teuchos::as<int>(this->getVerbLevel()) >=
       Teuchos::as<int>(Teuchos::VERB_HIGH)) {
@@ -202,34 +211,8 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
     timeStepControl_ = Teuchos::null;
     timeStepControl_ = tsc;
   }
-}
 
-
-template<class Scalar>
-void IntegratorBasic<Scalar>::setObserver(
-  Teuchos::RCP<IntegratorObserver<Scalar> > obs)
-{
-  if (obs == Teuchos::null) {
-    // Create default IntegratorObserver
-    integratorObserver_ =
-      Teuchos::rcp(new IntegratorObserver<Scalar>(solutionHistory_,
-                                                  timeStepControl_));
-  } else {
-    integratorObserver_ = obs;
-  }
-}
-
-
-template<class Scalar>
-void IntegratorBasic<Scalar>::initialize()
-{
-  // Check that ParameterList is valid.
-  integratorPL_->validateParameters(*this->getValidParameters());
-  this->setSolutionHistory();
-  this->setTimeStepControl();
-  this->setObserver();
-
-  // Check values and ranges of Parameters.
+  // Check Integrator's values against TimeStepControl ranges.
   Scalar initTime = integratorPL_->get<double>(initTime_name, initTime_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (initTime<timeStepControl_->timeMin_|| initTime>timeStepControl_->timeMax_),
@@ -283,53 +266,37 @@ void IntegratorBasic<Scalar>::initialize()
                                     << timeStepControl_->timeMax_ << "]\n"
     << "    finalTime = " << finalTime << "\n");
 
-  int fiStep =
+  const int finalIStep =
     integratorPL_->get<int>(finalTimeIndex_name, finalTimeIndex_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (fiStep<timeStepControl_->iStepMin_ || fiStep>timeStepControl_->iStepMax_),
+    (finalIStep<timeStepControl_->iStepMin_ ||
+     finalIStep>timeStepControl_->iStepMax_),
     std::out_of_range,
     "Error - Final time index is out of range.\n"
     << "    [iStepMin, iStepMax] = [" << timeStepControl_->iStepMin_ << ", "
                                       << timeStepControl_->iStepMax_ << "]\n"
-    << "    iStep = " << fiStep << "\n");
+    << "    iStep = " << finalIStep << "\n");
+}
 
 
-  // Parse output indices
-  {
-    outputScreenIndices_.clear();
-    std::string str =
-      integratorPL_->get<std::string>(outputScreenIndexList_name,
-                                              outputScreenIndexList_default);
-    std::string delimiters(",");
-    std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-    std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
-    while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
-      std::string token = str.substr(lastPos,pos-lastPos);
-      outputScreenIndices_.push_back(int(std::stoi(token)));
-      if(pos==std::string::npos)
-        break;
-
-      lastPos = str.find_first_not_of(delimiters, pos);
-      pos = str.find_first_of(delimiters, lastPos);
-    }
-
-    Scalar outputScreenIndexInterval =
-      integratorPL_->get<int>(outputScreenIndexInterval_name,
-                              outputScreenIndexInterval_default);
-    Scalar outputScreen_i = timeStepControl_->iStepMin_;
-    while (outputScreen_i <= timeStepControl_->iStepMax_) {
-      outputScreenIndices_.push_back(outputScreen_i);
-      outputScreen_i += outputScreenIndexInterval;
-    }
-
-    // order output indices
-    std::sort(outputScreenIndices_.begin(),outputScreenIndices_.end());
+template<class Scalar>
+void IntegratorBasic<Scalar>::setObserver(
+  Teuchos::RCP<IntegratorObserver<Scalar> > obs)
+{
+  if (obs == Teuchos::null) {
+    // Create default IntegratorObserver
+    integratorObserver_ =
+      Teuchos::rcp(new IntegratorObserver<Scalar>(solutionHistory_,
+                                                  timeStepControl_));
+  } else {
+    integratorObserver_ = obs;
   }
+}
 
-  if (integratorTimer_ == Teuchos::null)
-    integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
-  if (stepperTimer_ == Teuchos::null)
-    stepperTimer_    = rcp(new Teuchos::Time("Stepper Timer"));
+
+template<class Scalar>
+void IntegratorBasic<Scalar>::initialize()
+{
 }
 
 
@@ -577,6 +544,41 @@ void IntegratorBasic<Scalar>::setParameterList(
     "Error - Inconsistent Integrator Type for IntegratorBasic\n"
     << "    " << integratorType_name << " = " << integratorType << "\n");
 
+  // Parse output indices
+  {
+    outputScreenIndices_.clear();
+    std::string str =
+      integratorPL_->get<std::string>(outputScreenIndexList_name,
+                                              outputScreenIndexList_default);
+    std::string delimiters(",");
+    std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+    std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+    while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
+      std::string token = str.substr(lastPos,pos-lastPos);
+      outputScreenIndices_.push_back(int(std::stoi(token)));
+      if(pos==std::string::npos)
+        break;
+
+      lastPos = str.find_first_not_of(delimiters, pos);
+      pos = str.find_first_of(delimiters, lastPos);
+    }
+
+    int outputScreenIndexInterval =
+      integratorPL_->get<int>(outputScreenIndexInterval_name,
+                              outputScreenIndexInterval_default);
+    int outputScreen_i =
+      integratorPL_->get<int>(initTimeIndex_name, initTimeIndex_default);
+    const int finalIStep =
+      integratorPL_->get<int>(finalTimeIndex_name, finalTimeIndex_default);
+    while (outputScreen_i <= finalIStep) {
+      outputScreenIndices_.push_back(outputScreen_i);
+      outputScreen_i += outputScreenIndexInterval;
+    }
+
+    // order output indices
+    std::sort(outputScreenIndices_.begin(),outputScreenIndices_.end());
+  }
+
   return;
 }
 
@@ -595,7 +597,8 @@ IntegratorBasic<Scalar>::getValidParameters() const
     Teuchos::setupVerboseObjectSublist(&*pl);
 
     std::ostringstream tmp;
-    tmp << "'" << integratorType_name << "' must be '" << integratorType_default << "'.";
+    tmp << "'" << integratorType_name << "' must be '"
+        << integratorType_default << "'.";
     pl->set(integratorType_name, integratorType_default, tmp.str());
 
     tmp.clear();

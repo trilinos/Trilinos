@@ -25,7 +25,7 @@ namespace {
   static int         iStepMin_default = 0;
 
   static std::string iStepMax_name    = "Maximum Time Step Index";
-  static int         iStepMax_default = std::numeric_limits<int>::max();
+  static int         iStepMax_default = 1000000;
 
   static std::string errorMaxAbs_name    = "Maximum Absolute Error";
   static double      errorMaxAbs_default = 1.0e-08;
@@ -63,8 +63,7 @@ namespace {
   static double      outputTimeInterval_default  =
     std::numeric_limits<double>::max();
   static std::string outputIndexInterval_name    = "Output Index Interval";
-  static int         outputIndexInterval_default =
-    std::numeric_limits<int>::max();
+  static int         outputIndexInterval_default = 1000000;
 
   static std::string nFailuresMax_name    =
     "Maximum Number of Stepper Failures";

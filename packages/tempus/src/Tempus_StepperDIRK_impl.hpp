@@ -24,6 +24,7 @@ StepperDIRK<Scalar>::StepperDIRK(
   this->setParameterList(pList);
   this->setModel(transientModel);
   this->setSolver();
+  this->setTableau();
   this->initialize();
 }
 
@@ -92,7 +93,6 @@ void StepperDIRK<Scalar>::setTableau(std::string stepperType)
 template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
-  this->setTableau();
 }
 
 template <typename Scalar>
