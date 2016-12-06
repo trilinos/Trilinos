@@ -416,10 +416,6 @@ mult_test_results multiply_test_autofc(
   }
 #endif
 
-  // HAQ
-  if(!A->getGraph()->getImporter().is_null() && !B->getGraph()->getImporter().is_null()) {
-    RCP<const Tpetra::Import<LO,GO,NT> > sumImport = A->getGraph()->getImporter()->setUnion(*B->getGraph()->getImporter());
-  }
 
   RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);

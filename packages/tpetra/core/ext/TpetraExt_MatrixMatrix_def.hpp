@@ -1732,7 +1732,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
 
     const LocalOrdinal LO_INVALID =Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-
     // Grap the raw pointers out of the  Teuchos::Array's to avoid the Teuchos::Array+Kokkos+DEBUG problems
     const LocalOrdinal * Acol2Brow_ptr = Acol2Brow.getRawPtr();
     const LocalOrdinal * Acol2Irow_ptr = Acol2Irow.getRawPtr();
