@@ -251,6 +251,16 @@ namespace Xpetra {
 
     // @}
 
+
+
+    //! @name Access functions
+    //@{
+
+    /** \brief Returns internal BlockReorderManager object */
+    Teuchos::RCP<const Xpetra::BlockReorderManager > getBlockReorderManager() { return brm_; }
+
+    // @}
+
     //! @name Overridden from Teuchos::Describable
     //@{
 
