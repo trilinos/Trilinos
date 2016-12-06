@@ -1432,7 +1432,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
 											       const std::string& label,
 											       const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore"))));
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore"))));
 #endif
 
   using Teuchos::Array;
@@ -1676,7 +1678,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MM Newmatrix OpenMP Wrapper")))));
+  Teuchos::RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MM Newmatrix OpenMP Wrapper")))));
 #endif
   //  printf("[%d] OpenMP kernel called\n",Aview.origMatrix->getRowMap()->getComm()->getRank());
 
