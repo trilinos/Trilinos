@@ -251,9 +251,7 @@ void Piro::TempusSolver<Scalar>::initialize(
       //Set observer in integrator
       fwdStateIntegrator->setObserver(observer);
       //Reinitialize everything in integrator class, since we have changed the observer.
-      //IKT, 12/2/16: it seems we do not need initialize() call here given how initialize()
-      //is implemented, as it nulls out the observer.  Checking with Curt.  
-      //fwdStateIntegrator->initialize(); 
+      fwdStateIntegrator->initialize(); 
     }
 
 
