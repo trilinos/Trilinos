@@ -150,7 +150,7 @@ public:
     }
 
     if( con_ == Teuchos::null ) {    // Type-U or Type-B
-      if( bnd_ == Teuchos::null || !bnd_->isActivated() ) {  // Type-U
+      if( bnd_ == Teuchos::null ) {  // Type-U
         problemType_ = TYPE_U;        
       }
       else { // Type-B
@@ -158,7 +158,7 @@ public:
       }
     }
     else { // Type-E or Type-EB
-      if( bnd_ == Teuchos::null || !bnd_->isActivated() ) { // Type-E
+      if( bnd_ == Teuchos::null ) { // Type-E
         problemType_ = TYPE_E;     
       }
       else { // Type-EB

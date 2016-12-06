@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     outStream = rcp(&bhs, false);
 
   int errorFlag   = 0;
-  int numProblems = 30;
+  int numProblems = 20;
 
   RealT errtol = 1e-5; // Require norm of computed solution error be less than this
 
@@ -121,23 +121,6 @@ int main(int argc, char *argv[]) {
 
       nlp = factory.getProblem(n);
       opt = nlp->getOptimizationProblem();
-
-      if( nlp->hasConsistentInitialGuess(errtol) ) {
-        *outStream << "Initial guess yields expected objective value." << std::endl;
-      }
-      else {
-        *outStream << "Initial guess does not produce expected objective value." << std::endl;
-      }
-
-      if( nlp->hasConsistentSolution(errtol) ) {
-        *outStream << "Given solutions yield expected objective value." << std::endl;
-      }
-      else {
-        *outStream << "Given solutions do not produce expected objective value." << std::endl;
-      }
-
-
-
       EProblem problemType = opt->getProblemType();
 
       std::string str;

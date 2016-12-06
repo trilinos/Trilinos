@@ -54,8 +54,9 @@ class Obj {
 public:
   template<class ScalarT>
   ScalarT value( const std::vector<ScalarT> &x, Real &tol ) {
-    ScalarT a = 1-x[0];
-    return a*a;
+    ScalarT a = x[1]-x[0]*x[0];
+    ScalarT b = 1-x[0];
+    return 100*a*a+b*b;
   }
 };
 
