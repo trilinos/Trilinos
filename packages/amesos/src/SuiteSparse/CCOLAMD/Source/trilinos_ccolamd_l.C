@@ -642,7 +642,7 @@
 /* ========================================================================== */
 
 /* define UF_long */
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 #ifdef DLONG
 
@@ -658,9 +658,9 @@
 #define CCOLAMD_postorder trilinos_ccolamd_l_postorder
 #define CCOLAMD_post_tree trilinos_ccolamd_l_post_tree
 #define CCOLAMD_fsize trilinos_ccolamd_l_fsize
-#define CSYMAMD_MAIN amesos_csymamd_l
+#define CSYMAMD_MAIN trilinos_csymamd_l
 #define CCOLAMD_report trilinos_ccolamd_l_report
-#define CSYMAMD_report amesos_csymamd_l_report
+#define CSYMAMD_report trilinos_csymamd_l_report
 
 #else
 
@@ -676,9 +676,9 @@
 #define CCOLAMD_postorder trilinos_ccolamd_postorder
 #define CCOLAMD_post_tree trilinos_ccolamd_post_tree
 #define CCOLAMD_fsize trilinos_ccolamd_fsize
-#define CSYMAMD_MAIN amesos_csymamd
+#define CSYMAMD_MAIN trilinos_csymamd
 #define CCOLAMD_report trilinos_ccolamd_report
-#define CSYMAMD_report amesos_csymamd_report
+#define CSYMAMD_report trilinos_csymamd_report
 
 #endif
 

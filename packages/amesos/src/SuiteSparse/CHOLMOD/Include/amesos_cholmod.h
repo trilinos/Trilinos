@@ -84,7 +84,7 @@ extern "C" {
 #include "amesos_cholmod_io64.h"
 
 /* define UF_long */
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 #include "amesos_cholmod_config.h"
 

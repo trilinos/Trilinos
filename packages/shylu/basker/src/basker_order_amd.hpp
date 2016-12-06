@@ -54,11 +54,11 @@ namespace BaskerNS
     knobs[1] = 0;
     knobs[2] = 2;
 
-    amesos_csymamd(n, Ai, Ap,  p, knobs, stats, 
+    trilinos_csymamd(n, Ai, Ap,  p, knobs, stats, 
 		     &(calloc), &(free), 
 		     cmember, 0);
 
-    //amesos_csymamd_report(stats);
+    //trilinos_csymamd_report(stats);
     
     return 0;
   }
@@ -85,11 +85,11 @@ namespace BaskerNS
     knobs[1] = 0;
     knobs[2] = 2;
 
-    amesos_csymamd_l(n, Ai, Ap,  p, knobs, stats, 
+    trilinos_csymamd_l(n, Ai, Ap,  p, knobs, stats, 
 		     &(calloc), &(free), 
 		     cmember, 0);
 
-    //amesos_csymamd_l_report(stats);
+    //trilinos_csymamd_l_report(stats);
     
     return 0;
   }

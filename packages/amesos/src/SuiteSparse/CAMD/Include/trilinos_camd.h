@@ -33,7 +33,7 @@ extern "C" {
 #include <stddef.h>
 
 /* define UF_long */
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 int trilinos_camd_order		    /* returns CAMD_OK, CAMD_OK_BUT_JUMBLED,
 			     * CAMD_INVALID, or CAMD_OUT_OF_MEMORY */

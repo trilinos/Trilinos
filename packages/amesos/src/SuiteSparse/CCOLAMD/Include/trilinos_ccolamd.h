@@ -114,7 +114,7 @@ extern "C" {
 /* ========================================================================== */
 
 /* define UF_long */
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 size_t trilinos_ccolamd_recommended	/* returns recommended value of Alen, */
 				/* or 0 if input arguments are erroneous */
@@ -166,7 +166,7 @@ UF_long trilinos_ccolamd_l	/* same as ccolamd, but with UF_long integers */
     UF_long cmember [ ]
 ) ;
 
-int amesos_csymamd		/* return (1) if OK, (0) otherwise */
+int trilinos_csymamd		/* return (1) if OK, (0) otherwise */
 (
     int n,			/* number of rows and columns of A */
     int A [ ],			/* row indices of A */
@@ -182,7 +182,7 @@ int amesos_csymamd		/* return (1) if OK, (0) otherwise */
     int stype			/* 0: use both parts, >0: upper, <0: lower */
 ) ;
 
-UF_long amesos_csymamd_l		/* same as csymamd, but with UF_long integers */
+UF_long trilinos_csymamd_l		/* same as csymamd, but with UF_long integers */
 (
     UF_long n,
     UF_long A [ ],
@@ -206,12 +206,12 @@ void trilinos_ccolamd_l_report
     UF_long stats [CCOLAMD_STATS]
 ) ;
 
-void amesos_csymamd_report
+void trilinos_csymamd_report
 (
     int stats [CCOLAMD_STATS]
 ) ;
 
-void amesos_csymamd_l_report
+void trilinos_csymamd_l_report
 (
     UF_long stats [CCOLAMD_STATS]
 ) ;

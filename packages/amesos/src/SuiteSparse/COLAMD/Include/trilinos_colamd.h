@@ -140,7 +140,7 @@ extern "C" {
 /* ========================================================================== */
 
 /* define UF_long */
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 size_t trilinos_colamd_recommended	/* returns recommended value of Alen, */
 				/* or 0 if input arguments are erroneous */
@@ -190,7 +190,7 @@ UF_long trilinos_colamd_l		/* returns (1) if successful, (0) otherwise*/
     UF_long stats [COLAMD_STATS]/* colamd output statistics and error codes */
 ) ;
 
-int amesos_symamd		        /* return (1) if OK, (0) otherwise */
+int trilinos_symamd		        /* return (1) if OK, (0) otherwise */
 (
     int n,				/* number of rows and columns of A */
     int A [],				/* row indices of A */
@@ -206,7 +206,7 @@ int amesos_symamd		        /* return (1) if OK, (0) otherwise */
     					/* mxFree (for MATLAB mexFunction) */
 ) ;
 
-UF_long amesos_symamd_l			/* return (1) if OK, (0) otherwise */
+UF_long trilinos_symamd_l			/* return (1) if OK, (0) otherwise */
 (
     UF_long n,				/* number of rows and columns of A */
     UF_long A [],			/* row indices of A */
@@ -232,12 +232,12 @@ void trilinos_colamd_l_report
     UF_long stats [COLAMD_STATS]
 ) ;
 
-void amesos_symamd_report
+void trilinos_symamd_report
 (
     int stats [COLAMD_STATS]
 ) ;
 
-void amesos_symamd_l_report
+void trilinos_symamd_l_report
 (
     UF_long stats [COLAMD_STATS]
 ) ;

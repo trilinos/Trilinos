@@ -151,7 +151,7 @@ SET(TRILINOS_KLU_COMMON_H
   SuiteSparse/AMD/Include/trilinos_amd.h
   SuiteSparse/AMD/Include/trilinos_amd_internal.h
   SuiteSparse/COLAMD/Include/trilinos_colamd.h
-  SuiteSparse/UFconfig/amesos_UFconfig.h
+  SuiteSparse/UFconfig/trilinos_UFconfig.h
   )
 
 SET(TRILINOS_KLU_COMMON

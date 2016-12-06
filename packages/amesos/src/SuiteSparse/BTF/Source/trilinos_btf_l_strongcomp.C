@@ -58,7 +58,7 @@
  * within each block.
  */
 
-static void amesos_dfs
+static void trilinos_dfs
 (
     /* inputs, not modified on output: */
     Int j,		/* start the DFS at node j */
@@ -243,7 +243,7 @@ static Int  /* for recursive illustration only, not for production use */
     chead, timestamp, nblocks, n, *Ap, *Ai, *Flag, *Cstack, *Time, *Low,
     *P, *R, *Q ;
 
-static void amesos_dfs
+static void trilinos_dfs
 (
     Int parent,		/* came from parent node */
     Int j		/* at node j in the DFS */
@@ -276,7 +276,7 @@ static void amesos_dfs
 	if (Flag [i] == UNVISITED)
 	{
 	    /* Node i has not been visited - start a DFS at node i. */
-	    amesos_dfs (j, i) ;
+	    trilinos_dfs (j, i) ;
 	}
 	else if (Flag [i] == UNASSIGNED)
 	{
@@ -444,12 +444,12 @@ Int BTF(strongcomp) /* recursive version - same as above except for Work size */
 	{
 #ifndef RECURSIVE
 	    /* non-recursive dfs (default) */
-	    amesos_dfs (j, Ap, Ai, Q, Time, Flag, Low, &nblocks, &timestamp,
+	    trilinos_dfs (j, Ap, Ai, Q, Time, Flag, Low, &nblocks, &timestamp,
 		    Cstack, Jstack, Pstack) ;
 #else
 	    /* recursive dfs (for illustration only) */
 	    ASSERT (chead == EMPTY) ;
-	    amesos_dfs (EMPTY, j) ;
+	    trilinos_dfs (EMPTY, j) ;
 	    ASSERT (chead == EMPTY) ;
 #endif
 	}

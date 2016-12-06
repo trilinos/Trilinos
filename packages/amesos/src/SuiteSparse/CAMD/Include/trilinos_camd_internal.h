@@ -163,7 +163,7 @@
 /* ------------------------------------------------------------------------- */
 
 /* define UF_long */
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 #if defined (DLONG) || defined (ZLONG)
 

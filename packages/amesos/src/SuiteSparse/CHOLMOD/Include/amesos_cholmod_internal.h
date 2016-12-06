@@ -197,7 +197,7 @@
  * It can also be redefined for other platforms, by modifying UFconfig.h.
  */
 
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 /* -------------------------------------------------------------------------- */
 /* Size_max: the largest value of size_t */

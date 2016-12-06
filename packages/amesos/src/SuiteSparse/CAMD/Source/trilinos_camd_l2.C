@@ -33,7 +33,7 @@
 /* === clear_flag ========================================================== */
 /* ========================================================================= */
 
-static Int amesos_clear_flag (Int wflg, Int wbig, Int W [ ], Int n)
+static Int trilinos_clear_flag (Int wflg, Int wbig, Int W [ ], Int n)
 {
     Int x ;
     if (wflg < 2 || wflg >= wbig)
@@ -752,7 +752,7 @@ GLOBAL void CAMD_2
 
     /* initialize wflg */
     wbig = Int_MAX - n ;
-    wflg = amesos_clear_flag (0, wbig, W, n) ;
+    wflg = trilinos_clear_flag (0, wbig, W, n) ;
 
     /* --------------------------------------------------------------------- */
     /* eliminate dense and empty rows */
@@ -1177,7 +1177,7 @@ GLOBAL void CAMD_2
 	/* With the current value of wflg, wflg+n must not cause integer
 	 * overflow */
 
-	wflg = amesos_clear_flag (wflg, wbig, W, n) ;
+	wflg = trilinos_clear_flag (wflg, wbig, W, n) ;
 
 /* ========================================================================= */
 /* COMPUTE (W [e] - wflg) = |Le\Lme| FOR ALL ELEMENTS */
@@ -1474,7 +1474,7 @@ GLOBAL void CAMD_2
 	/* make sure that wflg+n does not cause integer overflow */
 	lemax =  MAX (lemax, degme) ;
 	wflg += lemax ;
-	wflg = amesos_clear_flag (wflg, wbig, W, n) ;
+	wflg = trilinos_clear_flag (wflg, wbig, W, n) ;
 	/*  at this point, W [0..n-1] < wflg holds */
 
 /* ========================================================================= */

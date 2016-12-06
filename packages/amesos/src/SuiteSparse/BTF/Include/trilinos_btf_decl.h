@@ -93,7 +93,7 @@
 extern "C" {
 #endif
 
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 int trilinos_btf_maxtrans    /* returns # of columns matched */
 (

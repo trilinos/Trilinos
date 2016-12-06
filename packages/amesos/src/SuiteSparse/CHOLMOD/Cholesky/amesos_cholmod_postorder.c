@@ -35,7 +35,7 @@
 
 /* recursive version: a working code for reference only, not actual use */
 
-static Int amesos_dfs			/* return the new value of k */
+static Int trilinos_dfs			/* return the new value of k */
 (
     Int p,		/* start a DFS at node p */
     Int k,		/* start the node numbering at k */
@@ -50,7 +50,7 @@ static Int amesos_dfs			/* return the new value of k */
     for (j = Head [p] ; j != EMPTY ; j = Next [j])
     {
 	/* start a DFS at child node j */
-	k = amesos_dfs (j, k, Post, Head, Next, Pstack) ;
+	k = trilinos_dfs (j, k, Post, Head, Next, Pstack) ;
     }
     Post [k++] = p ;	/* order node p as the kth node */
     Head [p] = EMPTY ;	/* link list p no longer needed */
@@ -61,7 +61,7 @@ static Int amesos_dfs			/* return the new value of k */
 
 /* non-recursive version for actual use */
 
-static Int amesos_dfs		/* return the new value of k */
+static Int trilinos_dfs		/* return the new value of k */
 (
     Int p,		/* start the DFS at a root node p */
     Int k,		/* start the node numbering at k */
@@ -275,7 +275,7 @@ UF_long CHOLMOD(postorder)	/* return # of nodes postordered */
 	if (Parent [j] == EMPTY)
 	{
 	    /* j is the root of a tree; start a DFS here */
-	    k = amesos_dfs (j, k, Post, Head, Next, Pstack) ;
+	    k = trilinos_dfs (j, k, Post, Head, Next, Pstack) ;
 	}
     }
 

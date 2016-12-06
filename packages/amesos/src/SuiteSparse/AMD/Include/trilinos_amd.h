@@ -45,7 +45,7 @@ extern "C" {
 #include <stddef.h>
 
 /* define UF_long */
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 int trilinos_amd_order		    /* returns AMD_OK, AMD_OK_BUT_JUMBLED,
 			     * AMD_INVALID, or AMD_OUT_OF_MEMORY */

@@ -133,7 +133,7 @@
  * for (p = head ; ...)		DO 90 K=1,JORD
  */
 
-static Int amesos_augment
+static Int trilinos_augment
 (
     Int k,		/* which stage of the main loop we're in */
     Int Ap [ ],		/* column pointers, size n+1 */
@@ -359,7 +359,7 @@ Int BTF(maxtrans)   /* returns # of columns in the matching */
     for (k = 0 ; k < ncol ; k++)
     {
 	/* find an augmenting path to match some row i to column k */
-	result = amesos_augment (k, Ap, Ai, Match, Cheap, Flag, Istack, Jstack, Pstack,
+	result = trilinos_augment (k, Ap, Ai, Match, Cheap, Flag, Istack, Jstack, Pstack,
 	    work, maxwork) ;
 	if (result == TRUE)
 	{

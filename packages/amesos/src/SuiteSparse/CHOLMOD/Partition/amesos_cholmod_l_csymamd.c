@@ -107,10 +107,10 @@ int CHOLMOD(csymamd)
 
     {
 #ifdef LONG
-	amesos_csymamd_l (nrow, A->i, A->p, perm, knobs, stats, Common->calloc_memory,
+	trilinos_csymamd_l (nrow, A->i, A->p, perm, knobs, stats, Common->calloc_memory,
 		Common->free_memory, Cmember, A->stype) ;
 #else
-	amesos_csymamd (nrow, A->i, A->p, perm, knobs, stats, Common->calloc_memory,
+	trilinos_csymamd (nrow, A->i, A->p, perm, knobs, stats, Common->calloc_memory,
 		Common->free_memory, Cmember, A->stype) ;
 #endif
 	ok = stats [CCOLAMD_STATUS] ;

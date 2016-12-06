@@ -685,7 +685,7 @@
 /* ========================================================================== */
 
 /* define UF_long */
-#include "amesos_UFconfig.h"
+#include "trilinos_UFconfig.h"
 
 #ifdef DLONG
 
@@ -696,9 +696,9 @@
 #define COLAMD_recommended trilinos_colamd_l_recommended
 #define COLAMD_set_defaults trilinos_colamd_l_set_defaults
 #define COLAMD_MAIN trilinos_colamd_l
-#define SYMAMD_MAIN amesos_symamd_l
+#define SYMAMD_MAIN trilinos_symamd_l
 #define COLAMD_report trilinos_colamd_l_report
-#define SYMAMD_report amesos_symamd_l_report
+#define SYMAMD_report trilinos_symamd_l_report
 
 #else
 
@@ -709,9 +709,9 @@
 #define COLAMD_recommended trilinos_colamd_recommended
 #define COLAMD_set_defaults trilinos_colamd_set_defaults
 #define COLAMD_MAIN trilinos_colamd
-#define SYMAMD_MAIN amesos_symamd
+#define SYMAMD_MAIN trilinos_symamd
 #define COLAMD_report trilinos_colamd_report
-#define SYMAMD_report amesos_symamd_report
+#define SYMAMD_report trilinos_symamd_report
 
 #endif
 

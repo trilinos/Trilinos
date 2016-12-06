@@ -245,7 +245,7 @@ PARAKLETE_KLU_COMMON_H = \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_internal.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_io64.h \
 	$(srcdir)/SuiteSparse/CHOLMOD/Include/amesos_cholmod_partition.h \
-	$(srcdir)/SuiteSparse/UFconfig/amesos_UFconfig.h
+	$(srcdir)/SuiteSparse/UFconfig/trilinos_UFconfig.h
 
 if HAVE_AMESOS_PARAKLETE
 PARAKLETE_KLU = ${PARAKLETE_KLU_COMMON}
