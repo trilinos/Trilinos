@@ -140,8 +140,8 @@ namespace MueLu {
 
   private:
     LO MakeGeneralGeometricP(LO const ndm, LO const fNodePerDir[], LO const cNodePerDir[], LO const coarse_rate[], LO const end_rate[],
-			     const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords, LO const nnzP, LO const dofsPerNode, RCP<const Map>& coarseMap,
-			     RCP<Matrix> & Amat, RCP<Matrix>& P, RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords) const;
+                             const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords, LO const nnzP, LO const dofsPerNode, RCP<const Map>& coarseMap,
+                             RCP<Matrix> & Amat, RCP<Matrix>& P, RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords) const;
 
     void ComputeStencil(const LO ndm, const LO ordering, const SC coord[9][3], SC stencil[8]) const;
 
