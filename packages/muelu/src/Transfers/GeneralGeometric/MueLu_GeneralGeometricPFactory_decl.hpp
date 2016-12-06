@@ -59,44 +59,50 @@ namespace MueLu {
 
 
 /*!
-  @class SemiCoarsenPFactory
+  @class GenearlGeometricPFactory
   @ingroup MueLuTransferClasses
-  @brief Prolongator factory performing semi-coarsening.
+  @brief Prolongator factory performing geometric coarsening.
 
-  The semi-coarsening is performed along user-provided "vertical lines" (in z-direction).
-  The line detection algorithm can be found in the LineDetectionFactory.
-  Usually, the SemiCoarsenPFactory is used together with the TogglePFactory and a
-  second TentativePFactory which allows to dynamically switch from semi-coarsening to
-  aggregation-based coarsening (or any other compatible coarsening algorithm).
+  The geometric algorithm assumes the underlying mesh is reasonably structured.
+  Any rate of coarsening can be applied, and the rate is automatically decrease along
+  an edge if the number of element is not divisible by the coarsening rate.
+  The coarsening rate is allowed to be different in all direction which means that
+  semi-coarsening can be achieved within this algorithm in 1 or 2 directions.
+  The main difficulty is to obtain the number of elements/nodes in each directions
+  to identify coarse nodes and fine nodes.
 
-  ## Input/output of SemiCoarsenPFactory ##
+  ## Input/output of GeneralGeometricPFactory ##
 
   ### User parameters of SemiCoarsenPFactory ###
-  Parameter | type | default | master.xml | validated | requested | description
-  ----------|------|---------|:----------:|:---------:|:---------:|------------
-  | A         | Factory | null  |   | * | * | Generating factory of the matrix A used during the prolongator smoothing process |
-  | Nullspace | Factory | null  |   | * | * | Generating factory of the nullspace. The SemiCoarsenPFactory provides a coarse version of the given Nullspace. |
-  | Coordinates | Factory | NoFactory | | * | * | Generating factory for coorindates. The coordinates are expected to be provided on the finest level using the NoFactory mechanism. The coordinates are used to determine the number of z-layers if not otherwise provided by the user. |
-  | LineDetection_VertLineIds | Factory | null | | * | * | Generating factory for LineDetection information. Usually provided by the LineDetectionFactory. Array with vertical line ids for all nodes on current processor. |
-  | LineDetection_Layers | Factory | null | | * | * | Generating factory for LineDetection information. Usually provided by the LineDetectionFactory. Array with layer id for all nodes on current processor. |
-  | CoarseNumZLayers | Factory | null | | * | * | Generating factory for LineDetection information. Usually provided by the LineDetectionFactory. Number of remaining z-layers after semi-coarsening. |
-  | semicoarsen: coarsen rate | int | * | * |   | Coarsening rate along vertical lines (2 corresponds to classical semicoarsening. Values > 2 for more aggressive coarsening). |
+  | Parameter   | type    | default   | master.xml | validated | requested | description                                                                      |
+  | ------------|---------|-----------|:----------:|:---------:|:---------:|----------------------------------------------------------------------------------|
+  | Coarsen     | string  | -1        |            |           |           | A string that specify the coarsening rate, if it is a single character, it will  |
+  |             |         |           |            |           |           | indicate a unique coarsening rate in each direction, if it is longer, it will be | 
+  |             |         |           |            |           |           | processed as a vector with 3 entries, one for each spatial direction             |
+  | A           | Factory | null      |            | *         | *         | Generating factory of the matrix A used during the prolongator smoothing process |
+  | Nullspace   | Factory | null      |            | *         | *         | Generating factory of the nullspace. The GeneralGeometricPFactory provides       |
+  |             |         |           |            |           |           | a coarse version of the given Nullspace.                                         |
+  | Coordinates | Factory | NoFactory |            | *         | *         | Generating factory for coorindates. The coordinates are expected to be provided  |
+  |             |         |           |            |           |           | on the finest level using the NoFactory mechanism. The coordinates are used to   |
+  |             |         |           |            |           |           | compute the coarsening stencil and coarse coordinates are generated for the next |
+  |             |         |           |            |           |           | level.                                                                           |
 
 
 
   The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>
-  The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see SemiCoarsenPFactory::GetValidParameters).<br>
-  The * in the @c requested column states that the data is requested as input with all dependencies (see SemiCoarsenPFactory::DeclareInput).
+  The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see GeneralGeometricCoarsenPFactory::GetValidParameters).<br>
+  The * in the @c requested column states that the data is requested as input with all dependencies (see GeneralGeometricCoarsenPFactory::DeclareInput).
 
-  ### Variables provided by SemiCoarsenPFactory ###
+  ### Variables provided by GeneralGeometricPFactory ###
 
-  After SemiCoarsenPFactory::Build the following data is available (if requested)
+  After GeneralGeometricPFactory::Build the following data is available (if requested)
 
-  Parameter | generated by | description
-  ----------|--------------|------------
-  | P       | SemiCoarsenPFactory   | Prolongator
-  | Nullspace | SemiCoarsenPFactory | Coarse nullspace (the fine level nullspace information is coarsened using P to generate a coarse version of the nullspace. No scaling is applied.
-  | NumZLayers | NoFactory | Number of z layers after coarsening. Necessary input for LineDetectionFactory. Useful input for TogglePFactory.
+  | Parameter         | generated by             | description
+  |-------------------|--------------------------|------------------------------------------------------------------------------------------------------------------|
+  | P                 | GeneralGeometricPFactory | Prolongator                                                                                                      |
+  | Nullspace         | GeneralGeometricPFactory | Coarse nullspace (the fine level nullspace information is coarsened using P to generate a coarse version         |
+  |                   |                          | of the nullspace. No scaling is applied.                                                                         |
+  | coarseCoordinates | NoFactory                | Coarse coordinates that will be used on the next fine level to compute the coarsening stencils                   |
 
 */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
@@ -109,7 +115,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    GeneralGeometricPFactory() : bTransferCoordinates_(false) { }
+    GeneralGeometricPFactory() { }
 
     //! Destructor.
     virtual ~GeneralGeometricPFactory() { }
@@ -133,14 +139,11 @@ namespace MueLu {
     //@}
 
   private:
-    // LO FindCpts(LO const PtsPerLine, LO const CoarsenRate, LO const Thin, LO **LayerCpts) const;
     LO MakeGeneralGeometricP(LO const ndm, LO const fNodePerDir[], LO const cNodePerDir[], LO const coarse_rate[], LO const end_rate[],
-			     const RCP<Xpetra::MultiVector<double,LO,GO,NO> > fCoords, LO const nnzP, LO const dofsPerNode, RCP<const Map>& coarseMap,
+			     const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords, LO const nnzP, LO const dofsPerNode, RCP<const Map>& coarseMap,
 			     RCP<Matrix> & Amat, RCP<Matrix>& P, RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords) const;
 
     void ComputeStencil(const LO ndm, const LO ordering, const SC coord[9][3], SC stencil[8]) const;
-
-    mutable bool bTransferCoordinates_; //boolean telling us if coordinates information is available to be transfered to the coarse level
 
   }; //class GeneralGeometricPFactory
 

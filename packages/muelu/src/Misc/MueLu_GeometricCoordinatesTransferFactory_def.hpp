@@ -46,18 +46,9 @@
 #ifndef MUELU_GEOMETRICCOORDINATESTRANSFER_FACTORY_DEF_HPP
 #define MUELU_GEOMETRICCOORDINATESTRANSFER_FACTORY_DEF_HPP
 
-#include "Xpetra_ImportFactory.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Xpetra_VectorFactory.hpp"
-#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_IO.hpp"
-#include "Xpetra_MapFactory.hpp"
 
-#include "MueLu_CoarseMapFactory.hpp"
-#include "MueLu_Aggregates.hpp"
 #include "MueLu_GeometricCoordinatesTransferFactory_decl.hpp"
-//#include "MueLu_Utilities.hpp"
-
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -67,54 +58,31 @@ namespace MueLu {
   RCP<const ParameterList> GeometricCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    //validParamList->set< RCP<const FactoryBase> >("coarsening_rate", Teuchos::null, "coarsening rate for coordinates");
-    validParamList->set< std::string>            ("Coarsen",                  "2", "Coarsening rate for all spatial dimensions");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory for coordinates generation");
+    validParamList->set< RCP<const FactoryBase> >("coarseCoordinates",    Teuchos::null, "Factory for coarse coordinates generation");
     validParamList->set< int >                   ("write start",    -1, "first level at which coordinates should be written to file");
-    validParamList->set< int >                   ("write end",      -1, "last level at which coordinates should be written to file");
+    validParamList->set< int >                   ("write end",       -1, "last level at which coordinates should be written to file");
 
     return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeometricCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
-    static bool isAvailableCoords = false;
-    // if(fineLevel.GetLevelID()!=0) {
-    //   if (fineLevel.IsAvailable("coarsening_rate", NoFactory::get())) {
-    // 	fineLevel.DeclareInput("coarsening_rate", NoFactory::get(), this);
-    //   }
-    // }
-    // Input(fineLevel, "coarsening_rate");
-    
-    if (coarseLevel.GetRequestMode() == Level::REQUEST)
-      isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
-
-    if (isAvailableCoords == false) {
-      Input(fineLevel, "Coordinates");
-    }
+    Input(coarseLevel, "coarseCoordinates");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeometricCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
+    using xdMV = Xpetra::MultiVector<double,LO,GO,NO>;
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
 
-    if (coarseLevel.IsAvailable("Coordinates", this)) {
-      GetOStream(Runtime0) << "Reusing coordinates" << std::endl;
-      return;
-    } else {
-      GetOStream(Runtime0) << "Recomputing coarse coordinates" << std::endl;
-    }
+    RCP<xdMV> coarseCoords=Get< RCP<xdMV> >(coarseLevel, "coarseCoordinates");
+    Set(coarseLevel, "Coordinates", coarseCoords);
 
-    // get user-provided coarsening rate parameter (constant over all levels)
+    // get user-provided printing parameters
     const ParameterList& pL = GetParameterList();
-    
-    RCP<xdMV> coarseCoords=coarseLevel.Get< RCP<xdMV> >("Coordinates2");
-    Set<RCP<xdMV> >(coarseLevel, "Coordinates", coarseCoords);
-
     int writeStart = pL.get<int>("write start"), writeEnd = pL.get<int>("write end");
     if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd) {
       RCP<xdMV>    fineCoords = Get< RCP<xdMV> >(fineLevel, "Coordinates");
