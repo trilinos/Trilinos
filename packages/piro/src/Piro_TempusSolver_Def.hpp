@@ -106,9 +106,11 @@ Piro::TempusSolver<Scalar>::TempusSolver(
 #endif
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
+    bool computeSensitivities, 
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver):
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-  isInitialized(false)
+  isInitialized(false),
+  computeSensitivities_(computeSensitivities) 
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -292,7 +294,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   num_g(model->Ng()),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel),
-  isInitialized(true)
+  isInitialized(true), 
+  computeSensitivities_(false) 
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -328,7 +331,8 @@ Piro::TempusSolver<Scalar>::TempusSolver(
   num_g(model->Ng()),
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   solnVerbLevel(verbosityLevel),
-  isInitialized(true)
+  isInitialized(true),
+  computeSensitivities_(false) 
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -619,8 +623,11 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     }
   }
 
-  const bool requestedSensitivities =
-    Teuchos::nonnull(dgxdp_out) || !dgdp_deriv_out.isEmpty();
+  bool requestedSensitivities = true; 
+  if (computeSensitivities_ == true) 
+    requestedSensitivities = Teuchos::nonnull(dgxdp_out) || !dgdp_deriv_out.isEmpty();
+  else
+    requestedSensitivities = false;  
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
   RCP<Tempus::SolutionState<Scalar> > solutionState;
@@ -785,10 +792,17 @@ Piro::tempusSolver(
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+   bool computeSensitivities = true; 
+   if (appParams->isSublist("Analysis")) {
+     ParameterList& analysisPL = appParams->sublist("Analysis");
+     if (analysisPL.isParameter("Compute Sensitivities")) 
+       computeSensitivities = analysisPL.get<bool>("Compute Sensitivities"); 
+   }
+    
 #ifdef ALBANY_BUILD
-  return Teuchos::rcp(new TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, piroObserver));
+  return Teuchos::rcp(new TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, computeSensitivities, piroObserver));
 #else
-  return Teuchos::rcp(new TempusSolver<Scalar>(appParams, in_model, piroObserver));
+  return Teuchos::rcp(new TempusSolver<Scalar>(appParams, in_model, computeSensitivities, piroObserver));
 #endif
 
 }

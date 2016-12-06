@@ -86,6 +86,7 @@ public:
   TempusSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      bool computeSensitivities, 
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
@@ -164,6 +165,8 @@ private:
 
   int num_p;
   int num_g;
+
+  bool computeSensitivities_; 
 
   Teuchos::RCP<Teuchos::FancyOStream> out;
   Teuchos::EVerbosityLevel solnVerbLevel;
