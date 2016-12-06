@@ -8,7 +8,6 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   TIMEOUT_MINUTES 330
 )
 
-
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_RELEASE_Teuchos
   ctest_linux_nightly_mpi_release_teuchos_yaml_dorksaber.cmake
@@ -16,5 +15,15 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   RUN_SERIAL
   TIMEOUT_MINUTES 330
 )
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_RELEASE_MueLu_TpetraKernels
+  ctest_linux_nightly_mpi_release_tpetrakernels_experimental_dorksaber.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 330
+)
+
+
 
 TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()
