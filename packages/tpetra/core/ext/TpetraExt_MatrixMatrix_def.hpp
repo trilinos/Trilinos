@@ -1724,16 +1724,22 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
     const LocalOrdinal LO_INVALID =Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
 
+    // Grap the raw pointers out of the  Teuchos::Array's to avoid the Teuchos::Array+Kokkos+DEBUG problems
+    const LocalOrdinal * Acol2Brow_ptr = Acol2Brow.getRawPtr();
+    const LocalOrdinal * Acol2Irow_ptr = Acol2Irow.getRawPtr();
+    const LocalOrdinal * Bcol2Ccol_ptr = Bcol2Ccol.getRawPtr();
+    const LocalOrdinal * Icol2Ccol_ptr = Icol2Ccol.getRawPtr();
+
     // Use a Kokkos::parallel_scan to build the rowptr
     Kokkos::parallel_scan(merge_numrows,KOKKOS_LAMBDA(const size_t i, size_t & update, const bool final) {
 	if(final) Mrowptr(i) = update;
 	
 	// Get the row count
 	size_t ct=0;   
-	if(Acol2Brow[i]!=LO_INVALID) 
-	  ct = Bk.graph.row_map(Acol2Brow[i]+1) - Bk.graph.row_map(Acol2Brow[i]);
+	if(Acol2Brow_ptr[i]!=LO_INVALID) 
+	  ct = Bk.graph.row_map(Acol2Brow_ptr[i]+1) - Bk.graph.row_map(Acol2Brow_ptr[i]);
 	else
-	  ct = Ik->graph.row_map(Acol2Irow[i]+1) - Ik->graph.row_map(Acol2Irow[i]);
+	  ct = Ik->graph.row_map(Acol2Irow_ptr[i]+1) - Ik->graph.row_map(Acol2Irow_ptr[i]);
 	update+=ct;
 	
 	if(final && i+1==merge_numrows)
@@ -1747,20 +1753,20 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
     // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
     Kokkos::parallel_for(merge_numrows,KOKKOS_LAMBDA(const size_t i) {
-	if(Acol2Brow[i]!=LO_INVALID) {
-	  size_t row   = Acol2Brow[i];
+	if(Acol2Brow_ptr[i]!=LO_INVALID) {
+	  size_t row   = Acol2Brow_ptr[i];
 	  size_t start = Bk.graph.row_map(row);
 	  for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
 	    Mvalues(j) = Bk.values(j-Mrowptr(i)+start);
-	    Mcolind(j) = Bcol2Ccol[Bk.graph.entries(j-Mrowptr(i)+start)];
+	    Mcolind(j) = Bcol2Ccol_ptr[Bk.graph.entries(j-Mrowptr(i)+start)];
 	  }
 	}
 	else {
-	  size_t row   = Acol2Irow[i];
+	  size_t row   = Acol2Irow_ptr[i];
 	  size_t start = Ik->graph.row_map(row);
 	  for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
 	    Mvalues(j) = Ik->values(j-Mrowptr(i)+start);
-	    Mcolind(j) = Icol2Ccol[Ik->graph.entries(j-Mrowptr(i)+start)];
+	    Mcolind(j) = Icol2Ccol_ptr[Ik->graph.entries(j-Mrowptr(i)+start)];
 	  }
 	}       
       });
