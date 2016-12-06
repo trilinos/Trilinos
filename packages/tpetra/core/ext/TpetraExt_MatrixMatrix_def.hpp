@@ -1738,6 +1738,12 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     const LocalOrdinal * Bcol2Ccol_ptr = Bcol2Ccol.getRawPtr();
     const LocalOrdinal * Icol2Ccol_ptr = Icol2Ccol.getRawPtr();
 
+    // Grap the raw pointers out of the  Teuchos::Array's to avoid the Teuchos::Array+Kokkos+DEBUG problems
+    const LocalOrdinal * Acol2Brow_ptr = Acol2Brow.getRawPtr();
+    const LocalOrdinal * Acol2Irow_ptr = Acol2Irow.getRawPtr();
+    const LocalOrdinal * Bcol2Ccol_ptr = Bcol2Ccol.getRawPtr();
+    const LocalOrdinal * Icol2Ccol_ptr = Icol2Ccol.getRawPtr();
+
     // Use a Kokkos::parallel_scan to build the rowptr
     Kokkos::parallel_scan(merge_numrows,KOKKOS_LAMBDA(const size_t i, size_t & update, const bool final) {
 	if(final) Mrowptr(i) = update;
