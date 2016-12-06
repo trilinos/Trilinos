@@ -9,7 +9,7 @@
 /* This file should make the long int version of KLU */
 #define DLONG 1
 
-#include "amesos_klu_internal.h"
+#include "trilinos_klu_internal.h"
 
 /* ========================================================================== */
 /* === analyze_worker ======================================================= */

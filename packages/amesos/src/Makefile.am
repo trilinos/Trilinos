@@ -131,32 +131,32 @@ if HAVE_AMESOS_KLU
 #  hence they are commented out from here.  
 #
 KLU_H = \
-	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_decl.h \
-	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_internal.h \
-	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_version.h \
+	$(srcdir)/SuiteSparse/KLU/Include/trilinos_klu_decl.h \
+	$(srcdir)/SuiteSparse/KLU/Include/trilinos_klu_internal.h \
+	$(srcdir)/SuiteSparse/KLU/Include/trilinos_klu_version.h \
 	$(srcdir)/SuiteSparse/BTF/Include/trilinos_btf_decl.h \
 	$(srcdir)/SuiteSparse/BTF/Include/trilinos_btf_internal.h \
 	$(srcdir)/Amesos_Klu.h
 
 KLU = \
 	$(srcdir)/Amesos_Klu.cpp \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze_given.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_defaults.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_diagnostics.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_dump.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_extract.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_factor.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_free_numeric.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_free_symbolic.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_kernel.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_memory.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_refactor.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_scale.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_solve.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_sort.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_tsolve.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_analyze.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_analyze_given.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_impl.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_defaults.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_diagnostics.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_dump.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_extract.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_factor.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_free_numeric.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_free_symbolic.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_kernel.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_memory.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_refactor.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_scale.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_solve.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_sort.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_tsolve.c \
 	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_order.c \
 	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_maxtrans.c \
 	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_strongcomp.c
@@ -334,17 +334,17 @@ PARAKLETE = \
 	$(srcdir)/SuiteSparse/COLAMD/Source/trilinos_colamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_global.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_analyze.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_analyze_given.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_defaults.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_free_numeric.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_free_symbolic.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_factor.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_kernel.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_memory.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_scale.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_l_solve.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_analyze.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_analyze_given.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_defaults.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_free_numeric.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_free_symbolic.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_factor.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_kernel.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_memory.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_scale.c \
+	$(srcdir)/SuiteSparse/KLU/Source/trilinos_klu_l_solve.c \
 	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_l_order.c \
 	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_l_maxtrans.c \
 	$(srcdir)/SuiteSparse/BTF/Source/trilinos_btf_l_strongcomp.c \

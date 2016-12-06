@@ -6,7 +6,7 @@
  * or KLU_analyze_given.
  */
 
-#include "amesos_klu_internal.h"
+#include "trilinos_klu_internal.h"
 
 /* ========================================================================== */
 /* === KLU_factor2 ========================================================== */

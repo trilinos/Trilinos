@@ -1,5 +1,5 @@
-#ifndef AMESOS_KLU_VERSION_H
-#define AMESOS_KLU_VERSION_H
+#ifndef TRILINOS_KLU_VERSION_H
+#define TRILINOS_KLU_VERSION_H
 
 #ifdef DLONG
 #define Int UF_long
@@ -41,49 +41,49 @@
 
 #ifdef DLONG
 
-#define KLU_scale amesos_klu_zl_scale
-#define KLU_solve amesos_klu_zl_solve
-#define KLU_tsolve amesos_klu_zl_tsolve
-#define KLU_free_numeric amesos_klu_zl_free_numeric
-#define KLU_factor amesos_klu_zl_factor
-#define KLU_refactor amesos_klu_zl_refactor
-#define KLU_kernel_factor amesos_klu_zl_kernel_factor 
-#define KLU_lsolve amesos_klu_zl_lsolve
-#define KLU_ltsolve amesos_klu_zl_ltsolve
-#define KLU_usolve amesos_klu_zl_usolve
-#define KLU_utsolve amesos_klu_zl_utsolve
-#define KLU_kernel amesos_klu_zl_kernel
-#define KLU_valid amesos_klu_zl_valid
-#define KLU_valid_LU amesos_klu_zl_valid_LU
-#define KLU_sort amesos_klu_zl_sort
-#define KLU_rgrowth amesos_klu_zl_rgrowth
-#define KLU_rcond amesos_klu_zl_rcond
-#define KLU_extract amesos_klu_zl_extract
-#define KLU_condest amesos_klu_zl_condest
-#define KLU_flops amesos_klu_zl_flops
+#define KLU_scale trilinos_klu_zl_scale
+#define KLU_solve trilinos_klu_zl_solve
+#define KLU_tsolve trilinos_klu_zl_tsolve
+#define KLU_free_numeric trilinos_klu_zl_free_numeric
+#define KLU_factor trilinos_klu_zl_factor
+#define KLU_refactor trilinos_klu_zl_refactor
+#define KLU_kernel_factor trilinos_klu_zl_kernel_factor 
+#define KLU_lsolve trilinos_klu_zl_lsolve
+#define KLU_ltsolve trilinos_klu_zl_ltsolve
+#define KLU_usolve trilinos_klu_zl_usolve
+#define KLU_utsolve trilinos_klu_zl_utsolve
+#define KLU_kernel trilinos_klu_zl_kernel
+#define KLU_valid trilinos_klu_zl_valid
+#define KLU_valid_LU trilinos_klu_zl_valid_LU
+#define KLU_sort trilinos_klu_zl_sort
+#define KLU_rgrowth trilinos_klu_zl_rgrowth
+#define KLU_rcond trilinos_klu_zl_rcond
+#define KLU_extract trilinos_klu_zl_extract
+#define KLU_condest trilinos_klu_zl_condest
+#define KLU_flops trilinos_klu_zl_flops
 
 #else
 
-#define KLU_scale amesos_klu_z_scale
-#define KLU_solve amesos_klu_z_solve
-#define KLU_tsolve amesos_klu_z_tsolve
-#define KLU_free_numeric amesos_klu_z_free_numeric
-#define KLU_factor amesos_klu_z_factor
-#define KLU_refactor amesos_klu_z_refactor
-#define KLU_kernel_factor amesos_klu_z_kernel_factor 
-#define KLU_lsolve amesos_klu_z_lsolve
-#define KLU_ltsolve amesos_klu_z_ltsolve
-#define KLU_usolve amesos_klu_z_usolve
-#define KLU_utsolve amesos_klu_z_utsolve
-#define KLU_kernel amesos_klu_z_kernel
-#define KLU_valid amesos_klu_z_valid
-#define KLU_valid_LU amesos_klu_z_valid_LU
-#define KLU_sort amesos_klu_z_sort
-#define KLU_rgrowth amesos_klu_z_rgrowth
-#define KLU_rcond amesos_klu_z_rcond
-#define KLU_extract amesos_klu_z_extract
-#define KLU_condest amesos_klu_z_condest
-#define KLU_flops amesos_klu_z_flops
+#define KLU_scale trilinos_klu_z_scale
+#define KLU_solve trilinos_klu_z_solve
+#define KLU_tsolve trilinos_klu_z_tsolve
+#define KLU_free_numeric trilinos_klu_z_free_numeric
+#define KLU_factor trilinos_klu_z_factor
+#define KLU_refactor trilinos_klu_z_refactor
+#define KLU_kernel_factor trilinos_klu_z_kernel_factor 
+#define KLU_lsolve trilinos_klu_z_lsolve
+#define KLU_ltsolve trilinos_klu_z_ltsolve
+#define KLU_usolve trilinos_klu_z_usolve
+#define KLU_utsolve trilinos_klu_z_utsolve
+#define KLU_kernel trilinos_klu_z_kernel
+#define KLU_valid trilinos_klu_z_valid
+#define KLU_valid_LU trilinos_klu_z_valid_LU
+#define KLU_sort trilinos_klu_z_sort
+#define KLU_rgrowth trilinos_klu_z_rgrowth
+#define KLU_rcond trilinos_klu_z_rcond
+#define KLU_extract trilinos_klu_z_extract
+#define KLU_condest trilinos_klu_z_condest
+#define KLU_flops trilinos_klu_z_flops
 
 #endif
 
@@ -91,49 +91,49 @@
 
 #ifdef DLONG
 
-#define KLU_scale amesos_klu_l_scale
-#define KLU_solve amesos_klu_l_solve
-#define KLU_tsolve amesos_klu_l_tsolve
-#define KLU_free_numeric amesos_klu_l_free_numeric
-#define KLU_factor amesos_klu_l_factor
-#define KLU_refactor amesos_klu_l_refactor
-#define KLU_kernel_factor amesos_klu_l_kernel_factor 
-#define KLU_lsolve amesos_klu_l_lsolve
-#define KLU_ltsolve amesos_klu_l_ltsolve
-#define KLU_usolve amesos_klu_l_usolve
-#define KLU_utsolve amesos_klu_l_utsolve
-#define KLU_kernel amesos_klu_l_kernel
-#define KLU_valid amesos_klu_l_valid
-#define KLU_valid_LU amesos_klu_l_valid_LU
-#define KLU_sort amesos_klu_l_sort
-#define KLU_rgrowth amesos_klu_l_rgrowth
-#define KLU_rcond amesos_klu_l_rcond
-#define KLU_extract amesos_klu_l_extract
-#define KLU_condest amesos_klu_l_condest
-#define KLU_flops amesos_klu_l_flops
+#define KLU_scale trilinos_klu_l_scale
+#define KLU_solve trilinos_klu_l_solve
+#define KLU_tsolve trilinos_klu_l_tsolve
+#define KLU_free_numeric trilinos_klu_l_free_numeric
+#define KLU_factor trilinos_klu_l_factor
+#define KLU_refactor trilinos_klu_l_refactor
+#define KLU_kernel_factor trilinos_klu_l_kernel_factor 
+#define KLU_lsolve trilinos_klu_l_lsolve
+#define KLU_ltsolve trilinos_klu_l_ltsolve
+#define KLU_usolve trilinos_klu_l_usolve
+#define KLU_utsolve trilinos_klu_l_utsolve
+#define KLU_kernel trilinos_klu_l_kernel
+#define KLU_valid trilinos_klu_l_valid
+#define KLU_valid_LU trilinos_klu_l_valid_LU
+#define KLU_sort trilinos_klu_l_sort
+#define KLU_rgrowth trilinos_klu_l_rgrowth
+#define KLU_rcond trilinos_klu_l_rcond
+#define KLU_extract trilinos_klu_l_extract
+#define KLU_condest trilinos_klu_l_condest
+#define KLU_flops trilinos_klu_l_flops
 
 #else
 
-#define KLU_scale amesos_klu_scale
-#define KLU_solve amesos_klu_solve
-#define KLU_tsolve amesos_klu_tsolve
-#define KLU_free_numeric amesos_klu_free_numeric
-#define KLU_factor amesos_klu_factor
-#define KLU_refactor amesos_klu_refactor
-#define KLU_kernel_factor amesos_klu_kernel_factor 
-#define KLU_lsolve amesos_klu_lsolve
-#define KLU_ltsolve amesos_klu_ltsolve
-#define KLU_usolve amesos_klu_usolve
-#define KLU_utsolve amesos_klu_utsolve
-#define KLU_kernel amesos_klu_kernel
-#define KLU_valid amesos_klu_valid
-#define KLU_valid_LU amesos_klu_valid_LU
-#define KLU_sort amesos_klu_sort
-#define KLU_rgrowth amesos_klu_rgrowth
-#define KLU_rcond amesos_klu_rcond
-#define KLU_extract amesos_klu_extract
-#define KLU_condest amesos_klu_condest
-#define KLU_flops amesos_klu_flops
+#define KLU_scale trilinos_klu_scale
+#define KLU_solve trilinos_klu_solve
+#define KLU_tsolve trilinos_klu_tsolve
+#define KLU_free_numeric trilinos_klu_free_numeric
+#define KLU_factor trilinos_klu_factor
+#define KLU_refactor trilinos_klu_refactor
+#define KLU_kernel_factor trilinos_klu_kernel_factor 
+#define KLU_lsolve trilinos_klu_lsolve
+#define KLU_ltsolve trilinos_klu_ltsolve
+#define KLU_usolve trilinos_klu_usolve
+#define KLU_utsolve trilinos_klu_utsolve
+#define KLU_kernel trilinos_klu_kernel
+#define KLU_valid trilinos_klu_valid
+#define KLU_valid_LU trilinos_klu_valid_LU
+#define KLU_sort trilinos_klu_sort
+#define KLU_rgrowth trilinos_klu_rgrowth
+#define KLU_rcond trilinos_klu_rcond
+#define KLU_extract trilinos_klu_extract
+#define KLU_condest trilinos_klu_condest
+#define KLU_flops trilinos_klu_flops
 
 #endif
 
@@ -142,16 +142,16 @@
 
 #ifdef DLONG
 
-#define KLU_analyze amesos_klu_l_analyze
-#define KLU_analyze_given amesos_klu_l_analyze_given
-#define KLU_alloc_symbolic amesos_klu_l_alloc_symbolic
-#define KLU_free_symbolic amesos_klu_l_free_symbolic
-#define KLU_defaults amesos_klu_l_defaults
-#define KLU_free amesos_klu_l_free
-#define KLU_malloc amesos_klu_l_malloc
-#define KLU_realloc amesos_klu_l_realloc
-#define KLU_add_size_t amesos_klu_l_add_size_t
-#define KLU_mult_size_t amesos_klu_l_mult_size_t
+#define KLU_analyze trilinos_klu_l_analyze
+#define KLU_analyze_given trilinos_klu_l_analyze_given
+#define KLU_alloc_symbolic trilinos_klu_l_alloc_symbolic
+#define KLU_free_symbolic trilinos_klu_l_free_symbolic
+#define KLU_defaults trilinos_klu_l_defaults
+#define KLU_free trilinos_klu_l_free
+#define KLU_malloc trilinos_klu_l_malloc
+#define KLU_realloc trilinos_klu_l_realloc
+#define KLU_add_size_t trilinos_klu_l_add_size_t
+#define KLU_mult_size_t trilinos_klu_l_mult_size_t
 
 #define KLU_symbolic klu_l_symbolic
 #define KLU_numeric klu_l_numeric
@@ -166,16 +166,16 @@
 
 #else
 
-#define KLU_analyze amesos_klu_analyze
-#define KLU_analyze_given amesos_klu_analyze_given
-#define KLU_alloc_symbolic amesos_klu_alloc_symbolic
-#define KLU_free_symbolic amesos_klu_free_symbolic
-#define KLU_defaults amesos_klu_defaults
-#define KLU_free amesos_klu_free
-#define KLU_malloc amesos_klu_malloc
-#define KLU_realloc amesos_klu_realloc
-#define KLU_add_size_t amesos_klu_add_size_t
-#define KLU_mult_size_t amesos_klu_mult_size_t
+#define KLU_analyze trilinos_klu_analyze
+#define KLU_analyze_given trilinos_klu_analyze_given
+#define KLU_alloc_symbolic trilinos_klu_alloc_symbolic
+#define KLU_free_symbolic trilinos_klu_free_symbolic
+#define KLU_defaults trilinos_klu_defaults
+#define KLU_free trilinos_klu_free
+#define KLU_malloc trilinos_klu_malloc
+#define KLU_realloc trilinos_klu_realloc
+#define KLU_add_size_t trilinos_klu_add_size_t
+#define KLU_mult_size_t trilinos_klu_mult_size_t
 
 #define KLU_symbolic klu_symbolic
 #define KLU_numeric klu_numeric

@@ -14,7 +14,7 @@
  *	2 or more: the scale factor for row i is max (abs (A (i,:)))
  */
 
-#include "amesos_klu_internal.h"
+#include "trilinos_klu_internal.h"
 
 Int KLU_scale		/* return TRUE if successful, FALSE otherwise */
 (

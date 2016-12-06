@@ -26,7 +26,7 @@
 #include "amesos_cholmod.h"
 #include "amesos_cholmod_internal.h"
 #include "trilinos_btf_decl.h"
-#include "amesos_klu_decl.h"
+#include "trilinos_klu_decl.h"
 
 #ifndef NMPI
 #include "mpi.h"
@@ -39,15 +39,15 @@
 #define MPI_Int MPI_LONG
 
 /* use the long version of KLU and BTF */
-#define KLU_analyze amesos_klu_l_analyze
-#define KLU_factor amesos_klu_l_factor
-#define KLU_solve amesos_klu_l_solve
+#define KLU_analyze trilinos_klu_l_analyze
+#define KLU_factor trilinos_klu_l_factor
+#define KLU_solve trilinos_klu_l_solve
 #define KLU_symbolic klu_l_symbolic
 #define KLU_numeric klu_l_numeric
 #define KLU_common klu_l_common
-#define KLU_free_symbolic amesos_klu_l_free_symbolic
-#define KLU_free_numeric amesos_klu_l_free_numeric
-#define KLU_defaults amesos_klu_l_defaults
+#define KLU_free_symbolic trilinos_klu_l_free_symbolic
+#define KLU_free_numeric trilinos_klu_l_free_numeric
+#define KLU_defaults trilinos_klu_l_defaults
 
 #define BTF_order trilinos_btf_l_order
 

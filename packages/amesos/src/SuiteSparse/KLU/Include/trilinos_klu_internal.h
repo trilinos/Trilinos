@@ -4,12 +4,12 @@
 
 /* For internal use in KLU routines only, not for user programs */
 
-#ifndef AMESOS_KLU_INTERNAL_H
-#define AMESOS_KLU_INTERNAL_H
+#ifndef TRILINOS_KLU_INTERNAL_H
+#define TRILINOS_KLU_INTERNAL_H
 
-#include "amesos_klu_decl.h" 
+#include "trilinos_klu_decl.h" 
 #include "trilinos_btf_decl.h"
-#include "amesos_klu_version.h"
+#include "trilinos_klu_version.h"
 
 /* ========================================================================== */
 /* make sure debugging and printing is turned off */

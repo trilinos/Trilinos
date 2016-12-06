@@ -8,7 +8,7 @@
  * the pattern given to KLU_factor.
  */
 
-#include "amesos_klu_internal.h"
+#include "trilinos_klu_internal.h"
 
 
 /* ========================================================================== */

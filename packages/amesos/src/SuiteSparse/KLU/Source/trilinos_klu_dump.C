@@ -6,7 +6,7 @@
  * compile-time.
  */
 
-#include "amesos_klu_internal.h"
+#include "trilinos_klu_internal.h"
 
 #ifndef NDEBUG
 

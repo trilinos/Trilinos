@@ -6,7 +6,7 @@
  * ordering, or the user-provided-function on the blocks.  Does not support
  * using a given ordering (use klu_analyze_given for that case). */
 
-#include "amesos_klu_internal.h"
+#include "trilinos_klu_internal.h"
 
 /* ========================================================================== */
 /* === analyze_worker ======================================================= */

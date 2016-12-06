@@ -7,7 +7,10 @@
  * Liu's symmetric pruning.  No user-callable routines are in this file.
  */
 
-#include "amesos_klu_internal.h"
+/* This file should make the long int version of KLU */
+#define DLONG 1
+
+#include "trilinos_klu_internal.h"
 
 /* ========================================================================== */
 /* === dfs ================================================================== */
@@ -768,7 +771,7 @@ size_t KLU_kernel   /* final size of LU on output */
 		Common->status = KLU_TOO_LARGE ;
                 return (lusize) ;
             }
-            newlusize = (size_t) ( memgrow * lusize + 2*n + 1 ) ;
+            newlusize = memgrow * lusize + 2*n + 1 ;
 	    /* Future work: retry mechanism in case of malloc failure */
 	    LU = KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
 	    Common->nrealloc++ ;

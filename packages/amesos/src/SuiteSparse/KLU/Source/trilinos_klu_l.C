@@ -58,7 +58,10 @@
 
 /* ========================================================================== */
 
-#include "amesos_klu_internal.h"
+/* This file should make the long int version of KLU */
+#define DLONG 1
+
+#include "trilinos_klu_internal.h"
 
 size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
 (
@@ -116,11 +119,11 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
     {
 	Lsize = -Lsize ;
 	Lsize = MAX (Lsize, 1.0) ;
-	lsize = (int) ( Lsize * anz + n ) ;
+	lsize = Lsize * anz + n ;
     }
     else
     {
-	lsize = (int) Lsize ;
+	lsize = Lsize ;
     }
 
     usize = lsize ;
@@ -130,8 +133,8 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
 
     maxlnz = (((double) n) * ((double) n) + ((double) n)) / 2. ;
     maxlnz = MIN (maxlnz, ((double) INT_MAX)) ;
-    lsize  = (int) ( MIN (maxlnz, lsize) ) ;
-    usize  = (int) ( MIN (maxlnz, usize) ) ;
+    lsize  = MIN (maxlnz, lsize) ;
+    usize  = MIN (maxlnz, usize) ;
 
     PRINTF (("Welcome to klu: n %d anz %d k1 %d lsize %d usize %d maxlnz %g\n",
 	n, anz, k1, lsize, usize, maxlnz)) ;
@@ -222,7 +225,6 @@ void KLU_lsolve
 	    for (k = 0 ; k < n ; k++)
 	    {
 		x [0] = X [k] ;
-        if (x[0] == 0.0) continue;
 		GET_POINTER (LU, Lip, Llen, Li, Lx, k, len) ;
 		/* unit diagonal of L is not stored*/
 		for (p = 0 ; p < len ; p++)
@@ -239,7 +241,6 @@ void KLU_lsolve
 	    {
 		x [0] = X [2*k    ] ;
 		x [1] = X [2*k + 1] ;
-        if (x[0] == 0.0 && x[1] == 0.0) continue;
 		GET_POINTER (LU, Lip, Llen, Li, Lx, k, len) ;
 		for (p = 0 ; p < len ; p++)
 		{
@@ -258,7 +259,6 @@ void KLU_lsolve
 		x [0] = X [3*k    ] ;
 		x [1] = X [3*k + 1] ;
 		x [2] = X [3*k + 2] ;
-        if (x[0] == 0.0 && x[1] == 0.0 && x[2] == 0.0) continue;
 		GET_POINTER (LU, Lip, Llen, Li, Lx, k, len) ;
 		for (p = 0 ; p < len ; p++)
 		{
@@ -279,7 +279,6 @@ void KLU_lsolve
 		x [1] = X [4*k + 1] ;
 		x [2] = X [4*k + 2] ;
 		x [3] = X [4*k + 3] ;
-        if (x[0] == 0.0 && x[1] == 0.0 && x[2] == 0.0 && x[3] == 0.0) continue;
 		GET_POINTER (LU, Lip, Llen, Li, Lx, k, len) ;
 		for (p = 0 ; p < len ; p++)
 		{
@@ -332,7 +331,6 @@ void KLU_usolve
 	    {
 		GET_POINTER (LU, Uip, Ulen, Ui, Ux, k, len) ;
 		/* x [0] = X [k] / Udiag [k] ; */
-        if (X [k] == 0.0) continue;
 		DIV (x [0], X [k], Udiag [k]) ;
 		X [k] = x [0] ;
 		for (p = 0 ; p < len ; p++)
@@ -353,7 +351,6 @@ void KLU_usolve
 		ukk = Udiag [k] ;
 		/* x [0] = X [2*k    ] / ukk ;
 		x [1] = X [2*k + 1] / ukk ; */
-        if (X [2*k] == 0.0 && X [2*k + 1] == 0.0) continue;
 		DIV (x [0], X [2*k], ukk) ;
 		DIV (x [1], X [2*k + 1], ukk) ;
 
@@ -379,7 +376,6 @@ void KLU_usolve
 		GET_POINTER (LU, Uip, Ulen, Ui, Ux, k, len) ;
 		ukk = Udiag [k] ;
 
-        if (X [3*k] == 0.0 && X [3*k + 1] == 0.0 &&  X [3*k + 2] == 0.0) continue;
 		DIV (x [0], X [3*k], ukk) ;
 		DIV (x [1], X [3*k + 1], ukk) ;
 		DIV (x [2], X [3*k + 2], ukk) ;
@@ -406,7 +402,6 @@ void KLU_usolve
 		GET_POINTER (LU, Uip, Ulen, Ui, Ux, k, len) ;
 		ukk = Udiag [k] ;
 
-        if (X [4*k] == 0.0 && X [4*k + 1] == 0.0 &&  X [4*k + 2] == 0.0 && X [4*k + 3] == 0.0) continue;
 		DIV (x [0], X [4*k], ukk) ;
 		DIV (x [1], X [4*k + 1], ukk) ;
 		DIV (x [2], X [4*k + 2], ukk) ;
@@ -474,7 +469,6 @@ void KLU_ltsolve
 		x [0] = X [k] ;
 		for (p = 0 ; p < len ; p++)
 		{
-            if (X[Li[p]] == 0.0 ) continue;
 #ifdef COMPLEX
 		    if (conj_solve)
 		    {
@@ -502,7 +496,6 @@ void KLU_ltsolve
 		for (p = 0 ; p < len ; p++)
 		{
 		    i = Li [p] ;
-            if (X[2*i] == 0.0 && X[2*i + 1] == 0.0) continue;
 #ifdef COMPLEX
 		    if (conj_solve)
 		    {
@@ -532,7 +525,6 @@ void KLU_ltsolve
 		for (p = 0 ; p < len ; p++)
 		{
 		    i = Li [p] ;
-            if (X[3*i] == 0.0 && X[3*i + 1] == 0.0 && X[3*i + 2] == 0.0) continue;
 #ifdef COMPLEX
 		    if (conj_solve)
 		    {
@@ -565,7 +557,6 @@ void KLU_ltsolve
 		for (p = 0 ; p < len ; p++)
 		{
 		    i = Li [p] ;
-            if (X[4*i] == 0.0 && X[4*i + 1] == 0.0 && X[4*i + 2] == 0.0 && X[4*i + 3] == 0.0) continue;
 #ifdef COMPLEX
 		    if (conj_solve)
 		    {
@@ -632,7 +623,6 @@ void KLU_utsolve
 		x [0] = X [k] ;
 		for (p = 0 ; p < len ; p++)
 		{
-            if (X[Ui[p]] == 0.0) continue;
 #ifdef COMPLEX
 		    if (conj_solve)
 		    {
@@ -670,7 +660,6 @@ void KLU_utsolve
 		for (p = 0 ; p < len ; p++)
 		{
 		    i = Ui [p] ;
-            if (X[2*i] == 0.0 && X[2*i + 1] == 0.0 ) continue;
 #ifdef COMPLEX
 		    if (conj_solve)
 		    {
@@ -710,7 +699,6 @@ void KLU_utsolve
 		for (p = 0 ; p < len ; p++)
 		{
 		    i = Ui [p] ;
-            if (X[3*i] == 0.0 && X[3*i + 1] == 0.0 && X[3*i + 2] == 0.0 ) continue;
 #ifdef COMPLEX
 		    if (conj_solve)
 		    {
@@ -753,7 +741,6 @@ void KLU_utsolve
 		for (p = 0 ; p < len ; p++)
 		{
 		    i = Ui [p] ;
-            if (X[4*i] == 0.0 && X[4*i + 1] == 0.0 && X[4*i + 2] == 0.0 && X[4*i + 3] == 0.0) continue;
 #ifdef COMPLEX
 		    if (conj_solve)
 		    {

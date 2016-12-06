@@ -4,10 +4,7 @@
 
 /* Free the KLU Symbolic object. */
 
-/* This file should make the long int version of KLU */
-#define DLONG 1
-
-#include "amesos_klu_internal.h"
+#include "trilinos_klu_internal.h"
 
 Int KLU_free_symbolic
 (

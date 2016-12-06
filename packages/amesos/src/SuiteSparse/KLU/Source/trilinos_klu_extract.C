@@ -9,7 +9,7 @@
  * nnz(L) = Numeric->lnz, nnz(U) = Numeric->unz, and nnz(F) = Numeric->Offp [n]
  */
 
-#include "amesos_klu_internal.h"
+#include "trilinos_klu_internal.h"
 
 Int KLU_extract	    /* returns TRUE if successful, FALSE otherwise */
 (

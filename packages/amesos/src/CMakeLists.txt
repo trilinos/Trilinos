@@ -228,9 +228,9 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
 
   SET(HEADERS ${HEADERS}
     ${TRILINOS_KLU_COMMON_H}
-    SuiteSparse/KLU/Include/amesos_klu_decl.h
-    SuiteSparse/KLU/Include/amesos_klu_internal.h
-    SuiteSparse/KLU/Include/amesos_klu_version.h
+    SuiteSparse/KLU/Include/trilinos_klu_decl.h
+    SuiteSparse/KLU/Include/trilinos_klu_internal.h
+    SuiteSparse/KLU/Include/trilinos_klu_version.h
     SuiteSparse/BTF/Include/trilinos_btf_decl.h
     SuiteSparse/BTF/Include/trilinos_btf_internal.h
     SuiteSparse/CCOLAMD/Include/trilinos_ccolamd.h
@@ -240,23 +240,23 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     )
 
    SET(KLU_FILES
-   SuiteSparse/KLU/Source/amesos_klu_analyze.c
-    SuiteSparse/KLU/Source/amesos_klu_analyze_given.c
-    SuiteSparse/KLU/Source/amesos_klu_impl.c
-    SuiteSparse/KLU/Source/amesos_klu_defaults.c
-    SuiteSparse/KLU/Source/amesos_klu_diagnostics.c
-    SuiteSparse/KLU/Source/amesos_klu_dump.c
-    SuiteSparse/KLU/Source/amesos_klu_extract.c
-    SuiteSparse/KLU/Source/amesos_klu_factor.c
-    SuiteSparse/KLU/Source/amesos_klu_free_numeric.c
-    SuiteSparse/KLU/Source/amesos_klu_free_symbolic.c
-    SuiteSparse/KLU/Source/amesos_klu_kernel.c
-    SuiteSparse/KLU/Source/amesos_klu_memory.c
-    SuiteSparse/KLU/Source/amesos_klu_refactor.c
-    SuiteSparse/KLU/Source/amesos_klu_scale.c
-    SuiteSparse/KLU/Source/amesos_klu_solve.c
-    SuiteSparse/KLU/Source/amesos_klu_sort.c
-    SuiteSparse/KLU/Source/amesos_klu_tsolve.c
+   SuiteSparse/KLU/Source/trilinos_klu_analyze.c
+    SuiteSparse/KLU/Source/trilinos_klu_analyze_given.c
+    SuiteSparse/KLU/Source/trilinos_klu_impl.c
+    SuiteSparse/KLU/Source/trilinos_klu_defaults.c
+    SuiteSparse/KLU/Source/trilinos_klu_diagnostics.c
+    SuiteSparse/KLU/Source/trilinos_klu_dump.c
+    SuiteSparse/KLU/Source/trilinos_klu_extract.c
+    SuiteSparse/KLU/Source/trilinos_klu_factor.c
+    SuiteSparse/KLU/Source/trilinos_klu_free_numeric.c
+    SuiteSparse/KLU/Source/trilinos_klu_free_symbolic.c
+    SuiteSparse/KLU/Source/trilinos_klu_kernel.c
+    SuiteSparse/KLU/Source/trilinos_klu_memory.c
+    SuiteSparse/KLU/Source/trilinos_klu_refactor.c
+    SuiteSparse/KLU/Source/trilinos_klu_scale.c
+    SuiteSparse/KLU/Source/trilinos_klu_solve.c
+    SuiteSparse/KLU/Source/trilinos_klu_sort.c
+    SuiteSparse/KLU/Source/trilinos_klu_tsolve.c
     SuiteSparse/BTF/Source/trilinos_btf_order.c
     SuiteSparse/BTF/Source/trilinos_btf_maxtrans.c
     SuiteSparse/BTF/Source/trilinos_btf_strongcomp.c
