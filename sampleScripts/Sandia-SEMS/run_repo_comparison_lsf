@@ -1,0 +1,145 @@
+#!/bin/bash -el
+TRILINOS_UPDATED_PATH=$1
+TRILINOS_PRISTINE_PATH=$2
+CONFIG_SCRIPT=$3
+JOBNAME=$4
+QUEUE=$5
+
+rm -rf build_updated
+mkdir build_updated
+cd build_updated
+export TRILINOS_PATH=${TRILINOS_UPDATED_PATH}
+
+echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Conf -W 01:00 -Is -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
+echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Build -W 03:00 -Is -q ${QUEUE} make -j 60 -k  &> build.output" &> build_command
+echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Test -W 02:00 -Is -q ${QUEUE} ctest &> test.output" &> test_command
+
+chmod a+x *_command
+echo ""
+echo ""
+echo "Going to run these commands on updated Trilinos:"
+cat config_command
+cat build_command
+cat test_command
+echo ""
+echo ""
+
+./config_command
+echo ""
+echo ""
+echo "Config output:"
+cat config.output
+
+echo ""
+echo ""
+
+./build_command || true
+echo ""
+echo ""
+echo "Build output:"
+cat build.output
+
+./test_command || true
+echo ""
+echo ""
+echo "Test output:"
+cat test.output
+
+BUILD_ERRORS_UPDATED=`grep "error:" build.output | wc -l`
+TEST_FAILED_UPDATED=`grep "(Failed)" test.output | wc -l`
+TEST_NOTRUN_UPDATED=`grep "(Not Run)" test.output | wc -l`
+TOTAL_PROBLEMS_UPDATED=$((${BUILD_ERRORS_UPDATED} + ${TEST_FAILED_UPDATED} + ${TEST_NOTRUN_UPDATED}))
+echo ""
+echo ""
+echo "Updated Testing: BuildErrors: " ${BUILD_ERRORS_UPDATED} " Failed Tests: " ${TEST_FAILED_UPDATED} " NotRun Tests: " ${TEST_NOTRUN_UPDATED}
+cd ../
+
+if [ "${TOTAL_PROBLEMS_UPDATED}" -gt "0" ]; then
+rm -rf build_pristine
+mkdir build_pristine
+cd build_pristine
+
+export TRILINOS_PATH=${TRILINOS_PRISTINE_PATH}
+
+echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Conf -W 01:00 -Is -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
+echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Build -W 03:00 -Is -q ${QUEUE} make -j 60 -k  &> build.output" &> build_command
+echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Test -W 02:00 -Is -q ${QUEUE} ctest &> test.output" &> test_command
+
+
+chmod a+x *_command
+echo ""
+echo ""
+echo "Going to run these commands on pristine Trilinos:"
+cat config_command
+cat build_command
+cat test_command
+echo ""
+echo ""
+
+./config_command
+echo ""
+echo ""
+echo "Config output:"
+cat config.output
+
+echo ""
+echo ""
+
+./build_command || true
+echo ""
+echo ""
+echo "Build output:"
+cat build.output
+
+./test_command || true
+echo ""
+echo ""
+echo "Test output:"
+cat test.output
+
+BUILD_ERRORS_PRISTINE=`grep "error:" build.output | wc -l`
+TEST_FAILED_PRISTINE=`grep "(Failed)" test.output | wc -l`
+TEST_NOTRUN_PRISTINE=`grep "(Not Run)" test.output | wc -l`
+TOTAL_PROBLEMS_PRISTINE=$((${BUILD_ERRORS_PRISTINE} + ${TEST_FAILED_PRISTINE} + ${TEST_NOTRUN_PRISTINE}))
+
+sed -i 's|${TRILINOS_PRISTINE_PATH}|${TRILINOS_UPDATED_PATH}|g' build.output
+
+cd ..
+
+rm pristine_build.error updated_build.error pristine_test.failed updated_test.failed pristine_test.notrun updated_test.notrun
+touch pristine_build.error updated_build.error pristine_test.failed updated_test.failed pristine_test.notrun updated_test.notrun
+echo "Grepping for Errors:"
+grep "error:" build_pristine/build.output | awk '{$1 = ""; print $0;}' &> pristine_build.error || true
+grep "error:" build_updated/build.output | awk '{$1 = ""; print $0;}' &> updated_build.error || true
+grep "(Failed)" build_pristine/test.output &> pristine_test.failed || true
+grep "(Failed)" build_updated/test.output &> updated_test.failed || true
+grep "(Not Run)" build_pristine/test.output &> pristine_test.notrun || true
+grep "(Not Run)" build_updated/test.output &> updated_test.notrun || true
+
+DIFF_ERRORS=`diff pristine_build.error updated_build.error | wc -l`
+DIFF_FAILED=`diff pristine_test.failed updated_test.failed | wc -l`
+DIFF_NOTRUN=`diff pristine_test.notrun updated_test.notrun | wc -l`
+TOTAL_PROBLEMS=$((${DIFF_ERRORS} + ${DIFF_FAILED} + ${DIFF_NOTRUN}))
+
+echo "Total Problems: " ${TOTAL_PROBLEMS}
+if [ "${TOTAL_PROBLEMS}" -gt "0" ]; then
+echo ""
+echo ""
+echo "FAILED COMPARISON TEST"
+echo ""
+echo ""
+echo "Diff Build Errors:"
+diff pristine_build.error updated_build.error || true
+
+echo ""
+echo ""
+echo "Diff Failed Tests"
+diff pristine_test.failed updated_test.failed || true
+
+echo ""
+echo ""
+echo "Diff NotRun Tests"
+diff pristine_test.notrun updated_test.notrun || true
+exit 1
+fi
+fi
