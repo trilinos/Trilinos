@@ -1676,9 +1676,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MM Newmatrix OpenMPWrapper")))));
+  RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MM Newmatrix OpenMP Wrapper")))));
 #endif
-  printf("[%d] OpenMP kernel called\n",Aview.origMatrix->getRowMap()->getComm()->getRank());
+  //  printf("[%d] OpenMP kernel called\n",Aview.origMatrix->getRowMap()->getComm()->getRank());
 
   // Node-specific code
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
@@ -1704,35 +1704,26 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Get the algorithm mode
   std::string alg = nodename+std::string(" algorithm");
-#ifdef HAVE_TPETRAKERNELS_MKL
   std::string myalg("SPGEMM_KK_MEMORY");
-  //  std::string myalg("SPGEMM_MKL");
-#else
-  std::string myalg("SPGEMM_KK_MEMORY");
-#endif
   //  printf("DEBUG: Using kernel: %s\n",myalg.c_str());
   if(!params.is_null() && params->isParameter(alg)) myalg = params->get(alg,myalg);
   KokkosKernels::Experimental::Graph::SPGEMMAlgorithm alg_enum = KokkosKernels::Experimental::Graph::StringToSPGEMMAlgorithm(myalg);
 
-  if(!Bview.importMatrix.is_null()) {
+  // We need to do this dance if either (a) We have Bimport or (b) We don't A's colMap is not the same as B's rowMap
+  if(!Bview.importMatrix.is_null() || (Bview.importMatrix.is_null() && (&*Aview.origMatrix->getGraph()->getColMap() != &*Bview.origMatrix->getGraph()->getRowMap()))) {
     // We do have a Bimport
     // NOTE: We're going merge Borig and Bimport into a single matrix and reindex the columns *before* we multiply.  
     // This option was chosen because we know we don't have any duplicate entries, so we can allocate once.
-    size_t Ak_numcols    = Ak.numCols();
-    const KCRS & Ik = Bview.importMatrix->getLocalMatrix();
-    size_t Bk_numrows    = Bk.numRows();
-    size_t Bk_nnz        = Bk.nnz();   
-    size_t merge_numrows = Ak_numcols;
+    RCP<const KCRS> Ik;
+    if(!Bview.importMatrix.is_null()) Ik = Teuchos::rcpFromRef<const KCRS>(Bview.importMatrix->getLocalMatrix());
+
+    size_t merge_numrows =  Ak.numCols();
     lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
 
     const LocalOrdinal LO_INVALID =Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-  
-    // FIXME - Need to use these guys in the creation of Bmerged
-    //const Teuchos::Array<LocalOrdinal> & Acol2Brow,
-    //    const Teuchos::Array<LocalOrdinal> & Acol2Irow,	
 
     // Use a Kokkos::parallel_scan to build the rowptr
-    Kokkos::parallel_scan(Ak_numcols,KOKKOS_LAMBDA(const size_t i, size_t & update, const bool final) {
+    Kokkos::parallel_scan(merge_numrows,KOKKOS_LAMBDA(const size_t i, size_t & update, const bool final) {
 	if(final) Mrowptr(i) = update;
 	
 	// Get the row count
@@ -1740,41 +1731,12 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 	if(Acol2Brow[i]!=LO_INVALID) 
 	  ct = Bk.graph.row_map(Acol2Brow[i]+1) - Bk.graph.row_map(Acol2Brow[i]);
 	else
-	  ct = Ik.graph.row_map(Acol2Irow[i]+1) - Ik.graph.row_map(Acol2Irow[i]);
+	  ct = Ik->graph.row_map(Acol2Irow[i]+1) - Ik->graph.row_map(Acol2Irow[i]);
 	update+=ct;
 	
 	if(final && i+1==merge_numrows)
 	  Mrowptr(i+1)=update;
       });
-
-#if 0
-    {
-      // Serial sanity check
-      Teuchos::Array<size_t> Mrowptr_check(merge_numrows+1);
-      Mrowptr_check[0]=0;
-      for(size_t i=0; i<Ak_numcols;  i++) {
-	size_t ct=0;
-	if(Acol2Brow[i]!=LO_INVALID) 
-	  ct = Bk.graph.row_map(Acol2Brow[i]+1) - Bk.graph.row_map(Acol2Brow[i]);
-	else
-	  ct = Ik.graph.row_map(Acol2Irow[i]+1) - Ik.graph.row_map(Acol2Irow[i]);
-	Mrowptr_check[i+1]=Mrowptr_check[i]+ct;
-      }
-     int MyPID = Bview.origMatrix->getComm()->getRank();
-     printf("[%d] rowchk = ",MyPID);
-     for(size_t i=0; i<merge_numrows+1; i++) {
-       if(i==Bk_numrows) printf("*** ");
-       printf("%3d ",(int)Mrowptr_check[i]);
-     }
-     printf("\n");
-     printf("[%d] rowptr = ",MyPID);
-     for(size_t i=0; i<merge_numrows+1; i++) {
-       if(i==Bk_numrows) printf("*** ");
-       printf("%3d ",(int)Mrowptr(i));
-     }
-     printf("\n");
-    }
-#endif
 
     // Allocate nnz
     size_t merge_nnz = Mrowptr(merge_numrows);
@@ -1793,125 +1755,13 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 	}
 	else {
 	  size_t row   = Acol2Irow[i];
-	  size_t start = Ik.graph.row_map(row);
+	  size_t start = Ik->graph.row_map(row);
 	  for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
-	    Mvalues(j) = Ik.values(j-Mrowptr(i)+start);
-	    Mcolind(j) = Icol2Ccol[Ik.graph.entries(j-Mrowptr(i)+start)];
+	    Mvalues(j) = Ik->values(j-Mrowptr(i)+start);
+	    Mcolind(j) = Icol2Ccol[Ik->graph.entries(j-Mrowptr(i)+start)];
 	  }
 	}       
       });
-
-#if 0
-    {
-      // Serial sanity check
-      Teuchos::Array<size_t> Mcolind_check(merge_nnz);
-      Teuchos::Array<Scalar> Mvalues_check(merge_nnz);
-      for(size_t i=0; i<merge_numrows;  i++) {
-	if(Acol2Brow[i]!=LO_INVALID) {
-	  size_t brow   = Acol2Brow[i];
-	  size_t start = Bk.graph.row_map(brow);
-	  for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
-	    Mvalues_check[j] = Bk.values(j-Mrowptr(i)+start);
-	    Mcolind_check[j] = Bcol2Ccol[Bk.graph.entries(j-Mrowptr(i)+start)];
-	  }
-	}
-	else {
-	  size_t irow   = Acol2Irow[i];
-	  size_t start = Ik.graph.row_map(irow);
-	  for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
-	    Mvalues_check[j] = Ik.values(j-Mrowptr(i)+start);
-	    Mcolind_check[j] = Icol2Ccol[Ik.graph.entries(j-Mrowptr(i)+start)];
-	  }
-	}
-      }
-      int MyPID = Bview.origMatrix->getComm()->getRank();
-      printf("[%d] colchk = ",MyPID);
-      for(size_t i=0; i<merge_nnz; i++) {
-	if(i==Bk_nnz) printf("*** ");
-	printf("%3d ",(int)Mcolind_check[i]);
-      }
-      printf("\n");
-      
-
-      printf("[%d] colind = ",MyPID);
-      for(size_t i=0; i<merge_nnz; i++) {
-	if(i==Bk_nnz) printf("*** ");
-	printf("%3d ",(int)Mcolind(i));
-      }
-      printf("\n");
-    }
-#endif
-    
-
-
-#if OLD_AND_BUSTED
-    // Sanity check A's colmap vs. B+I's rowmap
-    for(int i=0; i<(int)Aview.origMatrix->getColMap()->getNodeNumElements(); i++) {
-      if(i < (int)Bk_numrows) {
-	if(Aview.origMatrix->getColMap()->getGlobalElement(i) != Bview.origMatrix->getRowMap()->getGlobalElement(i))
-	  printf("[%d] A/B mismatch %d(%d) != %d(%d)\n",Aview.origMatrix->getRowMap()->getComm()->getRank(),i,(int)Aview.origMatrix->getColMap()->getGlobalElement(i),i,(int)Bview.origMatrix->getRowMap()->getGlobalElement(i));
-	else
-	  printf("[%d] A/B    match %d(%d) == %d(%d)\n",Aview.origMatrix->getRowMap()->getComm()->getRank(),i,(int)Aview.origMatrix->getColMap()->getGlobalElement(i),i,(int)Bview.origMatrix->getRowMap()->getGlobalElement(i));
-      }
-      else
-	if(Aview.origMatrix->getColMap()->getGlobalElement(i) != Bview.importMatrix->getRowMap()->getGlobalElement(i-Bk_numrows))
-	  printf("[%d] A/I mismatch %d(%d) != %d(%d)\n",Aview.origMatrix->getRowMap()->getComm()->getRank(),i,(int)Aview.origMatrix->getColMap()->getGlobalElement(i),i,(int)Bview.importMatrix->getRowMap()->getGlobalElement(i-Bk_numrows));
-      }
-
-    Kokkos::parallel_for(Acol2Brow.size(),KOKKOS_LAMBDA(const size_t i){
-	LO rid = Acol2Brow[i];
-	if(rid != LO_INVALID) {
-	  Mrowptr(i) = Bk.graph.row_map(rid);
-	  for(size_t j=Bk.graph.row_map(rid); j<Bk.graph.row_map(rid+1); j++) {
-	    Mvalues(j) = Bk.values(j);
-	}
-	else {
-	  rid=Acol2Irow[i];
-	  Mrowptr(i) = Bk.graph.row_map(rid);
-	}
-      }
-    // Copy Rowptr
-    Kokkos::parallel_for(Bk_numrows+1,KOKKOS_LAMBDA(const size_t i){
-	Mrowptr(i) = Bk.graph.row_map(i);
-      });
-    Kokkos::parallel_for(Ik.numRows(),KOKKOS_LAMBDA(const size_t i){
-	// Assume rowptr[0] == 0
-	Mrowptr(Bk_numrows+i+1) = Bk_nnz + Ik.graph.row_map(i+1);// FIXME: This is probably wrong
-      });
-
-    // Copy (reindexed) colind and values
-    // FIXME: This code will almost certainly fail to work on GPUs since the Bcol2Ccol and Icol2Col things
-    // are Teuchos::Array's.  Those guys will have to get changed into Kokkos Views, I suspect
-    Kokkos::parallel_for(Bk_nnz,KOKKOS_LAMBDA(const size_t i){
-	Mvalues(i) = Bk.values(i);
-	Mcolind(i) = Bcol2Ccol[Bk.graph.entries(i)];
-      });
-    Kokkos::parallel_for(Ik.nnz(),KOKKOS_LAMBDA(const size_t i){
-	Mvalues(Bk_nnz+i) = Ik.values(i);
-	Mcolind(Bk_nnz+i) = Icol2Ccol[Ik.graph.entries(i)];
-      });
-#endif
-
-#if 0
-    {
-      // DEBUG
-      int MyPID = Bview.origMatrix->getComm()->getRank();
-      printf("[%d] rowptr = ",MyPID);
-      for(size_t i=0; i<(size_t)merge_numrows+1; i++) {
-	if(i==Bk_numrows) printf("*** ");
-	printf("%3d ",(int)Mrowptr(i));
-      }
-      printf("\n");
-      printf("[%d] colind = ",MyPID);
-      for(size_t i=0; i<merge_nnz; i++) {
-	if(i==Bk_nnz) printf("*** ");
-	printf("%3d ",(int)Mcolind(i));
-      }
-      printf("\n");
-      fflush(stdout);
-      // END DEBUG
-    }
-#endif
 
     Bmerged = Teuchos::rcp(new KCRS("CrsMatrix",merge_numrows,C.getColMap()->getNodeNumElements(),merge_nnz,Mvalues,Mrowptr,Mcolind));
 
@@ -1922,9 +1772,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   }
   
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OperMPCore"))));
+  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPCore"))));
 #endif
-
 
   // Do the multiply on whatever we've got
   typename KernelHandle::nnz_lno_t AnumRows = Ak.numRows();
@@ -1945,27 +1794,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
   }
   KokkosKernels::Experimental::Graph::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bmerged->graph.row_map,Bmerged->graph.entries,Bmerged->values,false,row_mapC,entriesC,valuesC);
-  
-#if 0
-  {
-    // DEBUG
-    int MyPID = C.getComm()->getRank();
-    printf("[%d] Crowptr = ",MyPID);
-    for(size_t i=0; i<(size_t) row_mapC.size(); i++) {
-      printf("%3d ",(int)row_mapC[i]);
-    }
-    printf("\n");
-    printf("[%d] Ccolind = ",MyPID);
-    for(size_t i=0; i<(size_t)entriesC.size(); i++) {
-      printf("%3d ",(int)entriesC[i]);
-    }
-    printf("\n");
-    fflush(stdout);
-    // END DEBUG
-  }
-#endif
-
-
 
   C.setAllValues(row_mapC,entriesC,valuesC);
   kh.destroy_spgemm_handle();

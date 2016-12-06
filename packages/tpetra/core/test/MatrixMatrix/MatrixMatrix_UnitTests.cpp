@@ -384,7 +384,7 @@ mult_test_results multiply_test_autofc(
   if(!C->getRangeMap()->isSameAs(*computedC->getRangeMap())) throw std::runtime_error("Range map mismatch");
   if(!C->getRowMap()->isSameAs(*computedC->getRowMap())) throw std::runtime_error("Row map mismatch");
 
-#if 1
+#if 0
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_calculated.mtx", computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
@@ -416,12 +416,6 @@ mult_test_results multiply_test_autofc(
   }
 #endif
 
-  // HAQ
-  if(!A->getGraph()->getImporter().is_null() && !B->getGraph()->getImporter().is_null()) {
-    RCP<const Tpetra::Import<LO,GO,NT> > sumImport = A->getGraph()->getImporter()->setUnion(*B->getGraph()->getImporter());
-  }
-
-
 
   RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(C->getRowMap());
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
@@ -432,14 +426,16 @@ mult_test_results multiply_test_autofc(
   results.compNorm = diffMatrix->getFrobeniusNorm ();
   results.epsilon  = results.compNorm/results.cNorm;
 
-#if 1
-  if(results.epsilon > 1e-2) {
+  if(results.epsilon > 1e-3) {
+#if 0
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_calculated.mtx", computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_real.mtx", C);
-  }
+ 
 #endif
+  if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
+  }
 
 
   return results;
