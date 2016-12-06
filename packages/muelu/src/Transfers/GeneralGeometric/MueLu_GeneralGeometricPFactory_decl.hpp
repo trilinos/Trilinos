@@ -139,7 +139,7 @@ namespace MueLu {
     //@}
 
   private:
-    LO MakeGeneralGeometricP(LO const ndm, LO const fNodePerDir[], LO const cNodePerDir[], LO const coarse_rate[], LO const end_rate[],
+    LO MakeGeneralGeometricP(LO const ndm, LO const *fNodePerDir, LO const *cNodePerDir, LO const coarse_rate[3], LO const end_rate[3],
                              const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords, LO const nnzP, LO const dofsPerNode, RCP<const Map>& coarseMap,
                              RCP<Matrix> & Amat, RCP<Matrix>& P, RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords) const;
 

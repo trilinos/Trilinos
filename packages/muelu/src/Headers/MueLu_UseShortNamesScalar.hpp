@@ -107,9 +107,6 @@ typedef MueLu::GeneralGeometricPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> 
 #ifdef MUELU_GENERICRFACTORY_SHORT
 typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRFactory;
 #endif
-#ifdef MUELU_GEOMETRICCOORDINATESTRANSFERFACTORY_SHORT
-typedef MueLu::GeometricCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricCoordinatesTransferFactory;
-#endif
 #ifdef MUELU_GMRESSOLVER_SHORT
 typedef MueLu::GMRESSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> GMRESSolver;
 #endif

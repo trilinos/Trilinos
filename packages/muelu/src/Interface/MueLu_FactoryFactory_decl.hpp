@@ -91,7 +91,6 @@
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_GeneralGeometricPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
-#include "MueLu_GeometricCoordinatesTransferFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #endif
@@ -219,7 +218,6 @@ namespace MueLu {
       if (factoryName == "FilteredAFactory")                   return Build2<FilteredAFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeneralGeometricPFactory")           return Build2<GeneralGeometricPFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                    return Build2<GenericRFactory>                    (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "GeometricCoordinatesTransferFactory")return Build2<GeometricCoordinatesTransferFactory>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "LineDetectionFactory")               return Build2<LineDetectionFactory>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MapTransferFactory")                 return Build2<MapTransferFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatrixAnalysisFactory")              return Build2<MatrixAnalysisFactory>              (paramList, factoryMapIn, factoryManagersIn);
