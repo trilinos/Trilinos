@@ -122,7 +122,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
   bool        binaryFormat      = false;             clp.setOption("binary", "ascii",       &binaryFormat,      "print timings to screen");
 
-  std::string mapFile;                               clp.setOption("map",                   &mapFile,           "map data file");
+  std::string rowmapFile;                            clp.setOption("rowmap",                &rowmapFile,        "map data file");
   std::string colMapFile;                            clp.setOption("colmap",                &colMapFile,        "colmap data file");
   std::string domainMapFile;                         clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
   std::string rangeMapFile;                          clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
@@ -235,8 +235,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     }
 
   } else {
-    if (!mapFile.empty())
-      map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(mapFile, lib, comm);
+    if (!rowmapFile.empty())
+      map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(rowmapFile, lib, comm);
     comm->barrier();
 
     if (!binaryFormat && !map.is_null()) {
