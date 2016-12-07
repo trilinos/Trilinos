@@ -1,18 +1,38 @@
 #!/bin/bash -el
+
+# This script is intended to compare two states of a repository (checked out into different directories)
+# and succefully return if the encountered errors are the same in both states. 
+# This can be used to update a non-clean state (as is most often the case for Trilinos).
+
+# Input parameters are: REPO1_PATH REPO2_PATH CONFIGURE_SCRIPT JOBNAME QUEUE
+
+# REPO1_PATH is the directory to the updated state (i.e. what later is supposed to get checked in).
+# REPO2_PATH is the gold standart directory
+# CONFIGURE_SCRIPT is the script to configure Trilinos. It takes TRILINOS_PATH as the source directory.
+# JOBNAME The root-name for the jobs to be submitted the job scheduler
+# QUEUE The job queue to be used for job submission
+
+# The script will first configure, build and run based on REPO1_PATH. If no errors occur it will exit.
+# If errors occur it will configure, build and run based on REPO2_PATH and compare the output.
+# If the output is the same (actually only the errors are checked) then it exists successfully. 
+# If the output differs the script will exit with return code 1.
+
 TRILINOS_UPDATED_PATH=$1
 TRILINOS_PRISTINE_PATH=$2
 CONFIG_SCRIPT=$3
 JOBNAME=$4
 QUEUE=$5
 
+export OMP_NUM_THREADS=4 
+
 rm -rf build_updated
 mkdir build_updated
 cd build_updated
 export TRILINOS_PATH=${TRILINOS_UPDATED_PATH}
 
-echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Conf -W 01:00 -Is -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
-echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Build -W 03:00 -Is -q ${QUEUE} make -j 60 -k  &> build.output" &> build_command
-echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Test -W 02:00 -Is -q ${QUEUE} ctest &> test.output" &> test_command
+echo "bsub -J ${JOBNAME}-Conf1 -W 01:00 -Is -n 16 -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
+echo "bsub -J ${JOBNAME}-Build1 -W 03:00 -Is -n 16 -q ${QUEUE} make -j 60 -k  &> build.output" &> build_command
+echo "bsub -J ${JOBNAME}-Test1 -W 02:00 -Is -n 16 -q ${QUEUE} ctest &> test.output" &> test_command
 
 chmod a+x *_command
 echo ""
@@ -61,9 +81,9 @@ cd build_pristine
 
 export TRILINOS_PATH=${TRILINOS_PRISTINE_PATH}
 
-echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Conf -W 01:00 -Is -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
-echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Build -W 03:00 -Is -q ${QUEUE} make -j 60 -k  &> build.output" &> build_command
-echo "bsub -J KokkosJenkins-Trilinos-OpenMP-GCC540-Test -W 02:00 -Is -q ${QUEUE} ctest &> test.output" &> test_command
+echo "bsub -J ${JOBNAME}-Conf2 -W 01:00 -Is -n 16 -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
+echo "bsub -J ${JOBNAME}-Build2 -W 03:00 -Is -n 16 -q ${QUEUE} make -j 60 -k  &> build.output" &> build_command
+echo "bsub -J ${JOBNAME}-Test2 -W 02:00 -Is -n 16 -q ${QUEUE} ctest &> test.output" &> test_command
 
 
 chmod a+x *_command
