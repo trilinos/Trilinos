@@ -400,7 +400,7 @@ namespace Intrepid2 {
 
     // construct edge and face map for the cell type
     const ordinal_type numEdge = primaryCell.getSubcellCount(1);
-    Kokkos::View<ordinal_type**,Kokkos::HostSpace> edgeMapHost("CellTools::getSubcvCoords::edgeMapHost", numEdge, 3);
+    Kokkos::View<ordinal_type**,Kokkos::LayoutRight,Kokkos::HostSpace> edgeMapHost("CellTools::getSubcvCoords::edgeMapHost", numEdge, 3);
     for (ordinal_type i=0;i<numEdge;++i) {
       edgeMapHost(i,0) = primaryCell.getNodeCount(1, i);
       for (ordinal_type j=0;j<edgeMapHost(i,0);++j)
@@ -408,7 +408,7 @@ namespace Intrepid2 {
     }
 
     const ordinal_type numFace = (spaceDim > 2 ? primaryCell.getSubcellCount(2) : 0);
-    Kokkos::View<ordinal_type**,Kokkos::HostSpace> faceMapHost("CellTools::getSubcvCoords::faceMapHost", numFace, 5);
+    Kokkos::View<ordinal_type**,Kokkos::LayoutRight,Kokkos::HostSpace> faceMapHost("CellTools::getSubcvCoords::faceMapHost", numFace, 5);
     for (ordinal_type i=0;i<numFace;++i) {
       faceMapHost(i,0) = primaryCell.getNodeCount(2, i);
       for (ordinal_type j=0;j<faceMapHost(i,0);++j)
@@ -422,7 +422,7 @@ namespace Intrepid2 {
     // parallel run
     typedef Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoordViewType;
     typedef Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoordViewType;
-    typedef Kokkos::View<ordinal_type**,SpT>                                 mapViewType;
+    typedef Kokkos::View<ordinal_type**,Kokkos::LayoutRight,SpT>             mapViewType;
 
     typedef typename ExecSpace<typename subcvCoordViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
