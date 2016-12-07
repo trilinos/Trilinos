@@ -643,6 +643,15 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     double time = fwdStateIntegrator->getTime();
     
     *out << "T final actual: " << time << "\n"; 
+    
+    if (abs(time-t_final) > 1.0e-10) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true,
+        Teuchos::Exceptions::InvalidParameter, 
+        "\n Error! Piro::TempusSolver: time-integrator did not make it to final time " << 
+        "specified in Input File.  Final time in input file is " << t_final << 
+        ", whereas actual final time is " << time << "\n" );
+    }
 
     finalSolution = fwdStateIntegrator->getX();
 
