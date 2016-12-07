@@ -126,7 +126,7 @@ sed -i 's|${TRILINOS_PRISTINE_PATH}|${TRILINOS_UPDATED_PATH}|g' build.output
 
 cd ..
 
-rm pristine_build.error updated_build.error pristine_test.failed updated_test.failed pristine_test.notrun updated_test.notrun
+rm pristine_build.error updated_build.error pristine_test.failed updated_test.failed pristine_test.notrun updated_test.notrun || true
 touch pristine_build.error updated_build.error pristine_test.failed updated_test.failed pristine_test.notrun updated_test.notrun
 echo "Grepping for Errors:"
 grep "error:" build_pristine/build.output | awk '{$1 = ""; print $0;}' &> pristine_build.error || true
