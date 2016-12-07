@@ -90,8 +90,8 @@ GLOBAL Int AMD_order
     }
 
     /* allocate two size-n integer workspaces */
-    Len = trilinos_amd_malloc (n * sizeof (Int)) ;
-    Pinv = trilinos_amd_malloc (n * sizeof (Int)) ;
+    Len = (int*) trilinos_amd_malloc (n * sizeof (Int)) ;
+    Pinv = (int*) trilinos_amd_malloc (n * sizeof (Int)) ;
     mem += n ;
     mem += n ;
     if (!Len || !Pinv)
@@ -107,8 +107,8 @@ GLOBAL Int AMD_order
     {
 	/* sort the input matrix and remove duplicate entries */
 	AMD_DEBUG1 (("Matrix is jumbled\n")) ;
-	Rp = trilinos_amd_malloc ((n+1) * sizeof (Int)) ;
-	Ri = trilinos_amd_malloc (MAX (nz,1) * sizeof (Int)) ;
+	Rp = (int*) trilinos_amd_malloc ((n+1) * sizeof (Int)) ;
+	Ri = (int*) trilinos_amd_malloc (MAX (nz,1) * sizeof (Int)) ;
 	mem += (n+1) ;
 	mem += MAX (nz,1) ;
 	if (!Rp || !Ri)
@@ -161,7 +161,7 @@ GLOBAL Int AMD_order
     ok = ok && (slen < Int_MAX) ;	/* S[i] for Int i must be OK */
     if (ok)
     {
-	S = trilinos_amd_malloc (slen * sizeof (Int)) ;
+	S = (int*) trilinos_amd_malloc (slen * sizeof (Int)) ;
     }
     AMD_DEBUG1 (("slen %g\n", (double) slen)) ;
     if (!S)

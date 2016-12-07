@@ -158,7 +158,7 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
              DUNITS (Int, usize) + DUNITS (Entry, usize) ;
     lusize = (size_t) dunits ;
     ok = !INT_OVERFLOW (dunits) ; 
-    LU = ok ? KLU_malloc (lusize, sizeof (Unit), Common) : NULL ;
+    LU = ok ? (Unit*) KLU_malloc (lusize, sizeof (Unit), Common) : NULL ;
     if (LU == NULL)
     {
 	/* out of memory, or problem too large */
@@ -183,7 +183,7 @@ size_t KLU_kernel_factor	    /* 0 if failure, size of LU if OK */
 
     if (Common->status < KLU_OK)
     {
-	LU = KLU_free (LU, lusize, sizeof (Unit), Common) ;
+	LU = (Unit*) KLU_free (LU, lusize, sizeof (Unit), Common) ;
 	lusize = 0 ;
     }
     *p_LU = LU ;

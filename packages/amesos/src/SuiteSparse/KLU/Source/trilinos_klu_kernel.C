@@ -770,7 +770,7 @@ size_t KLU_kernel   /* final size of LU on output */
             }
             newlusize = (size_t) ( memgrow * lusize + 2*n + 1 ) ;
 	    /* Future work: retry mechanism in case of malloc failure */
-	    LU = KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
+	    LU = (Unit*) KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
 	    Common->nrealloc++ ;
             *p_LU = LU ;
             if (Common->status == KLU_OUT_OF_MEMORY)
@@ -1002,7 +1002,7 @@ size_t KLU_kernel   /* final size of LU on output */
     ASSERT ((size_t) newlusize <= lusize) ;
 
     /* this cannot fail, since the block is descreasing in size */
-    LU = KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
+    LU = (Unit*) KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
     *p_LU = LU ;
     return (newlusize) ;
 }

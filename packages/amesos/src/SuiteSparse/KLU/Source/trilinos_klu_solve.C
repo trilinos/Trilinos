@@ -74,7 +74,7 @@ Int KLU_solve
     Uip  = Numeric->Uip ;
     Ulen = Numeric->Ulen ;
     LUbx = (Unit **) Numeric->LUbx ;
-    Udiag = Numeric->Udiag ;
+    Udiag = (double*) Numeric->Udiag ;
 
     Rs = Numeric->Rs ;
     X = (Entry *) Numeric->Xwork ;

@@ -7,6 +7,10 @@
 #SET(HAVE_BOOL ON)
 #SET(HAVE_STL ON)
 
+SET(ADD_SSSOURCE FALSE)
+
+add_subdirectory(SuiteSparse)
+
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
@@ -144,76 +148,6 @@ IF (${PACKAGE_NAME}_ENABLE_TAUCS)
 ENDIF()
 
 #
-# PARAKLETE KLU files
-#
-
-SET(TRILINOS_KLU_COMMON_H
-  SuiteSparse/AMD/Include/trilinos_amd.h
-  SuiteSparse/AMD/Include/trilinos_amd_internal.h
-  SuiteSparse/COLAMD/Include/trilinos_colamd.h
-  SuiteSparse/UFconfig/trilinos_UFconfig.h
-  )
-
-SET(TRILINOS_KLU_COMMON
-  SuiteSparse/AMD/Source/trilinos_amd_1.c
-  SuiteSparse/AMD/Source/trilinos_amd_2.c
-  SuiteSparse/AMD/Source/trilinos_amd_aat.c
-  SuiteSparse/AMD/Source/trilinos_amd_control.c
-  SuiteSparse/AMD/Source/trilinos_amd_defaults.c
-  SuiteSparse/AMD/Source/trilinos_amd_dump.c
-  SuiteSparse/AMD/Source/trilinos_amd_global.c
-  SuiteSparse/AMD/Source/trilinos_amd_info.c
-  SuiteSparse/AMD/Source/trilinos_amd_order.c
-  SuiteSparse/AMD/Source/trilinos_amd_postorder.c
-  SuiteSparse/AMD/Source/trilinos_amd_post_tree.c
-  SuiteSparse/AMD/Source/trilinos_amd_preprocess.c
-  SuiteSparse/AMD/Source/trilinos_amd_valid.c
-  SuiteSparse/AMD/Source/trilinos_amd_l1.c
-  SuiteSparse/AMD/Source/trilinos_amd_l2.c
-  SuiteSparse/AMD/Source/trilinos_amd_l_aat.c
-  SuiteSparse/AMD/Source/trilinos_amd_l_order.c
-  SuiteSparse/AMD/Source/trilinos_amd_l_postorder.c
-  SuiteSparse/AMD/Source/trilinos_amd_l_post_tree.c
-  SuiteSparse/AMD/Source/trilinos_amd_l_preprocess.c
-  SuiteSparse/AMD/Source/trilinos_amd_l_valid.c
-  SuiteSparse/COLAMD/Source/trilinos_colamd.c
-  SuiteSparse/COLAMD/Source/trilinos_colamd_l.c
-  SuiteSparse/COLAMD/Source/trilinos_colamd_global.c
-  SuiteSparse/CAMD/Source/trilinos_camd_1.c
-  SuiteSparse/CAMD/Source/trilinos_camd_defaults.c
-  SuiteSparse/CAMD/Source/trilinos_camd_l2.c
-  SuiteSparse/CAMD/Source/trilinos_camd_preprocess.c
-  SuiteSparse/CAMD/Source/trilinos_camd_2.c
-  SuiteSparse/CAMD/Source/trilinos_camd_dump.c
-  SuiteSparse/CAMD/Source/trilinos_camd_l_postorder.c
-  SuiteSparse/CAMD/Source/trilinos_camd_valid.c
-  SuiteSparse/CAMD/Source/trilinos_camd_aat.c
-  SuiteSparse/CAMD/Source/trilinos_camd_global.c
-  SuiteSparse/CAMD/Source/trilinos_camd_order.c
-  SuiteSparse/CAMD/Source/trilinos_camd_control.c
-  SuiteSparse/CAMD/Source/trilinos_camd_info.c
-  SuiteSparse/CAMD/Source/trilinos_camd_postorder.c
-  )
-
-
-  IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-      IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.2)
-        SET_SOURCE_FILES_PROPERTIES(${TRILINOS_KLU_COMMON},
-                PROPERTIES
-                COMPILE_FLAGS "-Wno-all -Wno-pedantic")
-      ENDIF()
-  ELSEIF (WIN32 AND NOT CYGWIN)
-       # No flags
-  ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
-      #No flags
-  ELSE()
-       SET_SOURCE_FILES_PROPERTIES(${TRILINOS_KLU_COMMON},
-                PROPERTIES
-                COMPILE_FLAGS "-Wno-all")
-  ENDIF()
-         
-
-#
 # KLU files
 #
 
@@ -226,71 +160,12 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/CAMD/Include)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/CCOLAMD/Include)
 
-  SET(HEADERS ${HEADERS}
-    ${TRILINOS_KLU_COMMON_H}
-    SuiteSparse/KLU/Include/trilinos_klu_decl.h
-    SuiteSparse/KLU/Include/trilinos_klu_internal.h
-    SuiteSparse/KLU/Include/trilinos_klu_version.h
-    SuiteSparse/BTF/Include/trilinos_btf_decl.h
-    SuiteSparse/BTF/Include/trilinos_btf_internal.h
-    SuiteSparse/CCOLAMD/Include/trilinos_ccolamd.h
-    SuiteSparse/CAMD/Include/trilinos_camd.h
-    SuiteSparse/CAMD/Include/trilinos_camd_internal.h
-    Amesos_Klu.h
+    SET(HEADERS ${HEADERS}
+   Amesos_Klu.h
     )
-
-   SET(KLU_FILES
-   SuiteSparse/KLU/Source/trilinos_klu_analyze.c
-    SuiteSparse/KLU/Source/trilinos_klu_analyze_given.c
-    SuiteSparse/KLU/Source/trilinos_klu_impl.c
-    SuiteSparse/KLU/Source/trilinos_klu_defaults.c
-    SuiteSparse/KLU/Source/trilinos_klu_diagnostics.c
-    SuiteSparse/KLU/Source/trilinos_klu_dump.c
-    SuiteSparse/KLU/Source/trilinos_klu_extract.c
-    SuiteSparse/KLU/Source/trilinos_klu_factor.c
-    SuiteSparse/KLU/Source/trilinos_klu_free_numeric.c
-    SuiteSparse/KLU/Source/trilinos_klu_free_symbolic.c
-    SuiteSparse/KLU/Source/trilinos_klu_kernel.c
-    SuiteSparse/KLU/Source/trilinos_klu_memory.c
-    SuiteSparse/KLU/Source/trilinos_klu_refactor.c
-    SuiteSparse/KLU/Source/trilinos_klu_scale.c
-    SuiteSparse/KLU/Source/trilinos_klu_solve.c
-    SuiteSparse/KLU/Source/trilinos_klu_sort.c
-    SuiteSparse/KLU/Source/trilinos_klu_tsolve.c
-    SuiteSparse/BTF/Source/trilinos_btf_order.c
-    SuiteSparse/BTF/Source/trilinos_btf_maxtrans.c
-    SuiteSparse/BTF/Source/trilinos_btf_strongcomp.c
-    SuiteSparse/BTF/Source/trilinos_btf_l_order.c
-    SuiteSparse/BTF/Source/trilinos_btf_l_maxtrans.c
-    SuiteSparse/BTF/Source/trilinos_btf_l_strongcomp.c
-    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd.c
-    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_l.c
-    SuiteSparse/CCOLAMD/Source/trilinos_ccolamd_global.c
-    )
-    
-
-    IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-        IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.2)
-        SET_SOURCE_FILES_PROPERTIES(${KLU_FILES},
-                PROPERTIES
-                COMPILE_FLAGS "-Wno-all -Wno-pedantic")
-        ENDIF()
-    ELSEIF (WIN32 AND NOT CYGWIN)
-       # No flags
-    ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
-      #No flags
-    ELSE()
-         SET_SOURCE_FILES_PROPERTIES(${KLU_FILES},
-                PROPERTIES
-                COMPILE_FLAGS "-Wno-all")
-    ENDIF()
-
-
 
     SET(SOURCES ${SOURCES}
-    ${TRILINOS_KLU_COMMON}
     Amesos_Klu.cpp
-    ${KLU_FILES}
     )
 
 ENDIF()

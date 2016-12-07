@@ -214,7 +214,7 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
     n = Symbolic->n ;
     nblocks = Symbolic->nblocks ;
     R = Symbolic->R ;
-    Udiag = Numeric->Udiag ;
+    Udiag = (double*) Numeric->Udiag ;
 
     /* ---------------------------------------------------------------------- */
     /* check if diagonal of U has a zero on it */
@@ -257,7 +257,7 @@ Int KLU_condest		/* return TRUE if successful, FALSE otherwise */
     /* ---------------------------------------------------------------------- */
 
     /* get workspace (size 2*n Entry's) */
-    X = Numeric->Xwork ;	    /* size n space used in KLU_solve, tsolve */
+    X = (double*) Numeric->Xwork ;  /* size n space used in KLU_solve, tsolve */
     X += n ;			    /* X is size n */
     S = X + n ;			    /* S is size n */
 
@@ -533,7 +533,7 @@ Int KLU_rcond		/* return TRUE if successful, FALSE otherwise */
     /* ---------------------------------------------------------------------- */
 
     n = Symbolic->n ;
-    Udiag = Numeric->Udiag ;
+    Udiag = (double*) Numeric->Udiag ;
     for (j = 0 ; j < n ; j++)
     {
 	/* get the magnitude of the pivot */

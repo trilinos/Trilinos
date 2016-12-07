@@ -88,7 +88,7 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
 	/* factorization was not scaled, but refactorization is scaled */
 	if (Numeric->Rs == NULL)
 	{
-	    Numeric->Rs = KLU_malloc (n, sizeof (double), Common) ;
+	    Numeric->Rs = (double*) KLU_malloc (n, sizeof (double), Common) ;
 	    if (Common->status < KLU_OK)
 	    {
 		Common->status = KLU_OUT_OF_MEMORY ;
@@ -100,14 +100,14 @@ Int KLU_refactor	/* returns TRUE if successful, FALSE otherwise */
     {
 	/* no scaling for refactorization; ensure Numeric->Rs is freed.  This
 	 * does nothing if Numeric->Rs is already NULL. */
-	Numeric->Rs = KLU_free (Numeric->Rs, n, sizeof (double), Common) ;
+	Numeric->Rs = (double*) KLU_free (Numeric->Rs, n, sizeof (double), Common) ;
     }
     Rs = Numeric->Rs ;
 
     Pinv = Numeric->Pinv ;
     X = (Entry *) Numeric->Xwork ;
     Common->nrealloc = 0 ;
-    Udiag = Numeric->Udiag ;
+    Udiag = (double*) Numeric->Udiag ;
     nzoff = Symbolic->nzoff ;
 
     /* ---------------------------------------------------------------------- */

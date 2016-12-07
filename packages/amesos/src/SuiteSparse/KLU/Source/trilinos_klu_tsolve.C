@@ -83,7 +83,7 @@ Int KLU_tsolve
     Uip  = Numeric->Uip ;
     Ulen = Numeric->Ulen ;
     LUbx = (Unit **) Numeric->LUbx ;
-    Udiag = Numeric->Udiag ;
+    Udiag = (double*) Numeric->Udiag ;
 
     Rs = Numeric->Rs ;
 #ifdef KLU_ENABLE_OPENMP

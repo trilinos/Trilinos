@@ -122,10 +122,10 @@ Int KLU_sort
 
     /* allocate workspace */
     nz = MAX (Numeric->max_lnz_block, Numeric->max_unz_block) ;
-    W  = KLU_malloc (maxblock, sizeof (Int), Common) ;
-    Tp = KLU_malloc (m1, sizeof (Int), Common) ;
-    Ti = KLU_malloc (nz, sizeof (Int), Common) ;
-    Tx = KLU_malloc (nz, sizeof (Entry), Common) ;
+    W  = (int*) KLU_malloc (maxblock, sizeof (Int), Common) ;
+    Tp = (int*) KLU_malloc (m1, sizeof (Int), Common) ;
+    Ti = (int*) KLU_malloc (nz, sizeof (Int), Common) ;
+    Tx = (Entry*) KLU_malloc (nz, sizeof (Entry), Common) ;
 
     PRINTF (("\n======================= Start sort:\n")) ;
 

@@ -316,8 +316,8 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     /* allocate workspace for BTF permutation */
     /* ---------------------------------------------------------------------- */
 
-    Pbtf = KLU_malloc (n, sizeof (Int), Common) ;
-    Qbtf = KLU_malloc (n, sizeof (Int), Common) ;
+    Pbtf = (int*) KLU_malloc (n, sizeof (Int), Common) ;
+    Qbtf = (int*) KLU_malloc (n, sizeof (Int), Common) ;
     if (Common->status < KLU_OK)
     {
 	KLU_free (Pbtf, n, sizeof (Int), Common) ;
@@ -344,7 +344,7 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
 
     if (do_btf)
     {
-	Work = KLU_malloc (5*n, sizeof (Int), Common) ;
+	Work = (int*) KLU_malloc (5*n, sizeof (Int), Common) ;
 	if (Common->status < KLU_OK)
 	{
 	    /* out of memory */
@@ -404,10 +404,10 @@ static KLU_symbolic *order_and_analyze	/* returns NULL if error, or a valid
     /* allocate more workspace, for analyze_worker */
     /* ---------------------------------------------------------------------- */
 
-    Pblk = KLU_malloc (maxblock, sizeof (Int), Common) ;
-    Cp   = KLU_malloc (maxblock + 1, sizeof (Int), Common) ;
-    Ci   = KLU_malloc (MAX (Cilen, nz+1), sizeof (Int), Common) ;
-    Pinv = KLU_malloc (n, sizeof (Int), Common) ;
+    Pblk = (int*) KLU_malloc (maxblock, sizeof (Int), Common) ;
+    Cp   = (int*) KLU_malloc (maxblock + 1, sizeof (Int), Common) ;
+    Ci   = (int*) KLU_malloc (MAX (Cilen, nz+1), sizeof (Int), Common) ;
+    Pinv = (int*) KLU_malloc (n, sizeof (Int), Common) ;
 
     /* ---------------------------------------------------------------------- */
     /* order each block of the BTF ordering, and a fill-reducing ordering */

@@ -61,7 +61,7 @@ static void factor2
     Llen = Numeric->Llen ;
     Ulen = Numeric->Ulen ;
     LUbx = (Unit **) Numeric->LUbx ;
-    Udiag = Numeric->Udiag ;
+    Udiag = (double*) Numeric->Udiag ;
 
     Rs = Numeric->Rs ;
     Pinv = Numeric->Pinv ;
@@ -446,7 +446,7 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
     n1 = ((size_t) n) + 1 ;
     nzoff1 = ((size_t) nzoff) + 1 ;
 
-    Numeric = KLU_malloc (sizeof (KLU_numeric), 1, Common) ;
+    Numeric = (KLU_numeric*) KLU_malloc (sizeof (KLU_numeric), 1, Common) ;
     if (Common->status < KLU_OK)
     {
 	/* out of memory */
@@ -456,19 +456,19 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
     Numeric->n = n ;
     Numeric->nblocks = nblocks ;
     Numeric->nzoff = nzoff ;
-    Numeric->Pnum = KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Offp = KLU_malloc (n1, sizeof (Int), Common) ;
-    Numeric->Offi = KLU_malloc (nzoff1, sizeof (Int), Common) ;
-    Numeric->Offx = KLU_malloc (nzoff1, sizeof (Entry), Common) ;
+    Numeric->Pnum = (long*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Offp = (long*) KLU_malloc (n1, sizeof (Int), Common) ;
+    Numeric->Offi = (long*) KLU_malloc (nzoff1, sizeof (Int), Common) ;
+    Numeric->Offx = (Entry*) KLU_malloc (nzoff1, sizeof (Entry), Common) ;
 
-    Numeric->Lip  = KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Uip  = KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Llen = KLU_malloc (n, sizeof (Int), Common) ;
-    Numeric->Ulen = KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Lip  = (long*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Uip  = (long*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Llen = (long*) KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Ulen = (long*) KLU_malloc (n, sizeof (Int), Common) ;
 
-    Numeric->LUsize = KLU_malloc (nblocks, sizeof (size_t), Common) ;
+    Numeric->LUsize = (size_t*) KLU_malloc (nblocks, sizeof (size_t), Common) ;
 
-    Numeric->LUbx = KLU_malloc (nblocks, sizeof (Unit *), Common) ;
+    Numeric->LUbx = (void**) KLU_malloc (nblocks, sizeof (Unit *), Common) ;
     if (Numeric->LUbx != NULL)
     {
 	for (k = 0 ; k < nblocks ; k++)
@@ -481,7 +481,7 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
 
     if (Common->scale > 0)
     {
-	Numeric->Rs = KLU_malloc (n, sizeof (double), Common) ;
+	Numeric->Rs = (double*) KLU_malloc (n, sizeof (double), Common) ;
     }
     else
     {
@@ -489,7 +489,7 @@ KLU_numeric *KLU_factor		/* returns NULL if error, or a valid
 	Numeric->Rs = NULL ;
     }
 
-    Numeric->Pinv = KLU_malloc (n, sizeof (Int), Common) ;
+    Numeric->Pinv = (long*) KLU_malloc (n, sizeof (Int), Common) ;
 
     /* allocate permanent workspace for factorization and solve.  Note that the
      * solver will use an Xwork of size 4n, whereas the factorization codes use

@@ -167,7 +167,7 @@ Int KLU_extract	    /* returns TRUE if successful, FALSE otherwise */
 	    else
 	    {
 		/* non-singleton block */
-		LU = Numeric->LUbx [block] ;
+		LU = (Unit*) Numeric->LUbx [block] ;
 		Lip = Numeric->Lip + k1 ;
 		Llen = Numeric->Llen + k1 ;
 		for (kk = 0 ; kk < nk ; kk++)
@@ -228,7 +228,7 @@ Int KLU_extract	    /* returns TRUE if successful, FALSE otherwise */
 	    else
 	    {
 		/* non-singleton block */
-		LU = Numeric->LUbx [block] ;
+		LU = (Unit*) Numeric->LUbx [block] ;
 		Uip = Numeric->Uip + k1 ;
 		Ulen = Numeric->Ulen + k1 ;
 		for (kk = 0 ; kk < nk ; kk++)
