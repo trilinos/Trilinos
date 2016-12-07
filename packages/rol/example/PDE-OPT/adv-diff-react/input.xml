@@ -1,23 +1,56 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Control Cost"               type="double"  value="1e0"   />
-    <Parameter name="State Cost"                 type="double"  value="1e5"   />
-    <Parameter name="Statistic Initial Guess"    type="double"  value="5.0"   />
-    <Parameter name="Is problem nonsmooth?"      type="bool"    value="false" />
-    <Parameter name="Number of Samples"          type="int"     value="4"     />
-    <Parameter name="Number of Output Samples"   type="int"     value="4"     />
-    <Parameter name="Order of FE discretization" type="int"     value="1"     />
-    <Parameter name="Check Derivatives"          type="bool"    value="false" />
-    <Parameter name="Print Mean Value State"     type="bool"    value="false" />
+    <Parameter name="Control Cost"                  type="double"  value="1e0"   />
+    <Parameter name="State Cost"                    type="double"  value="1e5"   />
+    <Parameter name="Statistic Initial Guess"       type="double"  value="5.0"   />
+    <Parameter name="Is problem nonsmooth?"         type="bool"    value="false" />
+    <Parameter name="Number of Samples"             type="int"     value="4"     />
+    <Parameter name="Number of Output Samples"      type="int"     value="4"     />
+    <Parameter name="Order of FE discretization"    type="int"     value="1"     />
+    <Parameter name="Check Derivatives"             type="bool"    value="false" />
+    <Parameter name="Print Mean Value State"        type="bool"    value="false" />
+    <Parameter name="Use State and Adjoint Storage" type="bool"    value="true"  />
+  </ParameterList>
+
+  <!-- SOLVER INFORMATION -->
+  <ParameterList name="Solver">
+    <Parameter name="Use Direct Solver"           type="bool"    value="true"          />
+    <ParameterList name="Direct">
+      <Parameter name="Solver Type"               type="string"  value="KLU2"          />
+    </ParameterList>
+  </ParameterList>
+
+  <!-- VECTOR INFORMATION -->
+  <ParameterList name="Vector">
+    <ParameterList name="Sim">
+      <Parameter name="Use Riesz Map"             type="bool"    value="false"         />
+      <Parameter name="Lump Riesz Map"            type="bool"    value="false"         />
+    </ParameterList>
+    <ParameterList name="Opt">
+      <Parameter name="Use Riesz Map"             type="bool"    value="false"         />
+      <Parameter name="Lump Riesz Map"            type="bool"    value="false"         />
+    </ParameterList>
+  </ParameterList>
+
+  <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Geometry">
+    <Parameter name="Width"             type="double"  value="1.0"  />
+    <Parameter name="Height"            type="double"  value="1.0"  />
+    <Parameter name="X0"                type="double"  value="0.0"  />
+    <Parameter name="Y0"                type="double"  value="0.0"  />
+    <Parameter name="NX"                type="int"     value="16"   />
+    <Parameter name="NY"                type="int"     value="16"   />
+    <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
 
   <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
   <ParameterList name="SOL">
-    <Parameter name="Stochastic Optimization Type" type="string" value="Mean Value"   />
+    <Parameter name="Stochastic Optimization Type"     type="string" value="Risk Neutral" />
+    <Parameter name="Store Sampled Value and Gradient" type="bool"   value="true"         />
     <!--
+      <Parameter name="Stochastic Optimization Type" type="string" value="Mean Value"   />
       <Parameter name="Stochastic Optimization Type" type="string" value="Risk Averse"  />
-      <Parameter name="Stochastic Optimization Type" type="string" value="Risk Neutral" />
       <Parameter name="Stochastic Optimization Type" type="string" value="BPOE"         />
     -->
     <ParameterList name="Risk Measure">
@@ -70,15 +103,17 @@
     </ParameterList>
   </ParameterList>
 
-  <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
-  <ParameterList name="Geometry">
-    <Parameter name="Width"             type="double"  value="1.0"  />
-    <Parameter name="Height"            type="double"  value="1.0"  />
-    <Parameter name="X0"                type="double"  value="0.0"  />
-    <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="32"   />
-    <Parameter name="NY"                type="int"     value="32"   />
-    <Parameter name="Partition type"    type="int"     value="1"    />
+  <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
+  <ParameterList name="SimOpt">
+    <ParameterList name="Solve">
+      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-12" />
+      <Parameter name="Relative Residual Tolerance"   type="double"  value="1.e0"   />
+      <Parameter name="Iteration Limit"               type="int"     value="1"      />
+      <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
+      <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
+      <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
+      <Parameter name="Output Iteration History"      type="bool"    value="false"  />
+    </ParameterList>
   </ParameterList>
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
@@ -106,7 +141,7 @@
       <Parameter name="Type"               type="string" value="Conjugate Gradients" />
       <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
       <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
-      <Parameter name="Iteration Limit"    type="int"    value="100"                 />
+      <Parameter name="Iteration Limit"    type="int"    value="50"                  />
     </ParameterList>
   </ParameterList>
 
@@ -266,6 +301,6 @@
     <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
-    <Parameter name="Iteration Limit"      type="int"    value="200"    />
+    <Parameter name="Iteration Limit"      type="int"    value="10"     />
   </ParameterList>
 </ParameterList>
