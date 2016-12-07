@@ -76,6 +76,8 @@ SET(TRIBITS_2ND_CTEST_DROP_LOCATION
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)
 
+SET(Trilinos_ENABLE_CONFIGURE_TIMING ON)
+
 SET(Trilinos_BRANCH develop)
 
 SET(EXTRA_EXCLUDE_PACKAGES)
@@ -83,6 +85,7 @@ SET(EXTRA_EXCLUDE_PACKAGES)
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake"
   "-DTrilinos_TEST_CATEGORIES=BASIC"
+  "-DTrilinos_ENABLE_CONFIGURE_TIMING=ON"
   )
 # NOTE: That above must match *exactly* what is listed is listed in
 # project-checkin-test-config.py and produced by the checkin-test-sems.sh
