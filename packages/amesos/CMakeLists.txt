@@ -114,31 +114,6 @@ TRIBITS_EXCLUDE_FILES(
   src/Amesos_Component.h
   src/Amesos_Merikos.h
   src/Amesos_BTF.h
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_amd.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_analyze.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_colamd.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_etree.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_factorize.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_postorder.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_rcond.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_resymbol.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_rowcolcounts.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_rowfac.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_spsolve.c
-  src/SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_rowfac.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_aat.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_add.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_band.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_change_factor.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_copy.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_dense.c
-  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_factor.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_camd.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_ccolamd.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_csymamd.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_metis.c
-  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_nesdis.c
   src/src-repository
   src/stamp-h.in
   test/TestOptions/Dummy
