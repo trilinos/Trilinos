@@ -41,23 +41,24 @@ SET(SOURCES ${AMD_SOURCES}
    ${CMAKE_CURRENT_SOURCE_DIR}/UFconfig/trilinos_UFconfig.h
    )
 
+SET_SOURCE_FILES_PROPERTIES(${SOURCES},
+                PROPERTIES
+                LANGUAGE C)
+
   IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
       IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.2)
         SET_SOURCE_FILES_PROPERTIES(${SOURCES},
                 PROPERTIES
-                COMPILE_FLAGS "-Wno-all -Wno-pedantic -Wnoreserved-user-defined-literal")
+                COMPILE_FLAGS "-Wno-all -Wno-pedantic")
       ENDIF()
   ELSEIF (WIN32 AND NOT CYGWIN)
        # No flags
   ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "PGI")
       #No flags
   ELSE()
-         SET_SOURCE_FILES_PROPERTIES(${SOURCES},
-                PROPERTIES
-                LANGUAGE C)
         SET_SOURCE_FILES_PROPERTIES(${SOURCES},
                 PROPERTIES
-                COMPILE_FLAGS "-Wno-all -Wno-pedantic -fpermissive")
+                COMPILE_FLAGS "-Wno-all -Wno-pedantic")
   ENDIF()
 
 TRIBITS_ADD_LIBRARY(
