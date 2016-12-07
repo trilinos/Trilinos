@@ -357,8 +357,9 @@ public:
       jvf->update(one,*cvec_,one);
     }
     Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
+    bool zeroOut = (vf == Teuchos::null);
     if (vp != Teuchos::null) {
-      applyJacobian3(cvec_,vp,false);
+      applyJacobian3(cvec_,vp,zeroOut);
       jvf->update(one,*cvec_,one);
     }
   }

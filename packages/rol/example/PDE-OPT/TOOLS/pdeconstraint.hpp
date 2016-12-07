@@ -795,11 +795,13 @@ public:
     }
     else {
       Teuchos::RCP<Tpetra::MultiVector<> > jvf = getField(jv);
+      bool zeroOut = true;
       if (!useFD2) {
         applyJacobian2(jvf,vf);
+        zeroOut = (vf == Teuchos::null);
       }
       if (!useFD3) {
-        applyJacobian3(jvf,vp,false);
+        applyJacobian3(jvf,vp,zeroOut);
       }
     }
   }
@@ -905,11 +907,13 @@ public:
     }
     else {
       Teuchos::RCP<Tpetra::MultiVector<> > ahwvf = getField(ahwv);
+      bool zeroOut = true;
       if (!useFD2) {
         applyHessian21(ahwvf,vf);
+        zeroOut = (vf == Teuchos::null);
       }
       if (!useFD3) {
-        applyHessian31(ahwvf,vp,false);
+        applyHessian31(ahwvf,vp,zeroOut);
       }
     }
   }
@@ -937,17 +941,20 @@ public:
       ROL::EqualityConstraint_SimOpt<Real>::applyAdjointHessian_22(ahwv,w,v,u,z,tol);
     }
     else {
+      bool zeroOut = true;
       if (!useFD22) {
         applyHessian22(ahwvf,vf);
+        zeroOut = (vf == Teuchos::null);
       }
       if (!useFD23) {
-        applyHessian23(ahwvp,vf,false);
+        applyHessian23(ahwvp,vf,zeroOut);
       }
       if (!useFD32) {
         applyHessian32(ahwvf,vp);
+        zeroOut = (vf == Teuchos::null);
       }
       if (!useFD33) {
-        applyHessian33(ahwvp,vp,false);
+        applyHessian33(ahwvp,vp,zeroOut);
       }
     }
   }
