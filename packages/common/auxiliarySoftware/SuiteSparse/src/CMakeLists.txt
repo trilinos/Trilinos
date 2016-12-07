@@ -61,7 +61,7 @@ SET(SOURCES ${AMD_SOURCES}
   ENDIF()
 
 TRIBITS_ADD_LIBRARY(
-  trilinossuitesparse
+  trilinosss
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

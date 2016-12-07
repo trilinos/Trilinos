@@ -59,6 +59,7 @@
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Gtest                 commonTools/gtest                 SS
+  TrilinosSS            packages/common/auxiliarySoftware/SuiteSparse PS
   ThreadPool            packages/ThreadPool               PS # Depends on Pthreads
   Kokkos                packages/kokkos                   PS
   Teuchos               packages/teuchos                  PS

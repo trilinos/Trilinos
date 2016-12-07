@@ -7,10 +7,6 @@
 #SET(HAVE_BOOL ON)
 #SET(HAVE_STL ON)
 
-SET(ADD_SSSOURCE FALSE)
-
-add_subdirectory(SuiteSparse)
-
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
