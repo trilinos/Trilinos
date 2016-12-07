@@ -199,7 +199,7 @@ void read_graph_bin(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, const char 
 
 
 
-bool endswith (std::string const &fullString, std::string const &ending) {
+inline bool endswith (std::string const &fullString, std::string const &ending) {
     if (fullString.length() >= ending.length()) {
         return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
     } else {

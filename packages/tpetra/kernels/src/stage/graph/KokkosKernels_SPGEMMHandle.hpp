@@ -541,7 +541,7 @@ private:
 };
 
 
-  SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string & name) {
+  inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string & name) {
     if(name=="SPGEMM_DEFAULT")             return SPGEMM_DEFAULT;
     else if(name=="SPGEMM_DEBUG")          return SPGEMM_DEBUG;
     else if(name=="SPGEMM_SERIAL")         return SPGEMM_SERIAL;
