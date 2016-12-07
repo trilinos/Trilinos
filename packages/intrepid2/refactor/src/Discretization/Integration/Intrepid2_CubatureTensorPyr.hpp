@@ -86,52 +86,34 @@ namespace Intrepid2 {
       }
     };
 
-    class Internal {
-    private:
-      CubatureTensorPyr *obj_;
-
-    public:
-      Internal(CubatureTensorPyr *obj)
-        : obj_(obj) {}
-
-      /** \brief Returns cubature points and weights
-          (return arrays must be pre-sized/pre-allocated).
-
-          \param cubPoints       [out]     - Vector containing the cubature points.
-          \param cubWeights      [out]     - Vector of corresponding cubature weights.
-      */
-
-      template<typename cubPointValueType,  class ...cubPointProperties,
-               typename cubWeightValueType, class ...cubWeightProperties>
-      void
-      getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-                   Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
-    };
-    Internal impl_;
+    template<typename cubPointValueType,  class ...cubPointProperties,
+             typename cubWeightValueType, class ...cubWeightProperties>
+    void
+    getCubatureImpl( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+                     Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
 
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+
+    using CubatureTensor<ExecSpaceType,pointValueType,weightValueType>::getCubature;
 
     virtual
     void
     getCubature( pointViewType  cubPoints,
                  weightViewType cubWeights ) const {
-      impl_.getCubature( cubPoints,
-                         cubWeights );
+      getCubatureImpl( cubPoints,
+                       cubWeights );
     }
 
     CubatureTensorPyr()
-      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(),
-        impl_(this) {}
+      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>() {}
     
     CubatureTensorPyr(const CubatureTensorPyr &b)
-      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(b),
-        impl_(this) {}
+      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(b) {}
 
     template<typename CubatureLineType>
     CubatureTensorPyr( const CubatureLineType line ) 
-      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(line, line, line),
-        impl_(this) {}
+      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(line, line, line) {}
 
     template<typename CubatureLineType0,
              typename CubatureLineType1,
@@ -139,16 +121,8 @@ namespace Intrepid2 {
     CubatureTensorPyr( const CubatureLineType0 line0,
                        const CubatureLineType1 line1,
                        const CubatureLineType2 line2 ) 
-      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(line0, line1, line2),
-        impl_(this) {}
+      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(line0, line1, line2) {}
     
-    CubatureTensorPyr& operator=(const CubatureTensorPyr &b) {
-      if (this != &b) {
-        CubatureTensor<ExecSpaceType,pointValueType,weightValueType>::operator= (b);
-        // do not copy impl
-      }
-      return *this;
-    }
   };
 } 
 

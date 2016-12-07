@@ -142,6 +142,8 @@ namespace Intrepid2{
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
+    using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
+
     /** \brief Returns cubature points and weights
         (return arrays must be pre-sized/pre-allocated).
 

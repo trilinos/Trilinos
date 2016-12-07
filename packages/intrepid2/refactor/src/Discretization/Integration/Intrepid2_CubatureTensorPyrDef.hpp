@@ -55,23 +55,23 @@ namespace Intrepid2 {
   template<typename cubPointValueType,  class ...cubPointProperties,
            typename cubWeightValueType, class ...cubWeightProperties>
   void
-  CubatureTensorPyr<SpT,PT,WT>::Internal::
-  getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-               Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
+  CubatureTensorPyr<SpT,PT,WT>::
+  getCubatureImpl( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+                   Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // check size of cubPoints and cubWeights
-    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(cubPoints.dimension(0))  < obj_->getNumPoints() ||
-                                  static_cast<ordinal_type>(cubPoints.dimension(1))  < obj_->getDimension() ||
-                                  static_cast<ordinal_type>(cubWeights.dimension(0)) < obj_->getNumPoints(), std::out_of_range,
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(cubPoints.dimension(0))  < this->getNumPoints() ||
+                                  static_cast<ordinal_type>(cubPoints.dimension(1))  < this->getDimension() ||
+                                  static_cast<ordinal_type>(cubWeights.dimension(0)) < this->getNumPoints(), std::out_of_range,
                                   ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 #endif
-    obj_->CubatureTensor<SpT,PT,WT>::impl_.getCubature( cubPoints, cubWeights );
+    CubatureTensor<SpT,PT,WT>::getCubatureImpl( cubPoints, cubWeights );
 
     typedef Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPointViewType;
     typedef Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeightViewType;
     typedef typename ExecSpace<typename cubPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
-    const auto loopSize = obj_->getNumPoints();
+    const auto loopSize = this->getNumPoints();
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     
     typedef Functor<cubPointViewType, cubWeightViewType> FunctorType;

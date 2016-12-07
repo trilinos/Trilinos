@@ -173,40 +173,16 @@ namespace Intrepid2 {
     //
     // Cubature public functions
     //
-
-    class Internal {
-    private:
-      CubatureDirect *obj_;
-
-    public:
-      Internal(CubatureDirect *obj)
-        : obj_(obj) {}
-
-      /** \brief Returns cubature points and weights
-
-          \param cubPoints       [out]     - Array containing the cubature points.
-          \param cubWeights      [out]     - Array of corresponding cubature weights.
-      */
-      template<typename cubPointValueType,  class ...cubPointProperties,
-               typename cubWeightValueType, class ...cubWeightProperties>
-      void
-      getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-                   Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
-        obj_->getCubatureFromData(cubPoints, cubWeights, obj_->cubatureData_);
-      }
-
-    };
-    Internal impl_;
-
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
     typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+
+    using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
 
     virtual
     void
     getCubature( pointViewType  cubPoints,
                  weightViewType cubWeights ) const {
-      impl_.getCubature( cubPoints,
-                         cubWeights );
+      this->getCubatureFromData(cubPoints, cubWeights, this->cubatureData_);
     }
 
     /** \brief Returns the number of cubature points.
@@ -245,32 +221,18 @@ namespace Intrepid2 {
     CubatureDirect()
       : degree_(),
         dimension_(),
-        cubatureData_(),
-        impl_(this) {}
+        cubatureData_() {}
 
     CubatureDirect(const CubatureDirect &b)
       : degree_(b.degree_),
         dimension_(b.dimension_),
-        cubatureData_(b.cubatureData_),
-        impl_(this) {}
+        cubatureData_(b.cubatureData_) {}
 
     CubatureDirect(const ordinal_type degree,
                    const ordinal_type dimension)
       : degree_(degree),
         dimension_(dimension),
-        cubatureData_(),
-        impl_(this) {}
-
-    CubatureDirect& operator=(const CubatureDirect &b) {
-      if (this != &b) {
-        Cubature<ExecSpaceType,pointValueType,weightValueType>::operator= (b);
-        degree_ = b.degree_;
-        dimension_ = b.dimension_;
-        cubatureData_ = b.cubatureData_;
-        // do not copy impl
-      }
-      return *this;
-    }
+        cubatureData_() {}
 
   };
 

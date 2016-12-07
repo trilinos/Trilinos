@@ -55,14 +55,14 @@ namespace Intrepid2 {
   template<typename cubPointValueType,  class ...cubPointProperties,
            typename cubWeightValueType, class ...cubWeightProperties>
   void 
-  CubatureTensor<SpT,PT,WT>::Internal::
-  getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-               Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
+  CubatureTensor<SpT,PT,WT>::
+  getCubatureImpl( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+                   Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // check size of cubPoints and cubWeights
-    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(cubPoints.dimension(0))  < obj_->getNumPoints() ||
-                                  static_cast<ordinal_type>(cubPoints.dimension(1))  < obj_->getDimension() ||
-                                  static_cast<ordinal_type>(cubWeights.dimension(0)) < obj_->getNumPoints(), std::out_of_range,
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(cubPoints.dimension(0))  < this->getNumPoints() ||
+                                  static_cast<ordinal_type>(cubPoints.dimension(1))  < this->getDimension() ||
+                                  static_cast<ordinal_type>(cubWeights.dimension(0)) < this->getNumPoints(), std::out_of_range,
                                   ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 #endif
     typedef Kokkos::DynRankView<cubPointValueType, SpT>  cubPointViewType;
@@ -74,16 +74,16 @@ namespace Intrepid2 {
 
     // this temporary allocation can be member of cubature; for now, let's do this way.
     // this is cubature setup on the reference cell and called for tensor elements.
-    for (auto k=0;k<obj_->numCubatures_;++k) {
-      const auto &cub = obj_->cubatures_[k];
+    for (auto k=0;k<this->numCubatures_;++k) {
+      const auto &cub = this->cubatures_[k];
       tmpPoints [k] = cubPointViewType ("CubatureTensor::getCubature::tmpPoints",  cub.getNumPoints(), cub.getDimension());
       tmpWeights[k] = cubWeightViewType("CubatureTensor::getCubature::tmpWeights", cub.getNumPoints());
       cub.getCubature(tmpPoints[k], tmpWeights[k]);
     }      
     
     {
-      const auto npts = obj_->getNumPoints();
-      const auto dim = obj_->getDimension();
+      const auto npts = this->getNumPoints();
+      const auto dim = this->getDimension();
       
       const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, npts);
       const Kokkos::pair<ordinal_type,ordinal_type> dimRange(0, dim);
@@ -96,14 +96,14 @@ namespace Intrepid2 {
     // fill tensor cubature
     {
       ordinal_type offset[Parameters::MaxDimension+1] = {};
-      for (auto k=0;k<obj_->numCubatures_;++k) {
-        offset[k+1] = offset[k] + obj_->cubatures_[k].getDimension();
+      for (auto k=0;k<this->numCubatures_;++k) {
+        offset[k+1] = offset[k] + this->cubatures_[k].getDimension();
       }
       ordinal_type ii = 0, i[3] = {};
-      switch (obj_->numCubatures_) {
+      switch (this->numCubatures_) {
       case 2: {
-        const ordinal_type npts[] = { obj_->cubatures_[0].getNumPoints(), obj_->cubatures_[1].getNumPoints() };
-        const ordinal_type dim [] = { obj_->cubatures_[0].getDimension(), obj_->cubatures_[1].getDimension() };
+        const ordinal_type npts[] = { this->cubatures_[0].getNumPoints(), this->cubatures_[1].getNumPoints() };
+        const ordinal_type dim [] = { this->cubatures_[0].getDimension(), this->cubatures_[1].getDimension() };
 
         for (i[1]=0;i[1]<npts[1];++i[1])
           for (i[0]=0;i[0]<npts[0];++i[0]) {
@@ -117,8 +117,8 @@ namespace Intrepid2 {
         break;
       }
       case 3: {
-        const ordinal_type npts[] = { obj_->cubatures_[0].getNumPoints(), obj_->cubatures_[1].getNumPoints(), obj_->cubatures_[2].getNumPoints() };
-        const ordinal_type dim [] = { obj_->cubatures_[0].getDimension(), obj_->cubatures_[1].getDimension(), obj_->cubatures_[2].getDimension() };
+        const ordinal_type npts[] = { this->cubatures_[0].getNumPoints(), this->cubatures_[1].getNumPoints(), this->cubatures_[2].getNumPoints() };
+        const ordinal_type dim [] = { this->cubatures_[0].getDimension(), this->cubatures_[1].getDimension(), this->cubatures_[2].getDimension() };
 
         for (i[2]=0;i[2]<npts[2];++i[2])
           for (i[1]=0;i[1]<npts[1];++i[1])
@@ -133,7 +133,7 @@ namespace Intrepid2 {
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_EXCEPTION( obj_->numCubatures_ != 2 || obj_->numCubatures_ != 3, std::runtime_error,
+        INTREPID2_TEST_FOR_EXCEPTION( this->numCubatures_ != 2 || this->numCubatures_ != 3, std::runtime_error,
                                       ">>> ERROR (CubatureTensor::getCubature): CubatureTensor supports only 2 or 3 component direct cubatures.");
       }
       }
