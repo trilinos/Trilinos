@@ -68,7 +68,7 @@ SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/install/gmp-4.3.2/lib:/home/trilinos/in
 SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 #Disabling the following packages due to issues with them with the gc 4.6 compiler
 #MOOCHO there were many test failures
 #Piro there was one test failure

@@ -45,7 +45,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SS_TESTING
   HAVE_TPETRA_ENABLE_SS_TESTING
   "Enabling testing of Secondary Stable Code."
-  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  ${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}
   )
 
 # If this variable isn't defined, then the TpetraTSQR subpackage of
@@ -71,7 +71,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BUGTESTS
   HAVE_TPETRA_BUGTESTS
   "Enabling testing of previous Tpetra bugs."
-  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  ${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE}
   )
 
 # ==================================================================
