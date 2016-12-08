@@ -83,7 +83,7 @@ Level 1
 
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x249bde0,node=0x218ed10,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x23615c0,node=0x23155a0,strong_count=2,weak_count=0}   [unused]
 
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -191,7 +191,7 @@ Level 2
 
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x21bf660,node=0x2490f60,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2373120,node=0x2331d80,strong_count=2,weak_count=0}   [unused]
 
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -232,7 +232,7 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
-Smoother (level 2) pre  : Basker solver interface
+Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother
 
 Level 0
@@ -397,6 +397,6 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10015}
 
-Smoother (level 2) pre  : Basker solver interface
+Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother
 

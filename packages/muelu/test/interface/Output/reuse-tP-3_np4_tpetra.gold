@@ -73,7 +73,7 @@ Level 1
 
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2498750,node=0x2454680,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2334a40,node=0x2463250,strong_count=2,weak_count=0}   [unused]
 
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -171,7 +171,7 @@ Level 2
 
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x24af350,node=0x2564840,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x24df470,node=0x24e5820,strong_count=2,weak_count=0}   [unused]
 
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -212,7 +212,7 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10003}
 
-Smoother (level 2) pre  : Basker solver interface
+Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother
 
 Level 0
@@ -342,7 +342,7 @@ Level 2
 
    Build (MueLu::Zoltan2Interface)
    rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x24af350,node=0x2564840,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x24df470,node=0x24e5820,strong_count=2,weak_count=0}   [unused]
 
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -383,6 +383,6 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3335, 3335], Global nnz: 10003}
 
-Smoother (level 2) pre  : Basker solver interface
+Smoother (level 2) pre  : KLU2 solver interface
 Smoother (level 2) post : no smoother
 

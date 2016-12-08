@@ -212,7 +212,7 @@ Level 3
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
 
- Setup Smoother (MueLu::Amesos2Smoother{type = Basker})
+ Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
@@ -239,6 +239,6 @@ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 2) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 
-Smoother (level 3) pre  : Basker solver interface
+Smoother (level 3) pre  : KLU2 solver interface
 Smoother (level 3) post : no smoother
 
