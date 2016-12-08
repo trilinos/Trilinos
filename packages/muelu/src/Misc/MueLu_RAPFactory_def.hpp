@@ -76,7 +76,6 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("rap: fix zero diagonals");
-    SET_VALID_ENTRY("matrixmatrix: kernel params");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",                   null, "Prolongator factory");
@@ -84,6 +83,11 @@ namespace MueLu {
 
     validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
     validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
+
+    // Make sure we don't recursively validate options for the matrixmatrix kernels
+    ParameterList norecurse;
+    norecurse.disableRecursiveValidation();
+    validParamList->set<ParameterList> ("matrixmatrix: kernel params", norecurse, "MatrixMatrix kernel parameters");
 
     return validParamList;
   }

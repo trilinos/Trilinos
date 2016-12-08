@@ -962,9 +962,10 @@ namespace MueLu {
     } else {
       RAP = rcp(new RAPFactory());
       ParameterList RAPparams;
+      if(paramList.isSublist("matrixmatrix: kernel params"))   RAPparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
+      if(defaultList.isSublist("matrixmatrix: kernel params")) RAPparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "matrixmatrix: kernel params", bool, RAPparams);
 
       try {
         if (paramList  .isParameter("aggregation: allow empty prolongator columns")) {
