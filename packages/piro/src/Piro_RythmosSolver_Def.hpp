@@ -385,8 +385,10 @@ void Piro::RythmosSolver<Scalar>::initialize(
      //
      // C.1) Create the underlying Thyra::ModelEvaluator
      // already constructed as "model". Decorate if needed.
-     // TODO: Generalize to any explicit method, option to invert mass matrix
-     if (stepperType == "Explicit RK") {
+     if (
+      stepperType == "Explicit RK" || 
+      stepperType == "Forward Euler" || 
+      stepperType == "Explicit Taylor Polynomial") {
       if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
         rythmosSolverPL->get("Lump Mass Matrix", false);  //JF line does not do anything
