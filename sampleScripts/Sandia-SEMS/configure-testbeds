@@ -18,13 +18,11 @@ export COMPLEX=OFF
 #Intel SandyBridge / IvyBridge
 #export ARCH_FLAG="-mavx"
 #Intel Haswell
-export ARCH_CXX_FLAG="-xCORE-AVX2"
-export ARCH_C_FLAG="-xCORE-AVX2"
+export ARCH_FLAG="-xCORE-AVX2"
 export BLAS_LIBRARIES=${MKLROOT}/lib/mic/libmkl_core.a
 export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 #Intel KNL
-#export ARCH_CXX_FLAG="-xMIC-AVX512"
-#export ARCH_C_FLAG="-xMIC-AVX512"
+#export ARCH_FLAG="-xMIC-AVX512"
 #export BLAS_LIBRARIES=${MKLROOT}/lib/mic/libmkl_core.a
 #export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 #IBM Power8:
