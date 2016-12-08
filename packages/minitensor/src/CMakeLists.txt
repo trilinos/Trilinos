@@ -1,6 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TrilinosCreateClientTemplateHeaders)
-
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(HEADERS "")
