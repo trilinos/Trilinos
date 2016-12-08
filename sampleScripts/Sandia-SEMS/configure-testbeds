@@ -19,8 +19,12 @@ export COMPLEX=OFF
 #export ARCH_FLAG="-mavx"
 #Intel Haswell
 export ARCH_FLAG="-xCORE-AVX2"
+export BLAS_LIBRARIES=${MKLROOT}/lib/mic/libmkl_core.a
+export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 #Intel KNL
 #export ARCH_FLAG="-xMIC-AVX512"
+#export BLAS_LIBRARIES=${MKLROOT}/lib/mic/libmkl_core.a
+#export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 #IBM Power8:
 #export ARCH_FLAG="-mcpu=power8"
 #IBM Power8 + NVIDIA K80
