@@ -18,19 +18,23 @@ export COMPLEX=OFF
 #Intel SandyBridge / IvyBridge
 #export ARCH_FLAG="-mavx"
 #Intel Haswell
-export ARCH_FLAG="-xCORE-AVX2"
+export ARCH_CXX_FLAG="-xCORE-AVX2"
+export ARCH_C_FLAG="-xCORE-AVX2"
 export BLAS_LIBRARIES=${MKLROOT}/lib/mic/libmkl_core.a
 export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 #Intel KNL
-#export ARCH_FLAG="-xMIC-AVX512"
+#export ARCH_CXX_FLAG="-xMIC-AVX512"
+#export ARCH_C_FLAG="-xMIC-AVX512"
 #export BLAS_LIBRARIES=${MKLROOT}/lib/mic/libmkl_core.a
 #export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
 #IBM Power8:
 #export ARCH_FLAG="-mcpu=power8"
 #IBM Power8 + NVIDIA K80
-#export ARCH_FLAG="-mcpu=power8 -arch=sm_37"
+#export ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_37"
+#export ARCH_C_FLAG="-mcpu=power8"
 #IBM Power8 + NVIDIA P100
-#export ARCH_FLAG="-mcpu=power8 -arch=sm_60"
+#export ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_60"
+#export ARCH_C_FLAG="-mcpu=power8"
 
 
 # Set up Tests/Examples
@@ -60,7 +64,8 @@ export JENKINS_DO_PTHREAD=${PTHREAD}
 export JENKINS_DO_SERIAL=${SERIAL}
 export JENKINS_DO_COMPLEX=${COMPLEX}
 
-export JENKINS_ARCH_FLAG=${ARCH_FLAG}
+export JENKINS_ARCH_CXX_FLAG=${ARCH_CXX_FLAG}
+export JENKINS_ARCH_C_FLAG=${ARCH_C_FLAG}
 
 export JENKINS_DO_TESTS=${TESTS}
 export JENKINS_DO_EXAMPLES=${EXAMPLES}
