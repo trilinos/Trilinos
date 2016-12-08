@@ -464,6 +464,6 @@ alternator_3(Index const dimension)
   return levi_civita_3<T, N, ES>(dimension);
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Tensor3_i_h

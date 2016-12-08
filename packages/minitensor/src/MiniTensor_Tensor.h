@@ -886,7 +886,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 skew(Vector<T, N, ES> const & u);
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #include "MiniTensor_Tensor.i.h"
 #include "MiniTensor_Tensor.t.h"

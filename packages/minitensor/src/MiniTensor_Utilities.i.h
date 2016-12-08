@@ -470,6 +470,6 @@ levi_civita(Index const i, Index const j, Index const k, Index const l)
   return T(0);
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Utilities_i_h

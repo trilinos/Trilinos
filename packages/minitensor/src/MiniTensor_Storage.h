@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           MiniTensor Package
 //                 Copyright (2016) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Storage_h)
-#define Intrepid_MiniTensor_Storage_h
+#if !defined(MiniTensor_Storage_h)
+#define MiniTensor_Storage_h
 
 #include "MiniTensor_Definitions.h"
 
@@ -432,4 +432,4 @@ private:
 
 #include "MiniTensor_Storage.i.h"
 
-#endif // Intrepid_MiniTensor_Storage_h
+#endif // MiniTensor_Storage_h

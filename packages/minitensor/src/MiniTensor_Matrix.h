@@ -686,7 +686,7 @@ KOKKOS_INLINE_FUNCTION
 Matrix<T, M, N, ES>
 adjoint(Matrix<T, N, M, ES> const & A);
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #include "MiniTensor_Matrix.i.h"
 #include "MiniTensor_Matrix.t.h"

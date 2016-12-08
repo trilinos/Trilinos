@@ -475,7 +475,7 @@ KOKKOS_INLINE_FUNCTION
 void
 split(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B);
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #include "MiniTensor_TensorBase.i.h"
 #include "MiniTensor_TensorBase.t.h"

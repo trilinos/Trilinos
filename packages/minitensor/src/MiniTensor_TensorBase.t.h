@@ -46,6 +46,6 @@ namespace minitensor {
 
 // Placeholder for now.
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_TensorBase_t_h

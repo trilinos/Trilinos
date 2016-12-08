@@ -1216,6 +1216,6 @@ split(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B)
   return;
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_TensorBase_i_h

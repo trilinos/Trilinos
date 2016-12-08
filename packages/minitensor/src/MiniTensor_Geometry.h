@@ -738,7 +738,7 @@ private:
 
 };
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #include "MiniTensor_Geometry.i.h"
 #include "MiniTensor_Geometry.t.h"

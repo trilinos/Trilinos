@@ -684,7 +684,7 @@ check_strong_ellipticity(Tensor4<T, N, ES> const & A)
   return std::make_pair(is_elliptic, eigenvector);
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Mechanics_t_h
 

@@ -622,7 +622,7 @@ ParametricGrid<T, N, ES>::traverse(Visitor & visitor) const
   return;
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Geometry_i_h
 

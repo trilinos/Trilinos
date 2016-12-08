@@ -237,7 +237,7 @@ KOKKOS_INLINE_FUNCTION
 T
 levi_civita(Index const i, Index const j, Index const k, Index const l);
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #include "MiniTensor_Utilities.i.h"
 

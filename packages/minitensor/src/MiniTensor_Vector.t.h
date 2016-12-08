@@ -92,6 +92,6 @@ operator<<(std::ostream & os, Vector<T, N, ES> const & u)
   return os;
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Vector_t_h

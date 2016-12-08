@@ -869,7 +869,7 @@ house(Vector<T, N, ES> const & x)
   return std::make_pair(v, beta);
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif
  // MiniTensor_Vector_i_h

@@ -524,7 +524,7 @@ template<typename T, Index N, typename ES>
 std::ostream &
 operator<<(std::ostream & os, Vector<T, N, ES> const & u);
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #include "MiniTensor_Vector.i.h"
 #include "MiniTensor_Vector.t.h"

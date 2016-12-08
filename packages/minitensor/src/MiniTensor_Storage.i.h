@@ -46,6 +46,6 @@ namespace minitensor {
 
 // Place holder for now.
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Storage_i_h

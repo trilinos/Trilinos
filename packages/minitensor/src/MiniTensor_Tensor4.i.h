@@ -402,6 +402,6 @@ inverse(Tensor4<T, N, ES> const & A)
   return Tensor4<T, N, ES>(inverse(Tensor<T, dimension_square<N>::value, ES>(A)));
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Tensor4_i_h

@@ -257,7 +257,7 @@ struct dimension_string<4> {
   static string eval() {return string("4");}
 };
 
-} // namespace Intrepid
+} // namespace minitensor
 
 namespace Sacado {
 

@@ -483,6 +483,6 @@ inv_cond(Tensor<T, N, ES> const & A)
   return k;
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_LinearAlgebra_i_h

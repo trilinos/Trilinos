@@ -219,7 +219,7 @@ template<typename T, Index N, typename ES>
 std::pair<bool, Vector<T, N, ES>>
 check_strong_ellipticity(Tensor4<T, N, ES> const & A);
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #include "MiniTensor_Mechanics.i.h"
 #include "MiniTensor_Mechanics.t.h"

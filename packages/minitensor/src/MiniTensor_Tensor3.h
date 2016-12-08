@@ -441,7 +441,7 @@ template<typename T, Index N, typename ES>
 std::ostream &
 operator<<(std::ostream & os, Tensor3<T, N, ES> const & A);
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #include "MiniTensor_Tensor3.i.h"
 #include "MiniTensor_Tensor3.t.h"

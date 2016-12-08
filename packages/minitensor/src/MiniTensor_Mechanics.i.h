@@ -74,6 +74,6 @@ dev(Tensor<T, N, ES> const & A)
   return A - vol(A);
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Mechanics_i_h

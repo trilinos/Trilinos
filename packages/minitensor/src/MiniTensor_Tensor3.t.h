@@ -387,6 +387,6 @@ operator<<(std::ostream & os, Tensor3<T, N, ES> const & A)
   return os;
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Tensor3_t_h

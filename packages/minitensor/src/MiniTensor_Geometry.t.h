@@ -804,6 +804,6 @@ minimum_distances(std::vector< std::vector<T>> const & distances)
   return minima;
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Geometry_t_h

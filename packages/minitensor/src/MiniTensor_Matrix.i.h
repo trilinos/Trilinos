@@ -1224,6 +1224,6 @@ transpose(Matrix<T, N, M, ES> const & A)
   return B;
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Matrix_i_h

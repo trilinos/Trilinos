@@ -102,6 +102,6 @@ operator<<(std::ostream & os, Matrix<T, M, N, ES> const & A)
   return os;
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Matrix_t_h

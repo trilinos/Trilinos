@@ -2052,6 +2052,6 @@ skew(Vector<T, N, ES> const & u)
   return A;
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_Tensor_i_h

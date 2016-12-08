@@ -2566,6 +2566,6 @@ solve(Tensor<T, N, ES> const & A, RHS const & b, PreconditionerType const pt)
   return solve_full_pivot(PA, Pb);
 }
 
-} // namespace Intrepid
+} // namespace minitensor
 
 #endif // MiniTensor_LinearAlgebra_t_h
