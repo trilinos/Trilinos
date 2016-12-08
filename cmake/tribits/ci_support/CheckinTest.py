@@ -731,12 +731,10 @@ def writeDefaultCommonConfigFile():
       "# Fill in the minimum CMake options that are needed to build and link\n" \
       "# that are common to all builds such as the following:\n" \
       "#\n" \
-      "#-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
-      "#-DBUILD_SHARED:BOOL=ON\n" \
-      "#-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
-      "#-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      "#-DCMAKE_VERBOSE_MAKEFILE=ON\n" \
+      "#-DBUILD_SHARED_LIBS=ON\n" \
       "#\n" \
-      "# NOTE: Please do not add any options here that would select what pacakges\n" \
+      "# NOTE: Please do not add any options here that would select what packages\n" \
       "# get enabled or disabled.\n"
 
     writeStrToFile(commonConfigFileName, commonConfigFileStr)
@@ -763,25 +761,9 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
       "# Fill in the minimum CMake options that are needed to build and link\n" \
       "# that are specific to the "+serialOrMpi+" build such as:\n" \
       "#\n" \
-      "#-DBUILD_SHARED:BOOL=ON\n"
-
-    if serialOrMpi == "MPI":
-      buildSpecificConfigFileStr += \
-        "#-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc\n" \
-        "#-DMPI_CXX_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicxx\n" \
-        "#-DMPI_C_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicc\n" \
-        "#-DMPI_Fortran_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpif77\n"
-    elif serialOrMpi == "SERIAL":
-      buildSpecificConfigFileStr += \
-        "#-DCMAKE_CXX_COMPILER:PATHNAME=/usr/local/bin/g++\n" \
-        "#-DCMAKE_C_COMPILER:PATHNAME=/usr/local/bin/gcc\n" \
-        "#-DCMAKE_Fortran_COMPILER:PATHNAME=/usr/local/bin/gfortran\n"
-    else:
-      raise Exception("Invalid value for serialOrMpi="+serialOrMpi)
-      
-    buildSpecificConfigFileStr += \
+      "#-DBUILD_SHARED_LIBS=ON\n" \
       "#\n" \
-      "# NOTE: Please do not add any options here that would change what pacakges\n" \
+      "# NOTE: Please do not add any options here that would change what packages\n" \
       "# or TPLs get enabled or disabled.\n"
 
     writeStrToFile(buildSpecificConfigFileName, buildSpecificConfigFileStr)
