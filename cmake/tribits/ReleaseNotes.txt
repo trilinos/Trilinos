@@ -2,6 +2,16 @@
 Release Notes for TriBITS
 ----------------------------------------
 
+2016/12/7/2016:
+
+(*) MAJOR: The long deprecated variable
+    ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE has been removed.  Upgrading
+    existing TriBITS projects is a simple doing a simple string replacement of
+    _ENABLE_SECONDARY_STABLE_CODE with _ENABLE_SECONDARY_TESTED_CODE.  Since
+    Trilinos has turned on ST code by default and many other TriBITS projects
+    don't differentiate between PT and ST code, this change should not even
+    break those projects, even if they don't update.
+
 2016/11/02:
 
 (*) MAJOR: gitdist now accepts --dist-repos and --dist-not-repos arguments and

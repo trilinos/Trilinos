@@ -133,7 +133,7 @@ a) Create a 'do-configure' script such as [Recommended]::
   NOTE: If one has already configured once and one needs to configure from
   scratch (needs to wipe clean defaults for cache variables, updates
   compilers, other types of changes) then one will want to delete the local
-  CASL and other CMake-generated files before configuring again (see
+  CMakeCache.txt and other CMake-generated files before configuring again (see
   `Reconfiguring completely from scratch`_).
 
 .. _<Project>_CONFIGURE_OPTIONS_FILE:
@@ -150,41 +150,74 @@ b) Create a CMake file fragment and point to it [Recommended].
       $EXTRA_ARGS \
       ${SOURCE_BASE}
      
-  where MyConfigureOptions.cmake might look like::
+  where MyConfigureOptions.cmake (in the current working directory) might look
+  like::
 
-    SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "")
-    SET(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "")
-    SET(BUILD_SHARED_LIBS ON CACHE BOOL "")
+    SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "Set in MyConfigureOptions.cmake")
+    SET(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "Set in MyConfigureOptions.cmake")
+    SET(BUILD_SHARED_LIBS ON CACHE BOOL "Set in MyConfigureOptions.cmake")
     ...
 
   Using a configuration fragment file allows for better reuse of configure
   options across different configure scripts and better version control of
-  configure options.  Also, when this file changes, CMake will automatically
+  configure options.  Using the comment "Set in MyConfigureOptions.cmake"
+  makes it easy see where that variable got set when looking an the
+  CMakeCache.txt file.  Also, when this file changes, CMake will automatically
   trigger a reconfgure during a make (because it knows about the file and will
   check its time stamp).
 
-  NOTE: You can actually pass in a list of configuration fragment files
-  which will be read in the order they are given.
-
-  NOTE: You can use the ``FORCE`` option in the ``SET()`` shown above and that
-  will override any value of the options that might already be set.  However,
-  that will not allow the user to override the options on the CMake
-  comamndline using ``-D<VAR>=<value>`` so it is generally desired to use
+  One can use the ``FORCE`` option in the ``SET()`` shown above and that will
+  override any value of the options that might already be set.  However, that
+  will not allow the user to override the options on the CMake comamndline
+  using ``-D<VAR>=<value>`` so it is generally **not** desired to use
   ``FORCE``.
 
-c) Using ccmake to configure
+  One can actually pass in a list of configuration fragment files separated by
+  ''","'' which will be read in the order they are given::
 
-  ::
+    -D <Project>_CONFIGURE_OPTIONS_FILE=<file0>,<file1>,...
 
-    $ ccmake $SOURCE_BASE
+  One can read in configure option files under the project source directory by
+  using the type ``STRING`` such as with::
 
-d) Using the QT CMake configuration GUI:
+    -D <Project>_CONFIGURE_OPTIONS_FILE:STRING=cmake/MpiConfig1.cmake
+
+  In this case, the relative paths will be with respect to the project base
+  source directory, not the current working directroy.  (By specifying the
+  type ``STRING``, one turns off CMake interpretation as a ``FILEPATH``.
+  Otherwise, the type ``FILEPATH`` causes CMake to always interpret relative
+  paths with respect to the current working directory and set the absolute
+  path).
+
+  Note that a CMake options file can also be read in with::
+
+    cmake -C MyConfigureOptions.cmake [other options]  ${SOURCE_BASE}
+
+  However, the advantages of using ``<Project>_CONFIGURE_OPTIONS_FILE`` are:
+
+  1) One can use ``-D<Project>_CONFIGURE_OPTIONS_FILE:STRING=<rel-path>`` to
+  use a relative path w.r.t. to the source tree to make it easier to point to
+  options files in the project source.  Using ``cmake -C`` would require
+  having to give the absolute path or a longer relative path from the build
+  directory back to the source directory.
+
+  2) ``<Project>_CONFIGURE_OPTIONS_FILE`` accepts a list of files where
+  ``cmake -C`` only accepts a single file.  That saves from having to create
+  another dummy ``*.cmake`` file that just includes the others.
+
+  3) One can create and use parameterized ``*.cmake`` files that can be used
+  with multiple TriBITS projects.  For example, one can have set statements
+  like ``SET(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME``
+  is known before the file is included.  One can't do that with ``cmake -C``
+  and instead would have to the full variables names.
+
+c) Using the QT CMake configuration GUI:
 
   On systems where the QT CMake GUI is installed (e.g. Windows) the CMake GUI
-  can be a nice way to configure <Project> if you are a user.  To make your
-  configuration easily repeatable, you might want to create a fragment file
-  and just load it by setting `<Project>_CONFIGURE_OPTIONS_FILE`_ (see above)
-  in the GUI.
+  can be a nice way to configure <Project> (or just explore options) if you
+  are a user.  To make your configuration easily repeatable, you might want to
+  create a fragment file and just load it by setting
+  `<Project>_CONFIGURE_OPTIONS_FILE`_ (see above) in the GUI.
 
 Selecting the list of packages to enable
 ----------------------------------------
@@ -1557,8 +1590,11 @@ Valid categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``HEAVY`` and
 testing, and nightly testing.  ``CONTINUOUS`` tests are for post-push testing
 and nightly testing.  ``NIGHTLY`` tests are for nightly testing only.
 ``HEAVY`` tests are for more expensive tests that require larger number of MPI
-processes and llonger run times.  ``PERFORMANCE`` tests a special category
-used only for performance testing.
+processes and longer run times.  These test categories are nested
+(e.g. ``HEAVY`` contains all ``NIGHTLY``, ``NIGHTLY`` contains all
+``CONTINUOUS`` and ``CONTINUOUS`` contains all ``BASIC`` tests).  However,
+``PERFORMANCE`` tests are special category used only for performance testing
+and don't nest with the other categories.
 
 
 Disabling specific tests
