@@ -964,6 +964,8 @@ namespace MueLu {
       ParameterList RAPparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "matrixmatrix: kernel params", bool, RAPparams);
+
       try {
         if (paramList  .isParameter("aggregation: allow empty prolongator columns")) {
           RAPparams.set("CheckMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
@@ -978,6 +980,7 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
                                             "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
       }
+
       RAP->SetParameterList(RAPparams);
       RAP->SetFactory("P", manager.GetFactory("P"));
       if (!this->implicitTranspose_)

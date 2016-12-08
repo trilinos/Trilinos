@@ -76,6 +76,7 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("rap: fix zero diagonals");
+    SET_VALID_ENTRY("matrixmatrix: kernel params");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",                   null, "Prolongator factory");
@@ -121,7 +122,10 @@ namespace MueLu {
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), AP, Ac;
 
       // Reuse pattern if available (multiple solve)
-      RCP<ParameterList> APparams = rcp(new ParameterList);
+      RCP<ParameterList> APparams;
+      if(pL.isSublist("matrixmatrix: kernel params")) APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else APparams= rcp(new ParameterList);
+
       if (coarseLevel.IsAvailable("AP reuse data", this)) {
         GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
@@ -139,7 +143,10 @@ namespace MueLu {
       }
 
       // Reuse coarse matrix memory if available (multiple solve)
-      RCP<ParameterList> RAPparams = rcp(new ParameterList);
+      RCP<ParameterList> RAPparams;
+      if(pL.isSublist("matrixmatrix: kernel params")) RAPparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else RAPparams= rcp(new ParameterList);
+
       if (coarseLevel.IsAvailable("RAP reuse data", this)) {
         GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
 
