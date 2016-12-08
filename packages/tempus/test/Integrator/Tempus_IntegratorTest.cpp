@@ -1,5 +1,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
 
@@ -41,6 +42,8 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, DefaultConstruction)
     getParametersFromXmlFile("Tempus_IntegratorBasic_ref.xml");
 
   TEST_ASSERT(*defaultIntegratorPL == *refIntegratorPL)
+
+  Teuchos::TimeMonitor::summarize();
 }
 
 } // namespace Tempus_Test

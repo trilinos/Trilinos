@@ -4,6 +4,8 @@
 // Teuchos
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+
 // Tempus
 #include "Tempus_SolutionStateMetaData.hpp"
 
@@ -197,35 +199,38 @@ SolutionHistory<Scalar>::interpolateState(const Scalar time) const
 template<class Scalar>
 void SolutionHistory<Scalar>::initWorkingState()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(getCurrentState() == Teuchos::null,
-    std::logic_error,
-    "Error - SolutionHistory::initWorkingState()\n"
-    "Can not initialize working state without a current state!\n");
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::SolutionHistory::initWorkingState()");
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(getCurrentState() == Teuchos::null,
+      std::logic_error,
+      "Error - SolutionHistory::initWorkingState()\n"
+      "Can not initialize working state without a current state!\n");
 
-  // If workingState_ has a valid pointer, we are still working on it,
-  // i.e., step failed and trying again, so do not initialize it.
-  if (getWorkingState() != Teuchos::null) return;
+    // If workingState_ has a valid pointer, we are still working on it,
+    // i.e., step failed and trying again, so do not initialize it.
+    if (getWorkingState() != Teuchos::null) return;
 
-  Teuchos::RCP<SolutionState<Scalar> > newState;
-  if (getNumStates() < storageLimit) {
-    // Create newState which is duplicate of currentState_
-    newState = getCurrentState()->clone();
-  } else {
-    // Recycle old state and duplicate currentState_
-    newState = (*history_)[0];
-    history_->erase(history_->begin());
-    newState->copy(getCurrentState());
-    // When using the Griewank algorithm, we will want to select which
-    // older state to recycle.
+    Teuchos::RCP<SolutionState<Scalar> > newState;
+    if (getNumStates() < storageLimit) {
+      // Create newState which is duplicate of currentState_
+      newState = getCurrentState()->clone();
+    } else {
+      // Recycle old state and duplicate currentState_
+      newState = (*history_)[0];
+      history_->erase(history_->begin());
+      newState->copy(getCurrentState());
+      // When using the Griewank algorithm, we will want to select which
+      // older state to recycle.
+    }
+
+    // Add newState and sort
+    addState(newState);
+
+    // Set workingState_
+    workingState_ = (*history_)[getNumStates()-1];
+
+    getWorkingState()->metaData_->setSolutionStatus(Status::WORKING);
   }
-
-  // Add newState and sort
-  addState(newState);
-
-  // Set workingState_
-  workingState_ = (*history_)[getNumStates()-1];
-
-  getWorkingState()->metaData_->setSolutionStatus(Status::WORKING);
 
   return;
 }

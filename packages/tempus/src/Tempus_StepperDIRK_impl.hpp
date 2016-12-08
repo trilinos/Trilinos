@@ -118,62 +118,65 @@ void StepperDIRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
-  RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
-  RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
-  const Scalar dt = workingState->getTimeStep();
-  const Scalar time = currentState->getTime();
 
-  const int stages = DIRK_ButcherTableau_->numStages();
-  Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
-  Teuchos::SerialDenseVector<int,Scalar> b = DIRK_ButcherTableau_->b();
-  Teuchos::SerialDenseVector<int,Scalar> c = DIRK_ButcherTableau_->c();
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperDIRK::takeStep()");
+  {
+    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
+    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
+    const Scalar dt = workingState->getTimeStep();
+    const Scalar time = currentState->getTime();
 
-  // Compute stage solutions
-  bool pass = true;
-  Thyra::SolveStatus<double> sStatus;
-  for (int i=0 ; i < stages ; ++i) {
-    Thyra::assign(stageXPartial_.ptr(), *(currentState->getX()));
-    for (int j=0 ; j < i ; ++j) {
-      if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
-        Thyra::Vp_StV(stageXPartial_.ptr(), dt*A(i,j), *(stageXDot_->col(j)));
+    const int stages = DIRK_ButcherTableau_->numStages();
+    Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
+    Teuchos::SerialDenseVector<int,Scalar> b = DIRK_ButcherTableau_->b();
+    Teuchos::SerialDenseVector<int,Scalar> c = DIRK_ButcherTableau_->c();
+
+    // Compute stage solutions
+    bool pass = true;
+    Thyra::SolveStatus<double> sStatus;
+    for (int i=0 ; i < stages ; ++i) {
+      Thyra::assign(stageXPartial_.ptr(), *(currentState->getX()));
+      for (int j=0 ; j < i ; ++j) {
+        if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
+          Thyra::Vp_StV(stageXPartial_.ptr(), dt*A(i,j), *(stageXDot_->col(j)));
+        }
+      }
+
+      Scalar alpha = 1.0/dt/A(i,i);
+      Scalar beta = 1.0;
+      Scalar ts = time + c(i)*dt;
+
+      // function used to compute time derivative
+      auto computeXDot = xDotFunction(alpha,stageXPartial_.getConst());
+
+      residualModel_->initialize(computeXDot, ts, alpha, beta);
+
+      sStatus = this->solveNonLinear(residualModel_,*solver_,stageX_,inArgs_);
+      if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED ) pass=false;
+
+      computeXDot(*stageX_, *(stageXDot_->col(i)));
+    }
+
+    // Sum for solution: x_n = x_n-1 + Sum{ dt*b(i) * f(i) }
+    Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
+    for (int i=0 ; i < stages ; ++i) {
+      if (b(i) != Teuchos::ScalarTraits<Scalar>::zero()) {
+        Thyra::Vp_StV((workingState->getX()).ptr(), dt*b(i),
+                      *(stageXDot_->col(i)));
       }
     }
 
-    Scalar alpha = 1.0/dt/A(i,i);
-    Scalar beta = 1.0;
-    Scalar ts = time + c(i)*dt;
-
-    // function used to compute time derivative
-    auto computeXDot = xDotFunction(alpha,stageXPartial_.getConst());
-
-    residualModel_->initialize(computeXDot, ts, alpha, beta);
-
-    sStatus = this->solveNonLinear(residualModel_,*solver_,stageX_,inArgs_);
-    if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED ) pass=false;
-
-    computeXDot(*stageX_, *(stageXDot_->col(i)));
-  }
-
-  // Sum for solution: x_n = x_n-1 + Sum{ dt*b(i) * f(i) }
-  Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
-  for (int i=0 ; i < stages ; ++i) {
-    if (b(i) != Teuchos::ScalarTraits<Scalar>::zero()) {
-      Thyra::Vp_StV((workingState->getX()).ptr(), dt*b(i),
-                    *(stageXDot_->col(i)));
+    if (DIRK_ButcherTableau_->isEmbedded() ) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Error - Implicit RK embedded methods not implemented yet!.\n");
     }
+
+    if (pass == true)
+      workingState->stepperState_->stepperStatus_ = Status::PASSED;
+    else
+      workingState->stepperState_->stepperStatus_ = Status::FAILED;
+    workingState->setOrder(DIRK_ButcherTableau_->order());
   }
-
-  if (DIRK_ButcherTableau_->isEmbedded() ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Error - Implicit RK embedded methods not implemented yet!.\n");
-  }
-
-  if (pass == true)
-    workingState->stepperState_->stepperStatus_ = Status::PASSED;
-  else
-    workingState->stepperState_->stepperStatus_ = Status::FAILED;
-  workingState->setOrder(DIRK_ButcherTableau_->order());
-
   return;
 }
 

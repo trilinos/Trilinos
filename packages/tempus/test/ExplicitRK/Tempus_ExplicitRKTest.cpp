@@ -1,5 +1,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
 
@@ -151,6 +152,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
     ftmp.close();
 
   }
+
+  Teuchos::TimeMonitor::summarize();
 }
 
 } // namespace Tempus_Test

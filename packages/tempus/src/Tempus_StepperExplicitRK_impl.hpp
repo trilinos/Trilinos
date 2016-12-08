@@ -4,8 +4,8 @@
 #include "Tempus_RKButcherTableauBuilder.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
-#include "Tempus_RKButcherTableau.hpp"
 
 
 namespace Tempus {
@@ -74,57 +74,61 @@ void StepperExplicitRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
-  RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
-  RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
-  const Scalar dt = workingState->getTimeStep();
-  const Scalar time = currentState->getTime();
 
-  int stages = ERK_ButcherTableau_->numStages();
-  Teuchos::SerialDenseMatrix<int,Scalar> A = ERK_ButcherTableau_->A();
-  Teuchos::SerialDenseVector<int,Scalar> b = ERK_ButcherTableau_->b();
-  Teuchos::SerialDenseVector<int,Scalar> c = ERK_ButcherTableau_->c();
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExplicitRK::takeStep()");
+  {
+    RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
+    RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
+    const Scalar dt = workingState->getTimeStep();
+    const Scalar time = currentState->getTime();
 
-  // Compute stage solutions
-  for (int s=0 ; s < stages ; ++s) {
-    Thyra::assign(stageX_.ptr(), *(currentState->getX()));
-    for (int j=0 ; j < s ; ++j) {
-      if (A(s,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
-        Thyra::Vp_StV(stageX_.ptr(), A(s,j), *stagef_[j]);
+    int stages = ERK_ButcherTableau_->numStages();
+    Teuchos::SerialDenseMatrix<int,Scalar> A = ERK_ButcherTableau_->A();
+    Teuchos::SerialDenseVector<int,Scalar> b = ERK_ButcherTableau_->b();
+    Teuchos::SerialDenseVector<int,Scalar> c = ERK_ButcherTableau_->c();
+
+    // Compute stage solutions
+    for (int s=0 ; s < stages ; ++s) {
+      Thyra::assign(stageX_.ptr(), *(currentState->getX()));
+      for (int j=0 ; j < s ; ++j) {
+        if (A(s,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
+          Thyra::Vp_StV(stageX_.ptr(), A(s,j), *stagef_[j]);
+        }
+      }
+      typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
+      TScalarMag ts = time + c(s)*dt;
+
+      // Evaluate model -----------------
+      //explicitEvalModel(currentState);
+      typedef Thyra::ModelEvaluatorBase MEB;
+      inArgs_.set_x(stageX_);
+      if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(ts);
+
+      if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
+      outArgs_.set_f(stagef_[s]);
+
+      eODEModel_->evalModel(inArgs_,outArgs_);
+      // --------------------------------
+
+      Thyra::Vt_S(stagef_[s].ptr(),dt);
+    }
+
+    // Sum for solution: x_n = x_n-1 + Sum{ b(s) * dt*f(s) }
+    Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
+    for (int s=0 ; s < stages ; ++s) {
+      if (b(s) != Teuchos::ScalarTraits<Scalar>::zero()) {
+        Thyra::Vp_StV((workingState->getX()).ptr(), b(s), *(stagef_[s]));
       }
     }
-    typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
-    TScalarMag ts = time + c(s)*dt;
 
-    // Evaluate model -----------------
-    //explicitEvalModel(currentState);
-    typedef Thyra::ModelEvaluatorBase MEB;
-    inArgs_.set_x(stageX_);
-    if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(ts);
-
-    if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-    outArgs_.set_f(stagef_[s]);
-
-    eODEModel_->evalModel(inArgs_,outArgs_);
-    // --------------------------------
-
-    Thyra::Vt_S(stagef_[s].ptr(),dt);
-  }
-
-  // Sum for solution: x_n = x_n-1 + Sum{ b(s) * dt*f(s) }
-  Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
-  for (int s=0 ; s < stages ; ++s) {
-    if (b(s) != Teuchos::ScalarTraits<Scalar>::zero()) {
-      Thyra::Vp_StV((workingState->getX()).ptr(), b(s), *(stagef_[s]));
+    if (ERK_ButcherTableau_->isEmbedded() ) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Error - Explicit RK embedded methods not implemented yet!.\n");
     }
-  }
 
-  if (ERK_ButcherTableau_->isEmbedded() ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Error - Explicit RK embedded methods not implemented yet!.\n");
+    workingState->stepperState_->stepperStatus_ = Status::PASSED;
+    workingState->setOrder(ERK_ButcherTableau_->order());
   }
-
-  workingState->stepperState_->stepperStatus_ = Status::PASSED;
-  workingState->setOrder(ERK_ButcherTableau_->order());
   return;
 }
 

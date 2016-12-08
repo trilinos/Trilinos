@@ -1,5 +1,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
 
@@ -110,6 +111,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
          << error0*(StepSize[n]/StepSize[0]) << std::endl;
   }
   ftmp.close();
+
+  Teuchos::TimeMonitor::summarize();
 }
 
 } // namespace Tempus_Test

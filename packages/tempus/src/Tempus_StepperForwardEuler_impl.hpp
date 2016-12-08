@@ -2,6 +2,7 @@
 #define Tempus_StepperForwardEuler_impl_hpp
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 namespace Tempus {
@@ -41,31 +42,34 @@ template<class Scalar>
 void StepperForwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  Teuchos::RCP<SolutionState<Scalar> > currentState =
-    solutionHistory->getCurrentState();
+  using Teuchos::RCP;
 
-  typedef Thyra::ModelEvaluatorBase MEB;
-  inArgs_.set_x(currentState->getX());
-  if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(currentState->getTime());
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperForwardEuler::takeStep()");
+  {
+    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
-  // For model evaluators whose state function f(x, x_dot, t) describes
-  // an implicit ODE, and which accept an optional x_dot input argument,
-  // make sure the latter is set to null in order to request the evaluation
-  // of a state function corresponding to the explicit ODE formulation
-  // x_dot = f(x, t)
-  if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-  outArgs_.set_f(currentState->getXDot());
+    typedef Thyra::ModelEvaluatorBase MEB;
+    inArgs_.set_x(currentState->getX());
+    if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(currentState->getTime());
 
-  eODEModel_->evalModel(inArgs_,outArgs_);
+    // For model evaluators whose state function f(x, x_dot, t) describes
+    // an implicit ODE, and which accept an optional x_dot input argument,
+    // make sure the latter is set to null in order to request the evaluation
+    // of a state function corresponding to the explicit ODE formulation
+    // x_dot = f(x, t)
+    if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
+    outArgs_.set_f(currentState->getXDot());
 
-  // Forward Euler update, x = x + dt*xdot
-  Teuchos::RCP<SolutionState<Scalar> > workingState =
-    solutionHistory->getWorkingState();
-  const Scalar dt = workingState->getTimeStep();
-  Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
-    *(currentState->getX()),dt,*(currentState->getXDot()));
+    eODEModel_->evalModel(inArgs_,outArgs_);
 
-  workingState->stepperState_->stepperStatus_ = Status::PASSED;
+    // Forward Euler update, x = x + dt*xdot
+    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
+    const Scalar dt = workingState->getTimeStep();
+    Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
+      *(currentState->getX()),dt,*(currentState->getXDot()));
+
+    workingState->stepperState_->stepperStatus_ = Status::PASSED;
+  }
   return;
 }
 

@@ -5,6 +5,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 
 namespace {
@@ -137,171 +138,174 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   Status & integratorStatus) const
 {
   using Teuchos::RCP;
-  RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
-  RCP<SolutionStateMetaData<Scalar> > metaData_ = workingState->metaData_;
-  const Scalar time = metaData_->getTime();
-  const int iStep = metaData_->getIStep();
-  const Scalar errorAbs = metaData_->getErrorAbs();
-  const Scalar errorRel = metaData_->getErrorRel();
-  int order = metaData_->getOrder();
-  Scalar dt = metaData_->getDt();
-  bool output = metaData_->getOutput();
 
-  RCP<StepperState<Scalar> > stepperState = workingState->stepperState_;
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::TimeStepControl::getNextTimeStep()");
+  {
+    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
+    RCP<SolutionStateMetaData<Scalar> > metaData_ = workingState->metaData_;
+    const Scalar time = metaData_->getTime();
+    const int iStep = metaData_->getIStep();
+    const Scalar errorAbs = metaData_->getErrorAbs();
+    const Scalar errorRel = metaData_->getErrorRel();
+    int order = metaData_->getOrder();
+    Scalar dt = metaData_->getDt();
+    bool output = metaData_->getOutput();
 
-  output = false;
+    RCP<StepperState<Scalar> > stepperState = workingState->stepperState_;
 
-  if (dt < dtMin_) {
-    RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-    *out << "Warning - Time step size (=" << dt << ") is less than\n"
-         << "  minimum time step size (=" << dtMin_ << ")\n."
-         << "  Resetting to minimum time step size." << std::endl;
-    dt = dtMin_;
-  }
+    output = false;
 
-  if (stepType_ == CONSTANT_STEP_SIZE) {
-
-    // Stepper failure
-    if (stepperState->stepperStatus_ == Status::FAILED) {
-      if (order+1 <= orderMax_) {
-        order++;
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out << "Warning - Stepper failure with constant time step.\n"
-             << "  Try increasing order.  order = " << order << std::endl;
-      } else {
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out << "Failure - Stepper failed and can not change time step size "
-             << "or order!\n"
-             << "    Time step type == CONSTANT_STEP_SIZE\n"
-             << "    order = " << order << std::endl;
-        integratorStatus = FAILED;
-        return;
-      }
-    }
-
-    // Absolute error failure
-    if (errorAbs > errorMaxAbs_) {
-      if (order+1 <= orderMax_) {
-        order++;
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out
-          << "Warning - Absolute error is too large with constant time step.\n"
-          << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
-          << "  Try increasing order.  order = " << order << std::endl;
-      } else {
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out
-          << "Failure - Absolute error failed and can not change time step "
-          << "size or order!\n"
-          << "  Time step type == CONSTANT_STEP_SIZE\n"
-          << "  order = " << order
-          << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
-          << std::endl;
-        integratorStatus = FAILED;
-        return;
-      }
-    }
-
-    // Relative error failure
-    if (errorRel > errorMaxRel_) {
-      if (order+1 <= orderMax_) {
-        order++;
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out
-          << "Warning - Relative error is too large with constant time step.\n"
-          << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
-          << "  Try increasing order.  order = " << order << std::endl;
-      } else {
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-        *out
-          << "Failure - Relative error failed and can not change time step "
-          << "size or order!\n"
-          << "  Time step type == CONSTANT_STEP_SIZE\n"
-          << "  order = " << order
-          << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
-          << std::endl;
-        integratorStatus = FAILED;
-        return;
-      }
-    }
-
-    const Scalar relTol = 1.0e-14;
-    if (time+dt < timeMin_*(1.0-relTol) || time+dt > timeMax_*(1.0+relTol)) {
+    if (dt < dtMin_) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-      *out << "Warning - Time step moves time outside desired time range.\n"
-           << "  [timeMin, timeMax] = [" << timeMin_ <<", "<< timeMax_ << "]\n"
-           << "  T + dt = "<< time <<" + "<< dt<<" = "<< time + dt <<"\n";
-      output = true;
+      *out << "Warning - Time step size (=" << dt << ") is less than\n"
+           << "  minimum time step size (=" << dtMin_ << ")\n."
+           << "  Resetting to minimum time step size." << std::endl;
+      dt = dtMin_;
     }
 
-    // Consistency checks
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      (dt != dtConstant_), std::out_of_range,
-      "Error - ( dt = "<< dt <<") != ( dtConstant = "<< dtConstant_ <<" )!\n");
+    if (stepType_ == CONSTANT_STEP_SIZE) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      (order < orderMin_ || order > orderMax_), std::out_of_range,
-      "Error - Solution order is out of range and can not change "
-      "time step size!\n"
-      "    Time step type == CONSTANT_STEP_SIZE\n"
-      "    [order_min, order_max] = [" <<orderMin_<< ", " <<orderMax_<< "]\n"
-      "    order = " << order << "\n");
+      // Stepper failure
+      if (stepperState->stepperStatus_ == Status::FAILED) {
+        if (order+1 <= orderMax_) {
+          order++;
+          RCP<Teuchos::FancyOStream> out = this->getOStream();
+          Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+          *out << "Warning - Stepper failure with constant time step.\n"
+               << "  Try increasing order.  order = " << order << std::endl;
+        } else {
+          RCP<Teuchos::FancyOStream> out = this->getOStream();
+          Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+          *out << "Failure - Stepper failed and can not change time step size "
+               << "or order!\n"
+               << "    Time step type == CONSTANT_STEP_SIZE\n"
+               << "    order = " << order << std::endl;
+          integratorStatus = FAILED;
+          return;
+        }
+      }
 
-  } else { // VARIABLE_STEP_SIZE
+      // Absolute error failure
+      if (errorAbs > errorMaxAbs_) {
+        if (order+1 <= orderMax_) {
+          order++;
+          RCP<Teuchos::FancyOStream> out = this->getOStream();
+          Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+          *out
+            <<"Warning - Absolute error is too large with constant time step.\n"
+            <<"  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
+            <<"  Try increasing order.  order = " << order << std::endl;
+        } else {
+          RCP<Teuchos::FancyOStream> out = this->getOStream();
+          Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+          *out
+            <<"Failure - Absolute error failed and can not change time step "
+            <<"size or order!\n"
+            <<"  Time step type == CONSTANT_STEP_SIZE\n"
+            <<"  order = " << order
+            <<"  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs_<<")"
+            << std::endl;
+          integratorStatus = FAILED;
+          return;
+        }
+      }
 
-    // \todo The following controls should be generalized to plugable options.
-    if (stepperState->stepperStatus_ == Status::FAILED) dt /=2;
-    if (errorAbs > errorMaxAbs_) dt /= 2;
-    if (errorRel > errorMaxRel_) dt /= 2;
-    if (order < orderMin_) dt *= 2;
-    if (order > orderMax_) dt /= 2;
+      // Relative error failure
+      if (errorRel > errorMaxRel_) {
+        if (order+1 <= orderMax_) {
+          order++;
+          RCP<Teuchos::FancyOStream> out = this->getOStream();
+          Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+          *out
+            <<"Warning - Relative error is too large with constant time step.\n"
+            <<"  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
+            <<"  Try increasing order.  order = " << order << std::endl;
+        } else {
+          RCP<Teuchos::FancyOStream> out = this->getOStream();
+          Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+          *out
+            <<"Failure - Relative error failed and can not change time step "
+            <<"size or order!\n"
+            <<"  Time step type == CONSTANT_STEP_SIZE\n"
+            <<"  order = " << order
+            <<"  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel_<<")"
+            << std::endl;
+          integratorStatus = FAILED;
+          return;
+        }
+      }
 
-    if (dt < dtMin_) dt = dtMin_;
-    if (dt > dtMax_) dt = dtMax_;
-
-    if (time + dt > timeMax_ ) dt = timeMax_ - time;
-
-    // Consistency checks
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      (time + dt < timeMin_), std::out_of_range,
-      "Error - Time step does not move time INTO time range.\n"
-      "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
-      "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      (time + dt > timeMax_), std::out_of_range,
-      "Error - Time step move time OUT OF time range.\n"
-      "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
-      "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
-  }
-
-  // Check if we need to output this step
-  std::vector<int>::const_iterator it =
-    std::find(outputIndices_.begin(), outputIndices_.end(), iStep+1);
-  if (it != outputIndices_.end()) output = true;
-
-  if (!output) {
-    for (size_t i=0; i < outputTimes_.size(); ++i) {
-      if (time < outputTimes_[i] && outputTimes_[i] <= time + dt) {
+      const Scalar relTol = 1.0e-14;
+      if (time+dt < timeMin_*(1.0-relTol) || time+dt > timeMax_*(1.0+relTol)) {
+        RCP<Teuchos::FancyOStream> out = this->getOStream();
+        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+        *out <<"Warning - Time step moves time outside desired time range.\n"
+             <<"  [timeMin, timeMax] = [" << timeMin_ <<", "<< timeMax_ << "]\n"
+             <<"  T + dt = "<< time <<" + "<< dt<<" = "<< time + dt <<"\n";
         output = true;
-        if (stepType_ == VARIABLE_STEP_SIZE) dt = outputTimes_[i] - time;
-        break;
+      }
+
+      // Consistency checks
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        (dt != dtConstant_), std::out_of_range,
+        "Error - ( dt = "<< dt <<") != ( dtConstant = "<< dtConstant_ <<" )!\n");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        (order < orderMin_ || order > orderMax_), std::out_of_range,
+        "Error - Solution order is out of range and can not change "
+        "time step size!\n"
+        "    Time step type == CONSTANT_STEP_SIZE\n"
+        "    [order_min, order_max] = [" <<orderMin_<< ", " <<orderMax_<< "]\n"
+        "    order = " << order << "\n");
+
+    } else { // VARIABLE_STEP_SIZE
+
+      // \todo The following controls should be generalized to plugable options.
+      if (stepperState->stepperStatus_ == Status::FAILED) dt /=2;
+      if (errorAbs > errorMaxAbs_) dt /= 2;
+      if (errorRel > errorMaxRel_) dt /= 2;
+      if (order < orderMin_) dt *= 2;
+      if (order > orderMax_) dt /= 2;
+
+      if (dt < dtMin_) dt = dtMin_;
+      if (dt > dtMax_) dt = dtMax_;
+
+      if (time + dt > timeMax_ ) dt = timeMax_ - time;
+
+      // Consistency checks
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        (time + dt < timeMin_), std::out_of_range,
+        "Error - Time step does not move time INTO time range.\n"
+        "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
+        "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        (time + dt > timeMax_), std::out_of_range,
+        "Error - Time step move time OUT OF time range.\n"
+        "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
+        "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
+    }
+
+    // Check if we need to output this step
+    std::vector<int>::const_iterator it =
+      std::find(outputIndices_.begin(), outputIndices_.end(), iStep+1);
+    if (it != outputIndices_.end()) output = true;
+
+    if (!output) {
+      for (size_t i=0; i < outputTimes_.size(); ++i) {
+        if (time < outputTimes_[i] && outputTimes_[i] <= time + dt) {
+          output = true;
+          if (stepType_ == VARIABLE_STEP_SIZE) dt = outputTimes_[i] - time;
+          break;
+        }
       }
     }
+
+    metaData_->setOrder(order);
+    metaData_->setDt(dt);
+    metaData_->setOutput(output);
   }
-
-  metaData_->setOrder(order);
-  metaData_->setDt(dt);
-  metaData_->setOutput(output);
-
   return;
 }
 

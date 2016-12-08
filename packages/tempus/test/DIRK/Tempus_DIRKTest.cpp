@@ -1,5 +1,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
 
@@ -153,6 +154,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
     TEST_FLOATING_EQUALITY( ErrorNorm[0], RKMethodErrors[m], 1.0e-4 );
 
   }
+  Teuchos::TimeMonitor::summarize();
 }
 
 } // namespace Tempus_Test
