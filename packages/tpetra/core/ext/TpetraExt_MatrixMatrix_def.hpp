@@ -1696,7 +1696,17 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
   typedef typename graph_t::row_map_type::const_type lno_view_t_const;
 
-  // Not sure what this does, how it works, or why things are done this way.
+  // Options
+  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
+  std::string myalg("SPGEMM_KK_MEMORY");
+  if(!params.is_null()) {
+    if(params->isParameter("openmp: algorithm"))
+      myalg = params->get("openmp: algorithm",myalg);
+    if(params->isParameter("openmp: team work size"))
+      team_work_size = params->get("openmp: team work size",team_work_size);
+  }
+
+  // KokkosKernelsHandle
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<lno_view_t,lno_nnz_view_t, scalar_view_t, typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrices
@@ -1706,7 +1716,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Get the algorithm mode
   std::string alg = nodename+std::string(" algorithm");
-  std::string myalg("SPGEMM_KK_MEMORY");
   //  printf("DEBUG: Using kernel: %s\n",myalg.c_str());
   if(!params.is_null() && params->isParameter(alg)) myalg = params->get(alg,myalg);
   KokkosKernels::Experimental::Graph::SPGEMMAlgorithm alg_enum = KokkosKernels::Experimental::Graph::StringToSPGEMMAlgorithm(myalg);
@@ -1793,7 +1802,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   scalar_view_t   valuesC;
   KernelHandle kh;
   kh.create_spgemm_handle(alg_enum);
-  
+  kh.set_team_work_size(team_work_size);
+
   KokkosKernels::Experimental::Graph::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bmerged->graph.row_map,Bmerged->graph.entries,false,row_mapC);
   
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
