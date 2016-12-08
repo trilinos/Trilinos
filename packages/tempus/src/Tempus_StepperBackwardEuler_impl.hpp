@@ -188,40 +188,43 @@ void StepperBackwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
-
-  RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
-  RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
-
-  RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
-  RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
-  RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
-
-  computePredictor(solutionHistory);
-  if (workingState->stepperState_->stepperStatus_ == Status::FAILED) return;
-
-  //typedef Thyra::ModelEvaluatorBase MEB;
-  const Scalar time = workingState->getTime();
-  const Scalar dt   = workingState->getTimeStep();
-
-  // constant variable capture of xOld pointer
-  auto computeXDot = xDotFunction(dt, xOld);
-
-  Scalar alpha = 1.0/dt;
-  Scalar beta = 1.0;
-  Scalar t = time+dt;
-
-  residualModel_->initialize(computeXDot, t, alpha, beta);
-
-  const Thyra::SolveStatus<double> sStatus =
-    this->solveNonLinear(residualModel_, *solver_, x, inArgs_);
-
-  computeXDot(*x, *xDot);
-
-  if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-    workingState->stepperState_->stepperStatus_ = Status::PASSED;
-  else
-    workingState->stepperState_->stepperStatus_ = Status::FAILED;
-
+  
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackardEuler::takeStep()");
+  { 
+    RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
+    RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
+    
+    RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
+    RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
+    RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
+    
+    computePredictor(solutionHistory);
+    if (workingState->stepperState_->stepperStatus_ == Status::FAILED) return;
+    
+    //typedef Thyra::ModelEvaluatorBase MEB;
+    const Scalar time = workingState->getTime();
+    const Scalar dt   = workingState->getTimeStep();
+    
+    // constant variable capture of xOld pointer
+    auto computeXDot = xDotFunction(dt, xOld);
+    
+    Scalar alpha = 1.0/dt;
+    Scalar beta = 1.0;
+    Scalar t = time+dt;
+    
+    residualModel_->initialize(computeXDot, t, alpha, beta);
+    
+    const Thyra::SolveStatus<double> sStatus =
+      this->solveNonLinear(residualModel_, *solver_, x, inArgs_);
+    
+    computeXDot(*x, *xDot);
+    
+    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
+      workingState->stepperState_->stepperStatus_ = Status::PASSED;
+    else
+      workingState->stepperState_->stepperStatus_ = Status::FAILED;
+  }
+  
   return;
 }
 

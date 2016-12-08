@@ -1,5 +1,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
@@ -291,6 +292,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
     ftmp.close();
   }
 
+  Teuchos::TimeMonitor::summarize();
 }
 
 } // namespace Tempus_Test
