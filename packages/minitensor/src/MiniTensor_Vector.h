@@ -46,7 +46,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
-#include<Kokkos_Core.hpp>
+#include <Kokkos_Core.hpp>
 #include "MiniTensor_TensorBase.h"
 
 namespace minitensor {
