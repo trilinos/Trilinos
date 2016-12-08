@@ -15,7 +15,19 @@ export COMPLEX=OFF
 
 # Set up Architecture
 
-export ARCH_FLAG="-mavx"
+#Intel SandyBridge / IvyBridge
+#export ARCH_FLAG="-mavx"
+#Intel Haswell
+export ARCH_FLAG="-xCORE-AVX2"
+#Intel KNL
+#export ARCH_FLAG="-xMIC-AVX512"
+#IBM Power8:
+#export ARCH_FLAG="-mcpu=power8"
+#IBM Power8 + NVIDIA K80
+#export ARCH_FLAG="-mcpu=power8 -arch=sm_37"
+#IBM Power8 + NVIDIA P100
+#export ARCH_FLAG="-mcpu=power8 -arch=sm_60"
+
 
 # Set up Tests/Examples
 
