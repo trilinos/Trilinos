@@ -1,5 +1,5 @@
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
-  LIB_REQUIRED_PACKAGES TeuchosCore TeuchosParameterList TeuchosComm Sacado KokkosCore
+  LIB_REQUIRED_PACKAGES TeuchosCore KokkosCore Sacado
   TEST_REQUIRED_PACKAGES Gtest
   LIB_REQUIRED_TPLS Boost
   )
