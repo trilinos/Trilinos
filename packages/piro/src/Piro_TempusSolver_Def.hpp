@@ -209,8 +209,21 @@ void Piro::TempusSolver<Scalar>::initialize(
     //
     // C.1) Create the underlying Thyra::ModelEvaluator
     // already constructed as "model". Decorate if needed.
-    // TODO: Generalize to any explicit method, option to invert mass matrix
-    if (stepperType == "Explicit RK") {
+    // IKT, 12/8/16: it may be necessary to expand the list of conditions
+    // below, as more explicit schemes get added to Tempus 
+    if (
+      stepperType == "RK Forward Euler" ||
+      stepperType == "RK Explicit 4 Stage" ||
+      stepperType == "RK Explicit 3/8 Rule" ||
+      stepperType == "RK Explicit 4 Stage 3rd order by Runge" ||
+      stepperType == "RK Explicit 5 Stage 3rd order by Kinnmark and Gray"||
+      stepperType == "RK Explicit 3 Stage 3rd order" ||
+      stepperType == "RK Explicit 3 Stage 3rd order TVD" ||
+      stepperType == "RK Explicit 3 Stage 3rd order by Heun" ||
+      stepperType == "RK Explicit 2 Stage 2nd order by Runge" ||
+      stepperType == "RK Explicit Trapezoidal" ||
+      stepperType == "General ERK" ) {
+
       if (tempusPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
         tempusPL->get("Lump Mass Matrix", false);  //JF line does not do anything
