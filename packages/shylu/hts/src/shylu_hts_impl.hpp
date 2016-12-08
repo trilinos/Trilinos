@@ -532,6 +532,7 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
     void reinit_numeric(const ConstCrsMatrix* T, const Real* r);
     void reset_max_nrhs(const Int max_nrhs);
     bool is_lower_tri () const { return is_lo_; }
+    bool has_implicit_unit_diag () const { return unitdiag_; }
     // x and b can be the same pointers.
     void solve(const Sclr* b, const Int nrhs, Sclr* x, const Sclr alpha,
                const Sclr beta, const Int ldb, const Int ldx) const;

@@ -128,9 +128,20 @@ template<typename Int, typename Size, typename Sclr> class Tester {
     {
       typename ihts::Impl* impl;
       try {
+        std::vector<Sclr> Td;
+        if (to.reprocess) {
+          // Save the true values.
+          Td = d.v;
+          // Zero the matrix values to simulate reprocessing.
+          d.v.assign(d.v.size(), 1);
+        }
         impl = ihts::preprocess(T, max_nrhs - 1 /* For testing; see below. */,
                                 to.nthreads, to.reprocess, d.p.data(), d.q.data(),
                                 d.r.data(), &opts);
+        if (to.reprocess) {
+          // Restore the values.
+          d.v = Td;
+        }
       } catch (...) {
         if ( ! exception_expected) {
           std::cerr << "Unexpected exception on ";
@@ -144,10 +155,8 @@ template<typename Int, typename Size, typename Sclr> class Tester {
       if (print_options)
         ihts::print_options(impl, std::cout);
       if (to.reprocess) {
-        // This isn't necessary since we aren't changing the numbers, but
-        // pretend we are to test the numerical phase. Do it 3 times to test
-        // idempotency.
-        for (int rep = 0; rep < 3; ++rep)
+        // Run 2 times to test idempotency.
+        for (int rep = 0; rep < 2; ++rep)
           ihts::reprocess_numeric(impl, T, d.r.data());
       }
       // Exercise reset_max_nrhs.

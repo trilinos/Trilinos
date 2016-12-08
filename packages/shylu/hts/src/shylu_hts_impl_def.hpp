@@ -2441,7 +2441,7 @@ RecursiveTri::reinit_numeric (const CrsMatrix& T) {
 #   pragma omp for
     for (Size i = 0; i < ilim; ++i) {
       const Int si = i / nthreads_;
-      if ( ! nd_.s[si].empty()) continue;
+      if (nd_.s[si].empty()) continue;
       const Int tid = i % nthreads_;
       nd_.s[si].reinit_numeric(T, tid);
     }
@@ -4161,6 +4161,11 @@ reprocess_numeric (Impl* impl, const CrsMatrix* T, const Real* r) {
 template<typename Int, typename Size, typename Sclr>
 bool HTS<Int, Size, Sclr>::
 is_lower_tri (const Impl* impl) { return impl->ts.is_lower_tri(); }
+
+template<typename Int, typename Size, typename Sclr>
+bool HTS<Int, Size, Sclr>::
+has_implicit_unit_diag (const Impl* impl)
+{ return impl->ts.has_implicit_unit_diag(); }
 
 template<typename Int, typename Size, typename Sclr>
 void HTS<Int, Size, Sclr>::

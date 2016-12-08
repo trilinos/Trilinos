@@ -229,6 +229,9 @@ struct HTS {
   //! \brief Ask whether T is lower or upper triangular.
   static bool is_lower_tri(const Impl* impl);
 
+  //! \brief Ask whether T has an implicit unit diagonal.
+  static bool has_implicit_unit_diag(const Impl* impl);
+
   //! \brief Delete the Impl after the solves are completed.
   static void delete_Impl(Impl* impl);
 
@@ -242,10 +245,10 @@ struct HTS {
     // Number of r.h.s.
     const Int nrhs,
     const Int ldxb=0);
-  // x = T \ b.
+  // x = T \ b. b and x can be the same.
   static void solve_omp(Impl* impl, const Sclr* b, const Int nrhs, Sclr* x,
                         const Int ldb=0, const Int ldx=0);
-  // x = alpha x + beta (T \ b).
+  // x = alpha x + beta (T \ b). b and x can be the same.
   static void solve_omp(Impl* impl, const Sclr* b, const Int nrhs, Sclr* x,
                         const Sclr alpha, const Sclr beta,
                         const Int ldb=0, const Int ldx=0);

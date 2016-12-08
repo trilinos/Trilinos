@@ -48,7 +48,6 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #ifdef HAVE_IFPACK2_SHYLUHTS
-# include "ShyLUHTS_config.h"
 # include "shylu_hts.hpp"
 #endif
 
@@ -86,8 +85,12 @@ public:
 
   void setParameters (const Teuchos::ParameterList& pl) {
 #ifdef HAVE_IFPACK2_SHYLUHTS
-    if (pl.isType<int>("trisolver: block size"))
-      levelset_block_size_ = pl.get<int>("trisolver: block size");
+    const char* block_size_s = "trisolver: block size";
+    if (pl.isParameter(block_size_s)) {
+      TEUCHOS_TEST_FOR_EXCEPT_MSG( ! pl.isType<int>(block_size_s),
+                                   "The parameter \"" << block_size_s << "\" must be of type int.");
+      levelset_block_size_ = pl.get<int>(block_size_s);
+    }
     if (levelset_block_size_ < 1)
       levelset_block_size_ = 1;
 #endif
