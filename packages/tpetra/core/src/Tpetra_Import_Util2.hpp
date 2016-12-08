@@ -203,6 +203,13 @@ sortCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
                 const Teuchos::ArrayView<Ordinal>& CRS_colind,
                 const Teuchos::ArrayView<Scalar>&CRS_vals);
 
+
+template<typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+		const colind_array_type& CRS_colind,
+		const vals_array_type& CRS_vals);
+
 /// \brief Sort and merge the entries of the (raw CSR) matrix by
 ///   column index within each row.
 ///
@@ -1129,6 +1136,55 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
     }
   }
 }
+
+
+template<typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
+void
+sortCrsEntries (const rowptr_array_type& CRS_rowptr,
+		const colind_array_type& CRS_colind,
+		const vals_array_type& CRS_vals) {
+  // For each row, sort column entries from smallest to largest.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  // Code copied from  Epetra_CrsMatrix::SortEntries()
+  // NOTE: This should not be taken as a particularly efficient way to sort 
+  // rows of matrices in parallel.  But it is correct, so that's something.
+  size_t NumRows = CRS_rowptr.dimension_0()-1;
+  size_t nnz = CRS_colind.dimension_0();
+  typedef typename colind_array_type::traits::non_const_value_type Ordinal;
+  typedef typename vals_array_type::traits::non_const_value_type Scalar;
+
+  Kokkos::parallel_for(NumRows,KOKKOS_LAMBDA(const size_t i) {
+      size_t start=CRS_rowptr(i);
+      if(start < nnz) {
+	size_t NumEntries = CRS_rowptr(i+1) - start;
+	
+	Ordinal n = (Ordinal) NumEntries;
+	Ordinal m = n/2;
+	
+	while(m > 0) {
+	  Ordinal max = n - m;
+	  for(Ordinal j = 0; j < max; j++) {
+	    for(Ordinal k = j; k >= 0; k-=m) {
+	      size_t sk = start+k;
+	      if(CRS_colind(sk+m) >= CRS_colind(sk))
+		break;
+	      Scalar dtemp     = CRS_vals(sk+m);
+	      CRS_vals(sk+m)   = CRS_vals(sk);
+	      CRS_vals(sk)     = dtemp;
+	      Ordinal itemp    = CRS_colind(sk+m);
+	      CRS_colind(sk+m) = CRS_colind(sk);
+	      CRS_colind(sk)   = itemp;
+	    }
+	  }
+	  m = m/2;
+	}
+      }
+    });  
+}
+
+
+
+
 
 // Note: This should get merged with the other Tpetra sort routines eventually.
 template<typename Scalar, typename Ordinal>
