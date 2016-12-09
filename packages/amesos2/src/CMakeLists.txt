@@ -80,8 +80,8 @@ APPEND_SET(HEADERS
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Include)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Source)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/KLU2/Source)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/AMD/Include)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/COLAMD/Include)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/packages/common/auxiliarySoftware/SuiteSparse/src/BTF/Include)
@@ -191,30 +191,30 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
 
 
    SET(KLU_HEADERS
-        SuiteSparse/KLU2/Source/klu2_analyze_given.hpp
-        SuiteSparse/KLU2/Source/klu2_analyze.hpp
-        SuiteSparse/KLU2/Source/klu2_defaults.hpp
-        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp
-        SuiteSparse/KLU2/Source/klu2_dump.hpp
-        SuiteSparse/KLU2/Source/klu2_extract.hpp
-        SuiteSparse/KLU2/Source/klu2_factor.hpp
-        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp
-        SuiteSparse/KLU2/Source/klu2_free_symbolic.hpp
-        SuiteSparse/KLU2/Source/klu2_refactor.hpp
-        SuiteSparse/KLU2/Source/klu2.hpp
-        SuiteSparse/KLU2/Source/klu2_kernel.hpp
-        SuiteSparse/KLU2/Source/klu2_memory.hpp
-        SuiteSparse/KLU2/Source/klu2_refactor.hpp
-        SuiteSparse/KLU2/Source/klu2_scale.hpp
-        SuiteSparse/KLU2/Source/klu2_solve.hpp
-        SuiteSparse/KLU2/Source/klu2_sort.hpp
-        SuiteSparse/KLU2/Source/klu2_tsolve.hpp
-        SuiteSparse/KLU2/Include/klu2_ext.hpp
-        SuiteSparse/KLU2/Include/klu2.h
-        SuiteSparse/KLU2/Include/klu2_internal.h
-        SuiteSparse/KLU2/Include/klu2_ordinaltraits.h
-        SuiteSparse/KLU2/Include/klu2_scalartraits.h
-        SuiteSparse/KLU2/Include/klu2_version.h
+        KLU2/Source/klu2_analyze_given.hpp
+        KLU2/Source/klu2_analyze.hpp
+        KLU2/Source/klu2_defaults.hpp
+        KLU2/Source/klu2_diagnostics.hpp
+        KLU2/Source/klu2_dump.hpp
+        KLU2/Source/klu2_extract.hpp
+        KLU2/Source/klu2_factor.hpp
+        KLU2/Source/klu2_free_numeric.hpp
+        KLU2/Source/klu2_free_symbolic.hpp
+        KLU2/Source/klu2_refactor.hpp
+        KLU2/Source/klu2.hpp
+        KLU2/Source/klu2_kernel.hpp
+        KLU2/Source/klu2_memory.hpp
+        KLU2/Source/klu2_refactor.hpp
+        KLU2/Source/klu2_scale.hpp
+        KLU2/Source/klu2_solve.hpp
+        KLU2/Source/klu2_sort.hpp
+        KLU2/Source/klu2_tsolve.hpp
+        KLU2/Include/klu2_ext.hpp
+        KLU2/Include/klu2.h
+        KLU2/Include/klu2_internal.h
+        KLU2/Include/klu2_ordinaltraits.h
+        KLU2/Include/klu2_scalartraits.h
+        KLU2/Include/klu2_version.h
      )
 
      #IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
@@ -224,30 +224,7 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
 
 
     APPEND_SET(HEADERS
-        SuiteSparse/KLU2/Source/klu2_analyze_given.hpp
-        SuiteSparse/KLU2/Source/klu2_analyze.hpp
-        SuiteSparse/KLU2/Source/klu2_defaults.hpp
-        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp
-        SuiteSparse/KLU2/Source/klu2_dump.hpp
-        SuiteSparse/KLU2/Source/klu2_extract.hpp
-        SuiteSparse/KLU2/Source/klu2_factor.hpp
-        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp
-        SuiteSparse/KLU2/Source/klu2_free_symbolic.hpp
-        SuiteSparse/KLU2/Source/klu2_refactor.hpp
-        SuiteSparse/KLU2/Source/klu2.hpp
-        SuiteSparse/KLU2/Source/klu2_kernel.hpp
-        SuiteSparse/KLU2/Source/klu2_memory.hpp
-        SuiteSparse/KLU2/Source/klu2_refactor.hpp
-        SuiteSparse/KLU2/Source/klu2_scale.hpp
-        SuiteSparse/KLU2/Source/klu2_solve.hpp
-        SuiteSparse/KLU2/Source/klu2_sort.hpp
-        SuiteSparse/KLU2/Source/klu2_tsolve.hpp
-        SuiteSparse/KLU2/Include/klu2_ext.hpp
-        SuiteSparse/KLU2/Include/klu2.h
-        SuiteSparse/KLU2/Include/klu2_internal.h
-        SuiteSparse/KLU2/Include/klu2_ordinaltraits.h
-        SuiteSparse/KLU2/Include/klu2_scalartraits.h
-        SuiteSparse/KLU2/Include/klu2_version.h
+        ${KLU_HEADERS}
      )
 
 ENDIF()
@@ -389,7 +366,7 @@ ENDIF()
 ENDIF()
 
 IF (Trilinos_ENABLE_TrilinosSS)
-    ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
+    ADD_SUBDIRECTORY(KLU2/Source)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
